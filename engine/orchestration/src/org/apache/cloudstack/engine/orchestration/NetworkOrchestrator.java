@@ -819,9 +819,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         vo = _nicDao.persist(vo);
 
         Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
-        final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
         NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
-                _networkModel.getNetworkTag(vm.getHypervisorType(), network), trafficId);
+                _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
     }
@@ -1328,9 +1327,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             URI isolationUri = nic.getIsolationUri();
-            final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
+
             profile = new NicProfile(nic, network, broadcastUri, isolationUri,
-                    networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network), trafficId);
+
+                    networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
             guru.reserve(profile, network, vmProfile, dest, context);
             nic.setIPv4Address(profile.getIPv4Address());
             nic.setAddressFormat(profile.getFormat());
@@ -1349,9 +1349,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             updateNic(nic, network.getId(), 1);
         } else {
-            final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
             profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
-                    _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network), trafficId);
+                    _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
             guru.updateNicProfile(profile, network);
             nic.setState(Nic.State.Reserved);
             updateNic(nic, network.getId(), 1);
@@ -1392,9 +1391,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
             NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-            final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
             NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
-                    _networkModel.getNetworkTag(vm.getHypervisorType(), network), trafficId);
+                    _networkModel.getNetworkTag(vm.getHypervisorType(), network));
             if (guru instanceof NetworkMigrationResponder) {
                 if (!((NetworkMigrationResponder)guru).prepareMigration(profile, network, vm, dest, context)) {
                     s_logger.error("NetworkGuru " + guru + " prepareForMigration failed."); // XXX: Transaction error
@@ -1437,9 +1435,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
             NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-            final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
             NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
-                    _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network), trafficId);
+                    _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
             if(guru instanceof NetworkMigrationResponder){
                 if(!((NetworkMigrationResponder) guru).prepareMigration(profile, network, vm, dest, context)){
                     s_logger.error("NetworkGuru "+guru+" prepareForMigration failed."); // XXX: Transaction error
@@ -1491,7 +1488,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
                     profile.setName(_networkModel.getNetworkTag(vm.getHypervisorType(), network));
                     profile.setNetworId(network.getId());
-                    profile.setTrafficId(_networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType()));
 
                     guru.updateNicProfile(profile, network);
                     vm.addNic(profile);
@@ -1601,9 +1597,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                         nic.setState(Nic.State.Releasing);
                         _nicDao.update(nic.getId(), nic);
-                        final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
                         NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel
-                                .isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network), trafficId);
+                                .isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
                         if (guru.release(profile, vmProfile, nic.getReservationId())) {
                             applyProfileToNicForRelease(nic, profile);
                             nic.setState(Nic.State.Allocated);
@@ -1686,9 +1681,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         nic.setState(Nic.State.Deallocating);
         _nicDao.update(nic.getId(), nic);
         NetworkVO network = _networksDao.findById(nic.getNetworkId());
-        final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
         NicProfile profile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
-                vm.getHypervisorType(), network), trafficId);
+                vm.getHypervisorType(), network));
 
         /*
          * We need to release the nics with a Create ReservationStrategy here
@@ -3193,9 +3187,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
                 NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-                final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
                 NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
-                        _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network), trafficId);
+                        _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
                 guru.updateNicProfile(profile, network);
                 profiles.add(profile);
             }

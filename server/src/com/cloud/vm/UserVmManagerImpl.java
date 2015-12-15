@@ -716,9 +716,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-            final long trafficId = _networkModel.getPhysicalNetworkTrafficId(defaultNetwork.getPhysicalNetworkId(), defaultNetwork.getTrafficType());
             NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
-                    _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork), trafficId);
+                    _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
             VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
@@ -824,9 +823,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-        final long trafficId = _networkModel.getPhysicalNetworkTrafficId(defaultNetwork.getPhysicalNetworkId(), defaultNetwork.getTrafficType());
         NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
-                _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork), trafficId);
+                _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
 
         VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
 
@@ -2356,9 +2354,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         for (Nic nic : nics) {
              Network network = _networkDao.findById(nic.getNetworkId());
-             final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
             NicProfile nicProfile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
-                    template.getHypervisorType(), network), trafficId);
+                    template.getHypervisorType(), network));
 
              VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
 
@@ -3644,8 +3641,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // In vmware, we will be effecting pvlan settings in portgroups in StartCommand.
                 if (profile.getHypervisorType() != HypervisorType.VMware) {
                     if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
-                        final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
-                        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic", trafficId);
+                        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
                         if (!setupVmForPvlan(true, hostId, nicProfile)) {
                             return false;
                         }
@@ -3751,8 +3747,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
                 if (nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
-                    final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
-                    NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic", trafficId);
+                    NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
                     setupVmForPvlan(false, vm.getHostId(), nicProfile);
                 }
             }

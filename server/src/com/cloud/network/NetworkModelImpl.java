@@ -115,7 +115,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -1166,15 +1165,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public long getPhysicalNetworkTrafficId(Long networkId, TrafficType trafficType) {
-        if(networkId == null) {
-            return 0;
-        }
-
-        return _pNTrafficTypeDao.getPhysicalNetworkTrafficId(networkId.longValue(), trafficType);
-    }
-
-    @Override
     public List<Long> listNetworkOfferingsForUpgrade(long networkId) {
         List<Long> offeringsToReturn = new ArrayList<Long>();
         NetworkOffering originalOffering = _entityMgr.findById(NetworkOffering.class, getNetwork(networkId).getNetworkOfferingId());
@@ -1641,142 +1631,72 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public Map<Long, String> getPublicTrafficInfo(long dcId, HypervisorType vmware)
-    {
-        Map<Long, String> publicTrafficInfo = null;
+    public String getDefaultPublicTrafficLabel(long dcId, HypervisorType hypervisorType) {
         try {
-            publicTrafficInfo = getTrafficInfo(dcId, TrafficType.Public, vmware);
-
-            return publicTrafficInfo;
-        } catch (Exception ex) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to get the public traffic info in zone due to: " + ex.getMessage());
-            }
-        }
-        return publicTrafficInfo;
-    }
-
-    @Override
-    public Map<Long, String> getGuestTrafficInfo(long dcId, HypervisorType vmware)
-    {
-        Map<Long, String> guestTrafficInfo = null;
-        try {
-            guestTrafficInfo = getTrafficInfo(dcId, TrafficType.Guest, vmware);
-
-            return guestTrafficInfo;
-        } catch (Exception ex) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to get the guest traffic info in zone due to: " + ex.getMessage());
-            }
-        }
-        return guestTrafficInfo;
-    }
-
-    @Override
-    public Pair<Long, String> getDefaultPublicTrafficInfo(long dcId, HypervisorType hypervisorType) {
-        try {
-            PhysicalNetwork publicPhyNetwork = getFirstPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public);
-            return getPhysicalNetworkTrafficInfo(publicPhyNetwork,  TrafficType.Public, hypervisorType);
-        } catch (Exception ex) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrieve the default label for public traffic in zone: " + dcId + " for hypervisor: " + hypervisorType + " due to: " +
-                    ex.getMessage());
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Pair<Long, String> getDefaultGuestTrafficInfo(long dcId, HypervisorType hypervisorType) {
-        try {
-            PhysicalNetwork guestPhyNetwork = getFirstPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Guest);
-            return getPhysicalNetworkTrafficInfo(guestPhyNetwork,  TrafficType.Guest, hypervisorType);
-        } catch (Exception ex) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrive the default label for guest traffic in zone: " + dcId + " for hypervisor: " + hypervisorType + " due to: " +
-                    ex.getMessage());
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public String getDefaultPublicTrafficLabel(long dcId, HypervisorType vmware) {
-        Pair<Long, String> publicTrafficInfo = getDefaultPublicTrafficInfo(dcId, vmware);
-        if(publicTrafficInfo == null) {
-            return null;
-        }
-
-        return publicTrafficInfo.second();
-    }
-
-    @Override
-    public String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware) {
-        Pair<Long, String> guestTrafficInfo = getDefaultGuestTrafficInfo(dcId, vmware);
-        if(guestTrafficInfo == null) {
-            return null;
-        }
-
-        return guestTrafficInfo.second();
-    }
-
-    private Map<Long, String> getTrafficInfo(long dcId, TrafficType trafficType, HypervisorType hypervisor)
-    {
-        Map<Long, String> trafficInfo = null;
-        try {
-            trafficInfo = new HashMap<Long, String>();
-            List<PhysicalNetworkVO> phyNetworks = getPhysicalNetworksByZoneAndTrafficType(dcId, trafficType);
-            for (PhysicalNetwork phyNetwork : phyNetworks) {
-                Pair<Long, String> phyNetworkTrafficInfo = getPhysicalNetworkTrafficInfo(phyNetwork, trafficType, hypervisor);
-                if(phyNetworkTrafficInfo == null) {
-                    continue;
+            PhysicalNetwork publicPhyNetwork = getOnePhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public);
+            PhysicalNetworkTrafficTypeVO publicTraffic = _pNTrafficTypeDao.findBy(publicPhyNetwork.getId(), TrafficType.Public);
+            if (publicTraffic != null) {
+                String label = null;
+                switch (hypervisorType) {
+                    case XenServer:
+                        label = publicTraffic.getXenNetworkLabel();
+                        break;
+                    case KVM:
+                        label = publicTraffic.getKvmNetworkLabel();
+                        break;
+                    case VMware:
+                        label = publicTraffic.getVmwareNetworkLabel();
+                        break;
+                    case Hyperv:
+                        label = publicTraffic.getHypervNetworkLabel();
+                        break;
+                    case Ovm3:
+                        label = publicTraffic.getOvm3NetworkLabel();
+                        break;
                 }
-
-                trafficInfo.put(phyNetworkTrafficInfo.first(), phyNetworkTrafficInfo.second());
+                return label;
             }
-
-            return trafficInfo;
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrieve " + trafficType + " traffic info in zone: " + dcId + " for hypervisor: " + hypervisor + " due to: " +
+                s_logger.debug("Failed to retrieve the default label for public traffic." + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to: " +
                     ex.getMessage());
             }
         }
-        return trafficInfo;
+        return null;
     }
 
-    private Pair<Long,String> getPhysicalNetworkTrafficInfo(PhysicalNetwork physicalNetwork, TrafficType trafficType, HypervisorType hypervisor) {
-        if(physicalNetwork == null) {
-            return null;
-        }
-
+    @Override
+    public String getDefaultGuestTrafficLabel(long dcId, HypervisorType hypervisorType) {
         try {
-            PhysicalNetworkTrafficTypeVO physicalNetworkTrafficType = _pNTrafficTypeDao.findBy(physicalNetwork.getId(), trafficType);
-            if (physicalNetworkTrafficType == null) {
-                return null;
-            }
-
-            switch (hypervisor) {
-                case XenServer:
-                    return new Pair<Long, String>(physicalNetworkTrafficType.getId(), physicalNetworkTrafficType.getXenNetworkLabel());
-                case KVM:
-                    return new Pair<Long, String>(physicalNetworkTrafficType.getId(), physicalNetworkTrafficType.getKvmNetworkLabel());
-                case VMware:
-                    return new Pair<Long, String>(physicalNetworkTrafficType.getId(), physicalNetworkTrafficType.getVmwareNetworkLabel());
-                case Hyperv:
-                    return new Pair<Long, String>(physicalNetworkTrafficType.getId(), physicalNetworkTrafficType.getHypervNetworkLabel());
-                case Ovm3:
-                    return new Pair<Long, String>(physicalNetworkTrafficType.getId(), physicalNetworkTrafficType.getOvm3NetworkLabel());
-                 default:
-                    return null;
+            PhysicalNetwork guestPhyNetwork = getOnePhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Guest);
+            PhysicalNetworkTrafficTypeVO guestTraffic = _pNTrafficTypeDao.findBy(guestPhyNetwork.getId(), TrafficType.Guest);
+            if (guestTraffic != null) {
+                String label = null;
+                switch (hypervisorType) {
+                    case XenServer:
+                        label = guestTraffic.getXenNetworkLabel();
+                        break;
+                    case KVM:
+                        label = guestTraffic.getKvmNetworkLabel();
+                        break;
+                    case VMware:
+                        label = guestTraffic.getVmwareNetworkLabel();
+                        break;
+                    case Hyperv:
+                        label = guestTraffic.getHypervNetworkLabel();
+                        break;
+                    case Ovm3:
+                        label = guestTraffic.getOvm3NetworkLabel();
+                        break;
+                }
+                return label;
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrive the label for traffic type:" + trafficType + " and hypervisor: " + hypervisor + " in physical network: "
-                        + physicalNetwork.getName() + " due to:" + ex.getMessage());
+                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" +
+                    ex.getMessage());
             }
         }
-
         return null;
     }
 
@@ -1962,10 +1882,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         return _dcDao.findById(zoneId).getDomain();
     }
 
-    PhysicalNetwork getFirstPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
+    PhysicalNetwork getOnePhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
         List<PhysicalNetworkVO> networkList = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
 
-        if (networkList == null || networkList.isEmpty()) {
+        if (networkList.isEmpty()) {
             throw new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType + " in zone id=" + zoneId + ". ");
         }
 
@@ -1974,16 +1894,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
 
         return networkList.get(0);
-    }
-
-    List<PhysicalNetworkVO> getPhysicalNetworksByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
-        List<PhysicalNetworkVO> networkList = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
-
-        if (networkList ==  null || networkList.isEmpty()) {
-            throw new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType + " in zone id=" + zoneId + ". ");
-        }
-
-        return networkList;
     }
 
     protected Long getNonGuestNetworkPhysicalNetworkId(Network network, TrafficType trafficType) {
@@ -2056,10 +1966,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
 //        NetworkGuru guru = _networkGurus.get(network.getGuruName());
-        final long trafficId = getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
         NicProfile profile =
             new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
-                vm.getHypervisorType(), network), trafficId);
+                vm.getHypervisorType(), network));
 //        guru.updateNicProfile(profile, network);
         return profile;
     }

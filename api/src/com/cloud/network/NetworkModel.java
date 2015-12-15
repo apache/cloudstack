@@ -39,8 +39,6 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
-import com.cloud.utils.Pair;
-
 /**
  * The NetworkModel presents a read-only view into the Network data such as L2 networks,
  * Nics, PublicIps, NetworkOfferings, traffic labels, physical networks and the like
@@ -166,14 +164,6 @@ public interface NetworkModel {
 
     String getDefaultStorageTrafficLabel(long zoneId, HypervisorType hypervisorType);
 
-    Map<Long, String> getPublicTrafficInfo(long dcId, HypervisorType vmware);
-
-    Map<Long, String> getGuestTrafficInfo(long dcId, HypervisorType vmware);
-
-    Pair<Long, String> getDefaultPublicTrafficInfo(long dcId, HypervisorType vmware);
-
-    Pair<Long, String> getDefaultGuestTrafficInfo(long dcId, HypervisorType vmware);
-
     String getDefaultPublicTrafficLabel(long dcId, HypervisorType vmware);
 
     String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware);
@@ -235,8 +225,6 @@ public interface NetworkModel {
     Network getExclusiveGuestNetwork(long zoneId);
 
     long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType);
-
-    long getPhysicalNetworkTrafficId(Long networkId, TrafficType trafficType);
 
     Integer getNetworkRate(long networkId, Long vmId);
 

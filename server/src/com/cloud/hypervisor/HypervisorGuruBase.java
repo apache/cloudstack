@@ -84,7 +84,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         NicTO to = new NicTO();
         to.setDeviceId(profile.getDeviceId());
         to.setBroadcastType(profile.getBroadcastType());
-        to.setTrafficId(profile.getTrafficId());
         to.setType(profile.getTrafficType());
         to.setIp(profile.getIPv4Address());
         to.setNetmask(profile.getIPv4Netmask());

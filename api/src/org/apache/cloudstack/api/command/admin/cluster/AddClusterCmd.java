@@ -19,16 +19,15 @@ package org.apache.cloudstack.api.command.admin.cluster;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -100,20 +99,14 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC,
                type = CommandType.STRING,
                required = false,
-               description = "Name of virtual switch used for guest traffic in the cluster. This would override zone wide traffic label setting for first guest traffic in the physical networks defined.")
+               description = "Name of virtual switch used for guest traffic in the cluster. This would override zone wide traffic label setting.")
     private String vSwitchNameGuestTraffic;
 
     @Parameter(name = ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC,
                type = CommandType.STRING,
                required = false,
-               description = "Name of virtual switch used for public traffic in the cluster.  This would override zone wide traffic label setting for first public traffic in the physical networks defined.")
+               description = "Name of virtual switch used for public traffic in the cluster.  This would override zone wide traffic label setting.")
     private String vSwitchNamePublicTraffic;
-
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_TRAFFIC_LABELS,
-               type = CommandType.MAP,
-               required = false,
-               description = "Map of physical network traffic id (of guest and public traffic in the zone) and vmware network label (vSwitch name) in the cluster. This would override zone wide traffic label setting for the specified guest and public traffic in the physical networks defined.")
-    private Map physicalNetworkTrafficLabels;
 
     @Parameter(name = ApiConstants.OVM3_POOL, type = CommandType.STRING, required = false, description = "Ovm3 native pooling enabled for cluster")
     private String ovm3pool;
@@ -145,10 +138,6 @@ public class AddClusterCmd extends BaseCmd {
 
     public String getVSwitchNamePublicTraffic() {
         return vSwitchNamePublicTraffic;
-    }
-
-    public Map<String, String> getPhysicalNetworkTrafficLabels() {
-        return physicalNetworkTrafficLabels;
     }
 
     public String getVSMIpaddress() {

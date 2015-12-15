@@ -67,14 +67,13 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         final Nic privateNic = _nicDao.findByIp4AddressAndNetworkId(ipVO.getIpAddress(), privateNetwork.getId());
 
         NicProfile privateNicProfile = new NicProfile();
-        final long trafficId = _networkModel.getPhysicalNetworkTrafficId(privateNetwork.getPhysicalNetworkId(), privateNetwork.getTrafficType());
 
         if (privateNic != null) {
             final VirtualMachine vm = _vmDao.findById(privateNic.getInstanceId());
             privateNicProfile =
                     new NicProfile(privateNic, privateNetwork, privateNic.getBroadcastUri(), privateNic.getIsolationUri(), _networkModel.getNetworkRate(
                             privateNetwork.getId(), vm.getId()), _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork), _networkModel.getNetworkTag(
-                                    vm.getHypervisorType(), privateNetwork), trafficId);
+                                    vm.getHypervisorType(), privateNetwork));
         } else {
             final String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
             final PrivateIpAddress ip =
@@ -93,7 +92,6 @@ public class NicProfileHelperImpl implements NicProfileHelper {
             privateNicProfile.setFormat(AddressFormat.Ip4);
             privateNicProfile.setReservationId(String.valueOf(ip.getBroadcastUri()));
             privateNicProfile.setMacAddress(ip.getMacAddress());
-            privateNicProfile.setTrafficId(trafficId);
         }
 
         return privateNicProfile;
@@ -115,7 +113,6 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         guestNic.setMode(guestNetwork.getMode());
         final String gatewayCidr = guestNetwork.getCidr();
         guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
-        guestNic.setTrafficId(_networkModel.getPhysicalNetworkTrafficId(guestNetwork.getPhysicalNetworkId(), guestNetwork.getTrafficType()));
 
         return guestNic;
     }

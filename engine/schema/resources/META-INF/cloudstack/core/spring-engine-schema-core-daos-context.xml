@@ -130,7 +130,6 @@
   <bean id="certificateDaoImpl" class="com.cloud.certificate.dao.CertificateDaoImpl" />
   <bean id="clusterDaoImpl" class="com.cloud.dc.dao.ClusterDaoImpl" />
   <bean id="clusterDetailsDaoImpl" class="com.cloud.dc.ClusterDetailsDaoImpl" />
-  <bean id="ClusterPhysicalNetworkTrafficInfoDaoImpl" class="com.cloud.dc.ClusterPhysicalNetworkTrafficInfoDaoImpl" />
   <bean id="clusterVSMMapDaoImpl" class="com.cloud.dc.dao.ClusterVSMMapDaoImpl" />
   <bean id="commandExecLogDaoImpl" class="com.cloud.secstorage.CommandExecLogDaoImpl" />
   <bean id="conditionDaoImpl" class="com.cloud.network.as.dao.ConditionDaoImpl" />

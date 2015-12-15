@@ -2097,8 +2097,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (network.getTrafficType() == TrafficType.Guest) {
                 guestNetworks.add(network);
                 if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
-                    final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
-                    final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic", trafficId);
+                    final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
 
                     final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
                     try {
@@ -2131,8 +2130,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
 
                 if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
-                    final long trafficId = _networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
-                    final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic", trafficId);
+                    final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
 
                     final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
                     try {

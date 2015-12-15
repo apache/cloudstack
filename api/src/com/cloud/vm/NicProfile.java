@@ -33,7 +33,6 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     long id;
     long networkId;
-    long trafficId;
     long vmId;
     String reservationId;
     Integer deviceId;
@@ -76,10 +75,9 @@ public class NicProfile implements InternalIdentity, Serializable {
     public NicProfile() {
     }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled, String name, long trafficId) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled, String name) {
         id = nic.getId();
         networkId = network.getId();
-        this.trafficId = trafficId;
         mode = network.getMode();
         broadcastType = network.getBroadcastDomainType();
         trafficType = network.getTrafficType();
@@ -144,14 +142,6 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     public void setNetworId(long networkId){
         this.networkId = networkId;
-    }
-
-    public long getTrafficId() {
-        return trafficId;
-    }
-
-    public void setTrafficId(long trafficId){
-        this.trafficId = trafficId;
     }
 
     public long getVirtualMachineId() {
