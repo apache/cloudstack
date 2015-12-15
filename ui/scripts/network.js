@@ -6527,23 +6527,92 @@
                                             edit: true,
                                             isPassword: true,
                                             label: 'label.password'
+                                        },
+                                         domain: {
+                                            label: 'label.domain',
+                                            isHidden: function(args) {
+                                                if (isAdmin() || isDomainAdmin())
+                                                    return false;
+                                                else
+                                                    return true;
+                                                },
+                                            select: function(args) {
+                                                if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "",
+                                                            description: ""
+                                                        });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                data: null
+                                                });
+                                                }
+                                            }
+                                        },
+                                        account: {
+                                            label: 'label.account',
+                                            validation: {
+                                                required: true
+                                            },
+                                            isHidden: function(args) {
+                                                if (isAdmin() || isDomainAdmin())
+                                                    return false;
+                                                else
+                                                    return true;
+                                                }
                                         }
-                                    },
+                                    }
                                 },
                                 action: function(args) {
-                                console.log(args.context);
-                            $.ajax({
-                                url: createURL('addVpnUser'),
-                                data: {
+                                var dataObj = {
                                     username: args.data.username,
-                                    password: args.data.password,
-                                    domainid: args.context.users[0].domainid,
-                                    account: args.context.users[0].account
-                                },
-                                    dataType: 'json',
-                                    success: function(json) {
-                                        var jid = json.addvpnuserresponse.jobid;
-                                        args.response.success({
+                                    password: args.data.password
+
+                                };
+                                if (args.data.domain != null && args.data.domain.length > 0) {
+                                    $.extend(dataObj, {
+                                        domainid: args.data.domain
+                                    });
+                                    if (args.data.account != null && args.data.account.length > 0) {
+                                        $.extend(dataObj, {
+                                            account: args.data.account
+                                        });
+                                    }
+                                }
+                                $.ajax({
+                                url: createURL('addVpnUser'),
+                                data: dataObj,
+                                dataType: 'json',
+                                success: function(json) {
+                                    var jid = json.addvpnuserresponse.jobid;
+                                    args.response.success({
                                         _custom: {
                                             jobId: jid,
                                             getUpdatedItem: function(json) {
