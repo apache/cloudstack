@@ -71,6 +71,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
+    HostVO findOlderHypervisorHostInCluster(long clusterId);
+
     /**
      * @param type
      * @param clusterId
