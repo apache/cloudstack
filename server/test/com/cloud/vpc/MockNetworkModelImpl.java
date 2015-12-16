@@ -916,4 +916,9 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
 
+    @Override
+    public String getValidNetworkCidr(Network guestNetwork) {
+        return null;
+    }
+
 }

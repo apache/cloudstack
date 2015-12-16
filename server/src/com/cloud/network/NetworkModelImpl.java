@@ -2377,4 +2377,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {MACIdentifier};
     }
+
+    @Override
+    public String getValidNetworkCidr(Network guestNetwork) {
+        String networkCidr = guestNetwork.getNetworkCidr();
+        return networkCidr == null ? guestNetwork.getCidr() : networkCidr;
+    }
 }
