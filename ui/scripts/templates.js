@@ -281,6 +281,26 @@
                                                 id: "ide",
                                                 description: "ide"
                                             });
+                                            items.push({
+                                                id: "osdefault",
+                                                description: "osdefault"
+                                            });
+                                            items.push({
+                                                id: "pvscsi",
+                                                description: "pvscsi"
+                                            });
+                                            items.push({
+                                                id: "lsilogic",
+                                                description: "lsilogic"
+                                            });
+                                            items.push({
+                                                id: "lsisas1068",
+                                                description: "lsilogicsas"
+                                            });
+                                            items.push({
+                                                id: "buslogic",
+                                                description: "buslogic"
+                                            });
                                             args.response.success({
                                                 data: items
                                             });
