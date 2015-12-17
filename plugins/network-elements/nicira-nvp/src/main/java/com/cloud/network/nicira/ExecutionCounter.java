@@ -19,15 +19,19 @@
 
 package com.cloud.network.nicira;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class ExecutionCounter {
 
     private final int executionLimit;
-    private final AtomicInteger executionCount = new AtomicInteger(0);
+    private final ThreadLocal<Integer> executionCount;
 
     public ExecutionCounter(final int executionLimit) {
         this.executionLimit = executionLimit;
+        executionCount = new ThreadLocal<Integer>() {
+            @Override
+            protected Integer initialValue() {
+                return new Integer(0);
+            }
+        };
     }
 
     public ExecutionCounter resetExecutionCounter() {
@@ -40,7 +44,7 @@ public class ExecutionCounter {
     }
 
     public ExecutionCounter incrementExecutionCounter() {
-        executionCount.incrementAndGet();
+        executionCount.set(executionCount.get() + 1);
         return this;
     }
 
