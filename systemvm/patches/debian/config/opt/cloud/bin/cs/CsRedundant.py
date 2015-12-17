@@ -108,7 +108,6 @@ class CsRedundant(object):
             CsHelper.service("keepalived", "stop")
             return
 
-
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
         CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
@@ -148,7 +147,7 @@ class CsRedundant(object):
         conntrackd_temp_bkp = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ.bkp")
         
         CsHelper.copy(conntrackd_template_conf, conntrackd_temp_bkp)
-        
+
         conntrackd_tmpl = CsFile(conntrackd_template_conf)
         conntrackd_tmpl.section("Multicast {", "}", [
                       "IPv4_address 225.0.0.50\n",
@@ -164,10 +163,14 @@ class CsRedundant(object):
         conntrackd_conf = CsFile(self.CONNTRACKD_CONF)
 
         is_equals = conntrackd_tmpl.compare(conntrackd_conf)
+
+        force_keepalived_restart = False
         proc = CsProcess(['/etc/conntrackd/conntrackd.conf'])
-        if not proc.find() or not is_equals:
+
+        if not proc.find() and not is_equals:
             CsHelper.copy(conntrackd_template_conf, self.CONNTRACKD_CONF)
             CsHelper.service("conntrackd", "restart")
+            force_keepalived_restart = True
 
         # Restore the template file and remove the backup.
         CsHelper.copy(conntrackd_temp_bkp, conntrackd_template_conf)
@@ -185,7 +188,7 @@ class CsRedundant(object):
         heartbeat_cron.commit()
 
         proc = CsProcess(['/usr/sbin/keepalived'])
-        if not proc.find() or keepalived_conf.is_changed():
+        if not proc.find() or keepalived_conf.is_changed() or force_keepalived_restart:
             keepalived_conf.commit()
             CsHelper.service("keepalived", "restart")
 
