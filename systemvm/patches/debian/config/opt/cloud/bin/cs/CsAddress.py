@@ -52,7 +52,7 @@ class CsAddress(CsDataBag):
         """
         ipr = []
         for ip in self.get_ips():
-            if ip.is_guest():
+            if ip.is_guest() and ip.is_added():
                 ipr.append(ip)
         if len(ipr) > 0:
             return sorted(ipr)[-1]
@@ -189,6 +189,9 @@ class CsInterface:
         if "nw_type" in self.address and self.address['nw_type'] in ['public']:
             return True
         return False
+    
+    def is_added(self):
+        return self.get_attr("add")
 
     def to_str(self):
         pprint(self.address)
