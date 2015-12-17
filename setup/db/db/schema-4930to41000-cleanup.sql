@@ -21,4 +21,6 @@
 
 DELETE FROM `cloud`.`configuration` WHERE name='consoleproxy.loadscan.interval';
 
+DELETE FROM `cloud`.`configuration` WHERE `name`='vmware.ports.per.dvportgroup';
+
 DELETE FROM `cloud`.`host_details` where name = 'vmName' and  value in (select name from `cloud`.`vm_instance`  where state = 'Expunging' and hypervisor_type ='BareMetal');
