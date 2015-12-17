@@ -122,15 +122,17 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
             Date lastStatementDate = quotaAccount.getLastStatementDate();
             if (interval != null) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (lastStatementDate == null || getDifferenceDays(lastStatementDate, new Date()) >= s_LAST_STATEMENT_SENT_DAYS + 1) {
-                    BigDecimal quotaUsage = _quotaUsage.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, interval[0].getTime(), interval[1].getTime());
-                    s_logger.info("For account=" + quotaAccount.getId() + ", quota used = " + quotaUsage);
-                    // send statement
-                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, quotaUsage, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("For " + quotaAccount.getId() + " the statement has been sent recently");
+                if (account != null) {
+                    if (lastStatementDate == null || getDifferenceDays(lastStatementDate, new Date()) >= s_LAST_STATEMENT_SENT_DAYS + 1) {
+                        BigDecimal quotaUsage = _quotaUsage.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, interval[0].getTime(), interval[1].getTime());
+                        s_logger.info("For account=" + quotaAccount.getId() + ", quota used = " + quotaUsage);
+                        // send statement
+                        deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, quotaUsage, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
+                    } else {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("For " + quotaAccount.getId() + " the statement has been sent recently");
 
+                        }
                     }
                 }
             } else if (lastStatementDate != null) {

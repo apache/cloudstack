@@ -153,6 +153,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             BigDecimal thresholdBalance = quotaAccount.getQuotaMinBalance();
             if (accountBalance != null) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
+                if (account == null) continue; // the account is removed
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("checkAndSendQuotaAlertEmails: Check id=" + account.getId() + " bal=" + accountBalance + ", alertDate=" + alertDate + ", lockable=" + lockable);
                 }
