@@ -748,7 +748,8 @@
                         $.ajax({
                             url: createURL('listLoadBalancers'),
                             data: {
-                                networkid: args.context.networks[0].id
+                                networkid: args.context.networks[0].id,
+                                listAll: true
                             },
                             success: function(json) {
                                 var items = json.listloadbalancersresponse.loadbalancer;
@@ -1132,7 +1133,8 @@
                             async: false,
                             data: {
                                 associatednetworkid: args.context.networks[0].id,
-                                forloadbalancing: true
+                                forloadbalancing: true,
+                                listall: true
                             },
                             success: function(json) {
                                 var items = json.listpublicipaddressesresponse.publicipaddress;
