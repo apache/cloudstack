@@ -360,6 +360,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         BigDecimal rawusage;
         // get service offering details
         ServiceOfferingVO serviceoffering = _serviceOfferingDao.findServiceOffering(usageRecord.getVmInstanceId(), usageRecord.getOfferingId());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(serviceoffering);
+        }
         if (serviceoffering == null) return quotalist;
         rawusage = new BigDecimal(usageRecord.getRawUsage());
 
