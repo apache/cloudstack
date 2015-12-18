@@ -167,6 +167,7 @@ import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
@@ -269,7 +270,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return networkGurus;
     }
 
-    public void setNetworkGurus(List<NetworkGuru> networkGurus) {
+    public void setNetworkGurus(final List<NetworkGuru> networkGurus) {
         this.networkGurus = networkGurus;
     }
 
@@ -279,7 +280,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return networkElements;
     }
 
-    public void setNetworkElements(List<NetworkElement> networkElements) {
+    public void setNetworkElements(final List<NetworkElement> networkElements) {
         this.networkElements = networkElements;
     }
 
@@ -292,7 +293,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return ipDeployers;
     }
 
-    public void setIpDeployers(List<IpDeployer> ipDeployers) {
+    public void setIpDeployers(final List<IpDeployer> ipDeployers) {
         this.ipDeployers = ipDeployers;
     }
 
@@ -302,7 +303,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return _dhcpProviders;
     }
 
-    public void setDhcpProviders(List<DhcpServiceProvider> dhcpProviders) {
+    public void setDhcpProviders(final List<DhcpServiceProvider> dhcpProviders) {
         _dhcpProviders = dhcpProviders;
     }
 
@@ -361,7 +362,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         // populate providers
         final Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
-        Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
+        final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
 
         defaultProviders.add(Network.Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
@@ -383,7 +384,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.Dns, defaultProviders);
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.UserData, defaultProviders);
-        Set<Provider> sgProviders = new HashSet<Provider>();
+        final Set<Provider> sgProviders = new HashSet<Provider>();
         sgProviders.add(Provider.SecurityGroupProvider);
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
 
@@ -417,7 +418,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
                 NetworkOfferingVO offering = null;
                 //#1 - quick cloud network offering
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.QuickCloudNoServices) == null) {
@@ -487,11 +488,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 //#8 - network offering with internal lb service
-                Map<Network.Service, Set<Network.Provider>> internalLbOffProviders = new HashMap<Network.Service, Set<Network.Provider>>();
-                Set<Network.Provider> defaultVpcProvider = new HashSet<Network.Provider>();
+                final Map<Network.Service, Set<Network.Provider>> internalLbOffProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+                final Set<Network.Provider> defaultVpcProvider = new HashSet<Network.Provider>();
                 defaultVpcProvider.add(Network.Provider.VPCVirtualRouter);
 
-                Set<Network.Provider> defaultInternalLbProvider = new HashSet<Network.Provider>();
+                final Set<Network.Provider> defaultInternalLbProvider = new HashSet<Network.Provider>();
                 defaultInternalLbProvider.add(Network.Provider.InternalLbVm);
 
                 internalLbOffProviders.put(Service.Dhcp, defaultVpcProvider);
@@ -512,12 +513,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     _networkOfferingDao.update(offering.getId(), offering);
                 }
 
-                Map<Network.Service, Set<Network.Provider>> netscalerServiceProviders = new HashMap<Network.Service, Set<Network.Provider>>();
-                Set<Network.Provider> vrProvider = new HashSet<Network.Provider>();
+                final Map<Network.Service, Set<Network.Provider>> netscalerServiceProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+                final Set<Network.Provider> vrProvider = new HashSet<Network.Provider>();
                 vrProvider.add(Provider.VirtualRouter);
-                Set<Network.Provider> sgProvider = new HashSet<Network.Provider>();
+                final Set<Network.Provider> sgProvider = new HashSet<Network.Provider>();
                 sgProvider.add(Provider.SecurityGroupProvider);
-                Set<Network.Provider> nsProvider = new HashSet<Network.Provider>();
+                final Set<Network.Provider> nsProvider = new HashSet<Network.Provider>();
                 nsProvider.add(Provider.Netscaler);
                 netscalerServiceProviders.put(Service.Dhcp, vrProvider);
                 netscalerServiceProviders.put(Service.Dns, vrProvider);
@@ -526,10 +527,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 netscalerServiceProviders.put(Service.StaticNat, nsProvider);
                 netscalerServiceProviders.put(Service.Lb, nsProvider);
 
-                Map<Service, Map<Capability, String>> serviceCapabilityMap = new HashMap<Service, Map<Capability, String>>();
-                Map<Capability, String> elb = new HashMap<Capability, String>();
+                final Map<Service, Map<Capability, String>> serviceCapabilityMap = new HashMap<Service, Map<Capability, String>>();
+                final Map<Capability, String> elb = new HashMap<Capability, String>();
                 elb.put(Capability.ElasticLb, "true");
-                Map<Capability, String> eip = new HashMap<Capability, String>();
+                final Map<Capability, String> eip = new HashMap<Capability, String>();
                 eip.put(Capability.ElasticIp, "true");
                 serviceCapabilityMap.put(Service.Lb, elb);
                 serviceCapabilityMap.put(Service.StaticNat, eip);
@@ -549,7 +550,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         AssignIpAddressSearch.and("dc", AssignIpAddressSearch.entity().getDataCenterId(), Op.EQ);
         AssignIpAddressSearch.and("allocated", AssignIpAddressSearch.entity().getAllocatedTime(), Op.NULL);
         AssignIpAddressSearch.and("vlanId", AssignIpAddressSearch.entity().getVlanId(), Op.IN);
-        SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
+        final SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("type", vlanSearch.entity().getVlanType(), Op.EQ);
         vlanSearch.and("networkId", vlanSearch.entity().getNetworkId(), Op.EQ);
         AssignIpAddressSearch.join("vlan", vlanSearch, vlanSearch.entity().getId(), AssignIpAddressSearch.entity().getVlanId(), JoinType.INNER);
@@ -560,10 +561,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         AssignIpAddressFromPodVlanSearch.and("allocated", AssignIpAddressFromPodVlanSearch.entity().getAllocatedTime(), Op.NULL);
         AssignIpAddressFromPodVlanSearch.and("vlanId", AssignIpAddressFromPodVlanSearch.entity().getVlanId(), Op.IN);
 
-        SearchBuilder<VlanVO> podVlanSearch = _vlanDao.createSearchBuilder();
+        final SearchBuilder<VlanVO> podVlanSearch = _vlanDao.createSearchBuilder();
         podVlanSearch.and("type", podVlanSearch.entity().getVlanType(), Op.EQ);
         podVlanSearch.and("networkId", podVlanSearch.entity().getNetworkId(), Op.EQ);
-        SearchBuilder<PodVlanMapVO> podVlanMapSB = _podVlanMapDao.createSearchBuilder();
+        final SearchBuilder<PodVlanMapVO> podVlanMapSB = _podVlanMapDao.createSearchBuilder();
         podVlanMapSB.and("podId", podVlanMapSB.entity().getPodId(), Op.EQ);
         AssignIpAddressFromPodVlanSearch.join("podVlanMapSB", podVlanMapSB, podVlanMapSB.entity().getVlanDbId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(),
                 JoinType.INNER);
@@ -584,7 +585,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public boolean start() {
-        _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), NetworkGcInterval.value(), NetworkGcInterval.value(), TimeUnit.SECONDS);
+        final int netGcInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
+        _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), netGcInterval, netGcInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -598,7 +600,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
+    public List<? extends Network> setupNetwork(final Account owner, final NetworkOffering offering, final DeploymentPlan plan, final String name, final String displayText, final boolean isDefault)
             throws ConcurrentOperationException {
         return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null, true);
     }
@@ -606,27 +608,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     @DB
     public List<? extends Network> setupNetwork(final Account owner, final NetworkOffering offering, final Network predefined, final DeploymentPlan plan, final String name,
-            final String displayText, boolean errorIfAlreadySetup, final Long domainId, final ACLType aclType, final Boolean subdomainAccess, final Long vpcId,
+            final String displayText, final boolean errorIfAlreadySetup, final Long domainId, final ACLType aclType, final Boolean subdomainAccess, final Long vpcId,
             final Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException {
 
-        Account locked = _accountDao.acquireInLockTable(owner.getId());
+        final Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on " + owner);
         }
 
         try {
             if (predefined == null
-                    || (offering.getTrafficType() != TrafficType.Guest && predefined.getCidr() == null && predefined.getBroadcastUri() == null && !(predefined
+                    || offering.getTrafficType() != TrafficType.Guest && predefined.getCidr() == null && predefined.getBroadcastUri() == null && !(predefined
                             .getBroadcastDomainType() == BroadcastDomainType.Vlan || predefined.getBroadcastDomainType() == BroadcastDomainType.Lswitch || predefined
-                            .getBroadcastDomainType() == BroadcastDomainType.Vxlan))) {
-                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
+                            .getBroadcastDomainType() == BroadcastDomainType.Vxlan)) {
+                final List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
                     }
 
                     if (errorIfAlreadySetup) {
-                        InvalidParameterValueException ex = new InvalidParameterValueException(
+                        final InvalidParameterValueException ex = new InvalidParameterValueException(
                                 "Found existing network configuration (with specified id) for offering (with specified id)");
                         ex.addProxyObject(offering.getUuid(), "offeringId");
                         ex.addProxyObject(configs.get(0).getUuid(), "networkConfigId");
@@ -664,8 +666,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final long relatedFile = related;
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), relatedFile, name, displayText, predefined
+                    public void doInTransactionWithoutResult(final TransactionStatus status) {
+                        final NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), relatedFile, name, displayText, predefined
                                 .getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(),
                                 vpcId, offering.getRedundantRouter());
                         vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
@@ -682,7 +684,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             if (networks.size() < 1) {
                 // see networkOfferingVO.java
-                CloudRuntimeException ex = new CloudRuntimeException("Unable to convert network offering with specified id to network profile");
+                final CloudRuntimeException ex = new CloudRuntimeException("Unable to convert network offering with specified id to network profile");
                 ex.addProxyObject(offering.getUuid(), "offeringId");
                 throw ex;
             }
@@ -701,11 +703,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientCapacityException {
+            public void doInTransactionWithoutResult(final TransactionStatus status) throws InsufficientCapacityException {
                 int deviceId = 0;
                 int size = 0;
-                for (Network ntwk : networks.keySet()) {
-                    List<? extends NicProfile> profiles = networks.get(ntwk);
+                for (final Network ntwk : networks.keySet()) {
+                    final List<? extends NicProfile> profiles = networks.get(ntwk);
                     if (profiles != null && !profiles.isEmpty()) {
                         size = size + profiles.size();
                     } else {
@@ -713,14 +715,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
                 }
 
-                boolean[] deviceIds = new boolean[size];
+                final boolean[] deviceIds = new boolean[size];
                 Arrays.fill(deviceIds, false);
 
-                List<NicProfile> nics = new ArrayList<NicProfile>(size);
+                final List<NicProfile> nics = new ArrayList<NicProfile>(size);
                 NicProfile defaultNic = null;
 
-                for (Map.Entry<? extends Network, List<? extends NicProfile>> network : networks.entrySet()) {
-                    Network config = network.getKey();
+                for (final Map.Entry<? extends Network, List<? extends NicProfile>> network : networks.entrySet()) {
+                    final Network config = network.getKey();
                     List<? extends NicProfile> requestedProfiles = network.getValue();
                     if (requestedProfiles == null) {
                         requestedProfiles = new ArrayList<NicProfile>();
@@ -729,9 +731,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         requestedProfiles.add(null);
                     }
 
-                    for (NicProfile requested : requestedProfiles) {
+                    for (final NicProfile requested : requestedProfiles) {
                         Boolean isDefaultNic = false;
-                        if (vm != null && (requested != null && requested.isDefaultNic())) {
+                        if (vm != null && requested != null && requested.isDefaultNic()) {
                             isDefaultNic = true;
                         }
 
@@ -739,7 +741,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             deviceId++;
                         }
 
-                        Pair<NicProfile, Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, deviceId, vm);
+                        final Pair<NicProfile, Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, deviceId, vm);
                         NicProfile vmNic = null;
                         if (vmNicPair != null) {
                             vmNic = vmNicPair.first();
@@ -749,7 +751,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             deviceId = vmNicPair.second();
                         }
 
-                        int devId = vmNic.getDeviceId();
+                        final int devId = vmNic.getDeviceId();
                         if (devId > deviceIds.length) {
                             throw new IllegalArgumentException("Device id for nic is too large: " + vmNic);
                         }
@@ -784,17 +786,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     @Override
-    public Pair<NicProfile, Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic, int deviceId, VirtualMachineProfile vm)
+    public Pair<NicProfile, Integer> allocateNic(final NicProfile requested, final Network network, final Boolean isDefaultNic, int deviceId, final VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
 
-        NetworkVO ntwkVO = _networksDao.findById(network.getId());
+        final NetworkVO ntwkVO = _networksDao.findById(network.getId());
         s_logger.debug("Allocating nic for vm " + vm.getVirtualMachine() + " in network " + network + " with requested profile " + requested);
-        NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, ntwkVO.getGuruName());
+        final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, ntwkVO.getGuruName());
 
         if (requested != null && requested.getMode() == null) {
             requested.setMode(network.getMode());
         }
-        NicProfile profile = guru.allocate(network, requested, vm);
+        final NicProfile profile = guru.allocate(network, requested, vm);
         if (profile == null) {
             return null;
         }
@@ -815,14 +817,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         vo = _nicDao.persist(vo);
 
-        Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
-        NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
+        final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+        final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
     }
 
-    protected Integer applyProfileToNic(NicVO vo, NicProfile profile, Integer deviceId) {
+    protected Integer applyProfileToNic(final NicVO vo, final NicProfile profile, Integer deviceId) {
         if (profile.getDeviceId() != null) {
             vo.setDeviceId(profile.getDeviceId());
         } else if (deviceId != null) {
@@ -863,7 +865,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return deviceId;
     }
 
-    protected void applyProfileToNicForRelease(NicVO vo, NicProfile profile) {
+    protected void applyProfileToNicForRelease(final NicVO vo, final NicProfile profile) {
         vo.setIPv4Gateway(profile.getIPv4Gateway());
         vo.setAddressFormat(profile.getFormat());
         vo.setIPv4Address(profile.getIPv4Address());
@@ -877,15 +879,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         vo.setIPv4Netmask(profile.getIPv4Netmask());
     }
 
-    protected void applyProfileToNetwork(NetworkVO network, NetworkProfile profile) {
+    protected void applyProfileToNetwork(final NetworkVO network, final NetworkProfile profile) {
         network.setBroadcastUri(profile.getBroadcastUri());
         network.setDns1(profile.getDns1());
         network.setDns2(profile.getDns2());
         network.setPhysicalNetworkId(profile.getPhysicalNetworkId());
     }
 
-    protected NicTO toNicTO(NicVO nic, NicProfile profile, NetworkVO config) {
-        NicTO to = new NicTO();
+    protected NicTO toNicTO(final NicVO nic, final NicProfile profile, final NetworkVO config) {
+        final NicTO to = new NicTO();
         to.setDeviceId(nic.getDeviceId());
         to.setBroadcastType(config.getBroadcastDomainType());
         to.setType(config.getTrafficType());
@@ -910,7 +912,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             to.setDns2(profile.getIPv4Dns2());
         }
 
-        Integer networkRate = _networkModel.getNetworkRate(config.getId(), null);
+        final Integer networkRate = _networkModel.getNetworkRate(config.getId(), null);
         to.setNetworkRateMbps(networkRate);
 
         to.setUuid(config.getUuid());
@@ -918,20 +920,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return to;
     }
 
-    boolean isNetworkImplemented(NetworkVO network) {
-        Network.State state = network.getState();
+    boolean isNetworkImplemented(final NetworkVO network) {
+        final Network.State state = network.getState();
         if (state == Network.State.Implemented) {
             return true;
         } else if (state == Network.State.Setup) {
-            DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-            if (!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) || (zone.getNetworkType() == NetworkType.Basic)) {
+            final DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+            if (!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) || zone.getNetworkType() == NetworkType.Basic) {
                 return true;
             }
         }
         return false;
     }
 
-    Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context, boolean isRouter) throws ConcurrentOperationException,
+    Pair<NetworkGuru, NetworkVO> implementNetwork(final long networkId, final DeployDestination dest, final ReservationContext context, final boolean isRouter) throws ConcurrentOperationException,
     ResourceUnavailableException, InsufficientCapacityException {
         Pair<NetworkGuru, NetworkVO> implemented = null;
         if (!isRouter) {
@@ -942,8 +944,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             // preparing VR nics. This flow creates issues in dealing with network state transitions. The original call
             // puts network in "Implementing" state and then the nested call again tries to put it into same state resulting
             // in issues. In order to avoid it, implementNetwork() call for VR is replaced with below code.
-            NetworkVO network = _networksDao.findById(networkId);
-            NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+            final NetworkVO network = _networksDao.findById(networkId);
+            final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
             implemented = new Pair<NetworkGuru, NetworkVO>(guru, network);
         }
         return implemented;
@@ -951,12 +953,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
-    public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+    public Pair<NetworkGuru, NetworkVO> implementNetwork(final long networkId, final DeployDestination dest, final ReservationContext context) throws ConcurrentOperationException,
     ResourceUnavailableException, InsufficientCapacityException {
-        Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
+        final Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
 
         NetworkVO network = _networksDao.findById(networkId);
-        NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+        final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
         if (isNetworkImplemented(network)) {
             s_logger.debug("Network id=" + networkId + " is already implemented");
             implemented.set(guru, network);
@@ -967,7 +969,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
         if (network == null) {
             // see NetworkVO.java
-            ConcurrentOperationException ex = new ConcurrentOperationException("Unable to acquire network configuration");
+            final ConcurrentOperationException ex = new ConcurrentOperationException("Unable to acquire network configuration");
             ex.addProxyObject(_entityMgr.findById(Network.class, networkId).getUuid());
             throw ex;
         }
@@ -987,7 +989,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.debug("Asking " + guru.getName() + " to implement " + network);
             }
 
-            NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
             network.setReservationId(context.getReservationId());
             if (isSharedNetworkWithServices(network)) {
@@ -996,7 +998,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 stateTransitTo(network, Event.ImplementNetwork);
             }
 
-            Network result = guru.implement(network, offering, dest, context);
+            final Network result = guru.implement(network, offering, dest, context);
             network.setCidr(result.getCidr());
             network.setBroadcastUri(result.getBroadcastUri());
             network.setGateway(result.getGateway());
@@ -1017,7 +1019,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
             return implemented;
-        } catch (NoTransitionException e) {
+        } catch (final NoTransitionException e) {
             s_logger.error(e.getMessage());
             return null;
         } finally {
@@ -1030,13 +1032,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     } else {
                         stateTransitTo(network, Event.OperationFailed);
                     }
-                } catch (NoTransitionException e) {
+                } catch (final NoTransitionException e) {
                     s_logger.error(e.getMessage());
                 }
 
                 try {
                     shutdownNetwork(networkId, context, false);
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     // Don't throw this exception as it would hide the original thrown exception, just log
                     s_logger.error("Exception caught while shutting down a network as part of a failed implementation", e);
                 }
@@ -1050,7 +1052,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, Network network, NetworkOffering offering)
+    public void implementNetworkElementsAndResources(final DeployDestination dest, final ReservationContext context, final Network network, final NetworkOffering offering)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
 
         // Associate a source NAT IP (if one isn't already associated with the network) if this is a
@@ -1058,18 +1060,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         //     2) network has sourceNat service
         //     3) network offering does not support a shared source NAT rule
 
-        boolean sharedSourceNat = offering.getSharedSourceNat();
-        DataCenter zone = _dcDao.findById(network.getDataCenterId());
+        final boolean sharedSourceNat = offering.getSharedSourceNat();
+        final DataCenter zone = _dcDao.findById(network.getDataCenterId());
 
         if (!sharedSourceNat && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.SourceNat)
-                && (network.getGuestType() == Network.GuestType.Isolated || (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
+                && (network.getGuestType() == Network.GuestType.Isolated || network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
 
             List<IPAddressVO> ips = null;
-            Account owner = _entityMgr.findById(Account.class, network.getAccountId());
+            final Account owner = _entityMgr.findById(Account.class, network.getAccountId());
             if (network.getVpcId() != null) {
                 ips = _ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
                 if (ips.isEmpty()) {
-                    Vpc vpc = _vpcMgr.getActiveVpc(network.getVpcId());
+                    final Vpc vpc = _vpcMgr.getActiveVpc(network.getVpcId());
                     s_logger.debug("Creating a source nat ip for vpc " + vpc);
                     _vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
                 }
@@ -1082,8 +1084,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
         // get providers to implement
-        List<Provider> providersToImplement = getNetworkProviders(network.getId());
-        for (NetworkElement element : networkElements) {
+        final List<Provider> providersToImplement = getNetworkProviders(network.getId());
+        for (final NetworkElement element : networkElements) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                     // The physicalNetworkId will not get translated into a uuid by the reponse serializer,
@@ -1099,15 +1101,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 if (!element.implement(network, offering, dest, context)) {
-                    CloudRuntimeException ex = new CloudRuntimeException("Failed to implement provider " + element.getProvider().getName() + " for network with specified id");
+                    final CloudRuntimeException ex = new CloudRuntimeException("Failed to implement provider " + element.getProvider().getName() + " for network with specified id");
                     ex.addProxyObject(network.getUuid(), "networkId");
                     throw ex;
                 }
             }
         }
 
-        for (NetworkElement element : networkElements) {
-            if ((element instanceof AggregatedCommandExecutor) && (providersToImplement.contains(element.getProvider()))) {
+        for (final NetworkElement element : networkElements) {
+            if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                 ((AggregatedCommandExecutor)element).prepareAggregatedExecution(network, dest);
             }
         }
@@ -1118,17 +1120,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (!reprogramNetworkRules(network.getId(), CallContext.current().getCallingAccount(), network)) {
                 s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
                 // see DataCenterVO.java
-                ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class,
+                final ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class,
                         network.getDataCenterId());
                 ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
                 throw ex;
             }
-            for (NetworkElement element : networkElements) {
-                if ((element instanceof AggregatedCommandExecutor) && (providersToImplement.contains(element.getProvider()))) {
+            for (final NetworkElement element : networkElements) {
+                if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                     if (!((AggregatedCommandExecutor)element).completeAggregatedExecution(network, dest)) {
                         s_logger.warn("Failed to re-program the network as a part of network " + network + " implement due to aggregated commands execution failure!");
                         // see DataCenterVO.java
-                        ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class,
+                        final ResourceUnavailableException ex = new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class,
                                 network.getDataCenterId());
                         ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
                         throw ex;
@@ -1136,8 +1138,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
             }
         } finally {
-            for (NetworkElement element : networkElements) {
-                if ((element instanceof AggregatedCommandExecutor) && (providersToImplement.contains(element.getProvider()))) {
+            for (final NetworkElement element : networkElements) {
+                if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                     ((AggregatedCommandExecutor)element).cleanupAggregatedExecution(network, dest);
                 }
             }
@@ -1145,15 +1147,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     // This method re-programs the rules/ips for existing network
-    protected boolean reprogramNetworkRules(long networkId, Account caller, Network network) throws ResourceUnavailableException {
+    protected boolean reprogramNetworkRules(final long networkId, final Account caller, final Network network) throws ResourceUnavailableException {
         boolean success = true;
 
         //Apply egress rules first to effect the egress policy early on the guest traffic
-        List<FirewallRuleVO> firewallEgressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        DataCenter zone = _dcDao.findById(network.getDataCenterId());
+        final List<FirewallRuleVO> firewallEgressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        final DataCenter zone = _dcDao.findById(network.getDataCenterId());
         if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall) && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)
-                && (network.getGuestType() == Network.GuestType.Isolated || (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
+                && (network.getGuestType() == Network.GuestType.Isolated || network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
             // add default egress rule to accept the traffic
             _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), offering.getEgressDefaultPolicy(), true);
         }
@@ -1176,7 +1178,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // apply firewall rules
-        List<FirewallRuleVO> firewallIngressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Ingress);
+        final List<FirewallRuleVO> firewallIngressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Ingress);
         if (!_firewallMgr.applyFirewallRules(firewallIngressRulesToApply, false, caller)) {
             s_logger.warn("Failed to reapply Ingress firewall rule(s) as a part of network id=" + networkId + " restart");
             success = false;
@@ -1207,9 +1209,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // apply vpn rules
-        List<? extends RemoteAccessVpn> vpnsToReapply = _vpnMgr.listRemoteAccessVpns(networkId);
+        final List<? extends RemoteAccessVpn> vpnsToReapply = _vpnMgr.listRemoteAccessVpns(networkId);
         if (vpnsToReapply != null) {
-            for (RemoteAccessVpn vpn : vpnsToReapply) {
+            for (final RemoteAccessVpn vpn : vpnsToReapply) {
                 // Start remote access vpn per ip
                 if (_vpnMgr.startRemoteAccessVpn(vpn.getServerAddressId(), false) == null) {
                     s_logger.warn("Failed to reapply vpn rules as a part of network id=" + networkId + " restart");
@@ -1227,16 +1229,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return success;
     }
 
-    protected boolean prepareElement(NetworkElement element, Network network, NicProfile profile, VirtualMachineProfile vmProfile, DeployDestination dest,
-            ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    protected boolean prepareElement(final NetworkElement element, final Network network, final NicProfile profile, final VirtualMachineProfile vmProfile, final DeployDestination dest,
+            final ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         element.prepare(network, profile, vmProfile, dest, context);
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
                     && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) && element instanceof DhcpServiceProvider) {
-                DhcpServiceProvider sp = (DhcpServiceProvider)element;
-                Map<Capability, String> dhcpCapabilities = element.getCapabilities().get(Service.Dhcp);
-                String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
-                if ((supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets)) && profile.getIPv6Address() == null) {
+                final DhcpServiceProvider sp = (DhcpServiceProvider)element;
+                final Map<Capability, String> dhcpCapabilities = element.getCapabilities().get(Service.Dhcp);
+                final String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
+                if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets) && profile.getIPv6Address() == null) {
                     if (!sp.configDhcpSupportForSubnet(network, profile, vmProfile, dest, context)) {
                         return false;
                     }
@@ -1247,7 +1249,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)
                     && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) && element instanceof UserDataServiceProvider) {
-                UserDataServiceProvider sp = (UserDataServiceProvider)element;
+                final UserDataServiceProvider sp = (UserDataServiceProvider)element;
                 if(!sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context)){
                     return false;
                 }
@@ -1260,7 +1262,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     protected void updateNic(final NicVO nic, final long networkId, final int count) {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
                 _nicDao.update(nic.getId(), nic);
 
                 if (nic.getVmType() == VirtualMachine.Type.User) {
@@ -1269,7 +1271,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 if (nic.getVmType() == VirtualMachine.Type.User
-                        || (nic.getVmType() == VirtualMachine.Type.DomainRouter && _networksDao.findById(networkId).getTrafficType() == TrafficType.Guest)) {
+                        || nic.getVmType() == VirtualMachine.Type.DomainRouter && _networksDao.findById(networkId).getTrafficType() == TrafficType.Guest) {
                     _networksDao.setCheckForGc(networkId);
                 }
             }
@@ -1277,9 +1279,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void prepare(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
+    public void prepare(final VirtualMachineProfile vmProfile, final DeployDestination dest, final ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
     ResourceUnavailableException {
-        List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
+        final List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
 
         // we have to implement default nics first - to ensure that default network elements start up first in multiple
         //nics case
@@ -1287,35 +1289,35 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         Collections.sort(nics, new Comparator<NicVO>() {
 
             @Override
-            public int compare(NicVO nic1, NicVO nic2) {
-                boolean isDefault1 = nic1.isDefaultNic();
-                boolean isDefault2 = nic2.isDefaultNic();
+            public int compare(final NicVO nic1, final NicVO nic2) {
+                final boolean isDefault1 = nic1.isDefaultNic();
+                final boolean isDefault2 = nic2.isDefaultNic();
 
-                return (isDefault1 ^ isDefault2) ? ((isDefault1 ^ true) ? 1 : -1) : 0;
+                return isDefault1 ^ isDefault2 ? isDefault1 ^ true ? 1 : -1 : 0;
             }
         });
 
-        for (NicVO nic : nics) {
-            Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context, vmProfile.getVirtualMachine().getType() == Type.DomainRouter);
+        for (final NicVO nic : nics) {
+            final Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context, vmProfile.getVirtualMachine().getType() == Type.DomainRouter);
             if (implemented == null || implemented.first() == null) {
                 s_logger.warn("Failed to implement network id=" + nic.getNetworkId() + " as a part of preparing nic id=" + nic.getId());
                 throw new CloudRuntimeException("Failed to implement network id=" + nic.getNetworkId() + " as a part preparing nic id=" + nic.getId());
             }
 
-            NetworkVO network = implemented.second();
-            NicProfile profile = prepareNic(vmProfile, dest, context, nic.getId(), network);
+            final NetworkVO network = implemented.second();
+            final NicProfile profile = prepareNic(vmProfile, dest, context, nic.getId(), network);
             vmProfile.addNic(profile);
         }
     }
 
     @Override
-    public NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context, long nicId, Network network)
+    public NicProfile prepareNic(final VirtualMachineProfile vmProfile, final DeployDestination dest, final ReservationContext context, final long nicId, final Network network)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
             ResourceUnavailableException {
 
-        Integer networkRate = _networkModel.getNetworkRate(network.getId(), vmProfile.getId());
-        NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-        NicVO nic = _nicDao.findById(nicId);
+        final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vmProfile.getId());
+        final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+        final NicVO nic = _nicDao.findById(nicId);
 
         NicProfile profile = null;
         if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
@@ -1327,7 +1329,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 broadcastUri = network.getBroadcastUri();
             }
 
-            URI isolationUri = nic.getIsolationUri();
+            final URI isolationUri = nic.getIsolationUri();
 
             profile = new NicProfile(nic, network, broadcastUri, isolationUri,
 
@@ -1357,8 +1359,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             updateNic(nic, network.getId(), 1);
         }
 
-        List<Provider> providersToImplement = getNetworkProviders(network.getId());
-        for (NetworkElement element : networkElements) {
+        final List<Provider> providersToImplement = getNetworkProviders(network.getId());
+        for (final NetworkElement element : networkElements) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                     throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -1379,28 +1381,28 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void prepareNicForMigration(VirtualMachineProfile vm, DeployDestination dest) {
+    public void prepareNicForMigration(final VirtualMachineProfile vm, final DeployDestination dest) {
         if(vm.getType().equals(VirtualMachine.Type.DomainRouter) && (vm.getHypervisorType().equals(HypervisorType.KVM) || vm.getHypervisorType().equals(HypervisorType.VMware))) {
             //Include nics hot plugged and not stored in DB
             prepareAllNicsForMigration(vm, dest);
             return;
         }
-        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
-        ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
-        for (NicVO nic : nics) {
-            NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        final ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+        for (final NicVO nic : nics) {
+            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
-            NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
+            final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+            final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                     _networkModel.getNetworkTag(vm.getHypervisorType(), network));
             if (guru instanceof NetworkMigrationResponder) {
                 if (!((NetworkMigrationResponder)guru).prepareMigration(profile, network, vm, dest, context)) {
                     s_logger.error("NetworkGuru " + guru + " prepareForMigration failed."); // XXX: Transaction error
                 }
             }
-            List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (NetworkElement element : networkElements) {
+            final List<Provider> providersToImplement = getNetworkProviders(network.getId());
+            for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                         throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -1424,27 +1426,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     Once clean fix is added by stored dynamically nics is DB, this workaround won't be needed
      */
     @Override
-    public void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest) {
-        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
-        ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
+    public void prepareAllNicsForMigration(final VirtualMachineProfile vm, final DeployDestination dest) {
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        final ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null, null);
         Long guestNetworkId = null;
-        for (NicVO nic : nics) {
-            NetworkVO network = _networksDao.findById(nic.getNetworkId());
+        for (final NicVO nic : nics) {
+            final NetworkVO network = _networksDao.findById(nic.getNetworkId());
             if(network.getTrafficType().equals(TrafficType.Guest) && network.getGuestType().equals(GuestType.Isolated)){
                 guestNetworkId = network.getId();
             }
-            Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+            final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
-            NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
+            final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+            final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
                     _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
             if(guru instanceof NetworkMigrationResponder){
                 if(!((NetworkMigrationResponder) guru).prepareMigration(profile, network, vm, dest, context)){
                     s_logger.error("NetworkGuru "+guru+" prepareForMigration failed."); // XXX: Transaction error
                 }
             }
-            List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (NetworkElement element : networkElements) {
+            final List<Provider> providersToImplement = getNetworkProviders(network.getId());
+            for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                         throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
@@ -1460,23 +1462,23 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             vm.addNic(profile);
         }
 
-        List<String> addedURIs = new ArrayList<String>();
+        final List<String> addedURIs = new ArrayList<String>();
         if(guestNetworkId != null){
-            List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(guestNetworkId, null);
-            for (IPAddressVO userIp : publicIps){
-                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                URI broadcastUri = BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag());
-                long ntwkId = publicIp.getNetworkId();
-                Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ntwkId, vm.getId(),
+            final List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(guestNetworkId, null);
+            for (final IPAddressVO userIp : publicIps){
+                final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                final URI broadcastUri = BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag());
+                final long ntwkId = publicIp.getNetworkId();
+                final Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ntwkId, vm.getId(),
                         broadcastUri.toString());
                 if(nic == null && !addedURIs.contains(broadcastUri.toString())){
                     //Nic details are not available in DB
                     //Create nic profile for migration
                     s_logger.debug("Creating nic profile for migration. BroadcastUri: "+broadcastUri.toString()+" NetworkId: "+ntwkId+" Vm: "+vm.getId());
-                    NetworkVO network = _networksDao.findById(ntwkId);
-                    Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
-                    NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-                    NicProfile profile = new NicProfile();
+                    final NetworkVO network = _networksDao.findById(ntwkId);
+                    final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+                    final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+                    final NicProfile profile = new NicProfile();
                     profile.setDeviceId(255); //dummyId
                     profile.setIPv4Address(userIp.getAddress().toString());
                     profile.setIPv4Netmask(publicIp.getNetmask());
@@ -1498,8 +1500,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
-    private NicProfile findNicProfileById(VirtualMachineProfile vm, long id) {
-        for (NicProfile nic : vm.getNics()) {
+    private NicProfile findNicProfileById(final VirtualMachineProfile vm, final long id) {
+        for (final NicProfile nic : vm.getNics()) {
             if (nic.getId() == id) {
                 return nic;
             }
@@ -1508,19 +1510,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void commitNicForMigration(VirtualMachineProfile src, VirtualMachineProfile dst) {
-        for (NicProfile nicSrc : src.getNics()) {
-            NetworkVO network = _networksDao.findById(nicSrc.getNetworkId());
-            NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-            NicProfile nicDst = findNicProfileById(dst, nicSrc.getId());
-            ReservationContext src_context = new ReservationContextImpl(nicSrc.getReservationId(), null, null);
-            ReservationContext dst_context = new ReservationContextImpl(nicDst.getReservationId(), null, null);
+    public void commitNicForMigration(final VirtualMachineProfile src, final VirtualMachineProfile dst) {
+        for (final NicProfile nicSrc : src.getNics()) {
+            final NetworkVO network = _networksDao.findById(nicSrc.getNetworkId());
+            final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+            final NicProfile nicDst = findNicProfileById(dst, nicSrc.getId());
+            final ReservationContext src_context = new ReservationContextImpl(nicSrc.getReservationId(), null, null);
+            final ReservationContext dst_context = new ReservationContextImpl(nicDst.getReservationId(), null, null);
 
             if (guru instanceof NetworkMigrationResponder) {
                 ((NetworkMigrationResponder)guru).commitMigration(nicSrc, network, src, src_context, dst_context);
             }
-            List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (NetworkElement element : networkElements) {
+            final List<Provider> providersToImplement = getNetworkProviders(network.getId());
+            for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                         throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -1532,26 +1534,26 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
             }
             // update the reservation id
-            NicVO nicVo = _nicDao.findById(nicDst.getId());
+            final NicVO nicVo = _nicDao.findById(nicDst.getId());
             nicVo.setReservationId(nicDst.getReservationId());
             _nicDao.persist(nicVo);
         }
     }
 
     @Override
-    public void rollbackNicForMigration(VirtualMachineProfile src, VirtualMachineProfile dst) {
-        for (NicProfile nicDst : dst.getNics()) {
-            NetworkVO network = _networksDao.findById(nicDst.getNetworkId());
-            NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-            NicProfile nicSrc = findNicProfileById(src, nicDst.getId());
-            ReservationContext src_context = new ReservationContextImpl(nicSrc.getReservationId(), null, null);
-            ReservationContext dst_context = new ReservationContextImpl(nicDst.getReservationId(), null, null);
+    public void rollbackNicForMigration(final VirtualMachineProfile src, final VirtualMachineProfile dst) {
+        for (final NicProfile nicDst : dst.getNics()) {
+            final NetworkVO network = _networksDao.findById(nicDst.getNetworkId());
+            final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+            final NicProfile nicSrc = findNicProfileById(src, nicDst.getId());
+            final ReservationContext src_context = new ReservationContextImpl(nicSrc.getReservationId(), null, null);
+            final ReservationContext dst_context = new ReservationContextImpl(nicDst.getReservationId(), null, null);
 
             if (guru instanceof NetworkMigrationResponder) {
                 ((NetworkMigrationResponder)guru).rollbackMigration(nicDst, network, dst, src_context, dst_context);
             }
-            List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (NetworkElement element : networkElements) {
+            final List<Provider> providersToImplement = getNetworkProviders(network.getId());
+            for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                         throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -1567,38 +1569,38 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
-    public void release(VirtualMachineProfile vmProfile, boolean forced) throws ConcurrentOperationException, ResourceUnavailableException {
-        List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
-        for (NicVO nic : nics) {
+    public void release(final VirtualMachineProfile vmProfile, final boolean forced) throws ConcurrentOperationException, ResourceUnavailableException {
+        final List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
+        for (final NicVO nic : nics) {
             releaseNic(vmProfile, nic.getId());
         }
     }
 
     @Override
     @DB
-    public void releaseNic(VirtualMachineProfile vmProfile, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException {
+    public void releaseNic(final VirtualMachineProfile vmProfile, final Nic nic) throws ConcurrentOperationException, ResourceUnavailableException {
         releaseNic(vmProfile, nic.getId());
     }
 
     @DB
     protected void releaseNic(final VirtualMachineProfile vmProfile, final long nicId) throws ConcurrentOperationException, ResourceUnavailableException {
-        Pair<Network, NicProfile> networkToRelease = Transaction.execute(new TransactionCallback<Pair<Network, NicProfile>>() {
+        final Pair<Network, NicProfile> networkToRelease = Transaction.execute(new TransactionCallback<Pair<Network, NicProfile>>() {
             @Override
-            public Pair<Network, NicProfile> doInTransaction(TransactionStatus status) {
-                NicVO nic = _nicDao.lockRow(nicId, true);
+            public Pair<Network, NicProfile> doInTransaction(final TransactionStatus status) {
+                final NicVO nic = _nicDao.lockRow(nicId, true);
                 if (nic == null) {
                     throw new ConcurrentOperationException("Unable to acquire lock on nic " + nic);
                 }
 
-                Nic.State originalState = nic.getState();
-                NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                final Nic.State originalState = nic.getState();
+                final NetworkVO network = _networksDao.findById(nic.getNetworkId());
 
                 if (originalState == Nic.State.Reserved || originalState == Nic.State.Reserving) {
                     if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
-                        NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+                        final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                         nic.setState(Nic.State.Releasing);
                         _nicDao.update(nic.getId(), nic);
-                        NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel
+                        final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel
                                 .isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
                         if (guru.release(profile, vmProfile, nic.getReservationId())) {
                             applyProfileToNicForRelease(nic, profile);
@@ -1623,10 +1625,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // cleanup the entry in vm_network_map
         if(vmProfile.getType().equals(VirtualMachine.Type.User)) {
-            NicVO nic = _nicDao.findById(nicId);
+            final NicVO nic = _nicDao.findById(nicId);
             if(nic != null) {
-                NetworkVO vmNetwork = _networksDao.findById(nic.getNetworkId());
-                VMNetworkMapVO vno = _vmNetworkMapDao.findByVmAndNetworkId(vmProfile.getVirtualMachine().getId(), vmNetwork.getId());
+                final NetworkVO vmNetwork = _networksDao.findById(nic.getNetworkId());
+                final VMNetworkMapVO vno = _vmNetworkMapDao.findByVmAndNetworkId(vmProfile.getVirtualMachine().getId(), vmNetwork.getId());
                 if(vno != null) {
                     _vmNetworkMapDao.remove(vno.getId());
                 }
@@ -1634,10 +1636,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         if (networkToRelease != null) {
-            Network network = networkToRelease.first();
-            NicProfile profile = networkToRelease.second();
-            List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (NetworkElement element : networkElements) {
+            final Network network = networkToRelease.first();
+            final NicProfile profile = networkToRelease.second();
+            final List<Provider> providersToImplement = getNetworkProviders(network.getId());
+            for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Asking " + element.getName() + " to release " + profile);
@@ -1651,38 +1653,38 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void cleanupNics(VirtualMachineProfile vm) {
+    public void cleanupNics(final VirtualMachineProfile vm) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Cleaning network for vm: " + vm.getId());
         }
 
-        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
-        for (NicVO nic : nics) {
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        for (final NicVO nic : nics) {
             removeNic(vm, nic);
         }
     }
 
     @Override
-    public void removeNic(VirtualMachineProfile vm, Nic nic) {
+    public void removeNic(final VirtualMachineProfile vm, final Nic nic) {
         removeNic(vm, _nicDao.findById(nic.getId()));
     }
 
-    protected void removeNic(VirtualMachineProfile vm, NicVO nic) {
+    protected void removeNic(final VirtualMachineProfile vm, final NicVO nic) {
 
         if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start && nic.getState() != Nic.State.Allocated) {
             // Nics with reservation strategy 'Start' should go through release phase in the Nic life cycle.
             // Ensure that release is performed before Nic is to be removed to avoid resource leaks.
             try {
                 releaseNic(vm, nic.getId());
-            } catch (Exception ex) {
+            } catch (final Exception ex) {
                 s_logger.warn("Failed to release nic: " + nic.toString() + " as part of remove operation due to", ex);
             }
         }
 
         nic.setState(Nic.State.Deallocating);
         _nicDao.update(nic.getId(), nic);
-        NetworkVO network = _networksDao.findById(nic.getNetworkId());
-        NicProfile profile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
+        final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+        final NicProfile profile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
                 vm.getHypervisorType(), network));
 
         /*
@@ -1690,17 +1692,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
          * because the nic is now being removed.
          */
         if (nic.getReservationStrategy() == Nic.ReservationStrategy.Create) {
-            List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (NetworkElement element : networkElements) {
+            final List<Provider> providersToImplement = getNetworkProviders(network.getId());
+            for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Asking " + element.getName() + " to release " + nic);
                     }
                     try {
                         element.release(network, profile, vm, null);
-                    } catch (ConcurrentOperationException ex) {
+                    } catch (final ConcurrentOperationException ex) {
                         s_logger.warn("release failed during the nic " + nic.toString() + " removeNic due to ", ex);
-                    } catch (ResourceUnavailableException ex) {
+                    } catch (final ResourceUnavailableException ex) {
                         s_logger.warn("release failed during the nic " + nic.toString() + " removeNic due to ", ex);
                     }
                 }
@@ -1713,14 +1715,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 && network.getGuestType() == GuestType.Shared
                 && isLastNicInSubnet(nic)) {
             // remove the dhcpservice ip if this is the last nic in subnet.
-            DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
+            final DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
             if (dhcpServiceProvider != null
                     && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)) {
                 removeDhcpServiceInSubnet(nic);
             }
         }
 
-        NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+        final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
         guru.deallocate(network, profile, vm);
         _nicDao.remove(nic.getId());
 
@@ -1731,17 +1733,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
-    public boolean isDhcpAccrossMultipleSubnetsSupported(DhcpServiceProvider dhcpServiceProvider) {
+    public boolean isDhcpAccrossMultipleSubnetsSupported(final DhcpServiceProvider dhcpServiceProvider) {
 
-        Map<Network.Capability, String> capabilities = dhcpServiceProvider.getCapabilities().get(Network.Service.Dhcp);
-        String supportsMultipleSubnets = capabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
+        final Map<Network.Capability, String> capabilities = dhcpServiceProvider.getCapabilities().get(Network.Service.Dhcp);
+        final String supportsMultipleSubnets = capabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
         if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets)) {
             return true;
         }
         return false;
     }
 
-    private boolean isLastNicInSubnet(NicVO nic) {
+    private boolean isLastNicInSubnet(final NicVO nic) {
         if (_nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getIPv4Gateway(), nic.getBroadcastUri()).size() > 1) {
             return false;
         }
@@ -1750,18 +1752,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     @Override
-    public void removeDhcpServiceInSubnet(Nic nic) {
-        Network network = _networksDao.findById(nic.getNetworkId());
-        DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
+    public void removeDhcpServiceInSubnet(final Nic nic) {
+        final Network network = _networksDao.findById(nic.getNetworkId());
+        final DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         try {
             final NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getIPv4Gateway(), network.getId(), NicIpAlias.State.active);
             if (ipAlias != null) {
                 ipAlias.setState(NicIpAlias.State.revoked);
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                    public void doInTransactionWithoutResult(final TransactionStatus status) {
                         _nicIpAliasDao.update(ipAlias.getId(), ipAlias);
-                        IPAddressVO aliasIpaddressVo = _publicIpAddressDao.findByIpAndSourceNetworkId(ipAlias.getNetworkId(), ipAlias.getIp4Address());
+                        final IPAddressVO aliasIpaddressVo = _publicIpAddressDao.findByIpAndSourceNetworkId(ipAlias.getNetworkId(), ipAlias.getIp4Address());
                         _publicIpAddressDao.unassignIpAddress(aliasIpaddressVo.getId());
                     }
                 });
@@ -1769,7 +1771,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     s_logger.warn("Failed to remove the ip alias on the router, marking it as removed in db and freed the allocated ip " + ipAlias.getIp4Address());
                 }
             }
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             //failed to remove the dhcpconfig on the router.
             s_logger.info("Unable to delete the ip alias due to unable to contact the virtualrouter.");
         }
@@ -1777,16 +1779,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void expungeNics(VirtualMachineProfile vm) {
-        List<NicVO> nics = _nicDao.listByVmIdIncludingRemoved(vm.getId());
-        for (NicVO nic : nics) {
+    public void expungeNics(final VirtualMachineProfile vm) {
+        final List<NicVO> nics = _nicDao.listByVmIdIncludingRemoved(vm.getId());
+        for (final NicVO nic : nics) {
             _nicDao.expunge(nic.getId());
         }
     }
 
     @Override
     @DB
-    public Network createGuestNetwork(long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
+    public Network createGuestNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
             String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, Boolean subdomainAccess,
             final Long vpcId, final String ip6Gateway, final String ip6Cidr, final Boolean isDisplayNetworkEnabled, final String isolatedPvlan)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
@@ -1807,7 +1809,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // Validate network offering
         if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
             // see NetworkOfferingVO
-            InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its stat is not " + NetworkOffering.State.Enabled);
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its stat is not " + NetworkOffering.State.Enabled);
             ex.addProxyObject(ntwkOff.getUuid(), "networkOfferingId");
             throw ex;
         }
@@ -1815,7 +1817,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // Validate physical network
         if (pNtwk.getState() != PhysicalNetwork.State.Enabled) {
             // see PhysicalNetworkVO.java
-            InvalidParameterValueException ex = new InvalidParameterValueException("Specified physical network id is" + " in incorrect state:" + pNtwk.getState());
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Specified physical network id is" + " in incorrect state:" + pNtwk.getState());
             ex.addProxyObject(pNtwk.getUuid(), "physicalNetworkId");
             throw ex;
         }
@@ -1838,7 +1840,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             // Only one guest network is supported in Basic zone
-            List<NetworkVO> guestNetworks = _networksDao.listByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
+            final List<NetworkVO> guestNetworks = _networksDao.listByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
             if (!guestNetworks.isEmpty()) {
                 throw new InvalidParameterValueException("Can't have more than one Guest network in zone with network type " + NetworkType.Basic);
             }
@@ -1883,7 +1885,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
                     throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
                 }
-                if (!(_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup))) {
+                if (!_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
                     throw new InvalidParameterValueException("network must have SecurityGroup provider in security group enabled zone");
                 }
             }
@@ -1896,7 +1898,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //TODO(VXLAN): Support VNI specified
         // VlanId can be specified only when network offering supports it
-        boolean vlanSpecified = (vlanId != null);
+        final boolean vlanSpecified = vlanId != null;
         if (vlanSpecified != ntwkOff.getSpecifyVlan()) {
             if (vlanSpecified) {
                 throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
@@ -1911,30 +1913,30 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                         + zone.getName());
             }
-            String uri = BroadcastDomainType.fromString(vlanId).toString();
+            final String uri = BroadcastDomainType.fromString(vlanId).toString();
             // For Isolated networks, don't allow to create network with vlan that already exists in the zone
             if (ntwkOff.getGuestType() == GuestType.Isolated) {
                 if (_networksDao.countByZoneAndUri(zoneId, uri) > 0) {
                     throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
                 } else {
-                    List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, vlanId.toString());
+                    final List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, vlanId.toString());
                     //for the network that is created as part of private gateway,
                     //the vnet is not coming from the data center vnet table, so the list can be empty
                     if (!dcVnets.isEmpty()) {
-                        DataCenterVnetVO dcVnet = dcVnets.get(0);
+                        final DataCenterVnetVO dcVnet = dcVnets.get(0);
                         // Fail network creation if specified vlan is dedicated to a different account
                         if (dcVnet.getAccountGuestVlanMapId() != null) {
-                            Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
-                            AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
+                            final Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
+                            final AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
                             if (map.getAccountId() != owner.getAccountId()) {
                                 throw new InvalidParameterValueException("Vlan " + vlanId + " is dedicated to a different account");
                             }
                             // Fail network creation if owner has a dedicated range of vlans but the specified vlan belongs to the system pool
                         } else {
-                            List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
+                            final List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
                             if (maps != null && !maps.isEmpty()) {
-                                int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
-                                int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
+                                final int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
+                                final int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
                                 if (vnetsAllocatedToAccount < vnetsDedicatedToAccount) {
                                     throw new InvalidParameterValueException("Specified vlan " + vlanId + " doesn't belong" + " to the vlan range dedicated to the owner "
                                             + owner.getAccountName());
@@ -1955,9 +1957,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // If networkDomain is not specified, take it from the global configuration
         if (_networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
-            Map<Network.Capability, String> dnsCapabilities = _networkModel.getNetworkOfferingServiceCapabilities(_entityMgr.findById(NetworkOffering.class, networkOfferingId),
+            final Map<Network.Capability, String> dnsCapabilities = _networkModel.getNetworkOfferingServiceCapabilities(_entityMgr.findById(NetworkOffering.class, networkOfferingId),
                     Service.Dns);
-            String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
+            final String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
             if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
                 if (networkDomain != null) {
                     // TBD: NetworkOfferingId and zoneId. Send uuids instead.
@@ -1991,10 +1993,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // In Advance zone Cidr for Shared networks and Isolated networks w/o source nat service can't be NULL - 2.2.x
         // limitation, remove after we introduce support for multiple ip ranges
         // with different Cidrs for the same Shared network
-        boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced
+        final boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced
                 && ntwkOff.getTrafficType() == TrafficType.Guest
-                && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated && !_networkModel.areServicesSupportedByNetworkOffering(
-                        ntwkOff.getId(), Service.SourceNat)));
+                && (ntwkOff.getGuestType() == GuestType.Shared || ntwkOff.getGuestType() == GuestType.Isolated && !_networkModel.areServicesSupportedByNetworkOffering(
+                        ntwkOff.getId(), Service.SourceNat));
         if (cidr == null && ip6Cidr == null && cidrRequired) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of" + " type " + Network.GuestType.Shared
                     + " and network of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
@@ -2015,15 +2017,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final String networkDomainFinal = networkDomain;
         final String vlanIdFinal = vlanId;
         final Boolean subdomainAccessFinal = subdomainAccess;
-        Network network = Transaction.execute(new TransactionCallback<Network>() {
+        final Network network = Transaction.execute(new TransactionCallback<Network>() {
             @Override
-            public Network doInTransaction(TransactionStatus status) {
+            public Network doInTransaction(final TransactionStatus status) {
                 Long physicalNetworkId = null;
                 if (pNtwk != null) {
                     physicalNetworkId = pNtwk.getId();
                 }
-                DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null, physicalNetworkId);
-                NetworkVO userNetwork = new NetworkVO();
+                final DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null, physicalNetworkId);
+                final NetworkVO userNetwork = new NetworkVO();
                 userNetwork.setNetworkDomain(networkDomainFinal);
 
                 if (cidr != null && gateway != null) {
@@ -2038,7 +2040,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 if (vlanIdFinal != null) {
                     if (isolatedPvlan == null) {
-                        URI uri = BroadcastDomainType.fromString(vlanIdFinal);
+                        final URI uri = BroadcastDomainType.fromString(vlanIdFinal);
                         userNetwork.setBroadcastUri(uri);
                         if (!vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
                             userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
@@ -2054,7 +2056,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
                 }
 
-                List<? extends Network> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccessFinal, vpcId,
+                final List<? extends Network> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccessFinal, vpcId,
                         isDisplayNetworkEnabled);
 
                 Network network = null;
@@ -2063,7 +2065,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 } else {
                     if (networks.size() > 0 && networks.get(0).getGuestType() == Network.GuestType.Isolated && networks.get(0).getTrafficType() == TrafficType.Guest) {
                         Network defaultGuestNetwork = networks.get(0);
-                        for (Network nw : networks) {
+                        for (final Network nw : networks) {
                             if (nw.getCidr() != null && nw.getCidr().equals(zone.getGuestNetworkCidr())) {
                                 defaultGuestNetwork = nw;
                             }
@@ -2090,7 +2092,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
-    public boolean shutdownNetwork(final long networkId, ReservationContext context, boolean cleanupElements) {
+    public boolean shutdownNetwork(final long networkId, final ReservationContext context, final boolean cleanupElements) {
         NetworkVO network = _networksDao.findById(networkId);
         if (network.getState() == Network.State.Allocated) {
             s_logger.debug("Network is already shutdown: " + network);
@@ -2129,7 +2131,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             } else {
                 try {
                     stateTransitTo(network, Event.DestroyNetwork);
-                } catch (NoTransitionException e) {
+                } catch (final NoTransitionException e) {
                     network.setState(Network.State.Shutdown);
                     _networksDao.update(network.getId(), network);
                 }
@@ -2138,27 +2140,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
 
             final NetworkVO networkFinal = network;
-            boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
+            final boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
                 @Override
-                public Boolean doInTransaction(TransactionStatus status) {
+                public Boolean doInTransaction(final TransactionStatus status) {
                     boolean result = false;
 
                     if (success) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
                         }
-                        NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, networkFinal.getGuruName());
-                        NetworkProfile profile = convertNetworkToNetworkProfile(networkFinal.getId());
+                        final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, networkFinal.getGuruName());
+                        final NetworkProfile profile = convertNetworkToNetworkProfile(networkFinal.getId());
                         guru.shutdown(profile, _networkOfferingDao.findById(networkFinal.getNetworkOfferingId()));
 
                         applyProfileToNetwork(networkFinal, profile);
-                        DataCenterVO zone = _dcDao.findById(networkFinal.getDataCenterId());
-                        if (isSharedNetworkOfferingWithServices(networkFinal.getNetworkOfferingId()) && (zone.getNetworkType() == NetworkType.Advanced)) {
+                        final DataCenterVO zone = _dcDao.findById(networkFinal.getDataCenterId());
+                        if (isSharedNetworkOfferingWithServices(networkFinal.getNetworkOfferingId()) && zone.getNetworkType() == NetworkType.Advanced) {
                             networkFinal.setState(Network.State.Setup);
                         } else {
                             try {
                                 stateTransitTo(networkFinal, Event.OperationSucceeded);
-                            } catch (NoTransitionException e) {
+                            } catch (final NoTransitionException e) {
                                 networkFinal.setState(Network.State.Allocated);
                                 networkFinal.setRestartRequired(false);
                             }
@@ -2169,7 +2171,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     } else {
                         try {
                             stateTransitTo(networkFinal, Event.OperationFailed);
-                        } catch (NoTransitionException e) {
+                        } catch (final NoTransitionException e) {
                             networkFinal.setState(Network.State.Implemented);
                             _networksDao.update(networkFinal.getId(), networkFinal);
                         }
@@ -2192,17 +2194,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean cleanupElements, Network network) {
+    public boolean shutdownNetworkElementsAndResources(final ReservationContext context, final boolean cleanupElements, final Network network) {
 
         // get providers to shutdown
-        List<Provider> providersToShutdown = getNetworkProviders(network.getId());
+        final List<Provider> providersToShutdown = getNetworkProviders(network.getId());
 
         // 1) Cleanup all the rules for the network. If it fails, just log the failure and proceed with shutting down
         // the elements
         boolean cleanupResult = true;
         boolean cleanupNeeded = false;
         try {
-            for (Provider provider: providersToShutdown) {
+            for (final Provider provider: providersToShutdown) {
                 if (provider.cleanupNeededOnShutdown()) {
                     cleanupNeeded = true;
                     break;
@@ -2211,7 +2213,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (cleanupNeeded) {
                 cleanupResult = shutdownNetworkResources(network.getId(), context.getAccount(), context.getCaller().getId());
             }
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             s_logger.warn("shutdownNetworkRules failed during the network " + network + " shutdown due to ", ex);
         } finally {
             // just warn the administrator that the network elements failed to shutdown
@@ -2222,7 +2224,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // 2) Shutdown all the network elements
         boolean success = true;
-        for (NetworkElement element : networkElements) {
+        for (final NetworkElement element : networkElements) {
             if (providersToShutdown.contains(element.getProvider())) {
                 try {
                     if (s_logger.isDebugEnabled()) {
@@ -2232,13 +2234,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName());
                         success = false;
                     }
-                } catch (ResourceUnavailableException e) {
+                } catch (final ResourceUnavailableException e) {
                     s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName(), e);
                     success = false;
-                } catch (ConcurrentOperationException e) {
+                } catch (final ConcurrentOperationException e) {
                     s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName(), e);
                     success = false;
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName(), e);
                     success = false;
                 }
@@ -2249,7 +2251,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
-    public boolean destroyNetwork(long networkId, final ReservationContext context, boolean forced) {
+    public boolean destroyNetwork(final long networkId, final ReservationContext context, final boolean forced) {
         final Account callerAccount = context.getAccount();
 
         NetworkVO network = _networksDao.findById(networkId);
@@ -2259,9 +2261,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // Make sure that there are no user vms in the network that are not Expunged/Error
-        List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
+        final List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
 
-        for (UserVmVO vm : userVms) {
+        for (final UserVmVO vm : userVms) {
             if (!(vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null)) {
                 s_logger.warn("Can't delete the network, not all user vms are expunged. Vm " + vm + " is in " + vm.getState() + " state");
                 return false;
@@ -2269,18 +2271,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // Don't allow to delete network via api call when it has vms assigned to it
-        int nicCount = getActiveNicsInNetwork(networkId);
+        final int nicCount = getActiveNicsInNetwork(networkId);
         if (nicCount > 0) {
             s_logger.debug("The network id=" + networkId + " has active Nics, but shouldn't.");
             // at this point we have already determined that there are no active user vms in network
             // if the op_networks table shows active nics, it's a bug in releasing nics updating op_networks
-            _networksDao.changeActiveNicsBy(networkId, (-1 * nicCount));
+            _networksDao.changeActiveNicsBy(networkId, -1 * nicCount);
         }
 
         //In Basic zone, make sure that there are no non-removed console proxies and SSVMs using the network
-        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+        final DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         if (zone.getNetworkType() == NetworkType.Basic) {
-            List<VMInstanceVO> systemVms = _vmDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), Type.ConsoleProxy, Type.SecondaryStorageVm);
+            final List<VMInstanceVO> systemVms = _vmDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), Type.ConsoleProxy, Type.SecondaryStorageVm);
             if (systemVms != null && !systemVms.isEmpty()) {
                 s_logger.warn("Can't delete the network, not all consoleProxy/secondaryStorage vms are expunged");
                 return false;
@@ -2304,8 +2306,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // get providers to destroy
-        List<Provider> providersToDestroy = getNetworkProviders(network.getId());
-        for (NetworkElement element : networkElements) {
+        final List<Provider> providersToDestroy = getNetworkProviders(network.getId());
+        for (final NetworkElement element : networkElements) {
             if (providersToDestroy.contains(element.getProvider())) {
                 try {
                     if (s_logger.isDebugEnabled()) {
@@ -2316,13 +2318,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         success = false;
                         s_logger.warn("Unable to complete destroy of the network: failed to destroy network element " + element.getName());
                     }
-                } catch (ResourceUnavailableException e) {
+                } catch (final ResourceUnavailableException e) {
                     s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
                     success = false;
-                } catch (ConcurrentOperationException e) {
+                } catch (final ConcurrentOperationException e) {
                     s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
                     success = false;
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
                     success = false;
                 }
@@ -2338,8 +2340,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             try {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, networkFinal.getGuruName());
+                    public void doInTransactionWithoutResult(final TransactionStatus status) {
+                        final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, networkFinal.getGuruName());
 
                         guru.trash(networkFinal, _networkOfferingDao.findById(networkFinal.getNetworkOfferingId()));
 
@@ -2350,21 +2352,23 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             // commit transaction only when ips and vlans for the network are released successfully
                             try {
                                 stateTransitTo(networkFinal, Event.DestroyNetwork);
-                            } catch (NoTransitionException e) {
+                            } catch (final NoTransitionException e) {
                                 s_logger.debug(e.getMessage());
                             }
                             if (_networksDao.remove(networkFinal.getId())) {
-                                NetworkDomainVO networkDomain = _networkDomainDao.getDomainNetworkMapByNetworkId(networkFinal.getId());
-                                if (networkDomain != null)
+                                final NetworkDomainVO networkDomain = _networkDomainDao.getDomainNetworkMapByNetworkId(networkFinal.getId());
+                                if (networkDomain != null) {
                                     _networkDomainDao.remove(networkDomain.getId());
+                                }
 
-                                NetworkAccountVO networkAccount = _networkAccountDao.getAccountNetworkMapByNetworkId(networkFinal.getId());
-                                if (networkAccount != null)
+                                final NetworkAccountVO networkAccount = _networkAccountDao.getAccountNetworkMapByNetworkId(networkFinal.getId());
+                                if (networkAccount != null) {
                                     _networkAccountDao.remove(networkAccount.getId());
+                                }
                             }
 
-                            NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());
-                            boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, networkFinal.getAclType());
+                            final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());
+                            final boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, networkFinal.getAclType());
                             if (updateResourceCount) {
                                 _resourceLimitMgr.decrementResourceCount(networkFinal.getAccountId(), ResourceType.network, networkFinal.getDisplayNetwork());
                             }
@@ -2373,11 +2377,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 });
                 if (_networksDao.findById(network.getId()) == null) {
                     // remove its related ACL permission
-                    Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
+                    final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
                     _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                 }
                 return true;
-            } catch (CloudRuntimeException e) {
+            } catch (final CloudRuntimeException e) {
                 s_logger.error("Failed to delete network", e);
                 return false;
             }
@@ -2387,18 +2391,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
+    public boolean resourceCountNeedsUpdate(final NetworkOffering ntwkOff, final ACLType aclType) {
         //Update resource count only for Isolated account specific non-system networks
-        boolean updateResourceCount = (ntwkOff.getGuestType() == GuestType.Isolated && !ntwkOff.isSystemOnly() && aclType == ACLType.Account);
+        final boolean updateResourceCount = ntwkOff.getGuestType() == GuestType.Isolated && !ntwkOff.isSystemOnly() && aclType == ACLType.Account;
         return updateResourceCount;
     }
 
-    protected boolean deleteVlansInNetwork(long networkId, long userId, Account callerAccount) {
+    protected boolean deleteVlansInNetwork(final long networkId, final long userId, final Account callerAccount) {
 
         //cleanup Public vlans
-        List<VlanVO> publicVlans = _vlanDao.listVlansByNetworkId(networkId);
+        final List<VlanVO> publicVlans = _vlanDao.listVlansByNetworkId(networkId);
         boolean result = true;
-        for (VlanVO vlan : publicVlans) {
+        for (final VlanVO vlan : publicVlans) {
             if (!_configMgr.deleteVlanAndPublicIpRange(userId, vlan.getId(), callerAccount)) {
                 s_logger.warn("Failed to delete vlan " + vlan.getId() + ");");
                 result = false;
@@ -2406,7 +2410,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //cleanup private vlans
-        int privateIpAllocCount = _privateIpDao.countAllocatedByNetworkId(networkId);
+        final int privateIpAllocCount = _privateIpDao.countAllocatedByNetworkId(networkId);
         if (privateIpAllocCount > 0) {
             s_logger.warn("Can't delete Private ip range for network " + networkId + " as it has allocated ip addresses");
             result = false;
@@ -2420,7 +2424,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public class NetworkGarbageCollector extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
-            GlobalLock gcLock = GlobalLock.getInternLock("Network.GC.Lock");
+            final GlobalLock gcLock = GlobalLock.getInternLock("Network.GC.Lock");
             try {
                 if (gcLock.lock(3)) {
                     try {
@@ -2436,24 +2440,25 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         public void reallyRun() {
             try {
-                List<Long> shutdownList = new ArrayList<Long>();
-                long currentTime = System.currentTimeMillis() / 1000;
-                HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
+                final List<Long> shutdownList = new ArrayList<Long>();
+                final long currentTime = System.currentTimeMillis() / 1000;
+                final HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
 
-                List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
-                for (Long networkId : networkIds) {
+                final List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
+                final int netGcWait = NumbersUtil.parseInt(_configDao.getValue(NetworkGcWait.key()), 1);
+                for (final Long networkId : networkIds) {
 
                     if (!_networkModel.isNetworkReadyForGc(networkId)) {
                         continue;
                     }
 
-                    Long time = _lastNetworkIdsToFree.remove(networkId);
+                    final Long time = _lastNetworkIdsToFree.remove(networkId);
                     if (time == null) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("We found network " + networkId + " to be free for the first time.  Adding it to the list: " + currentTime);
                         }
                         stillFree.put(networkId, currentTime);
-                    } else if (time > (currentTime - NetworkGcWait.value())) {
+                    } else if (time > currentTime - netGcWait) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Network " + networkId + " is still free but it's not time to shutdown yet: " + time);
                         }
@@ -2465,9 +2470,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 _lastNetworkIdsToFree = stillFree;
 
-                CallContext cctx = CallContext.current();
+                final CallContext cctx = CallContext.current();
 
-                for (Long networkId : shutdownList) {
+                for (final Long networkId : shutdownList) {
 
                     // If network is removed, unset gc flag for it
                     if (_networksDao.findById(networkId) == null) {
@@ -2476,38 +2481,38 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     } else {
                         try {
 
-                            User caller = cctx.getCallingUser();
-                            Account owner = cctx.getCallingAccount();
+                            final User caller = cctx.getCallingUser();
+                            final Account owner = cctx.getCallingAccount();
 
-                            ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
+                            final ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
 
                             shutdownNetwork(networkId, context, false);
-                        } catch (Exception e) {
+                        } catch (final Exception e) {
                             s_logger.warn("Unable to shutdown network: " + networkId);
                         }
                     }
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 s_logger.warn("Caught exception while running network gc: ", e);
             }
         }
     }
 
     @Override
-    public boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
+    public boolean startNetwork(final long networkId, final DeployDestination dest, final ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
 
         // Check if network exists
-        NetworkVO network = _networksDao.findById(networkId);
+        final NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Network with specified id doesn't exist");
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Network with specified id doesn't exist");
             ex.addProxyObject(String.valueOf(networkId), "networkId");
             throw ex;
         }
 
         // implement the network
         s_logger.debug("Starting network " + network + "...");
-        Pair<NetworkGuru, NetworkVO> implementedNetwork = implementNetwork(networkId, dest, context);
+        final Pair<NetworkGuru, NetworkVO> implementedNetwork = implementNetwork(networkId, dest, context);
         if (implementedNetwork== null || implementedNetwork.first() == null) {
             s_logger.warn("Failed to start the network " + network);
             return false;
@@ -2517,14 +2522,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean restartNetwork(Long networkId, Account callerAccount, User callerUser, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
+    public boolean restartNetwork(final Long networkId, final Account callerAccount, final User callerUser, final boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
 
-        NetworkVO network = _networksDao.findById(networkId);
+        final NetworkVO network = _networksDao.findById(networkId);
 
         s_logger.debug("Restarting network " + networkId + "...");
 
-        ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
+        final ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
 
         if (cleanup) {
             // shutdown the network
@@ -2540,44 +2545,44 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // implement the network elements and rules again
-        DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
+        final DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
 
         s_logger.debug("Implementing the network " + network + " elements and resources as a part of network restart");
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
         try {
             implementNetworkElementsAndResources(dest, context, network, offering);
             setRestartRequired(network, true);
             return true;
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network restart due to ", ex);
             return false;
         }
     }
 
-    private void setRestartRequired(NetworkVO network, boolean restartRequired) {
+    private void setRestartRequired(final NetworkVO network, final boolean restartRequired) {
         s_logger.debug("Marking network " + network + " with restartRequired=" + restartRequired);
         network.setRestartRequired(restartRequired);
         _networksDao.update(network.getId(), network);
     }
 
-    protected int getActiveNicsInNetwork(long networkId) {
+    protected int getActiveNicsInNetwork(final long networkId) {
         return _networksDao.getActiveNicsIn(networkId);
     }
 
     @Override
-    public NetworkProfile convertNetworkToNetworkProfile(long networkId) {
-        NetworkVO network = _networksDao.findById(networkId);
-        NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-        NetworkProfile profile = new NetworkProfile(network);
+    public NetworkProfile convertNetworkToNetworkProfile(final long networkId) {
+        final NetworkVO network = _networksDao.findById(networkId);
+        final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+        final NetworkProfile profile = new NetworkProfile(network);
         guru.updateNetworkProfile(profile);
 
         return profile;
     }
 
     @Override
-    public UserDataServiceProvider getPasswordResetProvider(Network network) {
-        String passwordProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+    public UserDataServiceProvider getPasswordResetProvider(final Network network) {
+        final String passwordProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
 
         if (passwordProvider == null) {
             s_logger.debug("Network " + network + " doesn't support service " + Service.UserData.getName());
@@ -2588,8 +2593,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public UserDataServiceProvider getSSHKeyResetProvider(Network network) {
-        String SSHKeyProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+    public UserDataServiceProvider getSSHKeyResetProvider(final Network network) {
+        final String SSHKeyProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
 
         if (SSHKeyProvider == null) {
             s_logger.debug("Network " + network + " doesn't support service " + Service.UserData.getName());
@@ -2600,15 +2605,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public DhcpServiceProvider getDhcpServiceProvider(Network network) {
-        String DhcpProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
+    public DhcpServiceProvider getDhcpServiceProvider(final Network network) {
+        final String DhcpProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
 
         if (DhcpProvider == null) {
             s_logger.debug("Network " + network + " doesn't support service " + Service.Dhcp.getName());
             return null;
         }
 
-        NetworkElement element = _networkModel.getElementImplementingProvider(DhcpProvider);
+        final NetworkElement element = _networkModel.getElementImplementingProvider(DhcpProvider);
         if ( element instanceof DhcpServiceProvider ) {
             return (DhcpServiceProvider)element;
         } else {
@@ -2616,9 +2621,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
-    protected boolean isSharedNetworkWithServices(Network network) {
-        assert (network != null);
-        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+    protected boolean isSharedNetworkWithServices(final Network network) {
+        assert network != null;
+        final DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         if (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced
                 && isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
             return true;
@@ -2626,9 +2631,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return false;
     }
 
-    protected boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {
-        NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
-        if ((networkOffering.getGuestType() == Network.GuestType.Shared)
+    protected boolean isSharedNetworkOfferingWithServices(final long networkOfferingId) {
+        final NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
+        if (networkOffering.getGuestType() == Network.GuestType.Shared
                 && (_networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.SourceNat)
                         || _networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.StaticNat)
                         || _networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.Firewall)
@@ -2640,7 +2645,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId) {
+    public List<? extends Nic> listVmNics(final long vmId, final Long nicId, final Long networkId) {
         List<NicVO> result = null;
         if (nicId == null && networkId == null) {
             result = _nicDao.listByVmId(vmId);
@@ -2652,18 +2657,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     @Override
-    public boolean reallocate(final VirtualMachineProfile vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException {
-        VMInstanceVO vmInstance = _vmDao.findById(vm.getId());
-        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterId());
+    public boolean reallocate(final VirtualMachineProfile vm, final DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException {
+        final VMInstanceVO vmInstance = _vmDao.findById(vm.getId());
+        final DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterId());
         if (dc.getNetworkType() == NetworkType.Basic) {
-            List<NicVO> nics = _nicDao.listByVmId(vmInstance.getId());
-            NetworkVO network = _networksDao.findById(nics.get(0).getNetworkId());
+            final List<NicVO> nics = _nicDao.listByVmId(vmInstance.getId());
+            final NetworkVO network = _networksDao.findById(nics.get(0).getNetworkId());
             final LinkedHashMap<Network, List<? extends NicProfile>> profiles = new LinkedHashMap<Network, List<? extends NicProfile>>();
             profiles.put(network, new ArrayList<NicProfile>());
 
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
                 @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientCapacityException {
+                public void doInTransactionWithoutResult(final TransactionStatus status) throws InsufficientCapacityException {
                     cleanupNics(vm);
                     allocate(vm, profiles);
                 }
@@ -2672,9 +2677,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return true;
     }
 
-    private boolean cleanupNetworkResources(long networkId, Account caller, long callerUserId) {
+    private boolean cleanupNetworkResources(final long networkId, final Account caller, final long callerUserId) {
         boolean success = true;
-        Network network = _networksDao.findById(networkId);
+        final Network network = _networksDao.findById(networkId);
 
         //remove all PF/Static Nat rules for the network
         try {
@@ -2684,7 +2689,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 success = false;
                 s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup");
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             success = false;
             // shouldn't even come here as network is being cleaned up after all network elements are shutdown
             s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
@@ -2707,7 +2712,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 success = false;
                 s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup");
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             success = false;
             // shouldn't even come here as network is being cleaned up after all network elements are shutdown
             s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
@@ -2721,18 +2726,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 success = false;
                 s_logger.warn("Failed to cleanup NetworkACLs as a part of network id=" + networkId + " cleanup");
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             success = false;
             s_logger.warn("Failed to cleanup Network ACLs as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
         }
 
         //release all ip addresses
-        List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
-        for (IPAddressVO ipToRelease : ipsToRelease) {
+        final List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
+        for (final IPAddressVO ipToRelease : ipsToRelease) {
             if (ipToRelease.getVpcId() == null) {
                 if (!ipToRelease.isPortable()) {
-                    IPAddressVO ip = _ipAddrMgr.markIpAsUnavailable(ipToRelease.getId());
-                    assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
+                    final IPAddressVO ip = _ipAddrMgr.markIpAsUnavailable(ipToRelease.getId());
+                    assert ip != null : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
                 } else {
                     // portable IP address are associated with owner, until explicitly requested to be disassociated
                     // so as part of network clean up just break IP association with guest network
@@ -2750,25 +2755,25 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Unable to apply ip address associations for " + network);
                 success = false;
             }
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
         }
 
         return success;
     }
 
-    private boolean shutdownNetworkResources(long networkId, Account caller, long callerUserId) {
+    private boolean shutdownNetworkResources(final long networkId, final Account caller, final long callerUserId) {
         // This method cleans up network rules on the backend w/o touching them in the DB
         boolean success = true;
-        Network network = _networksDao.findById(networkId);
+        final Network network = _networksDao.findById(networkId);
 
         // Mark all PF rules as revoked and apply them on the backend (not in the DB)
-        List<PortForwardingRuleVO> pfRules = _portForwardingRulesDao.listByNetwork(networkId);
+        final List<PortForwardingRuleVO> pfRules = _portForwardingRulesDao.listByNetwork(networkId);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + pfRules.size() + " port forwarding rules for network id=" + networkId + " as a part of shutdownNetworkRules");
         }
 
-        for (PortForwardingRuleVO pfRule : pfRules) {
+        for (final PortForwardingRuleVO pfRule : pfRules) {
             s_logger.trace("Marking pf rule " + pfRule + " with Revoke state");
             pfRule.setState(FirewallRule.State.Revoke);
         }
@@ -2778,22 +2783,22 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Failed to cleanup pf rules as a part of shutdownNetworkRules");
                 success = false;
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Failed to cleanup pf rules as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
 
         // Mark all static rules as revoked and apply them on the backend (not in the DB)
-        List<FirewallRuleVO> firewallStaticNatRules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.StaticNat);
-        List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
+        final List<FirewallRuleVO> firewallStaticNatRules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.StaticNat);
+        final List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + firewallStaticNatRules.size() + " static nat rules for network id=" + networkId + " as a part of shutdownNetworkRules");
         }
 
-        for (FirewallRuleVO firewallStaticNatRule : firewallStaticNatRules) {
+        for (final FirewallRuleVO firewallStaticNatRule : firewallStaticNatRules) {
             s_logger.trace("Marking static nat rule " + firewallStaticNatRule + " with Revoke state");
-            IpAddress ip = _ipAddressDao.findById(firewallStaticNatRule.getSourceIpAddressId());
-            FirewallRuleVO ruleVO = _firewallDao.findById(firewallStaticNatRule.getId());
+            final IpAddress ip = _ipAddressDao.findById(firewallStaticNatRule.getSourceIpAddressId());
+            final FirewallRuleVO ruleVO = _firewallDao.findById(firewallStaticNatRule.getId());
 
             if (ip == null || !ip.isOneToOneNat() || ip.getAssociatedWithVmId() == null) {
                 throw new InvalidParameterValueException("Source ip address of the rule id=" + firewallStaticNatRule.getId() + " is not static nat enabled");
@@ -2809,7 +2814,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Failed to cleanup static nat rules as a part of shutdownNetworkRules");
                 success = false;
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Failed to cleanup static nat rules as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
@@ -2819,7 +2824,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Failed to cleanup public lb rules as a part of shutdownNetworkRules");
                 success = false;
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Failed to cleanup public lb rules as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
@@ -2829,18 +2834,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Failed to cleanup internal lb rules as a part of shutdownNetworkRules");
                 success = false;
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Failed to cleanup public lb rules as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
 
         // revoke all firewall rules for the network w/o applying them on the DB
-        List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Ingress);
+        final List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Ingress);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + firewallRules.size() + " firewall ingress rules for network id=" + networkId + " as a part of shutdownNetworkRules");
         }
 
-        for (FirewallRuleVO firewallRule : firewallRules) {
+        for (final FirewallRuleVO firewallRule : firewallRules) {
             s_logger.trace("Marking firewall ingress rule " + firewallRule + " with Revoke state");
             firewallRule.setState(FirewallRule.State.Revoke);
         }
@@ -2850,31 +2855,31 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Failed to cleanup firewall ingress rules as a part of shutdownNetworkRules");
                 success = false;
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Failed to cleanup firewall ingress rules as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
 
-        List<FirewallRuleVO> firewallEgressRules = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
+        final List<FirewallRuleVO> firewallEgressRules = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + firewallEgressRules.size() + " firewall egress rules for network id=" + networkId + " as a part of shutdownNetworkRules");
         }
 
         try {
             // delete default egress rule
-            DataCenter zone = _dcDao.findById(network.getDataCenterId());
+            final DataCenter zone = _dcDao.findById(network.getDataCenterId());
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)
-                    && (network.getGuestType() == Network.GuestType.Isolated || (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
+                    && (network.getGuestType() == Network.GuestType.Isolated || network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
                 // add default egress rule to accept the traffic
                 _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), _networkModel.getNetworkEgressDefaultPolicy(networkId), false);
             }
 
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Failed to cleanup firewall default egress rule as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
 
-        for (FirewallRuleVO firewallRule : firewallEgressRules) {
+        for (final FirewallRuleVO firewallRule : firewallEgressRules) {
             s_logger.trace("Marking firewall egress rule " + firewallRule + " with Revoke state");
             firewallRule.setState(FirewallRule.State.Revoke);
         }
@@ -2884,7 +2889,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Failed to cleanup firewall egress rules as a part of shutdownNetworkRules");
                 success = false;
             }
-        } catch (ResourceUnavailableException ex) {
+        } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Failed to cleanup firewall egress rules as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
@@ -2900,7 +2905,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
                     success = false;
                 }
-            } catch (ResourceUnavailableException ex) {
+            } catch (final ResourceUnavailableException ex) {
                 s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules due to ", ex);
                 success = false;
             }
@@ -2914,12 +2919,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // Get all ip addresses, mark as releasing and release them on the backend
-        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(networkId, null);
-        List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
+        final List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(networkId, null);
+        final List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
-            for (IPAddressVO userIp : userIps) {
+            for (final IPAddressVO userIp : userIps) {
                 userIp.setState(IpAddress.State.Releasing);
-                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIpsToRelease.add(publicIp);
             }
         }
@@ -2929,7 +2934,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.warn("Unable to apply ip address associations for " + network + " as a part of shutdownNetworkRules");
                 success = false;
             }
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
         }
 
@@ -2937,29 +2942,29 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
+    public boolean processAnswers(final long agentId, final long seq, final Answer[] answers) {
         return false;
     }
 
     @Override
-    public boolean processCommands(long agentId, long seq, Command[] commands) {
+    public boolean processCommands(final long agentId, final long seq, final Command[] commands) {
         return false;
     }
 
     @Override
-    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
+    public AgentControlAnswer processControlCommand(final long agentId, final AgentControlCommand cmd) {
         return null;
     }
 
     @Override
-    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(final Host host, final StartupCommand cmd, final boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }
-        long hostId = host.getId();
-        StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
+        final long hostId = host.getId();
+        final StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
 
-        String dataCenter = startup.getDataCenter();
+        final String dataCenter = startup.getDataCenter();
 
         long dcId = -1;
         DataCenterVO dc = _dcDao.findByName(dataCenter);
@@ -2974,31 +2979,31 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             throw new IllegalArgumentException("Host " + startup.getPrivateIpAddress() + " sent incorrect data center: " + dataCenter);
         }
         dcId = dc.getId();
-        HypervisorType hypervisorType = startup.getHypervisorType();
+        final HypervisorType hypervisorType = startup.getHypervisorType();
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Host's hypervisorType is: " + hypervisorType);
         }
 
-        List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+        final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
 
         // list all physicalnetworks in the zone & for each get the network names
-        List<PhysicalNetworkVO> physicalNtwkList = _physicalNetworkDao.listByZone(dcId);
-        for (PhysicalNetworkVO pNtwk : physicalNtwkList) {
-            String publicName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Public, hypervisorType);
-            String privateName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Management, hypervisorType);
-            String guestName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Guest, hypervisorType);
-            String storageName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Storage, hypervisorType);
+        final List<PhysicalNetworkVO> physicalNtwkList = _physicalNetworkDao.listByZone(dcId);
+        for (final PhysicalNetworkVO pNtwk : physicalNtwkList) {
+            final String publicName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Public, hypervisorType);
+            final String privateName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Management, hypervisorType);
+            final String guestName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Guest, hypervisorType);
+            final String storageName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Storage, hypervisorType);
             // String controlName = _pNTrafficTypeDao._networkModel.getNetworkTag(pNtwk.getId(), TrafficType.Control, hypervisorType);
-            PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
+            final PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
             info.setPhysicalNetworkId(pNtwk.getId());
             info.setGuestNetworkName(guestName);
             info.setPrivateNetworkName(privateName);
             info.setPublicNetworkName(publicName);
             info.setStorageNetworkName(storageName);
-            PhysicalNetworkTrafficTypeVO mgmtTraffic = _pNTrafficTypeDao.findBy(pNtwk.getId(), TrafficType.Management);
+            final PhysicalNetworkTrafficTypeVO mgmtTraffic = _pNTrafficTypeDao.findBy(pNtwk.getId(), TrafficType.Management);
             if (mgmtTraffic != null) {
-                String vlan = mgmtTraffic.getVlan();
+                final String vlan = mgmtTraffic.getVlan();
                 info.setMgmtVlan(vlan);
             }
             networkInfoList.add(info);
@@ -3008,9 +3013,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Sending CheckNetworkCommand to check the Network is setup correctly on Agent");
         }
-        CheckNetworkCommand nwCmd = new CheckNetworkCommand(networkInfoList);
+        final CheckNetworkCommand nwCmd = new CheckNetworkCommand(networkInfoList);
 
-        CheckNetworkAnswer answer = (CheckNetworkAnswer)_agentMgr.easySend(hostId, nwCmd);
+        final CheckNetworkAnswer answer = (CheckNetworkAnswer)_agentMgr.easySend(hostId, nwCmd);
 
         if (answer == null) {
             s_logger.warn("Unable to get an answer to the CheckNetworkCommand from agent:" + host.getId());
@@ -3019,7 +3024,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (!answer.getResult()) {
             s_logger.warn("Unable to setup agent " + hostId + " due to " + answer.getDetails() );
-            String msg = "Incorrect Network setup on agent, Reinitialize agent after network names are setup, details : " + answer.getDetails();
+            final String msg = "Incorrect Network setup on agent, Reinitialize agent after network names are setup, details : " + answer.getDetails();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, host.getPodId(), msg, msg);
             throw new ConnectionException(true, msg);
         } else {
@@ -3034,7 +3039,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean processDisconnect(long agentId, Status state) {
+    public boolean processDisconnect(final long agentId, final Status state) {
         return false;
     }
 
@@ -3049,26 +3054,26 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean processTimeout(long agentId, long seq) {
+    public boolean processTimeout(final long agentId, final long seq) {
         return false;
     }
 
     @Override
-    public Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId) {
-        Map<String, String> svcProviders = new HashMap<String, String>();
-        Map<String, List<String>> providerSvcs = new HashMap<String, List<String>>();
-        List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingSrvcDao.listByNetworkOfferingId(offering.getId());
+    public Map<String, String> finalizeServicesAndProvidersForNetwork(final NetworkOffering offering, final Long physicalNetworkId) {
+        final Map<String, String> svcProviders = new HashMap<String, String>();
+        final Map<String, List<String>> providerSvcs = new HashMap<String, List<String>>();
+        final List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingSrvcDao.listByNetworkOfferingId(offering.getId());
 
-        boolean checkPhysicalNetwork = (physicalNetworkId != null) ? true : false;
+        final boolean checkPhysicalNetwork = physicalNetworkId != null ? true : false;
 
-        for (NetworkOfferingServiceMapVO serviceMap : servicesMap) {
+        for (final NetworkOfferingServiceMapVO serviceMap : servicesMap) {
             if (svcProviders.containsKey(serviceMap.getService())) {
                 // FIXME - right now we pick up the first provider from the list, need to add more logic based on
                 // provider load, etc
                 continue;
             }
 
-            String service = serviceMap.getService();
+            final String service = serviceMap.getService();
             String provider = serviceMap.getProvider();
 
             if (provider == null) {
@@ -3094,10 +3099,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return svcProviders;
     }
 
-    private List<Provider> getNetworkProviders(long networkId) {
-        List<String> providerNames = _ntwkSrvcDao.getDistinctProviders(networkId);
-        List<Provider> providers = new ArrayList<Provider>();
-        for (String providerName : providerNames) {
+    private List<Provider> getNetworkProviders(final long networkId) {
+        final List<String> providerNames = _ntwkSrvcDao.getDistinctProviders(networkId);
+        final List<Provider> providers = new ArrayList<Provider>();
+        for (final String providerName : providerNames) {
             providers.add(Network.Provider.getProvider(providerName));
         }
 
@@ -3105,27 +3110,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean setupDns(Network network, Provider provider) {
-        boolean dnsProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, provider);
-        boolean dhcpProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, provider);
+    public boolean setupDns(final Network network, final Provider provider) {
+        final boolean dnsProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, provider);
+        final boolean dhcpProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, provider);
 
-        boolean setupDns = dnsProvided || dhcpProvided;
+        final boolean setupDns = dnsProvided || dhcpProvided;
         return setupDns;
     }
 
-    protected NicProfile getNicProfileForVm(Network network, NicProfile requested, VirtualMachine vm) {
+    protected NicProfile getNicProfileForVm(final Network network, final NicProfile requested, final VirtualMachine vm) {
         NicProfile nic = null;
         if (requested != null && requested.getBroadCastUri() != null) {
-            String broadcastUri = requested.getBroadCastUri().toString();
-            String ipAddress = requested.getIPv4Address();
-            NicVO nicVO = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
+            final String broadcastUri = requested.getBroadCastUri().toString();
+            final String ipAddress = requested.getIPv4Address();
+            final NicVO nicVO = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
             if (nicVO != null) {
                 if (ipAddress == null || nicVO.getIPv4Address().equals(ipAddress)) {
                     nic = _networkModel.getNicProfile(vm, network.getId(), broadcastUri);
                 }
             }
         } else {
-            NicVO nicVO = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
+            final NicVO nicVO = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
             if (nicVO != null) {
                 nic = _networkModel.getNicProfile(vm, network.getId(), null);
             }
@@ -3134,20 +3139,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile vmProfile, boolean prepare)
+    public NicProfile createNicForVm(final Network network, final NicProfile requested, final ReservationContext context, final VirtualMachineProfile vmProfile, final boolean prepare)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
             ResourceUnavailableException {
 
-        VirtualMachine vm = vmProfile.getVirtualMachine();
-        DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
-        Host host = _hostDao.findById(vm.getHostId());
-        DeployDestination dest = new DeployDestination(dc, null, null, host);
+        final VirtualMachine vm = vmProfile.getVirtualMachine();
+        final DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+        final Host host = _hostDao.findById(vm.getHostId());
+        final DeployDestination dest = new DeployDestination(dc, null, null, host);
 
         NicProfile nic = getNicProfileForVm(network, requested, vm);
 
         //1) allocate nic (if needed) Always allocate if it is a user vm
-        if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
-            int deviceId = _nicDao.getFreeDeviceId(vm.getId());
+        if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
+            final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
 
             nic = allocateNic(requested, network, false, deviceId, vmProfile).first();
 
@@ -3157,7 +3162,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             //Update vm_network_map table
             if(vmProfile.getType() == VirtualMachine.Type.User) {
-                VMNetworkMapVO vno = new VMNetworkMapVO(vm.getId(), network.getId());
+                final VMNetworkMapVO vno = new VMNetworkMapVO(vm.getId(), network.getId());
                 _vmNetworkMapDao.persist(vno);
             }
             s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
@@ -3165,7 +3170,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //2) prepare nic
         if (prepare) {
-            Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context, vmProfile.getVirtualMachine().getType() == Type.DomainRouter);
+            final Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context, vmProfile.getVirtualMachine().getType() == Type.DomainRouter);
             if (implemented == null || implemented.first() == null) {
                 s_logger.warn("Failed to implement network id=" + nic.getNetworkId() + " as a part of preparing nic id=" + nic.getId());
                 throw new CloudRuntimeException("Failed to implement network id=" + nic.getNetworkId() + " as a part preparing nic id=" + nic.getId());
@@ -3178,17 +3183,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<NicProfile> getNicProfiles(VirtualMachine vm) {
-        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
-        List<NicProfile> profiles = new ArrayList<NicProfile>();
+    public List<NicProfile> getNicProfiles(final VirtualMachine vm) {
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        final List<NicProfile> profiles = new ArrayList<NicProfile>();
 
         if (nics != null) {
-            for (Nic nic : nics) {
-                NetworkVO network = _networksDao.findById(nic.getNetworkId());
-                Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+            for (final Nic nic : nics) {
+                final NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
 
-                NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
+                final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+                final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
                         _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
                 guru.updateNicProfile(profile, network);
                 profiles.add(profile);
@@ -3197,7 +3202,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return profiles;
     }
 
-    protected boolean stateTransitTo(NetworkVO network, Network.Event e) throws NoTransitionException {
+    protected boolean stateTransitTo(final NetworkVO network, final Network.Event e) throws NoTransitionException {
         return _stateMachine.transitTo(network, e, null, _networksDao);
     }
 
@@ -3205,10 +3210,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         _stateMachine = Network.State.getStateMachine();
     }
 
-    private Map<Service, Set<Provider>> getServiceProvidersMap(long networkId) {
-        Map<Service, Set<Provider>> map = new HashMap<Service, Set<Provider>>();
-        List<NetworkServiceMapVO> nsms = _ntwkSrvcDao.getServicesInNetwork(networkId);
-        for (NetworkServiceMapVO nsm : nsms) {
+    private Map<Service, Set<Provider>> getServiceProvidersMap(final long networkId) {
+        final Map<Service, Set<Provider>> map = new HashMap<Service, Set<Provider>>();
+        final List<NetworkServiceMapVO> nsms = _ntwkSrvcDao.getServicesInNetwork(networkId);
+        for (final NetworkServiceMapVO nsm : nsms) {
             Set<Provider> providers = map.get(Service.getService(nsm.getService()));
             if (providers == null) {
                 providers = new HashSet<Provider>();
@@ -3220,18 +3225,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<Provider> getProvidersForServiceInNetwork(Network network, Service service) {
-        Map<Service, Set<Provider>> service2ProviderMap = getServiceProvidersMap(network.getId());
+    public List<Provider> getProvidersForServiceInNetwork(final Network network, final Service service) {
+        final Map<Service, Set<Provider>> service2ProviderMap = getServiceProvidersMap(network.getId());
         if (service2ProviderMap.get(service) != null) {
-            List<Provider> providers = new ArrayList<Provider>(service2ProviderMap.get(service));
+            final List<Provider> providers = new ArrayList<Provider>(service2ProviderMap.get(service));
             return providers;
         }
         return null;
     }
 
-    protected List<NetworkElement> getElementForServiceInNetwork(Network network, Service service) {
-        List<NetworkElement> elements = new ArrayList<NetworkElement>();
-        List<Provider> providers = getProvidersForServiceInNetwork(network, service);
+    protected List<NetworkElement> getElementForServiceInNetwork(final Network network, final Service service) {
+        final List<NetworkElement> elements = new ArrayList<NetworkElement>();
+        final List<Provider> providers = getProvidersForServiceInNetwork(network, service);
         //Only support one provider now
         if (providers == null) {
             s_logger.error("Cannot find " + service.getName() + " provider for network " + network.getId());
@@ -3243,8 +3248,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return null;
         }
 
-        for (Provider provider : providers) {
-            NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
+        for (final Provider provider : providers) {
+            final NetworkElement element = _networkModel.getElementImplementingProvider(provider.getName());
             s_logger.info("Let " + element.getName() + " handle " + service.getName() + " in network " + network.getId());
             elements.add(element);
         }
@@ -3252,21 +3257,21 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
+    public StaticNatServiceProvider getStaticNatProviderForNetwork(final Network network) {
         //only one provider per Static nat service is supoprted
-        NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat).get(0);
+        final NetworkElement element = getElementForServiceInNetwork(network, Service.StaticNat).get(0);
         assert element instanceof StaticNatServiceProvider;
         return (StaticNatServiceProvider)element;
     }
 
     @Override
-    public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network, Scheme lbScheme) {
-        List<NetworkElement> lbElements = getElementForServiceInNetwork(network, Service.Lb);
+    public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(final Network network, final Scheme lbScheme) {
+        final List<NetworkElement> lbElements = getElementForServiceInNetwork(network, Service.Lb);
         NetworkElement lbElement = null;
         if (lbElements.size() > 1) {
             String providerName = null;
             //get network offering details
-            NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+            final NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
             if (lbScheme == Scheme.Public) {
                 providerName = _ntwkOffDetailsDao.getDetail(off.getId(), NetworkOffering.Detail.PublicLbProvider);
             } else {
@@ -3286,24 +3291,24 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean isNetworkInlineMode(Network network) {
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+    public boolean isNetworkInlineMode(final Network network) {
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         return offering.isInline();
     }
 
     @Override
-    public boolean isSecondaryIpSetForNic(long nicId) {
-        NicVO nic = _nicDao.findById(nicId);
+    public boolean isSecondaryIpSetForNic(final long nicId) {
+        final NicVO nic = _nicDao.findById(nicId);
         return nic.getSecondaryIp();
     }
 
     private boolean removeVmSecondaryIpsOfNic(final long nicId) {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                List<NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
+                final List<NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
                 if (ipList != null) {
-                    for (NicSecondaryIpVO ip : ipList) {
+                    for (final NicSecondaryIpVO ip : ipList) {
                         _nicSecondaryIpDao.remove(ip.getId());
                     }
                     s_logger.debug("Revoving nic secondary ip entry ...");
@@ -3315,8 +3320,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType) {
-        NicVO nic = new NicVO(null, null, network.getId(), null);
+    public NicVO savePlaceholderNic(final Network network, final String ip4Address, final String ip6Address, final Type vmType) {
+        final NicVO nic = new NicVO(null, null, network.getId(), null);
         nic.setIPv4Address(ip4Address);
         nic.setIPv6Address(ip6Address);
         nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
@@ -3339,5 +3344,4 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NetworkGcWait, NetworkGcInterval, NetworkLockTimeout, GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion};
     }
-
 }
