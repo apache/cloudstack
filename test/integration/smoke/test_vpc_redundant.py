@@ -34,7 +34,8 @@ from marvin.lib.base import (stopRouter,
                              NetworkOffering,
                              Network,
                              VirtualMachine,
-                             LoadBalancerRule)
+                             LoadBalancerRule,
+                             Configurations)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
@@ -295,7 +296,7 @@ class TestVPCRedundancy(cloudstackTestCase):
             len(self.routers), count,
             "Check that %s routers were indeed created" % count)
 
-    def check_master_status(self,count=2, showall=False):
+    def check_routers_state(self,count=2, status_to_check="MASTER", expected_count=1, showall=False):
         vals = ["MASTER", "BACKUP", "UNKNOWN"]
         cnts = [0, 0, 0]
 
@@ -348,8 +349,8 @@ class TestVPCRedundancy(cloudstackTestCase):
                 if result.count(vals[0]) == 1:
                     cnts[vals.index(vals[0])] += 1
 
-        if cnts[vals.index('MASTER')] != 1:
-            self.fail("No Master or too many master routers found %s" % cnts[vals.index('MASTER')])
+        if cnts[vals.index(status_to_check)] != expected_count:
+            self.fail("Expected '%s' routers at state '%s', but found '%s'!" % (expected_count, status_to_check, cnts[vals.index('status_to_check')]))
 
     def stop_router(self, router):
         self.logger.debug('Stopping router %s' % router.id)
@@ -364,14 +365,14 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.apiclient.rebootRouter(cmd)
 
     def stop_router_by_type(self, type):
-        self.check_master_status(2)
+        self.check_routers_state()
         self.logger.debug('Stopping %s router' % type)
         for router in self.routers:
             if router.redundantstate == type:
                 self.stop_router(router)
 
     def reboot_router_by_type(self, type):
-        self.check_master_status(2)
+        self.check_routers_state()
         self.logger.debug('Rebooting %s router' % type)
         for router in self.routers:
             if router.redundantstate == type:
@@ -387,7 +388,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.routers = []
 
     def start_routers(self):
-        self.check_master_status(2, showall=True)
+        self.check_routers_state(showall=True)
         self.logger.debug('Starting stopped routers')
         for router in self.routers:
             self.logger.debug('Router %s has state %s' % (router.id, router.state))
@@ -397,7 +398,9 @@ class TestVPCRedundancy(cloudstackTestCase):
                 cmd.id = router.id
                 self.apiclient.startRouter(cmd)
 
-    def create_network(self, net_offerring, gateway='10.1.1.1', vpc=None):
+    def create_network(self, net_offerring, gateway='10.1.1.1', vpc=None, nr_vms=2):
+        if not nr_vms or nr_vms <= 0:
+            self.fail("At least 1 VM has to be created. You informed nr_vms < 1")
         try:
             self.logger.debug('Create NetworkOffering')
             net_offerring["name"] = "NET_OFF-" + str(gateway)
@@ -428,13 +431,13 @@ class TestVPCRedundancy(cloudstackTestCase):
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
         o = networkO(obj_network)
         
-        vm1 = self.deployvm_in_network(obj_network)
-        vm2 = self.deployvm_in_network(obj_network)
+        for i in range(0, nr_vms):
+            vm1 = self.deployvm_in_network(obj_network)
+            o.add_vm(vm1)
+
         self.cleanup.insert(2, obj_network)
         self.cleanup.insert(3, nw_off)
-        
-        o.add_vm(vm1)
-        o.add_vm(vm2)
+
         return o
 
     def deployvm_in_network(self, network, host_id=None):
@@ -524,22 +527,22 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1"))
-        self.check_master_status(2)
+        self.check_routers_state()
         self.add_nat_rules()
         self.do_vpc_test(False)
         
         self.stop_router_by_type("MASTER")
-        self.check_master_status(1)
+        self.check_routers_state(1)
         self.do_vpc_test(False)
 
         self.delete_nat_rules()
-        self.check_master_status(1)
+        self.check_routers_state(count=1)
         self.do_vpc_test(True)
         self.delete_public_ip()
 
         self.start_routers()
         self.add_nat_rules()
-        self.check_master_status(2)
+        self.check_routers_state()
         self.do_vpc_test(False)
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
@@ -549,7 +552,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1"))
-        self.check_master_status(2)
+        self.check_routers_state()
         self.add_nat_rules()
         self.do_default_routes_test()
     
@@ -559,17 +562,44 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.logger.debug("Starting test_01_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL")
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
-        self.check_master_status(2)
+        self.check_routers_state()
         self.add_nat_rules()
         self.do_vpc_test(False)
         
         self.reboot_router_by_type("MASTER")
-        self.check_master_status(2)
+        self.check_routers_state()
         self.do_vpc_test(False)
 
         self.reboot_router_by_type("MASTER")
-        self.check_master_status(2)
+        self.check_routers_state()
         self.do_vpc_test(False)
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    def test_04_rvpc_network_garbage_collector_nics(self):
+        """ Create a redundant VPC with 1 Tier, 1 VM, 1 ACL, 1 PF and test Network GC Nics"""
+        self.logger.debug("Starting test_04_rvpc_network_garbage_collector_nics")
+        self.query_routers()
+        self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1", nr_vms=1))
+        self.check_routers_state()
+        self.add_nat_rules()
+        self.do_vpc_test(False)
+
+        self.stop_vm()
+        time.sleep(total_sleep)
+        self.check_routers_state(status_to_check="BACKUP", expected_count=2)
+        self.start_vm()
+        self.check_routers_state(status_to_check="MASTER")
+        self.do_vpc_test(False)
+
+    def stop_vm(self):
+        for o in self.networks:
+            for vm in o.get_vms():
+                vm.stop(self.apiclient)
+
+    def start_vm(self):
+        for o in self.networks:
+            for vm in o.get_vms():
+                vm.start(self.apiclient)
 
     def delete_nat_rules(self):
         for o in self.networks:
