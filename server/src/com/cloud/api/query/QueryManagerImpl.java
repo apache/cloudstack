@@ -1769,6 +1769,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
+        sb.and("uuid", sb.entity().getUuid(), SearchCriteria.Op.NNULL);
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
