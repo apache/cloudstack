@@ -48,15 +48,17 @@ class CsAddress(CsDataBag):
 
     def get_guest_if(self):
         """
-        Return CsInterface object for the lowest guest interface
+        Return CsInterface object for the lowest in use guest interface
         """
-        ipr = []
+        guest_interface = None
+        lowest_device = 99
         for ip in self.get_ips():
             if ip.is_guest() and ip.is_added():
-                ipr.append(ip)
-        if len(ipr) > 0:
-            return sorted(ipr)[-1]
-        return None
+                devive_sufix = int(ip.get_device()[-1:])
+                if devive_sufix < lowest_device:
+                    lowest_device = devive_sufix
+                    guest_interface = ip
+        return guest_interface
 
     def get_guest_ip(self):
         """

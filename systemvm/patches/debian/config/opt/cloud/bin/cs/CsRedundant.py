@@ -81,6 +81,7 @@ class CsRedundant(object):
 
     def _redundant_on(self):
         guest = self.address.get_guest_if()
+
         # No redundancy if there is no guest network
         if guest is None:
             self._redundant_off()
@@ -344,13 +345,15 @@ class CsRedundant(object):
         that could function as a router and VPC router at the same time
         """
         lines = []
-        for o in self.address.get_ips():
-            if o.needs_vrrp():
+        for ip in self.address.get_ips():
+            if ip.needs_vrrp():
                 cmdline=self.config.get_cmdline_instance()
+                if not ip.is_added():
+                    continue
                 if(cmdline.get_type()=='router'):
-                    str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), o.get_broadcast(), o.get_device())
+                    str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), ip.get_broadcast(), ip.get_device())
                 else:
-                    str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
+                    str = "        %s brd %s dev %s\n" % (ip.get_gateway_cidr(), ip.get_broadcast(), ip.get_device())
                 lines.append(str)
         return lines
 
