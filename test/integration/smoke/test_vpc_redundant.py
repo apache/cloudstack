@@ -523,8 +523,7 @@ class TestVPCRedundancy(cloudstackTestCase):
                 self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
-    def test_04_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL(self):
-        self.skipTest("Skipping for now...")
+    def test_01_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL(self):
         """ Create a redundant VPC with two networks with two VMs in each network """
         self.logger.debug("Starting test_01_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL")
         self.query_routers()
@@ -549,8 +548,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.do_vpc_test(False)
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
-    def test_05_redundant_VPC_default_routes(self):
-        self.skipTest("Skipping for now...")
+    def test_02_redundant_VPC_default_routes(self):
         """ Create a redundant VPC with two networks with two VMs in each network and check default routes"""
         self.logger.debug("Starting test_02_redundant_VPC_default_routes")
         self.query_routers()
@@ -562,7 +560,6 @@ class TestVPCRedundancy(cloudstackTestCase):
     
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_create_redundant_VPC_1tier_2VMs_2IPs_2PF_ACL_reboot_routers(self):
-        self.skipTest("Skipping for now...")
         """ Create a redundant VPC with two networks with two VMs in each network """
         self.logger.debug("Starting test_01_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL")
         self.query_routers()
@@ -580,7 +577,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.do_vpc_test(False)
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
-    def test_01_rvpc_network_garbage_collector_nics(self):
+    def test_04_rvpc_network_garbage_collector_nics(self):
         """ Create a redundant VPC with 1 Tier, 1 VM, 1 ACL, 1 PF and test Network GC Nics"""
         self.logger.debug("Starting test_04_rvpc_network_garbage_collector_nics")
         self.query_routers()
@@ -597,7 +594,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.logger.debug("network.gc.wait is ==> %s" % gc_wait)
         self.logger.debug("network.gc.interval is ==> %s" % gc_wait)
 
-        total_sleep = 90
+        total_sleep = 120
         if gc_wait and gc_interval:
             total_sleep = int(gc_wait[0].value) + int(gc_interval[0].value)
         else:
@@ -611,7 +608,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.do_vpc_test(False)
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
-    def test_02_rvpc_multi_tiers(self):
+    def test_05_rvpc_multi_tiers(self):
         """ Create a redundant VPC with 1 Tier, 1 VM, 1 ACL, 1 PF and test Network GC Nics"""
         self.logger.debug("Starting test_04_rvpc_network_garbage_collector_nics")
         self.query_routers()

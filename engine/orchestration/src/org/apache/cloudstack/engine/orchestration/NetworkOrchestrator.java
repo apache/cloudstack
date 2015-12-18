@@ -586,6 +586,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public boolean start() {
         final int netGcInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
+        s_logger.info("Network Manager will run the NetworkGarbageCollector every '" + netGcInterval + "' seconds.");
+
         _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), netGcInterval, netGcInterval, TimeUnit.SECONDS);
         return true;
     }
@@ -2445,7 +2447,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
 
                 final List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
-                final int netGcWait = NumbersUtil.parseInt(_configDao.getValue(NetworkGcWait.key()), 1);
+                final int netGcWait = NumbersUtil.parseInt(_configDao.getValue(NetworkGcWait.key()), 60);
+                s_logger.info("NetworkGarbageCollector uses '" + netGcWait + "' seconds for GC interval.");
+
                 for (final Long networkId : networkIds) {
 
                     if (!_networkModel.isNetworkReadyForGc(networkId)) {
