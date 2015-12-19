@@ -20,28 +20,21 @@
 package org.apache.cloudstack.mom.kafka;
 
 import java.io.FileInputStream;
-
 import java.util.Map;
-import java.util.UUID;
 import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.cloudstack.framework.events.EventSubscriber;
-import org.apache.cloudstack.framework.events.EventTopic;
-
-import com.cloud.utils.component.ManagerBase;
-
-import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ManagerBase;
 
 public class KafkaEventBus extends ManagerBase implements EventBus {
 
@@ -85,17 +78,6 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
     @Override
     public void setName(String name) {
         _name = name;
-    }
-
-    @Override
-    public UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException {
-        /* NOOP */
-        return UUID.randomUUID();
-    }
-
-    @Override
-    public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
-        /* NOOP */
     }
 
     @Override

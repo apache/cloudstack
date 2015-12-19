@@ -58,34 +58,6 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
     }
 
     @Override
-    public UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException {
-        if (subscriber == null || topic == null) {
-            throw new EventBusException("Invalid EventSubscriber/EventTopic object passed.");
-        }
-        UUID subscriberId = UUID.randomUUID();
-
-        subscribers.put(subscriberId, new Pair<EventTopic, EventSubscriber>(topic, subscriber));
-        return subscriberId;
-    }
-
-    @Override
-    public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
-        if (subscriberId == null) {
-            throw new EventBusException("Cannot unregister a null subscriberId.");
-        }
-
-        if (subscribers.isEmpty()) {
-            throw new EventBusException("There are no registered subscribers to unregister.");
-        }
-
-        if (!subscribers.containsKey(subscriberId)) {
-            throw new EventBusException("No subscriber found with subscriber id " + subscriberId);
-        } else {
-            subscribers.remove(subscriberId);
-        }
-    }
-
-    @Override
     public void publish(Event event) throws EventBusException {
         if (subscribers == null || subscribers.isEmpty()) {
             return; // no subscriber to publish to, so just return
