@@ -575,7 +575,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         _agentMgr.registerForHostEvents(this, true, false, true);
 
-        Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao, _configDao));
+        Network.State.getStateMachine().registerListener(new NetworkStateListener(_configDao));
 
         s_logger.info("Network Manager is configured.");
 
