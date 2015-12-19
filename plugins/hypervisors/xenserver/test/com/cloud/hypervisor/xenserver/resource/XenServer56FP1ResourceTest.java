@@ -45,4 +45,21 @@ public class XenServer56FP1ResourceTest extends CitrixResourceBaseTest{
     public void testGetFilesListReturned(){
         testGetPathFilesListReturned(xenServer56FP1Resource);
     }
+
+    @Test
+    public void testGetOsTypeNull() {
+        testGetGuestOsTypeNull(xenServer56FP1Resource);
+    }
+    @Test
+    public void testGetOsTypeEmpty() {
+        testGetGuestOsTypeEmpty(xenServer56FP1Resource);
+    }
+    @Test
+    public void testGetOsTypeBlank() {
+        testGetGuestOsTypeBlank(xenServer56FP1Resource);
+    }
+    @Test
+    public void testGetOsTypeOther() {
+        testGetGuestOsTypeOther(xenServer56FP1Resource);
+    }
 }

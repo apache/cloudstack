@@ -47,4 +47,21 @@ public class XcpOssResourceTest extends CitrixResourceBaseTest{
     public void testGetFilesListReturned(){
         testGetPathFilesListReturned(xcpOssResource);
     }
+
+    @Test
+    public void testGetOsTypeNull() {
+        testGetGuestOsTypeNull(xcpOssResource);
+    }
+    @Test
+    public void testGetOsTypeEmpty() {
+        testGetGuestOsTypeEmpty(xcpOssResource);
+    }
+    @Test
+    public void testGetOsTypeBlank() {
+        testGetGuestOsTypeBlank(xcpOssResource);
+    }
+    @Test
+    public void testGetOsTypeOther() {
+        testGetGuestOsTypeOther(xcpOssResource);
+    }
 }

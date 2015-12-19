@@ -45,4 +45,21 @@ public class XenServer600ResourceTest extends CitrixResourceBaseTest{
     public void testGetFilesListReturned(){
         testGetPathFilesListReturned(xenServer600Resource);
     }
+
+    @Test
+    public void testGetOsTypeNull() {
+        testGetGuestOsTypeNull(xenServer600Resource);
+    }
+    @Test
+    public void testGetOsTypeEmpty() {
+        testGetGuestOsTypeEmpty(xenServer600Resource);
+    }
+    @Test
+    public void testGetOsTypeBlank() {
+        testGetGuestOsTypeBlank(xenServer600Resource);
+    }
+    @Test
+    public void testGetOsTypeOther() {
+        testGetGuestOsTypeOther(xenServer600Resource);
+    }
 }

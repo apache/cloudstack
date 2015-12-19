@@ -49,4 +49,35 @@ public abstract class CitrixResourceBaseTest {
         String receivedPath = files.get(0).getAbsolutePath();
         Assert.assertEquals(receivedPath, pathExpected);
     }
+
+    public void testGetGuestOsTypeNull(CitrixResourceBase citrixResourceBase) {
+        String platformEmulator = null;
+
+        String expected = "Other install media";
+        String guestOsType = citrixResourceBase.getGuestOsType(platformEmulator);
+        Assert.assertEquals(expected, guestOsType);
+    }
+
+    public void testGetGuestOsTypeEmpty(CitrixResourceBase citrixResourceBase) {
+        String platformEmulator = "";
+
+        String expected = "Other install media";
+        String guestOsType = citrixResourceBase.getGuestOsType(platformEmulator);
+        Assert.assertEquals(expected, guestOsType);
+    }
+
+    public void testGetGuestOsTypeBlank(CitrixResourceBase citrixResourceBase) {
+        String platformEmulator = "    ";
+
+        String expected = "Other install media";
+        String guestOsType = citrixResourceBase.getGuestOsType(platformEmulator);
+        Assert.assertEquals(expected, guestOsType);
+    }
+
+    public void testGetGuestOsTypeOther(CitrixResourceBase citrixResourceBase) {
+        String platformEmulator = "My Own Linux Distribution Y.M (64-bit)";
+
+        String guestOsType = citrixResourceBase.getGuestOsType(platformEmulator);
+        Assert.assertEquals(platformEmulator, guestOsType);
+    }
 }
