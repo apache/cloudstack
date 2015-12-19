@@ -600,12 +600,11 @@ class TestVPCRedundancy(cloudstackTestCase):
         else:
             self.logger.debug("Could not retrieve the keys 'network.gc.interval' and 'network.gc.wait'. Sleeping for 2 minutes.")
 
-        time.sleep(total_sleep)
+        time.sleep(total_sleep * 3)
 
         self.check_routers_state(status_to_check="BACKUP", expected_count=2)
         self.start_vm()
         self.check_routers_state(status_to_check="MASTER")
-        self.do_vpc_test(False)
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_rvpc_multi_tiers(self):
