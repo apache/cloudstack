@@ -48,15 +48,19 @@ class CsAddress(CsDataBag):
 
     def get_guest_if(self):
         """
-        Return CsInterface object for the lowest guest interface
+        Return CsInterface object for the lowest in use guest interface
         """
-        ipr = []
+        guest_interface = None
+        lowest_device = 1000
         for ip in self.get_ips():
-            if ip.is_guest():
-                ipr.append(ip)
-        if len(ipr) > 0:
-            return sorted(ipr)[-1]
-        return None
+            if ip.is_guest() and ip.is_added():
+                device = ip.get_device()
+                device_suffix = int(''.join([digit for digit in device if digit.isdigit()]))
+                if device_suffix < lowest_device:
+                    lowest_device = device_suffix
+                    guest_interface = ip
+                    logging.debug("Guest interface will be set on device '%s' and IP '%s'" % (guest_interface.get_device(), guest_interface.get_ip()))
+        return guest_interface
 
     def get_guest_ip(self):
         """
@@ -189,6 +193,9 @@ class CsInterface:
         if "nw_type" in self.address and self.address['nw_type'] in ['public']:
             return True
         return False
+    
+    def is_added(self):
+        return self.get_attr("add")
 
     def to_str(self):
         pprint(self.address)
