@@ -916,6 +916,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
                 continue;
             }
+            if (router.getIsRedundantRouter() && router.getRedundantState() != RedundantState.MASTER){
+                continue;
+            }
             final List<String> ipList = new ArrayList<String>();
             for (final Site2SiteVpnConnectionVO conn : conns) {
                 if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
