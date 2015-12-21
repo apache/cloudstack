@@ -60,6 +60,7 @@ import com.cloud.upgrade.dao.Upgrade452to460;
 import com.cloud.upgrade.dao.Upgrade453to460;
 import com.cloud.upgrade.dao.Upgrade460to461;
 import com.cloud.upgrade.dao.Upgrade461to470;
+import com.cloud.upgrade.dao.Upgrade462to470;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
@@ -242,13 +243,13 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         _upgradeMap.put("4.5.2", new DbUpgrade[] {new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470()});
 
-        _upgradeMap.put("4.5.3", new DbUpgrade[] {new Upgrade453to460()});
+        _upgradeMap.put("4.5.3", new DbUpgrade[] {new Upgrade453to460(), new Upgrade460to461(), new Upgrade461to470()});
 
         _upgradeMap.put("4.6.0", new DbUpgrade[] {new Upgrade460to461(), new Upgrade461to470()});
 
         _upgradeMap.put("4.6.1", new DbUpgrade[] {new Upgrade461to470()});
 
-        _upgradeMap.put("4.6.2", new DbUpgrade[] {new Upgrade461to470()});
+        _upgradeMap.put("4.6.2", new DbUpgrade[] {new Upgrade462to470()});
 
         //CP Upgrades
         _upgradeMap.put("3.0.3", new DbUpgrade[] {new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(),
