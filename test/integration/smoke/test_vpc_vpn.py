@@ -71,13 +71,10 @@ class Services:
                 "firstname": "Test",
                 "lastname": "User",
                 "username": "test",
-                # Random characters are appended for unique
-                # username
                 "password": "password",
             },
             "host1": None,
             "host2": None,
-            "default_hypervisor": "kvm",
             "compute_offering": {
                 "name": "Tiny Instance",
                 "displaytext": "Tiny Instance",
@@ -132,6 +129,11 @@ class Services:
                 "egress_policy": "true",
             },
             "vpc_offering": {
+                "name": 'VPC off',
+                "displaytext": 'VPC off',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+            },
+            "redundant_vpc_offering": {
                 "name": 'Redundant VPC off',
                 "displaytext": 'Redundant VPC off',
                 "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
@@ -224,17 +226,38 @@ class Services:
                     "requireshvm": "True",
                 },
 
-                "xen": {
+                "xenserver": {
                     "name": "tiny-xen",
                     "displaytext": "macchinina xen",
                     "format": "vhd",
                     "hypervisor": "xen",
-                    "ostype": "Other (64-bit)",
+                    "ostype": "Other PV (64-bit)",
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
                     "requireshvm": "True",
                 },
+
+                "hyperv": {
+                    "name": "tiny-hyperv",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "hyperv",
+                    "ostype": "Other PV (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
+                    "requireshvm": "True",
+                },
+
+                "vmware": {
+                    "name": "tiny-vmware",
+                    "displaytext": "macchinina vmware",
+                    "format": "ova",
+                    "hypervisor": "vmware",
+                    "ostype": "Other PV (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.vmdk.bz2",
+                    "requireshvm": "True",
+                }
             }
         }
+
 
 
 class TestVpcRemoteAccessVpn(cloudstackTestCase):
@@ -253,6 +276,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
+
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
@@ -260,24 +284,27 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
 
-        cls.hypervisor = cls.services["default_hypervisor"]
-        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
-                         cls.hypervisor]["name"], cls.services["template"][cls.hypervisor]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][
-                                         cls.hypervisor], cls.zone.id, hypervisor=cls.hypervisor, account=cls.account.name, domainid=cls.domain.id)
+        cls.hypervisor = testClient.getHypervisorInfo()
+
+        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services[
-                "compute_offering"]
+            assert False, "get_template() failed to return template"
 
-        cls.services["virtual_machine"][
-            "hypervisor"] = cls.services["default_hypervisor"]
-        cls.cleanup = [cls.account]
+        cls.logger.debug("Successfully created account: %s, id: \
+                   %s" % (cls.account.name,
+                          cls.account.id))
+
+        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        return
 
     @attr(tags=["advanced"], required_hardware="true")
-    def test_vpc_remote_access_vpn(self):
+    def test_01_vpc_remote_access_vpn(self):
         """Test Remote Access VPN in VPC"""
+
+        self.logger.debug("Starting test: test_01_vpc_site2site_vpn")
 
         # 0) Get the default network offering for VPC
         self.logger.debug("Retrieving default VPC offering")
@@ -334,8 +361,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                                        domainid=self.domain.id,
                                        serviceofferingid=self.compute_offering.id,
                                        networkids=ntwk.id,
-                                       hypervisor=self.services[
-                                           "virtual_machine"]["hypervisor"]
+                                       hypervisor=self.hypervisor
                                        )
             self.assert_(vm is not None, "VM failed to deploy")
             self.assert_(vm.state == 'Running', "VM is not running")
@@ -426,29 +452,32 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
-        cls.service_offering = ServiceOffering.create(
+
+        cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
-        cls.hypervisor = cls.services["default_hypervisor"]
-        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
-                         cls.hypervisor]["name"], cls.services["template"][cls.hypervisor]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][
-                                         cls.hypervisor], cls.zone.id, hypervisor=cls.hypervisor, account=cls.account.name, domainid=cls.domain.id)
+
+        cls.hypervisor = testClient.getHypervisorInfo()
+
+        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services[
-                "compute_offering"]
+            assert False, "get_template() failed to return template"
 
-        cls.services["virtual_machine"][
-            "hypervisor"] = cls.services["default_hypervisor"]
-        cls.cleanup = [cls.account]
+        cls.logger.debug("Successfully created account: %s, id: \
+                   %s" % (cls.account.name,
+                          cls.account.id))
 
-    def get_ssh_client(self, virtual_machine, services, retries):
+        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        return
+
+    def _get_ssh_client(self, virtual_machine, services, retries):
         """ Setup ssh client connection and return connection
         vm requires attributes public_ip, public_port, username, password """
 
@@ -468,7 +497,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         return ssh_client
 
-    def create_natrule(self, vpc, vm, public_port, private_port, public_ip, network, services=None):
+    def _create_natrule(self, vpc, vm, public_port, private_port, public_ip, network, services=None):
         self.logger.debug("Creating NAT rule in network for vm with public IP")
         if not services:
             self.services["natrule"]["privateport"] = private_port
@@ -494,28 +523,67 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         vm.public_port = int(public_port)
         return nat_rule
 
-    @attr(tags=["advanced"], required_hardware="true")
-    def test_vpc_site2site_vpn(self):
-        """Test VPN in VPC"""
+    def _validate_vpc_offering(self, vpc_offering):
 
+        self.logger.debug("Check if the VPC offering is created successfully?")
+        vpc_offs = VpcOffering.list(
+            self.apiclient,
+            id=vpc_offering.id
+        )
+        self.assertEqual(
+            isinstance(vpc_offs, list),
+            True,
+            "List VPC offerings should return a valid list"
+        )
+        self.assertEqual(
+            vpc_offering.name,
+            vpc_offs[0].name,
+            "Name of the VPC offering should match with listVPCOff data"
+        )
+        self.logger.debug(
+            "VPC offering is created successfully - %s" %
+            vpc_offering.name)
+        return
+
+    def _create_vpc_offering(self, offering_name):
+
+        vpc_off = None
+        if offering_name is not None:
+
+            self.logger.debug("Creating VPC offering: %s", offering_name)
+            vpc_off = VpcOffering.create(
+                self.apiclient,
+                self.services[offering_name]
+            )
+
+            self._validate_vpc_offering(vpc_off)
+            self.cleanup.append(vpc_off)
+
+        return vpc_off
+
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_01_vpc_site2site_vpn(self):
+        """Test Site 2 Site VPN Across VPCs"""
+        self.logger.debug("Starting test: test_01_vpc_site2site_vpn")
         # 0) Get the default network offering for VPC
         networkOffering = NetworkOffering.list(
             self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
         self.assert_(networkOffering is not None and len(
             networkOffering) > 0, "No VPC based network offering")
 
-        # 1) Create VPC offering
-        vpcOffering = VpcOffering.list(self.apiclient, isdefault=True)
-        self.assert_(vpcOffering is not None and len(
-            vpcOffering) > 0, "No VPC offerings found")
+        # Create and Enable VPC offering
+        vpc_offering = self._create_vpc_offering('vpc_offering')
+        self.assert_(vpc_offering is not None, "Failed to create VPC Offering")
+        vpc_offering.update(self.apiclient, state='Enabled')
 
+        vpc1 = None
         # Create VPC 1
         try:
             vpc1 = VPC.create(
                 apiclient=self.apiclient,
                 services=self.services["vpc"],
                 networkDomain="vpc1.vpn",
-                vpcofferingid=vpcOffering[0].id,
+                vpcofferingid=vpc_offering.id,
                 zoneid=self.zone.id,
                 account=self.account.name,
                 domainid=self.domain.id
@@ -525,15 +593,16 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         finally:
             self.assert_(vpc1 is not None, "VPC1 creation failed")
 
-        self.logger.debug("VPC1 %s created" % (vpc1.id))
+        self.logger.debug("VPC1 %s created" % vpc1.id)
 
+        vpc2 = None
         # Create VPC 2
         try:
             vpc2 = VPC.create(
                 apiclient=self.apiclient,
                 services=self.services["vpc2"],
                 networkDomain="vpc2.vpn",
-                vpcofferingid=vpcOffering[0].id,
+                vpcofferingid=vpc_offering.id,
                 zoneid=self.zone.id,
                 account=self.account.name,
                 domainid=self.account.domainid
@@ -543,11 +612,12 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         finally:
             self.assert_(vpc2 is not None, "VPC2 creation failed")
 
-        self.logger.debug("VPC2 %s created" % (vpc2.id))
+        self.logger.debug("VPC2 %s created" % vpc2.id)
 
         default_acl = NetworkACLList.list(
             self.apiclient, name="default_allow")[0]
 
+        ntwk1 = None
         # Create network in VPC 1
         try:
             ntwk1 = Network.create(
@@ -567,6 +637,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         self.logger.debug("Network %s created in VPC %s" % (ntwk1.id, vpc1.id))
 
+        ntwk2 = None
         # Create network in VPC 2
         try:
             ntwk2 = Network.create(
@@ -586,6 +657,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
+        vm1 = None
         # Deploy a vm in network 2
         try:
             vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
@@ -593,10 +665,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
                                         domainid=self.account.domainid,
-                                        serviceofferingid=self.service_offering.id,
+                                        serviceofferingid=self.compute_offering.id,
                                         networkids=ntwk1.id,
-                                        hypervisor=self.services[
-                                            "virtual_machine"]["hypervisor"]
+                                        hypervisor=self.hypervisor
                                         )
         except Exception as e:
             self.fail(e)
@@ -606,6 +677,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         self.logger.debug("VM %s deployed in VPC %s" % (vm1.id, vpc1.id))
 
+        vm2 = None
         # Deploy a vm in network 2
         try:
             vm2 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
@@ -613,10 +685,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
                                         domainid=self.account.domainid,
-                                        serviceofferingid=self.service_offering.id,
+                                        serviceofferingid=self.compute_offering.id,
                                         networkids=ntwk2.id,
-                                        hypervisor=self.services[
-                                            "virtual_machine"]["hypervisor"]
+                                        hypervisor=self.hypervisor
                                         )
         except Exception as e:
             self.fail(e)
@@ -696,9 +767,10 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.assert_(
                 vm2.public_ip is not None, "Failed to aqcuire public ip for vm2")
 
+        natrule = None
         # Create port forward to be able to ssh into vm2
         try:
-            natrule = self.create_natrule(
+            natrule = self._create_natrule(
                 vpc2, vm2, 22, 22, vm2.public_ip, ntwk2)
         except Exception as e:
             self.fail(e)
@@ -708,7 +780,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             time.sleep(20)
 
         # setup ssh connection to vm2
-        ssh_client = self.get_ssh_client(vm2, self.services, 10)
+        ssh_client = self._get_ssh_client(vm2, self.services, 10)
 
         if ssh_client:
             # run ping test
