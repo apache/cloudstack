@@ -538,9 +538,9 @@ class CsSite2SiteVpn(CsDataBag):
             file.commit()
             logging.info("Configured vpn %s %s", leftpeer, rightpeer)
             CsHelper.execute("ipsec auto --rereadall")
-            CsHelper.execute("ipsec --add vpn-%s" % rightpeer)
+            CsHelper.execute("ipsec auto --add vpn-%s" % rightpeer)
             if not obj['passive']:
-                CsHelper.execute("ipsec --up vpn-%s" % rightpeer)
+                CsHelper.execute("ipsec auto --up vpn-%s" % rightpeer)
         os.chmod(vpnsecretsfile, 0o400)
 
     def convert_sec_to_h(self, val):
