@@ -304,7 +304,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
     def test_01_vpc_remote_access_vpn(self):
         """Test Remote Access VPN in VPC"""
 
-        self.logger.debug("Starting test: test_01_vpc_site2site_vpn")
+        self.logger.debug("Starting test: test_01_vpc_remote_access_vpn")
 
         # 0) Get the default network offering for VPC
         self.logger.debug("Retrieving default VPC offering")
@@ -769,6 +769,371 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         natrule = None
         # Create port forward to be able to ssh into vm2
+        try:
+            natrule = self._create_natrule(
+                vpc2, vm2, 22, 22, vm2.public_ip, ntwk2)
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.assert_(
+                natrule is not None, "Failed to create portforward for vm2")
+            time.sleep(20)
+
+        # setup ssh connection to vm2
+        ssh_client = self._get_ssh_client(vm2, self.services, 10)
+
+        if ssh_client:
+            # run ping test
+            packet_loss = ssh_client.execute(
+                "/bin/ping -c 3 -t 10 " + vm1.nic[0].ipaddress + " |grep packet|cut -d ' ' -f 7| cut -f1 -d'%'")[0]
+            self.assert_(int(packet_loss) == 0, "Ping did not succeed")
+        else:
+            self.fail("Failed to setup ssh connection to %s" % vm2.public_ip)
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls.cleanup)
+        except Exception, e:
+            raise Exception("Cleanup failed with %s" % e)
+
+
+class TestRVPCSite2SiteVpn(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.logger = logging.getLogger('TestRVPCSite2SiteVPN')
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+
+        testClient = super(TestRVPCSite2SiteVpn, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = Services().services
+
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.domain = get_domain(cls.apiclient)
+
+        cls.compute_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["compute_offering"]
+        )
+
+        cls.account = Account.create(
+            cls.apiclient, services=cls.services["account"])
+
+        cls.hypervisor = testClient.getHypervisorInfo()
+
+        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
+        cls.template.download(cls.apiclient)
+
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template"
+
+        cls.logger.debug("Successfully created account: %s, id: \
+                   %s" % (cls.account.name,
+                          cls.account.id))
+
+        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        return
+
+    def _validate_vpc_offering(self, vpc_offering):
+
+        self.logger.debug("Check if the VPC offering is created successfully?")
+        vpc_offs = VpcOffering.list(
+            self.apiclient,
+            id=vpc_offering.id
+        )
+        self.assertEqual(
+            isinstance(vpc_offs, list),
+            True,
+            "List VPC offerings should return a valid list"
+        )
+        self.assertEqual(
+            vpc_offering.name,
+            vpc_offs[0].name,
+            "Name of the VPC offering should match with listVPCOff data"
+        )
+        self.logger.debug(
+            "VPC offering is created successfully - %s" %
+            vpc_offering.name)
+        return
+
+    def _create_vpc_offering(self, offering_name):
+
+        vpc_off = None
+        if offering_name is not None:
+
+            self.logger.debug("Creating VPC offering: %s", offering_name)
+            vpc_off = VpcOffering.create(
+                self.apiclient,
+                self.services[offering_name]
+            )
+
+            self._validate_vpc_offering(vpc_off)
+            self.cleanup.append(vpc_off)
+
+        return vpc_off
+
+
+    def _get_ssh_client(self, virtual_machine, services, retries):
+        """ Setup ssh client connection and return connection
+        vm requires attributes public_ip, public_port, username, password """
+
+        try:
+            ssh_client = SshClient(
+                virtual_machine.public_ip,
+                services["virtual_machine"]["ssh_port"],
+                services["virtual_machine"]["username"],
+                services["virtual_machine"]["password"],
+                retries)
+
+        except Exception as e:
+            self.fail("Unable to create ssh connection: " % e)
+
+        self.assertIsNotNone(
+            ssh_client, "Failed to setup ssh connection to vm=%s on public_ip=%s" % (virtual_machine.name, virtual_machine.public_ip))
+
+        return ssh_client
+
+    def _create_natrule(self, vpc, vm, public_port, private_port, public_ip, network, services=None):
+        self.logger.debug("Creating NAT rule in network for vm with public IP")
+        if not services:
+            self.services["natrule"]["privateport"] = private_port
+            self.services["natrule"]["publicport"] = public_port
+            self.services["natrule"]["startport"] = public_port
+            self.services["natrule"]["endport"] = public_port
+            services = self.services["natrule"]
+
+        nat_rule = NATRule.create(
+            apiclient=self.apiclient,
+            services=services,
+            ipaddressid=public_ip.ipaddress.id,
+            virtual_machine=vm,
+            networkid=network.id
+        )
+        self.assertIsNotNone(
+            nat_rule, "Failed to create NAT Rule for %s" % public_ip.ipaddress.ipaddress)
+        self.logger.debug(
+            "Adding NetworkACL rules to make NAT rule accessible")
+
+        vm.ssh_ip = nat_rule.ipaddress
+        vm.public_ip = nat_rule.ipaddress
+        vm.public_port = int(public_port)
+        return nat_rule
+
+
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_01_redundant_vpc_site2site_vpn(self):
+        """Test Site 2 Site VPN Across redundant VPCs"""
+        self.logger.debug("Starting test: test_02_redundant_vpc_site2site_vpn")
+
+        # 0) Get the default network offering for VPC
+        networkOffering = NetworkOffering.list(
+            self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
+        self.assert_(networkOffering is not None and len(
+            networkOffering) > 0, "No VPC based network offering")
+
+        # Create and enable redundant VPC offering
+        redundant_vpc_offering = self._create_vpc_offering('redundant_vpc_offering')
+        self.assert_(redundant_vpc_offering is not None, "Failed to create redundant VPC Offering")
+
+        redundant_vpc_offering.update(self.apiclient, state='Enabled')
+
+        # Create VPC 1
+        vpc1 = None
+        try:
+            vpc1 = VPC.create(
+                apiclient=self.apiclient,
+                services=self.services["vpc"],
+                networkDomain="vpc1.vpn",
+                vpcofferingid=redundant_vpc_offering.id,
+                zoneid=self.zone.id,
+                account=self.account.name,
+                domainid=self.domain.id
+            )
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.assert_(vpc1 is not None, "VPC1 creation failed")
+
+        self.logger.debug("VPC1 %s created" % vpc1.id)
+
+        # Create VPC 2
+        vpc2 = None
+        try:
+            vpc2 = VPC.create(
+                apiclient=self.apiclient,
+                services=self.services["vpc2"],
+                networkDomain="vpc2.vpn",
+                vpcofferingid=redundant_vpc_offering.id,
+                zoneid=self.zone.id,
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.assert_(vpc2 is not None, "VPC2 creation failed")
+
+        self.logger.debug("VPC2 %s created" % vpc2.id)
+
+        default_acl = NetworkACLList.list(
+            self.apiclient, name="default_allow")[0]
+
+        # Create network in VPC 1
+        ntwk1 = None
+        try:
+            ntwk1 = Network.create(
+                apiclient=self.apiclient,
+                services=self.services["network_1"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                networkofferingid=networkOffering[0].id,
+                zoneid=self.zone.id,
+                vpcid=vpc1.id,
+                aclid=default_acl.id
+            )
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.assertIsNotNone(ntwk1, "Network failed to create")
+
+        self.logger.debug("Network %s created in VPC %s" % (ntwk1.id, vpc1.id))
+
+        # Create network in VPC 2
+        ntwk2 = None
+        try:
+            ntwk2 = Network.create(
+                apiclient=self.apiclient,
+                services=self.services["network_2"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                networkofferingid=networkOffering[0].id,
+                zoneid=self.zone.id,
+                vpcid=vpc2.id,
+                aclid=default_acl.id
+            )
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.assertIsNotNone(ntwk2, "Network failed to create")
+
+        self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
+
+        # Deploy a vm in network 2
+        vm1 = None
+        try:
+            vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+                                        templateid=self.template.id,
+                                        zoneid=self.zone.id,
+                                        accountid=self.account.name,
+                                        domainid=self.account.domainid,
+                                        serviceofferingid=self.compute_offering.id,
+                                        networkids=ntwk1.id,
+                                        hypervisor=self.hypervisor
+                                        )
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.assert_(vm1 is not None, "VM failed to deploy")
+            self.assert_(vm1.state == 'Running', "VM is not running")
+
+        self.logger.debug("VM %s deployed in VPC %s" % (vm1.id, vpc1.id))
+
+        # Deploy a vm in network 2
+        vm2 = None
+        try:
+            vm2 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+                                        templateid=self.template.id,
+                                        zoneid=self.zone.id,
+                                        accountid=self.account.name,
+                                        domainid=self.account.domainid,
+                                        serviceofferingid=self.compute_offering.id,
+                                        networkids=ntwk2.id,
+                                        hypervisor=self.hypervisor
+                                        )
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.assert_(vm2 is not None, "VM failed to deploy")
+            self.assert_(vm2.state == 'Running', "VM is not running")
+
+        self.debug("VM %s deployed in VPC %s" % (vm2.id, vpc2.id))
+
+        # 4) Enable Site-to-Site VPN for VPC
+        vpn1_response = Vpn.createVpnGateway(self.apiclient, vpc1.id)
+        self.assert_(
+            vpn1_response is not None, "Failed to enable VPN Gateway 1")
+        self.logger.debug("VPN gateway for VPC %s enabled" % vpc1.id)
+
+        vpn2_response = Vpn.createVpnGateway(self.apiclient, vpc2.id)
+        self.assert_(
+            vpn2_response is not None, "Failed to enable VPN Gateway 2")
+        self.logger.debug("VPN gateway for VPC %s enabled" % vpc2.id)
+
+        # 5) Add VPN Customer gateway info
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            vpcid=vpc1.id
+        )
+        ip1 = src_nat_list[0]
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            vpcid=vpc2.id
+        )
+        ip2 = src_nat_list[0]
+
+        services = self.services["vpncustomergateway"]
+        customer1_response = VpnCustomerGateway.create(
+            self.apiclient, services, "Peer VPC1", ip1.ipaddress, vpc1.cidr, self.account.name, self.domain.id)
+        self.debug("VPN customer gateway added for VPC %s enabled" % vpc1.id)
+        self.logger.debug(vars(customer1_response))
+
+        customer2_response = VpnCustomerGateway.create(
+            self.apiclient, services, "Peer VPC2", ip2.ipaddress, vpc2.cidr, self.account.name, self.domain.id)
+        self.debug("VPN customer gateway added for VPC %s enabled" % vpc2.id)
+        self.logger.debug(vars(customer2_response))
+
+        # 6) Connect two VPCs
+        vpnconn1_response = Vpn.createVpnConnection(
+            self.apiclient, customer1_response.id, vpn2_response['id'], True)
+        self.debug("VPN passive connection created for VPC %s" % vpc2.id)
+
+        vpnconn2_response = Vpn.createVpnConnection(
+            self.apiclient, customer2_response.id, vpn1_response['id'])
+        self.debug("VPN connection created for VPC %s" % vpc1.id)
+
+        self.assertEqual(
+            vpnconn2_response['state'], "Connected", "Failed to connect between VPCs!")
+
+        # acquire an extra ip address to use to ssh into vm2
+        try:
+            vm2.public_ip = PublicIPAddress.create(
+                apiclient=self.apiclient,
+                accountid=self.account.name,
+                zoneid=self.zone.id,
+                domainid=self.account.domainid,
+                services=self.services,
+                networkid=ntwk2.id,
+                vpcid=vpc2.id)
+        except Exception as e:
+            self.fail(e)
+        finally:
+            self.assert_(
+                vm2.public_ip is not None, "Failed to aqcuire public ip for vm2")
+
+        # Create port forward to be able to ssh into vm2
+        natrule = None
         try:
             natrule = self._create_natrule(
                 vpc2, vm2, 22, 22, vm2.public_ip, ntwk2)
