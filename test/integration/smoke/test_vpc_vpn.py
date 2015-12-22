@@ -259,7 +259,6 @@ class Services:
         }
 
 
-
 class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
     @classmethod
@@ -286,8 +285,10 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
+        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
+                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
+        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
@@ -463,8 +464,10 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
+        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
+                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
+        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
@@ -824,8 +827,10 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
+        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
+                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
+        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
@@ -876,7 +881,6 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
         return vpc_off
 
-
     def _get_ssh_client(self, virtual_machine, services, retries):
         """ Setup ssh client connection and return connection
         vm requires attributes public_ip, public_port, username, password """
@@ -923,7 +927,6 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         vm.public_port = int(public_port)
         return nat_rule
 
-
     @attr(tags=["advanced"], required_hardware="true")
     def test_01_redundant_vpc_site2site_vpn(self):
         """Test Site 2 Site VPN Across redundant VPCs"""
@@ -936,8 +939,10 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             networkOffering) > 0, "No VPC based network offering")
 
         # Create and enable redundant VPC offering
-        redundant_vpc_offering = self._create_vpc_offering('redundant_vpc_offering')
-        self.assert_(redundant_vpc_offering is not None, "Failed to create redundant VPC Offering")
+        redundant_vpc_offering = self._create_vpc_offering(
+            'redundant_vpc_offering')
+        self.assert_(redundant_vpc_offering is not None,
+                     "Failed to create redundant VPC Offering")
 
         redundant_vpc_offering.update(self.apiclient, state='Enabled')
 
