@@ -19,7 +19,8 @@
 # Import Local Modules
 from marvin.codes import PASS, FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (validateList,
+                              cleanup_resources,
                               get_process_status)
 
 from marvin.lib.base import (Domain,
@@ -259,7 +260,6 @@ class Services:
         }
 
 
-
 class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
     @classmethod
@@ -286,8 +286,10 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
+        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
+                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
+        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
@@ -463,8 +465,10 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
+        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
+                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
+        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
@@ -530,11 +534,11 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.apiclient,
             id=vpc_offering.id
         )
-        self.assertEqual(
-            isinstance(vpc_offs, list),
-            True,
-            "List VPC offerings should return a valid list"
-        )
+        offering_list = validateList(vpc_offs)
+        self.assertEqual(offering_list[0],
+                         PASS,
+                         "List VPC offerings should return a valid list"
+                         )
         self.assertEqual(
             vpc_offering.name,
             vpc_offs[0].name,
@@ -824,8 +828,10 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
+        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
+                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
+        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
@@ -845,11 +851,11 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.apiclient,
             id=vpc_offering.id
         )
-        self.assertEqual(
-            isinstance(vpc_offs, list),
-            True,
-            "List VPC offerings should return a valid list"
-        )
+        offering_list = validateList(vpc_offs)
+        self.assertEqual(offering_list[0],
+                         PASS,
+                         "List VPC offerings should return a valid list"
+                         )
         self.assertEqual(
             vpc_offering.name,
             vpc_offs[0].name,
@@ -875,7 +881,6 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.cleanup.append(vpc_off)
 
         return vpc_off
-
 
     def _get_ssh_client(self, virtual_machine, services, retries):
         """ Setup ssh client connection and return connection
@@ -923,7 +928,6 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         vm.public_port = int(public_port)
         return nat_rule
 
-
     @attr(tags=["advanced"], required_hardware="true")
     def test_01_redundant_vpc_site2site_vpn(self):
         """Test Site 2 Site VPN Across redundant VPCs"""
@@ -936,8 +940,10 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             networkOffering) > 0, "No VPC based network offering")
 
         # Create and enable redundant VPC offering
-        redundant_vpc_offering = self._create_vpc_offering('redundant_vpc_offering')
-        self.assert_(redundant_vpc_offering is not None, "Failed to create redundant VPC Offering")
+        redundant_vpc_offering = self._create_vpc_offering(
+            'redundant_vpc_offering')
+        self.assert_(redundant_vpc_offering is not None,
+                     "Failed to create redundant VPC Offering")
 
         redundant_vpc_offering.update(self.apiclient, state='Enabled')
 
