@@ -527,6 +527,7 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
         file.addeq(" keyingtries=2")
         file.addeq(" auto=start")
+        file.addeq(" forceencaps=%s" % CsHelper.bool_to_yn(obj['encap']))
         if obj['dpd']:
             file.addeq("  dpddelay=30")
             file.addeq("  dpdtimeout=120")
@@ -538,9 +539,9 @@ class CsSite2SiteVpn(CsDataBag):
             file.commit()
             logging.info("Configured vpn %s %s", leftpeer, rightpeer)
             CsHelper.execute("ipsec auto --rereadall")
-            CsHelper.execute("ipsec --add vpn-%s" % rightpeer)
+            CsHelper.execute("ipsec auto --add vpn-%s" % rightpeer)
             if not obj['passive']:
-                CsHelper.execute("ipsec --up vpn-%s" % rightpeer)
+                CsHelper.execute("ipsec auto --up vpn-%s" % rightpeer)
         os.chmod(vpnsecretsfile, 0o400)
 
     def convert_sec_to_h(self, val):
