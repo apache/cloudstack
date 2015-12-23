@@ -36,7 +36,7 @@ public class Site2SiteVpnConfigItem extends AbstractConfigItemFacade {
 
         final Site2SiteVpn site2siteVpn = new Site2SiteVpn(command.getLocalPublicIp(), command.getLocalGuestCidr(), command.getLocalPublicGateway(), command.getPeerGatewayIp(),
                 command.getPeerGuestCidrList(), command.getEspPolicy(), command.getIkePolicy(), command.getIpsecPsk(), command.getIkeLifetime(), command.getEspLifetime(), command.isCreate(), command.getDpd(),
-                command.isPassive());
+                command.isPassive(), command.getEncap());
         return generateConfigItems(site2siteVpn);
     }
 

@@ -70,6 +70,9 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Column(name = "dpd")
     private boolean dpd;
 
+    @Column(name = "force_encap")
+    private boolean encap;
+
     @Column(name = "domain_id")
     private Long domainId;
 
@@ -83,7 +86,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     }
 
     public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy,
-            String espPolicy, long ikeLifetime, long espLifetime, boolean dpd) {
+            String espPolicy, long ikeLifetime, long espLifetime, boolean dpd, boolean encap) {
         this.name = name;
         this.gatewayIp = gatewayIp;
         this.guestCidrList = guestCidrList;
@@ -93,6 +96,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.ikeLifetime = ikeLifetime;
         this.espLifetime = espLifetime;
         this.dpd = dpd;
+        this.encap = encap;
         uuid = UUID.randomUUID().toString();
         this.accountId = accountId;
         this.domainId = domainId;
@@ -191,6 +195,15 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
 
     public void setDpd(boolean dpd) {
         this.dpd = dpd;
+    }
+
+    @Override
+    public Boolean getEncap() {
+        return encap;
+    }
+
+    public void setEncap(boolean encap) {
+        this.encap = encap;
     }
 
     @Override

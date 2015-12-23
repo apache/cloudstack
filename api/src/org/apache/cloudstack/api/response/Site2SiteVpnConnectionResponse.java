@@ -87,6 +87,11 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     //from CustomerGateway
     private Boolean dpd;
 
+    @SerializedName(ApiConstants.FORCE_ENCAP)
+    @Param(description = "if Force NAT Encapsulation is enabled for customer gateway")
+    //from CustomerGateway
+    private Boolean encap;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "State of vpn connection")
     private String state;
@@ -173,6 +178,10 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
 
     public void setDpd(Boolean dpd) {
         this.dpd = dpd;
+    }
+
+    public void setEncap(Boolean encap) {
+        this.encap = encap;
     }
 
     public void setState(String state) {
