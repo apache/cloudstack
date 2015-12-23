@@ -43,6 +43,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
     @Inject
     private AccountManager _accountManager;
 
+    private String ldapGroupName;
+
     public LdapAuthenticator() {
         super();
     }
@@ -68,6 +70,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
             final LdapTrustMapVO ldapTrustMapVO = _ldapManager.getDomainLinkedToLdap(domainId);
             if (ldapTrustMapVO != null) {
+                ldapGroupName = DistinguishedNameParser.parseLeafName(ldapTrustMapVO.getName());
                 try {
                     final LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName());
                     if (!ldapUser.isDisabled()) {
@@ -119,8 +122,16 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
 
     private void createCloudStackUserAccount(final LdapUser user, final long domainId, final short accountType) {
         final String username = user.getUsername();
-        _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, ldapGroupName, accountType, domainId,
-                        username, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
+        final Account account = _accountManager.getActiveAccountByName(ldapGroupName, domainId);
+        if (account == null) {
+            s_logger.info("Account (" + ldapGroupName + ") for LDAP group does not exist. Creating account and user (" + username + ").");
+            _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, ldapGroupName, accountType, domainId,
+                            username, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
+        } else {
+            s_logger.debug("Account (" + ldapGroupName + ") for LDAP group already exists. Creating user (" + username + ").");
+            _accountManager.createUser(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, ldapGroupName, domainId,
+                            UUID.randomUUID().toString(), User.Source.LDAP);
+        }
     }
 
     private void disableUserInCloudStack(final UserAccount user) {
