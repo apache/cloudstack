@@ -553,6 +553,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
                 throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
             }
 
+            if(!serviceOffering.isDynamic()) {
+                for(String detail: getDetails().keySet()) {
+                    if(detail.equalsIgnoreCase("cpuNumber") || detail.equalsIgnoreCase("cpuSpeed") || detail.equalsIgnoreCase("memory")) {
+                        throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
+                    }
+                }
+            }
+
             VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
             // Make sure a valid template ID was specified
             if (template == null) {
