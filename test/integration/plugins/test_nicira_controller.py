@@ -214,7 +214,7 @@ class TestNiciraContoller(cloudstackTestCase):
             if result_count == 0:
                 raise Exception('Nicira controller did not return any Transport Zones')
             elif result_count > 1:
-                self.logger.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
+                cls.logger.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
             transport_zone_api_url = list_transport_zone_response['results'][0]['_href']
             r3 = requests.get(
                 "https://%s%s" % (controller_host, transport_zone_api_url),
@@ -525,10 +525,10 @@ class TestNiciraContoller(cloudstackTestCase):
             result = str(ssh.execute(ssh_command))
             self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
         except Exception as e:
-            self.fail("SSH Access failed for %s: %s" % (vmObj.get_ip(), e))
+            self.fail("SSH Access failed for %s: %s" % (virtual_machine.get_ip(), e))
 
         self.assertEqual(result.count('3 packets received'), 1, 'Ping to outside world from VM should be successful')
-		
+
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_04_nicira_shared_networks_numerical_vlanid(self):
         """
