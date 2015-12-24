@@ -18,3 +18,5 @@
 --;
 -- Schema upgrade from 4.7.1 to 4.8.0;
 --;
+
+ALTER TABLE `cloud`.`nicira_nvp_router_map` DROP INDEX `logicalrouter_uuid` ;
