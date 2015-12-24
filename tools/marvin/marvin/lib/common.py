@@ -56,7 +56,8 @@ from marvin.cloudstackAPI import (listConfigurations,
                                   listVirtualRouterElements,
                                   listNetworkOfferings,
                                   listResourceLimits,
-                                  listVPCOfferings)
+                                  listVPCOfferings,
+                                  migrateSystemVm)
 from marvin.sshClient import SshClient
 from marvin.codes import (PASS, FAILED, ISOLATED_NETWORK, VPC_NETWORK,
                           BASIC_ZONE, FAIL, NAT_RULE, STATIC_NAT_RULE,
@@ -64,8 +65,8 @@ from marvin.codes import (PASS, FAILED, ISOLATED_NETWORK, VPC_NETWORK,
                           RESOURCE_CPU, RESOURCE_MEMORY, PUBLIC_TRAFFIC,
                           GUEST_TRAFFIC, MANAGEMENT_TRAFFIC, STORAGE_TRAFFIC,
                           VMWAREDVS)
-from marvin.lib.utils import (validateList, 
-                              xsplit, 
+from marvin.lib.utils import (validateList,
+                              xsplit,
                               get_process_status,
                               random_gen,
                               format_volume_to_ext3)
@@ -1419,13 +1420,13 @@ def isNetworkDeleted(apiclient, networkid, timeout=600):
     return networkDeleted
 
 
-def createChecksum(service=None, 
-                   virtual_machine=None, 
-                   disk=None, 
+def createChecksum(service=None,
+                   virtual_machine=None,
+                   disk=None,
                    disk_type=None):
 
     """ Calculate the MD5 checksum of the disk by writing \
-		data on the disk where disk_type is either root disk or data disk 
+		data on the disk where disk_type is either root disk or data disk
 	@return: returns the calculated checksum"""
 
     random_data_0 = random_gen(size=100)
@@ -1440,7 +1441,7 @@ def createChecksum(service=None,
             virtual_machine.username,
             virtual_machine.password
         )
-    except Exception: 
+    except Exception:
         raise Exception("SSH access failed for server with IP address: %s" %
                     virtual_machine.ssh_ip)
 
@@ -1898,3 +1899,10 @@ def verifyVCenterPortGroups(
     except Exception as e:
         return [FAIL, e]
     return [PASS, None]
+
+def migrate_router(apiclient, router_id, host_id):
+    cmd = migrateSystemVm.migrateSystemVmCmd()
+    cmd.hostid = host_id
+    cmd.virtualmachineid = router_id
+
+    apiclient.migrateSystemVm(cmd)
