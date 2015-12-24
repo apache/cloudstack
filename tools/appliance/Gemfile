@@ -19,4 +19,6 @@ source 'https://rubygems.org'
 # gem 'veewee', :git => 'https://github.com/jedi4ever/veewee.git'
 gem 'veewee', '~> 0.4.5.1'
 gem 'em-winrm'
+gem 'net-scp'
 gem 'sys-proctable'
+gem 'net-ssh', '~>2.9.2' # v3 requires Ruby 2.0

@@ -8893,6 +8893,100 @@
                                             }
                                         }
                                     },
+                                    
+                                    // START OSPF ZONE
+
+
+
+                                  vpcRouted: {
+                                      type: 'select',
+                                      title: 'label.vpc.dynamicallyrouted',
+                                      listView: {
+                                          label: 'label.vpc.dynamicallyrouted',
+                                          disableInfiniteScrolling: true,
+                                          actions: {
+                                              edit: {
+                                                  label: 'label.change.value',
+                                                  action: function(args) {
+                                                      if (isAdmin()) {
+                                                          $.ajax({
+                                                              url: createURL("vpcOSPFConfigUpdate&zoneid=" + args.context.physicalResources[0].id + "&" + args.data.jsonObj.configName + "=" + args.data.configValue),
+                                                              type: "GET",
+                                                              success: function(json) {
+                                                                  var items = { 
+                                                                                name: args.data.jsonObj.configName,
+                                                                                value : args.data.configValue
+                                                                                };
+                                                                  args.response.success({
+                                                                      data: items
+                                                                  });
+                                                              },
+                                                              error: function(data) {
+                                                                  cloudStack.dialog.notice({
+                                                                      message: parseXMLHttpResponse(data)
+                                                                  });
+                                                              }
+                                                          });
+                                                          
+                                                      } // if is ADMIN
+                                                  } // end action
+                                              }//edits
+                                          },//actions
+                                          
+                                          fields: {
+                                              configDisplayName: {
+                                                  label: 'label.vpc.dynamicallyrouted.configitemname',
+                                                  id: true
+                                              },
+                                              configValue: {
+                                                  label: 'label.vpc.dynamicallyrouted.configitemvalue',
+                                                  editable: true
+                                              }
+                                          },
+                                          dataProvider: function(args) {
+                                              var data = {};
+                                              if (args.filterBy.search.value) {
+                                                  data.startdate = args.filterBy.search.value;
+                                              }
+                                              $.ajax({
+                                                  url: createURL("vpcOSPFConfig&zoneid=" + args.context.physicalResources[0].id),
+                                                  data: data,
+                                                  dataType: "json",
+                                                  async: true,
+                                                  success: function(json) {
+                                                      var jsonObj = json.vpcospfconfigresponse.ospfconfig;
+                                                      var items = new Array();
+                                                      //console.log(jsonObj);
+                                                      if (jsonObj.quaggaEnabled == null){
+                                                    	  jsonObj.quaggaEnabled = false;
+                                                      }
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.enabled'), configName: 'enabled', configValue: jsonObj.enabled ? "true" : "false" });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.protocol'), configName: 'protocol', configValue: jsonObj.protocol == null ? "--" : jsonObj.protocol });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.ospfarea'), configName: 'area', configValue: jsonObj.area == null ? "--" : jsonObj.area });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.hellointerval'), configName: 'hellointerval', configValue: jsonObj.helloInterval == null ? "--" : jsonObj.helloInterval });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.deadinterval'), configName: 'deadinterval', configValue: jsonObj.deadInterval == null ? "--" : jsonObj.deadInterval });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.retransmitinterval'), configName: 'retransmitinterval', configValue: jsonObj.retransmitInterval == null ? "--" : jsonObj.retransmitInterval });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.transitdelay'), configName: 'transitdelay', configValue: jsonObj.transitDelay == null ? "--" : jsonObj.transitDelay });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.authentication'), configName: 'authentication', configValue: jsonObj.authentication == null ? "--" : jsonObj.authentication });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.password'), configName: 'password', configValue: jsonObj.password == null ? "--" : jsonObj.password });
+                                                      items.push({ configDisplayName: _l('label.vpc.dynamicallyrouted.supercidr'), configName: 'supercidr', configValue: jsonObj.superCIDR == null ? "--" : jsonObj.superCIDR });
+                                              
+                                                      args.response.success({
+                                                          data: items
+                                                      });
+                                                  },
+                                                  error: function(data) {
+                                                      cloudStack.dialog.notice({
+                                                          message: parseXMLHttpResponse(data)
+                                                      });
+                                                  }
+                                              });
+                                          }
+                                      }
+                                  },
+
+
+                                    // END QUAGGA ZONE
 
                                     // Granular settings for zone
                                     settings: {

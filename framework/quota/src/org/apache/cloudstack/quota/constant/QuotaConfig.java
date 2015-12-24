@@ -24,7 +24,7 @@ public interface QuotaConfig {
     public static final ConfigKey<Boolean> QuotaPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.service", "false",
             "Indicates whether Quota plugin is enabled or not", true);
 
-    public static final ConfigKey<String> QuotaEnableEnforcement = new ConfigKey<String>("Advanced", String.class, "quota.enable.enforcement", "false",
+    public static final ConfigKey<Boolean> QuotaEnableEnforcement = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.enforcement", "false",
             "Enable the usage quota enforcement, i.e. on true when exceeding quota the respective account will be locked.", true);
 
     public static final ConfigKey<String> QuotaCurrencySymbol = new ConfigKey<String>("Advanced", String.class, "quota.currency.symbol", "$",

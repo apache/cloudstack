@@ -39,6 +39,7 @@ import com.cloud.utils.db.GenericDao;
 @Entity
 @Table(name = "physical_network_service_providers")
 public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceProvider, InternalIdentity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -95,6 +96,9 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
 
     @Column(name = "networkacl_service_provided")
     boolean networkAclServiceProvided;
+
+    @Column(name = "dynamic_routing_provided")
+    boolean dynamicRoutingProvided;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
@@ -241,6 +245,24 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     }
 
     @Override
+    public boolean isNetworkAclServiceProvided() {
+        return networkAclServiceProvided;
+    }
+
+    public void setDynamicRoutingProvided(boolean dynamicRoutingProvided) {
+        this.dynamicRoutingProvided = dynamicRoutingProvided;
+    }
+
+    @Override
+    public boolean isDynamicRoutingProvided() {
+        return dynamicRoutingProvided;
+    }
+
+    public void setNetworkAclServiceProvided(boolean networkAclServiceProvided) {
+        this.networkAclServiceProvided = networkAclServiceProvided;
+    }
+
+    @Override
     public String getUuid() {
         return this.uuid;
     }
@@ -270,6 +292,7 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         this.setUserdataServiceProvided(services.contains(Service.UserData));
         this.setSecuritygroupServiceProvided(services.contains(Service.SecurityGroup));
         this.setNetworkAclServiceProvided(services.contains(Service.NetworkACL));
+        this.setDynamicRoutingProvided(services.contains(Service.VPCDynamicRouting));
     }
 
     @Override
@@ -308,15 +331,21 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         if (this.isSecuritygroupServiceProvided()) {
             services.add(Service.SecurityGroup);
         }
+        if (this.isDynamicRoutingProvided()) {
+            services.add(Service.VPCDynamicRouting);
+        }
         return services;
     }
 
     @Override
-    public boolean isNetworkAclServiceProvided() {
-        return networkAclServiceProvided;
+    public String toString() {
+        return "PhysicalNetworkServiceProviderVO [id=" + id + ", physicalNetworkId=" + physicalNetworkId + ", destPhysicalNetworkId=" + destPhysicalNetworkId + ", providerName="
+                + providerName + ", state=" + state + ", vpnServiceProvided=" + vpnServiceProvided + ", dhcpServiceProvided=" + dhcpServiceProvided + ", dnsServiceProvided="
+                + dnsServiceProvided + ", gatewayServiceProvided=" + gatewayServiceProvided + ", firewallServiceProvided=" + firewallServiceProvided + ", sourcenatServiceProvided="
+                + sourcenatServiceProvided + ", lbServiceProvided=" + lbServiceProvided + ", staticnatServiceProvided=" + staticnatServiceProvided
+                + ", portForwardingServiceProvided=" + portForwardingServiceProvided + ", userdataServiceProvided=" + userdataServiceProvided + ", securitygroupServiceProvided="
+                + securitygroupServiceProvided + ", networkAclServiceProvided=" + networkAclServiceProvided + ", dynamicRoutingProvided=" + dynamicRoutingProvided + ", removed="
+                + removed + "]";
     }
 
-    public void setNetworkAclServiceProvided(boolean networkAclServiceProvided) {
-        this.networkAclServiceProvided = networkAclServiceProvided;
-    }
 }

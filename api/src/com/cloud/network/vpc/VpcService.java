@@ -30,6 +30,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.cidr.BadCIDRException;
 
 public interface VpcService {
 
@@ -49,6 +50,25 @@ public interface VpcService {
      */
     public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain, Boolean displayVpc)
             throws ResourceAllocationException;
+
+    /**
+     * Persists VPC record in the database
+     *
+     * @param zoneId
+     * @param vpcOffId
+     * @param vpcOwnerId
+     * @param vpcName
+     * @param displayText
+     * @param cidr
+     * @param networkDomain TODO
+     * @param displayVpc TODO
+     * @return
+     * @throws ResourceAllocationException TODO
+     * @throws UnknownHostException
+     * @throws BadCIDRException
+     */
+    public Vpc createDynamicVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String netmask, String networkDomain, Boolean displayVpc)
+            throws ResourceAllocationException, BadCIDRException;
 
     /**
      * Deletes a VPC
@@ -247,13 +267,17 @@ public interface VpcService {
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
-    IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException,
-    ConcurrentOperationException;
+    IpAddress associateIPToVpc(long ipId, long vpcId)
+            throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * @param routeId
      * @return
      */
     public boolean applyStaticRoute(long routeId) throws ResourceUnavailableException;
+
+    boolean isVpcOfferingDynamicallyRouted(long dcId, long vpcOffId);
+
+    boolean isVpcOfferingDynamicallyRouted(long vpcOffId);
 
 }

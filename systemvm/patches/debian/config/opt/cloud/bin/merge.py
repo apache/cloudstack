@@ -35,6 +35,7 @@ import cs_site2sitevpn
 import cs_remoteaccessvpn
 import cs_vpnusers
 import cs_staticroutes
+import cs_quagga
 
 from pprint import pprint
 
@@ -129,6 +130,8 @@ class updateDataBag:
             dbag = self.process_vpnusers(self.db.getDataBag())
         elif self.qFile.type == 'staticroutes':
             dbag = self.process_staticroutes(self.db.getDataBag())
+        elif self.qFile.type == 'quagga':
+            dbag = self.process_quagga(self.db.getDataBag())
         else:
             logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
             return
@@ -177,6 +180,9 @@ class updateDataBag:
 
     def process_staticroutes(self, dbag):
         return cs_staticroutes.merge(dbag, self.qFile.data)
+
+    def process_quagga(self, dbag):
+        return cs_quagga.merge(dbag, self.qFile.data)
 
     def processVMpassword(self, dbag):
         return cs_vmp.merge(dbag, self.qFile.data)

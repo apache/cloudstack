@@ -138,7 +138,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         } else {
             for (final QuotaAccountVO quotaAccount : _quotaAccountDao.listAllQuotaAccount()) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (account == null) continue;
+                if (account == null)
+                    continue;
                 QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
                 result.add(qr);
             }
@@ -389,7 +390,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Date despositedOn = _quotaService.computeAdjustedTime(new Date());
         QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
 
-
         if (qb != null) {
             throw new InvalidParameterValueException("Incorrect deposit date: " + despositedOn + " there are balance entries after this date");
         }
@@ -399,10 +399,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaCreditsVO result = _quotaCreditsDao.saveCredits(credits);
 
         final AccountVO account = _accountDao.findById(accountId);
+
         if (account == null) {
             throw new InvalidParameterValueException("Account does not exist with account id " + accountId);
         }
-        final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
+        final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value();
+
         final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(despositedOn.getTime())));
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn + ", current balance " + currentAccountBalance);

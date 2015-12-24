@@ -59,6 +59,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
         public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet);
+        public static final Service VPCDynamicRouting = new Service("VPCDynamicRouting");
 
         private final String name;
         private final Capability[] caps;
@@ -213,6 +214,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability DistributedRouter = new Capability("DistributedRouter");
         public static final Capability StretchedL2Subnet = new Capability("StretchedL2Subnet");
         public static final Capability RegionLevelVpc = new Capability("RegionLevelVpc");
+        public static final Capability VPCDynamicRouting = new Capability("VPCDynamicRouting");
 
         private final String name;
 
@@ -241,9 +243,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     public enum State {
 
-        Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"), Implementing(
-                "Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"), Shutdown(
-                "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
+        Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"),
+        Implementing("Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"),
+        Shutdown("Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
 
         protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 

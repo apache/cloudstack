@@ -54,6 +54,7 @@ import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PasswordToRouterRules;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PrivateGatewayRules;
+import com.cloud.network.rules.QuaggaRules;
 import com.cloud.network.rules.SshKeyToRouterRules;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
@@ -106,7 +107,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     @Override
     public boolean visit(final LoadBalancingRules loadbalancing) throws ResourceUnavailableException {
         final Network network = loadbalancing.getNetwork();
-        final DomainRouterVO router = (DomainRouterVO) loadbalancing.getRouter();
+        final DomainRouterVO router = (DomainRouterVO)loadbalancing.getRouter();
         final List<LoadBalancingRule> rules = loadbalancing.getRules();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
@@ -134,13 +135,13 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
         } else if (purpose == Purpose.PortForwarding) {
 
-            _commandSetupHelper.createApplyPortForwardingRulesCommands((List<? extends PortForwardingRule>) rules, router, cmds, network.getId());
+            _commandSetupHelper.createApplyPortForwardingRulesCommands((List<? extends PortForwardingRule>)rules, router, cmds, network.getId());
 
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
         } else if (purpose == Purpose.StaticNat) {
 
-            _commandSetupHelper.createApplyStaticNatRulesCommands((List<StaticNatRule>) rules, router, cmds, network.getId());
+            _commandSetupHelper.createApplyStaticNatRulesCommands((List<StaticNatRule>)rules, router, cmds, network.getId());
 
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
@@ -314,6 +315,11 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
     @Override
     public boolean visit(final AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("AdvancedVpnRules not implemented in Basic Network Topology.");
+    }
+
+    @Override
+    public boolean visit(final QuaggaRules vpnRules) throws ResourceUnavailableException {
         throw new CloudRuntimeException("AdvancedVpnRules not implemented in Basic Network Topology.");
     }
 }

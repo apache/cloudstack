@@ -116,6 +116,8 @@ public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<Physic
             sc.setParameters("userDataService", true);
         } else if (serviceType.equalsIgnoreCase(Service.Vpn.getName())) {
             sc.setParameters("vpnService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.VPCDynamicRouting.getName())) {
+            sc.setParameters("vpcDynamicRouting", true);
         }
 
         PhysicalNetworkServiceProviderVO map = findOneBy(sc);

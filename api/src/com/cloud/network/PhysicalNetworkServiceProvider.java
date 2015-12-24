@@ -67,4 +67,6 @@ public interface PhysicalNetworkServiceProvider extends InternalIdentity {
     String getUuid();
 
     boolean isNetworkAclServiceProvided();
+
+    boolean isDynamicRoutingProvided();
 }

@@ -39,6 +39,7 @@ import com.cloud.network.rules.DhcpPvlanRules;
 import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PrivateGatewayRules;
+import com.cloud.network.rules.QuaggaRules;
 import com.cloud.network.rules.StaticRoutesRules;
 import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.VpcIpAssociationRules;
@@ -47,6 +48,7 @@ import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.net.cidr.BadCIDRException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
@@ -164,8 +166,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         } else {
             s_logger.warn("Unable to setup private gateway, virtual router " + router + " is not in the right state " + router.getState());
 
-            throw new ResourceUnavailableException("Unable to setup Private gateway on the backend," + " virtual router " + router + " is not in the right state",
-                    DataCenter.class, router.getDataCenterId());
+            throw new ResourceUnavailableException("Unable to setup Private gateway on the backend," + " virtual router " + router + " is not in the right state", DataCenter.class,
+                    router.getDataCenterId());
         }
         return true;
     }
@@ -210,6 +212,22 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         // Currently we receive just one answer from the agent. In the future we
         // have to parse individual answers and set
         // results accordingly
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
+    }
+
+    @Override
+    public boolean visit(final QuaggaRules quaggaRules) throws ResourceUnavailableException {
+        final VirtualRouter router = quaggaRules.getRouter();
+
+        final Commands cmds = new Commands(Command.OnError.Continue);
+
+        try {
+            _commandSetupHelper.createQuaggaConfigCommand(router, quaggaRules.getVpcId(), cmds);
+        } catch (BadCIDRException ex) {
+            s_logger.warn("Failed to create Quagga config due to faulty cidr ");
+            return false;
+        }
+
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 }

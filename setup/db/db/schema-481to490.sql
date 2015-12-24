@@ -413,3 +413,6 @@ VIEW `user_vm_view` AS
 
 -- Add cluster.storage.operations.exclude property
 INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `description`, `default_value`, `updated`, `scope`, `is_dynamic`) VALUES ('Advanced', 'DEFAULT', 'CapacityManager', 'cluster.storage.operations.exclude', 'Exclude cluster from storage operations', 'false', now(), 'Cluster', '1');
+
+ALTER TABLE `cloud`.`physical_network_service_providers` 
+ADD COLUMN `dynamic_routing_provided` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' AFTER `networkacl_service_provided`;

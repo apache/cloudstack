@@ -3612,6 +3612,10 @@
                                                        {name: 'BigSwitchBcf'}]
                                             });
                                             networkServiceObjs.push({
+                                                name: 'VPCDynamicRouting',
+                                                provider: [{name: 'VpcVirtualRouter'}]
+                                            });
+                                            networkServiceObjs.push({
                                                 name: 'PortForwarding',
                                                 provider: [{name: 'VpcVirtualRouter'}]
                                             });
@@ -3660,8 +3664,8 @@
                                                     case 'SourceNat':
                                                         serviceDisplayName = _l('label.source.nat');
                                                         break;
-                                                    case 'StaticNat':
-                                                        serviceDisplayName = _l('label.static.nat');
+                                                    case 'VPCDynamicRouting':
+                                                        serviceDisplayName = _l('label.vpc.dynamicrouting.service');
                                                         break;
                                                     case 'PortForwarding':
                                                         serviceDisplayName = _l('label.port.forwarding');

@@ -82,7 +82,7 @@ public class VpcVO implements Vpc {
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
-    @Column(name="uses_distributed_router")
+    @Column(name = "uses_distributed_router")
     boolean usesDistributedRouter = false;
 
     @Column(name = "region_level_vpc")
@@ -92,22 +92,21 @@ public class VpcVO implements Vpc {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VpcVO(final long zoneId, final String name, final String displayText, final long accountId, final long domainId,
-            final long vpcOffId, final String cidr, final String networkDomain, final boolean useDistributedRouter,
-            final boolean regionLevelVpc, final boolean isRedundant) {
+    public VpcVO(final long zoneId, final String name, final String displayText, final long accountId, final long domainId, final long vpcOffId, final String cidr,
+            final String networkDomain, final boolean useDistributedRouter, final boolean regionLevelVpc, final boolean isRedundant) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
         this.accountId = accountId;
         this.domainId = domainId;
         this.cidr = cidr;
-        uuid = UUID.randomUUID().toString();
-        state = State.Enabled;
+        this.uuid = UUID.randomUUID().toString();
+        this.state = State.Enabled;
         this.networkDomain = networkDomain;
-        vpcOfferingId = vpcOffId;
-        usesDistributedRouter = useDistributedRouter;
+        this.vpcOfferingId = vpcOffId;
+        this.usesDistributedRouter = useDistributedRouter;
         this.regionLevelVpc = regionLevelVpc;
-        redundant = isRedundant;
+        this.redundant = isRedundant;
     }
 
     @Override
@@ -209,7 +208,6 @@ public class VpcVO implements Vpc {
         return regionLevelVpc;
     }
 
-
     public void setDisplay(final boolean display) {
         this.display = display;
     }
@@ -219,13 +217,13 @@ public class VpcVO implements Vpc {
         return display;
     }
 
+    public void setRedundant(final boolean isRedundant) {
+        redundant = isRedundant;
+    }
+
     @Override
     public boolean isRedundant() {
         return redundant;
-    }
-
-    public void setRedundant(final boolean isRedundant) {
-        redundant = isRedundant;
     }
 
     @Override
@@ -237,4 +235,5 @@ public class VpcVO implements Vpc {
     public boolean usesDistributedRouter() {
         return usesDistributedRouter;
     }
+
 }

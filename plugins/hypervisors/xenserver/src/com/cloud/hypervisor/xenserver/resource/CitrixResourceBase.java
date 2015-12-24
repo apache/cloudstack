@@ -86,6 +86,7 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.QuaggaConfigCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -3908,6 +3909,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return prepareNetworkElementCommand((SetSourceNatCommand) cmd);
         } else if (cmd instanceof SetNetworkACLCommand) {
             return prepareNetworkElementCommand((SetNetworkACLCommand) cmd);
+        } else if (cmd instanceof SetNetworkACLCommand) {
+            return prepareNetworkElementCommand((QuaggaConfigCommand) cmd);
         }
         return new ExecutionResult(true, null);
     }
@@ -4112,6 +4115,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (final Exception e) {
             return new ExecutionResult(false, e.getMessage());
         }
+        return new ExecutionResult(true, null);
+    }
+
+    protected ExecutionResult prepareNetworkElementCommand(final QuaggaConfigCommand cmd) {
+        final Connection conn = getConnection();
+        final String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         return new ExecutionResult(true, null);
     }
 

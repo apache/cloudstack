@@ -819,6 +819,179 @@ var addGuestNetworkDialog = {
 }
 
 
+
+//Add Guest Network in Advanced zone (for root-admin only)
+var addDynamicVpcDialog = {
+  zoneObjs: [],
+  physicalNetworkObjs: [],
+  networkOfferingObjs: [],
+  def: {
+      label: 'label.vpc.dynamicrouting.add',
+
+      messages: {
+          notification: function(args) {
+              return 'label.vpc.dynamicrouting.add';
+          }
+      },
+      createForm: {
+          title: 'label.add.vpc',
+          messages: {
+              notification: function(args) {
+                  return 'label.add.vpc';
+              }
+          },
+          fields: {
+              name: {
+                  label: 'label.name',
+                  docID: 'helpVPCName',
+                  validation: {
+                      required: true
+                  }
+              },
+              displaytext: {
+                  label: 'label.description',
+                  docID: 'helpVPCDescription',
+                  validation: {
+                      required: true
+                  }
+              },
+              zoneid: {
+                  label: 'label.zone',
+                  docID: 'helpVPCZone',
+                  validation: {
+                      required: true
+                  },
+                  select: function(args) {
+                      var data = {};
+                      $.ajax({
+                          url: createURL('listZones'),
+                          data: data,
+                          success: function(json) {
+                              var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
+                              var advZones = $.grep(zones, function(zone) {
+                                  return zone.networktype == 'Advanced' && !zone.securitygroupsenabled;
+                              });
+                              args.response.success({
+                                  data: $.map(advZones, function(zone) {
+                                      return {
+                                          id: zone.id,
+                                          description: zone.name
+                                      };
+                                  })
+                              });
+                          }
+                      });
+                  }
+              },
+              netmask: {
+                  label: 'label.vpc.dynamicrouting.ipv4.netmask',
+                  docID: 'helpVPCNetmask'
+              },
+              networkdomain: {
+                  docID: 'helpVPCDomain',
+                  label: 'label.DNS.domain.for.guest.networks'
+                  //format: FQDN
+              },
+              publicLoadBalancerProvider: {
+                  label: 'label.public.load.balancer.provider',
+                  select: function(args) {
+                      var items = [];
+                      items.push({
+                          id: 'VpcVirtualRouter',
+                          description: 'VpcVirtualRouter'
+                      });
+                      items.push({
+                          id: 'Netscaler',
+                          description: 'Netscaler'
+                      });
+                      args.response.success({
+                          data: items
+                      });
+                  }
+              },
+              vpcoffering: {
+                  label: 'label.vpc.offering',
+                  validation: {
+                      required: true
+                  },
+
+                  select: function(args) {
+                      var data = {};
+                      $.ajax({
+                          url: createURL('listVPCOfferings&supportedservices=VPCDynamicRouting'),
+                          data: {},
+                          success: function(json) {
+                                var offerings  = json.listvpcofferingsresponse.vpcoffering ? json.listvpcofferingsresponse.vpcoffering : [];
+                                var filteredofferings = $.grep(offerings, function(offering) {
+                                    return offering.state == 'Enabled';
+                                });
+                              args.response.success({
+                                  data: $.map(filteredofferings, function(vpco) {
+                                      return {
+                                          id: vpco.id,
+                                          description: vpco.name
+                                      };
+                                  })
+                              });
+                          }
+                      });
+                  }
+              }
+          }
+      },
+
+      action: function(args) {
+          var vpcOfferingName = args.data.vpcoffering
+          var dataObj = {
+              name: args.data.name,
+              displaytext: args.data.displaytext,
+              zoneid: args.data.zoneid,
+              cidr: args.data.cidr,
+              vpcofferingid: args.data.vpcoffering,
+              netmask: args.data.netmask
+          };
+
+          if (args.data.networkdomain != null && args.data.networkdomain.length > 0)
+              $.extend(dataObj, {
+                  networkdomain: args.data.networkdomain
+              });
+
+          $.ajax({
+              url: createURL("createVPC"),
+              dataType: "json",
+              data: dataObj,
+              async: true,
+              success: function(json) {
+                  var jid = json.createvpcresponse.jobid;
+                  args.response.success({
+                      _custom: {
+                          jobId: jid,
+                          getUpdatedItem: function(json) {
+                              return json.queryasyncjobresultresponse.jobresult.vpc;
+                          }
+                      }
+                  });
+              },
+              error: function(data) {
+                  args.response.error(parseXMLHttpResponse(data));
+              }
+          });
+
+      },
+      notification: {
+          poll: function(args) {
+              args.complete();
+          }
+      }
+  }
+}
+
+
+
+
+
+
+
     function isLdapEnabled() {
         var result;
         $.ajax({

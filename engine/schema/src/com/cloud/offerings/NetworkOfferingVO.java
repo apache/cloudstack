@@ -139,7 +139,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "keep_alive_enabled")
     boolean keepAliveEnabled = false;
 
-    @Column(name="supports_streched_l2")
+    @Column(name = "supports_streched_l2")
     boolean supportsStrechedL2 = false;
 
     @Override
@@ -301,9 +301,9 @@ public class NetworkOfferingVO implements NetworkOffering {
         return egressdefaultpolicy;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
-            Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode,
-            boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps,
+            boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean specifyIpRanges, boolean isPersistent,
+            boolean internalLb, boolean publicLb) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -331,26 +331,12 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.internalLb = internalLb;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
-            Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb,
-            boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges, boolean inline, boolean isPersistent,
-            boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean egressdefaultpolicy, boolean supportsStrechedL2) {
-        this(name,
-            displayText,
-            trafficType,
-            systemOnly,
-            specifyVlan,
-            rateMbps,
-            multicastRateMbps,
-            isDefault,
-            availability,
-            tags,
-            guestType,
-            conserveMode,
-            specifyIpRanges,
-            isPersistent,
-            internalLb,
-            publicLb);
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps,
+            boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat,
+            boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges, boolean inline, boolean isPersistent, boolean associatePublicIP,
+            boolean publicLb, boolean internalLb, boolean egressdefaultpolicy, boolean supportsStrechedL2) {
+        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges,
+                isPersistent, internalLb, publicLb);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
@@ -379,22 +365,8 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     public NetworkOfferingVO(String name, Network.GuestType guestType) {
-        this(name,
-            "System Offering for " + name,
-            TrafficType.Guest,
-            true,
-            true,
-            0,
-            0,
-            true,
-            Availability.Optional,
-            null,
-            Network.GuestType.Isolated,
-            true,
-            false,
-            false,
-            false,
-            false);
+        this(name, "System Offering for " + name, TrafficType.Guest, true, true, 0, 0, true, Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false,
+                false);
         this.state = State.Enabled;
     }
 

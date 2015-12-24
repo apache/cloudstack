@@ -18,21 +18,22 @@
  */
 package com.cloud.network.vpc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.element.NetworkElement;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -41,8 +42,12 @@ import org.mockito.MockitoAnnotations;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
+import com.cloud.utils.net.cidr.BadCIDRException;
+
 import org.powermock.reflect.Whitebox;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -50,14 +55,18 @@ public class VpcManagerImplTest {
 
     @Mock
     VpcOfferingServiceMapDao vpcOffSvcMapDao;
+
     VpcManagerImpl manager;
 
+    @Mock
+    DataCenterDao dcDao;
+
     @Before
-    public void setup()
-    {
+    public void setup() {
         MockitoAnnotations.initMocks(this);
         manager = new VpcManagerImpl();
         manager._vpcOffSvcMapDao = vpcOffSvcMapDao;
+        manager._dcDao = dcDao;
     }
 
     @Test
@@ -70,7 +79,7 @@ public class VpcManagerImplTest {
         Map<Service, Set<Provider>> map = manager.getVpcOffSvcProvidersMap(vpcOffId);
 
         assertNotNull(map);
-        assertEquals(map.size(),1);
+        assertEquals(map.size(), 1);
     }
 
     protected Map<String, String> createFakeCapabilityInputMap() {
@@ -94,10 +103,8 @@ public class VpcManagerImplTest {
         servicePair.put(VpcManagerImpl.CAPABILITYVALUE, VpcManagerImpl.TRUE_VALUE);
         serviceCapabilitystList.put("", servicePair);
 
-
         // Execute
-        boolean result = Whitebox.invokeMethod(this.manager, "isVpcOfferingForRegionLevelVpc",
-                serviceCapabilitystList); //, Network.Capability.RedundantRouter.getName(), Service.SourceNat);
+        boolean result = Whitebox.invokeMethod(this.manager, "isVpcOfferingForRegionLevelVpc", serviceCapabilitystList); //, Network.Capability.RedundantRouter.getName(), Service.SourceNat);
 
         // Assert
         assertEquals("VpcOffering should be created for Region Level Vpc", true, result);
@@ -112,8 +119,7 @@ public class VpcManagerImplTest {
         serviceCapabilitystList.put("", createFakeCapabilityInputMap());
 
         // Execute
-        boolean result = Whitebox.invokeMethod(this.manager, "isVpcOfferingForRegionLevelVpc",
-                serviceCapabilitystList);
+        boolean result = Whitebox.invokeMethod(this.manager, "isVpcOfferingForRegionLevelVpc", serviceCapabilitystList);
 
         // Assert
         assertEquals("VpcOffering should be created NOT for Region Level Vpc", false, result);
@@ -152,8 +158,7 @@ public class VpcManagerImplTest {
         final boolean distributedRouter = true;
         final NetworkElement nwElement1 = mock(NetworkElement.class);
         this.manager._ntwkModel = mock(NetworkModel.class);
-        when(this.manager._ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()))
-                .thenReturn(nwElement1);
+        when(this.manager._ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName())).thenReturn(nwElement1);
         final Map<Service, Map<Network.Capability, String>> capabilitiesService1 = new HashMap<>();
         when(nwElement1.getCapabilities()).thenReturn(capabilitiesService1);
         capabilities.put(Capability.RegionLevelVpc, "");
@@ -162,4 +167,23 @@ public class VpcManagerImplTest {
 
         return providers;
     }
+
+    @Test
+    public void checkValidCidr() throws BadCIDRException {
+        Long zoneid = 1L;
+        DataCenterVO dc = new DataCenterVO(zoneid, "TestZone", null, null, null, null, null, null, null, 1L, null, null, null);
+        dc.setDetails(new HashMap<String, String>());
+        when(dcDao.findById(zoneid)).thenReturn(dc);
+        manager.updateQuaggaConfig(zoneid, "OSPF", "223", (short)10,  (short)40,  (short)5,  (short)1, "MD5", "sfkjsdkk123", "192.168.100.0/20", true);
+    }
+
+    @Test(expected=InvalidParameterValueException.class)
+    public void checkInValidCidr() throws BadCIDRException {
+        Long zoneid = 1L;
+        DataCenterVO dc = new DataCenterVO(zoneid, "TestZone", null, null, null, null, null, null, null, 1L, null, null, null);
+        dc.setDetails(new HashMap<String, String>());
+        when(manager._dcDao.findById(zoneid)).thenReturn(dc);
+        manager.updateQuaggaConfig(zoneid, "OSPF", "2222",  (short)10,  (short)40,  (short)5,  (short)1, "MD5", "sfkjsdkk123", "192.168.100.x", true);
+    }
+
 }

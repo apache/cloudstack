@@ -181,6 +181,7 @@ import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -299,6 +300,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     VMInstanceDao _vmDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
+    @Inject
+    VpcOfferingServiceMapDao _vpcOffServiceDao;
     @Inject
     GuestOSDao _guestOSDao = null;
     @Inject

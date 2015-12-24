@@ -485,6 +485,10 @@ updateVPCOffering=1
 deleteVPCOffering=1
 listVPCOfferings=15
 
+#### VPC OSPF config commands
+vpcOSPFConfig=15
+vpcOSPFConfigUpdate=1
+
 #### Private gateway commands
 createPrivateGateway=1
 listPrivateGateways=15

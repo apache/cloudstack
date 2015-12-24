@@ -867,6 +867,8 @@
               <exclude>systemvm/patches/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
               <exclude>systemvm/patches/debian/vpn/etc/ipsec.secrets</exclude>
               <exclude>systemvm/patches/debian/config/etc/haproxy/haproxy.cfg</exclude>
+              <exclude>systemvm/patches/debian/config/etc/quagga/daemons</exclude>
+              <exclude>systemvm/patches/debian/config/etc/quagga/debian.conf</exclude>
               <exclude>systemvm/patches/debian/config/etc/cloud-nic.rules</exclude>
               <exclude>systemvm/patches/debian/config/etc/modprobe.d/aesni_intel</exclude>
               <exclude>systemvm/patches/debian/config/etc/rc.local</exclude>

@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VpcOffering extends InternalIdentity, Identity {
+
     public enum State {
         Disabled, Enabled
     }
@@ -27,6 +28,7 @@ public interface VpcOffering extends InternalIdentity, Identity {
     public static final String defaultVPCOfferingName = "Default VPC offering";
     public static final String defaultVPCNSOfferingName = "Default VPC  offering with Netscaler";
     public static final String redundantVPCOfferingName = "Redundant VPC offering";
+    public static final String routedVPCOfferingName = "Default Dynamically Routed VPC offering";
 
     /**
      *

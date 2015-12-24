@@ -62,7 +62,31 @@ public class VpcServiceMapDaoImpl extends GenericDaoBase<VpcServiceMapVO, Long> 
 
     @Override
     public boolean areServicesSupportedInVpc(long vpcId, Service... services) {
-        // TODO Auto-generated method stub
+        SearchCriteria<VpcServiceMapVO> sc = MultipleServicesSearch.create();
+        sc.setParameters("vpcId", vpcId);
+
+        if (services != null) {
+            String[] servicesStr = new String[services.length];
+
+            int i = 0;
+            for (Service service : services) {
+                servicesStr[i] = service.getName();
+                i++;
+            }
+
+            sc.setParameters("service", (Object[])servicesStr);
+        }
+
+        List<VpcServiceMapVO> vpcServices = listBy(sc);
+
+        if (services != null) {
+            if (vpcServices.size() == services.length) {
+                return true;
+            }
+        } else if (!vpcServices.isEmpty()) {
+            return true;
+        }
+
         return false;
     }
 

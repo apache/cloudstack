@@ -1125,5 +1125,22 @@ dictionary = {
 'label.root.disk.offering': '<fmt:message key="label.root.disk.offering" />',
 'message.configure.firewall.rules.allow.traffic': '<fmt:message key="message.configure.firewall.rules.allow.traffic" />',
 'message.configure.firewall.rules.block.traffic': '<fmt:message key="message.configure.firewall.rules.block.traffic" />',
+'label.vpc.dynamicallyrouted': '<fmt:message key="label.vpc.dynamicallyrouted" />',
+'label.vpc.dynamicallyrouted.enabled': '<fmt:message key="label.vpc.dynamicallyrouted.enabled" />',
+'label.vpc.dynamicallyrouted.protocol': '<fmt:message key="label.vpc.dynamicallyrouted.protocol" />',
+'label.vpc.dynamicallyrouted.ospfarea': '<fmt:message key="label.vpc.dynamicallyrouted.ospfarea" />',
+'label.vpc.dynamicallyrouted.hellointerval': '<fmt:message key="label.vpc.dynamicallyrouted.hellointerval" />',
+'label.vpc.dynamicallyrouted.deadinterval': '<fmt:message key="label.vpc.dynamicallyrouted.deadinterval" />',
+'label.vpc.dynamicallyrouted.retransmitinterval': '<fmt:message key="label.vpc.dynamicallyrouted.retransmitinterval" />',
+'label.vpc.dynamicallyrouted.transitdelay': '<fmt:message key="label.vpc.dynamicallyrouted.transitdelay" />',
+'label.vpc.dynamicallyrouted.authentication': '<fmt:message key="label.vpc.dynamicallyrouted.authentication" />',
+'label.vpc.dynamicallyrouted.password': '<fmt:message key="label.vpc.dynamicallyrouted.password" />',
+'label.vpc.dynamicallyrouted.supercidr': '<fmt:message key="label.vpc.dynamicallyrouted.supercidr" />',
+'label.vpc.dynamicallyrouted.configitemname': '<fmt:message key="label.vpc.dynamicallyrouted.configitemname" />',
+'label.vpc.dynamicallyrouted.configitemvalue': '<fmt:message key="label.vpc.dynamicallyrouted.configitemvalue" />',
+'label.vpc.dynamicrouting.service': '<fmt:message key="label.vpc.dynamicrouting.service" />',
+'label.vpc.dynamicrouting.add': '<fmt:message key="label.vpc.dynamicrouting.add" />',
+'label.vpc.dynamicrouting.ipv4.netmask': '<fmt:message key="label.vpc.dynamicrouting.ipv4.netmask" />',
+
 };
 </script>

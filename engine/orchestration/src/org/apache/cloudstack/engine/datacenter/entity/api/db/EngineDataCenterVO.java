@@ -38,6 +38,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 
 import com.cloud.network.Network.Provider;
+import com.cloud.network.vpc.OSPFZoneConfig;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -500,5 +501,10 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
 
     public void setIp6Dns2(String ip6Dns2) {
         this.ip6Dns2 = ip6Dns2;
+    }
+
+    @Override
+    public boolean isDynamicRoutingEnabled() {
+        return Boolean.valueOf(getDetail(OSPFZoneConfig.Params.ENABLED.name()));
     }
 }
