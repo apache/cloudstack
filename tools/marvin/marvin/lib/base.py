@@ -3878,7 +3878,7 @@ class NiciraNvp:
 
         if l2gatewayserviceuuid:
             cmd.l2gatewayserviceuuid = l2gatewayserviceuuid
-        else:
+        elif services and 'l2gatewayserviceuuid' in services:
             cmd.l2gatewayserviceuuid = services['l2gatewayserviceuuid']
 
 	return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
@@ -4060,9 +4060,9 @@ class VpcOffering:
     @classmethod
     def create(cls, apiclient, services):
         """Create vpc offering"""
-        
+
         import logging
-        
+
         cmd = createVPCOffering.createVPCOfferingCmd()
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.displaytext = services["displaytext"]
