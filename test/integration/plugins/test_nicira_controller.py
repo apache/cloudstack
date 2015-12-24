@@ -45,6 +45,23 @@ import logging
 
 class TestNiciraContoller(cloudstackTestCase):
 
+    '''
+    Example of marvin config with NSX specific values
+        "niciraNvp": {
+            "hosts": [ "nsxcon1.cloud.lan", "nsxcon2.cloud.lan", "nsxcon3.cloud.lan" ],
+            "shared_network": {
+                "l2gatewayserviceuuid": "3595ca67-959f-47d4-8f01-0492a8e96205",
+                "iprange" : {
+                    "startip": "192.168.26.2",
+                    "endip": "192.168.26.20",
+                    "netmask": "255.255.255.0",
+                    "gateway": "192.168.26.1",
+                    "vlan": "50",
+                    "vlan_uuid": "5cdaa49d-06cd-488a-9ca4-e954a3181f54"
+                }
+            }
+        }
+    '''
     @classmethod
     def setUpClass(cls):
         test_case = super(TestNiciraContoller, cls)
@@ -55,52 +72,55 @@ class TestNiciraContoller(cloudstackTestCase):
 
         cls.physical_networks = cls.config.zones[0].physical_networks
         cls.nicira_hosts      = cls.config.niciraNvp.hosts
-		
-        cls.l2gatewayserviceuuid   = cls.config.niciraNvp.l2gatewayserviceuuid
+
+        cls.nicira_shared_network_iprange = cls.config.niciraNvp.shared_network.iprange
+        cls.l2gatewayserviceuuid          = cls.config.niciraNvp.shared_network.l2gatewayserviceuuid
 
         cls.physical_network_id = cls.get_nicira_enabled_physical_network_id(cls.physical_networks)
 
         cls.network_offerring_services = [
-			{
-				'name':              'NiciraEnabledNetwork',
-				'displaytext':       'NiciraEnabledNetwork',
-				'guestiptype':       'Isolated',
-            			'supportedservices': 'SourceNat,Dhcp,Dns,Firewall,PortForwarding,Connectivity',
-				'traffictype':       'GUEST',
-				'availability':      'Optional',
-				'serviceProviderList': {
-						'SourceNat':      'VirtualRouter',
-                    				'Dhcp':           'VirtualRouter',
-                    				'Dns':            'VirtualRouter',
-						'Firewall':       'VirtualRouter',
-						'PortForwarding': 'VirtualRouter',
-						'Connectivity':   'NiciraNvp'
-				}
-			},
-			{
-				'name':              'NiciraEnabledSharedNetwork',
-				'displaytext':       'NiciraEnabledSharedNetwork',
-				'guestiptype':       'Shared',
-				'supportedservices': 'Connectivity,Dhcp,UserData',
-				'traffictype':       'GUEST',
-				'availability':      'Optional',
-				'specifyVlan':		'true',
-				'specifyIpRanges':	'true',
-				'serviceProviderList': {
-						'Connectivity':   	'NiciraNvp',
-						'Dhcp':       		'VirtualRouter',
-						'UserData': 		'VirtualRouter'
-				}
-			}
-		]
+            {
+                'name':              'NiciraEnabledIsolatedNetwork',
+                'displaytext':       'NiciraEnabledIsolatedNetwork',
+                'guestiptype':       'Isolated',
+                'supportedservices': 'SourceNat,Dhcp,Dns,Firewall,PortForwarding,Connectivity',
+                'traffictype':       'GUEST',
+                'availability':      'Optional',
+                'serviceProviderList': {
+                        'SourceNat':      'VirtualRouter',
+                        'Dhcp':           'VirtualRouter',
+                        'Dns':            'VirtualRouter',
+                        'Firewall':       'VirtualRouter',
+                        'PortForwarding': 'VirtualRouter',
+                        'Connectivity':   'NiciraNvp'
+                }
+            },
+            {
+                'name':              'NiciraEnabledSharedNetwork',
+                'displaytext':       'NiciraEnabledSharedNetwork',
+                'guestiptype':       'Shared',
+                'supportedservices': 'Connectivity,Dhcp,UserData,SourceNat,StaticNat,Lb,PortForwarding',
+                'traffictype':       'GUEST',
+                'availability':      'Optional',
+                'specifyVlan':        'true',
+                'specifyIpRanges':    'true',
+                'serviceProviderList': {
+                        'Connectivity':   'NiciraNvp',
+                        'Dhcp':           'VirtualRouter',
+                        'SourceNat':      'VirtualRouter',
+                        'StaticNat':      'VirtualRouter',
+                        'Lb':             'VirtualRouter',
+                        'PortForwarding': 'VirtualRouter',
+                        'UserData':       'VirtualRouter'
+                }
+            }
+        ]
 
         cls.network_offering_isolated = NetworkOffering.create(cls.api_client, cls.network_offerring_services[0])
         cls.network_offering_isolated.update(cls.api_client, state='Enabled')
 
         cls.network_offering_shared = NetworkOffering.create(cls.api_client, cls.network_offerring_services[1])
         cls.network_offering_shared.update(cls.api_client, state='Enabled')
-		
-        cls.ip_ranges_shared = cls.config.zones[0].ipranges[0]
 
         cls.nicira_credentials = {
             'username': 'admin',
@@ -117,7 +137,9 @@ class TestNiciraContoller(cloudstackTestCase):
             cls.nicira_credentials
         )
 
-        cls.domain = get_domain(cls.api_client)
+        cls.admin_account   = 'admin'
+        cls.admin_domain    = get_domain(cls.api_client)
+
         cls.zone   = get_zone(cls.api_client, test_client.getZoneForTests())
 
         template = get_template(
@@ -148,7 +170,7 @@ class TestNiciraContoller(cloudstackTestCase):
                     'cpunumber':   1,
                     'cpuspeed':    100,
                     'memory':      64,
-					'offerha':		'true'
+                    'offerha':     'true'
                 }
             }
         }
@@ -164,7 +186,7 @@ class TestNiciraContoller(cloudstackTestCase):
         cls.cleanup = [
             cls.network_offering_isolated,
             cls.service_offering,
-			cls.network_offering_shared
+            cls.network_offering_shared
         ]
 
         cls.logger = logging.getLogger('TestNiciraContoller')
@@ -246,18 +268,7 @@ class TestNiciraContoller(cloudstackTestCase):
             raise Exception("None of the supplied hosts (%s) is a Nicira slave" % hosts)
 
 
-    def add_nicira_device(self, hostname):
-        nicira_device = NiciraNvp.add(
-            self.api_client,
-            None,
-            self.physical_network_id,
-            hostname=hostname,
-            username=self.nicira_credentials['username'],
-            password=self.nicira_credentials['password'],
-            transportzoneuuid=self.transport_zone_uuid)
-        self.test_cleanup.append(nicira_device)
-
-    def add_nicira_device_l2gateway(self, hostname):
+    def add_nicira_device(self, hostname, l2gatewayserviceuuid=None):
         nicira_device = NiciraNvp.add(
             self.api_client,
             None,
@@ -266,7 +277,8 @@ class TestNiciraContoller(cloudstackTestCase):
             username=self.nicira_credentials['username'],
             password=self.nicira_credentials['password'],
             transportzoneuuid=self.transport_zone_uuid,
-            l2gatewayserviceuuid=self.l2gatewayserviceuuid)
+            l2gatewayserviceuuid=l2gatewayserviceuuid
+        )
         self.test_cleanup.append(nicira_device)
 
     def create_guest_isolated_network(self):
@@ -279,8 +291,8 @@ class TestNiciraContoller(cloudstackTestCase):
         network = Network.create(
             self.api_client,
             network_services,
-            accountid='admin',
-            domainid=self.domain.id,
+            accountid=self.admin_account,
+            domainid=self.admin_domain.id
         )
         self.test_cleanup.append(network)
         return network
@@ -291,17 +303,17 @@ class TestNiciraContoller(cloudstackTestCase):
             'displaytext'     : 'nicira_enabled_network_shared',
             'zoneid'          : self.zone.id,
             'networkoffering' : self.network_offering_shared.id,
-			'startip'			: self.ip_ranges_shared.startip,
-			'endip'				: self.ip_ranges_shared.endip,
-			'netmask'			: self.ip_ranges_shared.netmask,
-			'gateway'			: self.ip_ranges_shared.gateway
+            'startip'         : self.nicira_shared_network_iprange.startip,
+            'endip'           : self.nicira_shared_network_iprange.endip,
+            'netmask'         : self.nicira_shared_network_iprange.netmask,
+            'gateway'         : self.nicira_shared_network_iprange.gateway,
+            'vlan'            : self.nicira_shared_network_iprange.vlan
         }
         network = Network.create(
             self.api_client,
             network_services,
-            accountid='admin',
-            domainid=self.domain.id,
-			vlan=self.ip_ranges_shared.vlan
+            accountid=self.admin_account,
+            domainid=self.admin_domain.id
         )
         self.test_cleanup.append(network)
         return network
@@ -312,17 +324,17 @@ class TestNiciraContoller(cloudstackTestCase):
             'displaytext'     : 'nicira_enabled_network_shared',
             'zoneid'          : self.zone.id,
             'networkoffering' : self.network_offering_shared.id,
-			'startip'			: self.ip_ranges_shared.startip,
-			'endip'				: self.ip_ranges_shared.endip,
-			'netmask'			: self.ip_ranges_shared.netmask,
-			'gateway'			: self.ip_ranges_shared.gateway
+            'startip'         : self.nicira_shared_network_iprange.startip,
+            'endip'           : self.nicira_shared_network_iprange.endip,
+            'netmask'         : self.nicira_shared_network_iprange.netmask,
+            'gateway'         : self.nicira_shared_network_iprange.gateway,
+            'vlan'            : self.nicira_shared_network_iprange.vlan_uuid
         }
         network = Network.create(
             self.api_client,
             network_services,
-            accountid='admin',
-            domainid=self.domain.id,
-			vlan=self.ip_ranges_shared.vlan_uuid
+            accountid=self.admin_account,
+            domainid=self.admin_domain.id
         )
         self.test_cleanup.append(network)
         return network
@@ -333,16 +345,16 @@ class TestNiciraContoller(cloudstackTestCase):
             'displaytext'     : 'nicira_enabled_network_shared',
             'zoneid'          : self.zone.id,
             'networkoffering' : self.network_offering_shared.id,
-			'startip'			: self.ip_ranges_shared.startip,
-			'endip'				: self.ip_ranges_shared.endip,
-			'netmask'			: self.ip_ranges_shared.netmask,
-			'gateway'			: self.ip_ranges_shared.gateway
+            'startip'         : self.nicira_shared_network_iprange.startip,
+            'endip'           : self.nicira_shared_network_iprange.endip,
+            'netmask'         : self.nicira_shared_network_iprange.netmask,
+            'gateway'         : self.nicira_shared_network_iprange.gateway
         }
         network = Network.create(
             self.api_client,
             network_services,
-            accountid='admin',
-            domainid=self.domain.id,
+            accountid=self.admin_account,
+            domainid=self.admin_domain.id,
         )
         self.test_cleanup.append(network)
         return network
@@ -352,8 +364,8 @@ class TestNiciraContoller(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
-            accountid='admin',
-            domainid=self.domain.id,
+            accountid=self.admin_account,
+            domainid=self.admin_domain.id,
             serviceofferingid=self.service_offering.id,
             networkids=[network.id],
             mode=self.vm_services['mode']
@@ -365,8 +377,8 @@ class TestNiciraContoller(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
-            accountid='admin',
-            domainid=self.domain.id,
+            accountid=self.admin_account,
+            domainid=self.admin_domain.id,
             serviceofferingid=self.service_offering.id,
             networkids=[network.id],
             mode='BASIC'
@@ -378,8 +390,8 @@ class TestNiciraContoller(cloudstackTestCase):
     def get_routers_for_network(self, network):
         return list_routers(
             self.api_client,
-            account='admin',
-            domainid=self.domain.id,
+            accountid=self.admin_account,
+            domainid=self.admin_domain.id,
             networkid=network.id
         )
 
@@ -387,8 +399,8 @@ class TestNiciraContoller(cloudstackTestCase):
     def get_hosts(self):
         return list_hosts(
             self.api_client,
-            account='admin',
-            domainid=self.domain.id
+            accountid=self.admin_account,
+            domainid=self.admin_domain.id
         )
 
 
@@ -421,9 +433,9 @@ class TestNiciraContoller(cloudstackTestCase):
         self.logger.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
             self.api_client,
-            accountid='admin',
+            accountid=self.admin_account,
             zoneid=self.zone.id,
-            domainid=self.domain.id,
+            domainid=self.admin_domain.id,
             networkid=network.id
         )
         self.logger.debug("Associated %s with network %s" % (public_ip.ipaddress.ipaddress, network.id))
@@ -536,10 +548,10 @@ class TestNiciraContoller(cloudstackTestCase):
             CASE 1) Numerical VLAN_ID provided in network creation
         """
         self.debug("Starting test case 1 for Shared Networks")
-        self.add_nicira_device_l2gateway(self.nicira_master_controller)
+        self.add_nicira_device(self.nicira_master_controller, self.l2gatewayserviceuuid)
         network = self.create_guest_shared_network_numerical_vlanid()
         virtual_machine = self.create_virtual_machine_shared_networks(network)
-		
+
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
         self.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
 
@@ -557,10 +569,10 @@ class TestNiciraContoller(cloudstackTestCase):
             CASE 2) Logical Router's UUID as VLAN_ID provided in network creation
         """
         self.debug("Starting test case 2 for Shared Networks")
-        self.add_nicira_device_l2gateway(self.nicira_master_controller)
+        self.add_nicira_device(self.nicira_master_controller, self.l2gatewayserviceuuid)
         network = self.create_guest_shared_network_uuid_vlanid()
         virtual_machine = self.create_virtual_machine_shared_networks(network)
-		
+
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
         self.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
 
