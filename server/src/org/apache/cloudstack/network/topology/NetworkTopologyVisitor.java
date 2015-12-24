@@ -30,6 +30,7 @@ import com.cloud.network.rules.NetworkAclsRules;
 import com.cloud.network.rules.NicPlugInOutRules;
 import com.cloud.network.rules.PasswordToRouterRules;
 import com.cloud.network.rules.PrivateGatewayRules;
+import com.cloud.network.rules.QuaggaRules;
 import com.cloud.network.rules.SshKeyToRouterRules;
 import com.cloud.network.rules.StaticNatRules;
 import com.cloud.network.rules.StaticRoutesRules;
@@ -60,4 +61,6 @@ public abstract class NetworkTopologyVisitor {
     public abstract boolean visit(DhcpSubNetRules dhcpRules) throws ResourceUnavailableException;
     public abstract boolean visit(NicPlugInOutRules nicPlugInOutRules) throws ResourceUnavailableException;
     public abstract boolean visit(StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException;
+    public abstract boolean visit(QuaggaRules quaggaRules) throws ResourceUnavailableException;
+
 }

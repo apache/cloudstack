@@ -30,6 +30,7 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Random;
@@ -40,6 +41,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
@@ -479,9 +481,7 @@ public class NetUtils {
     public static String long2Mac(final long macAddress) {
         final StringBuilder result = new StringBuilder(17);
         try (Formatter formatter = new Formatter(result)) {
-            formatter.format("%02x:%02x:%02x:%02x:%02x:%02x",
-                    macAddress >> 40 & 0xff, macAddress >> 32 & 0xff,
-                    macAddress >> 24 & 0xff, macAddress >> 16 & 0xff,
+            formatter.format("%02x:%02x:%02x:%02x:%02x:%02x", macAddress >> 40 & 0xff, macAddress >> 32 & 0xff, macAddress >> 24 & 0xff, macAddress >> 16 & 0xff,
                     macAddress >> 8 & 0xff, macAddress & 0xff);
         }
         return result.toString();
@@ -516,7 +516,7 @@ public class NetUtils {
             return false;
         } else {
             final InetAddress ip = parseIpAddress(ipAddress);
-            if(ip != null) {
+            if (ip != null) {
                 return ip.isSiteLocalAddress();
             }
             return false;
@@ -541,7 +541,7 @@ public class NetUtils {
 
     public static boolean is31PrefixCidr(final String cidr) {
         final boolean isValidCird = isValidCIDR(cidr);
-        if (isValidCird){
+        if (isValidCird) {
             final String[] cidrPair = cidr.split("\\/");
             final String cidrSize = cidrPair[1];
 
@@ -888,7 +888,7 @@ public class NetUtils {
         }
         final String[] cidrPair = cidr.split("\\/");
         if (cidrPair.length != 2) {
-            throw new CloudRuntimeException("cidr is not formatted correctly: "+ cidr);
+            throw new CloudRuntimeException("cidr is not formatted correctly: " + cidr);
         }
         final String cidrAddress = cidrPair[0];
         final String cidrSize = cidrPair[1];
@@ -916,7 +916,7 @@ public class NetUtils {
         } catch (final NumberFormatException e) {
             throw new CloudRuntimeException("cidrsize is not a valid int: " + cidrSize, e);
         }
-        if(cidrSizeNum > 32 || cidrSizeNum < 0) {// assuming IPv4
+        if (cidrSizeNum > 32 || cidrSizeNum < 0) {// assuming IPv4
             throw new CloudRuntimeException("cidr size out of range: " + cidrSizeNum);
         }
         return cidrSizeNum;
@@ -1159,6 +1159,7 @@ public class NetUtils {
         }
     }
 
+
     public static boolean verifyInstanceName(final String instanceName) {
         //instance name for cloudstack vms shouldn't contain - and spaces
         if (instanceName.contains("-") || instanceName.contains(" ") || instanceName.contains("+")) {
@@ -1176,7 +1177,7 @@ public class NetUtils {
             final long shift = MAX_CIDR - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
             return cidrALong[0] >> shift == cidrBLong[0] >> shift;
         } catch (CloudRuntimeException e) {
-            s_logger.error(e.getLocalizedMessage(),e);
+            s_logger.error(e.getLocalizedMessage(), e);
         }
         return false;
     }
@@ -1302,7 +1303,7 @@ public class NetUtils {
                 return null;
             }
         }
-        if( resultAddr != null) {
+        if (resultAddr != null) {
             final IPv6Address ip = IPv6Address.fromInetAddress(resultAddr);
             return ip.toString();
         }
@@ -1431,7 +1432,7 @@ public class NetUtils {
         }
     }
 
-    public static String standardizeIp6Cidr(final String ip6Cidr){
+    public static String standardizeIp6Cidr(final String ip6Cidr) {
         try {
             return IPv6Network.fromString(ip6Cidr).toString();
         } catch (final IllegalArgumentException ex) {
@@ -1570,12 +1571,38 @@ public class NetUtils {
         }
         return false;
     }
-    public static boolean isNetworkorBroadcastIP(String ip, String netmask){
-        String cidr = getCidrFromGatewayAndNetmask(ip,netmask);
+
+    public static boolean isNetworkorBroadcastIP(String ip, String netmask) {
+        String cidr = getCidrFromGatewayAndNetmask(ip, netmask);
         final SubnetUtils subnetUtils = new SubnetUtils(cidr);
         subnetUtils.setInclusiveHostCount(false);
         final boolean isInRange = subnetUtils.getInfo().isInRange(ip);
         return !isInRange;
+    }
+
+    public static List<String> getAllSubnets(final String[] superCidrList, final String netmask) {
+        if (!NetUtils.isValidNetmask(netmask)) {
+            throw new IllegalStateException("Invalid netmask");
+        }
+
+        List<String> addresses = new ArrayList<String>();
+        if (!ArrayUtils.isEmpty(superCidrList)) {
+            for (String superCidr : superCidrList) {
+                SubnetUtils utils = new SubnetUtils(superCidr);
+                addresses.addAll(Arrays.asList(utils.getInfo().getAllAddresses()));
+            }
+        }
+
+        List<String> subnets = new ArrayList<String>();
+        String cidr = "";
+        for (String tip : addresses) {
+            String new_cidr = NetUtils.getCidrFromGatewayAndNetmask(tip, netmask);
+            if (!cidr.endsWith(new_cidr)) {
+                subnets.add(new_cidr);
+                cidr = new_cidr;
+            }
+        }
+        return subnets;
     }
 
 

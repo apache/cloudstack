@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.utils.net.cidr.CIDR;
+import org.apache.cloudstack.utils.net.cidr.CIDRException;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -106,12 +108,10 @@ public interface VpcManager {
      * @throws InsufficientCapacityException
      * @throws ResourceAllocationException
      */
-    Network
-        createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
-            Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
-            Boolean displayNetworkEnabled)
+    Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
+            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean displayNetworkEnabled)
 
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
      * Assigns source nat public IP address to VPC
@@ -161,8 +161,9 @@ public interface VpcManager {
      * @param gateway
      * @param networkOwner TODO
      */
-        void
-        validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId);
+    void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId);
 
     List<PrivateGateway> getVpcPrivateGateways(long vpcId);
+
+    CIDR[] getZoneSuperCidrList(long zoneId) throws CIDRException;
 }

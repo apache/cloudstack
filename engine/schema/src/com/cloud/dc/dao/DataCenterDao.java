@@ -96,4 +96,8 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     List<DataCenterVO> findByKeyword(String keyword);
 
     List<DataCenterVO> listAllZones();
+
+    boolean isDynamicallyRouted(long dcId);
+
+    String getDetail(long dcId, String name);
 }

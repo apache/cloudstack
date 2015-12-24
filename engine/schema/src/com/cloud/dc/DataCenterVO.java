@@ -32,6 +32,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import com.cloud.network.Network.Provider;
+import com.cloud.network.vpc.OSPFZoneConfig;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -363,6 +364,13 @@ public class DataCenterVO implements DataCenter {
     public void setLocalStorageEnabled(boolean enabled) {
         this.localStorageEnabled = enabled;
     }
+
+    @Override
+    public boolean isDynamicRoutingEnabled() {
+        String dynr = getDetail(OSPFZoneConfig.Params.ENABLED.name());
+        return dynr == null ? false : Boolean.valueOf(dynr);
+    }
+
 
     @Override
     public Map<String, String> getDetails() {

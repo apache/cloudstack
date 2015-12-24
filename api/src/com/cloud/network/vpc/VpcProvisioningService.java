@@ -16,9 +16,10 @@
 // under the License.
 package com.cloud.network.vpc;
 
-
 import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.utils.net.cidr.CIDRException;
 
 import com.cloud.utils.Pair;
 
@@ -26,13 +27,11 @@ public interface VpcProvisioningService {
 
     public VpcOffering getVpcOffering(long vpcOfferingId);
 
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices,
-                                         Map<String, List<String>> serviceProviders,
-                                         Map serviceCapabilitystList,
-                                         Long serviceOfferingId);
+    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders, Map serviceCapabilitystList,
+            Long serviceOfferingId);
 
-    Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
-        String state, Long startIndex, Long pageSizeVal);
+    Pair<List<? extends VpcOffering>, Integer> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
+            String state, Long startIndex, Long pageSizeVal);
 
     /**
      * @param offId
@@ -48,5 +47,10 @@ public interface VpcProvisioningService {
      * @return
      */
     public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state);
+
+    Map<String, String> updateQuaggaConfig(Long id, String protocol, String ospfArea, Short helloInterval, Short deadInterval, Short retransmitInterval, Short transitDelay,
+            String authentication, String password, String superCIDR, Boolean enabled) throws CIDRException;
+
+    Map<String, String> quaggaConfig(Long id);
 
 }

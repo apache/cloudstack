@@ -31,7 +31,7 @@ public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceM
      * @param services
      * @return
      */
-    boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service[] services);
+    boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
     List<String> listServicesForVpcOffering(long vpcOfferingId);
 

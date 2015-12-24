@@ -339,6 +339,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         defaultVPCOffProviders.put(Service.StaticNat, defaultProviders);
         defaultVPCOffProviders.put(Service.PortForwarding, defaultProviders);
         defaultVPCOffProviders.put(Service.Vpn, defaultProviders);
+        defaultVPCOffProviders.put(Service.VPCDynamicRouting, defaultProviders);
 
         //#8 - network offering with internal lb service
         Map<Network.Service, Set<Network.Provider>> internalLbOffProviders = new HashMap<Network.Service, Set<Network.Provider>>();

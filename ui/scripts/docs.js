@@ -1040,6 +1040,10 @@ cloudStack.docs = {
         desc: 'CIDR range for all the tiers within a VPC. Each tier\'s CIDR must be within the Super CIDR.',
         externalLink: ''
     },
+    helpVPCNetmask: {
+        desc: 'IpV4 Netmask that will carve out a cidr for this dynamic VPC from Zone Cidr',
+        externalLink: ''
+    },
     helpVPCDomain: {
         desc: 'If you want to assign a special domain name to this VPC\'s guest VM network, specify the DNS suffix',
         externalLink: ''

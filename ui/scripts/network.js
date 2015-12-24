@@ -5401,6 +5401,7 @@
                         });
                     },
                     actions: {
+                    	
                         add: {
                             label: 'label.add.vpc',
                             messages: {
@@ -5566,7 +5567,10 @@
                             action: {
                                 custom: cloudStack.uiCustom.vpc(cloudStack.vpc)
                             }
-                        }
+                        },
+                        addDynamicVpcDialog: $.extend({}, addDynamicVpcDialog.def, {
+                            isHeader: true
+                        })
                     },
 
                     detailView: {
@@ -5784,6 +5788,9 @@
                                             return "No";
                                         }
                                     },
+                                    dynamicallyroutedvpcrouter: {
+                                        label: 'label.vpc.dynamicallyrouted'
+                                    },
                                     redundantvpcrouter: {
                                         label: 'label.redundant.vpc',
                                         converter: function(booleanValue) {
@@ -5824,6 +5831,13 @@
                                         async: true,
                                         success: function(json) {
                                             var item = json.listvpcsresponse.vpc[0];
+                                            item.dynamicallyroutedvpcrouter = "No";
+                                            for (var i = 0; i < item.service.length; i += 1 ){
+                                            	if (_l('label.vpc.dynamicrouting.service') == item.service[i].name){
+                                                    item.dynamicallyroutedvpcrouter = "Yes";
+                                                    break;
+                                            	}
+                                            }
                                             args.response.success({
                                                 data: item
                                             });

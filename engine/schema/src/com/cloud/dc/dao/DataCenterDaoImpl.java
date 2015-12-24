@@ -438,4 +438,18 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
         return dcs;
     }
+
+    @Override
+    public boolean isDynamicallyRouted(final long dcId) {
+        DataCenterVO zone = this.findById(dcId);
+        loadDetails(zone);
+        return zone.isDynamicRoutingEnabled();
+    }
+
+    @Override
+    public String getDetail(final long dcId, final String name) {
+        DataCenterVO zone = this.findById(dcId);
+        loadDetails(zone);
+        return zone.getDetail(name);
+    }
 }

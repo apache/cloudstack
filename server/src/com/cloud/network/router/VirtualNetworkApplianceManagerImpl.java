@@ -310,6 +310,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject protected NetworkTopologyContext _networkTopologyContext;
 
+
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _nwHelper;

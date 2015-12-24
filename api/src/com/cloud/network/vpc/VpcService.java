@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.apache.cloudstack.utils.net.cidr.CIDRException;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -46,9 +47,11 @@ public interface VpcService {
      * @param displayVpc TODO
      * @return
      * @throws ResourceAllocationException TODO
+     * @throws CIDRException
      */
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain, Boolean displayVpc)
-            throws ResourceAllocationException;
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String netmask, String networkDomain, Boolean displayVpc)
+            throws ResourceAllocationException, CIDRException;
+
 
     /**
      * Deletes a VPC
@@ -247,13 +250,17 @@ public interface VpcService {
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
-    IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException,
-    ConcurrentOperationException;
+    IpAddress associateIPToVpc(long ipId, long vpcId)
+            throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * @param routeId
      * @return
      */
     public boolean applyStaticRoute(long routeId) throws ResourceUnavailableException;
+
+    boolean isVpcOfferingDynamicallyRouted(long dcId, long vpcOffId);
+
+    boolean isVpcOfferingDynamicallyRouted(long vpcOffId);
 
 }
