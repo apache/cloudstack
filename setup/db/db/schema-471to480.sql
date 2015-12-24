@@ -27,3 +27,10 @@ ALTER TABLE `cloud`.`image_store` MODIFY COLUMN `url` varchar(2048);
 ALTER TABLE `cloud`.`template_store_ref` MODIFY COLUMN `url` varchar(2048);
 ALTER TABLE `cloud`.`volume_store_ref` MODIFY COLUMN `url` varchar(2048);
 ALTER TABLE `cloud`.`volume_store_ref` MODIFY COLUMN `download_url` varchar(2048);
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `ospf` INT(1) NULL DEFAULT 0 AFTER `supports_streched_l2`;`
+
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `ospf` INT(1) NULL DEFAULT 0 AFTER `redundant_router_service`;
+
+ALTER TABLE `cloud`.`vpc` ADD COLUMN `ospf` INT(1) NULL DEFAULT 0 AFTER `redundant`;
+

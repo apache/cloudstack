@@ -2722,6 +2722,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworkDomain(vpc.getNetworkDomain());
         response.setForDisplay(vpc.isDisplay());
         response.setUsesDistributedRouter(vpc.usesDistributedRouter());
+        response.setDynamicallyRoutedRouter(vpc.isDynamicallyRouted());
         response.setRedundantRouter(vpc.isRedundant());
         response.setRegionLevelVpc(vpc.isRegionLevelVpc());
 

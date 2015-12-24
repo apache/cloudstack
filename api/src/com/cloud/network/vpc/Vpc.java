@@ -87,4 +87,10 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
      * @return true if VPC spans multiple zones in the region
      */
     boolean isRegionLevelVpc();
+
+    /**
+    *
+    * @return true if VPC is dynamically routed using ospf
+    */
+    boolean isDynamicallyRouted();
 }

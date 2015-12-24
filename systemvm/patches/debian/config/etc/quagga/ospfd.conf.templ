@@ -1,0 +1,15 @@
+hostname $HOSTNAME
+password zebra
+!enable password please-set-at-here
+!
+ log file /var/log/quagga/ospfd.log
+!
+interface eth1
+!
+router ospf
+ ospf router-id $ETH1_IP
+ redistribute connected
+ no passive-interface eth1
+ network 192.168.100.0/24 area 0
+ network area $ETH1_IP
+!append the vpc tiers networks info below

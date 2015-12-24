@@ -1,0 +1,12 @@
+hostname $HOSTNAME
+password zebra
+enable password zebra
+!
+! Interface's description.
+!
+interface eth1
+  description link to area 0
+  ip address $ETH1_IP/24
+  link-detect
+!
+  log file /var/log/quagga/zebra.log

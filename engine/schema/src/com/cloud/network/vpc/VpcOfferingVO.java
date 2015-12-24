@@ -76,6 +76,17 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "redundant_router_service")
     boolean redundantRouter = false;
 
+    @Column(name = "ospf")
+    boolean ospf;
+
+    public boolean isDynamicallyRouted() {
+        return ospf;
+    }
+
+    public void setOspf(boolean ospf) {
+        this.ospf = ospf;
+    }
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -91,12 +102,13 @@ public class VpcOfferingVO implements VpcOffering {
 
     public VpcOfferingVO(final String name, final String displayText, final boolean isDefault, final Long serviceOfferingId,
                          final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                         final boolean redundantRouter) {
+                         final boolean redundantRouter, final boolean ospf) {
         this(name, displayText, serviceOfferingId);
         this.isDefault = isDefault;
         this.supportsDistributedRouter = supportsDistributedRouter;
         this.offersRegionLevelVPC = offersRegionLevelVPC;
         this.redundantRouter = redundantRouter;
+        this.ospf = ospf;
     }
 
     public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId,

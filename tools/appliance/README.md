@@ -71,7 +71,7 @@ bundle_args="--path vendor/bundle"
 Just run build.sh, it will export archived appliances for KVM, XenServer,
 VMWare and HyperV in `dist`:
 
-    bash build.sh [systemvmtemplate|systemvmtemplate64]
+    bash build.sh systemvmtemplate
 
 # Building SystemVM template appliance manually
 

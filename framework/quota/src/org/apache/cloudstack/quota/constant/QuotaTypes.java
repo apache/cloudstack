@@ -47,6 +47,7 @@ public class QuotaTypes extends UsageTypes {
         quotaTypeList.put(SNAPSHOT, new QuotaTypes(SNAPSHOT, "SNAPSHOT", "GB-Month", "Snapshot Usage"));
         quotaTypeList.put(SECURITY_GROUP, new QuotaTypes(SECURITY_GROUP, "SECURITY_GROUP", "Policy-Month", "Security Group Usage"));
         quotaTypeList.put(LOAD_BALANCER_POLICY, new QuotaTypes(LOAD_BALANCER_POLICY, "LOAD_BALANCER_POLICY", "Policy-Month", "Load Balancer Usage"));
+        quotaTypeList.put(DYNAMIC_ROUTING_POLICY, new QuotaTypes(DYNAMIC_ROUTING_POLICY, "DYNAMIC_ROUTING_POLICY", "Policy-Month", "Dynamic Routing Usage"));
         quotaTypeList.put(PORT_FORWARDING_RULE, new QuotaTypes(PORT_FORWARDING_RULE, "PORT_FORWARDING_RULE", "Policy-Month", "Port Forwarding Usage"));
         quotaTypeList.put(NETWORK_OFFERING, new QuotaTypes(NETWORK_OFFERING, "NETWORK_OFFERING", "Policy-Month", "Network Offering Usage"));
         quotaTypeList.put(VPN_USERS, new QuotaTypes(VPN_USERS, "VPN_USERS", "Policy-Month", "VPN users usage"));

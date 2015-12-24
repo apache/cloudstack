@@ -42,6 +42,7 @@ public class UsageTypes {
     public static final int VM_DISK_BYTES_READ = 23;
     public static final int VM_DISK_BYTES_WRITE = 24;
     public static final int VM_SNAPSHOT = 25;
+    public static final int DYNAMIC_ROUTING_POLICY = 16;
 
     public static List<UsageTypeResponse> listUsageTypes() {
         List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
@@ -56,6 +57,7 @@ public class UsageTypes {
         responseList.add(new UsageTypeResponse(SNAPSHOT, "Snapshot Usage"));
         responseList.add(new UsageTypeResponse(SECURITY_GROUP, "Security Group Usage"));
         responseList.add(new UsageTypeResponse(LOAD_BALANCER_POLICY, "Load Balancer Usage"));
+        responseList.add(new UsageTypeResponse(DYNAMIC_ROUTING_POLICY, "Load Balancer Usage"));
         responseList.add(new UsageTypeResponse(PORT_FORWARDING_RULE, "Port Forwarding Usage"));
         responseList.add(new UsageTypeResponse(NETWORK_OFFERING, "Network Offering Usage"));
         responseList.add(new UsageTypeResponse(VPN_USERS, "VPN users usage"));

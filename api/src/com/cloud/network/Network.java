@@ -59,6 +59,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
         public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet);
+        public static final Service VPCDynamicRouting = new Service("VPCDynamicRouting");
 
         private final String name;
         private final Capability[] caps;
@@ -124,6 +125,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
         public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
         public static final Provider VPCVirtualRouter = new Provider("VpcVirtualRouter", false);
+        public static final Provider VPCDynamicRouting = new Provider("VPCDynamicRouting", false);
         public static final Provider None = new Provider("None", false);
         // NiciraNvp is not an "External" provider, otherwise we get in trouble with NetworkServiceImpl.providersConfiguredForExternalNetworking
         public static final Provider NiciraNvp = new Provider("NiciraNvp", false);
@@ -213,6 +215,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability DistributedRouter = new Capability("DistributedRouter");
         public static final Capability StretchedL2Subnet = new Capability("StretchedL2Subnet");
         public static final Capability RegionLevelVpc = new Capability("RegionLevelVpc");
+        public static final Capability DynamicallyRoutedVpc = new Capability("DynamicallyRoutedVpc");
 
         private final String name;
 

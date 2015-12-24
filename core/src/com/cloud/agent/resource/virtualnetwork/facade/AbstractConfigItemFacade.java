@@ -33,6 +33,7 @@ import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.QuaggaConfigCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
@@ -90,6 +91,7 @@ public abstract class AbstractConfigItemFacade {
         flyweight.put(SetSourceNatCommand.class, new SetSourceNatConfigItem());
         flyweight.put(IpAssocCommand.class, new IpAssociationConfigItem());
         flyweight.put(IpAssocVpcCommand.class, new IpAssociationConfigItem());
+        flyweight.put(QuaggaConfigCommand.class, new QuaggaConfigItem());
     }
 
     protected String destinationFile;

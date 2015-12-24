@@ -485,6 +485,9 @@ updateVPCOffering=1
 deleteVPCOffering=1
 listVPCOfferings=15
 
+#### VPC config commands
+vpcQuaggaConfigCmd=1
+
 #### Private gateway commands
 createPrivateGateway=1
 listPrivateGateways=15

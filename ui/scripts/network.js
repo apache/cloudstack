@@ -5378,6 +5378,7 @@
                         });
                     },
                     actions: {
+                    	
                         add: {
                             label: 'label.add.vpc',
                             messages: {
@@ -5753,6 +5754,16 @@
                                     },
                                     ispersistent: {
                                         label: 'label.persistent',
+                                        converter: function(booleanValue) {
+                                            if (booleanValue == true) {
+                                                return "Yes";
+                                            }
+
+                                            return "No";
+                                        }
+                                    },
+                                    dynamicallyroutedvpcrouter: {
+                                        label: 'label.dynamicallyrouted.vpc',
                                         converter: function(booleanValue) {
                                             if (booleanValue == true) {
                                                 return "Yes";

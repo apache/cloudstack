@@ -123,6 +123,18 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @Param(description = "if this VPC has redundant router", since = "4.6")
     private boolean redundantRouter;
 
+    @SerializedName(ApiConstants.DYNAMICALLY_ROUTED_VPC_ROUTER)
+    @Param(description = "if this VPC is dynamically routed router", since = "4.8")
+    private boolean dynamicallyRoutedRouter;
+
+    public boolean isDynamicallyRoutedRouter() {
+        return dynamicallyRoutedRouter;
+    }
+
+    public void setDynamicallyRoutedRouter(boolean dynamicallyRoutedRouter) {
+        this.dynamicallyRoutedRouter = dynamicallyRoutedRouter;
+    }
+
     public void setId(final String id) {
         this.id = id;
     }
