@@ -35,7 +35,8 @@ from marvin.lib.common import (
     get_template,
     list_routers,
     list_hosts,
-    findSuitableHostForMigration
+    findSuitableHostForMigration,
+    migrate_router
 )
 from nose.plugins.attrib import attr
 from marvin.codes import (FAILED, PASS)
@@ -408,8 +409,8 @@ class TestNiciraContoller(cloudstackTestCase):
             self.logger.debug("Master Router VM is on the same host as VM")
             host = findSuitableHostForMigration(self.api_client, router.id)
             if host is not None:
-                router.migrate(self.api_client, host)
-                self.logger.debug("Migrated Master Router VM to host %s" % host)
+                migrate_router(self.api_client, router.id, host.id)
+                self.logger.debug("Migrated Master Router VM to host %s" % host.name)
             else:
                 self.fail('No suitable host to migrate Master Router VM to')
         else:
