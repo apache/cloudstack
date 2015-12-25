@@ -32,6 +32,8 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.utils.net.NetUtils;
 
 public class SecurityGroupRulesCmd extends Command {
+    static final String EGRESS_RULE = "E:";
+    static final String INGRESS_RULE = "I:";
     private static Logger s_logger = Logger.getLogger(SecurityGroupRulesCmd.class);
 
     public static class IpPortAndProto {
