@@ -72,9 +72,9 @@ public class SecurityGroupHttpClient {
         }
     }
 
-    private List<SecurityGroupRule> generateRules(IpPortAndProto[] ipps) {
+    private List<SecurityGroupRule> generateRules(final List<IpPortAndProto> ipps) {
         List<SecurityGroupRule> rules = new ArrayList<SecurityGroupRule>(
-                ipps.length);
+                ipps.size());
         for (SecurityGroupRulesCmd.IpPortAndProto ipp : ipps) {
             SecurityGroupRule r = new SecurityGroupRule();
             r.setProtocol(ipp.getProto());

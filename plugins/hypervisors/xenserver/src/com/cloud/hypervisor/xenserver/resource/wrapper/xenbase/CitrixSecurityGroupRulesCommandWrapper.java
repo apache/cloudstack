@@ -56,7 +56,7 @@ public final class CitrixSecurityGroupRulesCommandWrapper extends CommandWrapper
             return new SecurityGroupRuleAnswer(command, false, "programming network rules failed");
         } else {
             s_logger.info("Programmed network rules for vm " + command.getVmName() + " guestIp=" + command.getGuestIp() + ", ingress numrules="
-                    + command.getIngressRuleSet().length + ", egress numrules=" + command.getEgressRuleSet().length);
+                    + command.getIngressRuleSet().size() + ", egress numrules=" + command.getEgressRuleSet().size());
             return new SecurityGroupRuleAnswer(command);
         }
     }
