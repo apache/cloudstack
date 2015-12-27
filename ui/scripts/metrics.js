@@ -23,7 +23,7 @@
                 name: {
                     label: 'metrics'
                 }
-            },
+            }
         }
     };
 
@@ -546,7 +546,7 @@
                         'Error': 'off',
                         'Connecting': 'transition',
                         'Rebalancing': 'transition',
-                        'Alert': 'warning',
+                        'Alert': 'warning'
                     },
                     compact: true
                 },
@@ -558,7 +558,7 @@
                     collapsible: true,
                     columns: {
                         cores: {
-                            label: 'label.metrics.num.cpu.cores',
+                            label: 'label.metrics.num.cpu.cores'
                         },
                         cputotal: {
                             label: 'label.metrics.cpu.total'
@@ -768,7 +768,7 @@
                         'Stopping': 'transition',
                         'Starting': 'transition',
                         'Migrating': 'transition',
-                        'Shutdowned': 'warning',
+                        'Shutdowned': 'warning'
                     },
                     compact: true
                 },
@@ -783,13 +783,13 @@
                     collapsible: true,
                     columns: {
                         cores: {
-                            label: 'label.metrics.num.cpu.cores',
+                            label: 'label.metrics.num.cpu.cores'
                         },
                         cputotal: {
                             label: 'label.metrics.cpu.total'
                         },
                         cpuused: {
-                            label: 'label.metrics.cpu.used.avg',
+                            label: 'label.metrics.cpu.used.avg'
                         }
                     }
                 },
@@ -912,7 +912,7 @@
                         'Expunging': 'off',
                         'Migrating': 'warning',
                         'UploadOp': 'transition',
-                        'Snapshotting': 'warning',
+                        'Snapshotting': 'warning'
                     },
                     compact: true
                 },
@@ -927,7 +927,7 @@
                 },
                 storagepool: {
                     label: 'label.metrics.storagepool'
-                },
+                }
             },
             dataProvider: function(args) {
                 var data = {listAll: true};
@@ -990,7 +990,7 @@
                                 'ErrorInMaintenance': 'off',
                                 'PrepareForMaintenance': 'transition',
                                 'CancelMaintenance': 'warning',
-                                'Maintenance': 'warning',
+                                'Maintenance': 'warning'
                             },
                             compact: true
                         },
@@ -999,7 +999,7 @@
                         },
                         type: {
                             label: 'label.metrics.disk.storagetype'
-                        },
+                        }
                     }
                 },
                 disk: {
