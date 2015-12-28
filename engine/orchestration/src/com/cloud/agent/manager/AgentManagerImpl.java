@@ -843,7 +843,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
 
                 final Status currentStatus = host.getStatus();
-                s_logger.info("The agent " + hostId + " state determined is " + determinedState);
+                s_logger.info("The agent from host " + hostId + " state determined is " + determinedState);
 
                 if (determinedState == Status.Down) {
                     final String message = "Host is down: " + host.getId() + "-" + host.getName() + ". Starting HA on the VMs";
