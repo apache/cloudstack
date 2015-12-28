@@ -104,6 +104,8 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.RouterNamingPolicy;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -165,6 +167,8 @@ public class VirtualRouterElementTest {
     @Mock private ResourceManager _resourceMgr;
     @Mock private UserVmManager _userVmMgr;
     @Mock private VirtualMachineManager _itMgr;
+    @Mock private ResourceNamingPolicyManager _resourceNamingPolicyMgr;
+    @Mock private RouterNamingPolicy _routerNamingPolicy;
 
     @InjectMocks
     private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;

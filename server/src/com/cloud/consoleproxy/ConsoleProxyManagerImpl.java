@@ -132,7 +132,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.naming.ConsoleProxyNamingPolicy;
+import com.cloud.naming.ResourceNamingPolicyManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -210,6 +211,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private KeysManager _keysMgr;
     @Inject
     private VirtualMachineManager _itMgr;
+    @Inject
+    private ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     private ConsoleProxyListener _listener;
 
@@ -742,7 +745,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     protected Map<String, Object> createProxyInstance(long dataCenterId, VMTemplateVO template) throws ConcurrentOperationException {
 
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
-        String name = VirtualMachineName.getConsoleProxyName(id, _instance);
+        String name = _resourceNamingPolicyMgr.getPolicy(ConsoleProxyNamingPolicy.class).getConsoleProxyName(id);
         DataCenterVO dc = _dcDao.findById(dataCenterId);
         Account systemAcct = _accountMgr.getSystemAccount();
 
@@ -772,6 +775,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), 0, serviceOffering.getOfferHA());
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
+
+        _resourceNamingPolicyMgr.getPolicy(ConsoleProxyNamingPolicy.class).finalizeIdentifiers(proxy);
+
         proxy = _consoleProxyDao.persist(proxy);
         try {
             _itMgr.allocate(name, template, serviceOffering, networks, plan, null);

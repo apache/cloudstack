@@ -113,7 +113,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.RouterNamingPolicy;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -121,7 +122,6 @@ import com.cloud.vm.dao.NicDao;
 
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements InternalLoadBalancerVMManager, InternalLoadBalancerVMService, VirtualMachineGuru {
     private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerVMManagerImpl.class);
-    static final private String InternalLbVmNamePrefix = "b";
 
     private String _instance;
     private String _mgmtHost;
@@ -168,6 +168,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     ResourceManager _resourceMgr;
     @Inject
     UserDao _userDao;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     @Override
     public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {
@@ -776,11 +778,15 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                         userId =  userVOs.get(0).getId();
                     }
                 }
-
+                String name = _resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class).getInternalLBName(id);
                 internalLbVm =
-                        new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
-                                template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
+                        new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, name, template.getId(), template.getHypervisorType(),
+                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN, false, false,
+                                VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
+
+                _resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class).finalizeIdentifiers(internalLbVm);
+
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);
                 _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null);
                 internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());

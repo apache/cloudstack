@@ -22,14 +22,17 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.naming.ResourceNamingPolicyManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -51,6 +54,8 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected ResourceManager _resourceMgr;
     @Inject
     protected DataCenterDao _dcDao;
+    @Inject
+    protected ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -89,6 +94,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
             Class<?> clazz = Class.forName(resourceName);
             Constructor constructor = clazz.getConstructor();
             resource = (ServerResource)constructor.newInstance();
+
         } catch (ClassNotFoundException e) {
             s_logger.warn("Unable to find class " + resourceName, e);
         } catch (InstantiationException e) {
@@ -139,6 +145,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
         params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
         params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+        params.put("resourceNamingPolicy", _resourceNamingPolicyMgr);
 
         return params;
 

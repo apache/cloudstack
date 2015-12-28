@@ -143,6 +143,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.VolumeNamingPolicy;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
@@ -280,6 +282,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected UserVmDetailsDao _vmDetailsDao;
     @Inject
     ServiceOfferingDao _serviceOfferingDao = null;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     @Inject
     ConfigDepot _configDepot;
@@ -411,18 +415,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 if (template.getFormat() == ImageFormat.ISO) {
-                    volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
-                            rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vmFinal, template, owner);
+                    volumeMgr.allocateRawVolume(Type.ROOT,
+                            _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).getRootName(vmFinal.getId()),
+                            rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(), rootDiskOfferingInfo.getMinIops(),
+                            rootDiskOfferingInfo.getMaxIops(), vmFinal, template, owner);
                 } else if (template.getFormat() == ImageFormat.BAREMETAL) {
                     // Do nothing
                 } else {
-                    volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                    volumeMgr.allocateTemplatedVolume(Type.ROOT,
+                            _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).getRootName(vmFinal.getId()),
+                            rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                 }
 
                 if (dataDiskOfferings != null) {
                     for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
-                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vmFinal.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
+                        volumeMgr.allocateRawVolume(Type.DATADISK,
+                                _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).getDatadiskName(vmFinal.getId()),
+                                dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
                                 dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), vmFinal, template, owner);
                     }
                 }

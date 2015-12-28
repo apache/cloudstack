@@ -175,6 +175,8 @@ public class VirtualNetworkApplianceManagerImplTest {
 
     //@Mock private AccountManager _accountMgr;
 
+
+    // mock the managers that have no influence on this functionality
     @Mock private VirtualMachineManager _itMgr;
 
     //    @InjectMocks

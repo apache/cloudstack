@@ -36,7 +36,9 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.user.User;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+
 import junit.framework.Assert;
+
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.junit.After;
 import org.junit.Before;
@@ -46,7 +48,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -65,6 +66,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.VolumeNamingPolicy;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -110,6 +113,10 @@ public class VolumeApiServiceImplTest {
     CreateVolumeCmd createVol;
     @Mock
     UserVmManager _userVmMgr;
+    @Mock
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
+    @Mock
+    VolumeNamingPolicy _volumeNamingPolicy;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
@@ -129,6 +136,7 @@ public class VolumeApiServiceImplTest {
         _svc.volService = volService;
         _svc._userVmMgr = _userVmMgr;
         _svc._gson = GsonHelper.getGsonLogger();
+        _svc._resourceNamingPolicyMgr = _resourceNamingPolicyMgr;
 
         // mock caller context
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
@@ -254,6 +262,11 @@ public class VolumeApiServiceImplTest {
             // helper dao methods mock
             when(_svc._vmSnapshotDao.findByVm(any(Long.class))).thenReturn(new ArrayList<VMSnapshotVO>());
             when(_svc._vmInstanceDao.findById(any(Long.class))).thenReturn(stoppedVm);
+
+            when(_resourceNamingPolicyMgr.getPolicy((Class<VolumeNamingPolicy>)any(Class.class))).thenReturn(_volumeNamingPolicy);
+            when(_volumeNamingPolicy.getDatadiskName()).thenReturn(UUID.randomUUID().toString());
+            when(_volumeNamingPolicy.getDatadiskName(any(Long.class))).thenReturn(UUID.randomUUID().toString());
+            when(_volumeNamingPolicy.getRootName(any(Long.class))).thenReturn(UUID.randomUUID().toString());
 
         } finally {
             txn.close("runVolumeDaoImplTest");

@@ -30,6 +30,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.TemplateNamingPolicy;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
@@ -621,6 +623,19 @@ public class TemplateManagerImplTest {
         @Bean
         public TemplateAdapter templateAdapter() {
             return Mockito.mock(TemplateAdapter.class);
+        }
+
+        @Bean
+        public TemplateNamingPolicy getTemplateNamingPolicy() {
+            return Mockito.mock(TemplateNamingPolicy.class);
+        }
+        @SuppressWarnings("unchecked")
+        @Bean
+        public ResourceNamingPolicyManager resourceNamingPolicies() {
+            ResourceNamingPolicyManager r = Mockito.mock(ResourceNamingPolicyManager.class);
+            Class<TemplateNamingPolicy> clz = any();
+            when(r.getPolicy(clz)).thenReturn(getTemplateNamingPolicy());
+            return r;
         }
 
         public static class Library implements TypeFilter {

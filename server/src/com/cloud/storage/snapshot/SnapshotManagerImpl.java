@@ -17,7 +17,6 @@
 package com.cloud.storage.snapshot;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -76,6 +75,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.SnapshotNamingPolicy;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -186,6 +187,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     ResourceManager _resourceMgr;
     @Inject
     StorageStrategyFactory _storageStrategyFactory;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -1169,18 +1172,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw e;
         }
 
-        // Determine the name for this snapshot
-        // Snapshot Name: VMInstancename + volumeName + timeString
-        String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
-
-        VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
-        String vmDisplayName = "detached";
-        if (vmInstance != null) {
-            vmDisplayName = vmInstance.getHostName();
-        }
-        if (snapshotName == null)
-            snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
-
         HypervisorType hypervisorType = HypervisorType.None;
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());
         if (storagePool.getScope() == ScopeType.ZONE) {
@@ -1194,9 +1185,16 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             hypervisorType = volume.getHypervisorType();
         }
 
+        if (snapshotName == null) {
+            snapshotName = _resourceNamingPolicyMgr.getPolicy(SnapshotNamingPolicy.class).getSnapshotName(volume.getId());
+        }
+
         SnapshotVO snapshotVO =
             new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
                 (short)snapshotType.ordinal(), snapshotType.name(), volume.getSize(), volume.getMinIops(), volume.getMaxIops(), hypervisorType);
+
+        _resourceNamingPolicyMgr.getPolicy(SnapshotNamingPolicy.class).finalizeIdentifiers(snapshotVO);
+
 
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
         if (snapshot == null) {

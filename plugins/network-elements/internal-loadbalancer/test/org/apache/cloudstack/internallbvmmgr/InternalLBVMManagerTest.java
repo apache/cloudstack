@@ -87,6 +87,7 @@ public class InternalLBVMManagerTest extends TestCase {
     InternalLoadBalancerVMManager _lbVmMgr;
 
     //Mocked interfaces
+
     @Inject
     AccountManager _accountMgr;
     @Inject

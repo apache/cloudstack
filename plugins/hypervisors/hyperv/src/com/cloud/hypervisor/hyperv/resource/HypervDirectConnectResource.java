@@ -152,9 +152,10 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachineName;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.RouterNamingPolicy;
 
 
 /**
@@ -190,6 +191,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     private static HypervManager s_hypervMgr;
     @Inject
     HypervManager _hypervMgr;
+    protected ResourceNamingPolicyManager _resourceNamingPolicyMgr;
     protected VirtualRoutingResource _vrResource;
 
     @PostConstruct
@@ -2171,7 +2173,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             s_logger.debug("Ping command port succeeded for vm " + vmName);
         }
 
-        if (VirtualMachineName.isValidRouterName(vmName)) {
+        if (_resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class).isValidRouterName(vmName)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Execute network usage setup command on " + vmName);
             }
@@ -2346,6 +2348,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             _password = (String)params.get("password");
             _username = (String)params.get("username");
             _configureCalled = true;
+            _resourceNamingPolicyMgr = (ResourceNamingPolicyManager)params.get("resourceNamingPolicy");
         }
 
         _vrResource = new VirtualRoutingResource(this);
@@ -2442,4 +2445,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         return cleanLogString;
     }
+
+
 }

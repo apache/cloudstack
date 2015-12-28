@@ -61,6 +61,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.naming.ResourceNamingPolicyManager;
 import com.cloud.network.ElasticLbVmMapVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -137,6 +138,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     private ElasticLbVmMapDao _elbVmMapDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     String _instance;
 
@@ -321,7 +324,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             _itMgr.registerGuru(VirtualMachine.Type.ElasticLoadBalancerVm, this);
         }
 
-        loadBalanceRuleHandler = new LoadBalanceRuleHandler(_instance, _systemAcct);
+        loadBalanceRuleHandler = new LoadBalanceRuleHandler(_instance, _systemAcct, _resourceNamingPolicyMgr);
 
         return true;
     }

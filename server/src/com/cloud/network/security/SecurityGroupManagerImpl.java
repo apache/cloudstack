@@ -73,6 +73,8 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.SecurityGroupNamingPolicy;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.security.SecurityGroupWork.Step;
@@ -170,6 +172,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     NicDao _nicDao;
     @Inject
     NicSecondaryIpDao _nicSecIpDao;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -872,6 +876,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         SecurityGroupVO group = _securityGroupDao.findByAccountAndName(accountId, name);
         if (group == null) {
             group = new SecurityGroupVO(name, description, domainId, accountId);
+
+            _resourceNamingPolicyMgr.getPolicy(SecurityGroupNamingPolicy.class).finalizeIdentifiers(group);
+
             group = _securityGroupDao.persist(group);
             s_logger.debug("Created security group " + group + " for account id=" + accountId);
         } else {
@@ -930,7 +937,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if (groupVO == null) {
             Account accVO = _accountDao.findById(accountId);
             if (accVO != null) {
-                return createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, accVO.getDomainId(), accVO.getId(),
+                return createSecurityGroup(_resourceNamingPolicyMgr.getPolicy(SecurityGroupNamingPolicy.class).getSgDefaultName(),
+                        SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, accVO.getDomainId(), accVO.getId(),
                         accVO.getAccountName());
             }
         }

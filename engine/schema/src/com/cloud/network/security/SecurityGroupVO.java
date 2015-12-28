@@ -94,6 +94,10 @@ public class SecurityGroupVO implements SecurityGroup {
         this.uuid = uuid;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
     public Class<?> getEntityType() {
         return SecurityGroup.class;

@@ -51,7 +51,7 @@ public class DefaultModuleDefinition implements ModuleDefinition {
     List<Resource> contextLocations;
     List<Resource> inheritableContextLocations;
     List<Resource> overrideContextLocations;
-    Map<String, ModuleDefinition> children = new TreeMap<String, ModuleDefinition>();
+    Map<String, ModuleDefinition> children = new TreeMap<String, ModuleDefinition>(new ModuleLoadingComparator());
 
     public DefaultModuleDefinition(String baseDir, Resource moduleProperties, ResourcePatternResolver resolver) {
         this.baseDir = baseDir;

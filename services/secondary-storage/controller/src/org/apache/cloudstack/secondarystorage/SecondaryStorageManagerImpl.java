@@ -139,7 +139,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.SecondaryStorageVMNamingPolicy;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -245,6 +246,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
+    @Inject
+    private ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     private String _instance;
     private boolean _useSSlCopy;
@@ -602,7 +605,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         long id = _secStorageVmDao.getNextInSequence(Long.class, "id");
-        String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();
+        String name = _resourceNamingPolicyMgr.getPolicy(SecondaryStorageVMNamingPolicy.class).getSsvmName(id);
         Account systemAcct = _accountMgr.getSystemAccount();
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -646,6 +649,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), role, serviceOffering.getOfferHA());
         secStorageVm.setDynamicallyScalable(template.isDynamicallyScalable());
+
+        _resourceNamingPolicyMgr.getPolicy(SecondaryStorageVMNamingPolicy.class).finalizeIdentifiers(secStorageVm);
+
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
         try {
             _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
@@ -1489,5 +1495,4 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public void setSecondaryStorageVmAllocators(List<SecondaryStorageVmAllocator> ssVmAllocators) {
         _ssVmAllocators = ssVmAllocators;
     }
-
 }

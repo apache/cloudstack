@@ -59,7 +59,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.UserVMNamingPolicy;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
@@ -79,6 +80,8 @@ public class ServiceManagerImpl implements ServiceManager {
     AccountService _accountService;
     @Inject
     ContrailManager _manager;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     /**
      * In the case of service instance the master object is in the contrail API server. This object stores the
@@ -109,7 +112,6 @@ public class ServiceManagerImpl implements ServiceManager {
         networks.put(linklocal, new ArrayList<NicProfile>());
         networks.put((NetworkVO)left, new ArrayList<NicProfile>());
         networks.put((NetworkVO)right, new ArrayList<NicProfile>());
-        String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
 
         long userId = CallContext.current().getCallingUserId();
         if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
@@ -119,6 +121,7 @@ public class ServiceManagerImpl implements ServiceManager {
             }
         }
 
+        String instanceName = _resourceNamingPolicyMgr.getPolicy(UserVMNamingPolicy.class).getServiceVmName(id, owner.getId());
         ServiceVirtualMachine svm =
             new ServiceVirtualMachine(id, instanceName, name, template.getId(), serviceOffering.getId(), template.getHypervisorType(), template.getGuestOSId(),
                 zone.getId(), owner.getDomainId(), owner.getAccountId(), userId, false);
