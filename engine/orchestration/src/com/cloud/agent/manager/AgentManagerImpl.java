@@ -1536,7 +1536,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                             /*
                              * Host is in non-operation state, so no investigation and direct put agent to Disconnected
                              */
-                            status_logger.debug("Ping timeout but host " + agentId + " is in resource state of " + resourceState + ", so no investigation");
+                            status_logger.debug("Ping timeout but agent " + agentId + " is in resource state of " + resourceState + ", so no investigation");
                             disconnectWithoutInvestigation(agentId, Event.ShutdownRequested);
                         } else {
                             final HostVO host = _hostDao.findById(agentId);
@@ -1546,7 +1546,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                 s_logger.warn("Disconnect agent for CPVM/SSVM due to physical connection close. host: " + host.getId());
                                 disconnectWithoutInvestigation(agentId, Event.ShutdownRequested);
                             } else {
-                                status_logger.debug("Ping timeout for host " + agentId + ", do invstigation");
+                                status_logger.debug("Ping timeout for agent " + agentId + ", do invstigation");
                                 disconnectWithInvestigation(agentId, Event.PingTimeout);
                             }
                         }
