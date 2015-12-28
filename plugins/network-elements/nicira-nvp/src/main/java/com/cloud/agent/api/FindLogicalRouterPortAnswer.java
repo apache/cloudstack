@@ -17,22 +17,22 @@
 // under the License.
 //
 
-package com.cloud.utils.rest;
+package com.cloud.agent.api;
 
-import org.apache.http.HttpStatus;
+public class FindLogicalRouterPortAnswer extends Answer {
 
-public class HttpStatusCodeHelper {
+    private String logicalRouterPortUuid;
 
-    public static boolean isSuccess(final int statusCode) {
-        return statusCode >= HttpStatus.SC_OK && statusCode <= HttpStatus.SC_MULTI_STATUS;
+    public FindLogicalRouterPortAnswer(final Command command, final boolean success, final String details, final String lRouterPortUuid) {
+        super(command, success, details);
+        this.logicalRouterPortUuid = lRouterPortUuid;
     }
 
-    public static boolean isUnauthorized(final int statusCode) {
-        return statusCode == HttpStatus.SC_UNAUTHORIZED;
+    public FindLogicalRouterPortAnswer(final Command command, final Exception e) {
+        super(command, e);
     }
 
-    public static boolean isConflict(final int statusCode){
-        return statusCode == HttpStatus.SC_CONFLICT;
+    public String getLogicalRouterPortUuid() {
+        return logicalRouterPortUuid;
     }
-
 }

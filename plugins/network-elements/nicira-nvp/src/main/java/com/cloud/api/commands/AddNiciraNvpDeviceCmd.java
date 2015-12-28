@@ -80,6 +80,12 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
                description = "The L3 Gateway Service UUID configured on the Nicira Controller")
     private String l3gatewayserviceuuid;
 
+    @Parameter(name = ApiConstants.NICIRA_NVP_L2_GATEWAYSERVICE_UUID,
+            type = CommandType.STRING,
+            required = false,
+            description = "The L2 Gateway Service UUID configured on the Nicira Controller")
+    private String l2gatewayserviceuuid;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -107,6 +113,10 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     public String getL3GatewayServiceUuid() {
         return l3gatewayserviceuuid;
     }
+
+    public String getL2GatewayServiceUuid() {
+        return l2gatewayserviceuuid;
+     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

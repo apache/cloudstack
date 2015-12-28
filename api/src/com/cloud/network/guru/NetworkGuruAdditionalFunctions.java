@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,24 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.network.guru;
 
-package com.cloud.utils.rest;
+import java.util.Map;
 
-import org.apache.http.HttpStatus;
+public interface NetworkGuruAdditionalFunctions {
 
-public class HttpStatusCodeHelper {
+    public static final String NSX_LSWITCH_UUID = "logicalswitch";
+    public static final String NSX_LSWITCHPORT_UUID = "logicalswitchport";
 
-    public static boolean isSuccess(final int statusCode) {
-        return statusCode >= HttpStatus.SC_OK && statusCode <= HttpStatus.SC_MULTI_STATUS;
-    }
-
-    public static boolean isUnauthorized(final int statusCode) {
-        return statusCode == HttpStatus.SC_UNAUTHORIZED;
-    }
-
-    public static boolean isConflict(final int statusCode){
-        return statusCode == HttpStatus.SC_CONFLICT;
-    }
-
+    void finalizeNetworkDesign(long networkId, String vlanIdAsUUID);
+    Map<String, ? extends Object> listAdditionalNicParams(String nicUuid);
 }

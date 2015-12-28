@@ -3853,7 +3853,7 @@ class NiciraNvp:
 
     @classmethod
     def add(cls, apiclient, services, physicalnetworkid,
-            hostname=None, username=None, password=None, transportzoneuuid=None):
+            hostname=None, username=None, password=None, transportzoneuuid=None, l2gatewayserviceuuid=None):
         cmd = addNiciraNvpDevice.addNiciraNvpDeviceCmd()
         cmd.physicalnetworkid = physicalnetworkid
         if hostname:
@@ -3876,7 +3876,12 @@ class NiciraNvp:
         else:
             cmd.transportzoneuuid = services['transportZoneUuid']
 
-        return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
+        if l2gatewayserviceuuid:
+            cmd.l2gatewayserviceuuid = l2gatewayserviceuuid
+        elif services and 'l2gatewayserviceuuid' in services:
+            cmd.l2gatewayserviceuuid = services['l2gatewayserviceuuid']
+
+	return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
 
     def delete(self, apiclient):
         cmd = deleteNiciraNvpDevice.deleteNiciraNvpDeviceCmd()
@@ -4055,9 +4060,9 @@ class VpcOffering:
     @classmethod
     def create(cls, apiclient, services):
         """Create vpc offering"""
-        
+
         import logging
-        
+
         cmd = createVPCOffering.createVPCOfferingCmd()
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.displaytext = services["displaytext"]

@@ -17,22 +17,30 @@
 // under the License.
 //
 
-package com.cloud.utils.rest;
+package com.cloud.agent.api;
 
-import org.apache.http.HttpStatus;
+import com.cloud.network.nicira.GatewayServiceConfig;
+import com.cloud.network.nicira.L2GatewayServiceConfig;
 
-public class HttpStatusCodeHelper {
+public class FindL2GatewayServiceCommand extends Command {
 
-    public static boolean isSuccess(final int statusCode) {
-        return statusCode >= HttpStatus.SC_OK && statusCode <= HttpStatus.SC_MULTI_STATUS;
+    private L2GatewayServiceConfig gatewayServiceConfig;
+
+    public FindL2GatewayServiceCommand(L2GatewayServiceConfig config) {
+        this.gatewayServiceConfig = config;
     }
 
-    public static boolean isUnauthorized(final int statusCode) {
-        return statusCode == HttpStatus.SC_UNAUTHORIZED;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 
-    public static boolean isConflict(final int statusCode){
-        return statusCode == HttpStatus.SC_CONFLICT;
+    public GatewayServiceConfig getGatewayServiceConfig() {
+        return gatewayServiceConfig;
+    }
+
+    public void setGatewayServiceConfig(L2GatewayServiceConfig gatewayServiceConfig) {
+        this.gatewayServiceConfig = gatewayServiceConfig;
     }
 
 }

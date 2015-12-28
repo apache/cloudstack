@@ -17,22 +17,16 @@
 // under the License.
 //
 
-package com.cloud.utils.rest;
+package com.cloud.agent.api;
 
-import org.apache.http.HttpStatus;
+public class ConfigureSharedNetworkUuidAnswer extends Answer {
 
-public class HttpStatusCodeHelper {
-
-    public static boolean isSuccess(final int statusCode) {
-        return statusCode >= HttpStatus.SC_OK && statusCode <= HttpStatus.SC_MULTI_STATUS;
+    public ConfigureSharedNetworkUuidAnswer(final Command command, final boolean success, final String details) {
+        super(command, success, details);
     }
 
-    public static boolean isUnauthorized(final int statusCode) {
-        return statusCode == HttpStatus.SC_UNAUTHORIZED;
-    }
-
-    public static boolean isConflict(final int statusCode){
-        return statusCode == HttpStatus.SC_CONFLICT;
+    public ConfigureSharedNetworkUuidAnswer(final Command command, final Exception e) {
+        super(command, e);
     }
 
 }
