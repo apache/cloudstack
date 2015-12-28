@@ -29,6 +29,8 @@ import com.trilead.ssh2.Session;
 
 public class SSHCmdHelper {
     private static final Logger s_logger = Logger.getLogger(SSHCmdHelper.class);
+    private static final int DEFAULT_CONNECT_TIMEOUT = 180000;
+    private static final int DEFAULT_KEX_TIMEOUT = 60000;
 
     public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, String username, String password) {
         return acquireAuthorizedConnection(ip, 22, username, password);
@@ -37,7 +39,7 @@ public class SSHCmdHelper {
     public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, int port, String username, String password) {
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(ip, port);
         try {
-            sshConnection.connect(null, 60000, 60000);
+            sshConnection.connect(null, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
             if (!sshConnection.authenticateWithPassword(username, password)) {
                 String[] methods = sshConnection.getRemainingAuthMethods(username);
                 StringBuffer mStr = new StringBuffer();
