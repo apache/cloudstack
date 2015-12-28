@@ -30,6 +30,7 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.ClusterDetailsDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -307,6 +308,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
+    @Inject
+    private ClusterDetailsDao _clusterDetailsDao;
     @Inject
     private EntityManager _entityMgr;
     @Inject
@@ -991,6 +994,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         String memoryOvercommitRatio = ApiDBUtils.findClusterDetails(cluster.getId(), "memoryOvercommitRatio");
         clusterResponse.setCpuOvercommitRatio(cpuOvercommitRatio);
         clusterResponse.setMemoryOvercommitRatio(memoryOvercommitRatio);
+        clusterResponse.setResourceDetails(_clusterDetailsDao.findDetails(cluster.getId()));
 
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());

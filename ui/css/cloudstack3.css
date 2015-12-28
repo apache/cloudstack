@@ -12674,6 +12674,54 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -137px -614px;
 }
 
+.blankOutOfBandManagement .icon {
+  background-position: -266px -31px;
+}
+
+.blankOutOfBandManagement:hover .icon {
+  background-position: -266px -31px;
+}
+
+.configureOutOfBandManagement .icon {
+  background-position: -168px -31px;
+}
+
+.configureOutOfBandManagement:hover .icon {
+  background-position: -168px -613px;
+}
+
+.enableOutOfBandManagement .icon {
+  background-position: -138px -65px;
+}
+
+.enableOutOfBandManagement:hover .icon {
+  background-position: -138px -647px;
+}
+
+.disableOutOfBandManagement .icon {
+  background-position: -138px -123px;
+}
+
+.disableOutOfBandManagement:hover .icon {
+  background-position: -138px -705px;
+}
+
+.issueOutOfBandManagementPowerAction .icon {
+  background-position: -266px -3px;
+}
+
+.issueOutOfBandManagementPowerAction:hover .icon {
+  background-position: -265px -584px;
+}
+
+.changeOutOfBandManagementPassword .icon {
+  background-position: -68px -30px;
+}
+
+.changeOutOfBandManagementPassword:hover .icon {
+  background-position: -68px -612px;
+}
+
 .enableMaintenanceMode .icon {
   background-position: -138px -65px;
 }

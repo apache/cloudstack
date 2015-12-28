@@ -310,6 +310,13 @@ public class EventTypes {
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
 
+    // Host Out-of-band management
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLEDISABLE = "HOST.OOBM.ENABLEDISABLE";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_CONFIGURE = "HOST.OOBM.CONFIGURE";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION = "HOST.OOBM.ACTION";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD = "HOST.OOBM.CHANGEPASSWORD";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION = "HOST.OOBM.POWERSTATE.TRANSITION";
+
     // Maintenance
     public static final String EVENT_MAINTENANCE_CANCEL = "MAINT.CANCEL";
     public static final String EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE = "MAINT.CANCEL.PS";
@@ -737,6 +744,13 @@ public class EventTypes {
 
         // Host
         entityEventDetails.put(EVENT_HOST_RECONNECT, Host.class);
+
+        // Host Out-of-band management
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLEDISABLE, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_CONFIGURE, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION, Host.class);
 
         // Maintenance
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL, Host.class);

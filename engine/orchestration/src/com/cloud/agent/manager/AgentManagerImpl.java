@@ -38,6 +38,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -140,6 +141,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected NioServer _connection;
     @Inject
     protected HostDao _hostDao = null;
+    @Inject
+    protected OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     protected DataCenterDao _dcDao = null;
     @Inject

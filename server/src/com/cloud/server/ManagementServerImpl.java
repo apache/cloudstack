@@ -132,6 +132,15 @@ import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.DisableOutOfBandManagementForClusterCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.DisableOutOfBandManagementForHostCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.DisableOutOfBandManagementForZoneCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.EnableOutOfBandManagementForClusterCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.EnableOutOfBandManagementForHostCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.EnableOutOfBandManagementForZoneCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.ConfigureOutOfBandManagementCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.IssueOutOfBandManagementPowerActionCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.ChangeOutOfBandManagementPasswordCmd;
 import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
@@ -1378,7 +1387,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private Pair<List<HostVO>, Integer> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster,
-            Object id, Object keyword, Object resourceState, Object haHosts, Object hypervisorType, Object hypervisorVersion) {
+                                                         Object id, Object keyword, Object resourceState, Object haHosts, Object hypervisorType, Object hypervisorVersion) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
@@ -3008,6 +3017,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateVPCCmdByAdmin.class);
         cmdList.add(UpdateLBStickinessPolicyCmd.class);
         cmdList.add(UpdateLBHealthCheckPolicyCmd.class);
+        cmdList.add(EnableOutOfBandManagementForHostCmd.class);
+        cmdList.add(DisableOutOfBandManagementForHostCmd.class);
+        cmdList.add(EnableOutOfBandManagementForClusterCmd.class);
+        cmdList.add(DisableOutOfBandManagementForClusterCmd.class);
+        cmdList.add(EnableOutOfBandManagementForZoneCmd.class);
+        cmdList.add(DisableOutOfBandManagementForZoneCmd.class);
+        cmdList.add(ConfigureOutOfBandManagementCmd.class);
+        cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
+        cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
 
         return cmdList;
     }
