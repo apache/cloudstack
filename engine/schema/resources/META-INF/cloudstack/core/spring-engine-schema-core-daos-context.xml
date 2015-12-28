@@ -347,6 +347,6 @@
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
   <bean id="LBStickinessPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.LBStickinessPolicyDetailsDaoImpl" />
   <bean id="LBHealthCheckPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.LBHealthCheckPolicyDetailsDaoImpl" />
-
+  <bean id="outOfBandManagementDaoImpl" class="org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDaoImpl" />
 
 </beans>

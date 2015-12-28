@@ -66,6 +66,7 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED = new AlertType((short)26, "ALERT.RESOURCE.EXCEED", true);
         public static final AlertType ALERT_TYPE_SYNC = new AlertType((short)27, "ALERT.TYPE.SYNC", true);
         public static final AlertType ALERT_TYPE_UPLOAD_FAILED = new AlertType((short)28, "ALERT.UPLOAD.FAILED", true);
+        public static final AlertType ALERT_TYPE_OOBM_AUTH_ERROR = new AlertType((short)29, "ALERT.OOBM.AUTHERROR", true);
 
         public short getType() {
             return type;

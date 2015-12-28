@@ -61,6 +61,7 @@ known_categories = {
     'StaticNat': 'NAT',
     'IpForwarding': 'NAT',
     'Host': 'Host',
+    'OutOfBand': 'Out-of-band Management',
     'Cluster': 'Cluster',
     'Account': 'Account',
     'Role': 'Role',

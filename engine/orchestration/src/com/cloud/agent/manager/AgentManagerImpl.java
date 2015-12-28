@@ -43,6 +43,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 import org.slf4j.MDC;
@@ -138,6 +139,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected NioServer _connection;
     @Inject
     protected HostDao _hostDao = null;
+    @Inject
+    protected OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     protected DataCenterDao _dcDao = null;
     @Inject

@@ -86,10 +86,19 @@ sudo service mysql restart
 echo -e "\nInstalling Development tools: "
 RETRY_COUNT=3
 
-sudo apt-get -q -y install uuid-runtime genisoimage netcat > /dev/null
+sudo apt-get -q -y install uuid-runtime genisoimage netcat freeipmi-common freeipmi-tools libfreeipmi12 > /dev/null
 if [[ $? -ne 0 ]]; then
   echo -e "\napt-get packages failed to install"
 fi
+
+# We need version 1.8.15 or above, default installed version is buggy
+wget http://mirrors.kernel.org/ubuntu/pool/universe/i/ipmitool/ipmitool_1.8.15-1ubuntu1.1_amd64.deb -O /tmp/ipmitool.deb
+if [[ $? -eq 0 ]]; then
+  sudo dpkg -i /tmp/ipmitool.deb
+  sudo apt-get install -f -y
+  ipmitool -V
+fi
+
 echo "<settings>
   <mirrors>
     <mirror>
@@ -107,7 +116,7 @@ pip install --user --upgrade pip
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  pip install --user --upgrade lxml paramiko nose texttable > /tmp/piplog
+  pip install --user --upgrade lxml paramiko nose texttable ipmisim > /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;
