@@ -102,6 +102,7 @@
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
     <module>database/quota</module>
+    <module>naming-policies</module>
   </modules>
 
   <dependencies>
@@ -130,7 +131,7 @@
       <artifactId>cloud-api</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
-      <scope>test</scope>      
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

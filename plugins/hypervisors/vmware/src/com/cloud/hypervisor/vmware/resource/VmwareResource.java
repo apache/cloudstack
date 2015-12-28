@@ -276,7 +276,8 @@ import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.RouterNamingPolicy;
 import com.cloud.vm.VmDetailConstants;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
@@ -330,6 +331,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected VirtualRoutingResource _vrResource;
 
     protected final static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable = new HashMap<VirtualMachinePowerState, PowerState>();
+
+    protected ResourceNamingPolicyManager _resourceNamingPolicyMgr;
+
     static {
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_ON, PowerState.PowerOn);
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
@@ -1248,7 +1252,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.debug("Ping command port succeeded for vm " + vmName);
         }
 
-        if (VirtualMachineName.isValidRouterName(vmName)) {
+        if (_resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class).isValidRouterName(vmName)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Execute network usage setup command on " + vmName);
             }
@@ -5103,7 +5107,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
             _name = name;
-
+            _resourceNamingPolicyMgr = (ResourceNamingPolicyManager)params.get("resourceNamingPolicy");
             _url = (String)params.get("url");
             _username = (String)params.get("username");
             _password = (String)params.get("password");

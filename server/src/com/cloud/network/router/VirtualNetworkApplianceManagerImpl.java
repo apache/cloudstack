@@ -379,6 +379,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject
     protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
 
+
     int _routerRamSize;
     int _routerCpuMHz;
     int _retry = 2;
@@ -2704,4 +2705,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     public boolean completeAggregatedExecution(final Network network, final List<DomainRouterVO> routers) throws AgentUnavailableException, ResourceUnavailableException {
         return aggregationExecution(Action.Finish, network, routers);
     }
+
+
 }

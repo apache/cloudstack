@@ -93,7 +93,8 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.RouterNamingPolicy;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -148,15 +149,17 @@ public class LoadBalanceRuleHandler {
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private UserDao _userDao;
-
-    static final private String ELB_VM_NAME_PREFIX = "l";
+    @Inject
+    private ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     private final String _instance;
     private final Account _systemAcct;
 
-    public LoadBalanceRuleHandler(String instance, Account systemAcct) {
+    public LoadBalanceRuleHandler(String instance, Account systemAcct, ResourceNamingPolicyManager resourceNamingPolicyMgr) {
         _instance = instance;
         _systemAcct = systemAcct;
+        _resourceNamingPolicyMgr = resourceNamingPolicyMgr;
+
     }
 
     public void handleDeleteLoadBalancerRule(final LoadBalancer lb, final long userId, final Account caller) {
@@ -285,12 +288,15 @@ public class LoadBalanceRuleHandler {
                         userId =  userVOs.get(0).getId();
                     }
                 }
-
+                String name = _resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class).getElasticLBName(id);
                 ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.elbVmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
-                elbVm = new DomainRouterVO(id, elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
+                elbVm = new DomainRouterVO(id, elasticLbVmOffering.getId(), vrProvider.getId(), name,
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN,
                         elasticLbVmOffering.getOfferHA(), false, null);
                 elbVm.setRole(Role.LB);
+
+                _resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class).finalizeIdentifiers(elbVm);
+
                 elbVm = _routerDao.persist(elbVm);
                 _itMgr.allocate(elbVm.getInstanceName(), template, elasticLbVmOffering, networks, plan, null);
                 elbVm = _routerDao.findById(elbVm.getId());
@@ -480,4 +486,5 @@ public class LoadBalanceRuleHandler {
         _itMgr.start(elbVm.getUuid(), params);
         return _routerDao.findById(elbVm.getId());
     }
+
 }

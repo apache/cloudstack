@@ -52,6 +52,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.SnapshotNamingPolicy;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -119,12 +121,18 @@ public class SnapshotManagerTest {
     ResourceManager _resourceMgr;
     @Mock
     DataStore storeMock;
+    @Mock
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
+    @Mock
+    SnapshotNamingPolicy _snapshotNamingPolicy;
+
 
     private static final long TEST_SNAPSHOT_ID = 3L;
     private static final long TEST_VOLUME_ID = 4L;
     private static final long TEST_VM_ID = 5L;
     private static final long TEST_STORAGE_POOL_ID = 6L;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws ResourceAllocationException {
         MockitoAnnotations.initMocks(this);
@@ -139,6 +147,8 @@ public class SnapshotManagerTest {
         _snapshotMgr._storagePoolDao = _storagePoolDao;
         _snapshotMgr._resourceMgr = _resourceMgr;
         _snapshotMgr._vmSnapshotDao = _vmSnapshotDao;
+        _snapshotMgr._resourceNamingPolicyMgr = _resourceNamingPolicyMgr;
+
 
         when(_snapshotDao.findById(anyLong())).thenReturn(snapshotMock);
         when(snapshotMock.getVolumeId()).thenReturn(TEST_VOLUME_ID);
@@ -150,6 +160,8 @@ public class SnapshotManagerTest {
         when(volumeInfoMock.getDataStore()).thenReturn(storeMock);
         when(storeMock.getId()).thenReturn(TEST_STORAGE_POOL_ID);
 
+        when(_resourceNamingPolicyMgr.getPolicy((Class<SnapshotNamingPolicy>)any(Class.class)))
+        .thenReturn(_snapshotNamingPolicy);
         when(snapshotFactory.getSnapshot(anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(snapshotInfoMock);
         when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.REVERT))).thenReturn(snapshotStrategy);
         when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.DELETE))).thenReturn(snapshotStrategy);

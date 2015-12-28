@@ -269,4 +269,9 @@
     <bean id="imageStoreUploadMonitorImpl" class="com.cloud.storage.ImageStoreUploadMonitorImpl" />
 
     <bean id="usageEventEmitter" class="com.cloud.event.UsageEventEmitterImpl" />
+
+
+    <bean id="resourceNamingPolicies" class="com.cloud.naming.ResourceNamingPolicyManagerImpl" >
+        <property name="registered" value="#{resourceNamingRegistry.registered}"></property>
+    </bean>
 </beans>

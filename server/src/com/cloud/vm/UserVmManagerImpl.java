@@ -163,6 +163,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.IpAddressManager;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.SecurityGroupNamingPolicy;
+import com.cloud.naming.UserVMNamingPolicy;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
@@ -268,7 +271,6 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -463,8 +465,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     UserVmDetailsDao _uservmDetailsDao;
     @Inject
-    UUIDManager _uuidMgr;
-    @Inject
     DeploymentPlanningManager _planningMgr;
     @Inject
     VolumeApiService _volumeService;
@@ -480,6 +480,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected VMNetworkMapDao _vmNetworkMapDao;
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -2798,7 +2800,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
                     }
-                    defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
+                    String sgName = _resourceNamingPolicyMgr.getPolicy(SecurityGroupNamingPolicy.class).getSgDefaultName();
+                    defaultGroup = _securityGroupMgr.createSecurityGroup(sgName, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
                             owner.getDomainId(), owner.getId(), owner.getAccountName());
                     securityGroupIdList.add(defaultGroup.getId());
                 }
@@ -2909,7 +2912,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Couldn't find default security group for the account " + owner + " so creating a new one");
                     }
-                    defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
+                    String sgName = _resourceNamingPolicyMgr.getPolicy(SecurityGroupNamingPolicy.class).getSgDefaultName();
+                    defaultGroup = _securityGroupMgr.createSecurityGroup(sgName, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
                             owner.getDomainId(), owner.getId(), owner.getAccountName());
                     securityGroupIdList.add(defaultGroup.getId());
                 }
@@ -3305,6 +3309,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to deploy vm with security groups as SecurityGroup service is not enabled for the vm's network");
         }
 
+        long userId = CallContext.current().getCallingUserId();
+        if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+            List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+            if (!userVOs.isEmpty()) {
+                userId =  userVOs.get(0).getId();
+            }
+        }
         // Verify network information - network default network has to be set;
         // and vm can't have more than one default network
         // This is a part of business logic because default network is required
@@ -3324,13 +3335,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         String instanceName = null;
-        String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
+        String uuidName = _resourceNamingPolicyMgr.getPolicy(UserVMNamingPolicy.class).generateUuid(id, userId, customId);
         if (_instanceNameFlag && hypervisor.equals(HypervisorType.VMware)) {
             if (hostName == null) {
                 if (displayName != null) {
                     hostName = displayName;
                 } else {
-                    hostName = generateHostName(uuidName);
+                    hostName = _resourceNamingPolicyMgr.getPolicy(UserVMNamingPolicy.class).getHostName(id, owner.getId(), uuidName);
                 }
             }
             // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
@@ -3342,7 +3353,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             if (hostName == null) {
                 //Generate name using uuid and instance.name global config
-                hostName = generateHostName(uuidName);
+                hostName = _resourceNamingPolicyMgr.getPolicy(UserVMNamingPolicy.class).getHostName(id, owner.getId(), uuidName);
             }
         }
 
@@ -3350,7 +3361,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check is hostName is RFC compliant
             checkNameForRFCCompliance(hostName);
         }
-        instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        instanceName = _resourceNamingPolicyMgr.getPolicy(UserVMNamingPolicy.class).getInstanceName(id, owner.getId(), uuidName);
 
         // Check if VM with instanceName already exists.
         VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
@@ -3359,14 +3370,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         checkIfHostNameUniqueInNtwkDomain(hostName, networkList);
-
-        long userId = CallContext.current().getCallingUserId();
-        if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-            List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
-            if (!userVOs.isEmpty()) {
-                userId =  userVOs.get(0).getId();
-            }
-        }
 
         UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard, accountId, userId, offering,
                 isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters);
@@ -3420,10 +3423,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
-    }
-
-    private String generateHostName(String uuidName) {
-        return _instance + "-" + uuidName;
     }
 
     private UserVmVO commitUserVm(final DataCenter zone, final VirtualMachineTemplate template, final String hostName, final String displayName, final Account owner,
@@ -3531,6 +3530,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         }
                     }
                 }
+
+
+                _resourceNamingPolicyMgr.getPolicy(UserVMNamingPolicy.class).finalizeIdentifiers(vm);
 
                 _vmDao.persist(vm);
                 for (String key : customParameters.keySet()) {
@@ -5009,7 +5011,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Couldn't find default security group for the account " + newAccount + " so creating a new one");
                     }
-                    defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
+                    String sgName = _resourceNamingPolicyMgr.getPolicy(SecurityGroupNamingPolicy.class).getSgDefaultName();
+                    defaultGroup = _securityGroupMgr.createSecurityGroup(sgName, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
                             newAccount.getDomainId(), newAccount.getId(), newAccount.getAccountName());
                     securityGroupIdList.add(defaultGroup.getId());
                 }
@@ -5500,4 +5503,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         return true; // no info then default to true
     }
+
+
 }

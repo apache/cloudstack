@@ -129,6 +129,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.TemplateNamingPolicy;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.DataStoreRole;
@@ -264,6 +266,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
     private UsageEventEmitter _usageEventEmitter;
+    @Inject
+    private ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     @Inject
     MessageBus _messageBus;
@@ -1702,6 +1706,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
         privateTemplate.setSourceTemplateId(sourceTemplateId);
+
+        _resourceNamingPolicyMgr.getPolicy(TemplateNamingPolicy.class).finalizeIdentifiers(privateTemplate);
 
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
         // Increment the number of templates

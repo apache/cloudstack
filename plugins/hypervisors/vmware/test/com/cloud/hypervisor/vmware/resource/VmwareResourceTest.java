@@ -23,11 +23,11 @@ import static org.mockito.Mockito.when;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import com.vmware.vim25.VirtualMachineConfigSpec;
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
@@ -35,6 +35,8 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.RouterNamingPolicy;
 
 public class VmwareResourceTest {
 
@@ -64,12 +66,18 @@ public class VmwareResourceTest {
     VirtualMachineMO vmMo;
     @Mock
     VirtualMachineConfigSpec vmConfigSpec;
+    @Mock
+    ResourceNamingPolicyManager resourceNamingPolicyMgr;
+    @Mock
+    RouterNamingPolicy routerNamingPolicy;
 
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
         doReturn(context).when(_resource).getServiceContext(null);
         when(cmd.getVirtualMachine()).thenReturn(vmSpec);
+        when(resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class)).thenReturn(routerNamingPolicy);
+        when(routerNamingPolicy.isValidRouterName(Mockito.anyString())).thenReturn(true);
     }
 
     //Test successful scaling up the vm

@@ -24,7 +24,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -50,6 +49,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.TemplateNamingPolicy;
 import com.cloud.org.Grouping;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ConfigurationServer;
@@ -111,6 +112,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     ConfigurationServer _configServer;
     @Inject
     ProjectManager _projectMgr;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     @Override
     public boolean stop() {
@@ -336,11 +339,17 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
 
             template.setCrossZones(true);
+
+            _resourceNamingPolicyMgr.getPolicy(TemplateNamingPolicy.class).finalizeIdentifiers(template);
+
+
             for (DataCenterVO dc : dcs) {
                 _tmpltDao.addTemplateToZone(template, dc.getId());
             }
 
         } else {
+            _resourceNamingPolicyMgr.getPolicy(TemplateNamingPolicy.class).finalizeIdentifiers(template);
+
             _tmpltDao.addTemplateToZone(template, zoneId);
         }
         return _tmpltDao.findById(template.getId());

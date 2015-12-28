@@ -85,6 +85,8 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.VolumeNamingPolicy;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
@@ -179,6 +181,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     StorageManager storageMgr;
     @Inject
     UsageEventEmitter _usageEventEmitter;
+    @Inject ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -255,6 +258,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         newVol.setInstanceId(oldVol.getInstanceId());
         newVol.setRecreatable(oldVol.isRecreatable());
         newVol.setFormat(oldVol.getFormat());
+
+        _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).finalizeIdentifiers(newVol);
+
         return _volsDao.persist(newVol);
     }
 
@@ -643,6 +649,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 minIops,
                 maxIops,
                 null);
+
+
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -662,6 +670,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
+
+        _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).finalizeIdentifiers(vol);
+
         vol = _volsDao.persist(vol);
 
         // Save usage event and update resource count for user vm volumes
@@ -724,6 +735,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
+        _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).finalizeIdentifiers(vol);
 
         vol = _volsDao.persist(vol);
 
@@ -1534,4 +1546,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             _volsDao.update(volumeId, vol);
         }
     }
+
+
 }

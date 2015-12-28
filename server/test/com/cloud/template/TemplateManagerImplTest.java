@@ -28,6 +28,8 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.TemplateNamingPolicy;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -544,6 +546,17 @@ public class TemplateManagerImplTest {
         @Bean
         public UsageEventEmitter usageEventEmitter() {
             return Mockito.mock(UsageEventEmitter.class);
+        }
+
+        @Bean
+        public TemplateNamingPolicy getTemplateNamingPolicy() {
+            return Mockito.mock(TemplateNamingPolicy.class);
+        }
+        @SuppressWarnings("unchecked")
+        @Bean
+        public ResourceNamingPolicyManager resourceNamingPolicies() {
+            ResourceNamingPolicyManager r = Mockito.mock(ResourceNamingPolicyManager.class);
+            return r;
         }
 
         public static class Library implements TypeFilter {

@@ -57,6 +57,8 @@ import com.cloud.hypervisor.xenserver.resource.XenServer620SP1Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServerConnectionPool;
 import com.cloud.hypervisor.xenserver.resource.Xenserver625Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer650Resource;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.TemplateNamingPolicy;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
@@ -123,6 +125,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     VMTemplateDao _tmpltDao;
     @Inject
     HostPodDao _podDao;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     protected XcpServerDiscoverer() {
     }
@@ -533,6 +537,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             VMTemplateVO template =
                     VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
                             null, "xen-pv-drv-iso", false, 1, false, HypervisorType.XenServer);
+
+            _resourceNamingPolicyMgr.getPolicy(TemplateNamingPolicy.class).finalizeIdentifiers(template);
+
             _tmpltDao.persist(template);
         } else {
             id = tmplt.getId();

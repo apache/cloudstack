@@ -60,6 +60,8 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.maint.Version;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.RouterNamingPolicy;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -94,7 +96,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -147,8 +148,11 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected VirtualMachineManager _itMgr;
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    @Inject
+    protected ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
+
 
     @PostConstruct
     protected void setupHypervisorsMap() {
@@ -485,13 +489,16 @@ public class NetworkHelperImpl implements NetworkHelper {
                         userId =  userVOs.get(0).getId();
                     }
                 }
-
-                router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), VirtualMachineName.getRouterName(id,
-                        s_vmInstanceName), template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
+                String name = _resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class).getRouterName(id);
+                router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), name,
+                        template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
                         userId, routerDeploymentDefinition.isRedundant(), RedundantState.UNKNOWN, offerHA, false, vpcId);
 
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);
+
+                _resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class).finalizeIdentifiers(router);
+
                 router = _routerDao.persist(router);
 
                 reallocateRouterNetworks(routerDeploymentDefinition, router, template, null);
