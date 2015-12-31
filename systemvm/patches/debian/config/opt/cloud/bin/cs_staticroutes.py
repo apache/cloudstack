@@ -23,7 +23,10 @@ def merge(dbag, staticroutes):
         key = route['ip_address']
         revoke = route['revoke']
         if revoke:
-            del dbag[key]
+            try:
+                del dbag[key]
+            except KeyError:
+                pass
         else:
             dbag[key] = route
 
