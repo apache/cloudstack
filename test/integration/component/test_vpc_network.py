@@ -21,7 +21,7 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import startVirtualMachine, stopVirtualMachine
-from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.utils import cleanup_resources, validateList, get_host_credentials
 from marvin.lib.base import (VirtualMachine,
                              ServiceOffering,
                              Account,
@@ -41,11 +41,14 @@ from marvin.lib.common import (get_zone,
                                wait_for_cleanup,
                                add_netscaler,
                                list_networks,
-                               verifyRouterState)
+                               verifyRouterState,
+                               list_hosts,
+                               get_process_status)
 # For more info on ddt refer to
 # http://ddt.readthedocs.org/en/latest/api.html#module-ddt
 from ddt import ddt, data
 import time
+import re
 from marvin.codes import PASS
 
 
@@ -2598,6 +2601,7 @@ class TestRouterOperations(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -2683,6 +2687,68 @@ class TestRouterOperations(cloudstackTestCase):
     def tearDown(self):
         return
 
+    def listRouter(self):
+        routers = Router.list(
+            self.apiclient,
+            vpcid=self.vpc.id,
+            listall="true"
+        )
+        self.assertEqual(validateList(routers)[0], PASS, "Invalid router response")
+        return routers[0]
+
+    def secondaryIP(self, router):
+        hosts = list_hosts(
+            self.apiclient,
+            id=router.hostid
+        )
+        self.assertEqual(validateList(hosts)[0], PASS, "Invalid host response")
+        host = hosts[0]
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
+            # SSH into system vms is done via management server for Vmware and
+            # Hyper-V
+            result = get_process_status(
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                router.privateip,
+                "ip addr show",
+                hypervisor=self.hypervisor
+            )
+        else:
+            try:
+                host.user, host.passwd = get_host_credentials(
+                    self.config, host.ipaddress
+                )
+                result = get_process_status(
+                    host.ipaddress,
+                    22,
+                    host.user,
+                    host.passwd,
+                    router.linklocalip,
+                    "ip addr show"
+                )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
+        return result
+
+    def validateResult(self, output):
+        ip = self.public_ip_1.ipaddress.ipaddress
+        reg = re.compile(ip)
+        for line in output:
+            m = reg.search(line)
+            if m:
+                break
+        if m:
+            if m.group(0) == ip and re.search("secondary", line):
+                self.debug("Found secondary ip address even after network restart")
+            else:
+                self.fail("Secondary IP is missing from vpcVR after \
+                      network restart with cleanup")
+        else:
+            self.fail("IP is missing from vpcVR")
+        return
+
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_stop_start_vpc_router(self):
         """ Test stop and start VPC router
@@ -2747,4 +2813,40 @@ class TestRouterOperations(cloudstackTestCase):
 
         if (exceptionOccured or (not isRouterInDesiredState)):
             self.fail(exceptionMessage)
+        return
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    def test_restart_network_with_cleanup(self):
+        """ Test restart network with cleanup
+
+        #1.Acquire pubilc ip
+        #2.Configure PF rule on acquired ip
+        #3.Restart network with leanup
+        #4.Verify that IP won't be deleted from vpc VR
+        """
+        self.public_ip_1 = PublicIPAddress.create(
+            self.apiclient,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            networkid=self.network_1.id,
+            vpcid=self.vpc.id
+        )
+        NATRule.create(
+            self.apiclient,
+            self.vm_1,
+            self.services["natrule"],
+            ipaddressid=self.public_ip_1.ipaddress.id,
+            networkid=self.network_1.id
+        )
+        router = self.listRouter()
+        result = self.secondaryIP(router)
+        self.validateResult(result)
+        self.network_1.restart(
+            self.apiclient,
+            cleanup="true"
+        )
+        router = self.listRouter()
+        result = self.secondaryIP(router)
+        self.validateResult(result)
         return
