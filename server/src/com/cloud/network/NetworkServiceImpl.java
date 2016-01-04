@@ -39,7 +39,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.router.VirtualRouter;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -181,7 +180,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
@@ -2252,20 +2250,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         int resourceCount=1;
         if(updateInSequence && restartNetwork && _networkOfferingDao.findById(network.getNetworkOfferingId()).getRedundantRouter()
                 && (networkOfferingId==null || _networkOfferingDao.findById(networkOfferingId).getRedundantRouter()) && network.getVpcId()==null) {
-            _networkMgr.canUpdateInSequence(network);
+            _networkMgr.canUpdateInSequence(network, forced);
             NetworkDetailVO networkDetail =new NetworkDetailVO(network.getId(),Network.updatingInSequence,"true",true);
             _networkDetailsDao.persist(networkDetail);
             _networkMgr.configureUpdateInSequence(network);
             resourceCount=_networkMgr.getResourceCount(network);
-            //check if routers are in correct state before proceeding with the update
-            List<DomainRouterVO> routers=_routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER);
-            for(DomainRouterVO router :routers){
-                if(router.getRedundantState()== VirtualRouter.RedundantState.UNKNOWN){
-                    if(!forced){
-                        throw new CloudRuntimeException("Domain router: "+router.getInstanceName()+" is in unknown state, Cannot update network. set parameter forced to true for forcing an update");
-                    }
-                }
-            }
         }
         List<String > servicesNotInNewOffering = null;
         if(networkOfferingId != null)
@@ -2413,7 +2402,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 resourceCount--;
             } while(updateInSequence && resourceCount>0);
         }catch (Exception exception){
-             throw new CloudRuntimeException("failed to update network "+network.getUuid()+"due to "+exception.getMessage());
+             if(updateInSequence)
+                 _networkMgr.finalizeUpdateInSequence(network,false);
+             throw new CloudRuntimeException("failed to update network "+network.getUuid()+" due to "+exception.getMessage());
         }finally {
             if(updateInSequence){
                 if( _networkDetailsDao.findDetail(networkId,Network.updatingInSequence)!=null){

@@ -227,7 +227,7 @@ public interface NetworkOrchestrationService {
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
 
-    boolean canUpdateInSequence(Network network);
+    boolean canUpdateInSequence(Network network, boolean forced);
 
     List<String> getServicesNotSupportedInNewOffering(Network network, long newNetworkOfferingId);
 
@@ -236,4 +236,6 @@ public interface NetworkOrchestrationService {
     void configureUpdateInSequence(Network network);
 
     int getResourceCount(Network network);
+
+    void finalizeUpdateInSequence(Network network, boolean success);
 }
