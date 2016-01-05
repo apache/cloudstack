@@ -22,7 +22,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import junit.framework.TestCase;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.QuotaStatementImpl.STATEMENT_PERIODS;
-import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
@@ -224,6 +223,7 @@ public class QuotaStatementTest extends TestCase {
 
     }
 
+
     @Test
     public void testSendStatement() throws UnsupportedEncodingException, MessagingException {
         Calendar date = Calendar.getInstance();
@@ -242,13 +242,11 @@ public class QuotaStatementTest extends TestCase {
         Mockito.when(quotaUsage.findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyInt(), Mockito.any(Date.class), Mockito.any(Date.class)))
                 .thenReturn(new BigDecimal(100));
 
-        QuotaAlertManagerImpl.DeferredQuotaEmail email = new QuotaAlertManagerImpl.DeferredQuotaEmail(accountVO, acc, new BigDecimal(100),
-                QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW);
         // call real method on send monthly statement
-        Mockito.doCallRealMethod().when(quotaStatement).sendStatement();
+        quotaStatement.sendStatement();
         Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.MONTHLY);
         if (period != null){
-            Mockito.verify(alertManager, Mockito.times(1)).sendQuotaAlert(email);
+            Mockito.verify(alertManager, Mockito.times(1)).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
         }
     }
 
