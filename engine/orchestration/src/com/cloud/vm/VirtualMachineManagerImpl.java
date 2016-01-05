@@ -1256,7 +1256,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachine vm = profile.getVirtualMachine();
         final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
         try {
-            final Answer answer = _agentMgr.send(vm.getHostId(), stop);
+            Answer answer = null;
+            if(vm.getHostId() != null) {
+                answer = _agentMgr.send(vm.getHostId(), stop);
+            }
             if (answer != null && answer instanceof StopAnswer) {
                 final StopAnswer stopAns = (StopAnswer)answer;
                 if (vm.getType() == VirtualMachine.Type.User) {
