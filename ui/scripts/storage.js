@@ -80,10 +80,7 @@
                                 fields: {
                                     name: {
                                         docID: 'helpVolumeName',
-                                        label: 'label.name',
-                                        validation: {
-                                            required: true
-                                        }
+                                        label: 'label.name'
                                     },
                                     availabilityZone: {
                                         label: 'label.availability.zone',

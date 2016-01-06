@@ -29,6 +29,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.user.User;
+import junit.framework.Assert;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -97,6 +99,8 @@ public class VolumeApiServiceImplTest {
     SnapshotInfo snapshotInfoMock;
     @Mock
     VolumeService volService;
+    @Mock
+    CreateVolumeCmd createVol;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
@@ -353,6 +357,30 @@ public class VolumeApiServiceImplTest {
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
         when (volService.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
         _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false);
+    }
+
+    @Test
+    public void testNullGetVolumeNameFromCmd() {
+        when(createVol.getVolumeName()).thenReturn(null);
+        Assert.assertNotNull(_svc.getVolumeNameFromCommand(createVol));
+    }
+
+    @Test
+    public void testEmptyGetVolumeNameFromCmd() {
+        when(createVol.getVolumeName()).thenReturn("");
+        Assert.assertNotNull(_svc.getVolumeNameFromCommand(createVol));
+    }
+
+    @Test
+    public void testBlankGetVolumeNameFromCmd() {
+        when(createVol.getVolumeName()).thenReturn("   ");
+        Assert.assertNotNull(_svc.getVolumeNameFromCommand(createVol));
+    }
+
+    @Test
+    public void testNonEmptyGetVolumeNameFromCmd() {
+        when(createVol.getVolumeName()).thenReturn("abc");
+        Assert.assertSame(_svc.getVolumeNameFromCommand(createVol), "abc");
     }
 
     @After
