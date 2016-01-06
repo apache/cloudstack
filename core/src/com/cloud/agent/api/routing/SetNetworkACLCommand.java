@@ -83,7 +83,7 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
                 Boolean firstEntry = true;
                 for (final String tag : cidr) {
                     if (!firstEntry) {
-                        sb.append("-");
+                        sb.append(",");
                     }
                     sb.append(tag);
                     firstEntry = false;
