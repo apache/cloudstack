@@ -2904,6 +2904,12 @@
                                                 return str ? 'Yes' : 'No';
                                             }
                                         },
+                                        forceencap: {
+                                            label: 'label.vpn.force.encapsulation',
+                                            converter: function(str) {
+                                                return str ? 'Yes' : 'No';
+                                            }
+                                        },
                                         state: {
                                             label: 'label.state'
                                         },

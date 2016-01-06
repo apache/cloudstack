@@ -6129,6 +6129,14 @@
                                         docID: 'helpVPNGatewayDeadPeerDetection',
                                         isBoolean: true,
                                         isChecked: false
+                                    },
+
+                                    forceencap: {
+                                        label: 'label.vpn.force.encapsulation',
+                                        docID: 'helpVPNGatewayForceEncapsulation',
+                                        docID: 'helpVPNGatewayForceEncapsulation',
+                                        isBoolean: true,
+                                        isChecked: false
                                     }
                                 }
                             },
@@ -6140,7 +6148,8 @@
                                     ipsecpsk: args.data.ipsecpsk,
                                     ikelifetime: args.data.ikelifetime,
                                     esplifetime: args.data.esplifetime,
-                                    dpd: (args.data.dpd == "on")
+                                    dpd: (args.data.dpd == "on"),
+                                    forceencap: (args.data.forceencap == "on")
                                 };
 
                                 var ikepolicy = args.data.ikeEncryption + '-' + args.data.ikeHash;
@@ -6196,7 +6205,8 @@
                                         ipsecpsk: args.data.ipsecpsk,
                                         ikelifetime: args.data.ikelifetime,
                                         esplifetime: args.data.esplifetime,
-                                        dpd: (args.data.dpd == "on")
+                                        dpd: (args.data.dpd == "on"),
+                                        forceencap: (args.data.forceencap == "on")
                                     };
 
                                     var ikepolicy = args.data.ikeEncryption + '-' + args.data.ikeHash;
@@ -6460,6 +6470,13 @@
 
                                     dpd: {
                                         label: 'label.dead.peer.detection',
+                                        isBoolean: true,
+                                        isEditable: true,
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+
+                                    forceencap: {
+                                        label: 'label.vpn.force.encapsulation',
                                         isBoolean: true,
                                         isEditable: true,
                                         converter: cloudStack.converters.toBooleanText
