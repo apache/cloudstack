@@ -22,7 +22,7 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import updateZone
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              VPC,
                              VpcOffering,
@@ -42,6 +42,7 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                list_configurations)
+from marvin.codes import PASS
 import time
 
 
@@ -2517,4 +2518,18 @@ class TestVPC(cloudstackTestCase):
         except Exception as e:
             self.fail("Creating vpn customer gateway with hostname\
                       Failed with error :%s" % e)
+        vpn_cgw_res = VpnCustomerGateway.list(
+            self.apiclient,
+            id=vpnGw.id
+        )
+        self.assertEqual(
+            validateList(vpn_cgw_res)[0],
+            PASS,
+            "Invalid response for list vpncustomer gateways"
+        )
+        self.assertEqual(
+            vpnGw.gateway,
+            vpn_cgw_res[0].gateway,
+            "Mismatch in vpn customer gateway names"
+        )
         return
