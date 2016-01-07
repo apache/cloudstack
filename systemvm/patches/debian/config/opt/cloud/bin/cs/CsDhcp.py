@@ -16,6 +16,7 @@
 # under the License.
 import CsHelper
 import logging
+import os
 from netaddr import *
 from CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
@@ -96,27 +97,16 @@ class CsDhcp(CsDataBag):
             self.conf.search(sline, line)
 
     def delete_leases(self):
-        changed = []
-        leases = []
         try:
             for line in open(LEASES):
                 bits = line.strip().split(' ')
-                to = {"device": bits[0],
-                      "mac": bits[1],
-                      "ip": bits[2],
-                      "host": bits[3:],
-                      "del": False
-                      }
-                changed.append(to)
+                to = {
+                    "mac": bits[1],
+                    "ip": bits[2]
+                }
 
-                for v in changed:
-                    if v['mac'] == to['mac'] or v['ip'] == to['ip'] or v['host'] == to['host']:
-                        to['del'] = True
-                leases.append(to)
-
-            for o in leases:
-                if o['del']:
-                    cmd = "dhcp_release eth%s %s %s" % (o['device'], o['ip'], o['mac'])
+                for i in os.listdir('/sys/class/net/'):
+                    cmd = "dhcp_release %s %s %s" % (i, to['ip'], to['mac'])
                     logging.info(cmd)
                     CsHelper.execute(cmd)
         except IOError:
