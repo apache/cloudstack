@@ -51,13 +51,15 @@ class CsAddress(CsDataBag):
         Return CsInterface object for the lowest in use guest interface
         """
         guest_interface = None
-        lowest_device = 99
+        lowest_device = 1000
         for ip in self.get_ips():
             if ip.is_guest() and ip.is_added():
-                devive_sufix = int(ip.get_device()[-1:])
-                if devive_sufix < lowest_device:
-                    lowest_device = devive_sufix
+                device = ip.get_device()
+                device_suffix = int(''.join([digit for digit in device if digit.isdigit()]))
+                if device_suffix < lowest_device:
+                    lowest_device = device_suffix
                     guest_interface = ip
+                    logging.debug("Guest interface will be set on device '%s' and IP '%s'" % (guest_interface.get_device(), guest_interface.get_ip()))
         return guest_interface
 
     def get_guest_ip(self):
