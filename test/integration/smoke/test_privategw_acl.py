@@ -253,7 +253,19 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.performVPCTests(vpc_off)
 
     @attr(tags=["advanced"], required_hardware="true")
-    def test_03_rvpc_privategw_static_routes(self):
+    def test_03_vpc_privategw_restart_vpc_cleanup(self):
+        self.logger.debug("Creating a VPC offering..")
+        vpc_off = VpcOffering.create(
+            self.apiclient,
+            self.services["vpc_offering"])
+
+        self.logger.debug("Enabling the VPC offering created")
+        vpc_off.update(self.apiclient, state='Enabled')
+
+        self.performVPCTests(vpc_off, True)
+
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_04_rvpc_privategw_static_routes(self):
         self.logger.debug("Creating a Redundant VPC offering..")
         vpc_off = VpcOffering.create(
             self.apiclient,
@@ -264,7 +276,7 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         self.performVPCTests(vpc_off)
 
-    def performVPCTests(self, vpc_off):
+    def performVPCTests(self, vpc_off, restart_with_cleanup = False):
         self.logger.debug("Creating VPCs with  offering ID %s" % vpc_off.id)
         vpc_1 = self.createVPC(vpc_off, cidr = '10.0.1.0/24')
         vpc_2 = self.createVPC(vpc_off, cidr = '10.0.2.0/24')
@@ -311,6 +323,13 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         self.check_pvt_gw_connectivity(vm1, public_ip_1, vm2.nic[0].ipaddress)
         self.check_pvt_gw_connectivity(vm2, public_ip_2, vm1.nic[0].ipaddress)
+
+        if restart_with_cleanup:
+            self.reboot_vpc_with_cleanup(vpc_1, True)
+            self.reboot_vpc_with_cleanup(vpc_2, True)
+
+            self.check_pvt_gw_connectivity(vm1, public_ip_1, vm2.nic[0].ipaddress)
+            self.check_pvt_gw_connectivity(vm2, public_ip_2, vm1.nic[0].ipaddress)
 
     def createVPC(self, vpc_offering, cidr = '10.1.1.1/16'):
         try:
@@ -539,3 +558,14 @@ class TestPrivateGwACL(cloudstackTestCase):
                          1,
                          "Ping to outside world from VM should be successful"
                          )
+
+    def reboot_vpc_with_cleanup(self, vpc, cleanup = True):
+        self.logger.debug("Restarting VPC %s with cleanup" % vpc.id)
+
+        # Reboot the router
+        cmd = restartVPC.restartVPCCmd()
+        cmd.id = vpc.id
+        cmd.cleanup = cleanup
+        cmd.makeredundant = False
+        self.api_client.restartVPC(cmd)
+
