@@ -19,13 +19,13 @@
 
 package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.to.NetworkACLTO;
-import com.cloud.agent.api.to.NicTO;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import com.cloud.agent.api.to.NetworkACLTO;
+import com.cloud.agent.api.to.NicTO;
 
 public class SetNetworkACLCommand extends NetworkElementCommand {
     NetworkACLTO[] rules;
@@ -34,7 +34,7 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
     protected SetNetworkACLCommand() {
     }
 
-    public SetNetworkACLCommand(List<NetworkACLTO> rules, NicTO nic) {
+    public SetNetworkACLCommand(final List<NetworkACLTO> rules, final NicTO nic) {
         this.rules = rules.toArray(new NetworkACLTO[rules.size()]);
         this.nic = nic;
     }
@@ -44,32 +44,32 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
     }
 
     public String[][] generateFwRules() {
-        List<NetworkACLTO> aclList = Arrays.asList(rules);
+        final List<NetworkACLTO> aclList = Arrays.asList(rules);
         Collections.sort(aclList, new Comparator<NetworkACLTO>() {
             @Override
-            public int compare(NetworkACLTO acl1, NetworkACLTO acl2) {
+            public int compare(final NetworkACLTO acl1, final NetworkACLTO acl2) {
                 return acl1.getNumber() < acl2.getNumber() ? 1 : -1;
             }
         });
 
-        String[][] result = new String[2][aclList.size()];
+        final String[][] result = new String[2][aclList.size()];
         int i = 0;
-        for (NetworkACLTO aclTO : aclList) {
+        for (final NetworkACLTO aclTO : aclList) {
             /*  example  :  Ingress:tcp:80:80:0.0.0.0/0:ACCEPT:,Egress:tcp:220:220:0.0.0.0/0:DROP:,
              *  each entry format      Ingress/Egress:protocol:start port: end port:scidrs:action:
              *  reverted entry format  Ingress/Egress:reverted:0:0:0:
              */
             if (aclTO.revoked() == true) {
-                StringBuilder sb = new StringBuilder();
+                final StringBuilder sb = new StringBuilder();
                 /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
                 sb.append(aclTO.getTrafficType().toString()).append(":reverted:0:0:0:");
-                String aclRuleEntry = sb.toString();
+                final String aclRuleEntry = sb.toString();
                 result[0][i++] = aclRuleEntry;
                 continue;
             }
 
             List<String> cidr;
-            StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder();
             sb.append(aclTO.getTrafficType().toString()).append(":").append(aclTO.getProtocol()).append(":");
             if ("icmp".compareTo(aclTO.getProtocol()) == 0) {
                 sb.append(aclTO.getIcmpType()).append(":").append(aclTO.getIcmpCode()).append(":");
@@ -81,15 +81,16 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
                 sb.append("0.0.0.0/0");
             } else {
                 Boolean firstEntry = true;
-                for (String tag : cidr) {
-                    if (!firstEntry)
-                        sb.append("-");
+                for (final String tag : cidr) {
+                    if (!firstEntry) {
+                        sb.append(",");
+                    }
                     sb.append(tag);
                     firstEntry = false;
                 }
             }
             sb.append(":").append(aclTO.getAction()).append(":");
-            String aclRuleEntry = sb.toString();
+            final String aclRuleEntry = sb.toString();
             result[0][i++] = aclRuleEntry;
         }
 

@@ -722,6 +722,11 @@
                         async: false,
                         success: function(json) {
                             var domainObjs = json.listdomainsresponse.domain;
+                            if (domainObjs != null && domainObjs.length > 0) {
+                                domainObjs.sort(function(a, b) {
+                                    return a.name.localeCompare(b.name);
+                                });
+                            }
                             args.response.success({
                                 actionFilter: domainActionfilter,
                                 data: domainObjs
@@ -735,6 +740,11 @@
                         async: false,
                         success: function(json) {
                             var domainObjs = json.listdomainchildrenresponse.domain;
+                            if (domainObjs != null && domainObjs.length > 0) {
+                                domainObjs.sort(function(a, b) {
+                                    return a.name.localeCompare(b.name);
+                                });
+                            }
                             args.response.success({
                                 actionFilter: domainActionfilter,
                                 data: domainObjs

@@ -3526,6 +3526,8 @@
                                                     if ('vpc' in args.context) {
                                                         var data = {
                                                             //listAll: true,  //do not pass listAll to listNetworks under VPC
+                                                            domainid: args.context.vpc[0].domainid,
+                                                            account: args.context.vpc[0].account,
                                                             supportedservices: 'Lb'
                                                         };
                                                         if (args.context.ipAddresses[0].associatednetworkid == null) {
@@ -4158,6 +4160,8 @@
                                                     if ('vpc' in args.context) {
                                                         var data = {
                                                             //listAll: true,  //do not pass listAll to listNetworks under VPC
+                                                            domainid: args.context.vpc[0].domainid,
+                                                            account: args.context.vpc[0].account,
                                                             supportedservices: 'PortForwarding'
                                                         };
                                                         if (args.context.ipAddresses[0].associatednetworkid == null) {
