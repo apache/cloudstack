@@ -19,7 +19,7 @@ from pprint import pprint
 
 
 def merge(dbag, vpn):
-    key = vpn['local_public_ip']
+    key = vpn['peer_gateway_ip']
     op = vpn['create']
     if key in dbag.keys() and not op:
         del(dbag[key])
