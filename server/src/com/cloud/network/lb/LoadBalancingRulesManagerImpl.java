@@ -596,7 +596,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
          */
         if (!validateHealthCheck(cmd)) {
             throw new InvalidParameterValueException(
-                "Failed to create HealthCheck policy: Validation Failed (HealthCheck Policy is not supported by LB Provider for the LB rule id :)" + cmd.getLbRuleId());
+                "Failed to create HealthCheck policy: Validation Failed (HealthCheck Policy is not supported by LB Provider for the LB rule id :" + cmd.getLbRuleId() + ")");
         }
 
         /* Validation : check for the multiple hc policies to the rule id */
