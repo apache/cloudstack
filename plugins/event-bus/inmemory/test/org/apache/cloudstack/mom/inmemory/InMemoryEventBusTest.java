@@ -19,21 +19,14 @@
 
 package org.apache.cloudstack.mom.inmemory;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.UUID;
-
 import org.apache.cloudstack.framework.events.Event;
-import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventSubscriber;
-import org.apache.cloudstack.framework.events.EventTopic;
 import org.junit.Test;
-
-import com.cloud.utils.UuidUtils;
 
 public class InMemoryEventBusTest {
 
@@ -46,107 +39,6 @@ public class InMemoryEventBusTest {
 
         assertTrue(success);
         assertTrue(name.equals(bus.getName()));
-    }
-
-    @Test
-    public void testSubscribe() throws Exception {
-        EventTopic topic = mock(EventTopic.class);
-        EventSubscriber subscriber = mock(EventSubscriber.class);
-
-        InMemoryEventBus bus = new InMemoryEventBus();
-
-        UUID uuid = bus.subscribe(topic, subscriber);
-        assertNotNull(uuid);
-
-        String uuidStr = uuid.toString();
-        assertTrue(UuidUtils.validateUUID(uuidStr));
-        assertTrue(bus.totalSubscribers() == 1);
-
-        bus.unsubscribe(uuid, subscriber);
-        assertTrue(bus.totalSubscribers() == 0);
-    }
-
-    @Test(expected = EventBusException.class)
-    public void testSubscribeFailTopic() throws Exception {
-        EventSubscriber subscriber = mock(EventSubscriber.class);
-
-        InMemoryEventBus bus = new InMemoryEventBus();
-
-        bus.subscribe(null, subscriber);
-    }
-
-    @Test(expected = EventBusException.class)
-    public void testSubscribeFailSubscriber() throws Exception {
-        EventTopic topic = mock(EventTopic.class);
-
-        InMemoryEventBus bus = new InMemoryEventBus();
-
-        bus.subscribe(topic, null);
-    }
-
-    @Test
-    public void testUnsubscribe() throws Exception {
-        EventTopic topic = mock(EventTopic.class);
-        EventSubscriber subscriber = mock(EventSubscriber.class);
-
-        InMemoryEventBus bus = new InMemoryEventBus();
-
-        UUID uuid = bus.subscribe(topic, subscriber);
-        assertNotNull(uuid);
-
-        String uuidStr = uuid.toString();
-
-        assertTrue(UuidUtils.validateUUID(uuidStr));
-        assertTrue(bus.totalSubscribers() == 1);
-        //
-        bus.unsubscribe(uuid, subscriber);
-        assertTrue(bus.totalSubscribers() == 0);
-    }
-
-    @Test(expected = EventBusException.class)
-    public void testUnsubscribeFailEmpty() throws Exception {
-        UUID uuid = UUID.randomUUID();
-
-        InMemoryEventBus bus = new InMemoryEventBus();
-        bus.unsubscribe(uuid, null);
-    }
-
-    @Test(expected = EventBusException.class)
-    public void testUnsubscribeFailNull() throws Exception {
-        InMemoryEventBus bus = new InMemoryEventBus();
-        bus.unsubscribe(null, null);
-    }
-
-    @Test(expected = EventBusException.class)
-    public void testUnsubscribeFailWrongUUID() throws Exception {
-        EventSubscriber subscriber = mock(EventSubscriber.class);
-        InMemoryEventBus bus = new InMemoryEventBus();
-        UUID uuid = UUID.randomUUID();
-
-        bus.unsubscribe(uuid, subscriber);
-    }
-
-    @Test
-    public void testPublish() throws Exception {
-        EventTopic topic = mock(EventTopic.class);
-        EventSubscriber subscriber = mock(EventSubscriber.class);
-        Event event = mock(Event.class);
-
-        InMemoryEventBus bus = new InMemoryEventBus();
-
-        UUID uuid = bus.subscribe(topic, subscriber);
-        assertNotNull(uuid);
-
-        String uuidStr = uuid.toString();
-        assertTrue(UuidUtils.validateUUID(uuidStr));
-        assertTrue(bus.totalSubscribers() == 1);
-
-        bus.publish(event);
-
-        verify(subscriber, times(1)).onEvent(event);
-
-        bus.unsubscribe(uuid, subscriber);
-        assertTrue(bus.totalSubscribers() == 0);
     }
 
     @Test
