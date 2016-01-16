@@ -29,14 +29,14 @@ import com.trilead.ssh2.ChannelCondition;
 import com.cloud.utils.Pair;
 
 public class SshHelper {
-    private static final int DEFAULT_CONNECT_TIMEOUT = 60000;
+    private static final int DEFAULT_CONNECT_TIMEOUT = 180000;
     private static final int DEFAULT_KEX_TIMEOUT = 60000;
 
     private static final Logger s_logger = Logger.getLogger(SshHelper.class);
 
     public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command) throws Exception {
 
-        return sshExecute(host, port, user, pemKeyFile, password, command, 60000, 60000, 120000);
+        return sshExecute(host, port, user, pemKeyFile, password, command, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT, 120000);
     }
 
     public static void scpTo(String host, int port, String user, File pemKeyFile, String password, String remoteTargetDirectory, String localFile, String fileMode)
