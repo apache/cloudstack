@@ -907,6 +907,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (conns == null || conns.isEmpty()) {
                 continue;
             }
+            if (router.getIsRedundantRouter() && router.getRedundantState() != RedundantState.MASTER){
+                continue;
+            }
             if (router.getState() != VirtualMachine.State.Running) {
                 for (final Site2SiteVpnConnectionVO conn : conns) {
                     if (conn.getState() != Site2SiteVpnConnection.State.Error) {
