@@ -39,6 +39,8 @@ public interface Site2SiteCustomerGateway extends ControlledEntity, Identity, In
 
     public Boolean getDpd();
 
+    public Boolean getEncap();
+
     public Date getRemoved();
 
     String getName();

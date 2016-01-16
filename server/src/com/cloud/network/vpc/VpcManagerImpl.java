@@ -1668,7 +1668,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         // A more permanent solution would be to define a type of 'gatewaynetwork'
                         // so that handling code is not mixed between the two
                         final NetworkVO gatewaynet = _ntwkDao.findById(privateNtwk.getId());
-                        gatewaynet.setVpcId(vpcId);
+                        gatewaynet.setVpcId(null);
                         _ntwkDao.persist(gatewaynet);
                     }
 

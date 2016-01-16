@@ -1118,6 +1118,10 @@ cloudStack.docs = {
         desc: 'Check this to make the virtual router query its IKE peer at regular intervals to ensure continued availability. It is recommended to have the same DPD setting on both sides of the VPN connection.',
         externalLink: ''
     },
+    helpVPNGatewayForceEncapsulation: {
+        desc: 'Force UDP encapsulation for ESP packets even if no NAT situation is detected. This may help to surmount restrictive firewalls. In order to force the peer to encapsulate packets, NAT detection payloads are faked',
+        externalLink: ''
+    },
     // Copy template
     helpCopyTemplateDestination: {
         desc: 'The zone to which you want to copy the template',

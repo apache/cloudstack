@@ -462,16 +462,20 @@ class CsSite2SiteVpn(CsDataBag):
             if m:
                 self.confips.append(m.group(1))
 
-        for public_ip in self.dbag:
-            if public_ip == "id":
+        for vpn in self.dbag:
+            if vpn == "id":
                 continue
-            dev = CsHelper.get_device(public_ip)
+
+            local_ip = self.dbag[vpn]['local_public_ip']
+            dev = CsHelper.get_device(local_ip)
+
             if dev == "":
-                logging.error("Request for ipsec to %s not possible because ip is not configured", public_ip)
+                logging.error("Request for ipsec to %s not possible because ip is not configured", local_ip)
                 continue
+
             CsHelper.start_if_stopped("ipsec")
-            self.configure_iptables(dev, self.dbag[public_ip])
-            self.configure_ipsec(self.dbag[public_ip])
+            self.configure_iptables(dev, self.dbag[vpn])
+            self.configure_ipsec(self.dbag[vpn])
 
         # Delete vpns that are no longer in the configuration
         for ip in self.confips:
@@ -527,6 +531,7 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
         file.addeq(" keyingtries=2")
         file.addeq(" auto=start")
+        file.addeq(" forceencaps=%s" % CsHelper.bool_to_yn(obj['encap']))
         if obj['dpd']:
             file.addeq("  dpddelay=30")
             file.addeq("  dpdtimeout=120")
@@ -538,9 +543,9 @@ class CsSite2SiteVpn(CsDataBag):
             file.commit()
             logging.info("Configured vpn %s %s", leftpeer, rightpeer)
             CsHelper.execute("ipsec auto --rereadall")
-            CsHelper.execute("ipsec --add vpn-%s" % rightpeer)
+            CsHelper.execute("ipsec auto --add vpn-%s" % rightpeer)
             if not obj['passive']:
-                CsHelper.execute("ipsec --up vpn-%s" % rightpeer)
+                CsHelper.execute("ipsec auto --up vpn-%s" % rightpeer)
         os.chmod(vpnsecretsfile, 0o400)
 
     def convert_sec_to_h(self, val):
