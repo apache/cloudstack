@@ -20,3 +20,10 @@
 --;
 
 ALTER TABLE `cloud`.`nicira_nvp_router_map` DROP INDEX `logicalrouter_uuid` ;
+
+ALTER TABLE `cloud`.`volume_host_ref` MODIFY COLUMN `url` varchar(2048);
+ALTER TABLE `cloud`.`object_datastore_ref` MODIFY COLUMN `url` varchar(2048);
+ALTER TABLE `cloud`.`image_store` MODIFY COLUMN `url` varchar(2048);
+ALTER TABLE `cloud`.`template_store_ref` MODIFY COLUMN `url` varchar(2048);
+ALTER TABLE `cloud`.`volume_store_ref` MODIFY COLUMN `url` varchar(2048);
+ALTER TABLE `cloud`.`volume_store_ref` MODIFY COLUMN `download_url` varchar(2048);
