@@ -3001,7 +3001,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIkeLifetime(result.getIkeLifetime());
         response.setEspLifetime(result.getEspLifetime());
         response.setDpd(result.getDpd());
-
+        response.setEncap(result.getEncap());
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpncustomergateway");
 
@@ -3041,6 +3041,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setIkeLifetime(customerGateway.getIkeLifetime());
                 response.setEspLifetime(customerGateway.getEspLifetime());
                 response.setDpd(customerGateway.getDpd());
+                response.setEncap(customerGateway.getEncap());
             }
         }
 

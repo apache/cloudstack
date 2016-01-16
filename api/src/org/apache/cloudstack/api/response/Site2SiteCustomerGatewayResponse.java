@@ -74,6 +74,10 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     @Param(description = "if DPD is enabled for customer gateway")
     private Boolean dpd;
 
+    @SerializedName(ApiConstants.FORCE_ENCAP)
+    @Param(description = "if Force NAT Encapsulation is enabled for customer gateway")
+    private Boolean encap;
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the owner")
     private String accountName;
@@ -141,6 +145,8 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     public void setDpd(Boolean dpd) {
         this.dpd = dpd;
     }
+
+    public void setEncap(Boolean encap) { this.encap = encap; }
 
     public void setRemoved(Date removed) {
         this.removed = removed;

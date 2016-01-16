@@ -857,9 +857,10 @@ public class CommandSetupHelper {
         final Long ikeLifetime = gw.getIkeLifetime();
         final Long espLifetime = gw.getEspLifetime();
         final Boolean dpd = gw.getDpd();
+        final Boolean encap = gw.getEncap();
 
         final Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(isCreate, localPublicIp, localPublicGateway, localGuestCidr, peerGatewayIp, peerGuestCidrList, ikePolicy,
-                espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive());
+                espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive(), encap);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

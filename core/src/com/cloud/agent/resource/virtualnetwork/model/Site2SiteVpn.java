@@ -23,7 +23,7 @@ public class Site2SiteVpn extends ConfigBase {
 
     private String localPublicIp, localGuestCidr, localPublicGateway, peerGatewayIp, peerGuestCidrList, espPolicy, ikePolicy, ipsecPsk;
     private Long ikeLifetime, espLifetime;
-    private boolean create, dpd, passive;
+    private boolean create, dpd, passive, encap;
 
     public Site2SiteVpn() {
         super(ConfigBase.SITE2SITEVPN);
@@ -31,7 +31,7 @@ public class Site2SiteVpn extends ConfigBase {
 
     public Site2SiteVpn(String localPublicIp, String localGuestCidr, String localPublicGateway, String peerGatewayIp, String peerGuestCidrList, String espPolicy,
  String ikePolicy,
-            String ipsecPsk, Long ikeLifetime, Long espLifetime, boolean create, Boolean dpd, boolean passive) {
+            String ipsecPsk, Long ikeLifetime, Long espLifetime, boolean create, Boolean dpd, boolean passive, boolean encap) {
         super(ConfigBase.SITE2SITEVPN);
         this.localPublicIp = localPublicIp;
         this.localGuestCidr = localGuestCidr;
@@ -46,6 +46,7 @@ public class Site2SiteVpn extends ConfigBase {
         this.create = create;
         this.dpd = dpd;
         this.passive = passive;
+        this.encap = encap;
     }
 
     public String getLocalPublicIp() {
@@ -150,6 +151,14 @@ public class Site2SiteVpn extends ConfigBase {
 
     public void setPassive(boolean passive) {
         this.passive = passive;
+    }
+
+    public boolean getEncap() {
+        return encap;
+    }
+
+    public void setEncap(boolean encap) {
+        this.encap = encap;
     }
 
 }
