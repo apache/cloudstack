@@ -6233,7 +6233,7 @@
                                         url: createURL('updateVpnCustomerGateway'),
                                         data: data,
                                         success: function(json) {
-                                            var jobId = json.updatecustomergatewayresponse.jobid;
+                                            var jobId = json.updatevpncustomergatewayresponse.jobid;
                                             args.response.success({
                                                 _custom: {
                                                     jobId: jobId,
@@ -6245,6 +6245,9 @@
                                                     }
                                                 }
                                             });
+                                        },
+                                        error: function(json) {
+                                            args.response.error(parseXMLHttpResponse(json));
                                         }
                                     });
                                 },
