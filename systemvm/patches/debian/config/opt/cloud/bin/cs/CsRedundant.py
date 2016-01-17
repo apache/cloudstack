@@ -81,8 +81,10 @@ class CsRedundant(object):
 
     def _redundant_on(self):
         guest = self.address.get_guest_if()
+
         # No redundancy if there is no guest network
         if guest is None:
+            self.set_backup()
             self._redundant_off()
             return
 
@@ -107,7 +109,6 @@ class CsRedundant(object):
             CsHelper.service("conntrackd", "stop")
             CsHelper.service("keepalived", "stop")
             return
-
 
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
@@ -148,7 +149,7 @@ class CsRedundant(object):
         conntrackd_temp_bkp = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ.bkp")
         
         CsHelper.copy(conntrackd_template_conf, conntrackd_temp_bkp)
-        
+
         conntrackd_tmpl = CsFile(conntrackd_template_conf)
         conntrackd_tmpl.section("Multicast {", "}", [
                       "IPv4_address 225.0.0.50\n",
@@ -164,10 +165,14 @@ class CsRedundant(object):
         conntrackd_conf = CsFile(self.CONNTRACKD_CONF)
 
         is_equals = conntrackd_tmpl.compare(conntrackd_conf)
+
+        force_keepalived_restart = False
         proc = CsProcess(['/etc/conntrackd/conntrackd.conf'])
-        if not proc.find() or not is_equals:
+
+        if not proc.find() and not is_equals:
             CsHelper.copy(conntrackd_template_conf, self.CONNTRACKD_CONF)
             CsHelper.service("conntrackd", "restart")
+            force_keepalived_restart = True
 
         # Restore the template file and remove the backup.
         CsHelper.copy(conntrackd_temp_bkp, conntrackd_template_conf)
@@ -185,7 +190,7 @@ class CsRedundant(object):
         heartbeat_cron.commit()
 
         proc = CsProcess(['/usr/sbin/keepalived'])
-        if not proc.find() or keepalived_conf.is_changed():
+        if not proc.find() or keepalived_conf.is_changed() or force_keepalived_restart:
             keepalived_conf.commit()
             CsHelper.service("keepalived", "restart")
 
@@ -222,17 +227,21 @@ class CsRedundant(object):
 
         self.set_lock()
         logging.info("Router switched to fault mode")
-        ads = [o for o in self.address.get_ips() if o.is_public()]
-        for o in ads:
-            CsHelper.execute("ifconfig %s down" % o.get_device())
+
+        ips = [ip for ip in self.address.get_ips() if ip.is_public()]
+        for ip in ips:
+            CsHelper.execute("ifconfig %s down" % ip.get_device())
+
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
         CsHelper.execute("%s -s" % cmd)
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
         CsHelper.service("dnsmasq", "stop")
-        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
-        for o in ads:
-            CsPasswdSvc(o.get_gateway()).stop()
+
+        ips = [ip for ip in self.address.get_ips() if ip.needs_vrrp()]
+        for ip in ips:
+            CsPasswdSvc(ip.get_gateway()).stop()
+
         self.cl.set_fault_state()
         self.cl.save()
         self.release_lock()
@@ -246,22 +255,25 @@ class CsRedundant(object):
 
         self.set_lock()
         logging.debug("Setting router to backup")
-        ads = [o for o in self.address.get_ips() if o.is_public()]
+
         dev = ''
-        for o in ads:
-            if dev == o.get_device():
+        ips = [ip for ip in self.address.get_ips() if ip.is_public()]
+        for ip in ips:
+            if dev == ip.get_device():
                 continue
-            logging.info("Bringing public interface %s down" % o.get_device())
-            cmd2 = "ip link set %s down" % o.get_device()
+            logging.info("Bringing public interface %s down" % ip.get_device())
+            cmd2 = "ip link set %s down" % ip.get_device()
             CsHelper.execute(cmd2)
-            dev = o.get_device()
+            dev = ip.get_device()
+
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
         CsHelper.execute("%s -d" % cmd)
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
-        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
-        for o in ads:
-            CsPasswdSvc(o.get_gateway()).stop()
+
+        ips = [ip for ip in self.address.get_ips() if ip.needs_vrrp()]
+        for ip in ips:
+            CsPasswdSvc(ip.get_gateway()).stop()
         CsHelper.service("dnsmasq", "stop")
 
         self.cl.set_master_state(False)
@@ -278,13 +290,13 @@ class CsRedundant(object):
         self.set_lock()
         logging.debug("Setting router to master")
 
-        ads = [o for o in self.address.get_ips() if o.is_public()]
         dev = ''
+        ips = [ip for ip in self.address.get_ips() if ip.is_public()]
         route = CsRoute()
-        for o in ads:
-            if dev == o.get_device():
+        for ip in ips:
+            if dev == ip.get_device():
                 continue
-            dev = o.get_device()
+            dev = ip.get_device()
             logging.info("Will proceed configuring device ==> %s" % dev)
             cmd2 = "ip link set %s up" % dev
             if CsDevice(dev, self.config).waitfordevice():
@@ -292,7 +304,7 @@ class CsRedundant(object):
                 logging.info("Bringing public interface %s up" % dev)
 
                 try:
-                    gateway = o.get_gateway()
+                    gateway = ip.get_gateway()
                     logging.info("Adding gateway ==> %s to device ==> %s" % (gateway, dev))
                     route.add_defaultroute(gateway)
                 except:
@@ -341,13 +353,15 @@ class CsRedundant(object):
         that could function as a router and VPC router at the same time
         """
         lines = []
-        for o in self.address.get_ips():
-            if o.needs_vrrp():
+        for ip in self.address.get_ips():
+            if ip.needs_vrrp():
                 cmdline=self.config.get_cmdline_instance()
+                if not ip.is_added():
+                    continue
                 if(cmdline.get_type()=='router'):
-                    str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), o.get_broadcast(), o.get_device())
+                    str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), ip.get_broadcast(), ip.get_device())
                 else:
-                    str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
+                    str = "        %s brd %s dev %s\n" % (ip.get_gateway_cidr(), ip.get_broadcast(), ip.get_device())
                 lines.append(str)
         return lines
 
