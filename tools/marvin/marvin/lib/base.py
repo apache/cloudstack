@@ -1201,6 +1201,9 @@ class Template:
             random_gen()
         ]) if random_name else services["name"]
 
+	if services["ispublic"]:
+	    cmd.ispublic = services["ispublic"]
+
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
         elif "ostype" in services:
