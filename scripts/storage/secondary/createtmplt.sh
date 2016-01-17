@@ -27,7 +27,6 @@ usage() {
 
 
 #set -x
-ulimit -f 41943040 #40GiB in blocks
 ulimit -c 0
 
 rollback_if_needed() {
