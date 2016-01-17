@@ -167,9 +167,15 @@ class TestVerifyEventsTable(cloudstackTestCase):
             self.apiclient,
             root_volume.id)
 
-        self.assertNotEqual(
-            len(snapshot),
-            0,
+        snapshots_list = Snapshot.list(self.userapiclient,
+                                        id=snapshot.id)
+
+        status = validateList(snapshots_list)
+        self.assertEqual(status[0], PASS, "Snapshots List Validation Failed")
+
+        self.assertEqual(
+            snapshot.state,
+            "BackedUp",
             "Check if snapshot gets created properly"
         )
 
