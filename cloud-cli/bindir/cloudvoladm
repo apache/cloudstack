@@ -1,0 +1,607 @@
+#!/usr/bin/env python
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+import sys
+import os
+import subprocess
+import cloudtool
+import urllib2
+from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
+import xml.dom.minidom
+
+NetAppServerIP=None
+NetAppUserName=None
+NetAppPassword=None
+CloudStackSvrIP=None
+CloudStackSvrPort=8096
+
+
+cmds=["createvol","deletevol", "listvol", "createlun", "listlun", "destroylun", "assoclun", "disassoclun", "createpool", "modifypool", "destroypool", "listpools"]
+header = "Volume Manager CLI, the available COMMANDS are:"
+
+
+def cmd_help():
+    print header
+    print
+    print "createpool    add a new pool to the system"
+    print "modifypool    change the allocation algorithm for a pool"
+    print "destroypool   destroy a pool"
+    print "listpools     list all the pools"
+    print "createvol     add volume to a storage server"
+    print "deletevol     delete volume on a storage server"
+    print "listvol       list volume on a storage server"
+    print "createlun     create LUN on a storage server"
+    print "listlun       list LUN on a storage server"
+    print "destroylun    destroy LUN on a storage server"
+    print "assoclun      assoc LUN on a storage server"
+    print "disassoclun   disassoc LUN on a storage server"
+    print
+    print "\"cloudvoladm COMMAND --help\" for more information on a specific command"
+    print
+    print "Global Options:"
+    print "--cloudStackMgtSvrIP the IP address of CloudStack Management Server"
+    print 
+    print "Config file is ~/.cloudvoladmrc, Config options including: "
+    print "cloudStackMgtSvrIP=Cloudstack Management Server Address, which can be overriden by --cloudStackMgtSvrIP. If neither is provided, localhost is used."
+
+usage="Volume Manager CLI: add a new volume to a storage pool"
+addvolParser= OptionParser(usage)
+addvolParser.add_option("-i", metavar="server ip", dest="server_ip", help="The IP address of the storage server")
+addvolParser.add_option("-u", metavar="username", dest="username", help="username to access the storage server with")
+addvolParser.add_option("-w", metavar="password", dest="password", help="the password to access the storage server with")
+addvolParser.add_option("-p", dest="pool_name", help="the name of the pool to allocate from") 
+addvolParser.add_option("-a", dest="aggregate_name", help="the name of aggregate") 
+addvolParser.add_option("-v", dest="vol_name", help="the name of volume") 
+addvolParser.add_option("-s", dest="size", help="size in GB eg.1") 
+optionalGroup = OptionGroup(addvolParser, "Optional")
+optionalGroup.add_option("-r", dest="percentage", help="Percentage used for snapshot reserve") 
+optionalGroup.add_option("-S", dest="snapshots", help="Snapshot schedule in <weeks> <days> <hours>@<which-hours> <minutes>@<which-minutes> e.g. \"2 4 5@1,4 6@2,5\"") 
+addvolParser.add_option_group(optionalGroup)
+
+usage="Volume Manager CLI: remove a volume from a pool"
+delvolParser= OptionParser(usage)
+delvolParser.add_option("-i", metavar="server ip", dest="server_ip", help="The IP address of the storage server")
+delvolParser.add_option("-a", dest="aggregate_name", help="The name of aggregate") 
+delvolParser.add_option("-v", dest="vol_name", help="The name of volume") 
+
+usage="Volume Manager CLI: list all volumes known to exist in a pool"
+listvolParser= OptionParser(usage)
+listvolParser.add_option("-p", dest="pool_name", help="The name of the pool to list volumes from") 
+
+usage="Volume Manager CLI: create a LUN on a pool"
+createlunParser = OptionParser(usage)
+createlunParser.add_option("-p", dest="pool_name", help="The name of the pool to add the volume to") 
+createlunParser.add_option("-s", dest="size", help="The size in GB e.g. 100") 
+
+usage="Volume Manager CLI: list LUN on a pool"
+listlunParser = OptionParser(usage)
+listlunParser.add_option("-p", dest="pool_name", help="The pool name") 
+
+usage="Volume Manager CLI: destroy a LUN "
+destroylunParser = OptionParser(usage)
+destroylunParser.add_option("-l", dest="lun_name", help="The LUN name") 
+
+usage="Volume Manager CLI: Add a new pool to the system"
+createPoolParser = OptionParser(usage)
+createPoolParser.add_option("-p", dest="pool_name", help="The pool name") 
+createPoolParser.add_option("-A", dest="algorithm", help="roundrobin or leastfull") 
+
+
+usage="Volume Manager CLI: change the allocation algorithm for a pool"
+modifyPoolParser = OptionParser(usage)
+modifyPoolParser.add_option("-p", dest="pool_name", help="The pool name") 
+modifyPoolParser.add_option("-A", dest="algorithm", help="roundrobin or leastfull") 
+
+usage="Volume Manager CLI: destroy a pool"
+destroyPoolParser = OptionParser(usage)
+destroyPoolParser.add_option("-p", dest="pool_name", help="The pool name") 
+
+usage="Volume Manager CLI: list pools"
+listPoolParser = OptionParser(usage)
+
+usage="Volume Manager CLI: associate a LUN with a guest that uses the stated IQN as client"
+assocLunParser = OptionParser(usage)
+assocLunParser.add_option("-g", dest="guest_iqn", help="the guest IQN. By default, it reads from /etc/iscsi/initiatorname.iscsi") 
+assocLunParser.add_option("-l", dest="lun_name", help="The LUN name") 
+
+usage="Volume Manager CLI: disassociate a LUN with a guest that uses the stated IQN as client"
+disassocLunParser = OptionParser(usage)
+disassocLunParser.add_option("-g", dest="guest_iqn", help="the guest IQN. By default, it reads from /etc/iscsi/initiatorname.iscsi") 
+disassocLunParser.add_option("-l", dest="lun_name", help="The LUN name") 
+
+cmdParsers = {cmds[0]:addvolParser, cmds[1]:delvolParser, cmds[2]:listvolParser,  cmds[3]:createlunParser, cmds[4]:listlunParser, 
+          cmds[5]:destroylunParser, cmds[6]:assocLunParser, cmds[7]:disassocLunParser, cmds[8]:createPoolParser, cmds[9]:modifyPoolParser, cmds[10]:destroyPoolParser, cmds[11]:listPoolParser}
+
+
+def validate_parameter(input, signature):
+    (options, args) =  signature.parse_args([])
+    inputDict = input.__dict__
+    sigDict = options.__dict__
+    for k,v in sigDict.iteritems():
+        inputValue = inputDict[k]
+        if inputValue == None:
+            print "Volume Manager CLI: missing operand "
+            print
+            signature.parse_args(["--help"])
+
+def help_callback(option, opt, value, parser):
+    argv = sys.argv[1:]
+    try:
+        argv.remove(opt)
+    except:
+        argv.remove("--h")
+
+    if len(argv) == 0:
+        cmd_help()
+        return
+    (options, args) = parser.parse_args(argv)
+    for cmd in cmds:
+        if cmd == args[0]:
+            cmdParsers[cmd].parse_args(["--help"])      
+
+def Help():
+    usage = "usage: %prog cmd[createpool|listpools|modifypool|destroypool|createvol|deletevol|listvol|createlun|listlun|destroylun|assoclun|disassoclun] arg1 arg2 [--help, -h]"
+    parser = OptionParser(usage=usage, add_help_option=False)   
+    parser.add_option("-h", "--help", action="callback", callback=help_callback);
+    parser.add_option("-i", metavar="server ip", dest="server_ip", help="The IP address of the storage server")
+    parser.add_option("--cloudstackSvr", dest="cloudstackSvr", help="cloudStack Server IP") 
+    parser.add_option("-u", metavar="username", dest="username", help="username to access the storage server with")
+    parser.add_option("-w", metavar="password", dest="password", help="the password to access the storage server with")
+    parser.add_option("-p", dest="pool_name", help="the name of the pool to allocate from") 
+    parser.add_option("-v", dest="vol_name", help="the name of volume") 
+    parser.add_option("-A", dest="algorithm", help="roundrobin or leastfull") 
+    parser.add_option("-a", dest="aggregate_name", help="The name of aggregate") 
+    parser.add_option("-o", dest="options", help="requested option string for the NFS export or attach") 
+    parser.add_option("-S", dest="snapshots", help="Snapshot schedule e.g.2 4 5@1,4 6@2,5") 
+    parser.add_option("-r", dest="percentage", help="Percentage used for snapshot reservation") 
+    parser.add_option("-s", dest="size", help="size in GB eg.1") 
+    parser.add_option("-t", dest="target_iqn", help="the target IQN") 
+    parser.add_option("-g", dest="guest_iqn", help="the guest IQN") 
+    parser.add_option("-l", dest="lun_name", help="the LUN name") 
+    
+    return parser
+
+def httpErrorHandler(code, msg):
+    try:
+        errtext = xml.dom.minidom.parseString(msg) 
+        if errtext.getElementsByTagName("errortext") is not None:
+            err = getText(errtext.getElementsByTagName("errortext")[0].childNodes).strip()
+            print err
+    except:
+        print "Internal Error %s"%msg
+    
+def getText(nodelist):
+    rc = []
+    for node in nodelist:
+        if node.nodeType == node.TEXT_NODE: rc.append(node.data)
+    return ''.join(rc)
+
+def createvol(options):
+    args = []
+    if options.pool_name == None:
+        print "Volume Manager CLI: missing operand "
+        print
+        addvolParser.parse_args(["--help"])
+    if options.aggregate_name == None:
+        print "Volume Manager CLI: missing operand "
+        print
+        addvolParser.parse_args(["--help"])
+    if options.vol_name == None:
+        print "Volume Manager CLI: missing operand "
+        print
+        addvolParser.parse_args(["--help"])
+    
+    if options.snapshots != None:
+        args += ['--snapshotpolicy=' + options.snapshots]
+        
+    if options.size == None:
+        print "Volume Manager CLI: missing operand "
+        print
+        addvolParser.parse_args(["--help"])
+        
+    if options.percentage != None:
+        args += ['--snapshotreservation=' + options.percentage]
+
+    if NetAppServerIP == None:
+        print "Volume Manager CLI: missing operand "
+        print
+        addvolParser.parse_args(["--help"])
+
+    if NetAppUserName == None:
+        print "Volume Manager CLI: missing operand "
+        print
+        addvolParser.parse_args(["--help"])
+    
+    if NetAppPassword == None:
+        print "Volume Manager CLI: missing operand "
+        print
+        addvolParser.parse_args(["--help"])
+
+    '''
+    snapshot = options.snapshots
+    tokens = snapshot.split(" ")
+    print tokens
+    pos = 0;
+    for token in tokens:
+        if pos == 0:
+            #week
+            try:
+                week = int(token)           
+                if week < 0:
+                    raise
+            except:
+                print "Pls input correct week"
+                sys.exit(1)
+        elif pos == 1:
+            try:
+                day = int(token)
+                if day < 0:
+                    raise
+            except:
+                print "Pls input correct day"
+                sys.exit(1)
+        
+        elif pos == 2:
+            try:
+                hours = token.split("@")
+                if int(hours[0]) < 0:
+                    raise
+                hourlists = hours[1].split(",")
+                for hour in hourlists:
+                    if int(hour) < 0 or int(hour) > 24:
+                        raise
+            except:
+                print "Pls input correct hour"
+                sys.exit(1)
+        elif pos == 3:
+            try:
+                minutes = token.split("@")
+                if int(minutes[0]) < 0:
+                    raise
+                
+                minuteslist = minutes[1].split(",")
+                for minute in minuteslist:
+                    if int(minute) < 0 or int(minute) > 60:
+                        raise
+            except:
+                print "Pls input correct hour"
+                sys.exit(1)
+                
+    '''
+    
+
+    try:
+        output = cloudtool.main(['cloud-tool', 'createVolumeOnFiler', '--ipaddress=' + NetAppServerIP ,  '--aggregatename=' + options.aggregate_name,
+                            '--poolname=' + options.pool_name, '--volumename=' + options.vol_name,
+                            '--size=' + options.size,                  
+                            '--username=' + NetAppUserName, '--password=' + NetAppPassword, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"] + args)
+        print "Successfully added volume"
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing createvol cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing createvol cmd failed: %s" % (err.reason)
+        sys.exit(1)
+
+
+def deletevol(options):
+    validate_parameter(options, delvolParser)
+
+    try:
+        output = cloudtool.main(['cloud-tool', 'destroyVolumeOnFiler', '--ipaddress=' + NetAppServerIP,  '--aggregatename=' + options.aggregate_name,
+                             '--volumename=' + options.vol_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully deleted volume"
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing deletevol cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing deletevol cmd failed: %s" % (err.reason)
+        sys.exit(1)
+        
+def listvol(options):
+    validate_parameter(options, listvolParser)
+    
+    try:
+        output = cloudtool.main(['cloud-tool', 'listVolumesOnFiler', '--poolname=' + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"]).strip("\n")
+
+        xmlResult = xml.dom.minidom.parseString(output) 
+        print "%-10s %-20s %-20s %-40s %-20s %-30s "%('Id', 'Address', 'Aggregate', 'Volume', 'Size(GB)', 'snapshotPolicy', )
+        for volume in xmlResult.getElementsByTagName("volume"):
+            aggregatename = getText(volume.getElementsByTagName('aggregatename')[0].childNodes).strip()
+            id = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
+            volumeName = getText(volume.getElementsByTagName('volumename')[0].childNodes).strip()
+            snapshotPolicy = getText(volume.getElementsByTagName('snapshotpolicy')[0].childNodes).strip()
+            ipaddress = getText(volume.getElementsByTagName('ipaddress')[0].childNodes).strip()
+            volSize = getText(volume.getElementsByTagName('size')[0].childNodes).strip()
+            print "%-10s %-20s %-20s %-40s %-20s %-30s "%(id, ipaddress, aggregatename, volumeName, volSize, snapshotPolicy)
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing listvol cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing listvol cmd failed: %s" % (err.reason)
+        sys.exit(1)
+
+
+def createlun(options):
+    validate_parameter(options, createlunParser)
+
+    try:
+        output = cloudtool.main(['cloud-tool', 'createLunOnFiler', '--name=' + options.pool_name,
+                                              '--size=' + options.size, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+
+        xmlResult = xml.dom.minidom.parseString(output.strip("\n"))
+        path = getText(xmlResult.getElementsByTagName("path")[0].childNodes).strip()
+        iqn = getText(xmlResult.getElementsByTagName("iqn")[0].childNodes).strip()
+        ipAddr = getText(xmlResult.getElementsByTagName('ipaddress')[0].childNodes).strip()
+        print "%-30s %-30s %-50s "%('LUN Name', 'Address', 'Target IQN')
+        print "%-30s %-30s %-50s "%(path, ipAddr, iqn)
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing createlun cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing createlun cmd failed: %s" % (err.reason)
+        sys.exit(1)
+
+def listlun(options):
+    validate_parameter(options, listlunParser)
+
+    args = ["--poolname=" + options.pool_name, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"]
+    try:
+        output = cloudtool.main(['cloud-tool', 'listLunsOnFiler'] + args).strip("\n")
+        xmlResult = xml.dom.minidom.parseString(output)
+        
+        print "%-10s %-10s %-50s %-30s "%('LUN Id', 'Volume Id', 'Target IQN', 'LUN Name')
+        for volume in xmlResult.getElementsByTagName("lun"):
+            uuid = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
+            path = getText(volume.getElementsByTagName('name')[0].childNodes).strip()
+            targetiqn = getText(volume.getElementsByTagName('iqn')[0].childNodes).strip()
+            volumeId = getText(volume.getElementsByTagName('volumeid')[0].childNodes).strip()
+            print "%-10s %-10s %-50s %-30s "%(uuid, volumeId, targetiqn, path)
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing listlun cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing listlun cmd failed: %s" % (err.reason)
+        sys.exit(1)
+
+def destroylun(options):
+    validate_parameter(options, destroylunParser)
+
+    try:
+        output = cloudtool.main(['cloud-tool', 'destroyLunOnFiler', '--path=' + options.lun_name,
+                                              "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully destroyed LUN"
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing destroylun cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing destroylun failed: %s" % (err.reason)
+        sys.exit(1)
+
+def assoclun(options):
+    validate_parameter(options, assocLunParser)
+
+    try:
+        output = cloudtool.main(['cloud-tool', 'associateLun', '--name=' + options.lun_name,
+                                              '--iqn=' + options.guest_iqn, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        xmlResult = xml.dom.minidom.parseString(output.strip("\n"))
+        lunid = getText(xmlResult.getElementsByTagName("id")[0].childNodes).strip()
+        iqn = getText(xmlResult.getElementsByTagName("targetiqn")[0].childNodes).strip()
+        ipAddr = getText(xmlResult.getElementsByTagName('ipaddress')[0].childNodes).strip()
+        print "%-30s %-30s %-50s "%('LUN Id', 'Address', 'Target IQN')
+        print "%-30s %-30s %-50s" % (lunid, ipAddr, iqn)
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing assoclun cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing assoclun failed: %s" % (err.reason)
+        sys.exit(1)
+        
+def disassoclun(options):
+    validate_parameter(options, disassocLunParser)
+
+    try:
+        output = cloudtool.main(['cloud-tool', 'dissociateLun', '--path=' + options.lun_name,
+                                              '--iqn=' + options.guest_iqn, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully dissociated LUN"
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing disassoclun cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing disassoclun failed: %s" % (err.reason)
+        sys.exit(1)
+
+def createpool(options):
+    validate_parameter(options, createPoolParser)
+
+    if not (options.algorithm == "roundrobin" or options.algorithm == "leastfull"):
+        print "Only roundrobin or leastfull algorithm is supported"
+        sys.exit(1)
+    try:
+        output = cloudtool.main(['cloud-tool', 'createPool', '--name=' + options.pool_name,
+                                              '--algorithm=' + options.algorithm, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully created pool"
+    except urllib2.HTTPError, err:
+        code = err.code
+        print "executing createpool cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, err.read())
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing createpool failed: %s" % (err.reason)
+        sys.exit(1)
+
+def listpools(options):
+    try:
+        output = cloudtool.main(['cloud-tool', 'listPools',
+                                 "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        output = output.strip("\n")
+        xmlResult = xml.dom.minidom.parseString(output) 
+        print "%-10s %-40s %-10s" %('Id', 'Pool Name', 'Algorithm')
+        for volume in xmlResult.getElementsByTagName("pool"):
+            id = getText(volume.getElementsByTagName('id')[0].childNodes).strip()
+            poolname = getText(volume.getElementsByTagName('name')[0].childNodes).strip()
+            alg = getText(volume.getElementsByTagName('algorithm')[0].childNodes).strip()
+            print "%-10s %-40s %-10s"%(id, poolname, alg)
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing listpools cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing listpools failed, due to: %s" % (err.reason)
+        sys.exit(1)
+
+def modifypool(options):
+    validate_parameter(options, modifyPoolParser)
+    
+    try:
+        output = cloudtool.main(['cloud-tool', 'modifyPool', '--poolname=' + options.pool_name,
+                                              '--algorithm=' + options.algorithm, "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully modified pool"
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing modifypool cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing modifypool failed, due to: %s" % (err.reason)
+        sys.exit(1)
+
+def destroypool(options):
+    validate_parameter(options, destroyPoolParser)
+
+    try:
+        output = cloudtool.main(['cloud-tool', 'deletePool', '--poolname=' + options.pool_name,
+                                         "--server=" + CloudStackSvrIP + ":" + str(CloudStackSvrPort), "--stripxml=false"])
+        print "Successfully destroyed pool: " + options.pool_name
+    except urllib2.HTTPError, err:
+        code = err.code
+        msg = err.read()
+        print "executing destroypool cmd failed, http returning error code: %s" % (code)
+        httpErrorHandler(code, msg)
+        sys.exit(1)
+    except urllib2.URLError, err:
+        print "executing destroypool failed, due to: %s" % (err.reason)
+        sys.exit(1)
+
+def loadCfgFile():
+    options = dict()
+    try:
+        cfgFile = open(os.environ['HOME'] + "/.cloudvoladmrc")
+        for line in cfgFile:
+            option = line.split("=")
+            if option[0] == "cloudStackMgtSvrIP":
+                options["cloudStackMgtSvrIP"] = option[1].strip("\n")
+
+    except:
+        return None
+
+    return options
+        
+def getGuestIQN():
+    try:
+        initialFile = open("/etc/iscsi/initiatorname.iscsi")    
+        for line in initialFile:
+            iqn = line.split("=")
+            if iqn[0] == "InitiatorName":
+                return iqn[1].strip("\n")
+    except:
+        return None
+    return None
+
+if __name__ == '__main__':
+    parser = Help()
+    (options, args) = parser.parse_args()
+    
+    globalCfg = loadCfgFile()
+
+    NetAppServerIP= options.server_ip
+
+    NetAppUserName = options.username
+    
+    NetAppPassword = options.password
+    
+    CloudStackSvrIP = options.cloudstackSvr
+    if CloudStackSvrIP == None:
+        if globalCfg != None and "cloudStackMgtSvrIP" in globalCfg:
+            CloudStackSvrIP = globalCfg["cloudStackMgtSvrIP"]
+        if CloudStackSvrIP == None:
+            CloudStackSvrIP = "127.0.0.1"
+
+    if options.guest_iqn == None:
+        GuestIQN = getGuestIQN()    
+        options.__dict__["guest_iqn"] = GuestIQN
+
+    if len(args) == 0:
+        sys.exit(1)
+    cmd = args[0]
+    if cmd == "createvol":
+        createvol(options)
+    elif cmd == "deletevol":
+        deletevol(options)
+    elif cmd == "listvol":
+        listvol(options)
+    elif cmd == "createlun":
+        createlun(options)
+    elif cmd == "listlun":
+        listlun(options)
+    elif cmd == "destroylun":
+        destroylun(options)
+    elif cmd == "assoclun":
+        assoclun(options)
+    elif cmd == "disassoclun":
+        disassoclun(options)
+    elif cmd == "createpool":
+        createpool(options)
+    elif cmd == "modifypool":
+        modifypool(options)
+    elif cmd == "destroypool":
+        destroypool(options)
+    elif cmd == "listpools":
+        listpools(options)
+    else:
+        print "Unrecoginzied command"   
+        cmd_help()
+        sys.exit(1)
