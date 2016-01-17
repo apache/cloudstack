@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Vector;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -43,28 +42,21 @@ public class SecurityGroupRulesCmdTest {
     /**
      * @throws java.lang.Exception
      */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-    }
-
-    /**
-     * @throws java.lang.Exception
-     */
     @Before
     public void setUp() throws Exception {
-        String guestIp = "10.10.10.10";
-        String guestMac = "aa:aa:aa:aa:aa:aa";
-        String vmName = "vm";
-        Long vmId = 1L;
-        String signature = "sig";
-        Long seqNum = 0L;
-        String proto = "abc";
-        int startPort = 1;
-        int endPort = 2;
-        String[] allowedCidrs = new String[] {"1.2.3.4/5","6.7.8.9/0"};
-        IpPortAndProto[] ingressRuleSet = new IpPortAndProto[]{new IpPortAndProto(proto, startPort, endPort, allowedCidrs)};
-        IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{new IpPortAndProto(proto, startPort, endPort, allowedCidrs)};
-        List<String> secIps = new Vector<String>();
+        final String guestIp = "10.10.10.10";
+        final String guestMac = "aa:aa:aa:aa:aa:aa";
+        final String vmName = "vm";
+        final Long vmId = 1L;
+        final String signature = "sig";
+        final Long seqNum = 0L;
+        final String proto = "abc";
+        final int startPort = 1;
+        final int endPort = 2;
+        final String[] allowedCidrs = new String[] {"1.2.3.4/5","6.7.8.9/0"};
+        final IpPortAndProto[] ingressRuleSet = new IpPortAndProto[]{new IpPortAndProto(proto, startPort, endPort, allowedCidrs)};
+        final IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{new IpPortAndProto(proto, startPort, endPort, allowedCidrs)};
+        final List<String> secIps = new Vector<String>();
         securityGroupRulesCmd = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
     }
 
@@ -73,7 +65,7 @@ public class SecurityGroupRulesCmdTest {
      */
     @Test
     public void testStringifyRules() throws Exception {
-        String a = securityGroupRulesCmd.stringifyRules();
+        final String a = securityGroupRulesCmd.stringifyRules();
 // do verification on a
         assertTrue(a.contains(SecurityGroupRulesCmd.EGRESS_RULE));
     }
@@ -83,7 +75,7 @@ public class SecurityGroupRulesCmdTest {
      */
     @Test
     public void testStringifyCompressedRules() throws Exception {
-        String a = securityGroupRulesCmd.stringifyCompressedRules();
+        final String a = securityGroupRulesCmd.stringifyCompressedRules();
 // do verification on a
         assertTrue(a.contains(SecurityGroupRulesCmd.EGRESS_RULE));
     }
@@ -93,8 +85,8 @@ public class SecurityGroupRulesCmdTest {
      */
     @Test
     public void testCompressStringifiedRules() throws Exception {
-        String compressed = "eJzztEpMSrYytDKyMtQz0jPWM9E31THTM9ez0LPUN9Dxc40IUXAlrAQAPdoP3Q==";
-        String a = securityGroupRulesCmd.compressStringifiedRules();
+        final String compressed = "eJzztEpMSrYytDKyMtQz0jPWM9E31THTM9ez0LPUN9Dxc40IUXAlrAQAPdoP3Q==";
+        final String a = securityGroupRulesCmd.compressStringifiedRules();
         assertTrue(compressed.equals(a));
     }
 
