@@ -41,6 +41,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.Pair;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Network;
@@ -60,7 +61,7 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
     public Answer execute(final MigrateWithStorageCommand command, final XenServer610Resource xenServer610Resource) {
         final Connection connection = xenServer610Resource.getConnection();
         final VirtualMachineTO vmSpec = command.getVirtualMachine();
-        final Map<VolumeTO, StorageFilerTO> volumeToFiler = command.getVolumeToFiler();
+        final List<Pair<VolumeTO, StorageFilerTO>> volToFiler = command.getVolumeToFilerAsList();
         final String vmName = vmSpec.getName();
         Task task = null;
 
@@ -83,10 +84,8 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
             // Create the vif map. The vm stays in the same cluster so we have to pass an empty vif map.
             final Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
             final Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
-            for (final Map.Entry<VolumeTO, StorageFilerTO> entry : volumeToFiler.entrySet()) {
-                final VolumeTO volume = entry.getKey();
-                final StorageFilerTO sotrageFiler = entry.getValue();
-                vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, volume.getPath()), xenServer610Resource.getStorageRepository(connection, sotrageFiler.getUuid()));
+            for (final Pair<VolumeTO, StorageFilerTO> entry : volToFiler) {
+                vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, entry.first().getPath()), xenServer610Resource.getStorageRepository(connection, entry.second().getUuid()));
             }
 
             // Get the vm to migrate.
