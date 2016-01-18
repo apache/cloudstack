@@ -213,8 +213,6 @@
                         domainid: g_domainid
                     }
                 } : false;
-
-                return testAddUser;
             },
 
             // Actual login process, via form
