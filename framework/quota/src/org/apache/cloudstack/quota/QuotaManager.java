@@ -16,10 +16,13 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import com.cloud.user.AccountVO;
 import com.cloud.utils.component.Manager;
 
 public interface QuotaManager extends Manager {
 
     boolean calculateQuotaUsage();
+
+    boolean isLockable(AccountVO account);
 
 }

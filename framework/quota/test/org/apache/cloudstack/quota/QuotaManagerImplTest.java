@@ -197,4 +197,43 @@ public class QuotaManagerImplTest extends TestCase {
         Mockito.verify(quotaAcc, Mockito.times(1)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
     }
 
+    @Test
+    public void testLockableAccount() {
+        AccountVO accountVO = new AccountVO();
+        accountVO.setId(2L);
+        accountVO.setDomainId(1L);
+        accountVO.setType(Account.ACCOUNT_TYPE_ADMIN);
+        assertFalse(quotaManager.isLockable(accountVO));
+
+        accountVO = new AccountVO();
+        accountVO.setId(3L);
+        accountVO.setDomainId(1L);
+        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        assertTrue(quotaManager.isLockable(accountVO));
+
+        accountVO = new AccountVO();
+        accountVO.setId(5L);
+        accountVO.setDomainId(1L);
+        accountVO.setType(Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        assertTrue(quotaManager.isLockable(accountVO));
+
+        accountVO = new AccountVO();
+        accountVO.setId(6L);
+        accountVO.setDomainId(1L);
+        accountVO.setType(Account.ACCOUNT_TYPE_READ_ONLY_ADMIN);
+        assertFalse(quotaManager.isLockable(accountVO));
+
+        accountVO = new AccountVO();
+        accountVO.setId(7L);
+        accountVO.setDomainId(1L);
+        accountVO.setType(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
+        assertFalse(quotaManager.isLockable(accountVO));
+
+        accountVO = new AccountVO();
+        accountVO.setId(7L);
+        accountVO.setDomainId(1L);
+        accountVO.setType(Account.ACCOUNT_TYPE_PROJECT);
+        assertFalse(quotaManager.isLockable(accountVO));
+    }
+
 }
