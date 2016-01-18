@@ -22,6 +22,7 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 import com.google.gson.Gson;
 import org.apache.log4j.Logger;
@@ -36,6 +37,7 @@ import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.Pair;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.SR;
@@ -55,8 +57,8 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
         final Connection connection = xenServer610Resource.getConnection();
 
         final VirtualMachineTO vmSpec = command.getVirtualMachine();
-        final Map<VolumeTO, String> volumeToSr = command.getVolumeToSr();
-        final Map<NicTO, String> nicToNetwork = command.getNicToNetwork();
+        final List<Pair<VolumeTO, Object>> volumeToSr = command.getVolumeToSr();
+        final List<Pair<NicTO, Object>> nicToNetwork = command.getNicToNetwork();
         final Map<String, String> token = command.getToken();
         final String vmName = vmSpec.getName();
 
@@ -78,10 +80,14 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
             // Create the vdi map which tells what volumes of the vm need to go
             // on which sr on the destination.
             final Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
-            for (final Map.Entry<VolumeTO, String> entry : volumeToSr.entrySet()) {
-                SR sr = gson.fromJson(entry.getValue(), SR.class);
-                VDI vdi = xenServer610Resource.getVDIbyUuid(connection, entry.getKey().getPath());
-                vdiMap.put(vdi, sr);
+            for (final Pair<VolumeTO, Object> entry : volumeToSr) {
+                if (entry.second() instanceof SR) {
+                    final SR sr = (SR)entry.second();
+                    final VDI vdi = xenServer610Resource.getVDIbyUuid(connection, entry.first().getPath());
+                    vdiMap.put(vdi, sr);
+                } else {
+                    throw new CloudRuntimeException("The object " + entry.second() + " passed is not of type SR.");
+                }
             }
 
             final Set<VM> vms = VM.getByNameLabel(connection, vmSpec.getName());
@@ -92,10 +98,14 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
 
             // Create the vif map.
             final Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
-            for (final Map.Entry<NicTO, String> entry : nicToNetwork.entrySet()) {
-                Network network = gson.fromJson(entry.getValue(), Network.class);
-                VIF vif = xenServer610Resource.getVifByMac(connection, vmToMigrate, entry.getKey().getMac());
-                vifMap.put(vif, network);
+            for (final Pair<NicTO, Object> entry : nicToNetwork) {
+                if (entry.second() instanceof Network) {
+                    final Network network = (Network)entry.second();
+                    final VIF vif = xenServer610Resource.getVifByMac(connection, vmToMigrate, entry.first().getMac());
+                    vifMap.put(vif, network);
+                } else {
+                    throw new CloudRuntimeException("The object " + entry.second() + " passed is not of type Network.");
+                }
             }
 
             // Check migration with storage is possible.

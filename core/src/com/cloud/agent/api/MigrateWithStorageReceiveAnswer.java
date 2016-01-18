@@ -19,15 +19,17 @@
 
 package com.cloud.agent.api;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.utils.Pair;
 
 public class MigrateWithStorageReceiveAnswer extends Answer {
 
-    Map<VolumeTO, String> volumeToSr;
-    Map<NicTO, String> nicToNetwork;
+    List<Pair<VolumeTO, Object>> volumeToSr;
+    List<Pair<NicTO, Object>> nicToNetwork;
     Map<String, String> token;
 
     public MigrateWithStorageReceiveAnswer(MigrateWithStorageReceiveCommand cmd, Exception ex) {
@@ -37,7 +39,7 @@ public class MigrateWithStorageReceiveAnswer extends Answer {
         token = null;
     }
 
-    public MigrateWithStorageReceiveAnswer(MigrateWithStorageReceiveCommand cmd, Map<VolumeTO, String> volumeToSr, Map<NicTO, String> nicToNetwork,
+    public MigrateWithStorageReceiveAnswer(MigrateWithStorageReceiveCommand cmd, List<Pair<VolumeTO, Object>> volumeToSr, List<Pair<NicTO, Object>> nicToNetwork,
             Map<String, String> token) {
         super(cmd, true, null);
         this.volumeToSr = volumeToSr;
@@ -45,11 +47,11 @@ public class MigrateWithStorageReceiveAnswer extends Answer {
         this.token = token;
     }
 
-    public Map<VolumeTO, String> getVolumeToSr() {
+    public List<Pair<VolumeTO, Object>> getVolumeToSr() {
         return volumeToSr;
     }
 
-    public Map<NicTO, String> getNicToNetwork() {
+    public List<Pair<NicTO, Object>> getNicToNetwork() {
         return nicToNetwork;
     }
 
