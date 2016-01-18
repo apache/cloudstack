@@ -156,7 +156,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
                 // get records before startDate to find start balance
                 for (QuotaBalanceVO entry : quotaUsageRecords) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("FindQuotaBalIance Entry=" + entry);
+                        s_logger.debug("FindQuotaBalance Entry=" + entry);
                     }
                     if (entry.getCreditsId() > 0) {
                         trimmedRecords.add(entry);
