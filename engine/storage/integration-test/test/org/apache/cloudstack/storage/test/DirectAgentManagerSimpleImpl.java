@@ -50,7 +50,7 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import org.apache.cloudstack.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.vmware.VmwareServerDiscoverer;
 import com.cloud.hypervisor.xenserver.resource.XcpOssResource;
 import com.cloud.resource.ServerResource;
