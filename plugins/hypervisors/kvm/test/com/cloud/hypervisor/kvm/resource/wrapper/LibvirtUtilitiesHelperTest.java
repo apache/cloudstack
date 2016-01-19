@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.File;
 import java.util.UUID;
 
 import com.cloud.utils.script.Script;
@@ -37,8 +38,8 @@ public class LibvirtUtilitiesHelperTest extends TestCase {
          * Hardcoded paths are not what we want in the longer run
          */
         assertEquals("/root/.ssh", helper.retrieveSshKeysPath());
-        assertEquals("/root/.ssh/id_rsa.pub.cloud", helper.retrieveSshPubKeyPath());
-        assertEquals("/root/.ssh/id_rsa.cloud", helper.retrieveSshPrvKeyPath());
+        assertEquals("/root/.ssh" + File.separator + "id_rsa.pub.cloud", helper.retrieveSshPubKeyPath());
+        assertEquals("/root/.ssh" + File.separator + "id_rsa.cloud", helper.retrieveSshPrvKeyPath());
     }
 
     public void testBashScriptPath() {
