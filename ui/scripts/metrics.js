@@ -575,8 +575,8 @@
                             label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
-                                notification: 'cpunotificationthreshold',
-                                disable: 'cpudisablethreshold'
+                                notification: 'cpuallocatednotificationthreshold',
+                                disable: 'cpuallocateddisablethreshold'
                             }
                         }
                     }
@@ -600,8 +600,8 @@
                             label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
-                                notification: 'memnotificationthreshold',
-                                disable: 'memdisablethreshold'
+                                notification: 'memallocatednotificationthreshold',
+                                disable: 'memallocateddisablethreshold'
                             }
                         }
                     }
@@ -656,11 +656,31 @@
                                     items[idx].networkwrite = '';
                                 }
 
+                                var cpuOverCommit = 1.0;
+                                var memOverCommit = 1.0;
+                                $.ajax({
+                                    url: createURL('listClusters'),
+                                    data: {clusterid: host.clusterid, listAll: true},
+                                    success: function(json) {
+                                        if (json.listclustersresponse && json.listclustersresponse.cluster) {
+                                            var cluster = json.listclustersresponse.cluster[0];
+                                            cpuOverCommit = parseFloat(cluster.cpuovercommitratio);
+                                            memOverCommit = parseFloat(cluster.memoryovercommitratio);
+                                        }
+                                    },
+                                    async: false
+                                });
+
                                 // Threshold color coding
                                 items[idx].cpunotificationthreshold = 0.75 * parseFloat(items[idx].cputotal);
                                 items[idx].cpudisablethreshold = 0.95 * parseFloat(items[idx].cputotal);
+                                items[idx].cpuallocatednotificationthreshold = 0.75 * cpuOverCommit * parseFloat(items[idx].cputotal);
+                                items[idx].cpuallocateddisablethreshold = 0.95 * cpuOverCommit * parseFloat(items[idx].cputotal);
+
                                 items[idx].memnotificationthreshold = 0.75 * parseFloat(items[idx].memtotal);
                                 items[idx].memdisablethreshold = 0.95 * parseFloat(items[idx].memtotal);
+                                items[idx].memallocatednotificationthreshold = 0.75 * memOverCommit * parseFloat(items[idx].memtotal);
+                                items[idx].memallocateddisablethreshold = 0.95 * memOverCommit * parseFloat(items[idx].memtotal);
 
                                 $.ajax({
                                     url: createURL('listConfigurations'),
@@ -671,15 +691,19 @@
                                                 switch (config.name) {
                                                     case 'cluster.cpu.allocated.capacity.disablethreshold':
                                                         items[idx].cpudisablethreshold = parseFloat(config.value) * parseFloat(items[idx].cputotal);
+                                                        items[idx].cpuallocateddisablethreshold = parseFloat(config.value) * cpuOverCommit * parseFloat(items[idx].cputotal);
                                                         break;
                                                     case 'cluster.cpu.allocated.capacity.notificationthreshold':
                                                         items[idx].cpunotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].cputotal);
+                                                        items[idx].cpuallocatednotificationthreshold = parseFloat(config.value) * cpuOverCommit * parseFloat(items[idx].cputotal);
                                                         break;
                                                     case 'cluster.memory.allocated.capacity.disablethreshold':
                                                         items[idx].memdisablethreshold = parseFloat(config.value) * parseFloat(items[idx].memtotal);
+                                                        items[idx].memallocateddisablethreshold = parseFloat(config.value) * memOverCommit * parseFloat(items[idx].memtotal);
                                                         break;
                                                     case 'cluster.memory.allocated.capacity.notificationthreshold':
                                                         items[idx].memnotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].memtotal);
+                                                        items[idx].memallocatednotificationthreshold = parseFloat(config.value) * memOverCommit * parseFloat(items[idx].memtotal);
                                                         break;
                                                 }
                                             });
@@ -688,20 +712,6 @@
                                     async: false
                                 });
 
-                                var cpuOverCommit = 1.0;
-                                var memOverCommit = 1.0;
-                                $.ajax({
-                                    url: createURL('listClusters'),
-                                    data: {clusterid: host.clusterid, listAll: true},
-                                    success: function(json) {
-                                        if (json.listclustersresponse && json.listclustersresponse.cluster) {
-                                            var cluster = json.listclustersresponse.cluster[0];
-                                            cpuOverCommit = cluster.cpuovercommitratio;
-                                            memOverCommit = cluster.memoryovercommitratio;
-                                        }
-                                    },
-                                    async: false
-                                });
 
                                 items[idx].cputotal = items[idx].cputotal + ' Ghz (x' + cpuOverCommit + ')';
                                 items[idx].memtotal = items[idx].memtotal + ' (x' + memOverCommit + ')';
@@ -1081,13 +1091,13 @@
                                                 $.each(json.listconfigurationsresponse.configuration, function(i, config) {
                                                     switch (config.name) {
                                                         case 'cluster.storage.allocated.capacity.notificationthreshold':
-                                                            items[idx].storageallocatednotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].disksizetotal);
+                                                            items[idx].storageallocatednotificationthreshold = parseFloat(config.value) * items[idx].overprovisionfactor * parseFloat(items[idx].disksizetotal);
                                                             break;
                                                         case 'cluster.storage.capacity.notificationthreshold':
                                                             items[idx].storagenotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].disksizetotal);
                                                             break;
                                                         case 'pool.storage.allocated.capacity.disablethreshold':
-                                                            items[idx].storageallocateddisablethreshold = parseFloat(config.value) * parseFloat(items[idx].disksizetotal);
+                                                            items[idx].storageallocateddisablethreshold = parseFloat(config.value) * items[idx].overprovisionfactor * parseFloat(items[idx].disksizetotal);
                                                             break;
                                                         case 'pool.storage.capacity.disablethreshold':
                                                             items[idx].storagedisablethreshold = parseFloat(config.value) * parseFloat(items[idx].disksizetotal);

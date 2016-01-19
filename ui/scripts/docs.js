@@ -1008,7 +1008,7 @@ cloudStack.docs = {
     },
     // Add volume
     helpVolumeName: {
-        desc: 'Give the volume a unique name so you can find it later.',
+        desc: 'Give a unique volume name. If it is not provided, a name will be generated randomly.',
         externalLink: ''
     },
     helpVolumeAvailabilityZone: {
