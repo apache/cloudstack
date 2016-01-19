@@ -1166,6 +1166,9 @@ setup_storage_network() {
 }
 
 setup_system_rfc1918_internal() {
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+
   echo "$public_ip" | grep -E "^((127\.)|(10\.)|(172\.1[6-9]\.)|(172\.2[0-9]\.)|(172\.3[0-1]\.)|(192\.168\.))"
   if [ "$?" == "0" ]; then
      log_it "Not setting up route of RFC1918 space to $LOCAL_GW befause $public_ip is RFC1918."
