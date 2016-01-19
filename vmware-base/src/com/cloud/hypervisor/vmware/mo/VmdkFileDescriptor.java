@@ -27,6 +27,8 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.StringUtils;
+
 public class VmdkFileDescriptor {
     private static final Logger s_logger = Logger.getLogger(VmdkFileDescriptor.class);
     private static final String VMDK_PROPERTY_CREATE_TYPE = "createType";
@@ -112,8 +114,8 @@ public class VmdkFileDescriptor {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         try {
-            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent)));
-            out = new BufferedWriter(new OutputStreamWriter(bos));
+            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent), StringUtils.getPreferredCharset()));
+            out = new BufferedWriter(new OutputStreamWriter(bos, StringUtils.getPreferredCharset()));
             String line;
             while ((line = in.readLine()) != null) {
                 // ignore empty and comment lines
