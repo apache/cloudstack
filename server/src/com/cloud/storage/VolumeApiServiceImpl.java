@@ -476,6 +476,25 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         });
     }
 
+    /**
+     * Retrieves the volume name from CreateVolumeCmd object.
+     *
+     * If the retrieved volume name is null, empty or blank, then A random name
+     * will be generated using getRandomVolumeName method.
+     *
+     * @param cmd
+     * @return Either the retrieved name or a random name.
+     */
+    public String getVolumeNameFromCommand(CreateVolumeCmd cmd) {
+        String userSpecifiedName = cmd.getVolumeName();
+
+        if (org.apache.commons.lang.StringUtils.isBlank(userSpecifiedName)) {
+            userSpecifiedName = getRandomVolumeName();
+        }
+
+        return userSpecifiedName;
+    }
+
     /*
      * Just allocate a volume in the database, don't send the createvolume cmd
      * to hypervisor. The volume will be finally created only when it's attached
@@ -671,10 +690,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
         }
 
-        String userSpecifiedName = cmd.getVolumeName();
-        if (userSpecifiedName == null) {
-            userSpecifiedName = getRandomVolumeName();
-        }
+        String userSpecifiedName = getVolumeNameFromCommand(cmd);
 
         VolumeVO volume = commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size,
                 minIops, maxIops, parentVolume, userSpecifiedName, _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
