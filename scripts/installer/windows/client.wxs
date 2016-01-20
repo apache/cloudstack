@@ -1758,12 +1758,6 @@
                         <Component Id="cmp13F40EF7ACA81350C4F8E813736A2CAE" Guid="{F9B9AE15-A292-41A1-830F-5515977D2100}">
                             <File Id="fil34FB2D991F3071B2EF73946CB0431D34" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\servlet-api-2.5-20081211.jar" />
                         </Component>
-                        <Component Id="cmp8CBA9E0D91DF8138E2BF1EEFE71BC07D" Guid="{FA12FAE1-F600-450E-A3D8-F455EA4BAF5D}">
-                            <File Id="fil168484CFF129899A7D518AFE187E4127" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\slf4j-api-1.7.5.jar" />
-                        </Component>
-                        <Component Id="cmpD51A9DB18A9C78D3F72950E5F2EAB25D" Guid="{BAFB763B-69F2-42BB-A152-C59064D2CD5B}">
-                            <File Id="fil16A4FB967AF2762742B451B2B67CC207" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\slf4j-log4j12-1.7.5.jar" />
-                        </Component>
                         <Component Id="cmpF1031D7436E22BE80D98DE4EB55C7BE3" Guid="{77B3F71F-111B-45AC-A7FB-FEFA507F7D7C}">
                             <File Id="fil532C144DF3AF862A6374F54E37FFBB6B" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\spock-core-0.7-groovy-2.0.jar" />
                         </Component>

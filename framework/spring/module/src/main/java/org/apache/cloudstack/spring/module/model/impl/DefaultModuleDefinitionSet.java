@@ -33,8 +33,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -49,7 +48,7 @@ import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 
 public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultModuleDefinitionSet.class);
+    private static final Logger log = Logger.getLogger(DefaultModuleDefinitionSet.class);
 
     public static final String DEFAULT_CONFIG_RESOURCES = "DefaultConfigResources";
     public static final String DEFAULT_CONFIG_PROPERTIES = "DefaultConfigProperties";
@@ -101,7 +100,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                     ApplicationContext context = getApplicationContext(def.getName());
                     try {
                         Runnable runnable = context.getBean("moduleStartup", Runnable.class);
-                        log.info("Starting module [{}]", def.getName());
+                        log.info("Starting module [" + def.getName() + "]");
                         runnable.run();
                     } catch (BeansException e) {
                         // Ignore
@@ -139,11 +138,11 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         long start = System.currentTimeMillis();
         if (log.isInfoEnabled()) {
             for (Resource resource : resources) {
-                log.info("Loading module context [{}] from {}", def.getName(), resource);
+                log.info("Loading module context [" + def.getName() + "] from " + resource);
             }
         }
         context.refresh();
-        log.info("Loaded module context [{}] in {} ms", def.getName(), (System.currentTimeMillis() - start));
+        log.info("Loaded module context [" + def.getName() + "] in " + (System.currentTimeMillis() - start) + " ms");
 
         contexts.put(def.getName(), context);
 
@@ -238,7 +237,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             return;
 
         if (!shouldLoad(def)) {
-            log.info("Excluding context [{}] based on configuration", def.getName());
+            log.info("Excluding context [" + def.getName() + "] based on configuration");
             return;
         }
 
