@@ -2831,7 +2831,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (networkIdList == null || networkIdList.isEmpty()) {
             Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
             if (networkWithSecurityGroup == null) {
-                throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getId());
+                throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getUuid());
             }
 
             networkList.add(_networkDao.findById(networkWithSecurityGroup.getId()));
@@ -3221,18 +3221,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), ntwkOffering.getTags(),
                         ntwkOffering.getTrafficType());
                 if (physicalNetworkId == null) {
-                    s_logger.warn("Network id " + network.getId() + " could not be streched to the zone " + zone.getId()
-                            + " as valid phyical network could not be found");
                     throw new InvalidParameterValueException("Network in which is VM getting deployed could not be" +
-                            " streched to the zone.");
+                            " streched to the zone, as we could not find a valid physical network");
                 }
 
                 String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Connectivity);
                 if (!_networkModel.isProviderEnabledInPhysicalNetwork(physicalNetworkId, provider)) {
-                    s_logger.warn("Network id " + network.getId() + " could not be streched to the zone " +zone.getId()
-                            + " as Connectivity service provider is not enabled in the zone " + zone.getId());
                     throw new InvalidParameterValueException("Network in which is VM getting deployed could not be" +
-                            " streched to the zone.");
+                            " streched to the zone, as we could not find a valid physical network");
                 }
             }
 
@@ -3645,7 +3641,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UserVmVO tmpVm = _vmDao.findById(vm.getId());
             if (!tmpVm.getState().equals(State.Running)) {
                 // Some other thread changed state of VM, possibly vmsync
-                throw new ConcurrentOperationException("VM " + tmpVm + " unexpectedly went to " + tmpVm.getState() + " state");
+                s_logger.error("VM " + tmpVm + " unexpectedly went to " + tmpVm.getState() + " state");
+                throw new ConcurrentOperationException("Failed to deploy VM "+vm);
             }
         } finally {
             updateVmStateForFailedVmCreation(vm.getId(), hostId);
@@ -3856,7 +3853,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // if account is removed, return error
         if (caller != null && caller.getRemoved() != null) {
-            throw new PermissionDeniedException("The account " + caller.getId() + " is removed");
+            throw new PermissionDeniedException("The account " + caller.getUuid() + " is removed");
         }
 
         UserVmVO vm = _vmDao.findById(vmId);

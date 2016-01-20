@@ -983,7 +983,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 try {
                     if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
-                        throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine");
+                        throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine "+vm.getUuid()+" oldstate: "+vm.getState()+ "Event :"+Event.OperationRetry);
                     }
                 } catch (final NoTransitionException e1) {
                     throw new ConcurrentOperationException(e1.getMessage());
@@ -1034,7 +1034,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         if (host_guid != null) {
                             final HostVO finalHost = _resourceMgr.findHostByGuid(host_guid);
                             if (finalHost == null) {
-                                throw new CloudRuntimeException("Host Guid " + host_guid + " doesn't exist in DB, something wrong here");
+                                throw new CloudRuntimeException("Host Guid " + host_guid + " doesn't exist in DB, something went wrong while processing start answer: "+startAnswer);
                             }
                             destHostId = finalHost.getId();
                         }
@@ -1042,7 +1042,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             syncDiskChainChange(startAnswer);
 
                             if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
-                                throw new ConcurrentOperationException("Unable to transition to a new state.");
+                                s_logger.error("Unable to transition to a new state. VM uuid: "+vm.getUuid()+    "VM oldstate:"+vm.getState()+"Event:"+Event.OperationSucceeded);
+                                throw new ConcurrentOperationException("Failed to deploy VM"+ vm.getUuid());
                             }
 
                             // Update GPU device capacity
@@ -1078,9 +1079,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (answer == null || !answer.getResult()) {
                                 s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
-                                throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
+                                throw new ExecutionException("Unable to stop this VM, "+vm.getUuid()+" so we are unable to retry the start operation");
                             }
-                            throw new ExecutionException("Unable to start " + vm + " due to error in finalizeStart, not retrying");
+                            throw new ExecutionException("Unable to start  VM:"+vm.getUuid()+" due to error in finalizeStart, not retrying");
                         }
                     }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
@@ -1088,8 +1089,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         break;
                     }
 
-                } catch (final OperationTimedoutException e) {
-                    s_logger.debug("Unable to send the start command to host " + dest.getHost());
+                } catch (OperationTimedoutException e) {
+                    s_logger.debug("Unable to send the start command to host " + dest.getHost()+" failed to start VM: "+vm.getUuid());
                     if (e.isActive()) {
                         _haMgr.scheduleStop(vm, destHostId, WorkType.CheckStop);
                     }
