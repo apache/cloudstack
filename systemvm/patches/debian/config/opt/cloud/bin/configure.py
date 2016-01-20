@@ -288,7 +288,7 @@ class CsAcl(CsDataBag):
             if item == "id":
                 continue
             if self.config.is_vpc():
-                dev_obj = self.AclDevice(self.dbag[item], self.config).create()
+                self.AclDevice(self.dbag[item], self.config).create()
             else:
                 self.AclIP(self.dbag[item], self.config).create()
 
@@ -901,79 +901,123 @@ class CsForwardingRules(CsDataBag):
 
 
 def main(argv):
+    # The file we are currently processing, if it is "cmd_line.json" everything will be processed.
+    process_file = argv[1]
+
+    # process_file can be None, if so assume cmd_line.json
+    if process_file is None:
+        process_file = "cmd_line.json"
+
+    # Track if changes need to be committed to NetFilter
+    iptables_change = False
+
+    # The "GLOBAL" Configuration object
     config = CsConfig()
+
     logging.basicConfig(filename=config.get_logger(),
                         level=config.get_level(),
                         format=config.get_format())
+
+    # Load stored ip adresses from disk to CsConfig()
     config.set_address()
 
     logging.debug("Configuring ip addresses")
-    # IP configuration
     config.address().compare()
     config.address().process()
 
-    logging.debug("Configuring vmpassword")
-    password = CsPassword("vmpassword", config)
-    password.process()
+    if process_file in ["cmd_line.json", "guest_network.json"]:
+        logging.debug("Configuring Guest Network")
+        iptables_change = True
 
-    logging.debug("Configuring vmdata")
-    metadata = CsVmMetadata('vmdata', config)
-    metadata.process()
+    if process_file in ["cmd_line.json", "vm_password.json"]:
+        logging.debug("Configuring vmpassword")
+        password = CsPassword("vmpassword", config)
+        password.process()
 
-    logging.debug("Configuring networkacl")
+    if process_file in ["cmd_line.json", "vm_metadata.json"]:
+        logging.debug("Configuring vmdata")
+        metadata = CsVmMetadata('vmdata', config)
+        metadata.process()
+
+    # Always run both CsAcl().process() methods
+    # They fill the base rules in config.fw[]
     acls = CsAcl('networkacl', config)
     acls.process()
 
-    logging.debug("Configuring firewall rules")
     acls = CsAcl('firewallrules', config)
     acls.process()
 
-    logging.debug("Configuring PF rules")
     fwd = CsForwardingRules("forwardingrules", config)
     fwd.process()
 
-    logging.debug("Configuring s2s vpn")
     vpns = CsSite2SiteVpn("site2sitevpn", config)
     vpns.process()
 
-    logging.debug("Configuring remote access vpn")
-    #remote access vpn
     rvpn = CsRemoteAccessVpn("remoteaccessvpn", config)
     rvpn.process()
 
-    logging.debug("Configuring vpn users list")
-    #remote access vpn users
-    vpnuser = CsVpnUser("vpnuserlist", config)
-    vpnuser.process()
-
-    logging.debug("Configuring dhcp entry")
-    dhcp = CsDhcp("dhcpentry", config)
-    dhcp.process()
-
-    logging.debug("Configuring load balancer")
     lb = CsLoadBalancer("loadbalancer", config)
     lb.process()
 
-    logging.debug("Configuring monitor service")
-    mon = CsMonitor("monitorservice", config)
-    mon.process()
+    if process_file in ["cmd_line.json", "network_acl.json"]:
+        logging.debug("Configuring networkacl")
+        iptables_change = True
 
-    logging.debug("Configuring iptables rules")
-    nf = CsNetfilters()
-    nf.compare(config.get_fw())
+    if process_file in ["cmd_line.json", "firewall_rules.json"]:
+        logging.debug("Configuring firewall rules")
+        iptables_change = True
+
+    if process_file in ["cmd_line.json", "forwarding_rules.json", "staticnat_rules.json"]:
+        logging.debug("Configuring PF rules")
+        iptables_change = True
+
+    if process_file in ["cmd_line.json", "site_2_site_vpn.json"]:
+        logging.debug("Configuring s2s vpn")
+        iptables_change = True
+
+    if process_file in ["cmd_line.json", "remote_access_vpn.json"]:
+        logging.debug("Configuring remote access vpn")
+        iptables_change = True
+
+    if process_file in ["cmd_line.json", "vpn_user_list.json"]:
+        logging.debug("Configuring vpn users list")
+        vpnuser = CsVpnUser("vpnuserlist", config)
+        vpnuser.process()
+
+    if process_file in ["cmd_line.json", "vm_dhcp_entry.json", "dhcp.json"]:
+        logging.debug("Configuring dhcp entry")
+        dhcp = CsDhcp("dhcpentry", config)
+        dhcp.process()
+
+    if process_file in ["cmd_line.json", "load_balancer.json"]:
+        logging.debug("Configuring load balancer")
+        iptables_change = True
+
+    if process_file in ["cmd_line.json", "monitor_service.json"]:
+        logging.debug("Configuring monitor service")
+        mon = CsMonitor("monitorservice", config)
+        mon.process()
+
+    # If iptable rules have changed, apply them.
+    if iptables_change:
+        logging.debug("Configuring iptables rules")
+        nf = CsNetfilters()
+        nf.compare(config.get_fw())
 
     red = CsRedundant(config)
     red.set()
 
-    logging.debug("Configuring static routes")
-    static_routes = CsStaticRoutes("staticroutes", config)
-    static_routes.process()
+    if process_file in ["cmd_line.json", "static_routes.json"]:
+        logging.debug("Configuring static routes")
+        static_routes = CsStaticRoutes("staticroutes", config)
+        static_routes.process()
 
-    logging.debug("Configuring iptables rules done ...saving rules")
+    if iptables_change:
+        logging.debug("Configuring iptables rules done ...saving rules")
 
-    # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
-    CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
-    CsHelper.save_iptables("ip6tables-save", "/etc/iptables/router_rules.v6")
+        # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
+        CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
+        CsHelper.save_iptables("ip6tables-save", "/etc/iptables/router_rules.v6")
 
 if __name__ == "__main__":
     main(sys.argv)
