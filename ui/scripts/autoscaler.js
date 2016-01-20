@@ -1116,7 +1116,7 @@
                     var apiCmd, apiCmdRes;
                     if (!('multiRules' in args.context)) { //from a new LB
                         var data = {
-                            zoneid: args.context.networks[0].zoneid, //get zoneid from args.context.networks[0] instead of args.context.ipAddresses[0] because args.context.ipAddresses is null when adding AutoScale rule from Add Load Balancer tab in Network page
+                            zoneid: args.context.networks[0].zoneid ? args.context.networks[0].zoneid : args.context.ipAddresses[0].zoneid, //get zoneid from args.context.networks[0]. If it is not null then get it from args.context.ipAddresses[0] because args.context.ipAddresses is null when adding AutoScale rule from Add Load Balancer tab in Network page
                             serviceofferingid: args.data.serviceOfferingId,
                             templateid: args.data.templateNames,
                             destroyvmgraceperiod: args.data.destroyVMgracePeriod,
