@@ -1953,7 +1953,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * @param vmMo virtual machine mo
      * @param vmSpec virtual machine specs
      */
-    private void postVideoCardMemoryConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec) {
+    protected void postVideoCardMemoryConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec) {
         String paramVRamSize = "svga.vramSize";
         if (vmSpec.getDetails().containsKey(paramVRamSize)){
             String value = vmSpec.getDetails().get(paramVRamSize);
