@@ -17,17 +17,26 @@
 
 package com.cloud.user;
 
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.region.RegionManager;
@@ -41,6 +50,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.inject.Inject;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DomainManagerImplTest {
@@ -72,6 +83,8 @@ public class DomainManagerImplTest {
     NetworkDomainDao _networkDomainDao;
     @Mock
     MessageBus _messageBus;
+    @Mock
+    ConfigurationManager _configMgr;
 
     DomainManagerImpl domainManager;
 
@@ -134,4 +147,64 @@ public class DomainManagerImplTest {
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, "/validDomain/"));
     }
 
+    @Test
+    public void deleteDomain() {
+        DomainVO domain = new DomainVO();
+        domain.setId(20l);
+        domain.setAccountId(30l);
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+
+        Mockito.when(_domainDao.findById(20l)).thenReturn(domain);
+        Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        Mockito.when(_domainDao.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
+        Mockito.when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<AccountVO>());
+        Mockito.when(_networkDomainDao.listNetworkIdsByDomain(Mockito.anyLong())).thenReturn(new ArrayList<Long>());
+        Mockito.when(_accountDao.findCleanupsForRemovedAccounts(Mockito.anyLong())).thenReturn(new ArrayList<AccountVO>());
+        Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());
+        Mockito.when(_domainDao.remove(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_diskOfferingDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DiskOfferingVO>());
+        Mockito.when(_offeringsDao.findServiceOfferingByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<ServiceOfferingVO>());
+
+        try {
+            Assert.assertTrue(domainManager.deleteDomain(20l, false));
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
+    @Test
+    public void deleteDomainCleanup() {
+        DomainVO domain = new DomainVO();
+        domain.setId(20l);
+        domain.setAccountId(30l);
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+
+        Mockito.when(_domainDao.findById(20l)).thenReturn(domain);
+        Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        Mockito.when(_domainDao.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
+        Mockito.when(_domainDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
+        Mockito.when(_domainDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<DomainVO>());
+        Mockito.when(_accountDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
+        Mockito.when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<AccountVO>());
+        Mockito.when(_networkDomainDao.listNetworkIdsByDomain(Mockito.anyLong())).thenReturn(new ArrayList<Long>());
+        Mockito.when(_accountDao.findCleanupsForRemovedAccounts(Mockito.anyLong())).thenReturn(new ArrayList<AccountVO>());
+        Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());
+        Mockito.when(_domainDao.remove(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_resourceCountDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
+        Mockito.when(_resourceLimitDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
+        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_diskOfferingDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DiskOfferingVO>());
+        Mockito.when(_offeringsDao.findServiceOfferingByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<ServiceOfferingVO>());
+
+        try {
+            Assert.assertTrue(domainManager.deleteDomain(20l, true));
+        } finally {
+            CallContext.unregister();
+        }
+    }
 }

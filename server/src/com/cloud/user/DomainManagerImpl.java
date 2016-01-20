@@ -35,6 +35,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.region.RegionManager;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -105,6 +106,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private NetworkOrchestrationService _networkMgr;
     @Inject
     private NetworkDomainDao _networkDomainDao;
+    @Inject
+    private ConfigurationManager _configMgr;
 
     @Inject
     MessageBus _messageBus;
@@ -324,6 +327,14 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
+            }
+
+            if (!_configMgr.releaseDomainSpecificVirtualRanges(domain.getId())) {
+                CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because failed to release domain specific virtual ip ranges");
+                e.addProxyObject(domain.getUuid(), "domainId");
+                throw e;
+            } else {
+                s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
             }
 
             cleanupDomainOfferings(domain.getId());
