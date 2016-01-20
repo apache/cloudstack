@@ -1166,6 +1166,7 @@ setup_storage_network() {
 }
 
 setup_system_rfc1918_internal() {
+  public_ip=`getPublicIp`
   echo "$public_ip" | grep -E "^((127\.)|(10\.)|(172\.1[6-9]\.)|(172\.2[0-9]\.)|(172\.3[0-1]\.)|(192\.168\.))"
   if [ "$?" == "0" ]; then
      log_it "Not setting up route of RFC1918 space to $LOCAL_GW befause $public_ip is RFC1918."
@@ -1180,6 +1181,12 @@ setup_system_rfc1918_internal() {
   fi
 }
 
+getPublicIp() {
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  echo $public_ip
+}
+
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
   sysctl vm.min_free_kbytes=8192
@@ -1188,8 +1195,7 @@ setup_secstorage() {
   setup_storage_network
   setup_system_rfc1918_internal
   sed -i  /gateway/d /etc/hosts
-  public_ip=$ETH2_IP
-  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  public_ip=`getPublicIp`
   echo "$public_ip $NAME" >> /etc/hosts
 
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules.v4
@@ -1246,8 +1252,7 @@ setup_console_proxy() {
   local hyp=$1
   setup_common eth0 eth1 eth2
   setup_system_rfc1918_internal
-  public_ip=$ETH2_IP
-  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  public_ip=`getPublicIp`
   sed -i  /gateway/d /etc/hosts
   echo "$public_ip $NAME" >> /etc/hosts
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules.v4

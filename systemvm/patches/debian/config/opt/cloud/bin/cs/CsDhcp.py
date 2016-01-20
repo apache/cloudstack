@@ -50,11 +50,11 @@ class CsDhcp(CsDataBag):
 
         self.configure_server()
 
-        # We restart DNSMASQ every time the configure.py is called in order to avoid lease problems.
-        CsHelper.service("dnsmasq", "restart")
-
         self.conf.commit()
         self.cloud.commit()
+
+        # We restart DNSMASQ every time the configure.py is called in order to avoid lease problems.
+        CsHelper.service("dnsmasq", "restart")
 
     def configure_server(self):
         # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
@@ -96,29 +96,8 @@ class CsDhcp(CsDataBag):
             self.conf.search(sline, line)
 
     def delete_leases(self):
-        changed = []
-        leases = []
         try:
-            for line in open(LEASES):
-                bits = line.strip().split(' ')
-                to = {"device": bits[0],
-                      "mac": bits[1],
-                      "ip": bits[2],
-                      "host": bits[3:],
-                      "del": False
-                      }
-                changed.append(to)
-
-                for v in changed:
-                    if v['mac'] == to['mac'] or v['ip'] == to['ip'] or v['host'] == to['host']:
-                        to['del'] = True
-                leases.append(to)
-
-            for o in leases:
-                if o['del']:
-                    cmd = "dhcp_release eth%s %s %s" % (o['device'], o['ip'], o['mac'])
-                    logging.info(cmd)
-                    CsHelper.execute(cmd)
+            open(LEASES, 'w').close()
         except IOError:
             return
 

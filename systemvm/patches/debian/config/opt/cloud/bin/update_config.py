@@ -41,7 +41,7 @@ currentGuestNetConfig = "/etc/cloudstack/guestnetwork.json"
 
 def finish_config():
     # Converge
-    returncode = configure.main([])
+    returncode = configure.main(sys.argv)
     sys.exit(returncode)
 
 
