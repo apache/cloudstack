@@ -211,7 +211,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     NetworkACLItemDao _networkACLItemDao;
     @Inject
-    NetworkACLService _networkACLService;
+    NetworkACLManager _networkAclMgr;
     @Inject
     IpAddressManager _ipAddrMgr;
     @Inject
@@ -1473,6 +1473,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
+        //5) Delete ACLs
+        final SearchBuilder<NetworkACLVO> searchBuilder = _networkAclDao.createSearchBuilder();
+
+        searchBuilder.and("vpcId", searchBuilder.entity().getVpcId(), Op.IN);
+        final SearchCriteria<NetworkACLVO> searchCriteria = searchBuilder.create();
+        searchCriteria.setParameters("vpcId", vpcId, 0);
+
+        final Filter filter = new Filter(NetworkACLVO.class, "id", false, null, null);
+        final Pair<List<NetworkACLVO>, Integer> aclsCountPair =  _networkAclDao.searchAndCount(searchCriteria, filter);
+
+        final List<NetworkACLVO> acls = aclsCountPair.first();
+        for (final NetworkACLVO networkAcl : acls) {
+            if (networkAcl.getId() != NetworkACL.DEFAULT_ALLOW && networkAcl.getId() != NetworkACL.DEFAULT_DENY) {
+                _networkAclMgr.deleteNetworkACL(networkAcl);
+            }
+        }
         return success;
     }
 

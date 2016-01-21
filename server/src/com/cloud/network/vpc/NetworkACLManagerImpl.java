@@ -141,18 +141,24 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     @Override
     public boolean deleteNetworkACL(final NetworkACL acl) {
-        final List<NetworkVO> networks = _networkDao.listByAclId(acl.getId());
+        final long aclId = acl.getId();
+        final List<NetworkVO> networks = _networkDao.listByAclId(aclId);
         if (networks != null && networks.size() > 0) {
             throw new CloudRuntimeException("ACL is still associated with " + networks.size() + " tier(s). Cannot delete network ACL: " + acl.getUuid());
         }
 
-        final List<VpcGatewayVO> pvtGateways = _vpcGatewayDao.listByAclIdAndType(acl.getId(), VpcGateway.Type.Private);
+        final List<VpcGatewayVO> pvtGateways = _vpcGatewayDao.listByAclIdAndType(aclId, VpcGateway.Type.Private);
 
         if (pvtGateways != null && pvtGateways.size() > 0) {
             throw new CloudRuntimeException("ACL is still associated with " + pvtGateways.size() + " private gateway(s). Cannot delete network ACL: " + acl.getUuid());
         }
 
-        return _networkACLDao.remove(acl.getId());
+        final List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(aclId);
+        for (final NetworkACLItemVO networkACLItem : aclItems) {
+            revokeNetworkACLItem(networkACLItem.getId());
+        }
+
+        return _networkACLDao.remove(aclId);
     }
 
     @Override
