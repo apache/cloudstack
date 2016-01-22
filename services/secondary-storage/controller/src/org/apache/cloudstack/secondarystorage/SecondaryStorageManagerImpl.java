@@ -39,6 +39,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -236,6 +237,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     ImageStoreDao _imageStoreDao;
     @Inject
+    ImageStoreDetailsDao _imageStoreDetailsDao;
+    @Inject
     TemplateDataStoreDao _tmplStoreDao;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
@@ -310,6 +313,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, certs);
                 }
 
+                setupCmd.setNfsVersion(getNfsVersion(ssStore.getId()));
+
                 //template/volume file upload key
                 String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
                 setupCmd.setPostUploadKey(postUploadKey);
@@ -356,6 +361,17 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
          */
         return true;
+    }
+
+    private String getNfsVersion(long storeId) {
+        String nfsVersion = null;
+        if (_imageStoreDetailsDao.getDetails(storeId) != null){
+            Map<String, String> storeDetails = _imageStoreDetailsDao.getDetails(storeId);
+            if (storeDetails != null && storeDetails.containsKey("nfs.version")){
+                nfsVersion = storeDetails.get("nfs.version");
+            }
+        }
+        return nfsVersion;
     }
 
     @Override
