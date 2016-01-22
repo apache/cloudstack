@@ -708,7 +708,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String installPathPrefix = cmd.getInstallPath();
         // for NFS, we need to get mounted path
         if (dstore instanceof NfsTO) {
-            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl()) + File.separator + installPathPrefix;
+            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl(), null) + File.separator + installPathPrefix;
         }
         String user = null;
         String password = null;

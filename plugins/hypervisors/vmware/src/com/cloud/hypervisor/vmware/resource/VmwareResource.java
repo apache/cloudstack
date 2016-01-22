@@ -1636,12 +1636,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // prepare systemvm patch ISO
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 // attach ISO (for patching of system VM)
-                String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
+                Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
+                String secStoreUrl = secStoreUrlAndId.first();
+                Long secStoreId = secStoreUrlAndId.second();
                 if (secStoreUrl == null) {
                     String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
                     throw new Exception(msg);
                 }
-                mgr.prepareSecondaryStorageStore(secStoreUrl);
+                mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
 
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
                 if (morSecDs == null) {
@@ -3134,12 +3136,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false, cmd.getVirtualMachine().getType());
             }
 
-            String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
+            Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
+            String secStoreUrl = secStoreUrlAndId.first();
+            Long secStoreId = secStoreUrlAndId.second();
             if (secStoreUrl == null) {
                 String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
                 throw new Exception(msg);
             }
-            mgr.prepareSecondaryStorageStore(secStoreUrl);
+            mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
 
             ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
             if (morSecDs == null) {
@@ -3350,12 +3354,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Ensure secondary storage mounted on target host
-            String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
+            Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
+            String secStoreUrl = secStoreUrlAndId.first();
+            Long secStoreId = secStoreUrlAndId.second();
             if (secStoreUrl == null) {
                 String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
                 throw new Exception(msg);
             }
-            mgr.prepareSecondaryStorageStore(secStoreUrl);
+            mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
             ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, tgtHyperHost);
             if (morSecDs == null) {
                 String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;

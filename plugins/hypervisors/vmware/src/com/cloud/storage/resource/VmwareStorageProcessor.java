@@ -160,7 +160,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
                 templatePathAtSecondaryStorage + ", templateName: " + templateName);
 
-        String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, null);
         s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
 
         String srcOVAFileName =
@@ -539,7 +539,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private String deleteVolumeDirOnSecondaryStorage(String volumeDir, String secStorageUrl) throws Exception {
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, null);
         String volumeMountRoot = secondaryMountPoint + File.separator + volumeDir;
 
         return deleteDir(volumeMountRoot);
@@ -722,7 +722,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, String installPath, long templateId, String templateUniqueName,
             String secStorageUrl, String volumePath, String workerVmName) throws Exception {
 
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, null);
         String installFullPath = secondaryMountPoint + "/" + installPath;
         synchronized (installPath.intern()) {
             Script command = new Script(false, "mkdir", _timeout, s_logger);
@@ -899,7 +899,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             snapshotFolder = StringUtils.join(tokens, File.separator, 0, tokens.length - 1);
         }
 
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, null);
         String installFullPath = secondaryMountPoint + "/" + installPath;
         String installFullOVAName = installFullPath + "/" + templateUniqueName + ".ova";  //Note: volss for tmpl
         String snapshotRoot = secondaryMountPoint + "/" + snapshotFolder;
@@ -1054,7 +1054,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private Pair<String, String[]> exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir,
             String exportName, String workerVmName) throws Exception {
 
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, null);
         String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
 
         synchronized (exportPath.intern()) {
@@ -1186,7 +1186,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                     // Get snapshot physical size
                     long physicalSize = 0l;
-                    String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl);
+                    String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, null);
                     String snapshotDir =  destSnapshot.getPath() + "/" + snapshotBackupUuid;
                     File[] files = new File(secondaryMountPoint + "/" + snapshotDir).listFiles();
                     if(files != null) {
@@ -2146,7 +2146,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, String secStorageUrl, String secStorageDir,
             String backupName, long wait) throws Exception {
 
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, null);
         String srcOVAFileName = null;
         String srcOVFFileName = null;
 

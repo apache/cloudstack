@@ -44,6 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
@@ -198,6 +199,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private HostGpuGroupsDao _hostGpuGroupsDao;
+    @Inject
+    private ImageStoreDetailsDao _imageStoreDetailsDao;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -715,7 +718,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
 
-                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO());
+                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), getNfsVersion(store.getId()));
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
                         s_logger.debug("There is no secondary storage VM for secondary storage host " + store.getName());
@@ -761,6 +764,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             } catch (Throwable t) {
                 s_logger.error("Error trying to retrieve storage stats", t);
             }
+        }
+
+        private String getNfsVersion(long storeId) {
+            String nfsVersion = null;
+            if (_imageStoreDetailsDao.getDetails(storeId) != null){
+                Map<String, String> storeDetails = _imageStoreDetailsDao.getDetails(storeId);
+                if (storeDetails != null && storeDetails.containsKey("nfs.version")){
+                    nfsVersion = storeDetails.get("nfs.version");
+                }
+            }
+            return nfsVersion;
         }
     }
 

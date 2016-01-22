@@ -82,7 +82,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
             //need to take extra processing for vmware, such as packing to ova, before sending to S3
             if (srcData.getObjectType() == DataObjectType.VOLUME) {
                 NfsTO cacheStore = (NfsTO)srcDataStore;
-                String parentPath = storageResource.getRootDir(cacheStore.getUrl());
+                String parentPath = storageResource.getRootDir(cacheStore.getUrl(), null);
                 VolumeObjectTO vol = (VolumeObjectTO)srcData;
                 String path = vol.getPath();
                 int index = path.lastIndexOf(File.separator);
@@ -95,7 +95,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
             } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT) {
                 // pack ova first
                 // sync snapshot from NFS cache to S3 in NFS migration to S3 case
-                String parentPath = storageResource.getRootDir(srcDataStore.getUrl());
+                String parentPath = storageResource.getRootDir(srcDataStore.getUrl(), null);
                 SnapshotObjectTO snap = (SnapshotObjectTO)srcData;
                 String path = snap.getPath();
                 int index = path.lastIndexOf(File.separator);
@@ -138,7 +138,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                     return answer;
                 }
                 NfsTO cacheStore = (NfsTO)cmd.getCacheTO().getDataStore();
-                String parentPath = storageResource.getRootDir(cacheStore.getUrl());
+                String parentPath = storageResource.getRootDir(cacheStore.getUrl(), null);
                 SnapshotObjectTO newSnapshot = (SnapshotObjectTO)answer.getNewData();
                 String path = newSnapshot.getPath();
                 int index = path.lastIndexOf(File.separator);

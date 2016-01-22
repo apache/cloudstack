@@ -304,7 +304,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     @Override
-    public String getMountPoint(String storageUrl) {
-        return _resource.getRootDir(storageUrl);
+    public String getMountPoint(String storageUrl, String nfsVersion) {
+        return _resource.getRootDir(storageUrl, nfsVersion);
     }
 }

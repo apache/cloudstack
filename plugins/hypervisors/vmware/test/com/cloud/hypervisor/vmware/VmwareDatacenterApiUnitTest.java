@@ -54,6 +54,7 @@ import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;
@@ -429,6 +430,11 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public DataStoreManager dataStoreManager() {
             return Mockito.mock(DataStoreManager.class);
+        }
+
+        @Bean
+        public ImageStoreDetailsDao imageStoreDetailsDao(){
+            return Mockito.mock(ImageStoreDetailsDao.class);
         }
 
         public static class Library implements TypeFilter {
