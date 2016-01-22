@@ -17,7 +17,17 @@
 
 package com.cloud.consoleproxy;
 
+import static org.mockito.AdditionalMatchers.not;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -25,7 +35,15 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleProxyVO;
 
 public class ConsoleProxyManagerTest {
@@ -37,13 +55,22 @@ public class ConsoleProxyManagerTest {
     @Mock
     ConsoleProxyVO proxyVO;
     @Mock
+    DataCenterDao _dcDao;
+    @Mock
+    NetworkDao _networkDao;
+    @Mock
     ConsoleProxyManagerImpl cpvmManager;
 
     @Before
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
         ReflectionTestUtils.setField(cpvmManager, "_allocProxyLock", globalLock);
+        ReflectionTestUtils.setField(cpvmManager, "_dcDao", _dcDao);
+        ReflectionTestUtils.setField(cpvmManager, "_networkDao", _networkDao);
         Mockito.doCallRealMethod().when(cpvmManager).expandPool(Mockito.anyLong(), Mockito.anyObject());
+        Mockito.doCallRealMethod().when(cpvmManager).getDefaultNetworkForCreation(Mockito.any(DataCenter.class));
+        Mockito.doCallRealMethod().when(cpvmManager).getDefaultNetworkForAdvancedZone(Mockito.any(DataCenter.class));
+        Mockito.doCallRealMethod().when(cpvmManager).getDefaultNetworkForBasicZone(Mockito.any(DataCenter.class));
     }
 
     @Test
@@ -86,5 +113,137 @@ public class ConsoleProxyManagerTest {
         Mockito.when(cpvmManager.destroyProxy(Mockito.anyLong())).thenReturn(true);
 
         cpvmManager.expandPool(new Long(1), new Object());
+    }
+
+    @Test
+    public void getDefaultNetworkForAdvancedNonSG() {
+        DataCenterVO dc = mock(DataCenterVO.class);
+        when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+        when(dc.isSecurityGroupEnabled()).thenReturn(false);
+
+        when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        NetworkVO badNetwork = Mockito.mock(NetworkVO.class);
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), eq(TrafficType.Public)))
+                    .thenReturn(Collections.singletonList(network));
+
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), not(eq(TrafficType.Public))))
+        .thenReturn(Collections.singletonList(badNetwork));
+
+        when(_networkDao.listByZoneSecurityGroup(anyLong()))
+                    .thenReturn(Collections.singletonList(badNetwork));
+
+        NetworkVO returnedNetwork = cpvmManager.getDefaultNetworkForAdvancedZone(dc);
+
+        Assert.assertNotNull(returnedNetwork);
+        Assert.assertEquals(network, returnedNetwork);
+        Assert.assertNotEquals(badNetwork, returnedNetwork);
+    }
+
+    @Test
+    public void getDefaultNetworkForAdvancedSG() {
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+        when(dc.isSecurityGroupEnabled()).thenReturn(true);
+
+        when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        NetworkVO badNetwork = Mockito.mock(NetworkVO.class);
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), any(TrafficType.class)))
+                    .thenReturn(Collections.singletonList(badNetwork));
+
+        when(_networkDao.listByZoneSecurityGroup(anyLong()))
+                    .thenReturn(Collections.singletonList(network));
+
+        NetworkVO returnedNetwork = cpvmManager.getDefaultNetworkForAdvancedZone(dc);
+
+        Assert.assertEquals(network, returnedNetwork);
+        Assert.assertNotEquals(badNetwork, returnedNetwork);
+    }
+
+    @Test
+    public void getDefaultNetworkForBasicNonSG() {
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+        when(dc.isSecurityGroupEnabled()).thenReturn(false);
+
+        when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        NetworkVO badNetwork = Mockito.mock(NetworkVO.class);
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), eq(TrafficType.Guest)))
+                    .thenReturn(Collections.singletonList(network));
+
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), not(eq(TrafficType.Guest))))
+                    .thenReturn(Collections.singletonList(badNetwork));
+
+        NetworkVO returnedNetwork = cpvmManager.getDefaultNetworkForBasicZone(dc);
+        Assert.assertNotNull(returnedNetwork);
+        Assert.assertEquals(network, returnedNetwork);
+        Assert.assertNotEquals(badNetwork, returnedNetwork);
+    }
+
+    @Test
+    public void getDefaultNetworkForBasicSG() {
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+        when(dc.isSecurityGroupEnabled()).thenReturn(true);
+
+        when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        NetworkVO badNetwork = Mockito.mock(NetworkVO.class);
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), eq(TrafficType.Guest)))
+                    .thenReturn(Collections.singletonList(network));
+
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), not(eq(TrafficType.Guest))))
+                    .thenReturn(Collections.singletonList(badNetwork));
+
+        NetworkVO returnedNetwork = cpvmManager.getDefaultNetworkForBasicZone(dc);
+
+        Assert.assertNotNull(returnedNetwork);
+        Assert.assertEquals(network, returnedNetwork);
+        Assert.assertNotEquals(badNetwork, returnedNetwork);
+    }
+
+    //also test invalid input
+    @Test(expected=CloudRuntimeException.class)
+    public void getDefaultNetworkForBasicSGWrongZoneType() {
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+        when(dc.isSecurityGroupEnabled()).thenReturn(true);
+
+        when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        NetworkVO badNetwork = Mockito.mock(NetworkVO.class);
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), eq(TrafficType.Guest)))
+                    .thenReturn(Collections.singletonList(network));
+
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), not(eq(TrafficType.Guest))))
+                    .thenReturn(Collections.singletonList(badNetwork));
+
+        cpvmManager.getDefaultNetworkForBasicZone(dc);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void getDefaultNetworkForAdvancedWrongZoneType() {
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+        when(dc.isSecurityGroupEnabled()).thenReturn(true);
+
+        when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        NetworkVO badNetwork = Mockito.mock(NetworkVO.class);
+        when(_networkDao.listByZoneAndTrafficType(anyLong(), any(TrafficType.class)))
+                    .thenReturn(Collections.singletonList(badNetwork));
+
+        when(_networkDao.listByZoneSecurityGroup(anyLong()))
+                    .thenReturn(Collections.singletonList(network));
+
+        cpvmManager.getDefaultNetworkForAdvancedZone(dc);
     }
 }
