@@ -2489,7 +2489,7 @@ div.detail-group.actions td {
   padding: 1px 0 0;
   /*+placement:shift -174px -57px;*/
   position: relative;
-  left: -174px;
+  left: -239px;
   top: -57px;
 }
 
@@ -2555,7 +2555,7 @@ div.detail-group.actions td {
   margin: 0;
   position: absolute;
   top: -47px;
-  left: 1090px;
+  left: 1025px;
   cursor: default !important;
   display: inline-block;
   float: left;
@@ -2568,8 +2568,8 @@ div.detail-group.actions td {
   padding: 9px 18px 7px 12px;
   border-right: none;
   /*[empty]border-top:;*/
-  min-width: 75px;
-  max-width: 120px;
+  min-width: 110px;
+  max-width: 220px;
   text-align: center;
   height: 12px;
   overflow: hidden;
@@ -4310,7 +4310,7 @@ textarea {
 #user-options {
   background: #FFFFFF;
   z-index: 10000;
-  width: 104px;
+  width: 150px;
   position: absolute;
   padding: 15px;
   top: 30px;
