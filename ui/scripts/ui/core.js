@@ -225,7 +225,7 @@
                 .append(
                     $('<div>').addClass('name').text(
                         args.context && args.context.users ?
-                        cloudStack.concat(userLabel, 14) : 'Invalid User'
+                        cloudStack.concat(userLabel, 21) : 'Invalid User'
                     )
             )
                 .append(
