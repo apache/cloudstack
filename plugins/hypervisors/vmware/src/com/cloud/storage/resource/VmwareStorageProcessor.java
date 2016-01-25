@@ -1345,24 +1345,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
-                String dataDiskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
-                String rootDiskController = controllerInfo.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
-                DiskControllerType rootDiskControllerType = DiskControllerType.getType(rootDiskController);
-
-                if (dataDiskController == null) {
-                    dataDiskController = getLegacyVmDataDiskController();
-                } else if ((rootDiskControllerType == DiskControllerType.lsilogic) ||
-                           (rootDiskControllerType == DiskControllerType.lsisas1068) ||
-                           (rootDiskControllerType == DiskControllerType.pvscsi) ||
-                           (rootDiskControllerType == DiskControllerType.buslogic)) {
-                    //TODO: Support mix of SCSI controller types for single VM. If root disk is already over
-                    //a SCSI controller then use the same for data volume as well. This limitation will go once mix
-                    //of SCSI controller types for single VM.
-                    dataDiskController = rootDiskController;
-                } else if (DiskControllerType.getType(dataDiskController) == DiskControllerType.osdefault) {
-                    dataDiskController = vmMo.getRecommendedDiskController(null);
+                Map<String, String> diskDetails = new HashMap<String, String>();
+                String diskController = null;
+                if (controllerInfo != null) {
+                    diskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
                 }
-                vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs, dataDiskController);
+                if (diskController == null) {
+                    diskController = getLegacyVmDataDiskController();
+                }
+                if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
+                    diskController = vmMo.getRecommendedDiskController(null);
+                }
+                vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs, diskController);
             } else {
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);

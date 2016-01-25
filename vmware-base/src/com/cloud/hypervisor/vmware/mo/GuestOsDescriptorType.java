@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,36 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.hypervisor.vmware.mo;
 
-package com.cloud.agent.api.storage;
+public enum GuestOsDescriptorType
+{
+  windows9Guest,
+  windows9_64Guest,
+  windows9Server64Guest,
+  rhel7Guest,
+  rhel7_64Guest;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-
-public class MigrateVolumeAnswer extends Answer {
-    private String volumePath;
-    private String volumeChain;
-
-    public MigrateVolumeAnswer(Command command, boolean success, String details, String volumePath) {
-        super(command, success, details);
-        this.volumePath = volumePath;
+  public static GuestOsDescriptorType fromValue(String value) {
+    if (value == null) {
+      return null;
     }
-
-    public MigrateVolumeAnswer(Command command) {
-        super(command);
-        this.volumePath = null;
+    GuestOsDescriptorType guestOsType = null;
+    try {
+      guestOsType = valueOf(value);
+    } catch (IllegalArgumentException e) {
     }
-
-    public String getVolumePath() {
-        return volumePath;
-    }
-
-    public String getVolumeChainInfo() {
-        return volumeChain;
-    }
-
-    public void setVolumeChainInfo(String volumeChain) {
-        this.volumeChain = volumeChain;
-    }
+    return guestOsType;
+  }
 }
