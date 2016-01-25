@@ -2112,8 +2112,12 @@ public class VirtualMachineMO extends BaseMO {
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
                 getDynamicProperty(_mor, "config.hardware.device");
 
+        String deviceList = "";
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
+                if (device != null) {
+                    deviceList += String.format(" Device %s: info:%s controller key:%s;", device.getKey(), device.getDeviceInfo(), device.getControllerKey());
+                }
                 if ((DiskControllerType.getType(diskController) == DiskControllerType.lsilogic || DiskControllerType.getType(diskController) == DiskControllerType.scsi)
                         && device instanceof VirtualLsiLogicController) {
                     return ((VirtualLsiLogicController)device).getKey();
@@ -2131,7 +2135,8 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         assert (false);
-        throw new Exception(diskController + " Controller Not Found");
+        throw new Exception("Scsi disk controller of type " + diskController + " not found among configured devices:" + deviceList +
+                ". Unable to find and return scsi disk controller key.");
     }
 
     public int getScsiDiskControllerKeyNoException(String diskController) throws Exception {

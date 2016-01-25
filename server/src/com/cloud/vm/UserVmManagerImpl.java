@@ -5028,6 +5028,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    public void persistDeviceBusInfo(UserVmVO vm, String rootDiskController) {
+        String existingVmRootDiskController = vm.getDetail(VmDetailConstants.ROOK_DISK_CONTROLLER);
+        if (((existingVmRootDiskController == null) || (existingVmRootDiskController.isEmpty())) && (rootDiskController != null) && (!rootDiskController.isEmpty())) {
+            vm.setDetail(VmDetailConstants.ROOK_DISK_CONTROLLER, rootDiskController);
+            _vmDao.saveDetails(vm);
+            s_logger.debug("Persisted device bus information rootDiskController=" + rootDiskController + " for vm: " + vm.getDisplayName());
+        }
+    }
+
     @Override
     public String getConfigComponentName() {
         return UserVmManager.class.getSimpleName();

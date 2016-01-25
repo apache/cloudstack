@@ -17,34 +17,32 @@
 // under the License.
 //
 
-package com.cloud.agent.api.storage;
+package org.apache.cloudstack.utils.volume;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
+public class VirtualMachineVolumeChainInfo {
+    String diskDeviceBusName;
+    String[] diskChain;
 
-public class MigrateVolumeAnswer extends Answer {
-    private String volumePath;
-    private String volumeChain;
-
-    public MigrateVolumeAnswer(Command command, boolean success, String details, String volumePath) {
-        super(command, success, details);
-        this.volumePath = volumePath;
+    public String getDiskDeviceBusName() {
+        return this.diskDeviceBusName;
     }
 
-    public MigrateVolumeAnswer(Command command) {
-        super(command);
-        this.volumePath = null;
+    public void setDiskDeviceBusName(String diskDeviceBusName) {
+        this.diskDeviceBusName = diskDeviceBusName;
     }
 
-    public String getVolumePath() {
-        return volumePath;
+    public String[] getDiskChain() {
+        return this.diskChain;
     }
 
-    public String getVolumeChainInfo() {
-        return volumeChain;
+    public void setDiskChain(String[] diskChain) {
+        this.diskChain = diskChain;
     }
 
-    public void setVolumeChainInfo(String volumeChain) {
-        this.volumeChain = volumeChain;
+    public String getControllerFromDeviceBusName() {
+        if ((this.diskDeviceBusName == null) || (this.diskDeviceBusName.isEmpty()) || (!this.diskDeviceBusName.contains(":"))) {
+            return null;
+        }
+        return this.diskDeviceBusName.substring(0, this.diskDeviceBusName.indexOf(":") - 1);
     }
 }

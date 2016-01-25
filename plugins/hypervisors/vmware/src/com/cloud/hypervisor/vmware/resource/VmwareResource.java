@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
@@ -228,6 +227,7 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.GuestOsDescriptorType;
 import com.cloud.hypervisor.vmware.mo.FeatureKeyConstants;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
@@ -1449,7 +1449,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
-
+            String guestOsId = translateGuestOsIdentifierEx(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator());
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
             NicTO[] nics = vmSpec.getNics();
@@ -1562,7 +1562,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         tearDownVm(vmMo);
                     }else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
                             getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),
-                            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value(), rootDiskDataStoreDetails.first(), false, controllerInfo, systemVm)) {
+                            guestOsId, rootDiskDataStoreDetails.first(), false, controllerInfo, systemVm)) {
                         throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                     }
                 }
@@ -1586,7 +1586,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
 
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
                     getReservedCpuMHZ(vmSpec), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),
@@ -3357,6 +3356,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
             }
 
+            VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
             // Update and return volume path for every disk because that could have changed after migration
             for (Pair<VolumeTO, StorageFilerTO> entry : volToFiler) {
                 volume = entry.first();
@@ -3365,8 +3365,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 for (VirtualDisk disk : disks) {
                     if (volumeDeviceKey.get(volumeId) == disk.getKey()) {
                         VolumeObjectTO newVol = new VolumeObjectTO();
+                        String newPath = vmMo.getVmdkFileBaseName(disk);
+                        String poolName = entry.second().getUuid().replace("-", "");
+                        VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolName);
                         newVol.setId(volumeId);
-                        newVol.setPath(vmMo.getVmdkFileBaseName(disk));
+                        newVol.setChainInfo(this._gson.toJson(diskInfo));
+                        newVol.setPath(newPath);
                         volumeToList.add(newVol);
                         break;
                     }
@@ -3498,7 +3502,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
             }
 
-            return new MigrateVolumeAnswer(cmd, true, null, volumePath);
+            VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, poolTo.getUuid().replace("-", "")));
+            MigrateVolumeAnswer answer = new MigrateVolumeAnswer(cmd, true, null, volumePath);
+            answer.setVolumeChainInfo(chainInfo);
+            return answer;
         } catch (Exception e) {
             String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.toString();
             s_logger.error(msg, e);
@@ -4670,6 +4678,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return VirtualMachineGuestOsIdentifier.OTHER_GUEST_64;
         }
         return VirtualMachineGuestOsIdentifier.OTHER_GUEST;
+    }
+
+    private String translateGuestOsIdentifierEx(String cpuArchitecture, String guestOs, String cloudGuestOs) {
+        if (cloudGuestOs != null) {
+            GuestOsDescriptorType guestOsId = GuestOsDescriptorType.fromValue(cloudGuestOs);
+            if (guestOsId != null) {
+                s_logger.debug("Found guest OS mapping name for guest os: " + guestOs);
+                return guestOsId.toString();
+            }
+        }
+        return translateGuestOsIdentifier(cpuArchitecture, guestOs, cloudGuestOs).value();
     }
 
     private HashMap<String, HostVmStateReportEntry> getHostVmStateReport() throws Exception {

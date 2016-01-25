@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.utils.volume.VirtualMachineVolumeChainInfo;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -96,16 +97,19 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
@@ -134,6 +138,7 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -154,6 +159,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 
 public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
@@ -175,6 +182,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     ConfigurationManager _configMgr;
     @Inject
     VolumeDao _volsDao;
+    @Inject
+    VolumeDetailsDao _volDetailDao;
     @Inject
     HostDao _hostDao;
     @Inject
@@ -225,6 +234,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     VmWorkJobDao _workJobDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    UserVmManager _userVmMgr;
+    protected Gson _gson;
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -238,6 +250,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
+        _gson = GsonHelper.getGsonLogger();
     }
 
     /*
@@ -1781,6 +1794,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                                 throw new InvalidParameterValueException("Cannot migrate ROOT volume of a stopped VM to a storage pool in a different VMware datacenter");
                             }
                         }
+
+                        String rootVolChainInfo = vol.getChainInfo();
+                        if ((vm.getType().equals(VirtualMachine.Type.User)) && (rootVolChainInfo != null) && (!rootVolChainInfo.isEmpty())) {
+                            String rootDiskController = null;
+                            try {
+                                VirtualMachineVolumeChainInfo infoInChain = _gson.fromJson(rootVolChainInfo, VirtualMachineVolumeChainInfo.class);
+                                if (infoInChain != null) {
+                                    rootDiskController = infoInChain.getControllerFromDeviceBusName();
+                                }
+                                UserVmVO userVmVo = _userVmDao.findById(vm.getId());
+                                if ((rootDiskController != null) && (!rootDiskController.isEmpty())) {
+                                    _userVmDao.loadDetails(userVmVo);
+                                    _userVmMgr.persistDeviceBusInfo(userVmVo, rootDiskController);
+                                }
+                            } catch (JsonParseException ignored) {
+                            }
+                        }
                     }
                 }
             }
@@ -2325,6 +2355,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             controllerInfo.put(VmDetailConstants.ROOK_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.ROOK_DISK_CONTROLLER));
             controllerInfo.put(VmDetailConstants.DATA_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.DATA_DISK_CONTROLLER));
             cmd.setControllerInfo(controllerInfo);
+            s_logger.debug("Attach volume id:" + volumeToAttach.getId() +  " on VM id:" + vm.getId() + " has controller info:" + controllerInfo);
 
             try {
                 answer = (AttachAnswer)_agentMgr.send(hostId, cmd);
@@ -2349,6 +2380,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                 }
+
+                if (host.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                    Map<String, String> diskDetails = answer.getDiskDetails();
+                    for (Map.Entry<String, String> detail : diskDetails.entrySet()) {
+                        VolumeDetailVO volumeDetailVo = new VolumeDetailVO(volumeToAttach.getId(), detail.getKey(), detail.getValue(), true);
+                        _volDetailDao.persist(volumeDetailVo);
+                    }
+                }
+
             } else {
                 _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);
             }
