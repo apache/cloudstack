@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.cloud.hypervisor.vmware.util.VmwareVirtualPciConstants;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -1134,7 +1135,7 @@ public class VirtualMachineMO extends BaseMO {
         }
     }
 
-    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController) throws Exception {
+    public String attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController) throws Exception {
 
         if(s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
@@ -1194,8 +1195,22 @@ public class VirtualMachineMO extends BaseMO {
             _context.waitForTaskProgressDone(morTask);
         }
 
-        if(s_logger.isTraceEnabled())
+        if(s_logger.isTraceEnabled()) {
             s_logger.trace("vCenter API trace - attachDisk() done(successfully)");
+        }
+
+        int busNumber = getControllerBusNumber(controllerKey);
+
+        String bus = VmwareVirtualPciConstants.PCI_BUS_LSILOGIC_CONTROLLER[busNumber];
+        String device = VmwareVirtualPciConstants.PCI_DEVICE_LSILOGIC_CONTROLLER[busNumber];
+        int virtualNodeUnitNumber = unitNumber;
+        String pciBusPath = VmwareVirtualPciConstants.PCI_BUS_DOMAIN + bus + VmwareVirtualPciConstants.PCI_BUS_PATH_SEPARATOR_DOMAIN_BUS
+                + device + VmwareVirtualPciConstants.PCI_BUS_PATH_SEPARATOR_DEVICE_FUNC + VmwareVirtualPciConstants.PCI_FUNC_LSILOGIC_CONTROLLER
+                + VmwareVirtualPciConstants.PCI_BUS_PATH_SEPARATOR_FUNC_UNIT
+                + VmwareVirtualPciConstants.PCI_DEVICE_UNIT_PREFIX + virtualNodeUnitNumber + VmwareVirtualPciConstants.PCI_DEVICE_UNIT_POSTFIX;
+
+        s_logger.debug("PCI bus path for this disk is : " + pciBusPath);
+        return pciBusPath;
     }
 
     private int getControllerBusNumber(int controllerKey) throws Exception {

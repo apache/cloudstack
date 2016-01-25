@@ -208,6 +208,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "true if the volume is extractable, false otherwise")
     private Boolean extractable;
 
+    @SerializedName(ApiConstants.PCI_DEVICE_PATH)
+    @Param(description="Location of the device/disk on virtual PCI bus inside the guest. /dev/disk/by-path/<THIS_STRING>/ would be linked to virtual disk inside the guest.")
+    private String pciDevicePath;
+
     @SerializedName(ApiConstants.STATUS)
     @Param(description = "the status of the volume")
     private String status;
@@ -423,6 +427,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     public void setExtractable(Boolean extractable) {
         this.extractable = extractable;
+    }
+
+    public void setPciDevicePath(String pciDevicePath) {
+        this.pciDevicePath = pciDevicePath;
     }
 
     public void setState(String state) {

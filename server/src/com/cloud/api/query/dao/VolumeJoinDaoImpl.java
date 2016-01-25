@@ -22,6 +22,9 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -49,6 +52,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
 
     @Inject
     private ConfigurationDao  _configDao;
+    @Inject
+    private VolumeDetailsDao _volDetailsDao;
     @Inject
     public AccountManager _accountMgr;
 
@@ -219,6 +224,12 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             if (vtag != null) {
                 volResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
+        }
+
+        // update pci devicepath information
+        VolumeDetailVO volDetailVo = _volDetailsDao.findDetail(volume.getId(), ApiConstants.PCI_DEVICE_PATH);
+        if (volDetailVo != null) {
+            volResponse.setPciDevicePath(volDetailVo.getValue());
         }
 
         volResponse.setExtractable(isExtractable);

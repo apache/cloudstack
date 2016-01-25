@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -1345,6 +1346,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
+                Map<String, String> diskDetails = new HashMap<String, String>();
                 String dataDiskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
                 String rootDiskController = controllerInfo.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
                 DiskControllerType rootDiskControllerType = DiskControllerType.getType(rootDiskController);
@@ -1362,7 +1364,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 } else if (DiskControllerType.getType(dataDiskController) == DiskControllerType.osdefault) {
                     dataDiskController = vmMo.getRecommendedDiskController(null);
                 }
-                vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs, dataDiskController);
+                String pciDevicePath = vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs, dataDiskController);
+                diskDetails.put(ApiConstants.PCI_DEVICE_PATH, pciDevicePath);
+                answer.setDiskDetails(diskDetails);
             } else {
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);

@@ -183,6 +183,7 @@ public class ApiConstants {
     public static final String PASSWORD_ENABLED = "passwordenabled";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
+    public static final String PCI_DEVICE_PATH = "pcidevicepath";
     public static final String POD_ID = "podid";
     public static final String POD_IDS = "podids";
     public static final String POLICY_ID = "policyid";
