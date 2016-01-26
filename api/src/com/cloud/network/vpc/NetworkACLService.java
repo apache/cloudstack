@@ -96,9 +96,8 @@ public interface NetworkACLService {
     Pair<List<? extends NetworkACLItem>, Integer> listNetworkACLItems(ListNetworkACLsCmd cmd);
 
     /**
-     * Revoked ACL Item with specified Id
+     * Revoke ACL Item with specified Id
      * @param ruleId
-     * @param apply
      * @return
      */
     boolean revokeNetworkACLItem(long ruleId);
@@ -121,7 +120,7 @@ public interface NetworkACLService {
      * @throws ResourceUnavailableException
      */
     NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
-        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID, Boolean forDisplay) throws ResourceUnavailableException;
+            Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID, Boolean forDisplay) throws ResourceUnavailableException;
 
     /**
      * Associates ACL with specified Network
