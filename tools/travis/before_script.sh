@@ -35,7 +35,7 @@ if [ $MOD -ne 0 ]; then
 fi
 
 
-export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Djava.security.egd=file:/dev/./urandom"
+export MAVEN_OPTS="-Xmx1024m -Djava.security.egd=file:/dev/./urandom"
 echo -e "\nStarting simulator"
 mvn -Dsimulator -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log &
 

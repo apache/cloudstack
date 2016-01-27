@@ -14,12 +14,12 @@ was tested against a CentOS 6.5 x86_64 setup.
 
 Install tools and dependencies used for development:
 
-    $ yum install git ant ant-devel java-1.6.0-openjdk java-1.6.0-openjdk-devel
-    mysql mysql-server tomcat6 mkisofs gcc python MySQL-python openssh-clients wget
+    $ yum install git java-1.8.0-openjdk java-1.8.0-openjdk-devel
+      mysql mysql-server tomcat6 mkisofs gcc python MySQL-python openssh-clients wget
 
     # yum -y update
-    # yum -y install java-1.7.0-openjdk
-    # yum -y install java-1.7.0-openjdk-devel
+    # yum -y install java-1.8.0-openjdk
+    # yum -y install java-1.8.0-openjdk-devel
     # yum -y install mysql-server
     # yum -y install git
     # yum -y install genisoimage
@@ -63,7 +63,7 @@ Clear old database (if any) and deploy the database schema:
 
 Export the following variable if you need to run and debug the management server:
 
-    $ export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
+    $ export MAVEN_OPTS="-Xmx1024m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
 
 Start the management server:
 

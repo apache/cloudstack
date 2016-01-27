@@ -34,7 +34,7 @@ if [ $MOD -ne 0 ]; then
  fi
 fi
 
-export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Djava.security.egd=file:/dev/./urandom"
+export MAVEN_OPTS="-Xmx1024m -Djava.security.egd=file:/dev/./urandom"
 
 if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    mvn -q -Pimpatient -Dsimulator clean install
