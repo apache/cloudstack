@@ -1337,7 +1337,7 @@
                                             $.ajax({
                                                 url: createURL('listSamlAuthorization'),
                                                 data: {
-                                                    userid: context.users[0].id,
+                                                    userid: context.users[0].id
                                                 },
                                                 success: function(json) {
                                                     var authorization = json.listsamlauthorizationsresponse.samlauthorization[0];
@@ -1881,7 +1881,7 @@
                                     if (!args.context.projects) {
                                         $.extend(data, {
                                             domainid: args.context.sshkeypairs[0].domainid,
-                                            account: args.context.sshkeypairs[0].account,
+                                            account: args.context.sshkeypairs[0].account
                                         });
                                     }
                                     $.ajax({
