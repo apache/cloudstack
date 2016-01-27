@@ -71,7 +71,7 @@
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-core</artifactId>
-      <version>8.0.15</version>
+      <version>8.0.30</version>
     </dependency>
     <!-- Another implementation of SSL protocol. Does not work with broken MS RDP SSL too. -->
     <dependency>

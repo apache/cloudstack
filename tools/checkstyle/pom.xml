@@ -25,12 +25,7 @@
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>checkstyle</artifactId>
     <version>4.9.0-SNAPSHOT</version>
-    
-    
-    <prerequisites>
-      <maven>3.0.4</maven>
-    </prerequisites>
-    
+
     <build>
       <plugins>
         <plugin>
