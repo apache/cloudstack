@@ -2642,7 +2642,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if(!found) {
                 VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
-                if(vm.getType() == VirtualMachine.Type.User) {
+                if(vm != null && vm.getType() == VirtualMachine.Type.User) {
                     updateVmMetaData(vm.getId(), platform);
                 }
             }
