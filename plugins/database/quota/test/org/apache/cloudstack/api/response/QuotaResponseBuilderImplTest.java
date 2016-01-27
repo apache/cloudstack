@@ -118,7 +118,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         tariffVO.setUsageType(QuotaTypes.IP_ADDRESS);
         tariffVO.setUsageName("ip address");
         tariffVO.setUsageUnit("IP-Month");
-        tariffVO.setCurrencyValue(new BigDecimal(100.19));
+        tariffVO.setCurrencyValue(BigDecimal.valueOf(100.19));
         tariffVO.setEffectiveOn(new Date());
         tariffVO.setUsageDiscriminator("");
         return tariffVO;
