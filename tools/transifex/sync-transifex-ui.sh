@@ -74,7 +74,7 @@ doDownloadL10NLangs()
         done
 
         # get all resource files from transifex
-        tx pull -f -r ${ARGUMENTS} 
+        tx pull -f --mode=translator -r ${ARGUMENTS} 
 
         # l10n languages
         for CODELANG in ${LIST_LANG} ; do
