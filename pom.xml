@@ -44,10 +44,6 @@
     <url>https://issues.apache.org/jira/browse/CLOUDSTACK</url>
   </issueManagement>
 
-  <prerequisites>
-    <maven>3.0.4</maven>
-  </prerequisites>
-
   <properties>
     <cs.jdk.version>1.7</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -55,7 +51,7 @@
 
     <cs.log4j.version>1.2.17</cs.log4j.version>
     <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
-    <cs.cglib.version>3.1</cs.cglib.version>
+    <cs.cglib.version>3.2.0</cs.cglib.version>
     <cs.dbcp.version>1.4</cs.dbcp.version>
     <cs.pool.version>1.6</cs.pool.version>
     <cs.codec.version>1.10</cs.codec.version>
@@ -65,25 +61,25 @@
     <cs.discovery.version>0.5</cs.discovery.version>
     <cs.ejb.version>3.0</cs.ejb.version>
     <!-- do not forget to also upgrade hamcrest library with junit -->
-    <cs.junit.version>4.11</cs.junit.version>
+    <cs.junit.version>4.12</cs.junit.version>
     <cs.hamcrest.version>1.3</cs.hamcrest.version>
     <cs.bcprov.version>1.46</cs.bcprov.version>
-    <cs.jsch.version>0.1.51</cs.jsch.version>
-    <cs.jpa.version>2.1.0</cs.jpa.version>
+    <cs.jsch.version>0.1.53</cs.jsch.version>
+    <cs.jpa.version>2.1.1</cs.jpa.version>
     <cs.jasypt.version>1.9.2</cs.jasypt.version>
-    <cs.trilead.version>1.0.0-build217</cs.trilead.version>
-    <cs.ehcache.version>2.6.9</cs.ehcache.version>
+    <cs.trilead.version>1.0.0-build220</cs.trilead.version>
+    <cs.ehcache.version>2.6.11</cs.ehcache.version>
     <cs.gson.version>1.7.2</cs.gson.version>
     <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-    <cs.guava.version>18.0</cs.guava.version>
+    <cs.guava.version>19.0</cs.guava.version>
     <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
-    <cs.httpclient.version>4.5</cs.httpclient.version>
-    <cs.httpcore.version>4.4</cs.httpcore.version>
+    <cs.httpclient.version>4.5.1</cs.httpclient.version>
+    <cs.httpcore.version>4.4.4</cs.httpcore.version>
     <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
     <cs.mysql.version>5.1.34</cs.mysql.version>
-    <cs.xstream.version>1.4.7</cs.xstream.version>
+    <cs.xstream.version>1.4.8</cs.xstream.version>
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
-    <cs.mail.version>1.4.7</cs.mail.version>
+    <cs.mail.version>1.5.0-b01</cs.mail.version>
     <cs.axis.version>1.4</cs.axis.version>
     <cs.axis2.version>1.5.6</cs.axis2.version>
     <cs.rampart.version>1.5.1</cs.rampart.version>
@@ -93,27 +89,27 @@
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>5.5</cs.vmware.api.version>
-    <org.springframework.version>3.2.12.RELEASE</org.springframework.version>
-    <cs.mockito.version>1.9.5</cs.mockito.version>
-    <cs.powermock.version>1.5.3</cs.powermock.version>
-    <cs.aws.sdk.version>1.10.34</cs.aws.sdk.version>
+    <org.springframework.version>3.2.16.RELEASE</org.springframework.version>
+    <cs.mockito.version>1.10.19</cs.mockito.version>
+    <cs.powermock.version>1.6.4</cs.powermock.version>
+    <cs.aws.sdk.version>1.10.50</cs.aws.sdk.version>
     <cs.jackson.version>2.6.3</cs.jackson.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-lang3.version>3.4</cs.commons-lang3.version>
     <cs.commons-io.version>2.4</cs.commons-io.version>
-    <cs.commons-validator.version>1.4.0</cs.commons-validator.version>
-    <cs.reflections.version>0.9.9</cs.reflections.version>
-    <cs.java-ipv6.version>0.15</cs.java-ipv6.version>
+    <cs.commons-validator.version>1.5.0</cs.commons-validator.version>
+    <cs.reflections.version>0.9.10</cs.reflections.version>
+    <cs.java-ipv6.version>0.16</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
     <cs.rados-java.version>0.2.0</cs.rados-java.version>
     <cs.target.dir>target</cs.target.dir>
     <cs.daemon.version>1.0.15</cs.daemon.version>
     <cs.jna.version>4.0.0</cs.jna.version>
-    <cs.checkstyle.version>2.11</cs.checkstyle.version>
-    <cs.mycila.license.version>2.7</cs.mycila.license.version>
-    <cs.findbugs.version>3.0.1</cs.findbugs.version>
-    <cs.javadoc.version>2.10.1</cs.javadoc.version>
+    <cs.checkstyle.version>2.17</cs.checkstyle.version>
+    <cs.mycila.license.version>2.11</cs.mycila.license.version>
+    <cs.findbugs.version>3.0.3</cs.findbugs.version>
+    <cs.javadoc.version>2.10.3</cs.javadoc.version>
     <cs.opensaml.version>2.6.1</cs.opensaml.version>
     <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
@@ -390,17 +386,17 @@
       <dependency>
         <groupId>org.apache.servicemix.bundles</groupId>
         <artifactId>org.apache.servicemix.bundles.snmp4j</artifactId>
-        <version>2.3.1_1</version>
+        <version>2.3.4_1</version>
       </dependency>
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjtools</artifactId>
-        <version>1.8.4</version>
+        <version>1.8.8</version>
       </dependency>
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjweaver</artifactId>
-        <version>1.8.4</version>
+        <version>1.8.8</version>
       </dependency>
       <dependency>
         <groupId>org.apache.axis</groupId>
@@ -425,12 +421,12 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.7</version>
+        <version>1.7.14</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
-        <version>1.7.7</version>
+        <version>1.7.14</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
