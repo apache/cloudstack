@@ -62,7 +62,7 @@ public class QuotaBalanceVO implements InternalIdentity {
         this.accountId = credit.getAccountId();
         this.domainId = credit.getDomainId();
         this.creditBalance = credit.getCredit();
-        this.updatedOn = credit.getUpdatedOn()  == null ? null : new Date(credit.getUpdatedOn().getTime());
+        this.updatedOn = credit.getUpdatedOn() == null ? null : new Date(credit.getUpdatedOn().getTime());
         this.creditsId = credit.getId();
     }
 
@@ -72,7 +72,7 @@ public class QuotaBalanceVO implements InternalIdentity {
         this.domainId = domainId;
         this.creditBalance = creditBalance;
         this.creditsId = 0L;
-        this.updatedOn = updatedOn  == null ? null : new Date(updatedOn.getTime());
+        this.updatedOn = updatedOn == null ? null : new Date(updatedOn.getTime());
     }
 
     @Override
@@ -108,6 +108,10 @@ public class QuotaBalanceVO implements InternalIdentity {
         this.creditsId = creditsId;
     }
 
+    public boolean isBalanceEntry(){
+        return creditsId==0;
+    }
+
     public BigDecimal getCreditBalance() {
         return creditBalance;
     }
@@ -121,7 +125,7 @@ public class QuotaBalanceVO implements InternalIdentity {
     }
 
     public void setUpdatedOn(Date updatedOn) {
-        this.updatedOn =  updatedOn == null ? null : new Date(updatedOn.getTime());
+        this.updatedOn = updatedOn == null ? null : new Date(updatedOn.getTime());
     }
 
     @Override
