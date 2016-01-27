@@ -85,7 +85,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
             mergeConfigs(configs, params);
         }
         String period_str = configs.get(QuotaConfig.QuotaStatementPeriod.key());
-        int period = period_str == null ? 1 : Integer.valueOf(period_str);
+        int period = period_str == null ? 1 : Integer.parseInt(period_str);
 
         STATEMENT_PERIODS _period = STATEMENT_PERIODS.values()[period];
         return true;
