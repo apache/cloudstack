@@ -3686,7 +3686,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     //
 
     @MessageHandler(topic = Topics.VM_POWER_STATE)
-    private void HandlePowerStateReport(final String subject, final String senderAddress, final Object args) {
+    protected void HandlePowerStateReport(final String subject, final String senderAddress, final Object args) {
         assert args != null;
         final Long vmId = (Long)args;
 
