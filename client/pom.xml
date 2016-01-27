@@ -969,6 +969,7 @@
         </dependency>
       </dependencies>
     </profile>
+    <!--
     <profile>
       <id>f5</id>
       <activation>
@@ -984,6 +985,7 @@
         </dependency>
       </dependencies>
     </profile>
+    -->
     <profile>
       <id>nuagevsp</id>
       <activation>

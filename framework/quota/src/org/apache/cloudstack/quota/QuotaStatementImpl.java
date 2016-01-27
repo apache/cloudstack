@@ -59,11 +59,11 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
 
     final public static int s_LAST_STATEMENT_SENT_DAYS = 6; //ideally should be less than 7 days
 
-    public enum STATEMENT_PERIODS {
+    public enum QuotaStatementPeriods {
         BIMONTHLY, MONTHLY, QUATERLY, HALFYEARLY, YEARLY
     };
 
-    private STATEMENT_PERIODS _period = STATEMENT_PERIODS.MONTHLY;
+    private QuotaStatementPeriods _period = QuotaStatementPeriods.MONTHLY;
 
     public QuotaStatementImpl() {
         super();
@@ -87,7 +87,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
         String period_str = configs.get(QuotaConfig.QuotaStatementPeriod.key());
         int period = period_str == null ? 1 : Integer.parseInt(period_str);
 
-        STATEMENT_PERIODS _period = STATEMENT_PERIODS.values()[period];
+        QuotaStatementPeriods _period = QuotaStatementPeriods.values()[period];
         return true;
     }
 
@@ -263,7 +263,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
         return null;
     }
 
-    public Calendar[] statementTime(final Calendar today, final STATEMENT_PERIODS period) {
+    public Calendar[] statementTime(final Calendar today, final QuotaStatementPeriods period) {
         //check if it is statement time
         int day_of_month = today.get(Calendar.DAY_OF_MONTH);
         int month_of_year = today.get(Calendar.MONTH);

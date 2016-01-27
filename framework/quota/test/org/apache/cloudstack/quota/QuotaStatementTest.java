@@ -21,7 +21,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.TransactionLegacy;
 import junit.framework.TestCase;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.quota.QuotaStatementImpl.STATEMENT_PERIODS;
+import org.apache.cloudstack.quota.QuotaStatementImpl.QuotaStatementPeriods;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
@@ -85,12 +85,12 @@ public class QuotaStatementTest extends TestCase {
 
         //BIMONTHLY - first statement of month
         date.set(Calendar.DATE, QuotaStatementImpl.s_LAST_STATEMENT_SENT_DAYS + 1);
-        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.BIMONTHLY);
+        Calendar period[] = quotaStatement.statementTime(date, QuotaStatementPeriods.BIMONTHLY);
         assertTrue(period == null);
 
         //1 of this month
         date.set(Calendar.DATE, 1);
-        period = quotaStatement.statementTime(date, STATEMENT_PERIODS.BIMONTHLY);
+        period = quotaStatement.statementTime(date, QuotaStatementPeriods.BIMONTHLY);
         assertTrue(period != null);
         assertTrue(period.length == 2);
         assertTrue(period[0].toString(), period[0].before(period[1]));
@@ -100,12 +100,12 @@ public class QuotaStatementTest extends TestCase {
         //BIMONTHLY - second statement of month
         date = Calendar.getInstance();
         date.set(Calendar.DATE, QuotaStatementImpl.s_LAST_STATEMENT_SENT_DAYS + 16);
-        period = quotaStatement.statementTime(date, STATEMENT_PERIODS.BIMONTHLY);
+        period = quotaStatement.statementTime(date, QuotaStatementPeriods.BIMONTHLY);
         assertTrue(period == null);
 
         //17 of this month
         date.set(Calendar.DATE, 17);
-        period = quotaStatement.statementTime(date, STATEMENT_PERIODS.BIMONTHLY);
+        period = quotaStatement.statementTime(date, QuotaStatementPeriods.BIMONTHLY);
         assertTrue(period != null);
         assertTrue(period.length == 2);
         assertTrue(period[0].toString(), period[0].before(period[1]));
@@ -128,12 +128,12 @@ public class QuotaStatementTest extends TestCase {
         //MONTHLY
         date = Calendar.getInstance();
         date.set(Calendar.DATE, QuotaStatementImpl.s_LAST_STATEMENT_SENT_DAYS + 1);
-        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.MONTHLY);
+        Calendar period[] = quotaStatement.statementTime(date, QuotaStatementPeriods.MONTHLY);
         assertTrue(period == null);
 
         //1 of this month
         date.set(Calendar.DATE, QuotaStatementImpl.s_LAST_STATEMENT_SENT_DAYS - 1);
-        period = quotaStatement.statementTime(date, STATEMENT_PERIODS.MONTHLY);
+        period = quotaStatement.statementTime(date, QuotaStatementPeriods.MONTHLY);
         assertTrue(period != null);
         assertTrue(period.length == 2);
         assertTrue(period[0].toString(), period[0].before(period[1]));
@@ -157,7 +157,7 @@ public class QuotaStatementTest extends TestCase {
         date = Calendar.getInstance();
         date.set(Calendar.MONTH, Calendar.JANUARY); // 1 Jan
         date.set(Calendar.DATE, 1);
-        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.QUATERLY);
+        Calendar period[] = quotaStatement.statementTime(date, QuotaStatementPeriods.QUATERLY);
         assertTrue(period != null);
         assertTrue(period.length == 2);
         assertTrue("period[0].before(period[1])" + period[0].toString(), period[0].before(period[1]));
@@ -182,7 +182,7 @@ public class QuotaStatementTest extends TestCase {
         date = Calendar.getInstance();
         date.set(Calendar.MONTH, Calendar.JANUARY); // 1 Jan
         date.set(Calendar.DATE, 1);
-        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.HALFYEARLY);
+        Calendar period[] = quotaStatement.statementTime(date, QuotaStatementPeriods.HALFYEARLY);
         assertTrue(period != null);
         assertTrue(period.length == 2);
         assertTrue("period[0].before(period[1])" + period[0].toString(), period[0].before(period[1]));
@@ -207,7 +207,7 @@ public class QuotaStatementTest extends TestCase {
         date = Calendar.getInstance();
         date.set(Calendar.MONTH, Calendar.JANUARY); // 1 Jan
         date.set(Calendar.DATE, 1);
-        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.YEARLY);
+        Calendar period[] = quotaStatement.statementTime(date, QuotaStatementPeriods.YEARLY);
         assertTrue("period != null", period != null);
         assertTrue(period.length == 2);
         assertTrue("period[0].before(period[1])" + period[0].toString(), period[0].before(period[1]));
@@ -244,7 +244,7 @@ public class QuotaStatementTest extends TestCase {
 
         // call real method on send monthly statement
         quotaStatement.sendStatement();
-        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.MONTHLY);
+        Calendar period[] = quotaStatement.statementTime(date, QuotaStatementPeriods.MONTHLY);
         if (period != null){
             Mockito.verify(alertManager, Mockito.times(1)).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
         }

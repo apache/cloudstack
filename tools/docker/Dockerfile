@@ -26,7 +26,7 @@ RUN apt-get -y update && apt-get install -y \
     genisoimage \
     git \
     maven \
-    openjdk-7-jdk \
+    openjdk-8-jdk \
     python-dev \
     python-setuptools \
     python-pip \
