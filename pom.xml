@@ -119,7 +119,6 @@
     <cs.servicemix.version>2.3.4_1</cs.servicemix.version>
     <cs.jetty.version>9.3.7.v20160115</cs.jetty.version>
     <cs.cxf.version>3.1.4</cs.cxf.version>
-    <cs.spring-security-saml2-core.version>1.0.1.RELEASE</cs.spring-security-saml2-core.version>
     <cs.spring-security-core.version>4.0.3.RELEASE</cs.spring-security-core.version>
     <cs.groovy.version>2.4.3</cs.groovy.version>
     <cs.apache-jsp.version>9.3.7.v20160115</cs.apache-jsp.version>
@@ -230,11 +229,6 @@
         <artifactId>spring-security-core</artifactId>
         <version>${cs.spring-security-core.version}</version>
       </dependency>
-      <dependency>
-	    <groupId>org.springframework.security.extensions</groupId>
-	    <artifactId>spring-security-saml2-core</artifactId>
-	    <version>${cs.spring-security-saml2-core.version}</version>
-	  </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk15on</artifactId>
