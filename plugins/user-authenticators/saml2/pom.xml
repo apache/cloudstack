@@ -28,11 +28,6 @@
   </parent>
   <dependencies>
     <dependency>
-      <groupId>org.springframework.security.extensions</groupId>
-      <artifactId>spring-security-saml2-core</artifactId>
-      <version>1.0.0.RELEASE</version>
-    </dependency>
-    <dependency>
       <groupId>org.opensaml</groupId>
       <artifactId>opensaml</artifactId>
       <version>${cs.opensaml.version}</version>
@@ -51,6 +46,12 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-config</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>xerces</groupId>
+      <artifactId>xercesImpl</artifactId>
+      <version>2.11.0</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
