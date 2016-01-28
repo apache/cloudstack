@@ -53,6 +53,7 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.EncryptionUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -66,6 +67,7 @@ import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
@@ -144,6 +146,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -165,6 +168,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
+
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -364,7 +368,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         final String storagePath = destImageStore.getUrl();
         final String destPath = destData.getPath();
         try {
-            String downloadPath = determineStorageTemplatePath(storagePath, destPath);
+            String downloadPath = determineStorageTemplatePath(storagePath, destPath, ImageStoreDetailsUtil.getNfsVersionByUuid(destImageStore.getUuid()));
             final File downloadDirectory = _storage.getFile(downloadPath);
 
             if (downloadDirectory.exists()) {
@@ -391,7 +395,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         try {
 
-            String downloadPath = determineStorageTemplatePath(storagePath, destPath);
+            String downloadPath = determineStorageTemplatePath(storagePath, destPath, ImageStoreDetailsUtil.getNfsVersionByUuid(destImageStore.getUuid()));
             final File downloadDirectory = _storage.getFile(downloadPath);
 
             if (downloadDirectory.exists()) {
@@ -424,7 +428,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore, TemplateObjectTO destData,
             NfsTO destDataStore) {
-        String srcMountPoint = getRootDir(srcDataStore.getUrl(), null);
+        String srcMountPoint = getRootDir(srcDataStore.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid()));
         String snapshotPath = srcData.getPath();
         int index = snapshotPath.lastIndexOf("/");
         String snapshotName = snapshotPath.substring(index + 1);
@@ -434,7 +438,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         snapshotPath = snapshotPath.substring(0, index);
 
         snapshotPath = srcMountPoint + File.separator + snapshotPath;
-        String destMountPoint = getRootDir(destDataStore.getUrl(), null);
+        String destMountPoint = getRootDir(destDataStore.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(destDataStore.getUuid()));
         String destPath = destMountPoint + File.separator + destData.getPath();
 
         String errMsg = null;
@@ -492,8 +496,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (srcData.getHypervisorType() == HypervisorType.XenServer) {
             return copySnapshotToTemplateFromNfsToNfsXenserver(cmd, srcData, srcDataStore, destData, destDataStore);
         } else if (srcData.getHypervisorType() == HypervisorType.KVM) {
-            File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
-            File destFile = getFile(destData.getPath(), destDataStore.getUrl());
+            File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid()));
+            File destFile = getFile(destData.getPath(), destDataStore.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(destDataStore.getUuid()));
 
             VolumeObjectTO volumeObjectTO = srcData.getVolume();
             ImageFormat srcFormat = null;
@@ -577,8 +581,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new CopyCmdAnswer("");
     }
 
-    protected File getFile(String path, String nfsPath) {
-        String filePath = getRootDir(nfsPath, null) + File.separator + path;
+    protected File getFile(String path, String nfsPath, String nfsVersion) {
+        String filePath = getRootDir(nfsPath, nfsVersion) + File.separator + path;
         File f = new File(filePath);
         if (!f.exists()) {
             _storage.mkdirs(filePath);
@@ -610,7 +614,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
                 s_logger.debug("starting copy template to swift");
                 DataTO newTemplate = answer.getNewData();
-                File templateFile = getFile(newTemplate.getPath(), ((NfsTO)srcDataStore).getUrl());
+                File templateFile = getFile(newTemplate.getPath(), ((NfsTO)srcDataStore).getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid()));
                 SwiftTO swift = (SwiftTO)destDataStore;
                 String containterName = SwiftUtil.getContainerName(destData.getObjectType().toString(), destData.getId());
                 String swiftPath = SwiftUtil.putObject(swift, templateFile, containterName, templateFile.getName());
@@ -717,8 +721,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return Long.parseLong(StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR));
     }
 
-    private String determineStorageTemplatePath(final String storagePath, String dataPath) {
-        return join(asList(getRootDir(storagePath, null), dataPath), File.separator);
+    private String determineStorageTemplatePath(final String storagePath, String dataPath, String nfsVersion) {
+        return join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
     }
 
     protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path, String name) {
@@ -732,7 +736,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 throw new CloudRuntimeException("Failed to get url: " + url);
             }
 
-            String nfsMountPath = getRootDir(nfs.getUrl(), null);
+            String nfsMountPath = getRootDir(nfs.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(nfs.getUuid()));
 
             String filePath = nfsMountPath + File.separator + path;
             File directory = new File(filePath);
@@ -897,7 +901,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         final S3TO s3 = (S3TO)destDataStore;
 
         try {
-            final String templatePath = determineStorageTemplatePath(srcStore.getUrl(), srcData.getPath());
+            final String templatePath = determineStorageTemplatePath(srcStore.getUrl(), srcData.getPath(), ImageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid()));
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found " + srcData.getObjectType() + " from directory " + templatePath + " to upload to S3.");
@@ -1110,7 +1114,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO)dstore;
             String relativeSnapshotPath = cmd.getDirectory();
-            String parent = getRootDir(nfs.getUrl(), null);
+            String parent = getRootDir(nfs.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(dstore.getUuid()));
 
             if (relativeSnapshotPath.startsWith(File.separator)) {
                 relativeSnapshotPath = relativeSnapshotPath.substring(1);
@@ -1188,7 +1192,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, false, "can't handle non nfs data store");
         }
         NfsTO nfsStore = (NfsTO)store;
-        String parent = getRootDir(nfsStore.getUrl(), null);
+        String parent = getRootDir(nfsStore.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(store.getUuid()));
 
         if (relativeTemplatePath.startsWith(File.separator)) {
             relativeTemplatePath = relativeTemplatePath.substring(1);
@@ -1409,7 +1413,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO dstore = obj.getDataStore();
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO)dstore;
-            String parent = getRootDir(nfs.getUrl(), null);
+            String parent = getRootDir(nfs.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(dstore.getUuid()));
             if (!parent.endsWith(File.separator)) {
                 parent += File.separator;
             }
@@ -1602,7 +1606,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         DataStoreTO store = cmd.getDataStore();
         if (store instanceof NfsTO) {
-            String root = getRootDir(cmd.getSecUrl(), null);
+            String root = getRootDir(cmd.getSecUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(store.getUuid()));
             Map<Long, TemplateProp> templateInfos = _dlMgr.gatherVolumeInfo(root);
             return new ListVolumeAnswer(cmd.getSecUrl(), templateInfos);
         } else if (store instanceof S3TO) {
@@ -1771,7 +1775,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO)dstore;
             String relativeTemplatePath = obj.getPath();
-            String parent = getRootDir(nfs.getUrl(), null);
+            String parent = getRootDir(nfs.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(dstore.getUuid()));
 
             if (relativeTemplatePath.startsWith(File.separator)) {
                 relativeTemplatePath = relativeTemplatePath.substring(1);
@@ -1875,7 +1879,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO)dstore;
             String relativeVolumePath = obj.getPath();
-            String parent = getRootDir(nfs.getUrl(), null);
+            String parent = getRootDir(nfs.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(dstore.getUuid()));
 
             if (relativeVolumePath.startsWith(File.separator)) {
                 relativeVolumePath = relativeVolumePath.substring(1);
@@ -2672,7 +2676,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 //relative path with out ssvm mount info.
                 uploadEntity.setTemplatePath(absolutePath);
                 String dataStoreUrl = cmd.getDataTo();
-                String installPathPrefix = this.getRootDir(dataStoreUrl, null) + File.separator + absolutePath;
+                String installPathPrefix = this.getRootDir(dataStoreUrl, cmd.getNfsVersion()) + File.separator + absolutePath;
                 uploadEntity.setInstallPathPrefix(installPathPrefix);
                 uploadEntity.setHvm(cmd.getRequiresHvm());
                 uploadEntity.setChksum(cmd.getChecksum());
@@ -2694,7 +2698,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private synchronized void checkSecondaryStorageResourceLimit(TemplateOrVolumePostUploadCommand cmd, int contentLengthInGB) {
-        String rootDir = this.getRootDir(cmd.getDataTo(), null) + File.separator;
+        String rootDir = this.getRootDir(cmd.getDataTo(), cmd.getNfsVersion()) + File.separator;
         long accountId = cmd.getAccountId();
 
         long accountTemplateDirSize = 0;
@@ -2741,7 +2745,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private boolean isOneTimePostUrlUsed(TemplateOrVolumePostUploadCommand cmd) {
         String uuid = cmd.getEntityUUID();
-        String uploadPath = this.getRootDir(cmd.getDataTo(), null) + File.separator + cmd.getAbsolutePath();
+        String uploadPath = this.getRootDir(cmd.getDataTo(), cmd.getNfsVersion()) + File.separator + cmd.getAbsolutePath();
         return uploadEntityStateMap.containsKey(uuid) || new File(uploadPath).exists();
     }
 

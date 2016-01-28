@@ -56,7 +56,6 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
@@ -74,6 +73,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
@@ -136,8 +136,6 @@ public class TemplateServiceImpl implements TemplateService {
     ConfigurationDao _configDao;
     @Inject
     StorageCacheManager _cacheMgr;
-    @Inject
-    ImageStoreDetailsDao _imageStoreDetailsDao;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -567,7 +565,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
-        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), getNfsVersion(ssStore.getId()));
+        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), ImageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
         EndPoint ep = _epSelector.select(ssStore);
         Answer answer = null;
         if (ep == null) {
@@ -587,17 +585,6 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         return null;
-    }
-
-    private String getNfsVersion(long storeId) {
-        String nfsVersion = null;
-        if (_imageStoreDetailsDao.getDetails(storeId) != null){
-            Map<String, String> storeDetails = _imageStoreDetailsDao.getDetails(storeId);
-            if (storeDetails != null && storeDetails.containsKey("nfs.version")){
-                nfsVersion = storeDetails.get("nfs.version");
-            }
-        }
-        return nfsVersion;
     }
 
     protected Void createTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, TemplateOpContext<TemplateApiResult> context) {

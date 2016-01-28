@@ -106,6 +106,7 @@ import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.FileUtil;
@@ -553,16 +554,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public void prepareSecondaryStorageStore(String storageUrl, Long storeId) {
-        String nfsVersion = null;
-        if (storeId != null){
-            Map<String, String> details = _imageDetailsStoreDao.getDetails(storeId);
-            for (String detailKey : details.keySet()) {
-                if (detailKey.equals("nfs.version")){
-                    nfsVersion = details.get(detailKey);
-                }
-            }
-        }
-        String mountPoint = getMountPoint(storageUrl, nfsVersion);
+        String mountPoint = getMountPoint(storageUrl, ImageStoreDetailsUtil.getNfsVersion(storeId));
 
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
         try {

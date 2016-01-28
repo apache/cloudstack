@@ -32,6 +32,7 @@ public class CopyVolumeCommand extends Command {
     boolean toSecondaryStorage;
     String vmName;
     boolean executeInSequence = false;
+    String nfsVersion;
 
     public CopyVolumeCommand() {
     }
@@ -74,5 +75,13 @@ public class CopyVolumeCommand extends Command {
 
     public String getVmName() {
         return vmName;
+    }
+
+    public String getNfsVersion() {
+        return nfsVersion;
+    }
+
+    public void setNfsVersion(String nfsVersion) {
+        this.nfsVersion = nfsVersion;
     }
 }

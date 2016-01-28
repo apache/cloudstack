@@ -36,7 +36,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -91,6 +90,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStats;
@@ -718,7 +718,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
 
-                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), getNfsVersion(store.getId()));
+                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), ImageStoreDetailsUtil.getNfsVersion(store.getId()));
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
                         s_logger.debug("There is no secondary storage VM for secondary storage host " + store.getName());
@@ -766,16 +766,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             }
         }
 
-        private String getNfsVersion(long storeId) {
-            String nfsVersion = null;
-            if (_imageStoreDetailsDao.getDetails(storeId) != null){
-                Map<String, String> storeDetails = _imageStoreDetailsDao.getDetails(storeId);
-                if (storeDetails != null && storeDetails.containsKey("nfs.version")){
-                    nfsVersion = storeDetails.get("nfs.version");
-                }
-            }
-            return nfsVersion;
-        }
     }
 
     class AutoScaleMonitor extends ManagedContextRunnable {
