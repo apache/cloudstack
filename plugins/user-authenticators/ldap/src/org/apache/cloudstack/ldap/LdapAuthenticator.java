@@ -43,6 +43,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
     @Inject
     private AccountManager _accountManager;
 
+    private String ldapGroupName;
+
     public LdapAuthenticator() {
         super();
     }
@@ -54,8 +56,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
     }
 
     @Override
-    public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId, final Map<String, Object[]> requestParameters) {
-
+    public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId,
+                    final Map<String, Object[]> requestParameters) {
         if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
             s_logger.debug("Username or Password cannot be empty");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
@@ -66,14 +68,15 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
 
         if (_ldapManager.isLdapEnabled()) {
             final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
-            LdapTrustMapVO ldapTrustMapVO = _ldapManager.getDomainLinkedToLdap(domainId);
-            if(ldapTrustMapVO != null) {
+            final LdapTrustMapVO ldapTrustMapVO = _ldapManager.getDomainLinkedToLdap(domainId);
+            if (ldapTrustMapVO != null) {
+                ldapGroupName = DistinguishedNameParser.parseLeafName(ldapTrustMapVO.getName());
                 try {
-                    LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName());
-                    if(!ldapUser.isDisabled()) {
+                    final LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName());
+                    if (!ldapUser.isDisabled()) {
                         result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
-                        if(result) {
-                            if(user == null) {
+                        if (result) {
+                            if (user == null) {
                                 // import user to cloudstack
                                 createCloudStackUserAccount(ldapUser, domainId, ldapTrustMapVO.getAccountType());
                             } else {
@@ -81,24 +84,24 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                             }
                         }
                     } else {
-                        //disable user in cloudstack
+                        // disable user in cloudstack
                         disableUserInCloudStack(user);
                     }
-                } catch (NoLdapUserMatchingQueryException e) {
+                } catch (final NoLdapUserMatchingQueryException e) {
                     s_logger.debug(e.getMessage());
                 }
 
             } else {
-                //domain is not linked to ldap follow normal authentication
-                if(user != null ) {
+                // domain is not linked to ldap follow normal authentication
+                if (user != null) {
                     try {
-                        LdapUser ldapUser = _ldapManager.getUser(username);
-                        if(!ldapUser.isDisabled()) {
+                        final LdapUser ldapUser = _ldapManager.getUser(username);
+                        if (!ldapUser.isDisabled()) {
                             result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
                         } else {
-                            s_logger.debug("user with principal "+ ldapUser.getPrincipal() + " is disabled in ldap");
+                            s_logger.debug("user with principal " + ldapUser.getPrincipal() + " is disabled in ldap");
                         }
-                    } catch (NoLdapUserMatchingQueryException e) {
+                    } catch (final NoLdapUserMatchingQueryException e) {
                         s_logger.debug(e.getMessage());
                     }
                 }
@@ -111,19 +114,27 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         return new Pair<Boolean, ActionOnFailedAuthentication>(result, action);
     }
 
-    private void enableUserInCloudStack(UserAccount user) {
-        if(user != null && (user.getState().equalsIgnoreCase(Account.State.disabled.toString()))) {
+    private void enableUserInCloudStack(final UserAccount user) {
+        if (user != null && user.getState().equalsIgnoreCase(Account.State.disabled.toString())) {
             _accountManager.enableUser(user.getId());
         }
     }
 
-    private void createCloudStackUserAccount(LdapUser user, long domainId, short accountType) {
-        String username = user.getUsername();
-        _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username, accountType, domainId, username, null,
-                                          UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
+    private void createCloudStackUserAccount(final LdapUser user, final long domainId, final short accountType) {
+        final String username = user.getUsername();
+        final Account account = _accountManager.getActiveAccountByName(ldapGroupName, domainId);
+        if (account == null) {
+            s_logger.info("Account (" + ldapGroupName + ") for LDAP group does not exist. Creating account and user (" + username + ").");
+            _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, ldapGroupName, accountType, domainId,
+                            username, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
+        } else {
+            s_logger.debug("Account (" + ldapGroupName + ") for LDAP group already exists. Creating user (" + username + ").");
+            _accountManager.createUser(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, ldapGroupName, domainId,
+                            UUID.randomUUID().toString(), User.Source.LDAP);
+        }
     }
 
-    private void disableUserInCloudStack(UserAccount user) {
+    private void disableUserInCloudStack(final UserAccount user) {
         if (user != null) {
             _accountManager.disableUser(user.getId());
         }
