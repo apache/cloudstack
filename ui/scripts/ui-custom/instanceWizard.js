@@ -419,8 +419,6 @@
                                         });
                                     });
 
-                                    originalValues(formData);
-
                                     var custom = args.customHidden({
                                         context: context,
                                         data: args.data
@@ -428,13 +426,52 @@
 
                                     $step.find('.custom-size-label').remove();
 
-                                    if (!custom) {
-                                        $step.find('.section.custom-size').show();
-                                        $step.addClass('custom-disk-size');
-                                    } else {
+                                    if (custom) {
                                         $step.find('.section.custom-size').hide();
                                         $step.removeClass('custom-disk-size');
                                     }
+
+                                    $step.find('input[type=radio]').bind('change', function() {
+                                        var $target = $(this);
+                                        var val = $target.val();
+                                        var item = null;
+                                        if (item == null) {
+                                            item = $.grep(args.data.templates.featuredtemplates, function(elem) {
+                                                return elem.id == val;
+                                            })[0];
+                                        }
+                                        if (item == null) {
+                                            item = $.grep(args.data.templates.communitytemplates, function(elem) {
+                                                return elem.id == val;
+                                            })[0];
+                                        }
+                                        if (item == null) {
+                                            item = $.grep(args.data.templates.mytemplates, function(elem) {
+                                                return elem.id == val;
+                                            })[0];
+                                        }
+                                        if (item == null) {
+                                            item = $.grep(args.data.templates.sharedtemplates, function(elem) {
+                                                return elem.id == val;
+                                            })[0];
+                                        }
+
+                                        if (!item) return true;
+
+                                        var hypervisor = item['hypervisor'];
+                                        if (hypervisor == 'KVM') {
+                                            $step.find('.section.custom-size').show();
+                                            $step.addClass('custom-disk-size');
+                                        } else {
+                                            $step.find('.section.custom-size').hide();
+                                            $step.removeClass('custom-disk-size');
+                                        }
+
+                                        return true;
+                                    });
+
+                                    originalValues(formData);
+
                                 }
                             }
                         };
@@ -1271,9 +1308,9 @@
                     args.maxDiskOfferingSize() : 100;
 
                 // Setup tabs and slider
-                $wizard.find('.section.custom-size .size.min span').html(minCustomDiskSize);
-                $wizard.find('.section.custom-size input[type=text]').val(minCustomDiskSize);
-                $wizard.find('.section.custom-size .size.max span').html(maxCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-disk-size .size.min span').html(minCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-disk-size input[type=text]').val(minCustomDiskSize);
+                $wizard.find('.section.custom-size.custom-disk-size .size.max span').html(maxCustomDiskSize);
                 $wizard.find('.tab-view').tabs();
                 $wizard.find('.slider').each(function() {
                    var $slider = $(this);
