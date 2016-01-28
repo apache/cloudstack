@@ -2,21 +2,19 @@ FROM debian:8
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update
-
 # Debian packaging
-RUN apt-get install -y                      \
+RUN apt-get update && apt-get install -y    \
         debhelper                           \
         devscripts                          \
         genisoimage
 
 # Python
-RUN apt-get install -y                      \
+RUN apt-get update && apt-get install -y    \
         python-software-properties          \
         python-mysqldb
 
 # Java
-RUN apt-get install -y                      \
+RUN apt-get update && apt-get install -y    \
         openjdk-7-jdk                       \
         tomcat8                             \
         libws-commons-util-java             \
