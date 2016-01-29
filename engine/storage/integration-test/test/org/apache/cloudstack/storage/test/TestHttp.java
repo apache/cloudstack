@@ -24,11 +24,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import junit.framework.Assert;
-
-import org.apache.commons.httpclient.HttpException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -37,13 +35,15 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.Parameters;
 
+import junit.framework.Assert;
+
 @ContextConfiguration(locations = "classpath:/storageContext.xml")
 public class TestHttp extends AbstractTestNGSpringContextTests {
     @Test
     @Parameters("template-url")
     public void testHttpclient(String templateUrl) {
-        HttpHead method = new HttpHead(templateUrl);
-        DefaultHttpClient client = new DefaultHttpClient();
+        final HttpHead method = new HttpHead(templateUrl);
+        final DefaultHttpClient client = new DefaultHttpClient();
 
         OutputStream output = null;
         long length = 0;
@@ -51,34 +51,35 @@ public class TestHttp extends AbstractTestNGSpringContextTests {
             HttpResponse response = client.execute(method);
             length = Long.parseLong(response.getFirstHeader("Content-Length").getValue());
             System.out.println(response.getFirstHeader("Content-Length").getValue());
-            File localFile = new File("/tmp/test");
+            final File localFile = new File("/tmp/test");
             if (!localFile.exists()) {
                 localFile.createNewFile();
             }
 
-            HttpGet getMethod = new HttpGet(templateUrl);
+            final HttpGet getMethod = new HttpGet(templateUrl);
             response = client.execute(getMethod);
-            HttpEntity entity = response.getEntity();
+            final HttpEntity entity = response.getEntity();
 
             output = new BufferedOutputStream(new FileOutputStream(localFile));
             entity.writeTo(output);
-        } catch (HttpException e) {
+        } catch (final ClientProtocolException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } finally {
             try {
-                if (output != null)
+                if (output != null) {
                     output.close();
-            } catch (IOException e) {
+                }
+            } catch (final IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
 
-        File f = new File("/tmp/test");
+        final File f = new File("/tmp/test");
         Assert.assertEquals(f.length(), length);
     }
 }
