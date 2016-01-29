@@ -20,6 +20,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -35,6 +36,10 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.vmware.vim25.OptionValue;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class VmwareResourceTest {
 
@@ -88,6 +93,21 @@ public class VmwareResourceTest {
 
         _resource.execute(cmd);
         verify(_resource).execute(cmd);
+    }
+
+    @Test
+    public void testHddBootOrder() {
+        List<OptionValue> options = new ArrayList<>();
+        VmwareResource.configBasicWithBootOrder(options, null);
+        Assert.assertTrue(options.size() == 0);
+        VmwareResource.configBasicWithBootOrder(options, ",");
+        Assert.assertTrue(options.size() == 0);
+        VmwareResource.configBasicWithBootOrder(options, ",,,");
+        Assert.assertTrue(options.size() == 0);
+        VmwareResource.configBasicWithBootOrder(options, "ide0:0,scsi1:0,");
+        Assert.assertTrue(options.size() == 2);
+        Assert.assertEquals(options.get(0).getValue(), "cdrom,hdd,floppy");
+        Assert.assertEquals(options.get(1).getValue(), "ide0:0,scsi1:0");
     }
 
 }
