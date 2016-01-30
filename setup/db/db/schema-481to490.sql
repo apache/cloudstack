@@ -21,3 +21,4 @@
 
 ALTER TABLE `event` ADD INDEX `archived` (`archived`);
 ALTER TABLE `event` ADD INDEX `state` (`state`);
+ALTER TABLE `s2s_customer_gateway` MODIFY `guest_cidr_list` VARCHAR(4096);
