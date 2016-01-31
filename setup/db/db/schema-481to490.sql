@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.8.1 to 4.9.0;
 --;
+
+ALTER TABLE `event` ADD INDEX `archived` (`archived`);
+ALTER TABLE `event` ADD INDEX `state` (`state`);
