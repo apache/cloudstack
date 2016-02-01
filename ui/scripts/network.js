@@ -5859,6 +5859,9 @@
                                     linklocalip: {
                                         label: 'label.linklocal.ip'
                                     },
+                                    hostname: {
+                                        label: 'label.host'
+                                    },
                                     state: {
                                         label: 'label.state'
                                     },
