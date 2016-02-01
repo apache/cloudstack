@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.user.User;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -48,12 +49,12 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
@@ -87,6 +88,7 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -130,6 +132,9 @@ public class VmwareDatacenterApiUnitTest {
 
     @Inject
     AccountManager _acctMgr;
+
+    @Inject
+    ImageStoreDetailsUtil _imageStoreDetailsUtil;
 
     long zoneId;
     long podId;
@@ -225,6 +230,8 @@ public class VmwareDatacenterApiUnitTest {
         Mockito.when(addCmd.getPassword()).thenReturn(password);
         Mockito.when(addCmd.getName()).thenReturn(vmwareDcName);
         Mockito.when(removeCmd.getZoneId()).thenReturn(1L);
+        Mockito.when(_imageStoreDetailsUtil.getNfsVersion(Mockito.anyLong())).thenReturn(null);
+        Mockito.when(_imageStoreDetailsUtil.getNfsVersionByUuid(Mockito.anyString())).thenReturn(null);
     }
 
     @After
@@ -433,7 +440,17 @@ public class VmwareDatacenterApiUnitTest {
         }
 
         @Bean
-        public ImageStoreDetailsDao imageStoreDetailsDao(){
+        public ImageStoreDetailsUtil imageStoreDetailsUtil() {
+            return Mockito.mock(ImageStoreDetailsUtil.class);
+        }
+
+        @Bean
+        public ImageStoreDao imageStoreDao() {
+            return Mockito.mock(ImageStoreDao.class);
+        }
+
+        @Bean
+        public ImageStoreDetailsDao imageStoreDetailsDao() {
             return Mockito.mock(ImageStoreDetailsDao.class);
         }
 

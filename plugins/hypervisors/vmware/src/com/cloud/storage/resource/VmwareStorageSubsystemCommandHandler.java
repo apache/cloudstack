@@ -20,6 +20,8 @@ package com.cloud.storage.resource;
 
 import java.io.File;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -40,6 +42,10 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStoreDetailsUtil;
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
+
+    @Inject
+    ImageStoreDetailsUtil _imageStoreDetailsUtil;
+
     private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
@@ -78,7 +84,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
             }
         }
 
-        String nfsVersion = ImageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid());
+        String nfsVersion = _imageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid());
         if (srcDataStore.getRole() == DataStoreRole.ImageCache && destDataStore.getRole() == DataStoreRole.Image) {
             //need to take extra processing for vmware, such as packing to ova, before sending to S3
             if (srcData.getObjectType() == DataObjectType.VOLUME) {

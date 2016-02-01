@@ -33,6 +33,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -110,6 +112,10 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 
 public class VmwareStorageProcessor implements StorageProcessor {
+
+    @Inject
+    ImageStoreDetailsUtil _imageStoreDetailsUtil;
+
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
     private static final int DEFAULT_NFS_PORT = 2049;
 
@@ -317,7 +323,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 if (managed) {
                     VirtualMachineMO vmMo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                            managedStoragePoolRootVolumeName, false, ImageStoreDetailsUtil.getNfsVersionByUuid(destStore.getUuid()));
+                            managedStoragePoolRootVolumeName, false, _imageStoreDetailsUtil.getNfsVersionByUuid(destStore.getUuid()));
 
                     vmMo.unregisterVm();
 
@@ -334,7 +340,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
                 else {
                     copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                            templateUuidName, true, ImageStoreDetailsUtil.getNfsVersionByUuid(destStore.getUuid()));
+                            templateUuidName, true, _imageStoreDetailsUtil.getNfsVersionByUuid(destStore.getUuid()));
                 }
             } else {
                 s_logger.info("Template " + templateInfo.second() + " has already been setup, skip the template setup process in primary storage");
@@ -579,8 +585,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            Pair<String, String> result = copyVolumeFromSecStorage(hyperHost, srcVolume.getPath(), new DatastoreMO(context, morDatastore), srcStore.getUrl(), (long)cmd.getWait() * 1000, ImageStoreDetailsUtil.getNfsVersionByUuid(destStore.getUuid()));
-            deleteVolumeDirOnSecondaryStorage(result.first(), srcStore.getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(uuid));
+            Pair<String, String> result = copyVolumeFromSecStorage(hyperHost, srcVolume.getPath(), new DatastoreMO(context, morDatastore), srcStore.getUrl(), (long)cmd.getWait() * 1000, _imageStoreDetailsUtil.getNfsVersionByUuid(destStore.getUuid()));
+            deleteVolumeDirOnSecondaryStorage(result.first(), srcStore.getUrl(), _imageStoreDetailsUtil.getNfsVersionByUuid(uuid));
             VolumeObjectTO newVolume = new VolumeObjectTO();
             newVolume.setPath(result.second());
             return new CopyCmdAnswer(newVolume);
@@ -638,7 +644,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
 
             exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, destVolumePath, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1),
-                   ImageStoreDetailsUtil.getNfsVersionByUuid(cmd.getDestTO().getDataStore().getUuid()));
+                   _imageStoreDetailsUtil.getNfsVersionByUuid(cmd.getDestTO().getDataStore().getUuid()));
             return new Pair<String, String>(destVolumePath, exportName);
 
         } finally {
@@ -840,7 +846,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             Ternary<String, Long, Long> result =
                     createTemplateFromVolume(vmMo, template.getPath(), template.getId(), template.getName(), secondaryStoragePoolURL, volumePath,
-                            hostService.getWorkerName(context, cmd, 0), ImageStoreDetailsUtil.getNfsVersionByUuid(imageStore.getUuid()));
+                            hostService.getWorkerName(context, cmd, 0), _imageStoreDetailsUtil.getNfsVersionByUuid(imageStore.getUuid()));
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
@@ -1032,7 +1038,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             NfsTO nfsSvr = (NfsTO)imageStore;
             Ternary<String, Long, Long> result = createTemplateFromSnapshot(template.getPath(), uniqeName, nfsSvr.getUrl(), snapshot.getPath(), template.getId(), (long)cmd.getWait() * 1000,
-                    ImageStoreDetailsUtil.getNfsVersionByUuid(imageStore.getUuid()));
+                    _imageStoreDetailsUtil.getNfsVersionByUuid(imageStore.getUuid()));
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
@@ -1175,7 +1181,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     throw new Exception("Failed to take snapshot " + srcSnapshot.getName() + " on vm: " + vmName);
                 }
 
-                String nfsVersion = ImageStoreDetailsUtil.getNfsVersionByUuid(destStore.getUuid());
+                String nfsVersion = _imageStoreDetailsUtil.getNfsVersionByUuid(destStore.getUuid());
                 backupResult =
                         backupSnapshotToSecondaryStorage(vmMo, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl,
                                 prevSnapshotUuid, prevBackupUuid, hostService.getWorkerName(context, cmd, 1), nfsVersion);
@@ -2252,7 +2258,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ovf", "");
             }
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, (long)cmd.getWait() * 1000, ImageStoreDetailsUtil.getNfsVersionByUuid(imageStore.getUuid()));
+            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, (long)cmd.getWait() * 1000, _imageStoreDetailsUtil.getNfsVersionByUuid(imageStore.getUuid()));
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(newVolumeName);

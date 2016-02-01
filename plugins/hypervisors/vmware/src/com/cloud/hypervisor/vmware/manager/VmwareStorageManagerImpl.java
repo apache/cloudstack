@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import com.vmware.vim25.FileInfo;
@@ -93,6 +95,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
+
+    @Inject
+    ImageStoreDetailsUtil _imageStoreDetailsUtil;
+
     @Override
     public boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd) {
         DataTO data = cmd.getData();
@@ -157,7 +163,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String secStorageUrl = nfsStore.getUrl();
         assert (secStorageUrl != null);
         String installPath = template.getPath();
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, ImageStoreDetailsUtil.getNfsVersionByUuid(storeTO.getUuid()));
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, _imageStoreDetailsUtil.getNfsVersionByUuid(storeTO.getUuid()));
         String installFullPath = secondaryMountPoint + "/" + installPath;
         try {
             if (installFullPath.endsWith(".ova")) {
@@ -195,7 +201,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String installPath = volume.getPath();
         int index = installPath.lastIndexOf(File.separator);
         String volumeUuid = installPath.substring(index + 1);
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, ImageStoreDetailsUtil.getNfsVersionByUuid(storeTO.getUuid()));
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, _imageStoreDetailsUtil.getNfsVersionByUuid(storeTO.getUuid()));
         //The real volume path
         String volumePath = installPath + File.separator + volumeUuid + ".ova";
         String installFullPath = secondaryMountPoint + "/" + installPath;

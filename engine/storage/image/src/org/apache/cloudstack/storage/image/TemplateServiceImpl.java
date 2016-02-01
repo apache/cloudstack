@@ -136,6 +136,8 @@ public class TemplateServiceImpl implements TemplateService {
     ConfigurationDao _configDao;
     @Inject
     StorageCacheManager _cacheMgr;
+    @Inject
+    ImageStoreDetailsUtil _imageStoreDetailsUtil;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -565,7 +567,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
-        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), ImageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
+        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), _imageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
         EndPoint ep = _epSelector.select(ssStore);
         Answer answer = null;
         if (ep == null) {

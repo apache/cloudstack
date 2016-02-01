@@ -43,7 +43,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
@@ -200,7 +199,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private HostGpuGroupsDao _hostGpuGroupsDao;
     @Inject
-    private ImageStoreDetailsDao _imageStoreDetailsDao;
+    ImageStoreDetailsUtil _imageStoreDetailsUtil;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -718,7 +717,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
 
-                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), ImageStoreDetailsUtil.getNfsVersion(store.getId()));
+                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), _imageStoreDetailsUtil.getNfsVersion(store.getId()));
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
                         s_logger.debug("There is no secondary storage VM for secondary storage host " + store.getName());

@@ -46,7 +46,6 @@ import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -170,7 +169,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject
     private ClusterManager _clusterMgr;
     @Inject
-    private ImageStoreDetailsDao _imageDetailsStoreDao;
+    private ImageStoreDetailsUtil _imageStoreDetailsUtil;
 
     private String _mountParent;
     private StorageLayer _storage;
@@ -554,7 +553,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public void prepareSecondaryStorageStore(String storageUrl, Long storeId) {
-        String mountPoint = getMountPoint(storageUrl, ImageStoreDetailsUtil.getNfsVersion(storeId));
+        String mountPoint = getMountPoint(storageUrl, _imageStoreDetailsUtil.getNfsVersion(storeId));
 
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
         try {

@@ -16,20 +16,10 @@
 // under the License.
 package com.cloud.storage;
 
-import java.util.Map;
+import com.cloud.utils.component.Manager;
 
-import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-
-public class ImageStoreDetailsUtil {
-
-    @Inject
-    private static ImageStoreDao imageStoreDao;
-    @Inject
-    private static ImageStoreDetailsDao imageStoreDetailsDao;
+public interface ImageStoreDetailsUtil extends Manager {
 
     /**
      * Obtain NFS protocol version (if provided) for a store id.<br/>
@@ -38,22 +28,14 @@ public class ImageStoreDetailsUtil {
      * @return {@code null} if {@code nfs.version} is not found for storeId <br/>
      * {@code X} if {@code nfs.version} is found found for storeId
      */
-    public static String getNfsVersion(long storeId) {
-        String nfsVersion = null;
-        if (imageStoreDetailsDao.getDetails(storeId) != null){
-            Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
-            if (storeDetails != null && storeDetails.containsKey("nfs.version")){
-                nfsVersion = storeDetails.get("nfs.version");
-            }
-        }
-        return nfsVersion;
-    }
+    public String getNfsVersion(long storeId);
 
-    public static String getNfsVersionByUuid(String storeUuid){
-        ImageStoreVO imageStore = imageStoreDao.findByUuid(storeUuid);
-        if (imageStore != null){
-            return getNfsVersion(imageStore.getId());
-        }
-        return null;
-    }
+    /**
+     * Obtain NFS protocol version (if provided) for a store uuid.<br/>
+     * It can be set by adding an entry in {@code image_store_details} table, providing {@code name=nfs.version} and {@code value=X} (e.g. 3)
+     * @param storeId image store id
+     * @return {@code null} if {@code nfs.version} is not found for storeUuid <br/>
+     * {@code X} if {@code nfs.version} is found found for storeUuid
+     */
+    public String getNfsVersionByUuid(String storeUuid);
 }

@@ -240,6 +240,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     TemplateDataStoreDao _tmplStoreDao;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
+    @Inject
+    ImageStoreDetailsUtil _imageStoreDetailsUtil;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -311,7 +313,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, certs);
                 }
 
-                setupCmd.setNfsVersion(ImageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
+                setupCmd.setNfsVersion(_imageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
 
                 //template/volume file upload key
                 String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());

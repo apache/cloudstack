@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.command.DownloadCommand;
@@ -53,7 +54,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.storage.ImageStoreDetailsUtil;
+import com.cloud.storage.ImageStoreDetailsUtilImpl;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateHostVO;
@@ -89,6 +90,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private String _name;
     StorageLayer _storage;
     public Map<String, Processor> _processors;
+
+    @Inject
+    ImageStoreDetailsUtilImpl _imageStoreDetailsUtil;
 
     public class Completion implements DownloadCompleteCallback {
         private final String jobId;
@@ -709,7 +713,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String installPathPrefix = cmd.getInstallPath();
         // for NFS, we need to get mounted path
         if (dstore instanceof NfsTO) {
-            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl(), ImageStoreDetailsUtil.getNfsVersionByUuid(dstore.getUuid())) + File.separator + installPathPrefix;
+            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl(), _imageStoreDetailsUtil.getNfsVersionByUuid(dstore.getUuid())) + File.separator + installPathPrefix;
         }
         String user = null;
         String password = null;
