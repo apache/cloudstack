@@ -19,14 +19,15 @@ License:    GNU General Public License version 3 or later
 
 Have Fun!
 """
+from __future__ import print_function
 
 try:
     from collections import UserDict
 except ImportError:
     from UserDict import UserDict
-from optparse import OptionParser
 import re
 import sys
+import logging
 
 
 class ConverterError():
@@ -97,8 +98,8 @@ class Chains(UserDict):
             new_chain_name = liste.pop(1)
             existing = self.data.keys()
             if new_chain_name in existing:
-                msg = "Chain %s already exists" % (new_chain_name)
-                raise ValueError(msg)
+                logging.debug("Chain %s already exists" % new_chain_name)
+                return
             self.data[new_chain_name] = []        # empty list
             self.poli[new_chain_name] = "-"       # empty policy, no need
             return
@@ -106,22 +107,18 @@ class Chains(UserDict):
             chain_name = liste[1]
             existing = self.data.keys()
             if chain_name not in existing:
-                msg = "invalid chain name: %s" % (chain_name)
-                raise ValueError(msg)
+                self.data[chain_name] = []
+                self.poli[chain_name] = "-"
             kette = self.data[chain_name]
-            if len(kette) > 0:
-                kette.insert(0, content)
-            else:
-                msg = "Empty chain %s allows append only!" % (chain_name)
-                raise ValueError(msg)
+            kette.insert(0, content.replace("-I", "-A"))
             self.data[chain_name] = kette
             return
         if "-A" in action:  # or "-I" in action:
             chain_name = liste[1]
             existing = self.data.keys()
             if chain_name not in existing:
-                msg = "invalid chain name: %s" % (chain_name)
-                raise ValueError(msg)
+                self.data[chain_name] = []
+                self.poli[chain_name] = "-"
             kette = self.data[chain_name]
             kette.append(content)
             self.data[chain_name] = kette
@@ -147,12 +144,12 @@ class Tables(UserDict):
     some chaingroups in tables are predef: filter, nat, mangle, raw
     """
 
-    def __init__(self, fname="reference-one"):
+    def __init__(self, rules):
         """init Tables Object is easy going"""
         UserDict.__init__(self)
-        self.reset(fname)
+        self.reset(rules)
 
-    def reset(self, fname):
+    def reset(self, rules):
         """all predefined Chains aka lists are setup as new here"""
         filter = Chains("filter", ["INPUT", "FORWARD", "OUTPUT"])
 
@@ -168,22 +165,23 @@ class Tables(UserDict):
         self.data["mangle"] = mangle
         self.data["nat"] = nat
         self.data["raw"] = raw
-        if len(fname) > 0:
-            self.linecounter = self.read_file(fname)
+        if rules is not None:
+            self.read_file(rules)
 
     def table_printout(self):
         """printout nonempty tabulars in fixed sequence"""
-        for key in ["raw", "nat", "mangle", "filter"]:
-            len = self.data[key].length
-            if len > -1:
-                print("*%s" % (self.data[key].name))
-                for chain in self.data[key].keys():
-                    poli = self.data[key].poli[chain]
-                    print(":%s %s [0:0]" % (chain, poli))
-                for chain in self.data[key].values():
-                    for elem in chain:
-                        print(elem)
-                print("COMMIT")
+        with open("/tmp/rules.save", 'w') as f:
+            for key in ["raw", "nat", "mangle", "filter"]:
+                len = self.data[key].length
+                if len > -1:
+                    print("*%s" % (self.data[key].name), file=f)
+                    for chain in self.data[key].keys():
+                        poli = self.data[key].poli[chain]
+                        print(":%s %s [0:0]" % (chain, poli), file=f)
+                    for chain in self.data[key].values():
+                        for elem in chain:
+                            print(elem, file=f)
+                    print("COMMIT", file=f)
 
     def put_into_tables(self, line):
         """put line into matching Chains-object"""
@@ -204,64 +202,26 @@ class Tables(UserDict):
         fam_dict = self.data[fam]           # select the group dictionary
         fam_dict.put_into_fgr(rest)         # do action thers
 
-    def read_file(self, fname):
+    def read_file(self, rules):
         """read file into Tables-object"""
         self.linecounter = 0
         self.tblctr = 0
-        try:
-            fil0 = open(fname, 'r')
-            for zeile in fil0:
-                line = str(zeile.strip())
-                self.linecounter += 1
-                if line.startswith('#'):
-                    continue
-                for element in ['\$', '\(', '\)', ]:
-                    if re.search(element, line):
-                        m1 = "Line %d:\n%s\nplain files only, " % \
-                             (self.linecounter, line)
-                        if element in ['\(', '\)', ]:
-                            m2 = "unable to convert shell functions, abort"
-                        else:
-                            m2 = "unable to resolve shell variables, abort"
-                        msg = m1 + m2
-                        raise ConverterError(msg)
-                for muster in ["^/sbin/iptables ", "^iptables "]:
-                    if re.search(muster, line):
-                        self.tblctr += 1
-                        self.put_into_tables(line)
-            fil0.close()
-        except ValueError as err:
-            print (fname + ": "), err
-            sys.exit(1)
-        except IOError as err:
-            print(fname + ": "), err.strerror
-            sys.exit(1)
-        if not fname == "reference-one":
-            print("# generated from: %s" % (fname))
-
-
-def main():
-    """
-    main parses options, filnames and the like
-    one option (-s) may be given: input-filename
-    if none given, it defaults to: rules
-    """
-    usage = "usage:  %prog --help | -h \n\n\t%prog: version 0.9.8"
-    usage = usage + "\tHave Fun!"
-    parser = OptionParser(usage)
-    parser.disable_interspersed_args()
-    parser.add_option("-s", "", dest="sourcefile",
-                      help="file with iptables commands, default: rules\n")
-    (options, args) = parser.parse_args()
-    hlp = "\n\tplease use \"--help\" as argument, abort!\n"
-    if options.sourcefile is None:
-        options.sourcefile = "rules"
-    sourcefile = options.sourcefile
-
-    chains = Tables(sourcefile)
-    chains.table_printout()
-
-
-if __name__ == "__main__":
-    main()
-    sys.exit(0)
+        for zeile in rules:
+            line = str(zeile.strip())
+            self.linecounter += 1
+            if line.startswith('#'):
+                continue
+            for element in ['\$', '\(', '\)', ]:
+                if re.search(element, line):
+                    m1 = "Line %d:\n%s\nplain files only, " % \
+                         (self.linecounter, line)
+                    if element in ['\(', '\)', ]:
+                        m2 = "unable to convert shell functions, abort"
+                    else:
+                        m2 = "unable to resolve shell variables, abort"
+                    msg = m1 + m2
+                    raise ConverterError(msg)
+            for muster in ["^/sbin/iptables ", "^iptables "]:
+                if re.search(muster, line):
+                    self.tblctr += 1
+                    self.put_into_tables(line)
