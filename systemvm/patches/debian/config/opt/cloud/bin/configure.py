@@ -17,27 +17,16 @@
 # specific language governing permissions and limitations
 # under the License.
 import sys
-import os
 import base64
 
-from merge import DataBag
-from pprint import pprint
-import subprocess
-import logging
 import re
-import time
-import shutil
-import os.path
-import os
 from fcntl import flock, LOCK_EX, LOCK_UN
 
-from cs.CsDatabag import CsDataBag, CsCmdLine
-import cs.CsHelper
+from cs.CsDatabag import CsDataBag
 from cs.CsNetfilter import CsNetfilters
 from cs.CsDhcp import CsDhcp
 from cs.CsRedundant import *
 from cs.CsFile import CsFile
-from cs.CsApp import CsApache, CsDnsmasq
 from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
 from cs.CsConfig import CsConfig
@@ -281,7 +270,7 @@ class CsAcl(CsDataBag):
                     rstr = "%s -m icmp --icmp-type %s" % (rstr, self.icmp_type)
                 rstr = "%s %s -j %s" % (rstr, self.dport, self.action)
                 rstr = rstr.replace("  ", " ").lstrip()
-                self.fw.append([self.table, self.count, rstr])
+                self.fw.append([self.table, "", rstr])
 
     def process(self):
         for item in self.dbag:
@@ -804,7 +793,7 @@ class CsForwardingRules(CsDataBag):
                 rule['internal_ip'],
                 self.portsToString(rule['internal_ports'], '-')
               )
-        fw4 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
+        fw4 = "-A POSTROUTING -j SNAT --to-source %s -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
               (
                 self.getGuestIp(),
                 self.getNetworkByIp(rule['internal_ip']),
