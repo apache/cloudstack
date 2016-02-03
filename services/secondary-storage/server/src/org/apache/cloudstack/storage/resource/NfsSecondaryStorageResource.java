@@ -146,7 +146,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ImageStoreDetailsUtilImpl;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -175,7 +175,7 @@ import org.joda.time.format.ISODateTimeFormat;
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
     @Inject
-    ImageStoreDetailsUtilImpl _imageStoreDetailsUtil;
+    ImageStoreDetailsUtil _imageStoreDetailsUtil;
 
     private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
 

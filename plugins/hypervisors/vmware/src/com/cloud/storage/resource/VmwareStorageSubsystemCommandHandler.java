@@ -20,8 +20,6 @@ package com.cloud.storage.resource;
 
 import java.io.File;
 
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -29,6 +27,7 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.springframework.context.ApplicationContext;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -43,8 +42,7 @@ import com.cloud.storage.ImageStoreDetailsUtil;
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
 
-    @Inject
-    ImageStoreDetailsUtil _imageStoreDetailsUtil;
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
@@ -68,6 +66,8 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
 
     public VmwareStorageSubsystemCommandHandler(StorageProcessor processor) {
         super(processor);
+        ApplicationContext applicationContext = com.cloud.utils.component.ComponentContext.getApplicationContext();
+        imageStoreDetailsUtil = applicationContext.getBean("imageStoreDetailsUtil", ImageStoreDetailsUtil.class);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
             }
         }
 
-        String nfsVersion = _imageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid());
+        String nfsVersion = imageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid());
         if (srcDataStore.getRole() == DataStoreRole.ImageCache && destDataStore.getRole() == DataStoreRole.Image) {
             //need to take extra processing for vmware, such as packing to ova, before sending to S3
             if (srcData.getObjectType() == DataObjectType.VOLUME) {

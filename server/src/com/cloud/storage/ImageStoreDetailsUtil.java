@@ -16,10 +16,22 @@
 // under the License.
 package com.cloud.storage;
 
-import com.cloud.utils.component.Manager;
+import java.util.Map;
 
+import javax.inject.Inject;
 
-public interface ImageStoreDetailsUtil extends Manager {
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ImageStoreDetailsUtil {
+
+    @Inject
+    protected ImageStoreDao imageStoreDao;
+    @Inject
+    protected ImageStoreDetailsDao imageStoreDetailsDao;
 
     /**
      * Obtain NFS protocol version (if provided) for a store id.<br/>
@@ -28,7 +40,16 @@ public interface ImageStoreDetailsUtil extends Manager {
      * @return {@code null} if {@code nfs.version} is not found for storeId <br/>
      * {@code X} if {@code nfs.version} is found found for storeId
      */
-    public String getNfsVersion(long storeId);
+    public String getNfsVersion(long storeId) {
+        String nfsVersion = null;
+        if (imageStoreDetailsDao.getDetails(storeId) != null){
+            Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
+            if (storeDetails != null && storeDetails.containsKey("nfs.version")){
+                nfsVersion = storeDetails.get("nfs.version");
+            }
+        }
+        return nfsVersion;
+    }
 
     /**
      * Obtain NFS protocol version (if provided) for a store uuid.<br/>
@@ -37,5 +58,12 @@ public interface ImageStoreDetailsUtil extends Manager {
      * @return {@code null} if {@code nfs.version} is not found for storeUuid <br/>
      * {@code X} if {@code nfs.version} is found found for storeUuid
      */
-    public String getNfsVersionByUuid(String storeUuid);
+    public String getNfsVersionByUuid(String storeUuid){
+        ImageStoreVO imageStore = imageStoreDao.findByUuid(storeUuid);
+        if (imageStore != null){
+            return getNfsVersion(imageStore.getId());
+        }
+        return null;
+    }
+
 }

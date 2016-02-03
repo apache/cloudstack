@@ -134,7 +134,7 @@ public class VmwareDatacenterApiUnitTest {
     AccountManager _acctMgr;
 
     @Inject
-    ImageStoreDetailsUtil _imageStoreDetailsUtil;
+    ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     long zoneId;
     long podId;
@@ -230,8 +230,8 @@ public class VmwareDatacenterApiUnitTest {
         Mockito.when(addCmd.getPassword()).thenReturn(password);
         Mockito.when(addCmd.getName()).thenReturn(vmwareDcName);
         Mockito.when(removeCmd.getZoneId()).thenReturn(1L);
-        Mockito.when(_imageStoreDetailsUtil.getNfsVersion(Mockito.anyLong())).thenReturn(null);
-        Mockito.when(_imageStoreDetailsUtil.getNfsVersionByUuid(Mockito.anyString())).thenReturn(null);
+        Mockito.when(imageStoreDetailsUtil.getNfsVersion(Mockito.anyLong())).thenReturn(null);
+        Mockito.when(imageStoreDetailsUtil.getNfsVersionByUuid(Mockito.anyString())).thenReturn(null);
     }
 
     @After

@@ -47,6 +47,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.springframework.context.ApplicationContext;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -168,8 +169,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private ManagementServerHostPeerDao _mshostPeerDao;
     @Inject
     private ClusterManager _clusterMgr;
-    @Inject
-    private ImageStoreDetailsUtil _imageStoreDetailsUtil;
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private String _mountParent;
     private StorageLayer _storage;
@@ -202,6 +202,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     public VmwareManagerImpl() {
         _storageMgr = new VmwareStorageManagerImpl(this);
+        ApplicationContext applicationContext = com.cloud.utils.component.ComponentContext.getApplicationContext();
+        imageStoreDetailsUtil = applicationContext.getBean("imageStoreDetailsUtil", ImageStoreDetailsUtil.class);
     }
 
     @Override
@@ -553,7 +555,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public void prepareSecondaryStorageStore(String storageUrl, Long storeId) {
-        String mountPoint = getMountPoint(storageUrl, _imageStoreDetailsUtil.getNfsVersion(storeId));
+        String mountPoint = getMountPoint(storageUrl, imageStoreDetailsUtil.getNfsVersion(storeId));
 
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
         try {

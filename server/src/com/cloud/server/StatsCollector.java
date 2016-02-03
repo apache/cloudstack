@@ -199,7 +199,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private HostGpuGroupsDao _hostGpuGroupsDao;
     @Inject
-    ImageStoreDetailsUtil _imageStoreDetailsUtil;
+    ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -717,7 +717,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
 
-                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), _imageStoreDetailsUtil.getNfsVersion(store.getId()));
+                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), imageStoreDetailsUtil.getNfsVersion(store.getId()));
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
                         s_logger.debug("There is no secondary storage VM for secondary storage host " + store.getName());
