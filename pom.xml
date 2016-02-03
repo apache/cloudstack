@@ -63,7 +63,7 @@
     <!-- do not forget to also upgrade hamcrest library with junit -->
     <cs.junit.version>4.12</cs.junit.version>
     <cs.hamcrest.version>1.3</cs.hamcrest.version>
-    <cs.bcprov.version>1.46</cs.bcprov.version>
+    <cs.bcprov.version>1.54</cs.bcprov.version>
     <cs.jsch.version>0.1.53</cs.jsch.version>
     <cs.jpa.version>2.1.1</cs.jpa.version>
     <cs.jasypt.version>1.9.2</cs.jasypt.version>
@@ -116,7 +116,6 @@
     <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
     <cs.batik.version>1.8</cs.batik.version>
-    <cs.bcprov-jdk15on.version>1.54</cs.bcprov-jdk15on.version>
     <cs.servicemix.version>2.3.4_1</cs.servicemix.version>
     <cs.jetty.version>9.3.7.v20160115</cs.jetty.version>
     <cs.cxf.version>3.1.4</cs.cxf.version>
@@ -239,7 +238,7 @@
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk15on</artifactId>
-        <version>${cs.bcprov-jdk15on.version}</version>
+        <version>${cs.bcprov.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.xmlgraphics</groupId>
@@ -317,11 +316,6 @@
         <groupId>commons-validator</groupId>
         <artifactId>commons-validator</artifactId>
         <version>${cs.commons-validator.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-jdk16</artifactId>
-        <version>${cs.bcprov.version}</version>
       </dependency>
       <dependency>
         <groupId>com.jcraft</groupId>
