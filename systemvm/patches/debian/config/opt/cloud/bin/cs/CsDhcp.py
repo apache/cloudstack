@@ -55,7 +55,7 @@ class CsDhcp(CsDataBag):
 
         # We restart DNSMASQ every time the configure.py is called in order to avoid lease problems.
         if not self.cl.is_redundant() or self.cl.is_master():
-            CsHelper.service("dnsmasq", "restart")
+            CsHelper.execute2("service dnsmasq restart")
 
     def configure_server(self):
         # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
