@@ -172,6 +172,7 @@ class CsNetfilters(object):
     def apply_rules(self):
         s = []
         for r in self.iptablerules:
+            r.replace('  ', ' ')  # Remove duplicate spaces
             if r not in s:
                 s.append(r)
 
