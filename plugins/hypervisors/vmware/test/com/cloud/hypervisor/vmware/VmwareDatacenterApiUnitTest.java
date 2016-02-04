@@ -38,6 +38,8 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -54,8 +56,6 @@ import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;
@@ -101,6 +101,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
+@PrepareForTest({ComponentContext.class, ApplicationContext.class})
 public class VmwareDatacenterApiUnitTest {
 
     @Inject
@@ -133,9 +134,6 @@ public class VmwareDatacenterApiUnitTest {
     @Inject
     AccountManager _acctMgr;
 
-    @Inject
-    ImageStoreDetailsUtil imageStoreDetailsUtil;
-
     long zoneId;
     long podId;
     long clusterId;
@@ -163,6 +161,13 @@ public class VmwareDatacenterApiUnitTest {
 
     @BeforeClass
     public static void setUp() throws ConfigurationException {
+        ComponentContext ctx = new ComponentContext();
+        ImageStoreDetailsUtil imgSDUtil = Mockito.mock(ImageStoreDetailsUtil.class);
+        Mockito.when(imgSDUtil.getNfsVersion(Mockito.anyLong())).thenReturn("3");
+        Mockito.when(imgSDUtil.getNfsVersionByUuid(Mockito.anyString())).thenReturn("3");
+        ApplicationContext appCtx = Mockito.mock(ApplicationContext.class);
+        Mockito.when(appCtx.getBean(Mockito.anyString(), Mockito.any(ImageStoreDetailsUtil.class))).thenReturn(imgSDUtil);
+        ctx.setApplicationContext(appCtx);
     }
 
     @Before
@@ -230,8 +235,6 @@ public class VmwareDatacenterApiUnitTest {
         Mockito.when(addCmd.getPassword()).thenReturn(password);
         Mockito.when(addCmd.getName()).thenReturn(vmwareDcName);
         Mockito.when(removeCmd.getZoneId()).thenReturn(1L);
-        Mockito.when(imageStoreDetailsUtil.getNfsVersion(Mockito.anyLong())).thenReturn(null);
-        Mockito.when(imageStoreDetailsUtil.getNfsVersionByUuid(Mockito.anyString())).thenReturn(null);
     }
 
     @After
@@ -437,21 +440,6 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public DataStoreManager dataStoreManager() {
             return Mockito.mock(DataStoreManager.class);
-        }
-
-        @Bean
-        public ImageStoreDetailsUtil imageStoreDetailsUtil() {
-            return Mockito.mock(ImageStoreDetailsUtil.class);
-        }
-
-        @Bean
-        public ImageStoreDao imageStoreDao() {
-            return Mockito.mock(ImageStoreDao.class);
-        }
-
-        @Bean
-        public ImageStoreDetailsDao imageStoreDetailsDao() {
-            return Mockito.mock(ImageStoreDetailsDao.class);
         }
 
         public static class Library implements TypeFilter {

@@ -112,6 +112,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -200,10 +201,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private final ScheduledExecutorService _hostScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-Host-Scan"));
 
+    private ApplicationContext applicationContext;
+
     public VmwareManagerImpl() {
-        _storageMgr = new VmwareStorageManagerImpl(this);
-        ApplicationContext applicationContext = com.cloud.utils.component.ComponentContext.getApplicationContext();
+        applicationContext = ComponentContext.getApplicationContext();
         imageStoreDetailsUtil = applicationContext.getBean("imageStoreDetailsUtil", ImageStoreDetailsUtil.class);
+        _storageMgr = new VmwareStorageManagerImpl(this);
     }
 
     @Override
