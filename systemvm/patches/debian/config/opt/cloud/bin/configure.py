@@ -85,13 +85,13 @@ class CsStaticRoutes(CsDataBag):
 
     def __update(self, route):
         if route['revoke']:
-            command = "route del -net %s gw %s" % (route['network'], route['gateway'])
+            command = "ip route del %s via %s" % (route['network'], route['gateway'])
             result = CsHelper.execute(command)
         else:
             command = "ip route show | grep %s | awk '{print $1, $3}'" % route['network']
             result = CsHelper.execute(command)
             if not result:
-                route_command = "route add -net %s gw %s" % (route['network'], route['gateway'])
+                route_command = "ip route add %s via %s" % (route['network'], route['gateway'])
                 result = CsHelper.execute(route_command)
 
 
