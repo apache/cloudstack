@@ -789,8 +789,7 @@ test_data = {
         "name": "coreos",
         "passwordenabled": False,
         "ostype": "Coreos",
-        "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/" \
-                         "coreos_production_cloudstack_image-vmware.vmdk.bz2",
+        "urlvmware":"http://10.147.28.7/templates/coreos/coreos_production_vmware.ova",
         "urlxen":"http://dl.openvm.eu/cloudstack/coreos/x86_64/"
                  "coreos_production_cloudstack_image-xen.vhd.bz2",
         "urlkvm": "http://dl.openvm.eu/cloudstack/coreos/x86_64/" \

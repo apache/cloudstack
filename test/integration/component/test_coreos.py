@@ -114,7 +114,7 @@ class TestDeployVmWithCoreosTemplate(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced","tt"], required_hardware="true")
     def test1_coreos_VM_creation(self):
 
         self.hypervisor = str(get_hypervisor_type(self.api_client)).lower()
@@ -226,7 +226,7 @@ class TestDeployVmWithCoreosTemplate(cloudstackTestCase):
             )
         else:
             list_router_response = list_routers(
-                self.api_Client,
+                self.api_client,
                 account=self.account.name,
                 domainid=self.account.domainid
             )
@@ -287,5 +287,6 @@ class TestDeployVmWithCoreosTemplate(cloudstackTestCase):
             res.__contains__("name: docker.service"),
             True,
             "Userdata Not applied Check the failures")
+        self.account.delete(self.api_client)
 
         return
