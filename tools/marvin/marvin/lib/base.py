@@ -1155,6 +1155,7 @@ class Template:
             "ispublic"] if "ispublic" in services else False
         cmd.isextractable = services[
             "isextractable"] if "isextractable" in services else False
+        cmd.isdynamicallyscalable=services["isdynamicallyscalable"] if "isdynamicallyscalable" in services else False
         cmd.passwordenabled = services[
             "passwordenabled"] if "passwordenabled" in services else False
 

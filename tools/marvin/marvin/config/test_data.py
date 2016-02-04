@@ -121,7 +121,7 @@ test_data = {
             "name": "LargeInstance",
             "displaytext": "LargeInstance",
             "cpunumber": 1,
-            "cpuspeed": 500,
+            "cpuspeed": 1024,
             "memory": 2048,
         },
         "hasmall": {
@@ -781,12 +781,41 @@ test_data = {
         "ostype": "CentOS 5.6 (64-bit)"
 
     },
+    "coreos_volume": {
+        "diskname": "Volume_core",
+        "urlvmware":"http://10.147.28.7/templates/coreos/coreos_production_vmware.ova",
+        "urlxen":"http://10.147.28.7/templates/coreos/" \
+                         "coreos_production_cloudstack_image-xen.vhd.bz2",
+        "urlkvm": "http://dl.openvm.eu/cloudstack/coreos/x86_64/" \
+                         "coreos_production_cloudstack_image-kvm.qcow2.bz2",
+        "urlhyperv":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-hyperv.vhd.zip"
+        },
     "CentOS6.3template": {
         "displaytext": "Centos",
         "name": "Centos",
         "passwordenabled": False,
         "ostype": "CentOS 6.3 (64-bit)",
         "url": "http://people.apache.org/~sanjeev/centos63.ova",
+        "format": "OVA",
+        "ispublic": "true"
+    },
+    "CentOS7template": {
+        "displaytext": "Centos",
+        "name": "Centos",
+        "passwordenabled": False,
+        "isdynamicallyscalable":True,
+        "ostype": "CentOS 7",
+        "url": "http://10.147.28.7/templates/cenots7/Centos7.vhd",
+        "format": "VHD",
+        "ispublic": "true",
+        "hypervisor":"Xenserver"
+    },
+    "Rhel7template": {
+        "displaytext": "Rhel",
+        "name": "Rhel",
+        "passwordenabled": False,
+        "ostype": "Red Hat Enterprise Linux 7",
+        "url": "http://10.147.28.7/templates/rhel71.ova",
         "format": "OVA",
         "ispublic": "true"
     },
@@ -810,6 +839,16 @@ test_data = {
         "ispublic": "true",
         "hypervisor": "XenServer"
     },
+    "Windows Server 2012": {
+            "displaytext": "Windows Server 2012",
+            "name": "Windows Server 2012",
+            "passwordenabled": False,
+            "url": "http://10.147.28.7/templates/Windows2012/WindowsServer2012R2.ova.gz",
+            "format": "OVA",
+            "ostype": "Windows Server 2012 (64-bit)",
+            "ispublic": "true",
+            "hypervisor": "Vmware"
+     },
     "privatetemplate": {
         "displaytext": "Public Template",
         "name": "Public template",
