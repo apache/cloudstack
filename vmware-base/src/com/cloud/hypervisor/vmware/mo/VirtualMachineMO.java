@@ -2137,7 +2137,7 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         assert (false);
-        throw new Exception(diskController + " Controller Not Found");
+        throw new IllegalStateException("Scsi disk controller of type " + diskController + " not found among configured devices.");
     }
 
     public int getScsiDiskControllerKeyNoException(String diskController) throws Exception {

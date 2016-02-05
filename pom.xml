@@ -92,7 +92,7 @@
     <cs.servlet.version>2.5</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
-    <cs.vmware.api.version>5.5</cs.vmware.api.version>
+    <cs.vmware.api.version>6.0</cs.vmware.api.version>
     <org.springframework.version>3.2.12.RELEASE</org.springframework.version>
     <cs.mockito.version>1.9.5</cs.mockito.version>
     <cs.powermock.version>1.5.3</cs.powermock.version>

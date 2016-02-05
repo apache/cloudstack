@@ -15,14 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.hypervisor.vmware.mo;
+package org.apache.cloudstack.utils.volume;
+
+import org.apache.commons.lang.StringUtils;
 
 public class VirtualMachineDiskInfo {
-    String diskDeviceBusName;
-    String[] diskChain;
-
-    public VirtualMachineDiskInfo() {
-    }
+    private String diskDeviceBusName;
+    private String[] diskChain;
 
     public String getDiskDeviceBusName() {
         return diskDeviceBusName;
@@ -38,5 +37,12 @@ public class VirtualMachineDiskInfo {
 
     public void setDiskChain(String[] diskChain) {
         this.diskChain = diskChain;
+    }
+
+    public String getControllerFromDeviceBusName() {
+        if (StringUtils.isEmpty(diskDeviceBusName) || !diskDeviceBusName.contains(":")) {
+            return null;
+        }
+        return diskDeviceBusName.substring(0, diskDeviceBusName.indexOf(":") - 1);
     }
 }
