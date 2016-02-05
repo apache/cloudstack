@@ -520,6 +520,8 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
         file.addeq(" keyingtries=2")
         file.addeq(" auto=start")
+        if not obj.has_key('encap'):
+            obj['encap']="false"
         file.addeq(" forceencaps=%s" % CsHelper.bool_to_yn(obj['encap']))
         if obj['dpd']:
             file.addeq("  dpddelay=30")
