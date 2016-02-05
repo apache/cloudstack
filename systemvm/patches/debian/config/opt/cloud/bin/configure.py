@@ -217,7 +217,23 @@ class CsAcl(CsDataBag):
 
         def process(self, direction, rule_list, base):
             count = base
-            for i in rule_list:
+            rule_list_splitted = []
+            for rule in rule_list:
+                if ',' in rule['cidr']:
+                    cidrs = rule['cidr'].split(',')
+                    for cidr in cidrs:
+                        new_rule = {
+                            'cidr': cidr,
+                            'last_port': rule['last_port'],
+                            'type': rule['type'],
+                            'first_port': rule['first_port'],
+                            'allowed': rule['allowed']
+                        }
+                        rule_list_splitted.append(new_rule)
+                else:
+                    rule_list_splitted.append(rule)
+
+            for i in rule_list_splitted:
                 r = self.AclRule(direction, self, i, self.config, count)
                 r.create()
                 count += 1
