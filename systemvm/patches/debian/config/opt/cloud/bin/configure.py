@@ -988,7 +988,7 @@ def main(argv):
         lb.process()
 
         logging.debug("Configuring iptables rules")
-        nf = CsNetfilters()
+        nf = CsNetfilters(False)
         nf.compare(config.get_fw())
 
         logging.debug("Configuring iptables rules done ...saving rules")
