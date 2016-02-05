@@ -15,9 +15,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from CsDatabag import CsDataBag, CsCmdLine
+from CsDatabag import CsDataBag
 from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
-import CsHelper
 import logging
 from netaddr import IPAddress, IPNetwork
 import CsHelper
@@ -198,7 +197,7 @@ class CsInterface:
         return self.get_attr("add")
 
     def to_str(self):
-        pprint(self.address)
+        print(self.address)
 
 
 class CsDevice:
@@ -384,8 +383,6 @@ class CsIP:
                             "-A FIREWALL_%s " % self.address['public_ip'] +
                             "-m state --state RELATED,ESTABLISHED -j ACCEPT"])
             self.fw.append(["mangle", "",
-                            "-A FIREWALL_%s DROP" % self.address['public_ip']])
-            self.fw.append(["mangle", "",
                             "-A VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
@@ -402,8 +399,7 @@ class CsIP:
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
-        self.fw.append(["filter", "", "-A INPUT -i %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
-                        self.dev])
+        self.fw.append(["filter", "", "-A INPUT -i %s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
         self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -i lo -j ACCEPT"])
 
@@ -446,6 +442,13 @@ class CsIP:
         self.fw.append(["mangle", "front", "-A PREROUTING " +
                         "-m state --state RELATED,ESTABLISHED " +
                         "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
+
+        self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
+        self.fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
+        self.fw.append(["", "front", "-A OUTPUT -j NETWORK_STATS"])
+
+        self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])
+
         if self.get_type() in ["guest"]:
             self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                             (self.address['network'], self.dev, self.dev)])
@@ -484,10 +487,6 @@ class CsIP:
                             ])
 
         if self.get_type() in ["public"]:
-            self.fw.append(["", "front",
-                            "-A FORWARD -o %s -d %s -j ACL_INBOUND_%s" % (
-                                self.dev, self.address['network'], self.dev)
-                            ])
             self.fw.append(
                 ["mangle", "", "-A FORWARD -j VPN_STATS_%s" % self.dev])
             self.fw.append(
@@ -495,11 +494,7 @@ class CsIP:
             self.fw.append(
                 ["mangle", "", "-A VPN_STATS_%s -i %s -m mark --mark 0x524/0xffffffff" % (self.dev, self.dev)])
             self.fw.append(
-                ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
-
-        self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
-        self.fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
-        self.fw.append(["", "front", "-A OUTPUT -j NETWORK_STATS"])
+                ["", "front", "-A FORWARD -j NETWORK_STATS_eth1"])
 
         self.fw.append(["", "", "-A NETWORK_STATS -i eth0 -o eth2 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 -o eth0 -p tcp"])
@@ -508,9 +503,11 @@ class CsIP:
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
-
+        self.fw.append(["filter", "", "-A INPUT -i %s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
+        self.fw.append(["filter", "", "-A INPUT -i lo -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -i eth0 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT"])
 
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
