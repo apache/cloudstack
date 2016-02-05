@@ -96,7 +96,6 @@ import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
@@ -228,8 +227,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Inject
     ImageStoreDetailsDao detailsStoreDao;
-
-    public static final String IMAGE_STORE_PARAMETER_ID = "imageStoreId";
 
     public void setParentPath(String path) {
         _parent = path;
@@ -1314,16 +1311,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 s_logger.debug("Failed to config ssl: " + e.toString());
             }
         }
-    }
-
-    private Long getImageStoreId(DataStoreTO dataStore){
-        Long imgStoreId = null;
-        if (dataStore.getRole().equals(DataStoreRole.Image)){
-            String uuid = dataStore.getUuid();
-            ImageStoreVO imageStoreVO = dataStoreDao.findByUuid(uuid);
-            imgStoreId = imageStoreVO.getId();
-        }
-        return imgStoreId;
     }
 
     private Answer execute(SecStorageSetupCommand cmd) {

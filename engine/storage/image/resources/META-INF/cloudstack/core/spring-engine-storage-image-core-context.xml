@@ -38,8 +38,6 @@
         class="org.apache.cloudstack.storage.image.datastore.ImageStoreHelper" />
     <bean id="imageFormatHelper"
         class="org.apache.cloudstack.storage.image.format.ImageFormatHelper" />
-    <bean id="imageStoreDetailsUtil"
-        class="com.cloud.storage.ImageStoreDetailsUtil" />
 
     <bean id="imageStoreProviderMgr"
         class="org.apache.cloudstack.storage.image.manager.ImageStoreProviderManagerImpl" />

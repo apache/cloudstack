@@ -201,10 +201,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private final ScheduledExecutorService _hostScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-Host-Scan"));
 
-    private ApplicationContext applicationContext;
-
     public VmwareManagerImpl() {
-        applicationContext = ComponentContext.getApplicationContext();
+        ApplicationContext applicationContext = ComponentContext.getApplicationContext();
         imageStoreDetailsUtil = applicationContext.getBean("imageStoreDetailsUtil", ImageStoreDetailsUtil.class);
         _storageMgr = new VmwareStorageManagerImpl(this);
     }
