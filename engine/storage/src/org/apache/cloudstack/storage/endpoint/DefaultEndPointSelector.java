@@ -29,9 +29,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -41,8 +39,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.DummyEndpoint;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -57,13 +58,21 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVm.Role;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     HostDao hostDao;
+
+    @Inject
+    SecondaryStorageVmDao ssvmDao;
+
     private final String findOneHostOnPrimaryStorage =
         "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and"
             + " h.id = s.host_id and s.pool_id = ? ";
@@ -341,12 +350,31 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
         } else if (action == StorageAction.DELETEVOLUME) {
             VolumeInfo volume = (VolumeInfo)object;
+            VirtualMachine vm = volume.getAttachedVM();
+
             if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                VirtualMachine vm = volume.getAttachedVM();
                 if (vm != null) {
                     Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
                     if (hostId != null) {
                         return getEndPointFromHostId(hostId);
+                    }
+                }
+            }
+
+            //Handle case where the volume is a volume of an expunging system VM and there are
+            //no other system VMs existing in the zone.
+            if (vm != null) {
+                VirtualMachine.Type type = volume.getAttachedVM().getType();
+                if ((type == VirtualMachine.Type.SecondaryStorageVm || type == VirtualMachine.Type.ConsoleProxy) &&
+                        (vm.getState() == State.Expunging || vm.getState() == State.Destroyed)) {
+
+                    List<SecondaryStorageVmVO> ssvms = ssvmDao.listByZoneId(Role.templateProcessor, volume.getDataCenterId());
+                    if (CollectionUtils.isEmpty(ssvms)) {
+
+                        s_logger.info("Volume " + volume.getName() + " is attached to a " + vm.getState() + " " + type + " and zone " +
+                                        volume.getDataCenterId() + " has no SSVMs.");
+                        s_logger.info("Volume " + volume.getName() + " will be handled by dummy endpoint.");
+                        return DummyEndpoint.getEndpoint();
                     }
                 }
             }
