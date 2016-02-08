@@ -92,7 +92,7 @@ public class VolumeObject implements VolumeInfo {
     public String getAttachedVmName() {
         Long vmId = volumeVO.getInstanceId();
         if (vmId != null) {
-            VMInstanceVO vm = vmInstanceDao.findById(vmId);
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
 
             if (vm == null) {
                 return null;
@@ -106,7 +106,7 @@ public class VolumeObject implements VolumeInfo {
     public VirtualMachine getAttachedVM() {
         Long vmId = volumeVO.getInstanceId();
         if (vmId != null) {
-            VMInstanceVO vm = vmInstanceDao.findById(vmId);
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
             return vm;
         }
         return null;
