@@ -557,15 +557,8 @@ class CsIP:
         for i in CsHelper.execute(cmd):
             vals = i.lstrip().split()
             if (vals[0] == 'inet'):
-                
                 cidr = vals[1]
-                for ip, device in self.iplist.iteritems():
-                    logging.info(
-                                 "Iterating over the existing IPs. CIDR to be configured ==> %s, existing IP ==> %s on device ==> %s",
-                                 cidr, ip, device)
-
-                    if cidr[0] != ip[0] and device != self.dev:
-                        self.iplist[cidr] = self.dev
+                self.iplist[cidr] = self.dev
 
     def configured(self):
         if self.address['cidr'] in self.iplist.keys():
