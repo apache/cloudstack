@@ -27,6 +27,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.exception.ConnectionException;
@@ -34,9 +36,11 @@ import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.service.ServiceOfferingVO;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public interface StorageManager extends StorageService {
@@ -116,13 +120,18 @@ public interface StorageManager extends StorageService {
 
     BigDecimal getStorageOverProvisioningFactor(Long dcId);
 
-    Long getDiskBytesReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskBytesReadRate(ServiceOffering offering, DiskOffering diskOffering);
 
-    Long getDiskBytesWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskBytesWriteRate(ServiceOffering offering, DiskOffering diskOffering);
 
-    Long getDiskIopsReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskIopsReadRate(ServiceOffering offering, DiskOffering diskOffering);
 
-    Long getDiskIopsWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskIopsWriteRate(ServiceOffering offering, DiskOffering diskOffering);
 
     void cleanupDownloadUrls();
+
+    void setDiskProfileThrottling(DiskProfile dskCh, ServiceOffering offering, DiskOffering diskOffering);
+
+    DiskTO getDiskWithThrottling(DataTO volTO, Volume.Type volumeType, long deviceId, String path, long offeringId, long diskOfferingId);
+
 }
