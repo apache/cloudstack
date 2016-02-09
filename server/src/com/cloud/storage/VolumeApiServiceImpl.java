@@ -81,6 +81,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -111,6 +112,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -240,6 +243,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     VmWorkJobDao _workJobDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    StorageManager storageMgr;
+    
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -2445,8 +2451,27 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
 
             deviceId = getDeviceId(vm.getId(), deviceId);
-
-            DiskTO disk = new DiskTO(volTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType());
+            
+            DiskTO disk = null;
+            if (volTO != null && volTO instanceof VolumeObjectTO) {
+                VolumeObjectTO volumeTO = (VolumeObjectTO) volTO;
+                ServiceOffering offering = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
+                DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volumeToAttach.getDiskOfferingId());
+                if (volumeToAttach.getVolumeType() == Volume.Type.ROOT) {
+                    volumeTO.setBytesReadRate(storageMgr.getDiskBytesReadRate(offering, diskOffering));
+                    volumeTO.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(offering, diskOffering));
+                    volumeTO.setIopsReadRate(storageMgr.getDiskIopsReadRate(offering, diskOffering));
+                    volumeTO.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(offering, diskOffering));
+                } else {
+                    volumeTO.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+                    volumeTO.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+                    volumeTO.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+                    volumeTO.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
+                }
+                disk = new DiskTO(volumeTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType());
+            } else {
+                disk = new DiskTO(volTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType());
+            }
 
             AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
 
