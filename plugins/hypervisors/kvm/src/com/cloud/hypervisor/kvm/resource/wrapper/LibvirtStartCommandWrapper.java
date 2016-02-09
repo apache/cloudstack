@@ -41,6 +41,7 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.StringUtils;
 import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  StartCommand.class)
@@ -78,7 +79,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
 
             libvirtComputingResource.createVifs(vmSpec, vm);
 
-            s_logger.debug("starting " + vmName + ": " + vm.toString());
+            s_logger.debug("starting " + vmName + ": " + StringUtils.cleanString(vm.toString()));
             libvirtComputingResource.startVM(conn, vmName, vm.toString());
 
             for (final NicTO nic : nics) {
