@@ -790,6 +790,18 @@ test_data = {
         "format": "OVA",
         "ispublic": "true"
     },
+    "coreos": {
+        "displaytext": "coreos",
+        "name": "coreos",
+        "passwordenabled": False,
+        "ostype": "Coreos",
+        "urlvmware":"http://10.147.28.7/templates/coreos/coreos_production_vmware.ova",
+        "urlxen":"http://dl.openvm.eu/cloudstack/coreos/x86_64/"
+                 "coreos_production_cloudstack_image-xen.vhd.bz2",
+        "urlkvm": "http://dl.openvm.eu/cloudstack/coreos/x86_64/" \
+                         "coreos_production_cloudstack_image-kvm.qcow2.bz2",
+        "urlhyperv":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-hyperv.vhd.zip"
+        },
     "template_2": {
         "displaytext": "Public Template",
         "name": "Public template",
