@@ -150,7 +150,12 @@ class TestUnableToRevertSnapshot(cloudstackTestCase):
         vm_snap = VmSnapshot.create(self.apiclient,
                 vm.id)
 
-        volume_list_validation = validateList(vm_snap)
+	self.assertEqual(
+			vm_snap.state,
+			"Ready",
+			"Check the snapshot of vm is ready!"
+			)
+
 
         #Step 3
         with self.assertRaises(Exception):
