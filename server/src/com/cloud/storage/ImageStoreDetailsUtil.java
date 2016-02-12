@@ -23,9 +23,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.springframework.stereotype.Component;
 
-@Component
 public class ImageStoreDetailsUtil {
 
     @Inject

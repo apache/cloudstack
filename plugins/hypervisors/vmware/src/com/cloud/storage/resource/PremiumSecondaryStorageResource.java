@@ -102,7 +102,7 @@ public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource
             VmwareSecondaryStorageContextFactory.initFactoryEnvironment();
         }
 
-        registerHandler(Hypervisor.HypervisorType.VMware, new VmwareSecondaryStorageResourceHandler(this));
+        registerHandler(Hypervisor.HypervisorType.VMware, new VmwareSecondaryStorageResourceHandler(this, (String)params.get("nfsVersion")));
         return true;
     }
 }

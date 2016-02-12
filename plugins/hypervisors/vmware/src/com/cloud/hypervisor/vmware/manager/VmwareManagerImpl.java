@@ -47,7 +47,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.springframework.context.ApplicationContext;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -112,7 +111,6 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -170,6 +168,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private ManagementServerHostPeerDao _mshostPeerDao;
     @Inject
     private ClusterManager _clusterMgr;
+    @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private String _mountParent;
@@ -202,8 +201,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private final ScheduledExecutorService _hostScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-Host-Scan"));
 
     public VmwareManagerImpl() {
-        ApplicationContext applicationContext = ComponentContext.getApplicationContext();
-        imageStoreDetailsUtil = applicationContext.getBean("imageStoreDetailsUtil", ImageStoreDetailsUtil.class);
         _storageMgr = new VmwareStorageManagerImpl(this);
     }
 

@@ -5197,8 +5197,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             value = (String)params.get("scripts.timeout");
             int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
-            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null);
-            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor);
+            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null, (String)params.get("nfsVersion"));
+            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor, (String)params.get("nfsVersion"));
 
             _vrResource = new VirtualRoutingResource(this);
             if (!_vrResource.configure(name, params)) {

@@ -199,7 +199,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private HostGpuGroupsDao _hostGpuGroupsDao;
     @Inject
-    ImageStoreDetailsUtil imageStoreDetailsUtil;
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();

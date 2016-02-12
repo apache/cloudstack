@@ -25,13 +25,11 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import com.cloud.user.User;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
@@ -56,6 +54,8 @@ import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;
@@ -158,17 +158,6 @@ public class VmwareDatacenterApiUnitTest {
     private static AddVmwareDcCmd addCmd;
     @Mock
     private static RemoveVmwareDcCmd removeCmd;
-
-    @BeforeClass
-    public static void setUp() throws ConfigurationException {
-        ComponentContext ctx = new ComponentContext();
-        ImageStoreDetailsUtil imgSDUtil = Mockito.mock(ImageStoreDetailsUtil.class);
-        Mockito.when(imgSDUtil.getNfsVersion(Mockito.anyLong())).thenReturn("3");
-        Mockito.when(imgSDUtil.getNfsVersionByUuid(Mockito.anyString())).thenReturn("3");
-        ApplicationContext appCtx = Mockito.mock(ApplicationContext.class);
-        Mockito.when(appCtx.getBean(Mockito.anyString(), Mockito.any(ImageStoreDetailsUtil.class))).thenReturn(imgSDUtil);
-        ctx.setApplicationContext(appCtx);
-    }
 
     @Before
     public void testSetUp() {
@@ -440,6 +429,22 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public DataStoreManager dataStoreManager() {
             return Mockito.mock(DataStoreManager.class);
+        }
+
+        @Bean
+        public ImageStoreDetailsUtil imageStoreDetailsUtil() {
+            return Mockito.mock(ImageStoreDetailsUtil.class);
+        }
+
+        //Mocks for ImageStoreDetailsUtil
+        @Bean
+        public ImageStoreDao imageStoreDao() {
+            return Mockito.mock(ImageStoreDao.class);
+        }
+
+        @Bean
+        public ImageStoreDetailsDao imageStoreDetailsDao() {
+            return Mockito.mock(ImageStoreDetailsDao.class);
         }
 
         public static class Library implements TypeFilter {

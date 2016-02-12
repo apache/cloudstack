@@ -27,7 +27,6 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.springframework.context.ApplicationContext;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -38,15 +37,13 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ImageStoreDetailsUtil;
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
-
-    private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
+    private String _nfsVersion;
 
     public PremiumSecondaryStorageResource getStorageResource() {
         return storageResource;
@@ -64,10 +61,9 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         this.storageManager = storageManager;
     }
 
-    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor) {
+    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor, String nfsVersion) {
         super(processor);
-        ApplicationContext applicationContext = com.cloud.utils.component.ComponentContext.getApplicationContext();
-        imageStoreDetailsUtil = applicationContext.getBean("imageStoreDetailsUtil", ImageStoreDetailsUtil.class);
+        this._nfsVersion = nfsVersion;
     }
 
     @Override
@@ -84,12 +80,11 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
             }
         }
 
-        String nfsVersion = imageStoreDetailsUtil.getNfsVersionByUuid(srcDataStore.getUuid());
         if (srcDataStore.getRole() == DataStoreRole.ImageCache && destDataStore.getRole() == DataStoreRole.Image) {
             //need to take extra processing for vmware, such as packing to ova, before sending to S3
             if (srcData.getObjectType() == DataObjectType.VOLUME) {
                 NfsTO cacheStore = (NfsTO)srcDataStore;
-                String parentPath = storageResource.getRootDir(cacheStore.getUrl(), nfsVersion);
+                String parentPath = storageResource.getRootDir(cacheStore.getUrl(), _nfsVersion);
                 VolumeObjectTO vol = (VolumeObjectTO)srcData;
                 String path = vol.getPath();
                 int index = path.lastIndexOf(File.separator);
@@ -102,7 +97,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
             } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT) {
                 // pack ova first
                 // sync snapshot from NFS cache to S3 in NFS migration to S3 case
-                String parentPath = storageResource.getRootDir(srcDataStore.getUrl(), nfsVersion);
+                String parentPath = storageResource.getRootDir(srcDataStore.getUrl(), _nfsVersion);
                 SnapshotObjectTO snap = (SnapshotObjectTO)srcData;
                 String path = snap.getPath();
                 int index = path.lastIndexOf(File.separator);
@@ -145,7 +140,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                     return answer;
                 }
                 NfsTO cacheStore = (NfsTO)cmd.getCacheTO().getDataStore();
-                String parentPath = storageResource.getRootDir(cacheStore.getUrl(), nfsVersion);
+                String parentPath = storageResource.getRootDir(cacheStore.getUrl(), _nfsVersion);
                 SnapshotObjectTO newSnapshot = (SnapshotObjectTO)answer.getNewData();
                 String path = newSnapshot.getPath();
                 int index = path.lastIndexOf(File.separator);

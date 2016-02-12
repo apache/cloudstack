@@ -42,7 +42,6 @@ import com.vmware.vim25.VirtualDisk;
 
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.springframework.context.ApplicationContext;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
@@ -78,7 +77,6 @@ import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
@@ -95,7 +93,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
-    private ImageStoreDetailsUtil imageStoreDetailsUtil;
+    private String _nfsVersion;
 
     @Override
     public boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd) {
@@ -141,8 +139,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     public VmwareStorageManagerImpl(VmwareStorageMount mountService) {
         assert (mountService != null);
         _mountService = mountService;
-        ApplicationContext applicationContext = com.cloud.utils.component.ComponentContext.getApplicationContext();
-        imageStoreDetailsUtil = applicationContext.getBean("imageStoreDetailsUtil", ImageStoreDetailsUtil.class);
+    }
+
+    public VmwareStorageManagerImpl(VmwareStorageMount mountService, String nfsVersion) {
+        assert (mountService != null);
+        _mountService = mountService;
+        _nfsVersion = nfsVersion;
     }
 
     public void configure(Map<String, Object> params) {
@@ -163,7 +165,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String secStorageUrl = nfsStore.getUrl();
         assert (secStorageUrl != null);
         String installPath = template.getPath();
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, imageStoreDetailsUtil.getNfsVersionByUuid(storeTO.getUuid()));
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, _nfsVersion);
         String installFullPath = secondaryMountPoint + "/" + installPath;
         try {
             if (installFullPath.endsWith(".ova")) {
@@ -201,7 +203,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String installPath = volume.getPath();
         int index = installPath.lastIndexOf(File.separator);
         String volumeUuid = installPath.substring(index + 1);
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, imageStoreDetailsUtil.getNfsVersionByUuid(storeTO.getUuid()));
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, _nfsVersion);
         //The real volume path
         String volumePath = installPath + File.separator + volumeUuid + ".ova";
         String installFullPath = secondaryMountPoint + "/" + installPath;
