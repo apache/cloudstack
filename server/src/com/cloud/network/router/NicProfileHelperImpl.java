@@ -85,6 +85,11 @@ public class NicProfileHelperImpl implements NicProfileHelper {
                     new NicProfile(privateNic, privateNetwork, privateNic.getBroadcastUri(), privateNic.getIsolationUri(), _networkModel.getNetworkRate(
                             privateNetwork.getId(), router.getId()), _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork), _networkModel.getNetworkTag(
                                     router.getHypervisorType(), privateNetwork));
+
+            if (router.getIsRedundantRouter()) {
+              String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
+              privateNicProfile.setMacAddress(newMacAddress);
+            }
         } else {
             final String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
             final PrivateIpAddress ip =
