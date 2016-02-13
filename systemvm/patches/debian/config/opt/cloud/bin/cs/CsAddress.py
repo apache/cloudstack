@@ -117,6 +117,7 @@ class CsAddress(CsDataBag):
                 else:
                     logging.info(
                         "Address %s on device %s not configured", ip.ip(), dev)
+                    
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure(address)
 
@@ -276,7 +277,7 @@ class CsIP:
             try:
                 logging.info("Configuring address %s on device %s", self.ip(), self.dev)
                 cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
-                subprocess.call(cmd, shell=True)
+                CsHelper.execute(cmd)
             except Exception as e:
                 logging.info("Exception occurred ==> %s" % e)
 
@@ -317,6 +318,9 @@ class CsIP:
 
     def check_is_up(self):
         """ Ensure device is up """
+        state_commands = {"router" : "ip addr | grep eth0 | grep inet | wc -l | xargs bash -c  'if [ $0 == 2 ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'",
+                         "vpcrouter" : "ip addr | grep eth1 | grep state | awk '{print $9;}' | xargs bash -c 'if [ $0 == \"UP\" ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'"}
+        
         cmd = "ip link show %s | grep 'state DOWN'" % self.getDevice()
         for i in CsHelper.execute(cmd):
             if " DOWN " in i:
@@ -324,10 +328,15 @@ class CsIP:
                 # If redundant only bring up public interfaces that are not eth1.
                 # Reason: private gateways are public interfaces.
                 # master.py and keepalived will deal with eth1 public interface.
-                if self.cl.is_redundant() and (not self.is_public() or self.getDevice() not in PUBLIC_INTERFACE):
-                    CsHelper.execute(cmd2)
-                # if not redundant bring everything up
-                if not self.cl.is_redundant():
+                
+                if self.cl.is_redundant() and self.is_public():
+                    state_cmd = state_commands[self.cl.get_type()]
+                    logging.info("Check state command => %s" % state_cmd)
+                    state = CsHelper.execute(state_cmd)[0]
+                    logging.info("Route state => %s" % state)
+                    if self.getDevice() not in PUBLIC_INTERFACE and state == "MASTER":
+                        CsHelper.execute(cmd2)
+                else:
                     CsHelper.execute(cmd2)
 
     def set_mark(self):
