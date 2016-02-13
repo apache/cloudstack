@@ -33,6 +33,13 @@ class Services:
 
     def __init__(self):
         self.services = {
+            "configurableData": {
+                "host": {
+                    "password": "password",
+                    "username": "root",
+                    "port": 22
+                }
+            },
             "account": {
                 "email": "test@test.com",
                 "firstname": "Test",
@@ -262,7 +269,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.logger.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
 
-        self.performVPCTests(vpc_off, True)
+        self.performVPCTests(vpc_off, restart_with_cleanup = True)
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_04_rvpc_privategw_static_routes(self):
@@ -275,6 +282,18 @@ class TestPrivateGwACL(cloudstackTestCase):
         vpc_off.update(self.apiclient, state='Enabled')
 
         self.performVPCTests(vpc_off)
+
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_05_rvpc_privategw_check_interface(self):
+        self.logger.debug("Creating a Redundant VPC offering..")
+        vpc_off = VpcOffering.create(
+            self.apiclient,
+            self.services["redundant_vpc_offering"])
+
+        self.logger.debug("Enabling the Redundant VPC offering created")
+        vpc_off.update(self.apiclient, state='Enabled')
+
+        self.performPrivateGWInterfaceTests(vpc_off)
 
     def performVPCTests(self, vpc_off, restart_with_cleanup = False):
         self.logger.debug("Creating VPCs with  offering ID %s" % vpc_off.id)
@@ -330,6 +349,99 @@ class TestPrivateGwACL(cloudstackTestCase):
 
             self.check_pvt_gw_connectivity(vm1, public_ip_1, vm2.nic[0].ipaddress)
             self.check_pvt_gw_connectivity(vm2, public_ip_2, vm1.nic[0].ipaddress)
+
+    def performPrivateGWInterfaceTests(self, vpc_off):
+        self.logger.debug("Creating VPCs with  offering ID %s" % vpc_off.id)
+        vpc_1 = self.createVPC(vpc_off, cidr = '10.0.1.0/24')
+
+        self.cleanup = [vpc_1, vpc_off, self.account]
+
+        physical_networks = get_physical_networks(self.apiclient, self.zone.id)
+        if not physical_networks:
+            self.fail("No Physical Networks found!")
+
+        vlans = physical_networks[0].vlan.split('-')
+        vlan_1 = int(vlans[0])
+
+        network_1 = self.createNetwork(vpc_1, gateway = '10.0.1.1')
+
+        vm1 = self.createVM(network_1)
+
+        self.cleanup.insert(0, vm1)
+        
+        acl1 = self.createACL(vpc_1)
+        self.createACLItem(acl1.id, cidr = "0.0.0.0/0")
+        privateGw_1 = self.createPvtGw(vpc_1, "10.0.3.100", "10.0.3.101", acl1.id, vlan_1)
+        self.replacePvtGwACL(acl1.id, privateGw_1.id)
+
+        self.replaceNetworkAcl(acl1.id, network_1)
+
+        staticRoute_1 = self.createStaticRoute(privateGw_1.id, cidr = '10.0.2.0/24')
+
+        public_ip_1 = self.acquire_publicip(vpc_1, network_1)
+
+        nat_rule_1 = self.create_natrule(vpc_1, vm1, public_ip_1, network_1)
+
+        routers = list_routers(self.apiclient,
+                               account=self.account.name,
+                               domainid=self.account.domainid)
+        
+        self.assertEqual(isinstance(routers, list), True,
+            "Check for list routers response return valid data")
+
+        self.assertEqual(len(routers), 2,
+            "Check for list routers size returned '%s' instead of 2" % len(routers))
+
+        state_holder = {routers[0].linklocalip : {"state" : None, "mac" : None},
+                        routers[1].linklocalip : {"state" : None, "mac" : None}}
+        state = None
+        mac = None
+        for router in routers:
+            if router.isredundantrouter and router.vpcid:
+                hosts = list_hosts(
+                    self.apiclient,
+                    id=router.hostid)
+                self.assertEqual(
+                    isinstance(hosts, list),
+                    True,
+                    "Check for list hosts response return valid data")
+
+                host = hosts[0]
+                host.user = self.services["configurableData"]["host"]["username"]
+                host.passwd = self.services["configurableData"]["host"]["password"]
+                host.port = self.services["configurableData"]["host"]["port"]
+
+                try:
+                    state = get_process_status(
+                        host.ipaddress,
+                        host.port,
+                        host.user,
+                        host.passwd,
+                        router.linklocalip,
+                        "ip addr | grep eth3 | grep state | awk '{print $9;}'")
+
+                    mac = get_process_status(
+                        host.ipaddress,
+                        host.port,
+                        host.user,
+                        host.passwd,
+                        router.linklocalip,
+                        "ip addr | grep link/ether | awk '{print $2;}' | sed -n 4p")
+                except KeyError:
+                    self.skipTest(
+                        "Provide a marvin config file with host\
+                                credentials to run %s" %
+                        self._testMethodName)
+
+                self.logger.debug("Result from the Router on IP '%s' is -> state: '%s', mac: '%s'" % (router.linklocalip, state, mac))
+                state_holder[router.linklocalip]["state"] = str(state)
+                state_holder[router.linklocalip]["mac"] = str(mac)
+
+        check_state = state_holder[routers[0].linklocalip]["state"].count(state_holder[routers[1].linklocalip]["state"])
+        check_mac = state_holder[routers[0].linklocalip]["mac"].count(state_holder[routers[1].linklocalip]["mac"])
+
+        self.assertTrue(check_state == 0, "Routers private gateway interface should not be on the same state!")
+        self.assertTrue(check_mac == 0, "Routers private gateway interface should not have the same mac address!")
 
     def createVPC(self, vpc_offering, cidr = '10.1.1.1/16'):
         try:
@@ -568,4 +680,3 @@ class TestPrivateGwACL(cloudstackTestCase):
         cmd.cleanup = cleanup
         cmd.makeredundant = False
         self.api_client.restartVPC(cmd)
-
