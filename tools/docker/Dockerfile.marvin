@@ -20,11 +20,11 @@
 FROM python:2
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.6.0"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.9.0-SNAPSHOT"
 
 ENV WORK_DIR=/marvin
 
-ENV PKG_URL=http://jenkins.buildacloud.org/job/cloudstack-marvin-master/lastSuccessfulBuild/artifact/tools/marvin/dist/Marvin-4.6.0-SNAPSHOT.tar.gz
+ENV PKG_URL=http://jenkins.buildacloud.org/job/cloudstack-marvin-master/lastSuccessfulBuild/artifact/tools/marvin/dist/Marvin-4.9.0-SNAPSHOT.tar.gz
 
 RUN pip install --upgrade paramiko nose requests
 RUN pip install --allow-external mysql-connector-python mysql-connector-python
