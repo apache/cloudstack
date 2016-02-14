@@ -307,7 +307,7 @@ class CsIP:
             # The code looks redundant here, but we actually have to cater for routers and
             # VPC routers in a different manner. Please do not remove this block otherwise
             # The VPC default route will be broken.
-            if self.get_type() in ["public"]:
+            if self.get_type() in ["public"] and address["device"] in PUBLIC_INTERFACE:
                 gateway = str(address["gateway"])
                 route.add_defaultroute(gateway)
         else:

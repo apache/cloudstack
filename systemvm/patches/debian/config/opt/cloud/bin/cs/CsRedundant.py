@@ -41,6 +41,7 @@ from CsRoute import CsRoute
 import socket
 from time import sleep
 
+PUBLIC_INTERFACE = ['eth0', 'eth1']
 
 class CsRedundant(object):
 
@@ -228,7 +229,7 @@ class CsRedundant(object):
         self.set_lock()
         logging.info("Router switched to fault mode")
 
-        ips = [ip for ip in self.address.get_ips() if ip.is_public()]
+        ips = [ip for ip in self.address.get_ips() if ip.is_public() and ip.get_device() in PUBLIC_INTERFACE]
         for ip in ips:
             CsHelper.execute("ifconfig %s down" % ip.get_device())
 
@@ -257,7 +258,7 @@ class CsRedundant(object):
         logging.debug("Setting router to backup")
 
         dev = ''
-        ips = [ip for ip in self.address.get_ips() if ip.is_public()]
+        ips = [ip for ip in self.address.get_ips() if ip.is_public() and ip.get_device() in PUBLIC_INTERFACE]
         for ip in ips:
             if dev == ip.get_device():
                 continue
@@ -291,7 +292,7 @@ class CsRedundant(object):
         logging.debug("Setting router to master")
 
         dev = ''
-        ips = [ip for ip in self.address.get_ips() if ip.is_public()]
+        ips = [ip for ip in self.address.get_ips() if ip.is_public() and ip.get_device() in PUBLIC_INTERFACE]
         route = CsRoute()
         for ip in ips:
             if dev == ip.get_device():
