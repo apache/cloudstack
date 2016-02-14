@@ -292,7 +292,7 @@ class CsRedundant(object):
         logging.debug("Setting router to master")
 
         dev = ''
-        ips = [ip for ip in self.address.get_ips() if ip.is_public() and ip.get_device() in PUBLIC_INTERFACE]
+        ips = [ip for ip in self.address.get_ips() if ip.is_public()]
         route = CsRoute()
         for ip in ips:
             if dev == ip.get_device():
@@ -307,7 +307,8 @@ class CsRedundant(object):
                 try:
                     gateway = ip.get_gateway()
                     logging.info("Adding gateway ==> %s to device ==> %s" % (gateway, dev))
-                    route.add_defaultroute(gateway)
+                    if ip.get_device() in PUBLIC_INTERFACE:
+                        route.add_defaultroute(gateway)
                 except:
                     logging.error("ERROR getting gateway from device %s" % dev)
             else:
