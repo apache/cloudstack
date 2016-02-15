@@ -25,6 +25,7 @@ package com.cloud.baremetal.manager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.UsageEventVO;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
@@ -39,6 +40,7 @@ import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
@@ -47,6 +49,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+
 import java.util.Date;
 import java.util.List;
 
@@ -56,6 +59,8 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
     HostDao _hostDao;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     @Override
     public String getName() {
@@ -155,13 +160,14 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
         }
 
         if (profile.getZoneId() != null) {
-            UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), profile.getZoneId(), templateId, null);
-            _usageEventDao.persist(usageEvent);
+            _usageEventEmitter.publishUsageEvent(eventType, template.getAccountId(), profile.getZoneId(), template.getId(),
+                    template.getName(), template.getClass().getName(), template.getUuid());
+
         } else {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
             for (DataCenterVO dc : dcs) {
-                UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), dc.getId(), templateId, null);
-                _usageEventDao.persist(usageEvent);
+                _usageEventEmitter.publishUsageEvent(eventType, template.getAccountId(), dc.getId(), template.getId(),
+                        template.getName(), template.getClass().getName(), template.getUuid());
             }
         }
 

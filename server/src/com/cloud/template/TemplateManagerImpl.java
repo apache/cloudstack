@@ -119,8 +119,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventEmitter;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -236,8 +234,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private GuestOSDao _guestOSDao;
     @Inject
     private StorageManager _storageMgr;
-    @Inject
-    private UsageEventDao _usageEventDao;
     @Inject
     private AccountService _accountService;
     @Inject
@@ -1513,10 +1509,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
                 privateTemplate = _tmpltDao.findById(templateId);
                 TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
-                UsageEventVO usageEvent =
-                        new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), zoneId, privateTemplate.getId(), privateTemplate.getName(), null,
-                                privateTemplate.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), privateTemplate.getSize());
-                _usageEventDao.persist(usageEvent);
+                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), zoneId,
+                                                    privateTemplate.getId(), privateTemplate.getName(), null,
+                                                    privateTemplate.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(),
+                                                    privateTemplate.getSize(), privateTemplate.getClass().getName(),
+                                                    privateTemplate.getUuid());
             } catch (InterruptedException e) {
                 s_logger.debug("Failed to create template", e);
                 throw new CloudRuntimeException("Failed to create template", e);
