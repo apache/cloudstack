@@ -53,6 +53,7 @@ INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (8, UUID(), 'Nov
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (9, UUID(), 'Unix');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (10, UUID(), 'Ubuntu');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (11, UUID(), 'None');
+INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (12, UUID(), 'CoreOS');
 
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (1, UUID(), 1, 'CentOS 4.5 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (2, UUID(), 1, 'CentOS 4.6 (32-bit)');
@@ -280,6 +281,8 @@ INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (200
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (201, UUID(), 1, 'Other CentOS (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (202, UUID(), 5, 'Other SUSE Linux(32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (203, UUID(), 5, 'Other SUSE Linux(64-bit)');
+
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (227, UUID(), 12, 'CoreOS');
 
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 4.5 (32-bit)', 1);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 4.6 (32-bit)', 2);
@@ -593,4 +596,6 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'DOS', 102);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Other', 60);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Other', 103);
+
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'CoreOS', 227);
 
