@@ -441,7 +441,7 @@ class VirtualMachine:
         virtual_machine.public_ip = nat_rule.ipaddress
 
     @classmethod
-    def create(cls, apiclient, services, templateid=None, accountid=None,
+    def create(cls, apiclient, services, templateid=None,vmsnapshotid=None, accountid=None,
                domainid=None, zoneid=None, networkids=None,
                serviceofferingid=None, securitygroupids=None,
                projectid=None, startvm=None, diskofferingid=None,
@@ -495,6 +495,11 @@ class VirtualMachine:
             # which has an egress policy of DENY. But guests in tests
             # need access to test network connectivity
             allow_egress = True
+
+        if vmsnapshotid:
+            cmd.vmsnapshotid = vmsnapshotid
+        elif "vmsnapshotid" in services:
+            cmd.vmsnapshotid = services["vmsnapshotid"]
 
         if templateid:
             cmd.templateid = templateid
@@ -986,6 +991,25 @@ class Volume:
         else:
             cmd.domainid = services["domainid"]
         return Volume(apiclient.createVolume(cmd).__dict__)
+
+    @classmethod
+    def create_from_vmsnapshot(cls, apiclient, services, vmsnapshotid,
+                               volumeid, account=None, domainid=None):
+        """Create Volume from vmsnapshot"""
+        cmd = createVolumeFromVmSnapshot.createVolumeFromVmSnapshotCmd()
+        cmd.name = "-".join([services["diskname"], random_gen()])
+        cmd.vmsnapshotid = vmsnapshotid
+        cmd.volumeid = volumeid
+        cmd.zoneid = services["zoneid"]
+        if account:
+            cmd.account = account
+        else:
+            cmd.account = services["account"]
+        if domainid:
+            cmd.domainid = domainid
+        else:
+            cmd.domainid = services["domainid"]
+        return Volume(apiclient.createVolumeFromVmSnapshot(cmd).__dict__)
 
     def delete(self, apiclient):
         """Delete Volume"""
