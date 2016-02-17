@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -28,12 +29,14 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.component.ComponentContext;
 
 
 public class UsageEventEmitterImpl implements UsageEventEmitter {
@@ -48,8 +51,7 @@ public class UsageEventEmitterImpl implements UsageEventEmitter {
     DataCenterDao dcDao;
     @Inject
     ConfigurationDao configDao;
-    @Inject
-    EventBus eventBus;
+
 
     public UsageEventEmitterImpl() {
     }
@@ -168,6 +170,14 @@ public class UsageEventEmitterImpl implements UsageEventEmitter {
     }
 
     private void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
+        EventBus eventBus;
+        try {
+            eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch (NoSuchBeanDefinitionException nbe) {
+            s_logger.warn("Failed to publish usage event on the the event bus - no event bus bean found.");
+            return;
+        }
+
         String configKey = "publish.usage.events";
         String value = configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
