@@ -195,7 +195,8 @@ class TestPrivateGwACL(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        
         self.logger.debug("Creating Admin Account for Domain ID ==> %s" % self.domain.id)
         self.account = Account.create(
             self.apiclient,
@@ -285,7 +286,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.performVPCTests(vpc_off)
 
     @attr(tags=["advanced"], required_hardware="true")
-    def test_05_rvpc_privategw_check_interface(self):
+    def _test_05_rvpc_privategw_check_interface(self):
         self.logger.debug("Creating a Redundant VPC offering..")
         vpc_off = VpcOffering.create(
             self.apiclient,
@@ -344,8 +345,8 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm1.nic[0].ipaddress])
 
         if restart_with_cleanup:
-            self.reboot_vpc_with_cleanup(vpc_1, True)
-            self.reboot_vpc_with_cleanup(vpc_2, True)
+            self.reboot_vpc_with_cleanup(vpc_1, cleanup = restart_with_cleanup)
+            self.reboot_vpc_with_cleanup(vpc_2, cleanup = restart_with_cleanup)
 
             self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm1.nic[0].ipaddress])
 
@@ -391,7 +392,31 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         public_ip_1 = self.acquire_publicip(vpc_1, network_1)
         nat_rule_1 = self.create_natrule(vpc_1, vm1, public_ip_1, network_1)
+        
+        self.check_private_gateway_interfaces()
 
+        self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
+
+        self.reboot_vpc_with_cleanup(vpc_1, cleanup = True)
+        self.check_routers_state()
+
+        self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
+
+        self.stop_router_by_type("MASTER")
+        self.check_routers_state()
+
+        self.check_private_gateway_interfaces()
+        self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
+
+        self.start_routers()
+        self.check_routers_state()
+        self.check_private_gateway_interfaces()
+        self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
+
+        self.deletePvtGw(privateGw_1.id)
+        self.check_private_gateway_interfaces(status_to_check = "DOWN")
+
+    def query_routers(self):
         routers = list_routers(self.apiclient,
                        account=self.account.name,
                        domainid=self.account.domainid)
@@ -402,34 +427,19 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.assertEqual(len(routers), 2,
             "Check for list routers size returned '%s' instead of 2" % len(routers))
 
-        self.check_private_gateway_interfaces(routers)
+        return routers
 
-        self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
-
-        self.reboot_vpc_with_cleanup(vpc_1, True)
-
-        self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
-
-        self.stop_router_by_type(routers, status_to_check = "MASTER")
-        self.check_routers_state(routers)
-
-        self.check_private_gateway_interfaces(routers)
-        self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
-
-        self.start_routers(routers)
-        self.check_routers_state(routers)
-        self.check_private_gateway_interfaces(routers)
-        self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
-
-    def stop_router_by_type(self, type, routers):
-        self.logger.debug('Stopping %s router' % type)
+    def stop_router_by_type(self, redundant_state):
+        self.logger.debug('Stopping %s router' % redundant_state)
+        routers = self.query_routers()
         for router in routers:
-            if router.redundantstate == type:
+            if router.redundantstate == redundant_state:
                 self.stop_router(router)
                 break
 
-    def start_routers(self, routers):
+    def start_routers(self):
         self.logger.debug('Starting stopped routers')
+        routers = self.query_routers()
         for router in routers:
             self.logger.debug('Router %s has state %s' % (router.id, router.state))
             if router.state == "Stopped":
@@ -437,6 +447,12 @@ class TestPrivateGwACL(cloudstackTestCase):
                 cmd = startRouter.startRouterCmd()
                 cmd.id = router.id
                 self.apiclient.startRouter(cmd)
+
+    def stop_router(self, router):
+        self.logger.debug('Stopping router %s' % router.id)
+        cmd = stopRouter.stopRouterCmd()
+        cmd.id = router.id
+        self.apiclient.stopRouter(cmd)
 
     def createVPC(self, vpc_offering, cidr = '10.1.1.1/16'):
         try:
@@ -574,13 +590,26 @@ class TestPrivateGwACL(cloudstackTestCase):
         createPrivateGatewayCmd.aclid = aclId
 
         try:
-            privateGw =  self.apiclient.createPrivateGateway(createPrivateGatewayCmd)
+            privateGw = self.apiclient.createPrivateGateway(createPrivateGatewayCmd)
         except Exception as e:
             self.fail("Failed to create Private Gateway ==> %s" % e)
 
-        self.assertIsNotNone(privateGw.id, "Failed to create ACL.")
+        self.assertIsNotNone(privateGw.id, "Failed to create Private Gateway.")
 
         return privateGw
+
+    def deletePvtGw(self, private_gw_id):
+        deletePrivateGatewayCmd = deletePrivateGateway.deletePrivateGatewayCmd()
+        deletePrivateGatewayCmd.id = private_gw_id
+
+        privateGwResponse = None
+        try:
+            privateGwResponse = self.apiclient.deletePrivateGateway(deletePrivateGatewayCmd)
+        except Exception as e:
+            self.fail("Failed to create Private Gateway ==> %s" % e)
+
+        self.assertIsNotNone(privateGwResponse, "Failed to Delete Private Gateway.")
+        self.assertTrue(privateGwResponse.success, "Failed to Delete Private Gateway.")
 
     def replaceNetworkAcl(self, aclId, network):
         self.logger.debug("Replacing Network ACL with ACL ID ==> %s" % aclId)
@@ -642,6 +671,9 @@ class TestPrivateGwACL(cloudstackTestCase):
         return nat_rule
 
     def check_pvt_gw_connectivity(self, virtual_machine, public_ip, vms_ips):
+        sleep_time = 5
+        succeeded_pings = 0
+        minimum_vms_to_pass = 2
         for vm_ip in vms_ips:
             ssh_command = "ping -c 3 %s" % vm_ip
 
@@ -652,22 +684,25 @@ class TestPrivateGwACL(cloudstackTestCase):
 
                 ssh = virtual_machine.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
 
+                self.logger.debug("Sleeping for %s seconds in order to get the firewall applied..." % sleep_time)
+                time.sleep(sleep_time)
+                sleep_time += sleep_time
+
                 self.logger.debug("Ping to VM inside another Network Tier")
                 result = str(ssh.execute(ssh_command))
 
                 self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
             except Exception as e:
                 self.fail("SSH Access failed for %s: %s" % \
-                          (vmObj.get_ip(), e)
+                          (virtual_machine, e)
                           )
 
-            self.assertEqual(
-                             result.count("3 packets received"),
-                             1,
-                             "Ping to VM on Network Tier N from VM in Network Tier A should be successful"
-                             )
+            succeeded_pings += result.count("3 packets received")
 
-            time.sleep(5)
+
+        self.assertTrue(succeeded_pings >= minimum_vms_to_pass,
+                        "Ping to VM on Network Tier N from VM in Network Tier A should be successful at least for 2 out of 3 VMs"
+                       )
 
     def reboot_vpc_with_cleanup(self, vpc, cleanup = True):
         self.logger.debug("Restarting VPC %s with cleanup" % vpc.id)
@@ -679,13 +714,20 @@ class TestPrivateGwACL(cloudstackTestCase):
         cmd.makeredundant = False
         self.api_client.restartVPC(cmd)
 
-    def check_private_gateway_interfaces(self, routers):
+    def check_private_gateway_interfaces(self, status_to_check = "UP"):
+        routers = self.query_routers()
+
         state_holder = {routers[0].linklocalip : {"state" : None, "mac" : None},
                         routers[1].linklocalip : {"state" : None, "mac" : None}}
         state = None
         mac = None
         for router in routers:
-            hosts = list_hosts(self.apiclient, id=router.hostid)
+            hosts = list_hosts(
+                    self.apiclient,
+                    zoneid=router.zoneid,
+                    type='Routing',
+                    state='Up',
+                    id=router.hostid)
 
             self.assertEqual(
                 isinstance(hosts, list),
@@ -716,17 +758,26 @@ class TestPrivateGwACL(cloudstackTestCase):
             except KeyError:
                 self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
 
+            state = str(state[0])
+            mac = str(mac[0])
+
             self.logger.debug("Result from the Router on IP '%s' is -> state: '%s', mac: '%s'" % (router.linklocalip, state, mac))
             state_holder[router.linklocalip]["state"] = str(state)
             state_holder[router.linklocalip]["mac"] = str(mac)
 
-        check_state = state_holder[routers[0].linklocalip]["state"].count(state_holder[routers[1].linklocalip]["state"])
-        check_mac = state_holder[routers[0].linklocalip]["mac"].count(state_holder[routers[1].linklocalip]["mac"])
 
-        self.assertTrue(check_state == 0, "Routers private gateway interface should not be on the same state!")
-        self.assertTrue(check_mac == 0, "Routers private gateway interface should not have the same mac address!")
+        if status_to_check == "UP":
+            check_state = state_holder[routers[0].linklocalip]["state"].count(state_holder[routers[1].linklocalip]["state"])
+            check_mac = state_holder[routers[0].linklocalip]["mac"].count(state_holder[routers[1].linklocalip]["mac"])
 
-    def check_routers_state(self, routers, status_to_check="MASTER", expected_count=1):
+            self.assertTrue(check_state == 0, "Routers private gateway interface should not be on the same state!")
+            self.assertTrue(check_mac == 0, "Routers private gateway interface should not have the same mac address!")
+        else:
+            self.assertTrue(check_state == 1, "Routers private gateway interface should should have been removed!")
+
+    def check_routers_state(self, status_to_check="MASTER", expected_count=1):
+        routers = self.query_routers()
+
         vals = ["MASTER", "BACKUP", "UNKNOWN"]
         cnts = [0, 0, 0]
 
