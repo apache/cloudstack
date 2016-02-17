@@ -731,34 +731,34 @@ class CsForwardingRules(CsDataBag):
 
     #return the VR guest interface ip
     def getGuestIp(self):
-        ipr = []
+        interfaces = []
         ipAddr = None
-        for ip in self.config.address().get_ips():
-            if ip.is_guest():
-                ipr.append(ip)
-            if len(ipr) > 0:
-                ipAddr = sorted(ipr)[-1]
+        for interface in self.config.address().get_interfaces():
+            if interface.is_guest():
+                interfaces.append(interface)
+            if len(interfaces) > 0:
+                ipAddr = sorted(interfaces)[-1]
             if ipAddr:
                 return ipAddr.get_ip()
 
         return None
 
     def getDeviceByIp(self, ipa):
-        for ip in self.config.address().get_ips():
-            if ip.ip_in_subnet(ipa):
-                return ip.get_device()
+        for interface in self.config.address().get_interfaces():
+            if interface.ip_in_subnet(ipa):
+                return interface.get_device()
         return None
 
     def getNetworkByIp(self, ipa):
-        for ip in self.config.address().get_ips():
-            if ip.ip_in_subnet(ipa):
-                return ip.get_network()
+        for interface in self.config.address().get_interfaces():
+            if interface.ip_in_subnet(ipa):
+                return interface.get_network()
         return None
 
     def getGatewayByIp(self, ipa):
-        for ip in self.config.address().get_ips():
-            if ip.ip_in_subnet(ipa):
-                return ip.get_gateway()
+        for interface in self.config.address().get_interfaces():
+            if interface.ip_in_subnet(ipa):
+                return interface.get_gateway()
         return None
 
     def portsToString(self, ports, delimiter):
