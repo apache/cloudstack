@@ -41,7 +41,15 @@ while [ -n "$1" ] ; do
     shift
 done
 
-export ACS_BUILD_OPTS="-Dtomcat8 -Dnoembed"
+if [ ! -d cs4-non-oss-dependencies ] ; then
+    git clone ssh://git@github.com/greenqloud/cs4-non-oss-dependencies
+    cp cs4-non-oss-dependencies/*.jar deps/
+    cd deps/
+    ./install-non-oss.sh
+    cd ..
+fi
+
+export ACS_BUILD_OPTS="-Dtomcat8 -Dnoembed -Dnoredist"
 
 REL_VERSION_STR="Release revision ${VERSION}"
 

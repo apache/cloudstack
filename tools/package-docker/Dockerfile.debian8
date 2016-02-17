@@ -24,6 +24,9 @@ RUN apt-get update && apt-get install -y    \
         ant                                 \
         maven
 
+# Dev tools
+RUN apt-get update && apt-get install -y git
+
 # debian packages are put in parent folder:
 RUN mkdir /build
 
