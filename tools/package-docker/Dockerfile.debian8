@@ -25,7 +25,10 @@ RUN apt-get update && apt-get install -y    \
         maven
 
 # Dev tools
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git wget
+
+# Secret sauce
+RUN wget http://repository.qstack.com/cs4-non-oss-dependencies.tar.gz
 
 # debian packages are put in parent folder:
 RUN mkdir /build
