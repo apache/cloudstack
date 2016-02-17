@@ -27,7 +27,7 @@ import shutil
 from netaddr import *
 from pprint import pprint
 
-PUBLIC_INTERFACES = {"router" : "eth0", "vpcrouter" : "eth1"}
+PUBLIC_INTERFACES = {"router" : "eth2", "vpcrouter" : "eth1"}
 
 STATE_COMMANDS = {"router" : "ip addr | grep eth0 | grep inet | wc -l | xargs bash -c  'if [ $0 == 2 ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'",
                   "vpcrouter" : "ip addr | grep eth1 | grep state | awk '{print $9;}' | xargs bash -c 'if [ $0 == \"UP\" ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'"}
