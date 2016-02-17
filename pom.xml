@@ -51,7 +51,7 @@
 
     <cs.log4j.version>1.2.17</cs.log4j.version>
     <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
-    <cs.cglib.version>3.2.0</cs.cglib.version>
+    <cs.cglib.version>3.2.1</cs.cglib.version>
     <cs.dbcp.version>1.4</cs.dbcp.version>
     <cs.pool.version>1.6</cs.pool.version>
     <cs.codec.version>1.10</cs.codec.version>
@@ -73,11 +73,11 @@
     <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
     <cs.guava.version>19.0</cs.guava.version>
     <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
-    <cs.httpclient.version>4.5.1</cs.httpclient.version>
+    <cs.httpclient.version>4.5.2</cs.httpclient.version>
     <cs.httpcore.version>4.4.4</cs.httpcore.version>
     <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
     <cs.mysql.version>5.1.34</cs.mysql.version>
-    <cs.xstream.version>1.4.8</cs.xstream.version>
+    <cs.xstream.version>1.4.9</cs.xstream.version>
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
     <cs.mail.version>1.5.0-b01</cs.mail.version>
     <cs.axis.version>1.4</cs.axis.version>
@@ -88,11 +88,11 @@
     <cs.servlet.version>2.5</cs.servlet.version>
     <cs.jstl.version>1.2.1</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
-    <cs.vmware.api.version>5.5</cs.vmware.api.version>
+    <cs.vmware.api.version>6.0</cs.vmware.api.version>
     <org.springframework.version>3.2.16.RELEASE</org.springframework.version>
     <cs.mockito.version>1.10.19</cs.mockito.version>
     <cs.powermock.version>1.6.4</cs.powermock.version>
-    <cs.aws.sdk.version>1.10.50</cs.aws.sdk.version>
+    <cs.aws.sdk.version>1.10.64</cs.aws.sdk.version>
     <cs.jackson.version>2.7.1</cs.jackson.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-lang3.version>3.4</cs.commons-lang3.version>
@@ -117,11 +117,10 @@
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
     <cs.batik.version>1.8</cs.batik.version>
     <cs.servicemix.version>2.3.4_1</cs.servicemix.version>
-    <cs.jetty.version>9.3.7.v20160115</cs.jetty.version>
+    <cs.jetty.version>9.2.15.v20160210</cs.jetty.version>
     <cs.cxf.version>3.1.4</cs.cxf.version>
-    <cs.spring-security-core.version>4.0.3.RELEASE</cs.spring-security-core.version>
-    <cs.groovy.version>2.4.3</cs.groovy.version>
-    <cs.apache-jsp.version>9.3.7.v20160115</cs.apache-jsp.version>
+    <cs.groovy.version>2.4.6</cs.groovy.version>
+    <cs.apache-jsp.version>9.2.15.v20160210</cs.apache-jsp.version>
     <cs.nitro.version>10.1</cs.nitro.version>
   </properties>
 
@@ -223,11 +222,6 @@
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
         <version>${cs.groovy.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.security</groupId>
-        <artifactId>spring-security-core</artifactId>
-        <version>${cs.spring-security-core.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
@@ -371,7 +365,7 @@
       <dependency>
         <groupId>org.owasp.esapi</groupId>
         <artifactId>esapi</artifactId>
-        <version>2.1.0</version>
+        <version>2.1.0.1</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.persistence</groupId>
@@ -441,12 +435,12 @@
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjtools</artifactId>
-        <version>1.8.8</version>
+        <version>1.8.9</version>
       </dependency>
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjweaver</artifactId>
-        <version>1.8.8</version>
+        <version>1.8.9</version>
       </dependency>
       <dependency>
         <groupId>org.apache.axis</groupId>
@@ -471,12 +465,12 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.14</version>
+        <version>1.7.19</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
-        <version>1.7.14</version>
+        <version>1.7.19</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
