@@ -2481,6 +2481,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @DB
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_DELETE, eventDescription = "deleting disk offering")
     public boolean deleteDiskOffering(final DeleteDiskOfferingCmd cmd) {
         final Long diskOfferingId = cmd.getId();
@@ -2512,7 +2513,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         offering.setState(DiskOffering.State.Inactive);
-        if (_diskOfferingDao.update(offering.getId(), offering)) {
+
+        boolean deleted = Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(final TransactionStatus status) {
+                return _diskOfferingDao.update(offering.getId(), offering) && _diskOfferingDao.remove(offering.getId());
+            }
+        });
+        if (deleted) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
             return true;
         } else {
@@ -2520,7 +2528,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+
     @Override
+    @DB
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_DELETE, eventDescription = "deleting service offering")
     public boolean deleteServiceOffering(final DeleteServiceOfferingCmd cmd) {
 
@@ -2558,7 +2568,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         offering.setState(DiskOffering.State.Inactive);
-        if (_serviceOfferingDao.update(offeringId, offering)) {
+        boolean deleted = Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(final TransactionStatus status) {
+                return _serviceOfferingDao.update(offeringId, offering) && _serviceOfferingDao.remove(offeringId);
+            }
+        });
+        if (deleted) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);
             return true;
         } else {

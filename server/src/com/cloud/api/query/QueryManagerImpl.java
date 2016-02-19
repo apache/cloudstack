@@ -2784,7 +2784,15 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
             sc.addAnd("vmType", SearchCriteria.Op.EQ, vmTypeStr);
         }
 
-        Pair<List<ServiceOfferingJoinVO>, Integer> result = _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<ServiceOfferingJoinVO>, Integer> result;
+        if (cmd.showRemoved()){
+            List<ServiceOfferingJoinVO> offerings = _srvOfferingJoinDao.searchIncludingRemoved(sc, searchFilter, false, false);
+            result = new Pair<List<ServiceOfferingJoinVO>, Integer>(offerings, offerings.size());
+        }
+        else {
+            result = _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+        }
+
 
         //Couldn't figure out a smart way to filter offerings based on tags in sql so doing it in Java.
         List<ServiceOfferingJoinVO> filteredOfferings = filterOfferingsOnCurrentTags(result.first(), currentVmOffering);
