@@ -22,6 +22,7 @@ package com.cloud.network.resource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -53,6 +54,7 @@ import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.ExecutionException;
+import java.net.HttpURLConnection;
 
 public class TrafficSentinelResource implements ServerResource {
 
@@ -206,13 +208,22 @@ public class TrafficSentinelResource implements ServerResource {
             }
 
             try {
-                //Query traffic Sentinel
-                trafficSentinel =
-                    new URL(_url + "/inmsf/Query?script=" + URLEncoder.encode(getScript(cmd.getPublicIps(), cmd.getStart(), cmd.getEnd()), "UTF-8") +
-                        "&authenticate=basic&resultFormat=txt");
+                //Query traffic Sentinel using POST method. 3 parts to the connection call and subsequent writing.
 
-                BufferedReader in = new BufferedReader(new InputStreamReader(trafficSentinel.openStream()));
+                //Part 1 - Connect to the URL of the traffic sentinel's instance.
+                trafficSentinel = new URL(_url + "/inmsf/Query");
+                String postData = "script="+URLEncoder.encode(getScript(cmd.getPublicIps(), cmd.getStart(), cmd.getEnd()), "UTF-8")+"&authenticate=basic&resultFormat=txt";
+                HttpURLConnection con = (HttpURLConnection) trafficSentinel.openConnection();
+                con.setRequestMethod("POST");
+                con.setRequestProperty("Content-Length", String.valueOf(postData.length()));
+                con.setDoOutput(true);
 
+                //Part 2 - Write Data
+                OutputStream os = con.getOutputStream();
+                os.write(postData.getBytes(postData));
+
+                //Part 3 - Read response of the request
+                BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
                 String inputLine;
 
                 while ((inputLine = in.readLine()) != null) {
@@ -228,6 +239,7 @@ public class TrafficSentinelResource implements ServerResource {
                         answer.put(publicIp, bytesSentAndReceived);
                     }
                 }
+                os.close();
                 in.close();
             } catch (MalformedURLException e1) {
                 s_logger.info("Invalid Traffic Sentinel URL", e1);
