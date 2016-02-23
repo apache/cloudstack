@@ -19,6 +19,12 @@ package com.cloud.hypervisor.vmware.resource;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,8 +32,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualMachineConfigSpec;
-
+import com.vmware.vim25.VirtualMachineVideoCard;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
@@ -64,6 +71,10 @@ public class VmwareResourceTest {
     VirtualMachineMO vmMo;
     @Mock
     VirtualMachineConfigSpec vmConfigSpec;
+    @Mock
+    VirtualMachineMO vmMo3dgpu;
+    @Mock
+    VirtualMachineTO vmSpec3dgpu;
 
     @Before
     public void setup() {
@@ -88,6 +99,22 @@ public class VmwareResourceTest {
 
         _resource.execute(cmd);
         verify(_resource).execute(cmd);
+    }
+
+    @Test
+    public void testStartVm3dgpuEnabled() throws Exception{
+        Map<String, String> specDetails = new HashMap<String, String>();
+        specDetails.put("svga.vramSize", "131072");
+        when(vmSpec3dgpu.getDetails()).thenReturn(specDetails);
+
+        VirtualMachineVideoCard videoCard = mock(VirtualMachineVideoCard.class);
+        when(videoCard.getVideoRamSizeInKB()).thenReturn(65536l);
+        when(vmMo3dgpu.getAllDeviceList()).thenReturn(Arrays.asList((VirtualDevice) videoCard));
+
+        when(vmMo3dgpu.configureVm(any(VirtualMachineConfigSpec.class))).thenReturn(true);
+
+        _resource.postVideoCardMemoryConfigBeforeStart(vmMo3dgpu, vmSpec3dgpu);
+        verify(vmMo3dgpu).configureVm(any(VirtualMachineConfigSpec.class));
     }
 
 }

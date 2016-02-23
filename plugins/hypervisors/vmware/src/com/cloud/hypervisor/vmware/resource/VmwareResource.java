@@ -94,6 +94,7 @@ import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRelocateSpec;
 import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
+import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -1895,6 +1896,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey, iqnToPath, hyperHost, context);
 
+            postVideoCardMemoryConfigBeforeStart(vmMo, vmSpec);
+
             //
             // Power-on VM
             //
@@ -1941,6 +1944,79 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return startAnswer;
         } finally {
         }
+    }
+
+    /**
+     * Sets video card memory to the one provided in detail svga.vramSize (if provided).
+     * 64MB was always set before.
+     * Size must be in KB.
+     * @param vmMo virtual machine mo
+     * @param vmSpec virtual machine specs
+     */
+    protected void postVideoCardMemoryConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec) {
+        String paramVRamSize = "svga.vramSize";
+        if (vmSpec.getDetails().containsKey(paramVRamSize)){
+            String value = vmSpec.getDetails().get(paramVRamSize);
+            try {
+                long svgaVmramSize = Long.parseLong(value);
+                setNewVRamSizeVmVideoCard(vmMo, svgaVmramSize);
+            }
+            catch (NumberFormatException e){
+                s_logger.error("Unexpected value, cannot parse " + value + " to long due to: " + e.getMessage());
+            }
+            catch (Exception e){
+                s_logger.error("Error while reconfiguring vm due to: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Search for vm video card iterating through vm device list
+     * @param vmMo virtual machine mo
+     * @param svgaVmramSize new svga vram size (in KB)
+     */
+    private void setNewVRamSizeVmVideoCard(VirtualMachineMO vmMo, long svgaVmramSize) throws Exception {
+        for (VirtualDevice device : vmMo.getAllDeviceList()){
+            if (device instanceof VirtualMachineVideoCard){
+                VirtualMachineVideoCard videoCard = (VirtualMachineVideoCard) device;
+                modifyVmVideoCardVRamSize(videoCard, vmMo, svgaVmramSize);
+            }
+        }
+    }
+
+    /**
+     * Modifies vm vram size if it was set to a different size to the one provided in svga.vramSize (user_vm_details or template_vm_details)
+     * @param videoCard vm's video card device
+     * @param vmMo virtual machine mo
+     * @param svgaVmramSize new svga vram size (in KB)
+     */
+    private void modifyVmVideoCardVRamSize(VirtualMachineVideoCard videoCard, VirtualMachineMO vmMo, long svgaVmramSize) throws Exception {
+        if (videoCard.getVideoRamSizeInKB().longValue() != svgaVmramSize){
+            s_logger.info("Video card memory was set " + videoCard.getVideoRamSizeInKB().longValue() + "kb instead of " + svgaVmramSize + "kb");
+            VirtualMachineConfigSpec newSizeSpecs = configSpecVideoCardNewVRamSize(videoCard, svgaVmramSize);
+            boolean res = vmMo.configureVm(newSizeSpecs);
+            if (res) {
+                s_logger.info("Video card memory successfully updated to " + svgaVmramSize + "kb");
+            }
+        }
+    }
+
+    /**
+     * Returns a VirtualMachineConfigSpec to edit its svga vram size
+     * @param videoCard video card device to edit providing the svga vram size
+     * @param svgaVmramSize new svga vram size (in KB)
+     */
+    private VirtualMachineConfigSpec configSpecVideoCardNewVRamSize(VirtualMachineVideoCard videoCard, long svgaVmramSize){
+        videoCard.setVideoRamSizeInKB(svgaVmramSize);
+        videoCard.setUseAutoDetect(false);
+
+        VirtualDeviceConfigSpec arrayVideoCardConfigSpecs = new VirtualDeviceConfigSpec();
+        arrayVideoCardConfigSpecs.setDevice(videoCard);
+        arrayVideoCardConfigSpecs.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+
+        VirtualMachineConfigSpec changeVideoCardSpecs = new VirtualMachineConfigSpec();
+        changeVideoCardSpecs.getDeviceChange().add(arrayVideoCardConfigSpecs);
+        return changeVideoCardSpecs;
     }
 
     private void tearDownVm(VirtualMachineMO vmMo) throws Exception{
