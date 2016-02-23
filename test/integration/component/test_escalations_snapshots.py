@@ -31,8 +31,6 @@ from marvin.lib.utils import validateList, cleanup_resources
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
 import time
-
-
 class TestSnapshots(cloudstackTestCase):
 
     @classmethod
@@ -101,7 +99,6 @@ class TestSnapshots(cloudstackTestCase):
             cls.tearDownClass()
             raise Exception("Warning: Exception in setup : %s" % e)
         return
-
     @classmethod
     def tearDownClass(cls):
         try:
@@ -110,21 +107,16 @@ class TestSnapshots(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
-
     def setUp(self):
 
         self.apiClient = self.testClient.getApiClient()
         self.cleanup = []
         if self.unsupportedHypervisor:
             self.skipTest("Snapshots are not supported on %s" %self.hypervisor)
-
     def tearDown(self):
         # Clean up, terminate the created resources
         cleanup_resources(self.apiClient, self.cleanup)
         return
-
-   #placeholder
-
     def __verify_values(self, expected_vals, actual_vals):
         """
         @Desc: Function to verify expected and actual values
@@ -155,7 +147,6 @@ class TestSnapshots(cloudstackTestCase):
                                                                                           act_val
                                                                                           ))
         return return_flag
-
     def createInstance(self, service_off, networks=None, api_client=None):
         """Creates an instance in account"""
 
@@ -174,16 +165,12 @@ class TestSnapshots(cloudstackTestCase):
                  networkids=networks,
                  serviceofferingid=service_off.id)
             vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
-            self.assertIsInstance(vms,
-                list,
-                "List VMs should return a valid response")
+            validateList(vms)
             self.assertEqual(vms[0].state, "Running",
                     "Vm state should be running after deployment")
             return vm
         except Exception as e:
             self.fail("Failed to deploy an instance: %s" % e)
-
-
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_list_volume_snapshots_pagination(self):
         """
@@ -318,7 +305,6 @@ class TestSnapshots(cloudstackTestCase):
                           "Volume snapshot not deleted from page 2"
                           )
         return
-
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_02_list_volume_snapshots_byid(self):
         """
@@ -671,12 +657,11 @@ class TestSnapshots(cloudstackTestCase):
                          "Listed VM Snapshot details are not as expected"
                          )
         return
-
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_05_check_vm_snapshot_creation_after_Instance_creation(self):
         """
-        @summary: Test  if SS creation is successful in the first
-        10 minutes of VM deployment
+        @summary: Test  if Snapshot creation is successful
+        in the first 10 minutes of VM deployment
 
         Step1: Create a VM with any Service offering
         Step2: Create a VM snapshot
@@ -684,8 +669,8 @@ class TestSnapshots(cloudstackTestCase):
                10 minutes of VM deployment
         """
         if self.hypervisor.lower() not in ['vmware']:
-            raise unittest.SkipTest("This test case is only for vmware. Hence, skipping the test")
-
+            self.skipTest("This test case is only for vmware. Hence, skipping the test")
+            
         api_client = self.testClient.getUserApiClient(
                 UserName=self.account.name,
                 DomainName=self.account.domain)
