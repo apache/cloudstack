@@ -30,6 +30,7 @@ public class GetStorageStatsCommand extends Command {
     private StoragePoolType pooltype;
     private String secUrl;
     private DataStoreTO store;
+    private String nfsVersion;
 
     public String getSecUrl() {
         return secUrl;
@@ -52,6 +53,11 @@ public class GetStorageStatsCommand extends Command {
 
     public GetStorageStatsCommand(DataStoreTO store) {
         this.store = store;
+    }
+
+    public GetStorageStatsCommand(DataStoreTO store, String nfsVersion) {
+        this.store = store;
+        this.nfsVersion = nfsVersion;
     }
 
     public GetStorageStatsCommand(String secUrl) {
@@ -79,6 +85,14 @@ public class GetStorageStatsCommand extends Command {
 
     public DataStoreTO getStore() {
         return this.store;
+    }
+
+    public String getNfsVersion() {
+        return nfsVersion;
+    }
+
+    public void setNfsVersion(String nfsVersion) {
+        this.nfsVersion = nfsVersion;
     }
 
     @Override

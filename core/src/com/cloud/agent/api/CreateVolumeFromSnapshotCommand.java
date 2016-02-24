@@ -26,6 +26,8 @@ import com.cloud.storage.StoragePool;
  */
 public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
 
+    private String nfsVersion;
+
     protected CreateVolumeFromSnapshotCommand() {
 
     }
@@ -49,5 +51,13 @@ public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
             String backedUpSnapshotName, int wait) {
         super(pool, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
         setWait(wait);
+    }
+
+    public String getNfsVersion() {
+        return nfsVersion;
+    }
+
+    public void setNfsVersion(String nfsVersion) {
+        this.nfsVersion = nfsVersion;
     }
 }

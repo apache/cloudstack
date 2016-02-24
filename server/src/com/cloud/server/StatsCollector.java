@@ -36,7 +36,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -90,6 +89,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStats;
@@ -198,6 +198,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private HostGpuGroupsDao _hostGpuGroupsDao;
+    @Inject
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -715,7 +717,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
 
-                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO());
+                    GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), imageStoreDetailsUtil.getNfsVersion(store.getId()));
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
                         s_logger.debug("There is no secondary storage VM for secondary storage host " + store.getName());
@@ -762,6 +764,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 s_logger.error("Error trying to retrieve storage stats", t);
             }
         }
+
     }
 
     class AutoScaleMonitor extends ManagedContextRunnable {

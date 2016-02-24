@@ -51,7 +51,7 @@ public class MockLocalNfsSecondaryStorageResource extends NfsSecondaryStorageRes
     }
 
     @Override
-    public String getRootDir(String secUrl) {
+    public String getRootDir(String secUrl, String nfsVersion) {
         return "/mnt";
     }
 

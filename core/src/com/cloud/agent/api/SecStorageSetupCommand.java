@@ -28,6 +28,7 @@ public class SecStorageSetupCommand extends Command {
     private String secUrl;
     private KeystoreManager.Certificates certs;
     private String postUploadKey;
+    private String nfsVersion;
 
 
     public SecStorageSetupCommand() {
@@ -73,5 +74,13 @@ public class SecStorageSetupCommand extends Command {
 
     public void setPostUploadKey(String postUploadKey) {
         this.postUploadKey = postUploadKey;
+    }
+
+    public String getNfsVersion() {
+        return nfsVersion;
+    }
+
+    public void setNfsVersion(String nfsVersion) {
+        this.nfsVersion = nfsVersion;
     }
 }

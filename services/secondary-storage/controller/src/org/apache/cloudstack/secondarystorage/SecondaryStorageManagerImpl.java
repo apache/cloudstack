@@ -101,6 +101,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.Storage;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
@@ -239,6 +240,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     TemplateDataStoreDao _tmplStoreDao;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
+    @Inject
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -309,6 +312,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     KeystoreManager.Certificates certs = _keystoreMgr.getCertificates(ConsoleProxyManager.CERTIFICATE_NAME);
                     setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, certs);
                 }
+
+                setupCmd.setNfsVersion(imageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
 
                 //template/volume file upload key
                 String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
@@ -1046,7 +1051,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
-
         SecondaryStorageVmVO vm = _secStorageVmDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
@@ -1131,6 +1135,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
+        String nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStore.getId()) : null;
+        buf.append(" nfsVersion=").append(nfsVersion);
 
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
@@ -1430,4 +1436,5 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public void setSecondaryStorageVmAllocators(List<SecondaryStorageVmAllocator> ssVmAllocators) {
         _ssVmAllocators = ssVmAllocators;
     }
+
 }
