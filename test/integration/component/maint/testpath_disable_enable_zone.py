@@ -21,6 +21,11 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources,
                               validateList)
+from marvin.cloudstackAPI import (dedicateCluster,
+                                  listDedicatedClusters,
+                                  releaseDedicatedCluster,
+                                  listAffinityGroups)
+
 from marvin.lib.base import (Account,
                              VirtualMachine,
                              ServiceOffering,
@@ -40,7 +45,10 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                list_volumes,
                                list_snapshots,
-                               get_builtin_template_info
+                               get_builtin_template_info,
+                               list_routers,
+                               list_virtual_machines,
+                               list_hosts
                                )
 
 from marvin.cloudstackAPI import (updateZone,
@@ -280,7 +288,7 @@ class TestDisableEnableZone(cloudstackTestCase):
         self.testdata["privatetemplate"]["hypervisor"] = builtin_info[1]
         self.testdata["privatetemplate"]["format"] = builtin_info[2]
         """
-        //commenting it for now will uncomment  once expected behaviour is known
+        //commenting it for now will uncomment once expected behaviour is known
         Template.register(
             self.apiclient,
             self.testdata["privatetemplate"],
@@ -295,7 +303,7 @@ class TestDisableEnableZone(cloudstackTestCase):
             diskofferingid=self.disk_offering.id
         )
         """
-        //commenting it for now will uncomment  once expected behaviour is known
+        //commenting it for now will uncomment once expected behaviour is known
         Iso.create(
             self.apiclient,
             self.testdata["iso2"],
@@ -1689,5 +1697,190 @@ class TestDisableEnableHost(cloudstackTestCase):
                          "up",
                          "Check if the host get reconnected successfully"
                          )
+
+        return
+
+
+class TestClusterDedication(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestClusterDedication, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.testdata = testClient.getParsedTestDataConfig()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.testdata["ostype"])
+
+        cls.Skiptest = False
+        cls._cleanup = []
+        cls.clusters = Cluster.list(cls.apiclient, zoneid=cls.zone.id)
+        if len(cls.clusters) < 2:
+            cls.Skiptest = True
+
+        try:
+            # Create an account
+            cls.account_1 = Account.create(
+                cls.apiclient,
+                cls.testdata["account"],
+                domainid=cls.domain.id
+            )
+
+            cls._cleanup.append(cls.account_1)
+
+            cls.account_2 = Account.create(
+                cls.apiclient,
+                cls.testdata["account"],
+                domainid=cls.domain.id
+            )
+
+            cls._cleanup.append(cls.account_2)
+            # Create user api client of the account
+            cls.userapiclient_1 = testClient.getUserApiClient(
+                UserName=cls.account_1.name,
+                DomainName=cls.account_1.domain
+            )
+            cls.userapiclient_2 = testClient.getUserApiClient(
+                UserName=cls.account_2.name,
+                DomainName=cls.account_2.domain
+            )
+
+            # Create Service offering
+            cls.service_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.testdata["service_offering"],
+            )
+            cls._cleanup.append(cls.service_offering)
+
+            cls.disk_offering = DiskOffering.create(
+                cls.apiclient,
+                cls.testdata["disk_offering"],
+            )
+
+            cls._cleanup.append(cls.disk_offering)
+
+        except Exception as e:
+            cls.tearDownClass()
+            raise e
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+
+    def setUp(self):
+
+        if self.Skiptest:
+            self.skipTest("Insufficient clusters to run the test")
+
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    def tearDown(self):
+        try:
+            listClusterscmd = listDedicatedClusters.listDedicatedClustersCmd()
+            listClusterscmd.clusterid = self.clusters[0].id
+            ret_list = self.apiclient.listDedicatedClusters(listClusterscmd)
+            if ret_list:
+                dedicateCmd = releaseDedicatedCluster.\
+                        releaseDedicatedClusterCmd()
+                dedicateCmd.clusterid = self.clusters[0].id
+                self.apiclient.releaseDedicatedCluster(dedicateCmd)
+
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["basic", "advanced"], required_hardware="false")
+    def test_01_dedicated_cluster_allocation(self):
+        """ Dedicated cluster and router allocation
+            1.   Dedicate a cluster to one account
+            2.   Deploy a VM on dedicated account
+            3.   Deploy another VM on another account.
+            4.   Verify the dedicated cluster is not used for
+                virtual routers that belong to non-dedicated account
+        """
+
+        # Step 1
+        dedicateCmd = dedicateCluster.dedicateClusterCmd()
+        dedicateCmd.clusterid = self.clusters[0].id
+        dedicateCmd.domainid = self.domain.id
+        dedicateCmd.account = self.account_1.name
+        self.apiclient.dedicateCluster(dedicateCmd)
+
+        afcmd = listAffinityGroups.listAffinityGroupsCmd()
+        afcmd.account = self.account_1.name
+        afcmd.domainid = self.account_1.domainid
+        affinitygr_list = self.apiclient.listAffinityGroups(afcmd)
+
+        # Step 2
+        self.vm = VirtualMachine.create(
+            self.userapiclient_1,
+            self.testdata["small"],
+            templateid=self.template.id,
+            accountid=self.account_1.name,
+            domainid=self.account_1.domainid,
+            serviceofferingid=self.service_offering.id,
+            affinitygroupids=[affinitygr_list[0].id],
+            zoneid=self.zone.id,
+            mode=self.zone.networktype
+        )
+        # Steps to verify if VM is created on dedicated account
+        vmlist = list_virtual_machines(self.apiclient,
+                                       id=self.vm.id)
+
+        hostlist = list_hosts(self.apiclient,
+                              id=vmlist[0].hostid)
+
+        self.assertEqual(hostlist[0].clusterid,
+                         self.clusters[0].id,
+                         "check if vm gets deployed on dedicated clusture"
+                         )
+        # Step 3
+        self.vm_1 = VirtualMachine.create(
+            self.userapiclient_2,
+            self.testdata["small"],
+            templateid=self.template.id,
+            accountid=self.account_2.name,
+            domainid=self.account_2.domainid,
+            serviceofferingid=self.service_offering.id,
+            zoneid=self.zone.id,
+            mode=self.zone.networktype
+        )
+
+        # Steps to verify if VM is created on dedicated account
+        vmlist_1 = list_virtual_machines(self.apiclient,
+                                         id=self.vm_1.id)
+
+        hostlist_1 = list_hosts(self.apiclient,
+                                id=vmlist_1[0].hostid)
+
+        self.assertNotEqual(hostlist_1[0].clusterid,
+                            self.clusters[0].id,
+                            "check if vm gets deployed on correct clusture"
+                            )
+
+        # Step 4
+        routerList = list_routers(self.apiclient,
+                                  clusterid=self.clusters[0].id,
+                                  networkid=self.vm_1.nic[0].networkid
+                                  )
+        self.assertEqual(
+            routerList,
+            None,
+            "Check Dedicated cluster is used for virtual routers \
+                    that belong to non-dedicated account")
 
         return
