@@ -40,6 +40,8 @@ import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -262,7 +264,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private UserVmJoinDao _userVmJoinDao;
     @Inject
     private SnapshotDataStoreDao _snapshotStoreDao;
-
+    @Inject
+    private ImageStoreDao _imgStoreDao;
     @Inject
     MessageBus _messageBus;
 
@@ -275,6 +278,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private StorageCacheManager cacheMgr;
     @Inject
     private EndPointSelector selector;
+
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
@@ -1705,6 +1709,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 s_logger.debug("This template is getting created from other template, setting source template Id to: " + sourceTemplateId);
             }
         }
+
+
+        // for region wide storage, set cross zones flag
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (!CollectionUtils.isEmpty(stores)) {
+            privateTemplate.setCrossZones(true);
+        }
+
         privateTemplate.setSourceTemplateId(sourceTemplateId);
 
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
