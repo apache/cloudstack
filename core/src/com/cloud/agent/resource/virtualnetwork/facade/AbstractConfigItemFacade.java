@@ -22,6 +22,9 @@ package com.cloud.agent.resource.virtualnetwork.facade;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -57,6 +60,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public abstract class AbstractConfigItemFacade {
+
+    private static final Logger s_logger = Logger.getLogger(AbstractConfigItemFacade.class);
 
     private final static Gson gson;
 
@@ -104,13 +109,25 @@ public abstract class AbstractConfigItemFacade {
         return instance;
     }
 
+
+    private static String appendUuidToJsonFiles(final String filename) {
+        String remoteFileName = new String(filename);
+        if (remoteFileName.endsWith("json")) {
+            remoteFileName += "." + UUID.randomUUID().toString();
+        }
+        return remoteFileName;
+    }
+
     protected List<ConfigItem> generateConfigItems(final ConfigBase configuration) {
         final List<ConfigItem> cfg = new LinkedList<>();
 
-        final ConfigItem configFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, destinationFile, gson.toJson(configuration));
+        final String remoteFilename = appendUuidToJsonFiles(destinationFile);
+        s_logger.debug("Transformed filename " + destinationFile + " to " + remoteFilename);
+
+        final ConfigItem configFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, remoteFilename, gson.toJson(configuration));
         cfg.add(configFile);
 
-        final ConfigItem updateCommand = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, destinationFile);
+        final ConfigItem updateCommand = new ScriptConfigItem(VRScripts.UPDATE_CONFIG, remoteFilename);
         cfg.add(updateCommand);
 
         return cfg;
