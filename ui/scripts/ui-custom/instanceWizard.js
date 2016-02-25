@@ -372,7 +372,7 @@
 
                                                 $select.addClass('selected').append(
                                                     $('<div>').addClass('hypervisor')
-                                                    .append($('<label>').html('Hypervisor:'))
+                                                    .append($('<label>').html(_l('label.hypervisor') + ':'))
                                                     .append($('<select>').attr({
                                                         name: 'hypervisorid'
                                                     }))
