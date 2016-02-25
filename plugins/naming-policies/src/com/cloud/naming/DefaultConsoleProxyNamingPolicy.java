@@ -50,7 +50,7 @@ public class DefaultConsoleProxyNamingPolicy extends AbstractResourceNamingPolic
     @Override
     public String getConsoleProxyName(Long resourceId) {
         StringBuilder builder = new StringBuilder("v");
-        builder.append(SEPARATOR).append(resourceId).append(SEPARATOR).append("instanceName");
+        builder.append(SEPARATOR).append(resourceId).append(SEPARATOR).append(instanceName);
         return builder.toString();
     }
 

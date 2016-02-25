@@ -48,7 +48,7 @@ public class DefaultSecondaryStorageNamingPolicy extends AbstractResourceNamingP
     @Override
     public String getSsvmName(Long vmId) {
         StringBuilder builder = new StringBuilder("s");
-        builder.append(SEPARATOR).append(vmId).append(SEPARATOR).append("instanceName");
+        builder.append(SEPARATOR).append(vmId).append(SEPARATOR).append(instanceName);
         return builder.toString();
     }
 
