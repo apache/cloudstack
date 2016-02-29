@@ -114,6 +114,10 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
         return this.key;
     }
 
+    public String getValue() {
+        return this.value;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
