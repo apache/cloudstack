@@ -30,7 +30,6 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -157,6 +156,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -475,6 +475,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
                 snapshotResponse.setZoneId(zone.getUuid());
+            }
+
+            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                VMInstanceVO instance = ApiDBUtils.findVMInstanceById(volume.getInstanceId());
+                if (instance != null) {
+                    GuestOS guestOs = ApiDBUtils.findGuestOSById(instance.getGuestOSId());
+                    if (guestOs != null) {
+                        snapshotResponse.setOsTypeId(guestOs.getUuid());
+                        snapshotResponse.setOsDisplayName(guestOs.getDisplayName());
+                    }
+                }
             }
         }
         snapshotResponse.setCreated(snapshot.getCreated());
