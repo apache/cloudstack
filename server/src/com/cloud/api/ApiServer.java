@@ -16,41 +16,45 @@
 // under the License.
 package com.cloud.api;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.security.SecureRandom;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.cloud.api.dispatch.DispatchChainFactory;
+import com.cloud.api.dispatch.DispatchTask;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.configuration.Config;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventCategory;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.AccountLimitException;
+import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.RequestLimitException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.UserVO;
+import com.cloud.utils.ConstantTimeComparator;
+import com.cloud.utils.HttpUtils;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UUIDManager;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -134,44 +138,42 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.dispatch.DispatchChainFactory;
-import com.cloud.api.dispatch.DispatchTask;
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.configuration.Config;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventCategory;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.AccountLimitException;
-import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.RequestLimitException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.DomainManager;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserVO;
-import com.cloud.utils.HttpUtils;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.db.UUIDManager;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExceptionProxyObject;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.security.SecureRandom;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
@@ -837,14 +839,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             // if api/secret key are passed to the parameters
-            if (/*(signature == null) ||*/ (apiKey == null)) {
+            if ((signature == null) || (apiKey == null)) {
                 s_logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                 return false; // no signature, bad request
             }
 
             Date expiresTS = null;
             // FIXME: Hard coded signature, why not have an enum
-            /*
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
@@ -865,7 +866,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     return false;
                 }
             }
-            */
 
             final TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
@@ -897,9 +897,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                         + userId);
             }
 
-            CallContext.register(user, account);
-            return true;
-            /*
             // verify secret key exists
             secretKey = user.getSecretKey();
             if (secretKey == null) {
@@ -924,7 +921,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 CallContext.register(user, account);
             }
             return equalSig;
-            */
         } catch (final ServerApiException ex) {
             throw ex;
         } catch (final Exception ex) {
