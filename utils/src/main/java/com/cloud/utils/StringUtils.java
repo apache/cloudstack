@@ -188,6 +188,9 @@ public class StringUtils {
     // removes a password/accesskey/ property from a response json object
     private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"((p|P|vncP)assword|privatekey|accesskey|secretkey)\":\\s?\".*?\",?");
 
+    //removes the vnc password from the xml sent to libvirt
+    private static final Pattern REGEX_LIBVIRT_VM_STRING = Pattern.compile("(passwd='.*?')");
+
     private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)((p|P)assword|accesskey|secretkey)(?=(%26|[&'\"]))");
 
     private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
@@ -200,6 +203,7 @@ public class StringUtils {
         if (stringToClean != null) {
             cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
             cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+            cleanResult = REGEX_LIBVIRT_VM_STRING.matcher(cleanResult).replaceAll("");
             final Matcher detailsMatcher = REGEX_PASSWORD_DETAILS.matcher(cleanResult);
             while (detailsMatcher.find()) {
                 final Matcher detailsIndexMatcher = REGEX_PASSWORD_DETAILS_INDEX.matcher(detailsMatcher.group());
