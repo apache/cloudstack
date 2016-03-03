@@ -62,6 +62,8 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
         final String vmName = vmSpec.getName();
         VmPowerState state = VmPowerState.HALTED;
         VM vm = null;
+        String configDriveLabel = vmSpec.getConfigDriveLabel();
+        List<String[]> vmDataList = vmSpec.getVmData();
         // if a VDI is created, record its UUID to send back to the CS MS
         final Map<String, String> iqnToPath = new HashMap<String, String>();
         try {
@@ -121,6 +123,16 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
             for (final NicTO nic : vmSpec.getNics()) {
                 citrixResourceBase.createVif(conn, vmName, vm, vmSpec, nic);
+            }
+
+            if (vmDataList != null) {
+                // for shared network with config drive
+                // 1. create iso sr if it is not there
+                // 2. add iso to sr
+                // 3. create vbd and attach it to vm
+                if (!citrixResourceBase.createAndAttachConfigDriveIsoForVM(conn, vm, vmDataList, configDriveLabel)) {
+                    s_logger.debug("Failed to attach config drive iso to VM " + vmName);
+                }
             }
 
             citrixResourceBase.startVM(conn, host, vm, vmName);

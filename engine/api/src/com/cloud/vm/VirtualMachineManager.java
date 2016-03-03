@@ -55,6 +55,9 @@ public interface VirtualMachineManager extends Manager {
     static final ConfigKey<String> VmConfigDriveLabel = new ConfigKey<String>("Hidden", String.class, "vm.configdrive.label", "config",
             "The default lable name for the config drive", false);
 
+    static final ConfigKey<Boolean> ConfigDriveCreation = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.config.drive", "true",
+            "If true, use config drives for data transfer else don't use. Default is true", true);
+
     public interface Topics {
         public static final String VM_POWER_STATE = "vm.powerstate";
     }
