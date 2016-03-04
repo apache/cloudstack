@@ -45,5 +45,5 @@ SHUTDOWN_VERBOSE="false"
 # Set the TOMCAT_PID location
 CATALINA_PID="/var/run/cloudstack-management.pid"
 
-CLASSPATH=/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/java/mysql-connector-java.jar
+CLASSPATH=/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup
 
