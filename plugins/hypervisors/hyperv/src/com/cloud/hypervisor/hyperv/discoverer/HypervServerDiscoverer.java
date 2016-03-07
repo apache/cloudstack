@@ -265,6 +265,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             params.put("cluster", Long.toString(clusterId));
             params.put("guid", guidWithTail);
             params.put("ipaddress", agentIp);
+            params.put("resourceNamingPolicy", _resourceNamingPolicyMgr);
 
             // Hyper-V specific settings
             Map<String, String> details = new HashMap<String, String>();

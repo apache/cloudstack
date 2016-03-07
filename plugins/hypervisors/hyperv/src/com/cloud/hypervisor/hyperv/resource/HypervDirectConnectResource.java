@@ -191,7 +191,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     private static HypervManager s_hypervMgr;
     @Inject
     HypervManager _hypervMgr;
-    @Inject
     protected ResourceNamingPolicyManager _resourceNamingPolicyMgr;
     protected VirtualRoutingResource _vrResource;
 
@@ -2349,6 +2348,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             _password = (String)params.get("password");
             _username = (String)params.get("username");
             _configureCalled = true;
+            _resourceNamingPolicyMgr = (ResourceNamingPolicyManager)params.get("resourceNamingPolicy");
         }
 
         _vrResource = new VirtualRoutingResource(this);

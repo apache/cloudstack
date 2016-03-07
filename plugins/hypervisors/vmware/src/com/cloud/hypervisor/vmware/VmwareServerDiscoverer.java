@@ -59,7 +59,6 @@ import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.naming.ResourceNamingPolicyManager;
 import com.cloud.naming.TemplateNamingPolicy;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
@@ -102,8 +101,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
     @Inject
     VmwareDatacenterDao _vmwareDcDao;
-    @Inject
-    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     protected Map<String, String> _urlParams;
     protected boolean useDVS = false;
