@@ -20,7 +20,7 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import deleteVolume
-from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.utils import (cleanup_resources, get_hypervisor_type)
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              NATRule,
@@ -93,7 +93,7 @@ class Services:
             "iso": {
                 "displaytext": "Test ISO",
                 "name": "Test ISO",
-                "url": "http://people.apache.org/~tsp/dummy.iso",
+                "url": "http://home.apache.org/~sanjeev/dummy.iso",
                 # Source URL where ISO is located
                 "isextractable": True,
                 "isfeatured": True,
@@ -674,7 +674,126 @@ class TestVolumeUsage(cloudstackTestCase):
             1,
             "Check VOLUME.DELETE in events table"
         )
-        return
+
+        self.hypervisor = str(get_hypervisor_type(self.apiclient)).lower()
+        if self.hypervisor == "vmware":
+            self.services["coreos_volume"][
+                "url"] = self.services["coreos_volume"]["urlvmware"]
+            self.services["coreos_volume"]["format"] = "OVA"
+        elif self.hypervisor == "xenserver":
+            self.services["coreos_volume"][
+                "url"] = self.services["coreos_volume"]["urlxen"]
+            self.services["coreos_volume"]["format"] = "VHD"
+        elif self.hypervisor == "kvm":
+            self.services["coreos_volume"][
+                "url"] = self.services["coreos_volume"]["urlkvm"]
+            self.services["coreos_volume"]["format"] = "QCOW2"
+        elif self.hypervisor == "hyperv":
+            self.services["coreos_volume"][
+                "url"] = self.services["coreos_volume"]["urlxen"]
+            self.services["coreos_volume"]["format"] = "VHD"
+
+        volume_uploaded = Volume.upload(
+            self.apiclient,
+            self.testdata["coreos_volume"],
+            self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid)
+        self.assertIsNotNone(volume_uploaded, "Volume creation failed")
+        volume_uploaded.wait_for_upload(self.apiclient)
+        # Fetch volume ID from volume_uuid
+        self.debug("select id from volumes where uuid = '%s';"
+                   % volume_uploaded.id)
+
+        qresultset = self.dbclient.execute(
+            "select id from volumes where uuid = '%s';"
+            % volume_uploaded.id
+        )
+        self.assertEqual(
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
+
+        self.assertNotEqual(
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
+        qresult = qresultset[0]
+
+        volume_id = qresult[0]
+
+        self.debug("select type from usage_event where volume_id = '%s';"
+                   % volume_id)
+
+        qresultset = self.dbclient.execute(
+            "select type from usage_event where resource_id = '%s';"
+            % volume_id
+        )
+        self.assertNotEqual(
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
+        self.assertEqual(
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
+
+        qresult = str(qresultset)
+        self.debug("Query result: %s" % qresult)
+        # Check VOLUME.UPLOAD event in cloud.usage_event table
+        self.assertEqual(
+            qresult.count('VOLUME.UPLOAD'),
+            1,
+            "Check VOLUME.UPLOAD event in events table"
+        )
+        self.virtual_machine.start(self.apiclient)
+        vms = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine.id,
+            listall=True
+        )
+        self.assertEqual(
+            isinstance(vms, list),
+            True,
+            "List VMs should return the valid list"
+        )
+        vm = vms[0]
+        self.assertEqual(
+            vm.state,
+            "Running",
+            "VM state should be running after deployment"
+        )
+        self.virtual_machine.attach_volume(self.apiclient,volume_uploaded)
+        self.debug("select type from usage_event where offering_id = 6 and volume_id = '%s';"
+                   % volume_id)
+
+        qresultset = self.dbclient.execute(
+            "select type from usage_event where offering_id = 6 and resource_id = '%s';"
+            % volume_id
+        )
+        self.assertNotEqual(
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
+        self.assertEqual(
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
+
+        qresult = str(qresultset)
+        self.debug("Query result: %s" % qresult)
+        # Check VOLUME.CREATE event in cloud.usage_event table
+        self.assertEqual(
+            qresult.count('VOLUME.CREATE'),
+            1,
+            "Check VOLUME.CREATE event in events table"
+        )
 
 
 class TestTemplateUsage(cloudstackTestCase):
