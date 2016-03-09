@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Date;
 import java.util.Map;
 
+import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -39,6 +40,7 @@ import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name = "user_vm_view")
+@AttributeOverride( name="id", column = @Column(name = "id", updatable = false, nullable = false) )
 public class UserVmJoinVO extends BaseViewWithTagInformationVO implements ControlledViewEntity {
 
     @Id
@@ -370,11 +372,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
 
     public UserVmJoinVO() {
-    }
-
-    @Override
-    public long getId() {
-        return id;
     }
 
     @Override
@@ -793,7 +790,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Override
     public String toString() {
         if (toString == null) {
-            toString = new StringBuilder("VM[").append(id).append("|").append(name).append("]").toString();
+            toString = new StringBuilder("VM[").append(getId()).append("|").append(name).append("]").toString();
         }
         return toString;
     }

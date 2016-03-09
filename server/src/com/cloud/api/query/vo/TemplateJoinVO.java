@@ -22,7 +22,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -40,10 +39,6 @@ import com.cloud.utils.db.GenericDao;
 @Entity
 @Table(name = "template_view")
 public class TemplateJoinVO extends BaseViewWithTagInformationVO implements ControlledViewEntity {
-
-    @Id
-    @Column(name = "id")
-    private long id;
 
     @Column(name = "uuid")
     private String uuid;
@@ -225,11 +220,6 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     private String tempZonePair; // represent a distinct (templateId, data_center_id) pair
 
     public TemplateJoinVO() {
-    }
-
-    @Override
-    public long getId() {
-        return id;
     }
 
     @Override

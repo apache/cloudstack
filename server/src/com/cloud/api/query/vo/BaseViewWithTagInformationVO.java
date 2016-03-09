@@ -16,13 +16,21 @@
 // under the License.
 package com.cloud.api.query.vo;
 
+import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
-public abstract class BaseViewWithTagInformationVO extends BaseViewVO {
+@MappedSuperclass
+public abstract class BaseViewWithTagInformationVO extends BaseViewVO implements Serializable {
+
+    @Id
+    @Column(name = "id")
+    private long id;
 
     @Column(name = "tag_id")
     private long tagId;
@@ -166,6 +174,10 @@ public abstract class BaseViewWithTagInformationVO extends BaseViewVO {
 
     public void setTagDomainName(String tagDomainName) {
         this.tagDomainName = tagDomainName;
+    }
+
+    public long getId() {
+        return id;
     }
 
 }
