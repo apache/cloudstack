@@ -28,6 +28,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Date;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -43,9 +45,6 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
@@ -114,7 +113,8 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         };
 
         try {
-            request = new GetMethod(downloadUrl);
+            URI uri = UriUtils.formUri(downloadUrl);
+            request = new GetMethod(uri.toString());
             request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
             completionCallback = callback;
             //this.request.setFollowRedirects(false);

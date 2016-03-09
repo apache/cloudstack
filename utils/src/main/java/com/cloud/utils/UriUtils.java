@@ -25,8 +25,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -49,7 +51,6 @@ import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
-
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
 
@@ -86,6 +87,17 @@ public class UriUtils {
         File file = new File(path);
 
         return file.toURI().toString();
+    }
+
+    public static URI formUri(String url) throws URISyntaxException {
+        try {
+            URL u = new URL(url);
+            URI uri = new URI(u.getProtocol(), u.getHost(), u.getPath(), u.getQuery(), null);
+
+            return uri;
+        } catch (MalformedURLException e) {
+            throw new URISyntaxException(url, "Invalid URL");
+        }
     }
 
     // a simple URI component helper (Note: it does not deal with URI paramemeter area)
@@ -241,7 +253,7 @@ public class UriUtils {
 
     public static Pair<String, Integer> validateUrl(String format, String url) throws IllegalArgumentException {
         try {
-            URI uri = new URI(url);
+            URI uri = formUri(url);
             if ((uri.getScheme() == null) ||
                     (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
                 throw new IllegalArgumentException("Unsupported scheme for url: " + url);

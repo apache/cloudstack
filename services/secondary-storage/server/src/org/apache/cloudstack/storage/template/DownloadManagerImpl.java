@@ -48,7 +48,6 @@ import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.utils.net.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
@@ -78,8 +77,10 @@ import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Proxy;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.QCOW2Utils;
@@ -518,7 +519,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         URI uri;
         try {
-            uri = new URI(url);
+            uri = UriUtils.formUri(url);
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException("URI is incorrect: " + url);
         }
