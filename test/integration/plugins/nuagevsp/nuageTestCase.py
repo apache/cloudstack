@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-""" Custom base class for NuageVsp network Plugin specific Marvin tests
+""" Custom base class for NuageVsp SDN Plugin specific Marvin tests
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
