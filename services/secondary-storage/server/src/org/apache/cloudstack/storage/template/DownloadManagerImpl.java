@@ -89,6 +89,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     StorageLayer _storage;
     public Map<String, Processor> _processors;
 
+    private String _nfsVersion;
+
     public class Completion implements DownloadCompleteCallback {
         private final String jobId;
 
@@ -708,7 +710,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String installPathPrefix = cmd.getInstallPath();
         // for NFS, we need to get mounted path
         if (dstore instanceof NfsTO) {
-            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl()) + File.separator + installPathPrefix;
+            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl(), _nfsVersion) + File.separator + installPathPrefix;
         }
         String user = null;
         String password = null;
@@ -982,6 +984,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
             s_logger.info("DownloadManager: starting additional services since we are inside system vm");
+            _nfsVersion = (String)params.get("nfsVersion");
             startAdditionalServices();
             blockOutgoingOnPrivate();
         }

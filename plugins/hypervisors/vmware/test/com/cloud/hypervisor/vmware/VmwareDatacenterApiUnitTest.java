@@ -25,18 +25,19 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import com.cloud.user.User;
+
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -48,12 +49,13 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;
@@ -86,6 +88,7 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -98,6 +101,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
+@PrepareForTest({ComponentContext.class, ApplicationContext.class})
 public class VmwareDatacenterApiUnitTest {
 
     @Inject
@@ -154,10 +158,6 @@ public class VmwareDatacenterApiUnitTest {
     private static AddVmwareDcCmd addCmd;
     @Mock
     private static RemoveVmwareDcCmd removeCmd;
-
-    @BeforeClass
-    public static void setUp() throws ConfigurationException {
-    }
 
     @Before
     public void testSetUp() {
@@ -429,6 +429,22 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public DataStoreManager dataStoreManager() {
             return Mockito.mock(DataStoreManager.class);
+        }
+
+        @Bean
+        public ImageStoreDetailsUtil imageStoreDetailsUtil() {
+            return Mockito.mock(ImageStoreDetailsUtil.class);
+        }
+
+        //Mocks for ImageStoreDetailsUtil
+        @Bean
+        public ImageStoreDao imageStoreDao() {
+            return Mockito.mock(ImageStoreDao.class);
+        }
+
+        @Bean
+        public ImageStoreDetailsDao imageStoreDetailsDao() {
+            return Mockito.mock(ImageStoreDetailsDao.class);
         }
 
         public static class Library implements TypeFilter {

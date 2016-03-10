@@ -109,6 +109,7 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 
 public class VmwareStorageProcessor implements StorageProcessor {
+
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
     private static final int DEFAULT_NFS_PORT = 2049;
 
@@ -120,9 +121,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
     protected Integer _shutdownWaitMs;
     private final Gson _gson;
     private final StorageLayer _storage = new JavaStorageLayer();
+    private String _nfsVersion;
 
     public VmwareStorageProcessor(VmwareHostService hostService, boolean fullCloneFlag, VmwareStorageMount mountService, Integer timeout, VmwareResource resource,
-            Integer shutdownWaitMs, PremiumSecondaryStorageResource storageResource) {
+            Integer shutdownWaitMs, PremiumSecondaryStorageResource storageResource, String nfsVersion) {
         this.hostService = hostService;
         _fullCloneFlag = fullCloneFlag;
         this.mountService = mountService;
@@ -130,6 +132,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         this.resource = resource;
         _shutdownWaitMs = shutdownWaitMs;
         _gson = GsonHelper.getGsonLogger();
+        _nfsVersion = nfsVersion;
     }
 
     @Override
@@ -155,12 +158,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private VirtualMachineMO copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-            String templatePathAtSecondaryStorage, String templateName, String templateUuid, boolean createSnapshot) throws Exception {
+            String templatePathAtSecondaryStorage, String templateName, String templateUuid, boolean createSnapshot, String nfsVersion) throws Exception {
 
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
                 templatePathAtSecondaryStorage + ", templateName: " + templateName);
 
-        String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, nfsVersion);
         s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
 
         String srcOVAFileName =
@@ -316,7 +319,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 if (managed) {
                     VirtualMachineMO vmMo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                            managedStoragePoolRootVolumeName, false);
+                            managedStoragePoolRootVolumeName, false, _nfsVersion);
 
                     vmMo.unregisterVm();
 
@@ -333,7 +336,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
                 else {
                     copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
-                            templateUuidName, true);
+                            templateUuidName, true, _nfsVersion);
                 }
             } else {
                 s_logger.info("Template " + templateInfo.second() + " has already been setup, skip the template setup process in primary storage");
@@ -518,7 +521,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, String srcVolumePath, DatastoreMO dsMo, String secStorageUrl, long wait) throws Exception {
+    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, String srcVolumePath, DatastoreMO dsMo, String secStorageUrl, long wait, String nfsVersion) throws Exception {
 
         String volumeFolder = null;
         String volumeName = null;
@@ -533,13 +536,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         String newVolume = VmwareHelper.getVCenterSafeUuid();
-        restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, volumeFolder, volumeName, wait);
+        restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, volumeFolder, volumeName, wait, nfsVersion);
 
         return new Pair<String, String>(volumeFolder, newVolume);
     }
 
-    private String deleteVolumeDirOnSecondaryStorage(String volumeDir, String secStorageUrl) throws Exception {
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+    private String deleteVolumeDirOnSecondaryStorage(String volumeDir, String secStorageUrl, String nfsVersion) throws Exception {
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
         String volumeMountRoot = secondaryMountPoint + File.separator + volumeDir;
 
         return deleteDir(volumeMountRoot);
@@ -578,8 +581,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            Pair<String, String> result = copyVolumeFromSecStorage(hyperHost, srcVolume.getPath(), new DatastoreMO(context, morDatastore), srcStore.getUrl(), (long)cmd.getWait() * 1000);
-            deleteVolumeDirOnSecondaryStorage(result.first(), srcStore.getUrl());
+            Pair<String, String> result = copyVolumeFromSecStorage(hyperHost, srcVolume.getPath(), new DatastoreMO(context, morDatastore), srcStore.getUrl(), (long)cmd.getWait() * 1000, _nfsVersion);
+            deleteVolumeDirOnSecondaryStorage(result.first(), srcStore.getUrl(), _nfsVersion);
             VolumeObjectTO newVolume = new VolumeObjectTO();
             newVolume.setPath(result.second());
             return new CopyCmdAnswer(newVolume);
@@ -636,7 +639,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
 
-            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, destVolumePath, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1));
+            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, destVolumePath, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1), _nfsVersion);
             return new Pair<String, String>(destVolumePath, exportName);
 
         } finally {
@@ -720,9 +723,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, String installPath, long templateId, String templateUniqueName,
-            String secStorageUrl, String volumePath, String workerVmName) throws Exception {
+            String secStorageUrl, String volumePath, String workerVmName, String nfsVersion) throws Exception {
 
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
         String installFullPath = secondaryMountPoint + "/" + installPath;
         synchronized (installPath.intern()) {
             Script command = new Script(false, "mkdir", _timeout, s_logger);
@@ -838,7 +841,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             Ternary<String, Long, Long> result =
                     createTemplateFromVolume(vmMo, template.getPath(), template.getId(), template.getName(), secondaryStoragePoolURL, volumePath,
-                            hostService.getWorkerName(context, cmd, 0));
+                            hostService.getWorkerName(context, cmd, 0), _nfsVersion);
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
@@ -885,7 +888,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private Ternary<String, Long, Long> createTemplateFromSnapshot(String installPath, String templateUniqueName, String secStorageUrl, String snapshotPath,
-            Long templateId, long wait) throws Exception {
+            Long templateId, long wait, String nfsVersion) throws Exception {
         //Snapshot path is decoded in this form: /snapshots/account/volumeId/uuid/uuid
         String backupSSUuid;
         String snapshotFolder;
@@ -899,7 +902,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             snapshotFolder = StringUtils.join(tokens, File.separator, 0, tokens.length - 1);
         }
 
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
         String installFullPath = secondaryMountPoint + "/" + installPath;
         String installFullOVAName = installFullPath + "/" + templateUniqueName + ".ova";  //Note: volss for tmpl
         String snapshotRoot = secondaryMountPoint + "/" + snapshotFolder;
@@ -1029,7 +1032,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             NfsTO nfsSvr = (NfsTO)imageStore;
-            Ternary<String, Long, Long> result = createTemplateFromSnapshot(template.getPath(), uniqeName, nfsSvr.getUrl(), snapshot.getPath(), template.getId(), (long)cmd.getWait() * 1000);
+            Ternary<String, Long, Long> result = createTemplateFromSnapshot(template.getPath(), uniqeName, nfsSvr.getUrl(), snapshot.getPath(), template.getId(), (long)cmd.getWait() * 1000, _nfsVersion);
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(result.first());
@@ -1052,9 +1055,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     // return Pair<String(divice bus name), String[](disk chain)>
     private Pair<String, String[]> exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir,
-            String exportName, String workerVmName) throws Exception {
+            String exportName, String workerVmName, String nfsVersion) throws Exception {
 
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
         String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
 
         synchronized (exportPath.intern()) {
@@ -1096,10 +1099,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     // Ternary<String(backup uuid in secondary storage), String(device bus name), String[](original disk chain in the snapshot)>
     private Ternary<String, String, String[]> backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, String installPath, String volumePath, String snapshotUuid,
-            String secStorageUrl, String prevSnapshotUuid, String prevBackupUuid, String workerVmName) throws Exception {
+            String secStorageUrl, String prevSnapshotUuid, String prevBackupUuid, String workerVmName, String nfsVersion) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
-        Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, installPath, backupUuid, workerVmName);
+        Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, installPath, backupUuid, workerVmName, nfsVersion);
         return new Ternary<String, String, String[]>(backupUuid, snapshotInfo.first(), snapshotInfo.second());
     }
 
@@ -1174,7 +1177,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 backupResult =
                         backupSnapshotToSecondaryStorage(vmMo, destSnapshot.getPath(), srcSnapshot.getVolume().getPath(), snapshotUuid, secondaryStorageUrl,
-                                prevSnapshotUuid, prevBackupUuid, hostService.getWorkerName(context, cmd, 1));
+                                prevSnapshotUuid, prevBackupUuid, hostService.getWorkerName(context, cmd, 1), _nfsVersion);
                 snapshotBackupUuid = backupResult.first();
 
                 success = (snapshotBackupUuid != null);
@@ -1186,7 +1189,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                     // Get snapshot physical size
                     long physicalSize = 0l;
-                    String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl);
+                    String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, _nfsVersion);
                     String snapshotDir =  destSnapshot.getPath() + "/" + snapshotBackupUuid;
                     File[] files = new File(secondaryMountPoint + "/" + snapshotDir).listFiles();
                     if(files != null) {
@@ -2144,9 +2147,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, String secStorageUrl, String secStorageDir,
-            String backupName, long wait) throws Exception {
+            String backupName, long wait, String nfsVersion) throws Exception {
 
-        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, null);
         String srcOVAFileName = null;
         String srcOVFFileName = null;
 
@@ -2248,7 +2251,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 backedUpSnapshotUuid = backedUpSnapshotUuid.replace(".ovf", "");
             }
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, (long)cmd.getWait() * 1000);
+            restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid, (long)cmd.getWait() * 1000, _nfsVersion);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(newVolumeName);

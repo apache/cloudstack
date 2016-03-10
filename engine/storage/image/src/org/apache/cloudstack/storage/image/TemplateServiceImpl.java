@@ -73,6 +73,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
@@ -135,6 +136,8 @@ public class TemplateServiceImpl implements TemplateService {
     ConfigurationDao _configDao;
     @Inject
     StorageCacheManager _cacheMgr;
+    @Inject
+    ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -564,7 +567,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
-        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO());
+        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), imageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
         EndPoint ep = _epSelector.select(ssStore);
         Answer answer = null;
         if (ep == null) {
