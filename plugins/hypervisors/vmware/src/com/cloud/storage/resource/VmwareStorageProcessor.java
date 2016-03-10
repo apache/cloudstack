@@ -1367,7 +1367,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             if (isAttach) {
                 String dataDiskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
-                String rootDiskController = controllerInfo.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
+                String rootDiskController = controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
                 DiskControllerType rootDiskControllerType = DiskControllerType.getType(rootDiskController);
 
                 if (dataDiskController == null) {
