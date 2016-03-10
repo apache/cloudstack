@@ -27,7 +27,8 @@ ENV WORK_DIR=/marvin
 ENV PKG_URL=http://jenkins.buildacloud.org/job/cloudstack-marvin-master/lastSuccessfulBuild/artifact/tools/marvin/dist/Marvin-4.9.0-SNAPSHOT.tar.gz
 
 RUN pip install --upgrade paramiko nose requests
-RUN pip install --allow-external mysql-connector-python mysql-connector-python
+#RUN pip install --allow-external mysql-connector-python mysql-connector-python
+RUN pip install http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df
 RUN pip install ${PKG_URL}
 
 RUN mkdir -p ${WORK_DIR}

@@ -30,6 +30,7 @@ RUN apt-get -y update && apt-get install -y \
     python-dev \
     python-setuptools \
     python-pip \
+    python-mysql.connector \
     supervisor
 
 RUN echo 'mysql-server mysql-server/root_password password root' |  debconf-set-selections; \
@@ -40,7 +41,7 @@ RUN apt-get install -qqy mysql-server && \
 
 RUN (/usr/bin/mysqld_safe &); sleep 5; mysqladmin -u root -proot password ''
 
-RUN pip install --allow-external mysql-connector-python mysql-connector-python
+#RUN pip install --allow-external mysql-connector-python mysql-connector-python
 
 COPY tools/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY . ./root
@@ -49,10 +50,10 @@ WORKDIR /root
 RUN mvn -Pdeveloper -Dsimulator -DskipTests clean install
 
 RUN (/usr/bin/mysqld_safe &); \
-    sleep 3; \
+    sleep 5; \
     mvn -Pdeveloper -pl developer -Ddeploydb; \
     mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
-    MARVIN_FILE=`find tools/marvin/dist/ -name "Marvin*.tar.gz"` \
+    MARVIN_FILE=`find /root/tools/marvin/dist/ -name "Marvin*.tar.gz"`; \
     pip install $MARVIN_FILE
 
 EXPOSE 8080 8096
