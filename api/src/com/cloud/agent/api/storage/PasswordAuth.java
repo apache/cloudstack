@@ -16,12 +16,16 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
+import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
 /**
  * Password authentication
  */
 public class PasswordAuth {
 
     String userName;
+    @LogLevel(Log4jLevel.Off)
     String password;
 
     public PasswordAuth() {

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.SwiftUtil;
 
@@ -25,6 +27,7 @@ public class SwiftTO implements DataStoreTO, SwiftUtil.SwiftClientCfg {
     String account;
 
     String userName;
+    @LogLevel(Log4jLevel.Off)
     String key;
     private static final String pathSeparator = "/";
 

@@ -131,7 +131,7 @@ public class Script implements Callable<String> {
                 builder.append(command[i]).append(" ");
             }
 
-            if ("-y".equals(cmd) || "-z".equals(cmd)) {
+            if ("-y".equals(cmd) || "-z".equals(cmd) || "-p".equals(cmd)) {
                 obscureParam = true;
                 _passwordCommand = true;
             }
@@ -150,7 +150,7 @@ public class Script implements Callable<String> {
                 builder.append(cmd).append(" ");
             }
 
-            if ("-y".equals(cmd) || "-z".equals(cmd)) {
+            if ("-y".equals(cmd) || "-z".equals(cmd) || "-p".equals(cmd)) {
                 obscureParam = true;
                 _passwordCommand = true;
             }

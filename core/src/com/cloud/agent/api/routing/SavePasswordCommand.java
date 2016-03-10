@@ -19,8 +19,12 @@
 
 package com.cloud.agent.api.routing;
 
+import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
 public class SavePasswordCommand extends NetworkElementCommand {
 
+    @LogLevel(Log4jLevel.Off)
     String password;
     String vmIpAddress;
     String vmName;
