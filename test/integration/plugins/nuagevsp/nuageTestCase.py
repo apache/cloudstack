@@ -95,6 +95,7 @@ class nuageTestCase(cloudstackTestCase):
             for pn in physical_networks:
                 if pn.isolationmethods == 'VSP':
                     cls.vsp_physical_network = pn
+                    break
             cls.nuage_vsp_device = Nuage.list(cls.api_client,
                                               physicalnetworkid=cls.vsp_physical_network.id
                                               )[0]
