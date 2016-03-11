@@ -24,9 +24,6 @@ ALTER TABLE `event` ADD INDEX `state` (`state`);
 
 DROP VIEW IF EXISTS `cloud`.`template_view`;
 CREATE 
-    ALGORITHM = UNDEFINED 
-    DEFINER = `cloud`@`%` 
-    SQL SECURITY DEFINER
 VIEW `template_view` AS
     SELECT 
         `vm_template`.`id` AS `id`,
@@ -128,9 +125,6 @@ VIEW `template_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE 
-    ALGORITHM = UNDEFINED 
-    DEFINER = `cloud`@`%` 
-    SQL SECURITY DEFINER
 VIEW `volume_view` AS
     SELECT 
         `volumes`.`id` AS `id`,
@@ -239,12 +233,8 @@ VIEW `volume_view` AS
             AND (`async_job`.`instance_type` = 'Volume')
             AND (`async_job`.`job_status` = 0))));
 
-DROP VIEW IF EXISTS `cloud`.`user_vm__view`;
-
+DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE 
-    ALGORITHM = UNDEFINED 
-    DEFINER = `cloud`@`%` 
-    SQL SECURITY DEFINER
 VIEW `user_vm_view` AS
     SELECT 
         `vm_instance`.`id` AS `id`,
