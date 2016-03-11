@@ -702,6 +702,7 @@ class CsRemoteAccessVpn(CsDataBag):
 class CsForwardingRules(CsDataBag):
 
     def process(self):
+        self.setupGQrules()
         for public_ip in self.dbag:
             if public_ip == "id":
                 continue
@@ -886,6 +887,9 @@ class CsForwardingRules(CsDataBag):
 
         self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o eth0 --to-source %s" % (self.getNetworkByIp(rule['internal_ip']),rule["internal_ip"], self.getGuestIp())])
 
+    def setupGQrules(self):
+        self.fw.append(["nat", "front",
+                        "-A PREROUTING -d 169.254.169.254/32 -i eth0 -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 80"])
 
 def main(argv):
     # The file we are currently processing, if it is "cmd_line.json" everything will be processed.
