@@ -164,40 +164,30 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
     private void validate(SnapshotInfo snapshotInfo) {
         long volumeId = snapshotInfo.getVolumeId();
-
         VolumeVO volumeVO = _volumeDao.findByIdIncludingRemoved(volumeId);
-
         if (volumeVO.getFormat() != ImageFormat.VHD) {
             throw new CloudRuntimeException("Only the " + ImageFormat.VHD.toString() + " image type is currently supported.");
         }
     }
 
-    private Void handleCreateTemplateFromSnapshot(SnapshotInfo snapshotInfo, TemplateInfo templateInfo, AsyncCompletionCallback<CopyCommandResult> callback) {
+    private void handleCreateTemplateFromSnapshot(SnapshotInfo snapshotInfo, TemplateInfo templateInfo, AsyncCompletionCallback<CopyCommandResult> callback) {
         try {
             snapshotInfo.processEvent(Event.CopyingRequested);
         }
         catch (Exception ex) {
             throw new CloudRuntimeException("This snapshot is not currently in a state where it can be used to create a template.");
         }
-
         HostVO hostVO = getHost(snapshotInfo.getDataStore().getId());
         DataStore srcDataStore = snapshotInfo.getDataStore();
-
         String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         CopyCommand copyCommand = new CopyCommand(snapshotInfo.getTO(), templateInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
-
         String errMsg = null;
-
         CopyCmdAnswer copyCmdAnswer = null;
-
         try {
             _volumeService.grantAccess(snapshotInfo, hostVO, srcDataStore);
-
             Map<String, String> srcDetails = getSnapshotDetails(_storagePoolDao.findById(srcDataStore.getId()), snapshotInfo);
-
             copyCommand.setOptions(srcDetails);
-
             copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
         }
         catch (Exception ex) {
@@ -210,7 +200,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             catch (Exception ex) {
                 s_logger.debug(ex.getMessage(), ex);
             }
-
             if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
                 if (copyCmdAnswer != null && copyCmdAnswer.getDetails() != null && !copyCmdAnswer.getDetails().isEmpty()) {
                     errMsg = copyCmdAnswer.getDetails();
@@ -219,7 +208,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     errMsg = "Unable to perform host-side operation";
                 }
             }
-
             try {
                 if (errMsg == null) {
                     snapshotInfo.processEvent(Event.OperationSuccessed);
@@ -232,17 +220,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 s_logger.debug(ex.getMessage(), ex);
             }
         }
-
         CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
-
         result.setResult(errMsg);
-
         callback.complete(result);
-
-        return null;
     }
 
-    private Void handleCreateVolumeFromSnapshotBothOnStorageSystem(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo, AsyncCompletionCallback<CopyCommandResult> callback) {
+    private void handleCreateVolumeFromSnapshotBothOnStorageSystem(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo, AsyncCompletionCallback<CopyCommandResult> callback) {
         try {
             // at this point, the snapshotInfo and volumeInfo should have the same disk offering ID (so either one should be OK to get a DiskOfferingVO instance)
             DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volumeInfo.getDiskOfferingId());
@@ -250,11 +233,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
             _volumeService.updateHypervisorSnapshotReserveForVolume(diskOffering, volumeInfo.getId(), snapshot.getHypervisorType());
-
             AsyncCallFuture<VolumeApiResult> future = _volumeService.createVolumeAsync(volumeInfo, volumeInfo.getDataStore());
-
             VolumeApiResult result = future.get();
-
             if (result.isFailed()) {
                 s_logger.debug("Failed to create a volume: " + result.getResult());
 
@@ -266,31 +246,21 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
 
         volumeInfo = _volumeDataFactory.getVolume(volumeInfo.getId(), volumeInfo.getDataStore());
-
         volumeInfo.processEvent(Event.MigrationRequested);
-
         volumeInfo = _volumeDataFactory.getVolume(volumeInfo.getId(), volumeInfo.getDataStore());
-
         HostVO hostVO = getHost(snapshotInfo.getDataStore().getId());
-
         String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         CopyCommand copyCommand = new CopyCommand(snapshotInfo.getTO(), volumeInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
-
         CopyCmdAnswer copyCmdAnswer = null;
-
+        
         try {
             _volumeService.grantAccess(snapshotInfo, hostVO, snapshotInfo.getDataStore());
             _volumeService.grantAccess(volumeInfo, hostVO, volumeInfo.getDataStore());
-
             Map<String, String> srcDetails = getSnapshotDetails(_storagePoolDao.findById(snapshotInfo.getDataStore().getId()), snapshotInfo);
-
             copyCommand.setOptions(srcDetails);
-
             Map<String, String> destDetails = getVolumeDetails(volumeInfo);
-
             copyCommand.setOptions2(destDetails);
-
             copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
         }
         catch (Exception ex) {
@@ -303,7 +273,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             catch (Exception ex) {
                 s_logger.debug(ex.getMessage(), ex);
             }
-
             try {
                 _volumeService.revokeAccess(volumeInfo, hostVO, volumeInfo.getDataStore());
             }
@@ -311,9 +280,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 s_logger.debug(ex.getMessage(), ex);
             }
         }
-
         String errMsg = null;
-
         if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
             if (copyCmdAnswer != null && copyCmdAnswer.getDetails() != null && !copyCmdAnswer.getDetails().isEmpty()) {
                 errMsg = copyCmdAnswer.getDetails();
@@ -322,14 +289,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 errMsg = "Unable to perform host-side operation";
             }
         }
-
         CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
-
         result.setResult(errMsg);
-
         callback.complete(result);
-
-        return null;
     }
 
     private Map<String, String> getSnapshotDetails(StoragePoolVO storagePoolVO, SnapshotInfo snapshotInfo) {

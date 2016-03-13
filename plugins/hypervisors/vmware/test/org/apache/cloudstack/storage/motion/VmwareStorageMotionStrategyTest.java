@@ -226,9 +226,8 @@ public class VmwareStorageMotionStrategyTest {
         }
     }
 
-    protected Void mockCallBack(AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> callback, MockContext<CommandResult> context) {
+    protected void mockCallBack(AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> callback, MockContext<CommandResult> context) {
         result = callback.getResult();
-        return null;
     }
 
     @Configuration

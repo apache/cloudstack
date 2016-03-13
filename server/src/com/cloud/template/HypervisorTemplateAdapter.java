@@ -309,7 +309,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
     }
 
-    protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> callback,
+    protected void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> callback,
         CreateTemplateContext<TemplateApiResult> context) {
         TemplateApiResult result = callback.getResult();
         TemplateInfo template = context.template;
@@ -352,8 +352,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
             }
         }
-
-        return null;
     }
 
     @Override

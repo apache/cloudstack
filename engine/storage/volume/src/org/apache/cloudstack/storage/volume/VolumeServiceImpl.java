@@ -216,7 +216,7 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    protected Void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
+    protected void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
         DataObject vo = context.getVolume();
         String errMsg = null;
@@ -231,7 +231,6 @@ public class VolumeServiceImpl implements VolumeService {
             volResult.setResult(errMsg);
         }
         context.getFuture().complete(volResult);
-        return null;
     }
 
     private class DeleteVolumeContext<T> extends AsyncRpcContext<T> {
@@ -328,7 +327,7 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    public Void deleteVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, DeleteVolumeContext<VolumeApiResult> context) {
+    public void deleteVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, DeleteVolumeContext<VolumeApiResult> context) {
         CommandResult result = callback.getResult();
         VolumeObject vo = context.getVolume();
         VolumeApiResult apiResult = new VolumeApiResult(vo);
@@ -347,7 +346,6 @@ public class VolumeServiceImpl implements VolumeService {
             s_logger.debug("ignore delete volume status update failure, it will be picked up by storage clean up thread later", e);
         }
         context.getFuture().complete(apiResult);
-        return null;
     }
 
     @Override
@@ -520,7 +518,7 @@ public class VolumeServiceImpl implements VolumeService {
         return;
     }
 
-    protected Void managedCopyBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
+    protected void managedCopyBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
             ManagedCreateBaseImageContext<VolumeApiResult> context) {
         CopyCommandResult result = callback.getResult();
         VolumeInfo volumeInfo = context.getVolumeInfo();
@@ -528,34 +526,25 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (result.isSuccess()) {
             // volumeInfo.processEvent(Event.OperationSuccessed, result.getAnswer());
-
             VolumeVO volume = volDao.findById(volumeInfo.getId());
             CopyCmdAnswer answer = (CopyCmdAnswer)result.getAnswer();
             TemplateObjectTO templateObjectTo = (TemplateObjectTO)answer.getNewData();
-
             volume.setPath(templateObjectTo.getPath());
-
             if (templateObjectTo.getFormat() != null) {
                 volume.setFormat(templateObjectTo.getFormat());
             }
-
             volDao.update(volume.getId(), volume);
         }
         else {
             volumeInfo.processEvent(Event.DestroyRequested);
-
             res.setResult(result.getResult());
         }
-
         AsyncCallFuture<VolumeApiResult> future = context.getFuture();
-
         future.complete(res);
-
-        return null;
     }
 
     @DB
-    protected Void copyBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CreateBaseImageContext<VolumeApiResult> context) {
+    protected void copyBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CreateBaseImageContext<VolumeApiResult> context) {
         CopyCommandResult result = callback.getResult();
         VolumeApiResult res = new VolumeApiResult(context.getVolume());
 
@@ -565,12 +554,10 @@ public class VolumeServiceImpl implements VolumeService {
             templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
             res.setResult(result.getResult());
             future.complete(res);
-            return null;
         }
 
         templateOnPrimaryStoreObj.processEvent(Event.OperationSuccessed, result.getAnswer());
         createVolumeFromBaseImageAsync(context.volume, templateOnPrimaryStoreObj, context.dataStore, future);
-        return null;
     }
 
     private class CreateVolumeFromBaseImageContext<T> extends AsyncRpcContext<T> {
@@ -609,7 +596,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @DB
-    protected Void createVolumeFromBaseImageCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
+    protected void createVolumeFromBaseImageCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
             CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
         DataObject vo = context.vo;
         DataObject tmplOnPrimary = context.templateOnStore;
@@ -619,7 +606,6 @@ public class VolumeServiceImpl implements VolumeService {
         if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed, result.getAnswer());
         } else {
-
             vo.processEvent(Event.OperationFailed);
             volResult.setResult(result.getResult());
             // hack for Vmware: host is down, previously download template to the host needs to be re-downloaded, so we need to reset
@@ -650,7 +636,6 @@ public class VolumeServiceImpl implements VolumeService {
 
         AsyncCallFuture<VolumeApiResult> future = context.getFuture();
         future.complete(volResult);
-        return null;
     }
 
     @Override
@@ -791,7 +776,7 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    protected Void createVolumeFromSnapshotCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
+    protected void createVolumeFromSnapshotCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
             CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
         CopyCommandResult result = callback.getResult();
         VolumeInfo volume = (VolumeInfo)context.templateOnStore;
@@ -804,7 +789,6 @@ public class VolumeServiceImpl implements VolumeService {
         } else {
             event = Event.OperationSuccessed;
         }
-
         try {
             if (result.isSuccess()) {
                 volume.processEvent(event, result.getAnswer());
@@ -816,10 +800,8 @@ public class VolumeServiceImpl implements VolumeService {
             s_logger.debug("create volume from snapshot failed", e);
             apiResult.setResult(e.toString());
         }
-
         AsyncCallFuture<VolumeApiResult> future = context.future;
         future.complete(apiResult);
-        return null;
     }
 
     protected VolumeVO duplicateVolumeOnAnotherStorage(Volume volume, StoragePool pool) {
@@ -886,8 +868,7 @@ public class VolumeServiceImpl implements VolumeService {
         }
     }
 
-    protected Void
-    copyVolumeFromImageToPrimaryCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+    protected void copyVolumeFromImageToPrimaryCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
         VolumeInfo srcVolume = context.srcVolume;
         VolumeInfo destVolume = context.destVolume;
         CopyCommandResult result = callback.getResult();
@@ -899,9 +880,7 @@ public class VolumeServiceImpl implements VolumeService {
                 srcVolume.processEvent(Event.OperationFailed);
                 res.setResult(result.getResult());
                 future.complete(res);
-                return null;
             }
-
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
             srcVolume.getDataStore().delete(srcVolume);
@@ -910,7 +889,6 @@ public class VolumeServiceImpl implements VolumeService {
             res.setResult(e.toString());
             future.complete(res);
         }
-        return null;
     }
 
     protected AsyncCallFuture<VolumeApiResult> copyVolumeFromPrimaryToImage(VolumeInfo srcVolume, DataStore destStore) {
@@ -940,8 +918,7 @@ public class VolumeServiceImpl implements VolumeService {
         }
     }
 
-    protected Void
-    copyVolumeFromPrimaryToImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+    protected void copyVolumeFromPrimaryToImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
         VolumeInfo srcVolume = context.srcVolume;
         VolumeInfo destVolume = context.destVolume;
         CopyCommandResult result = callback.getResult();
@@ -962,16 +939,13 @@ public class VolumeServiceImpl implements VolumeService {
             res.setResult(e.toString());
             future.complete(res);
         }
-        return null;
     }
 
     @Override
     public AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume, DataStore destStore) {
-
         if (srcVolume.getState() == Volume.State.Uploaded) {
             return copyVolumeFromImageToPrimary(srcVolume, destStore);
         }
-
         if (destStore.getRole() == DataStoreRole.Image) {
             return copyVolumeFromPrimaryToImage(srcVolume, destStore);
         }
@@ -1004,7 +978,7 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    protected Void copyVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+    protected void copyVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
         VolumeInfo srcVolume = context.srcVolume;
         VolumeInfo destVolume = context.destVolume;
         CopyCommandResult result = callback.getResult();
@@ -1020,7 +994,6 @@ public class VolumeServiceImpl implements VolumeService {
                 AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(destVolume);
                 destroyFuture.get();
                 future.complete(res);
-                return null;
             }
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
@@ -1045,8 +1018,6 @@ public class VolumeServiceImpl implements VolumeService {
             res.setResult(e.toString());
             future.complete(res);
         }
-
-        return null;
     }
 
     private class MigrateVolumeContext<T> extends AsyncRpcContext<T> {
@@ -1092,7 +1063,7 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    protected Void migrateVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, MigrateVolumeContext<VolumeApiResult> context) {
+    protected void migrateVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, MigrateVolumeContext<VolumeApiResult> context) {
         VolumeInfo srcVolume = context.srcVolume;
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<VolumeApiResult> future = context.future;
@@ -1111,8 +1082,6 @@ public class VolumeServiceImpl implements VolumeService {
             res.setResult(e.toString());
             future.complete(res);
         }
-
-        return null;
     }
 
     private class MigrateVmWithVolumesContext<T> extends AsyncRpcContext<T> {
@@ -1168,8 +1137,7 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    protected Void
-    migrateVmWithVolumesCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, MigrateVmWithVolumesContext<CommandResult> context) {
+    protected void migrateVmWithVolumesCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, MigrateVmWithVolumesContext<CommandResult> context) {
         Map<VolumeInfo, DataStore> volumeToPool = context.volumeToPool;
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<CommandResult> future = context.future;
@@ -1194,8 +1162,6 @@ public class VolumeServiceImpl implements VolumeService {
             res.setResult(e.toString());
             future.complete(res);
         }
-
-        return null;
     }
 
     @Override
@@ -1240,7 +1206,7 @@ public class VolumeServiceImpl implements VolumeService {
         return new Pair<>(ep,volumeOnStore);
     }
 
-    protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
+    protected void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
         VolumeObject vo = (VolumeObject)context.volume;
         try {
@@ -1251,10 +1217,8 @@ public class VolumeServiceImpl implements VolumeService {
                 if (vol != null) {
                     volDao.remove(vo.getId());
                 }
-
             } else {
                 vo.processEvent(Event.OperationSuccessed, result.getAnswer());
-
                 if (vo.getSize() != null) {
                     // publish usage events
                     // get physical size from volume_store_ref table
@@ -1286,8 +1250,6 @@ public class VolumeServiceImpl implements VolumeService {
             }
             VolumeApiResult res = new VolumeApiResult(vo);
             context.future.complete(res);
-            return null;
-
         } catch (Exception e) {
             s_logger.error("register volume failed: ", e);
             // delete the volume entry from volumes table in case of failure
@@ -1297,7 +1259,6 @@ public class VolumeServiceImpl implements VolumeService {
             }
             VolumeApiResult res = new VolumeApiResult(null);
             context.future.complete(res);
-            return null;
         }
     }
 
@@ -1347,11 +1308,10 @@ public class VolumeServiceImpl implements VolumeService {
         }
     }
 
-    protected Void resizeVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
+    protected void resizeVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
         AsyncCallFuture<VolumeApiResult> future = context.future;
         VolumeInfo volume = (VolumeInfo)context.volume;
-
         if (result.isFailed()) {
             try {
                 volume.processEvent(Event.OperationFailed);
@@ -1361,9 +1321,7 @@ public class VolumeServiceImpl implements VolumeService {
             VolumeApiResult res = new VolumeApiResult(volume);
             res.setResult(result.getResult());
             future.complete(res);
-            return null;
         }
-
         try {
             volume.processEvent(Event.OperationSuccessed);
         } catch (Exception e) {
@@ -1373,11 +1331,8 @@ public class VolumeServiceImpl implements VolumeService {
             future.complete(res);
             return null;
         }
-
         VolumeApiResult res = new VolumeApiResult(volume);
         future.complete(res);
-
-        return null;
     }
 
     @Override

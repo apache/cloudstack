@@ -589,7 +589,7 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
-    protected Void createTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, TemplateOpContext<TemplateApiResult> context) {
+    protected void createTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, TemplateOpContext<TemplateApiResult> context) {
         TemplateObject template = context.getTemplate();
         AsyncCompletionCallback<TemplateApiResult> parentCallback = context.getParentCallback();
         TemplateApiResult result = new TemplateApiResult(template);
@@ -600,9 +600,7 @@ public class TemplateServiceImpl implements TemplateService {
             if (parentCallback != null) {
                 parentCallback.complete(result);
             }
-            return null;
         }
-
         try {
             template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (Exception e) {
@@ -610,13 +608,10 @@ public class TemplateServiceImpl implements TemplateService {
             if (parentCallback != null) {
                 parentCallback.complete(result);
             }
-            return null;
         }
-
         if (parentCallback != null) {
             parentCallback.complete(result);
         }
-        return null;
     }
 
     @Override
@@ -634,7 +629,7 @@ public class TemplateServiceImpl implements TemplateService {
         return future;
     }
 
-    public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
+    public void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
         CommandResult result = callback.getResult();
         TemplateObject vo = context.getTemplate();
         if (result.isSuccess()) {
@@ -646,7 +641,6 @@ public class TemplateServiceImpl implements TemplateService {
         apiResult.setResult(result.getResult());
         apiResult.setSuccess(result.isSuccess());
         context.future.complete(apiResult);
-        return null;
     }
 
     private AsyncCallFuture<TemplateApiResult> copyAsync(DataObject source, TemplateInfo template, DataStore store) {
@@ -687,7 +681,7 @@ public class TemplateServiceImpl implements TemplateService {
         return future;
     }
 
-    protected Void syncTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
+    protected void syncTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
         TemplateInfo destTemplate = context.getTemplate();
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<TemplateApiResult> future = context.getFuture();
@@ -706,8 +700,6 @@ public class TemplateServiceImpl implements TemplateService {
             res.setResult(e.toString());
             future.complete(res);
         }
-
-        return null;
     }
 
     // This routine is used to push templates currently on cache store, but not in region store to region store.
@@ -847,7 +839,7 @@ public class TemplateServiceImpl implements TemplateService {
         return copyAsync(srcTemplate, srcTemplate, (DataStore)pool);
     }
 
-    protected Void copyTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
+    protected void copyTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
         TemplateInfo destTemplate = context.getTemplate();
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<TemplateApiResult> future = context.getFuture();
@@ -865,11 +857,9 @@ public class TemplateServiceImpl implements TemplateService {
             res.setResult(e.toString());
             future.complete(res);
         }
-
-        return null;
     }
 
-    protected Void copyTemplateCrossZoneCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, TemplateOpContext<TemplateApiResult> context) {
+    protected void copyTemplateCrossZoneCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback, TemplateOpContext<TemplateApiResult> context) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Performing copy template cross zone callback after completion");
         }
@@ -890,8 +880,6 @@ public class TemplateServiceImpl implements TemplateService {
             res.setResult(e.toString());
             future.complete(res);
         }
-
-        return null;
     }
 
     @Override
