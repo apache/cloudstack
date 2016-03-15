@@ -782,3 +782,13 @@ listOpenDaylightControllers=1
 
 ### GloboDNS commands
 addGloboDnsHost=1
+
+### Role commands
+createRole=1
+listRoles=1
+updateRole=1
+deleteRole=1
+createRolePermission=1
+listRolePermissions=1
+updateRolePermission=1
+deleteRolePermission=1

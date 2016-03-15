@@ -46,6 +46,8 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
 
     public short getType();
 
+    public Long getRoleId();
+
     public State getState();
 
     public Date getRemoved();
