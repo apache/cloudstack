@@ -18,7 +18,6 @@
 /etc/cloudstack/management/catalina.policy
 /etc/cloudstack/management/catalina.properties
 /etc/cloudstack/management/logging.properties
-/etc/cloudstack/management/commands.properties
 /etc/cloudstack/management/ehcache.xml
 /etc/cloudstack/management/server-ssl.xml
 /etc/cloudstack/management/server-nonssl.xml

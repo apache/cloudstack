@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Map;
-
-import javax.inject.Inject;
+import com.cloud.domain.DomainVO;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
@@ -38,11 +39,11 @@ import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
+import javax.inject.Inject;
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Map;
 
 @APICommand(name = "ldapCreateAccount", description = "Creates an account from an LDAP user", responseObject = AccountResponse.class, since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapCreateAccountCmd extends BaseCmd {
@@ -55,8 +56,11 @@ public class LdapCreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.SHORT, required = true, description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.SHORT, description = "Type of the account. Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Short accountType;
+
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
+    private Long roleId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Creates the user under the specified domain.")
     private Long domainId;
@@ -92,13 +96,21 @@ public class LdapCreateAccountCmd extends BaseCmd {
     UserAccount createCloudstackUserAccount(final LdapUser user, String accountName, Long domainId) {
         Account account = _accountService.getActiveAccountByName(accountName, domainId);
         if (account == null) {
-            return _accountService.createUserAccount(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, accountType,
+            return _accountService.createUserAccount(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, getAccountType(), getRoleId(),
                     domainId, networkDomain, details, accountUUID, userUUID, User.Source.LDAP);
         } else {
             User newUser = _accountService.createUser(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domainId,
                     userUUID, User.Source.LDAP);
             return _accountService.getUserAccountById(newUser.getId());
         }
+    }
+
+    public Short getAccountType() {
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), accountType);
+    }
+
+    public Long getRoleId() {
+        return RoleType.getRoleByAccountType(roleId, accountType);
     }
 
     private String getAccountName() {
@@ -119,6 +131,9 @@ public class LdapCreateAccountCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException {
+        if (getAccountType() == null && getRoleId() == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Both account type and role ID are not provided");
+        }
         final CallContext callContext = getCurrentContext();
         String finalAccountName = getAccountName();
         Long finalDomainId = getDomainId();

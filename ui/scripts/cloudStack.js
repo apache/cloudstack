@@ -22,7 +22,7 @@
             var sections = [];
 
             if (isAdmin()) {
-                sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "regions", "affinityGroups"];
+                sections = ["dashboard", "instances", "storage", "network", "templates", "roles", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "regions", "affinityGroups"];
             } else if (isDomainAdmin()) {
                 sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects", "configuration", "regions", "affinityGroups"];
             } else if (g_userProjectsEnabled) {
@@ -52,6 +52,7 @@
             templates: {},
             events: {},
             projects: {},
+            roles: {},
             accounts: {},
 
             domains: {}, //domain-admin and root-admin only

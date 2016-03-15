@@ -994,9 +994,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     })
     public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone,
-            String accountName, final short accountType, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
+            String accountName, final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
 
-        return createUserAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, domainId, networkDomain, details, accountUUID, userUUID,
+        return createUserAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, roleId, domainId, networkDomain, details, accountUUID, userUUID,
                 User.Source.UNKNOWN);
     }
 
@@ -1011,7 +1011,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     })
     public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email,
-        final String timezone, String accountName, final short accountType, Long domainId, final String networkDomain, final Map<String, String> details,
+        final String timezone, String accountName, final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details,
         String accountUUID, final String userUUID, final User.Source source) {
 
         if (accountName == null) {
@@ -1065,7 +1065,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (accountUUID == null) {
                     accountUUID = UUID.randomUUID().toString();
                 }
-                AccountVO account = createAccount(accountNameFinal, accountType, domainIdFinal, networkDomain, details, accountUUID);
+                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
                 long accountId = account.getId();
 
                 // create the first user for the account
@@ -1869,27 +1869,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public RoleType getRoleType(Account account) {
-        RoleType roleType = RoleType.Unknown;
-        if (account == null)
-            return roleType;
-        short accountType = account.getType();
-
-        // Account type to role type translation
-        switch (accountType) {
-            case Account.ACCOUNT_TYPE_ADMIN:
-                roleType = RoleType.Admin;
-                break;
-            case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
-                roleType = RoleType.DomainAdmin;
-                break;
-            case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
-                roleType = RoleType.ResourceAdmin;
-                break;
-            case Account.ACCOUNT_TYPE_NORMAL:
-                roleType = RoleType.User;
-                break;
+        if (account == null) {
+            return RoleType.Unknown;
         }
-        return roleType;
+        return RoleType.getByAccountType(account.getType());
     }
 
     @Override
@@ -1916,7 +1899,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @DB
-    public AccountVO createAccount(final String accountName, final short accountType, final Long domainId, final String networkDomain, final Map<String, String> details,
+    public AccountVO createAccount(final String accountName, final short accountType, final Long roleId, final Long domainId, final String networkDomain, final Map<String, String> details,
         final String uuid) {
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
@@ -1929,7 +1912,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if ((domainId != Domain.ROOT_DOMAIN) && (accountType == Account.ACCOUNT_TYPE_ADMIN)) {
-            throw new InvalidParameterValueException("Invalid account type " + accountType + " given for an account in domain " + domainId + "; unable to create user.");
+            throw new InvalidParameterValueException("Invalid account type " + accountType + " given for an account in domain " + domainId + "; unable to create user of admin role type in non-ROOT domain.");
         }
 
         // Validate account/user/domain settings
@@ -1961,7 +1944,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return Transaction.execute(new TransactionCallback<AccountVO>() {
             @Override
             public AccountVO doInTransaction(TransactionStatus status) {
-        AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, uuid));
+        AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid));
 
         if (account == null) {
             throw new CloudRuntimeException("Failed to create account name " + accountName + " in domain id=" + domainId);

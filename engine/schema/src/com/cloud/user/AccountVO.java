@@ -16,8 +16,8 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.Date;
-import java.util.UUID;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.acl.RoleType;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,8 +27,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "account")
@@ -43,6 +43,9 @@ public class AccountVO implements Account {
 
     @Column(name = "type")
     private short type = ACCOUNT_TYPE_NORMAL;
+
+    @Column(name = "role_id")
+    private Long roleId;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -78,13 +81,21 @@ public class AccountVO implements Account {
         uuid = UUID.randomUUID().toString();
     }
 
-    public AccountVO(String accountName, long domainId, String networkDomain, short type, String uuid) {
+    public AccountVO(final String accountName, final long domainId, final String networkDomain, final short type, final String uuid) {
         this.accountName = accountName;
         this.domainId = domainId;
         this.networkDomain = networkDomain;
         this.type = type;
-        state = State.enabled;
+        this.state = State.enabled;
         this.uuid = uuid;
+        this.roleId = RoleType.getRoleByAccountType(null, type);
+    }
+
+    public AccountVO(final String accountName, final long domainId, final String networkDomain, final short type, final Long roleId, final String uuid) {
+        this(accountName, domainId, networkDomain, type, uuid);
+        if (roleId != null) {
+            this.roleId = roleId;
+        }
     }
 
     public void setNeedsCleanup(boolean value) {
@@ -120,6 +131,14 @@ public class AccountVO implements Account {
 
     public void setType(short type) {
         this.type = type;
+    }
+
+    public Long getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(long roleId) {
+        this.roleId = roleId;
     }
 
     @Override

@@ -1112,6 +1112,17 @@ cloudStack.converters = {
             return "Domain-Admin";
         }
     },
+    toAccountType: function(roleType) {
+        if (roleType == 'User') {
+            return 0;
+        } else if (roleType == 'Admin') {
+            return 1;
+        } else if (roleType == 'DomainAdmin') {
+            return 2;
+        } else if (roleType == 'ResourceAdmin') {
+            return 3;
+        }
+    },
     toAlertType: function(alertCode) {
         switch (alertCode) {
             case 0:

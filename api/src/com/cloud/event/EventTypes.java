@@ -66,6 +66,8 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.usage.Usage;
 
@@ -165,6 +167,14 @@ public class EventTypes {
     public static final String EVENT_GLOBAL_LOAD_BALANCER_CREATE = "GLOBAL.LB.CREATE";
     public static final String EVENT_GLOBAL_LOAD_BALANCER_DELETE = "GLOBAL.LB.DELETE";
     public static final String EVENT_GLOBAL_LOAD_BALANCER_UPDATE = "GLOBAL.LB.UPDATE";
+
+    // Role events
+    public static final String EVENT_ROLE_CREATE = "ROLE.CREATE";
+    public static final String EVENT_ROLE_UPDATE = "ROLE.UPDATE";
+    public static final String EVENT_ROLE_DELETE = "ROLE.DELETE";
+    public static final String EVENT_ROLE_PERMISSION_CREATE = "ROLE.PERMISSION.CREATE";
+    public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
+    public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
 
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";
@@ -604,6 +614,14 @@ public class EventTypes {
         entityEventDetails.put(EVENT_LB_CERT_DELETE, LoadBalancer.class);
         entityEventDetails.put(EVENT_LB_CERT_ASSIGN, LoadBalancer.class);
         entityEventDetails.put(EVENT_LB_CERT_REMOVE, LoadBalancer.class);
+
+        // Role events
+        entityEventDetails.put(EVENT_ROLE_CREATE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_UPDATE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_DELETE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_PERMISSION_CREATE, RolePermission.class);
+        entityEventDetails.put(EVENT_ROLE_PERMISSION_UPDATE, RolePermission.class);
+        entityEventDetails.put(EVENT_ROLE_PERMISSION_DELETE, RolePermission.class);
 
         // Account events
         entityEventDetails.put(EVENT_ACCOUNT_ENABLE, Account.class);

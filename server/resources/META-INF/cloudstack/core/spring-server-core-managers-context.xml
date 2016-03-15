@@ -37,6 +37,8 @@
                   value="#{pluggableAPIAuthenticatorsRegistry.registered}" />
     </bean>
 
+    <bean id="roleManagerImpl" class="org.apache.cloudstack.acl.RoleManagerImpl" />
+
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />

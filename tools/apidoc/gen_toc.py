@@ -73,6 +73,7 @@ known_categories = {
     'Host': 'Host',
     'Cluster': 'Cluster',
     'Account': 'Account',
+    'Role': 'Role',
     'Snapshot': 'Snapshot',
     'User': 'User',
     'Os': 'Guest OS',
