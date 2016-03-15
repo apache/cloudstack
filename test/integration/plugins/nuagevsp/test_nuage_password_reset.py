@@ -18,13 +18,14 @@
 """ Component tests for - userdata
 """
 # Import Local Modules
-from marvin.lib.base import (VirtualMachine,
-                             Account,
-                             PublicIPAddress)
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             Volume,
+                             Template)
 from nose.plugins.attrib import attr
 from nuageTestCase import nuageTestCase
-from marvin.cloudstackAPI import (createTemplate,
-                                  listVolumes)
+from marvin.lib.utils import cleanup_resources
+from marvin.cloudstackAPI import startVirtualMachine
 import base64
 
 
@@ -69,12 +70,10 @@ class TestNuagePasswordReset(nuageTestCase):
     # create_template - Takes the VM object as the argument to create the template
     def create_template(self, vm):
         self.debug("CREATE TEMPLATE")
-        list_volume = list_volumes(
-            self.apiclient,
-            virtualmachineid=vm.id,
-            type='ROOT',
-            listall=True
-        )
+        list_volume = Volume.list(self.apiclient,
+                                  virtualmachineid=vm.id,
+                                  type='ROOT',
+                                  listall=True)
         if isinstance(list_volume, list):
             self.volume = list_volume[0]
         else:
@@ -115,7 +114,6 @@ class TestNuagePasswordReset(nuageTestCase):
 
         # VSD verification
         self.verify_vsp_floating_ip(network, vm, public_ip.ipaddress)
-        vm_public_ip = public_ip.ipaddress.ipaddress
 
         fw_rule = self.create_firewall_rule(public_ip, self.test_data["ingress_rule"])
         self.verify_vsp_firewall_rule(fw_rule)
@@ -130,6 +128,35 @@ class TestNuagePasswordReset(nuageTestCase):
                 break
         if not gotFirewallPolicy:
             raise ValueError('No firewall policy decision in vm interface')
+
+    def stop_vm(self, vm):
+        self.debug("STOP VM")
+        vm.stop(self.apiclient)
+        list_vm_response = VirtualMachine.list(self.apiclient,
+                                               id=vm.id)
+        if isinstance(list_vm_response, list):
+            vm = list_vm_response[0]
+            if vm.state != 'Stopped':
+                raise Exception("Failed to stop VM (ID: %s) " %
+                                self.vm.id)
+        else:
+            raise Exception("Invalid response from list_virtual_machines VM (ID: %s) " %
+                            self.vm.id)
+
+    def install_cloud_set_guest_password_script(self, ssh_client):
+        self.debug("GET CLOUD-SET-GUEST-PASSWORD")
+        cmd = "cd /etc/init.d;wget http://people.apache.org/~tsp/cloud-set-guest-password"
+        result = self.execute_cmd(ssh_client, cmd)
+        self.debug("WGET CLOUD-SET-GUEST-PASSWORD: " + result)
+        if "200 OK" not in result:
+            self.fail("failed to get file cloud-set-guest-password")
+        cmds = ["chmod +x /etc/init.d/cloud-set-guest-password",
+                "chkconfig --add cloud-set-guest-password"
+                ]
+        for c in cmds:
+            result = self.execute_cmd(ssh_client, c)
+            self.debug("get_set_password_file cmd " + c)
+            self.debug("get_set_password_file result " + result)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
     def test_01_UserDataPasswordReset(self):
@@ -211,7 +238,7 @@ class TestNuagePasswordReset(nuageTestCase):
             self.stop_vm(self.vm_1)
             self.create_template(self.vm_1)
             self.debug("DEPLOY VM 2 IN TEST NETWORK WITH NEW TEMPLATE")
-            self.vm_1 = self.create_VM_in_Network(self.network_1, "virtual_machine_pr")
+            self.vm_2 = self.create_VM_in_Network(self.network_1, "virtual_machine_pr")
             self.remove_vm2 = True
             self.debug("STARTING VM_2 ")
             startCmd = startVirtualMachine.startVirtualMachineCmd()
@@ -225,7 +252,7 @@ class TestNuagePasswordReset(nuageTestCase):
                                 "Password enabled not working. Password same as virtual_machine password "
                                 )
             self.verify_vsp_vm(vm_2a)
-            self.debug("GET PUBLIC IP,  CREATE AND VERIFY FIREWALL RULES")
+            self.debug("GET PUBLIC IP.  CREATE AND VERIFIED FIREWALL RULES")
             public_ip_2 = self.acquire_Public_IP(self.network_1)
             self.create_and_verify_fw(self.vm_2, public_ip_2, self.network_1)
 

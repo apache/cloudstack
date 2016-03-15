@@ -48,9 +48,6 @@ from marvin.cloudstackAPI import (listPhysicalNetworks,
                                   listHypervisors,
                                   stopRouter,
                                   startRouter)
-# Import nosetests Modules
-from nose.plugins.attrib import attr
-
 # Import System Modules
 import socket
 import importlib
@@ -317,30 +314,6 @@ class nuageTestCase(cloudstackTestCase):
         self.debug('Created VM=%s in network=%s' % (vm.id, network.name))
         self.cleanup.append(vm)
         return vm
-
-    # starts the given vm
-    def start(self, apiclient):
-        """Start the instance"""
-        cmd = startVirtualMachine.startVirtualMachineCmd()
-        cmd.id = self.id
-        apiclient.startVirtualMachine(cmd)
-        response = self.getState(apiclient, VirtualMachine.RUNNING)
-        if response[0] == FAIL:
-            raise Exception(response[1])
-        return
-
-    # stops the given vm
-    def stop(self, apiclient, forced=None):
-        """Stop the instance"""
-        cmd = stopVirtualMachine.stopVirtualMachineCmd()
-        cmd.id = self.id
-        if forced:
-            cmd.forced = forced
-        apiclient.stopVirtualMachine(cmd)
-        response = self.getState(apiclient, VirtualMachine.STOPPED)
-        if response[0] == FAIL:
-            raise Exception(response[1])
-        return
 
     # delete_VM - Deletes the given VM
     def delete_VM(self, vm):
