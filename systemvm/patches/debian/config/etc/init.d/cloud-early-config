@@ -813,7 +813,6 @@ setup_vpc_apache2() {
   # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
   [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
 
-  echo "Options -Indexes" > /var/www/html/.htaccess
 }
 
 
@@ -839,7 +838,6 @@ setup_apache2() {
   # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
   [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
 
-  echo "Options -Indexes" > /var/www/html/.htaccess
 }
 
 setup_redundant_router() {

@@ -1,0 +1,8 @@
+Options +FollowSymLinks
+RewriteEngine On
+
+RewriteRule ^$ supported-versions [L,NC,QSA]
+RewriteRule ^(1\.0|2007-01-19|2007-03-01|2007-08-29)(.*) /latest$2 [L,NC,QSA]
+RewriteRule ^(2007-10-10|2007-12-15|2008-02-01)(.*) /latest$2 [L,NC,QSA]
+RewriteRule ^(2008-09-01|2009-04-04|2011-01-01)(.*) /latest$2 [L,NC,QSA]
+RewriteRule ^(2011-05-01|2012-01-12|2014-02-25)(.*) /latest$2 [L,NC,QSA]
