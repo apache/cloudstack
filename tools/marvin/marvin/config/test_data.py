@@ -1695,5 +1695,115 @@ test_data = {
                     "ostype": 'CentOS 5.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
                 }
+        },
+    # Nuage Vsp supported services
+    "nuage_vsp_services": {
+        # Services supported by Nuage Vsp for Isolated networks
+        "isolated_network_offering": {
+            "name": 'nuage_marvin',
+            "displaytext": 'nuage_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "serviceProviderList": {
+                "Dhcp": 'NuageVsp',
+                "StaticNat": 'NuageVsp',
+                "SourceNat": 'NuageVsp',
+                "Firewall": 'NuageVsp',
+                "Connectivity": 'NuageVsp',
+                "UserData": 'VirtualRouter'
+            },
+            "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
+        # Services supported by Nuage Vsp for VPC networks
+        "vpc_network_offering": {
+            "name": 'nuage_vpc_marvin',
+            "displaytext": 'nuage_vpc_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "useVpc": 'on',
+            "ispersistent": 'True',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "VpcVirtualRouter"
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
+        # Nuage Vsp supports only pre-defined and custom VPC offerings
+        "vpc_offering": {
+            "name": 'Nuage VSP VPC offering',
+            "displaytext": 'Nuage VSP VPC offering',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "VpcVirtualRouter"
+            }
         }
+    },
+   
+    #_pr -_ passwordreset - below services used in test_nuage_password_reset
+    "network_offering_pr": {
+        "name": 'nuage_marvin',
+        "displaytext": 'nuage_marvin',
+        "guestiptype": 'Isolated',
+        "supportedservices":
+        'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "UserData": 'VirtualRouter',
+            "Dhcp": 'NuageVsp',
+            "Connectivity": 'NuageVsp',
+            "StaticNat": 'NuageVsp',
+            "SourceNat": 'NuageVsp',
+            "Firewall": 'NuageVsp'
+        },
+    },
+    "network_pr": {
+        "name": "Test Network",
+        "displaytext": "Test Network",
+        "netmask": '255.255.255.0'
+    },
+    "fw_rule_pr": {
+        "startport": 1,
+        "endport": 6000,
+        "cidr": '0.0.0.0/0',
+        # Any network (For creating FW rule)
+        "protocol": "TCP"
+    },
+    "virtual_machine_pr": {
+        "displayname": "Test VM",
+        "username": "root",
+        "password": "password",
+        "ssh_port": 22,
+        "hypervisor": 'kvm',
+        # Hypervisor type should be same as
+        # hypervisor type of cluster
+        "privateport": 22,
+        "publicport": 22,
+        "protocol": 'TCP',
+        "userdata": "This is sample data",
+    },
+    "template_pr": {
+        "displaytext": "Cent OS Template",
+        "name": "Cent OS Template",
+        "passwordenabled": True,
+    },
+    "ostype_pr": 'CentOS 5.5 (64-bit)',
+
 }
