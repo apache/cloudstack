@@ -145,7 +145,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VirtualNetworkApplianceService#destroyRouter(long, com.cloud.user.Account, java.lang.Long)
      */
     @Override
-    public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
+    public VirtualRouter destroyRouter(final long routerId, final Account caller) throws ResourceUnavailableException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }

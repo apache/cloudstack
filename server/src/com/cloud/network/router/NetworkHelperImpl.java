@@ -83,7 +83,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -208,8 +207,6 @@ public class NetworkHelperImpl implements NetworkHelper {
                 throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, virtualRouter.getDataCenterId());
             }
         }
-
-        final DomainRouterVO connectedRouter = (DomainRouterVO) connectedRouters.get(0);
         DomainRouterVO disconnectedRouter = (DomainRouterVO) disconnectedRouters.get(0);
 
         if (s_logger.isDebugEnabled()) {
@@ -231,7 +228,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     @Override
-    public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
+    public VirtualRouter destroyRouter(final long routerId, final Account caller) throws ResourceUnavailableException, ConcurrentOperationException {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to destroy router " + routerId);
@@ -263,7 +260,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         return Version.compare(trimmedVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
     }
 
-    protected DomainRouterVO start(DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params, final DeploymentPlan planToDeploy)
+    protected DomainRouterVO start(DomainRouterVO router, final Map<Param, Object> params, final DeploymentPlan planToDeploy)
             throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         try {
@@ -331,7 +328,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
             if (!skip) {
                 if (state != State.Running) {
-                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), routerDeploymentDefinition.getParams());
+                    router = startVirtualRouter(router, routerDeploymentDefinition.getParams());
                 }
                 if (router != null) {
                     runningRouters.add(router);
@@ -342,11 +339,11 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     @Override
-    public DomainRouterVO startVirtualRouter(final DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params)
+    public DomainRouterVO startVirtualRouter(final DomainRouterVO router, final Map<Param, Object> params)
             throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
         if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
-            return start(router, user, caller, params, null);
+            return start(router, params, null);
         }
 
         if (router.getState() == State.Running) {
@@ -384,7 +381,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
         }
         if (routerToBeAvoid == null) {
-            return start(router, user, caller, params, null);
+            return start(router, params, null);
         }
         // We would try best to deploy the router to another place
         final int retryIndex = 5;
@@ -409,7 +406,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
             plan.setAvoids(avoids[i]);
             try {
-                result = start(router, user, caller, params, plan);
+                result = start(router, params, plan);
             } catch (final InsufficientServerCapacityException ex) {
                 result = null;
             }
@@ -509,13 +506,13 @@ public class NetworkHelperImpl implements NetworkHelper {
 
             if (startRouter) {
                 try {
-                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), routerDeploymentDefinition.getParams());
+                    router = startVirtualRouter(router, routerDeploymentDefinition.getParams());
                     break;
                 } catch (final InsufficientCapacityException ex) {
                     if (startRetry < 2 && iter.hasNext()) {
                         s_logger.debug("Failed to start the VR  " + router + " with hypervisor type " + hType + ", " + "destroying it and recreating one more time");
                         // destroy the router
-                        destroyRouter(router.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
+                        destroyRouter(router.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
                         continue;
                     } else {
                         throw ex;

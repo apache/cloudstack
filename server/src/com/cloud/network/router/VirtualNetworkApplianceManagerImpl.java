@@ -406,8 +406,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     BlockingQueue<Long> _vrUpdateQueue = null;
 
     @Override
-    public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
-        return _nwHelper.destroyRouter(routerId, caller, callerUserId);
+    public VirtualRouter destroyRouter(final long routerId, final Account caller) throws ResourceUnavailableException, ConcurrentOperationException {
+        return _nwHelper.destroyRouter(routerId, caller);
     }
 
     @Override
@@ -2311,15 +2311,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (router.getState() == VirtualMachine.State.Running) {
             return router;
         }
-
-        final UserVO user = _userDao.findById(CallContext.current().getCallingUserId());
         final Map<Param, Object> params = new HashMap<Param, Object>();
         if (reprogramNetwork) {
             params.put(Param.ReProgramGuestNetworks, true);
         } else {
             params.put(Param.ReProgramGuestNetworks, false);
         }
-        final VirtualRouter virtualRouter = _nwHelper.startVirtualRouter(router, user, caller, params);
+        final VirtualRouter virtualRouter = _nwHelper.startVirtualRouter(router, params);
         if (virtualRouter == null) {
             throw new CloudRuntimeException("Failed to start router with id " + routerId);
         }

@@ -170,7 +170,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         boolean result = true;
         for (final DomainRouterVO router : routers) {
-            result = result && _routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null;
+            result = result && _routerMgr.destroyRouter(router.getId(), context.getAccount()) != null;
         }
         return result;
     }
