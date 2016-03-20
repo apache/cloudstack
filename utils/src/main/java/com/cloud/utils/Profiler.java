@@ -24,7 +24,6 @@ public class Profiler {
     private static final long MILLIS_FACTOR = 1000l;
     private static final double EXPONENT = 2d;
 
-
     private Long startTickNanoSeconds;
     private Long stopTickNanoSeconds;
 
