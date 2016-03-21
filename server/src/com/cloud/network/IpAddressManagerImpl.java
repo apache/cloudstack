@@ -1717,8 +1717,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return true;
         }
 
-        // get the list of public ip's owned by the network
-        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+        // get the list of public ip's that need to be applied for the static NAT. manipulating only these
+        // ips prevents concurrency issues when disabling static nat at the same time.
+        List<IPAddressVO> userIps = new ArrayList<>();
+        for (StaticNat snat : staticNats) {
+            userIps.add(_ipAddressDao.findById(snat.getSourceIpAddressId()));
+        }
+
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
