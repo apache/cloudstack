@@ -780,10 +780,11 @@ public class CommandSetupHelper {
 
                 final boolean add = ipAddr.getState() == IpAddress.State.Releasing ? false : true;
                 boolean sourceNat = ipAddr.isSourceNat();
-                /* enable sourceNAT for the first ip of the public interface */
-                if (firstIP) {
-                    sourceNat = true;
+                /* enable sourceNAT for the first ip of the public interface as long as it's source nat. */
+                if (firstIP && !sourceNat) {
+                    firstIP = false;
                 }
+
                 final String vlanId = ipAddr.getVlanTag();
                 final String vlanGateway = ipAddr.getGateway();
                 final String vlanNetmask = ipAddr.getNetmask();
