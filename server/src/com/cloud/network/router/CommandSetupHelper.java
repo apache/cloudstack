@@ -98,6 +98,9 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.security.SecurityGroupVMMapVO;
+import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.StaticRouteProfile;
@@ -109,8 +112,11 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -180,6 +186,17 @@ public class CommandSetupHelper {
     @Inject
     private RouterControlHelper _routerControlHelper;
 
+    @Inject
+    private VMTemplateDao _vmTemplateDao;
+    @Inject
+    DataCenterDao _zoneDao;
+    @Inject
+    SecurityGroupDao _sgDao;
+    @Inject
+    SecurityGroupVMMapDao _sgMapDao;
+    @Inject
+    SSHKeyPairDao _sshKeypairDao;
+
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
@@ -191,8 +208,7 @@ public class CommandSetupHelper {
         final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
         cmds.addCommand(
                 "vmdata",
-                generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIPv4Address(), vm.getHostName(), vm.getInstanceName(),
-                        vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
+                generateVmDataCommand(router, nic.getIPv4Address(), vm, serviceOffering, zoneName, nic.getIPv4Address(), publicKey, nic.getNetworkId()));
     }
 
     public void createApplyVpnUsersCommand(final List<? extends VpnUser> users, final VirtualRouter router, final Commands cmds) {
@@ -955,11 +971,16 @@ public class CommandSetupHelper {
         return setupCmd;
     }
 
-    private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering,
-            final String zoneName, final String guestIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
-            final long guestNetworkId) {
-        final VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkModel.getExecuteInSeqNtwkElmtCmd());
+    private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final UserVm vm, final String serviceOffering,
+            final String zoneName, final String guestIpAddress, final String publicKey, final long guestNetworkId) {
 
+        String vmName = vm.getHostName();
+        String vmInstanceName = vm.getInstanceName();
+        String vmUuid = vm.getUuid();
+        String userData = vm.getUserData();
+        long vmId = vm.getId();
+
+        final VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkModel.getExecuteInSeqNtwkElmtCmd());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -969,7 +990,11 @@ public class CommandSetupHelper {
 
         cmd.addVmData("userdata", "user-data", userData);
         cmd.addVmData("metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering));
+        cmd.addVmData("metadata", "instance-type", StringUtils.unicodeEscape(serviceOffering));
+
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));
+        cmd.addVmData("metadata", "placement", StringUtils.unicodeEscape(zoneName));
+
         cmd.addVmData("metadata", "local-ipv4", guestIpAddress);
         cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vmName));
         if (dcVo.getNetworkType() == NetworkType.Basic) {
@@ -990,7 +1015,37 @@ public class CommandSetupHelper {
             cmd.addVmData("metadata", "instance-id", vmUuid);
             cmd.addVmData("metadata", "vm-id", vmUuid);
         }
-        cmd.addVmData("metadata", "public-keys", publicKey);
+
+
+        String keyName = "default";
+        try {
+            keyName = _sshKeypairDao.findByPublicKey(vm.getAccountId(), vm.getDomainId(), publicKey).getName();
+        }
+        catch (Exception e) {
+            s_logger.error(String.format("Failed retrieving public key name for metadata. Account id: %d, Domain id: %d, Key: %s",
+                    vm.getAccountId(), vm.getDomainId(), publicKey), e);
+        }
+        cmd.addVmData("metadata", "public-key", publicKey);
+        cmd.addVmData("metadata", "public-keys", "0=" + keyName);
+        cmd.addVmData("metadata", "public-keys-0", "ssh-key");
+        cmd.addVmData("metadata", "public-keys-0-ssh-key", publicKey);
+
+
+        VMTemplateVO template = _vmTemplateDao.findById(vm.getTemplateId());
+        if (template != null) {
+            cmd.addVmData("metadata", "ami-id", template.getUuid());
+            if (template.getSourceTemplateId() != null) {
+                cmd.addVmData("metadata", "ancestor-ami-ids", template.getSourceTemplateId().toString());
+            }
+        }
+
+        if (_zoneDao.findById(vm.getDataCenterId()).isSecurityGroupEnabled()) {
+            String sgs = "";
+            for (SecurityGroupVMMapVO map : _sgMapDao.listByInstanceId(vm.getId())) {
+                sgs += _sgDao.findById(map.getSecurityGroupId()).getUuid() + " ";
+            }
+            cmd.addVmData("metadata", "security-groups", sgs);
+        }
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {

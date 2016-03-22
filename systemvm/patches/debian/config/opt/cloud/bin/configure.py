@@ -315,6 +315,14 @@ class CsVmMetadata(CsDataBag):
             if data is not None:
                 data = base64.b64decode(data)
 
+        # allow creation of directories
+        if not os.path.exists(os.path.dirname(dest)):
+            try:
+                os.makedirs(os.path.dirname(dest))
+            except OSError as exc:
+                if exc.errno != 17:
+                    raise
+
         fh = open(dest, "w")
         self.__exflock(fh)
         if data is not None:
@@ -351,7 +359,10 @@ class CsVmMetadata(CsDataBag):
             os.chmod(metamanifest, 0644)
 
     def __htaccess(self, ip, folder, file):
-        entry = "RewriteRule ^" + file + "$  ../" + folder + "/%{REMOTE_ADDR}/" + file + " [L,NC,QSA]"
+        entry = "RewriteRule ^" + file + "/?$  ../" + folder + "/%{REMOTE_ADDR}/" + file + " [L,NC,QSA]"
+        if "public-keys" in file:
+            unflatten = file.replace("public-keys-0", "public-keys/0").replace("public-keys/0-", "public-keys/0/")
+            entry = "RewriteRule ^" + unflatten + "/?$  ../" + folder + "/%{REMOTE_ADDR}/" + file + " [L,NC,QSA]"
         htaccessFolder = "/var/www/html/latest"
         htaccessFile = htaccessFolder + "/.htaccess"
 
@@ -372,7 +383,14 @@ class CsVmMetadata(CsDataBag):
             self.__unflock(fh)
             fh.close()
 
-        entry = "Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip
+        entry = "Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip + "\nRewriteEngine On"
+        #add the ssh-key re-routing
+        entry += "\nRewriteRule ^public-keys/([0-9]+)/?$  public-keys-$1"
+        entry += "\nRewriteRule ^public-keys/([0-9]+)/([\-a-zA-Z0-9]+)/?$  public-keys-$1-$2"
+        #be flexible with final slash
+        entry += "\nRewriteRule ^(.+)/$  $1"
+
+
         htaccessFolder = "/var/www/html/" + folder + "/" + ip
         htaccessFile = htaccessFolder+"/.htaccess"
 
@@ -384,6 +402,7 @@ class CsVmMetadata(CsDataBag):
                 print "failed to make directories " + htaccessFolder + " due to :" + e.strerror
                 sys.exit(1)
 
+
         fh = open(htaccessFile, "w")
         self.__exflock(fh)
         fh.write(entry + '\n')
@@ -391,7 +410,7 @@ class CsVmMetadata(CsDataBag):
         fh.close()
 
         if folder == "metadata" or folder == "meta-data":
-            entry = "RewriteRule ^meta-data/(.+)$  ../" + folder + "/%{REMOTE_ADDR}/$1 [L,NC,QSA]"
+            entry = "RewriteRule ^meta-data/(.+)/?$  ../" + folder + "/%{REMOTE_ADDR}/$1 [L,NC,QSA]"
             htaccessFolder = "/var/www/html/latest"
             htaccessFile = htaccessFolder + "/.htaccess"
 
@@ -702,7 +721,7 @@ class CsRemoteAccessVpn(CsDataBag):
 class CsForwardingRules(CsDataBag):
 
     def process(self):
-        self.setupGQrules()
+        self.setupMetadataRules()
         for public_ip in self.dbag:
             if public_ip == "id":
                 continue
@@ -887,7 +906,7 @@ class CsForwardingRules(CsDataBag):
 
         self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o eth0 --to-source %s" % (self.getNetworkByIp(rule['internal_ip']),rule["internal_ip"], self.getGuestIp())])
 
-    def setupGQrules(self):
+    def setupMetadataRules(self):
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d 169.254.169.254/32 -i eth0 -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 80"])
 
