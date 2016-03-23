@@ -4673,7 +4673,7 @@ class ApplicationLoadBalancer:
     @classmethod
     def create(cls, apiclient, services, name=None, sourceport=None,
                instanceport=22, algorithm="roundrobin", scheme="internal",
-               sourcenetworkid=None, networkid=None):
+               sourcenetworkid=None, networkid=None, sourceipaddress=None):
         """Create Application Load Balancer"""
         cmd = createLoadBalancer.createLoadBalancerCmd()
 
@@ -4711,6 +4711,11 @@ class ApplicationLoadBalancer:
             cmd.networkid = services["networkid"]
         elif networkid:
             cmd.networkid = networkid
+
+        if "sourceipaddress" in services:
+            cmd.sourceipaddress = services["sourceipaddress"]
+        elif sourceipaddress:
+            cmd.sourceipaddress = sourceipaddress
 
         return LoadBalancerRule(apiclient.createLoadBalancer(cmd).__dict__)
 
