@@ -379,7 +379,7 @@ public class VirtualRoutingResource {
                     timeout = 120;
                 }
 
-                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem);
+                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem, timeout);
                 if (!result.isSuccess()) {
                     return new Answer(cmd, false, result.getDetails());
                 }
