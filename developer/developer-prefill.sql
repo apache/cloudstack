@@ -64,6 +64,10 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'expunge.workers', '3');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
             'cluster.cpu.allocated.capacity.disablethreshold', '0.95');
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
@@ -77,6 +81,30 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
             'pool.storage.capacity.disablethreshold', '0.95');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'network.gc.wait', '60');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'network.gc.interval', '60');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'storage.cleanup.interval', '150');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'vm.op.wait.interval', '5');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'workers', '10');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'direct.agent.load.size', '1000');
 
 -- Add developer configuration entry; allows management server to be run as a user other than "cloud"
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)

@@ -19,4 +19,6 @@
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type, state)
     VALUES (100, UUID(), 'simulator-domR', 'SystemVM Template (simulator)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/routing/debian/latest/systemvm.vhd.bz2', '', 0, 'SystemVM Template (simulator)', 'VHD', 15, 0, 1, 'Simulator','Active');
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type,state)
-    VALUES (111, UUID(), 'simulator-Centos', 'CentOS 5.3(64-bit) no GUI (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/centos53-x86_64/latest/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', '', 0, 'CentOS 5.3(64-bit) no GUI (Simulator)', 'VHD', 11, 1, 1, 'Simulator','Active');
+    VALUES (111, UUID(), 'simulator-Centos', 'CentOS 5.6 (64-bit) no GUI (Simulator)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/centos53-x86_64/latest/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', '', 0, 'CentOS 5.6 (64-bit) no GUI (Simulator)', 'VHD', 142, 1, 1, 'Simulator','Active');
+
+INSERT INTO `cloud`.`template_store_ref` VALUES (1,1,111,NOW(),NOW(),NULL,100,0,'Image',0,'DOWNLOADED',NULL,NULL,'template/tmpl/1/111/','http://fake.cloud/111.vhd.bz2','Ready',0,0,0,0,NULL,NULL,NULL);
