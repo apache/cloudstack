@@ -107,6 +107,13 @@ public class DiskProfile {
     }
 
     /**
+     * Set tags for the disk. This can be used to match it to different storage pools.
+     */
+    public void setTags(String[] tags) {
+        this.tags = tags;
+    }
+
+    /**
      * @return type of volume.
      */
     public Volume.Type getType() {

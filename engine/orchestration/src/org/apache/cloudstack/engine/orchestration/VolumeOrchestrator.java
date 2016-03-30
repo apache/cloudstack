@@ -513,6 +513,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             dskCh.setSize(size);
         }
 
+        // If the disc offering has no tags, then check if the service offering has any. if so,
+        // make the new disc respect those
+        if (diskOffering.getTags() == null || diskOffering.getTags().length() == 0) {
+            dskCh.setTags(offering.getTagsArray());
+        }
+
         dskCh.setHyperType(hyperType);
 
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
