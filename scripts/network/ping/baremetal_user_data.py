@@ -93,7 +93,7 @@ def addUserData(vmIp, folder, fileName, contents):
     f.close()
     
     if folder == "metadata" or folder == "meta-data":
-        writeIfNotHere(metaManifest, fileName)
+        writeIfNotHere(metaManifest, [fileName])
 
 if __name__ == '__main__':
     string = sys.argv[1]
