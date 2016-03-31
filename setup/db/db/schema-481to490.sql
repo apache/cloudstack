@@ -410,3 +410,6 @@ VIEW `user_vm_view` AS
             AND (`custom_speed`.`name` = 'CpuSpeed'))))
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
             AND (`custom_ram_size`.`name` = 'memory'))));
+
+-- Add cluster.storage.operations.exclude property
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `description`, `default_value`, `updated`, `scope`, `is_dynamic`) VALUES ('Advanced', 'DEFAULT', 'CapacityManager', 'cluster.storage.operations.exclude', 'Exclude cluster from storage operations', 'false', now(), 'Cluster', '1');
