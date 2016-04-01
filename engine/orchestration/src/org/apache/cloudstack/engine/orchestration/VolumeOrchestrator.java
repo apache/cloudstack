@@ -209,7 +209,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
+    public VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType,
+            String [] serviceOfferingTagsArray)
             throws ConcurrentOperationException, StorageUnavailableException {
 
         // Find a destination storage pool with the specified criteria
@@ -217,6 +218,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSize(),
                 diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
         dskCh.setHyperType(dataDiskHyperType);
+
+        // If the disc offering has no tags, then check if the service offering has any. if so,
+        // make the new disc respect those
+        if (diskOffering.getTags() == null || diskOffering.getTags().length() == 0) {
+            dskCh.setTags(serviceOfferingTagsArray);
+        }
+
         storageMgr.setDiskProfileThrottling(dskCh, null, diskOffering);
 
         DataCenter destPoolDataCenter = _entityMgr.findById(DataCenter.class, destPoolDcId);

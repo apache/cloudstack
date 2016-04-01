@@ -71,7 +71,7 @@ public interface VolumeOrchestrationService {
         "Maximum size in GB for custom disk offering.",
         true
     );
-    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
+    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType, String [] serviceOfferingTagsArray)
         throws ConcurrentOperationException, StorageUnavailableException;
 
     Volume allocateDuplicateVolume(Volume oldVol, Long templateId);

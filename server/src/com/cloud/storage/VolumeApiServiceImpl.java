@@ -116,8 +116,12 @@ import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.naming.ResourceNamingPolicyManager;
 import com.cloud.naming.VolumeNamingPolicy;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -206,6 +210,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     SnapshotDao _snapshotDao;
     @Inject
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    ServiceOfferingDao _serviceOfferingDao;
     @Inject
     StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
@@ -1379,8 +1385,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
 
             try {
+                ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
                 newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(),
-                        vmRootVolumePool.getClusterId(), volumeToAttachHyperType);
+                        vmRootVolumePool.getClusterId(), volumeToAttachHyperType,  offering.getTagsArray());
             } catch (ConcurrentOperationException e) {
                 s_logger.debug("move volume failed", e);
                 throw new CloudRuntimeException("move volume failed", e);
@@ -2432,6 +2439,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
             throw new InvalidParameterValueException("Can't move volume between scope: " + storeForNewStoreScope.getScopeType() + " and " + storeForExistingStoreScope.getScopeType());
         }
+
+        /**
+         * Add check for storage tags to move volumes to correct tier based on those if needed
+         *
+         * When attaching a volume:
+         * 1. If the volume is not yet created, act as normal.
+         * 2. If the volume is already on the same pool as the existing disk do not auto-migrate.
+         * 3. If the volume IS created and its disk offering has no tag, auto-migrate to match compute offering tag of machine being attached to.
+         * 4. If the volume IS created and its disk offering has a tag, do not auto-migrate.
+         * 5. If the volume IS created and neither the disk offering or machine's compute offering have tags, do not auto-migrate.
+         **/
+        DiskOffering diskOffering = _diskOfferingDao.findById(newVolume.getDiskOfferingId());
+
+        if (newVolume.getPoolId() != existingVolume.getPoolId()) {
+            if (diskOffering.getTags() == null || diskOffering.getTags().isEmpty()) {
+                VirtualMachine instance = _vmInstanceDao.findById(existingVolume.getInstanceId());
+                ServiceOffering serviceOffering = _serviceOfferingDao.findById(instance.getServiceOfferingId());
+
+                if (serviceOffering.getTags() != null && !serviceOffering.getTags().isEmpty()) {
+                    return true;
+                }
+            }
+        }
+
 
         return !storeForExistingStoreScope.isSameScope(storeForNewStoreScope);
     }
