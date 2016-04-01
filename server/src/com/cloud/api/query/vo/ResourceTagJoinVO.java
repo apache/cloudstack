@@ -184,4 +184,56 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
     public Class<?> getEntityType() {
         return ResourceTag.class;
     }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
+    }
+
+    public void setResourceType(ResourceObjectType resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setDomainUuid(String domainUuid) {
+        this.domainUuid = domainUuid;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+
+    public void setCustomer(String customer) {
+        this.customer = customer;
+    }
 }

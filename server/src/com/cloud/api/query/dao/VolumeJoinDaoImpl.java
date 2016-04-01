@@ -29,7 +29,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
@@ -37,12 +36,11 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implements VolumeJoinDao {
+public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJoinVO, VolumeResponse> implements VolumeJoinDao {
     public static final Logger s_logger = Logger.getLogger(VolumeJoinDaoImpl.class);
 
     @Inject
@@ -221,10 +219,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         // update tag information
         long tag_id = volume.getTagId();
         if (tag_id > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                volResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
+            addTagInformation(volume, volResponse);
         }
 
         volResponse.setExtractable(isExtractable);
@@ -253,10 +248,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
     public VolumeResponse setVolumeResponse(ResponseView view, VolumeResponse volData, VolumeJoinVO vol) {
         long tag_id = vol.getTagId();
         if (tag_id > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                volData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
+            addTagInformation(vol, volData);
         }
         return volData;
     }
