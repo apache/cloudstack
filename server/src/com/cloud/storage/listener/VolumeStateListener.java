@@ -81,6 +81,9 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
               // Log usage event for volumes belonging user VM's only
               _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(),
                       vol.getDiskOfferingId(), vol.getTemplateId(), vol.getSize(), Volume.class.getName(), vol.getUuid());
+            } else if (transition.getEvent().equals(Event.MigrationCopySucceeded)) {
+                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_MIGRATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), vol.getDiskOfferingId(), null, vol.getSize(),
+                        Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
             } else {
               _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), vol.getDiskOfferingId(), null, vol.getSize(),
                       Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());

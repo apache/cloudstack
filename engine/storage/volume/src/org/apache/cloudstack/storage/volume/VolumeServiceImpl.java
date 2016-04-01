@@ -1025,9 +1025,9 @@ public class VolumeServiceImpl implements VolumeService {
                 future.complete(res);
                 return null;
             }
+            volDao.updateUuid(srcVolume.getId(), destVolume.getId());
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
-            volDao.updateUuid(srcVolume.getId(), destVolume.getId());
             try {
                 destroyVolume(srcVolume.getId());
                 srcVolume = volFactory.getVolume(srcVolume.getId());
