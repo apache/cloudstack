@@ -133,6 +133,12 @@ class DeployDataCenters(object):
                 hostcmd.username = host.username
                 hostcmd.zoneid = zoneId
                 hostcmd.hypervisor = hypervisor
+                if hostcmd.hypervisor.lower() == "baremetal":
+                    hostcmd.hostmac=host.hostmac
+                    hostcmd.cpunumber=host.cpunumber
+                    hostcmd.cpuspeed=host.cpuspeed
+                    hostcmd.memory=host.memory
+                    hostcmd.hosttags=host.hosttags
                 ret = self.__apiClient.addHost(hostcmd)
                 if ret:
                     self.__tcRunLogger.debug("=== Add Host Successful ===")
@@ -164,6 +170,25 @@ class DeployDataCenters(object):
             self.__tcRunLogger.exception("=== Adding VmWare DC Failed===")
             self.__cleanAndExit()
 
+    def addBaremetalRct(self, config):
+        networktype= config.zones[0].networktype
+        baremetalrcturl= config.zones[0].baremetalrcturl
+        if networktype is None or baremetalrcturl  is None:
+            return
+        if networktype.lower()=="advanced":
+
+            try:
+                brctcmd = addBaremetalRct.addBaremetalRctCmd()
+                brctcmd.baremetalrcturl=baremetalrcturl
+                ret = self.__apiClient.addBaremetalRct(brctcmd)
+                if ret.id:
+                    self.__tcRunLogger.debug("=== Adding Baremetal Rct file  Successful===")
+                    self.__addToCleanUp("BaremetalRct", ret.id)
+            except Exception as e:
+                print "Exception Occurred: %s" % GetDetailExceptionInfo(e)
+                self.__tcRunLogger.exception("=== Adding  Baremetal Rct file Failed===")
+                self.__cleanAndExit()
+
     def createClusters(self, clusters, zoneId, podId, vmwareDc=None):
         try:
             if clusters is None:
@@ -193,10 +218,12 @@ class DeployDataCenters(object):
                     self.addHosts(cluster.hosts, zoneId, podId, clusterId,
                                   cluster.hypervisor)
                 self.waitForHost(zoneId, clusterId)
-                self.createPrimaryStorages(cluster.primaryStorages,
-                                           zoneId,
-                                           podId,
-                                           clusterId)
+                if cluster.hypervisor.lower() != "baremetal":
+                    self.createPrimaryStorages(cluster.primaryStorages,
+                                               zoneId,
+                                               podId,
+                                               clusterId)
+
         except Exception as e:
             print "Exception Occurred %s" % GetDetailExceptionInfo(e)
             self.__tcRunLogger.exception("====Cluster %s Creation Failed"
@@ -888,6 +915,12 @@ class DeployDataCenters(object):
             self.__persistDcConfig()
             print "\n====Deploy DC Successful====="
             self.__tcRunLogger.debug("\n====Deploy DC Successful====")
+            '''
+            Upload baremetalSwitch configuration(.rct) file if  enabled zone has baremetal isolated network.
+            '''
+            self.addBaremetalRct(self.__config)
+            self.__tcRunLogger.debug("\n==== AddbaremetalRct Successful====")
+
             return SUCCESS
         except Exception as e:
             print "\nException Occurred Under deploy :%s" % \
