@@ -227,7 +227,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         try {
             _connection.start();
         } catch (final NioConnectionException e) {
-            throw new CloudRuntimeException("Unable to start the connection!", e);
+            s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
         }
         while (!_connection.isStartup()) {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
@@ -235,7 +235,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
-                throw new CloudRuntimeException("Unable to start the connection!", e);
+                s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
             }
         }
     }
@@ -412,7 +412,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
-                throw new CloudRuntimeException("Unable to start the connection!", e);
+                s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
             }
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         } while (!_connection.isStartup());
