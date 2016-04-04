@@ -184,9 +184,9 @@
                     },
                     capacity: function(data) {
                         if (window.fetchLatestflag == 1) {
-                            data.fetchLastest = true;
+                            data.fetchLatest = true;
                         } else {
-                            data.fetchLastest = false;
+                            data.fetchLatest = false;
                         }
                         window.fetchLatestflag = 0;
                         dataFns.alerts(data);
