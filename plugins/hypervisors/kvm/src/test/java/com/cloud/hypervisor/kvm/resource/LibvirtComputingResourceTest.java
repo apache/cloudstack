@@ -1259,6 +1259,7 @@ public class LibvirtComputingResourceTest {
         final MigrateCommand command = new MigrateCommand(vmName, destIp, isWindows, vmTO, executeInSequence );
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtComputingResource.getLibvirtConnectionProtocol()).thenReturn("qemu+tcp://");
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
             when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(dconn);
@@ -1750,7 +1751,7 @@ public class LibvirtComputingResourceTest {
 
         when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(baseVol);
         when(poolManager.createDiskFromTemplate(baseVol,
-                diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, 0)).thenReturn(vol);
+                diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0)).thenReturn(vol);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);

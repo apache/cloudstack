@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.StorageManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -473,6 +474,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private TemplateApiService _tmplService;
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private StorageManager _storageMgr;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -5468,7 +5471,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
         if (_capacityMgr.checkIfHostReachMaxGuestLimit(destinationHostVO)) {
             throw new VirtualMachineMigrationException("Host name: " + destinationHost.getName() + ", hostId: " + destinationHost.getId()
-            + " already has max running vms (count includes system VMs). Cannot" + " migrate to this host");
+                    + " already has max running vms (count includes system VMs). Cannot migrate to this host");
+        }
+
+        // Check if the destination host has enough space
+        if (!_storageMgr.storagePoolHasEnoughSpace(new ArrayList<Volume>(vmVolumes), (StoragePool)_dataStoreMgr.getDataStore(_storageMgr.findLocalStorageOnHost(destinationHost.getId()).getId(), DataStoreRole.Primary))) {
+            throw new VirtualMachineMigrationException("Host name: " + destinationHost.getName() + ", hostId: " + destinationHost.getId()
+                    + " does not have enough space on its storage pool. Cannot migrate to this host");
         }
 
         checkHostsDedication(vm, srcHostId, destinationHost.getId());

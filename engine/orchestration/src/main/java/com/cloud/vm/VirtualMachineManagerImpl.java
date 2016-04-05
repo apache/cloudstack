@@ -74,6 +74,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -147,6 +148,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
@@ -901,7 +903,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } catch (final InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (final java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new RuntimeException("Execution exception", e);
             }
 
             final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -2437,7 +2439,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public void migrateWithStorage(final String vmUuid, final long srcHostId, final long destHostId, final Map<Long, Long> volumeToPool)
-            throws ResourceUnavailableException, ConcurrentOperationException {
+            throws ResourceUnavailableException, ConcurrentOperationException, VirtualMachineMigrationException {
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
@@ -2481,7 +2483,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void orchestrateMigrateWithStorage(final String vmUuid, final long srcHostId, final long destHostId, final Map<Long, Long> volumeToPool) throws ResourceUnavailableException,
-    ConcurrentOperationException {
+    ConcurrentOperationException, VirtualMachineMigrationException {
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
@@ -2493,6 +2495,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final HostPodVO pod = _podDao.findById(destHost.getPodId());
         final Cluster cluster = _clusterDao.findById(destHost.getClusterId());
         final DeployDestination destination = new DeployDestination(dc, pod, cluster, destHost);
+        final VirtualMachineProfile vmSrc = new VirtualMachineProfileImpl(vm);
+        for (NicProfile nic : _networkMgr.getNicProfiles(vm)) {
+            vmSrc.addNic(nic);
+        }
 
         // Create a map of which volume should go in which storage pool.
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
@@ -2573,46 +2579,49 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             // Migrate the vm and its volume.
-            volumeMgr.migrateVolumes(vm, to, srcHost, destHost, volumeToPoolMap);
-
-            // Put the vm back to running state.
-            moveVmOutofMigratingStateOnSuccess(vm, destHost.getId(), work);
+            volumeMgr.liveMigrateVolumes(vm, to, srcHost, destHost, volumeToPoolMap);
+            migrated = true;
 
             try {
-                if (!checkVmOnHost(vm, destHostId)) {
+                if (migrated && !checkVmOnHost(vm, destHostId)) {
                     s_logger.error("Vm not found on destination host. Unable to complete migration for " + vm);
-                    try {
-                        _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
-                    } catch (final AgentUnavailableException e) {
-                        s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
-                    }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
-                    throw new CloudRuntimeException("VM not found on desintation host. Unable to complete migration for " + vm);
+                    migrated = false;
                 }
             } catch (final OperationTimedoutException e) {
                 s_logger.warn("Error while checking the vm " + vm + " is on host " + destHost, e);
             }
 
-            migrated = true;
         } finally {
+
             if (!migrated) {
-                s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
+                s_logger.info("Migration was unsuccessful for " + vm);
                 _alertMgr.sendAlert(alertType, srcHost.getDataCenterId(), srcHost.getPodId(),
                         "Unable to migrate vm " + vm.getInstanceName() + " from host " + srcHost.getName() + " in zone " + dc.getName() + " and pod " + dc.getName(),
-                        "Migrate Command failed.  Please check logs.");
+                        "Migrate Command failed. Please check logs.");
+                vm.setHostId(srcHostId);
+                _vmDao.update(vm.getId(), vm);
                 try {
-                    _agentMgr.send(destHostId, new Commands(cleanup(vm.getInstanceName())), null);
-                    vm.setPodIdToDeployIn(srcHost.getPodId());
+                    _networkMgr.rollbackNicForMigration(vmSrc, profile);
                     stateTransitTo(vm, Event.OperationFailed, srcHostId);
-                } catch (final AgentUnavailableException e) {
-                    s_logger.warn("Looks like the destination Host is unavailable for cleanup.", e);
-                } catch (final NoTransitionException e) {
+                } catch (NoTransitionException e) {
                     s_logger.error("Error while transitioning vm from migrating to running state.", e);
                 }
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Migration was successful, committing it.");
+                }
+                // Put the vm back to running state.
+                moveVmOutofMigratingStateOnSuccess(vm, destHost.getId(), work);
             }
+
+            volumeMgr.confirmMigration(profile, srcHostId, destHostId, migrated);
 
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
+        }
+
+        if (!migrated) {
+            throw new VirtualMachineMigrationException("Migration failed");
         }
     }
 

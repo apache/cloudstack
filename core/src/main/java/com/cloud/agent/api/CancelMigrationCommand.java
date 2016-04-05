@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,36 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-
 package com.cloud.agent.api;
 
-import java.util.List;
+public class CancelMigrationCommand extends Command {
+    String vmName;
+    boolean executeInSequence = false;
 
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
-public class MigrateWithStorageAnswer extends Answer {
-
-    final List<VolumeObjectTO> volumeTos;
-    boolean aborted = false;
-
-    public MigrateWithStorageAnswer(MigrateWithStorageCommand cmd, boolean result, boolean aborted, Exception ex) {
-        super(cmd, result, ex.toString());
-        this.aborted = aborted;
-        volumeTos = null;
+    public CancelMigrationCommand(String vmName) {
+        this.vmName = vmName;
     }
 
-    public MigrateWithStorageAnswer(MigrateWithStorageCommand cmd, List<VolumeObjectTO> volumeTos, boolean aborted, String details) {
-        super(cmd, !aborted, details);
-        this.volumeTos = volumeTos;
-        this.aborted = aborted;
+    public String getVmName() {
+        return vmName;
     }
 
-    public List<VolumeObjectTO> getVolumeTos() {
-        return volumeTos;
-    }
-
-    public boolean isAborted() {
-        return aborted;
+    @Override
+    public boolean executeInSequence() {
+        return executeInSequence;
     }
 }

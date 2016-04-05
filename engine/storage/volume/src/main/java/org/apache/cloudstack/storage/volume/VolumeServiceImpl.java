@@ -28,6 +28,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.MigrateWithStorageAnswer;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -1251,6 +1252,31 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @Override
+    public boolean deleteVolumeOnDataStore(DataStore store, long volumeId) {
+        VolumeInfo vol = volFactory.getVolume(volumeId);
+        VolumeObjectTO volTO = new VolumeObjectTO(vol);
+        volTO.setDataStore(store.getTO());
+        DeleteCommand dtCommand = new DeleteCommand(volTO);
+        EndPoint ep = _epSelector.select(store);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(dtCommand, false, errMsg);
+        } else {
+            answer = ep.sendMessage(dtCommand);
+        }
+        if (answer == null || !answer.getResult()) {
+            s_logger.info("Failed to deleted volume at store: " + store.getName());
+        } else {
+            String description = "Deleted volume " + vol.getName() + " on storage " + store.getName();
+            s_logger.info(description);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(VolumeInfo volume, DataStore store, SnapshotInfo snapshot) {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
 
@@ -1646,7 +1672,7 @@ public class VolumeServiceImpl implements VolumeService {
             motionSrv.copyAsync(volumeMap, vmTo, srcHost, destHost, caller);
 
         } catch (Exception e) {
-            s_logger.debug("Failed to copy volume", e);
+            s_logger.debug("Failed to migrate volume", e);
             res.setResult(e.toString());
             future.complete(res);
         }
@@ -1654,33 +1680,34 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    protected Void
-    migrateVmWithVolumesCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, MigrateVmWithVolumesContext<CommandResult> context) {
+    protected Void migrateVmWithVolumesCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, MigrateVmWithVolumesContext<CommandResult> context) {
         Map<VolumeInfo, DataStore> volumeToPool = context.volumeToPool;
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<CommandResult> future = context.future;
         CommandResult res = new CommandResult();
-        try {
-            if (result.isFailed()) {
-                res.setResult(result.getResult());
-                for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
-                    VolumeInfo volume = entry.getKey();
-                    volume.processEvent(Event.OperationFailed);
-                }
-                future.complete(res);
-            } else {
-                for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
-                    VolumeInfo volume = entry.getKey();
-                    snapshotMgr.cleanupSnapshotsByVolume(volume.getId());
-                    volume.processEvent(Event.OperationSuccessed);
-                }
-                future.complete(res);
+
+
+        if (result.isFailed()) {
+            res.setSuccess(false);
+            MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer)result.getAnswer();
+            if (answer != null) {
+                res.setAborted(answer.isAborted());
             }
-        } catch (Exception e) {
-            s_logger.error("Failed to process copy volume callback", e);
-            res.setResult(e.toString());
-            future.complete(res);
+            res.setResult(result.getResult());
         }
+
+        for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
+            VolumeInfo volume = entry.getKey();
+            if (result.isFailed() || result.isAborted()) {
+                volume.processEvent(Event.OperationFailed);
+            } else {
+                snapshotMgr.cleanupSnapshotsByVolume(volume.getId());
+                volume.processEvent(Event.OperationSuccessed);
+            }
+
+        }
+
+        future.complete(res);
 
         return null;
     }

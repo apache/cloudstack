@@ -39,4 +39,10 @@ public class CopyCommandResult extends CommandResult {
     public Answer getAnswer() {
         return this.answer;
     }
+
+    @Override
+    public String toString() {
+        String sup = super.toString();
+        return sup.substring(0, sup.length()-1) + ", path: " + (path == null ? "<null>" : path) + ", answer: " + (answer == null ? "<null>" : answer) + "}";
+    }
 }

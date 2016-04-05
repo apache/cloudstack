@@ -20,10 +20,12 @@ package org.apache.cloudstack.storage.command;
 
 public class CommandResult {
     private boolean success;
+    private boolean aborted;
     private String result;
 
     public CommandResult() {
         this.success = true;
+        this.aborted = false;
         this.result = "";
     }
 
@@ -39,6 +41,14 @@ public class CommandResult {
         this.success = success;
     }
 
+    public boolean isAborted() {
+        return aborted;
+    }
+
+    public void setAborted(boolean aborted) {
+        this.aborted = aborted;
+    }
+
     public String getResult() {
         return this.result;
     }
@@ -48,5 +58,10 @@ public class CommandResult {
         if (result != null) {
             this.success = false;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "CommandResult={success: " + success + ", aborted: " + aborted + ", result: " + (result == null ? "<null>" : result) + "}";
     }
 }

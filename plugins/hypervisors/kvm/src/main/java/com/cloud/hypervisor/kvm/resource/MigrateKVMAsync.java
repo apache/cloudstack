@@ -26,8 +26,6 @@ import org.libvirt.LibvirtException;
 
 public class MigrateKVMAsync implements Callable<Domain> {
 
-    private final LibvirtComputingResource libvirtComputingResource;
-
     private Domain dm = null;
     private Connect dconn = null;
     private String dxml = "";
@@ -35,18 +33,19 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private String destIp = "";
     private boolean migrateStorage;
     private boolean autoConvergence;
+    private long flags = 0L;
+    private int migrationSpeed = 0;
 
     public MigrateKVMAsync(final LibvirtComputingResource libvirtComputingResource, final Domain dm, final Connect dconn, final String dxml,
-                           final boolean migrateStorage, final boolean autoConvergence, final String vmName, final String destIp) {
-        this.libvirtComputingResource = libvirtComputingResource;
-
+                           final boolean migrateStorage, final boolean autoConvergence, final String vmName, final long flags) {
         this.dm = dm;
         this.dconn = dconn;
         this.dxml = dxml;
         this.migrateStorage = migrateStorage;
         this.autoConvergence = autoConvergence;
         this.vmName = vmName;
-        this.destIp = destIp;
+        this.migrationSpeed = libvirtComputingResource.getMigrateSpeed();
+        this.flags = flags;
     }
 
     @Override
@@ -66,6 +65,6 @@ public class MigrateKVMAsync implements Callable<Domain> {
             flags |= 1 << 13;
         }
 
-        return dm.migrate(dconn, flags, dxml, vmName, "tcp:" + destIp, libvirtComputingResource.getMigrateSpeed());
+        return dm.migrate(dconn, flags, dxml, vmName, null, migrationSpeed);
     }
 }

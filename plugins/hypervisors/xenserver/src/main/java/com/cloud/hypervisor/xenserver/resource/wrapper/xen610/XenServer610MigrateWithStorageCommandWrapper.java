@@ -124,10 +124,10 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
             // Volume paths would have changed. Return that information.
             final List<VolumeObjectTO> volumeToList = xenServer610Resource.getUpdatedVolumePathsOfMigratedVm(connection, vmToMigrate, vmSpec.getDisks());
             vmToMigrate.setAffinity(connection, host);
-            return new MigrateWithStorageAnswer(command, volumeToList);
+            return new MigrateWithStorageAnswer(command, volumeToList, false, null);
         } catch (final Exception e) {
             s_logger.warn("Catch Exception " + e.getClass().getName() + ". Storage motion failed due to " + e.toString(), e);
-            return new MigrateWithStorageAnswer(command, e);
+            return new MigrateWithStorageAnswer(command, false, false, e);
         } finally {
             if (task != null) {
                 try {

@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.VirtualMachineMigrationException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.to.NicTO;
@@ -118,7 +119,7 @@ public interface VirtualMachineManager extends Manager {
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
 
-    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Long, Long> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
+    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Long, Long> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException, VirtualMachineMigrationException;
 
     void reboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
