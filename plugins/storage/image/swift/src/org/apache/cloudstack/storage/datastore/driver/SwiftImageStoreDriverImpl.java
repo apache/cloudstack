@@ -18,10 +18,15 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.net.URL;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.configuration.Config;
+import com.cloud.utils.SwiftUtil;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +48,6 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -57,6 +61,8 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     EndPointSelector _epSelector;
     @Inject
     StorageCacheManager cacheManager;
+    @Inject
+    ConfigurationDao _configDao;
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
@@ -67,7 +73,29 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Override
     public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
-        throw new UnsupportedServiceException("Extract entity url is not yet supported for Swift image store provider");
+
+        SwiftTO swiftTO = (SwiftTO)store.getTO();
+        String tempKey = UUID.randomUUID().toString();
+        boolean result = SwiftUtil.setTempKey(swiftTO, tempKey);
+
+        if (!result) {
+            String errMsg = "Unable to set Temp-Key: " + tempKey;
+            s_logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+
+        String containerName = SwiftUtil.getContainerName(dataObject.getType().toString(), dataObject.getId());
+        String objectName = installPath.split("\\/")[1];
+        // Get extract url expiration interval set in global configuration (in seconds)
+        int urlExpirationInterval = Integer.parseInt(_configDao.getValue(Config.ExtractURLExpirationInterval.toString()));
+
+        URL swiftUrl = SwiftUtil.generateTempUrl(swiftTO, containerName, objectName, tempKey, urlExpirationInterval);
+        if (swiftUrl != null) {
+            s_logger.debug("Swift temp-url: " + swiftUrl.toString());
+            return swiftUrl.toString();
+        }
+
+        throw new CloudRuntimeException("Unable to create extraction URL");
     }
 
     @Override

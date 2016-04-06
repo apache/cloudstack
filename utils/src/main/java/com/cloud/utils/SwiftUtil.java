@@ -20,8 +20,14 @@
 package com.cloud.utils;
 
 import java.io.File;
-import java.util.Arrays;
+import java.net.URL;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Formatter;
 
 import org.apache.log4j.Logger;
 
@@ -29,9 +35,15 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 public class SwiftUtil {
     private static Logger logger = Logger.getLogger(SwiftUtil.class);
     private static final long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
+    private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
+
+
 
     public interface SwiftClientCfg {
         String getAccount();
@@ -143,8 +155,7 @@ public class SwiftUtil {
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result == null && parser.getLines() != null && !parser.getLines().equalsIgnoreCase("")) {
-            String[] lines = parser.getLines().split("\\n");
-            return lines;
+            return parser.getLines().split("\\n");
         } else {
             if (result != null) {
                 String errMsg = "swiftList failed , err=" + result;
@@ -161,7 +172,7 @@ public class SwiftUtil {
         int firstIndexOfSeparator = swiftPath.indexOf(File.separator);
         String container = swiftPath.substring(0, firstIndexOfSeparator);
         String srcPath = swiftPath.substring(firstIndexOfSeparator + 1);
-        String destFilePath = null;
+        String destFilePath;
         if (destDirectory.isDirectory()) {
             destFilePath = destDirectory.getAbsolutePath() + File.separator + srcPath;
         } else {
@@ -171,7 +182,7 @@ public class SwiftUtil {
         Script command = new Script("/bin/bash", logger);
         command.add("-c");
         command.add("/usr/bin/python " + swiftCli + " -A " + cfg.getEndPoint() + " -U " + cfg.getAccount() + ":" + cfg.getUserName() + " -K " + cfg.getKey() +
-            " download " + container + " " + srcPath + " -o " + destFilePath);
+                " download " + container + " " + srcPath + " -o " + destFilePath);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -235,5 +246,60 @@ public class SwiftUtil {
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         command.execute(parser);
         return true;
+    }
+
+    public static boolean setTempKey(SwiftClientCfg cfg, String tempKey){
+
+        Map<String, String> tempKeyMap = new HashMap<>();
+        tempKeyMap.put("Temp-URL-Key", tempKey);
+        return postMeta(cfg, "", "", tempKeyMap);
+
+    }
+
+    public static URL generateTempUrl(SwiftClientCfg cfg, String container, String object, String tempKey, int urlExpirationInterval) {
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000L);
+        int expirationSeconds = currentTime + urlExpirationInterval;
+
+        try {
+
+            URL endpoint = new URL(cfg.getEndPoint());
+            String method = "GET";
+            String path = String.format("/v1/AUTH_%s/%s/%s", cfg.getAccount(), container, object);
+
+            //sign the request
+            String hmacBody = String.format("%s\n%d\n%s", method, expirationSeconds, path);
+            String signature = calculateRFC2104HMAC(hmacBody, tempKey);
+            path += String.format("?temp_url_sig=%s&temp_url_expires=%d", signature, expirationSeconds);
+
+            //generate the temp url
+            URL tempUrl = new URL(endpoint.getProtocol(), endpoint.getHost(), endpoint.getPort(), path);
+
+            return tempUrl;
+
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw new CloudRuntimeException(e.getMessage());
+        }
+
+    }
+
+    public static String calculateRFC2104HMAC(String data, String key)
+            throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+
+        SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
+        Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+        mac.init(signingKey);
+        return toHexString(mac.doFinal(data.getBytes()));
+
+    }
+
+    public static String toHexString(byte[] bytes) {
+
+        Formatter formatter = new Formatter();
+        for (byte b : bytes) {
+            formatter.format("%02x", b);
+        }
+        return formatter.toString();
     }
 }
