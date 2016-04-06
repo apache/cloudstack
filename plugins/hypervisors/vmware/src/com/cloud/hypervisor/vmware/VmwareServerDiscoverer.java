@@ -490,9 +490,15 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             clusterName = pathTokens[2];
         }
 
-        if (!vCenterHost.equalsIgnoreCase(url.getHost())) {
+        String desiredUrl = url.getHost();
+
+        if (url.getPort() != -1) {
+            desiredUrl += ":" + url.getPort();
+        }
+
+        if (!vCenterHost.equalsIgnoreCase(desiredUrl)) {
             msg =
-                    "This cluster " + clusterName + " belongs to vCenter " + url.getHost() + ". But this zone is associated with VMware DC from vCenter " + vCenterHost +
+                    "This cluster " + clusterName + " belongs to vCenter " + desiredUrl + ". But this zone is associated with VMware DC from vCenter " + vCenterHost +
                     ". Make sure the cluster being added belongs to vCenter " + vCenterHost + " and VMware DC " + vmwareDcNameFromDb;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
