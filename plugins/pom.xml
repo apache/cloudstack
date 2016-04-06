@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.8.0</version>
+    <version>4.8.1</version>
   </parent>
 
   <build>
@@ -102,6 +102,7 @@
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
     <module>database/quota</module>
+    <module>database/mysql-ha</module>
   </modules>
 
   <dependencies>
