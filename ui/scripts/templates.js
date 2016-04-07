@@ -1451,8 +1451,18 @@
                                                      }
                                                  },
                                                  action: function(args) {
+                                                     var data = {
+                                                         id: args.context.templates[0].id,
+                                                     };
+                                                     if (args.context.zones[0].zoneid.length > 0) {
+                                                         var zoneid_data = {
+                                                            zoneid: args.context.zones[0].zoneid,
+                                                         };
+                                                         data = $.extend({}, data, zoneid_data);
+                                                     }
                                                      $.ajax({
-                                                         url: createURL("deleteTemplate&id=" + args.context.templates[0].id + "&zoneid=" + args.context.zones[0].zoneid),
+                                                         url: createURL("deleteTemplate"),
+                                                         data: data,
                                                          dataType: "json",
                                                          async: true,
                                                          success: function(json) {
