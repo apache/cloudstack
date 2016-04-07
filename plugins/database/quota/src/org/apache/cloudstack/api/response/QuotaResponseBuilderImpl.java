@@ -138,6 +138,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         } else {
             for (final QuotaAccountVO quotaAccount : _quotaAccountDao.listAllQuotaAccount()) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
+                if (account == null) continue;
                 QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
                 result.add(qr);
             }
@@ -167,7 +168,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             qr.setObjectName("summary");
             return qr;
         } else {
-            throw new InvalidParameterValueException("Quota summary response for an account requires a valid account.");
+            return new QuotaSummaryResponse();
         }
     }
 
@@ -398,6 +399,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaCreditsVO result = _quotaCreditsDao.saveCredits(credits);
 
         final AccountVO account = _accountDao.findById(accountId);
+        if (account == null) {
+            throw new InvalidParameterValueException("Account does not exist with account id " + accountId);
+        }
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
         final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(despositedOn.getTime())));
         if (s_logger.isDebugEnabled()) {
