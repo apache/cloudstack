@@ -29,9 +29,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -43,6 +40,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.host.Host;
@@ -64,15 +63,13 @@ import com.cloud.vm.VirtualMachine;
 public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
-    HostDao hostDao;
+    private HostDao hostDao;
     private final String findOneHostOnPrimaryStorage = "select t.id from "
                             + "(select h.id, cd.value "
                             + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
                             + "join cluster c on c.id=h.cluster_id "
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
-
-    private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
@@ -266,8 +263,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
     public EndPoint select(DataObject object) {
         DataStore store = object.getDataStore();
         EndPoint ep = select(store);
-        if (ep != null)
+        if (ep != null) {
             return ep;
+        }
         if (object instanceof TemplateInfo) {
             TemplateInfo tmplInfo = (TemplateInfo)object;
             if (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null && tmplInfo.getTemplateType() == TemplateType.SYSTEM) {
@@ -385,41 +383,5 @@ public class DefaultEndPointSelector implements EndPointSelector {
             throw new CloudRuntimeException("shouldn't use it for other scope");
         }
         return endPoints;
-    }
-
-    @Override
-    public EndPoint selectHypervisorHost(Scope scope) {
-        StringBuilder sbuilder = new StringBuilder();
-        sbuilder.append(findOneHypervisorHostInScope);
-        if (scope.getScopeType() == ScopeType.ZONE) {
-            sbuilder.append(" and h.data_center_id = ");
-            sbuilder.append(scope.getScopeId());
-        } else if (scope.getScopeType() == ScopeType.CLUSTER) {
-            sbuilder.append(" and h.cluster_id = ");
-            sbuilder.append(scope.getScopeId());
-        }
-        sbuilder.append(" ORDER by rand() limit 1");
-
-        String sql = sbuilder.toString();
-        HostVO host = null;
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-
-        try (
-                PreparedStatement pstmt = txn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery();
-            ) {
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                host = hostDao.findById(id);
-            }
-        } catch (SQLException e) {
-            s_logger.warn("can't find endpoint", e);
-        }
-
-        if (host == null) {
-            return null;
-        }
-
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 }
