@@ -119,7 +119,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
 
     private void createCloudStackUserAccount(LdapUser user, long domainId, short accountType) {
         String username = user.getUsername();
-        _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username, accountType, domainId, username, null,
+        _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username, accountType, domainId, null, null,
                                           UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
     }
 
