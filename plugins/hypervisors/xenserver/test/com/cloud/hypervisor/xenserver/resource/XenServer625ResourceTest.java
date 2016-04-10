@@ -16,6 +16,7 @@
 package com.cloud.hypervisor.xenserver.resource;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -23,43 +24,32 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-@RunWith(PowerMockRunner.class)
-public class XenServer625ResourceTest extends CitrixResourceBaseTest{
 
-    private Xenserver625Resource xenServer625Resource = new Xenserver625Resource();
+@RunWith(PowerMockRunner.class)
+public class XenServer625ResourceTest extends CitrixResourceBaseTest {
+
+    @Before
+    public void beforeTest() {
+        super.citrixResourceBase = new Xenserver625Resource();
+    }
 
     @Test
     public void testPatchFilePath() {
-        String patchFilePath = xenServer625Resource.getPatchFilePath();
+        String patchFilePath = citrixResourceBase.getPatchFilePath();
         String patch = "scripts/vm/hypervisor/xenserver/xenserver62/patch";
 
         Assert.assertEquals(patch, patchFilePath);
     }
+
     @Test(expected = CloudRuntimeException.class)
-    @PrepareForTest(Script.class )
-    public void testGetFiles(){
-        testGetPathFilesExeption(xenServer625Resource);
-    }
-    @Test
-    @PrepareForTest(Script.class )
-    public void testGetFilesListReturned(){
-        testGetPathFilesListReturned(xenServer625Resource);
+    @PrepareForTest(Script.class)
+    public void testGetFiles() {
+        testGetPathFilesExeption();
     }
 
     @Test
-    public void testGetOsTypeNull() {
-        testGetGuestOsTypeNull(xenServer625Resource);
-    }
-    @Test
-    public void testGetOsTypeEmpty() {
-        testGetGuestOsTypeEmpty(xenServer625Resource);
-    }
-    @Test
-    public void testGetOsTypeBlank() {
-        testGetGuestOsTypeBlank(xenServer625Resource);
-    }
-    @Test
-    public void testGetOsTypeOther() {
-        testGetGuestOsTypeOther(xenServer625Resource);
+    @PrepareForTest(Script.class)
+    public void testGetFilesListReturned() {
+        testGetPathFilesListReturned();
     }
 }

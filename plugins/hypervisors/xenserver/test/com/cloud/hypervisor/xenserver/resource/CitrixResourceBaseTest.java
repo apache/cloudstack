@@ -19,14 +19,22 @@ import java.io.File;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 
 import com.cloud.utils.script.Script;
 
-public abstract class CitrixResourceBaseTest {
+public class CitrixResourceBaseTest {
 
-    public void testGetPathFilesExeption(CitrixResourceBase citrixResourceBase) {
+    protected CitrixResourceBase citrixResourceBase = new CitrixResourceBase() {
+        @Override
+        protected String getPatchFilePath() {
+            return null;
+        }
+    };
+
+    public void testGetPathFilesExeption() {
         String patch = citrixResourceBase.getPatchFilePath();
 
         PowerMockito.mockStatic(Script.class);
@@ -36,7 +44,7 @@ public abstract class CitrixResourceBaseTest {
 
     }
 
-    public void testGetPathFilesListReturned(CitrixResourceBase citrixResourceBase) {
+    public void testGetPathFilesListReturned() {
         String patch = citrixResourceBase.getPatchFilePath();
 
         PowerMockito.mockStatic(Script.class);
@@ -50,7 +58,8 @@ public abstract class CitrixResourceBaseTest {
         Assert.assertEquals(receivedPath, pathExpected);
     }
 
-    public void testGetGuestOsTypeNull(CitrixResourceBase citrixResourceBase) {
+    @Test
+    public void testGetGuestOsTypeNull() {
         String platformEmulator = null;
 
         String expected = "Other install media";
@@ -58,7 +67,8 @@ public abstract class CitrixResourceBaseTest {
         Assert.assertEquals(expected, guestOsType);
     }
 
-    public void testGetGuestOsTypeEmpty(CitrixResourceBase citrixResourceBase) {
+    @Test
+    public void testGetGuestOsTypeEmpty() {
         String platformEmulator = "";
 
         String expected = "Other install media";
@@ -66,7 +76,8 @@ public abstract class CitrixResourceBaseTest {
         Assert.assertEquals(expected, guestOsType);
     }
 
-    public void testGetGuestOsTypeBlank(CitrixResourceBase citrixResourceBase) {
+    @Test
+    public void testGetGuestOsTypeBlank() {
         String platformEmulator = "    ";
 
         String expected = "Other install media";
@@ -74,7 +85,8 @@ public abstract class CitrixResourceBaseTest {
         Assert.assertEquals(expected, guestOsType);
     }
 
-    public void testGetGuestOsTypeOther(CitrixResourceBase citrixResourceBase) {
+    @Test
+    public void testGetGuestOsTypeOther() {
         String platformEmulator = "My Own Linux Distribution Y.M (64-bit)";
 
         String guestOsType = citrixResourceBase.getGuestOsType(platformEmulator);
