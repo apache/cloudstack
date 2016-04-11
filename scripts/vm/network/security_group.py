@@ -818,7 +818,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
       execute("iptables -F " + egress_vmchain)
     except:
       logging.debug("Error flushing iptables rules for " + vmchain + ". Presuming firewall rules deleted, re-initializing." )
-      default_network_rules(vm_name, vm_id, vm_ip, vmMac, vif, brname)
+      default_network_rules(vm_name, vm_id, vm_ip, vmMac, vif, brname, sec_ips)
     egressrule = 0
     for line in lines:
         tokens = line.split(':')

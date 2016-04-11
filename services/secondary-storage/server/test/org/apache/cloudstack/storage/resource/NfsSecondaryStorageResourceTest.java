@@ -80,7 +80,7 @@ public class NfsSecondaryStorageResourceTest extends TestCase {
         if (!sampleMount.isEmpty()) {
             s_logger.info("functional test, mount " + sampleMount);
             URI realMntUri = new URI(sampleMount);
-            String mntSubDir = resource.mountUri(realMntUri);
+            String mntSubDir = resource.mountUri(realMntUri, null);
             s_logger.info("functional test, umount " + mntSubDir);
             resource.umount(resource.getMountingRoot() + mntSubDir, realMntUri);
         } else {

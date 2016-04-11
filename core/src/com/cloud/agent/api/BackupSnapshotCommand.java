@@ -39,6 +39,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     private S3TO s3;
     StorageFilerTO pool;
     private Long secHostId;
+    private String nfsVersion;
 
     protected BackupSnapshotCommand() {
 
@@ -106,5 +107,13 @@ public class BackupSnapshotCommand extends SnapshotCommand {
 
     public Long getSecHostId() {
         return secHostId;
+    }
+
+    public String getNfsVersion() {
+        return nfsVersion;
+    }
+
+    public void setNfsVersion(String nfsVersion) {
+        this.nfsVersion = nfsVersion;
     }
 }

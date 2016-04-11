@@ -200,10 +200,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
 
-        String diskDeviceType = details.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
+        String diskDeviceType = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (userVm) {
             if (diskDeviceType == null) {
-                details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
+                details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
             }
         }
         String diskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);

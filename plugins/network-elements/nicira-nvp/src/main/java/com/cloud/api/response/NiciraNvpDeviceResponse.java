@@ -58,6 +58,10 @@ public class NiciraNvpDeviceResponse extends BaseResponse {
     @Param(description = "this L3 gateway service Uuid")
     private String l3GatewayServiceUuid;
 
+    @SerializedName(ApiConstants.NICIRA_NVP_L2_GATEWAYSERVICE_UUID)
+    @Param(description = "this L2 gateway service Uuid")
+    private String l2GatewayServiceUuid;
+
     public void setId(String nvpDeviceId) {
         this.id = nvpDeviceId;
     }
@@ -86,4 +90,7 @@ public class NiciraNvpDeviceResponse extends BaseResponse {
         this.l3GatewayServiceUuid = l3GatewayServiceUuid;
     }
 
+    public void setL2GatewayServiceUuid(final String l2GatewayServiceUuid) {
+        this.l2GatewayServiceUuid = l2GatewayServiceUuid;
+    }
 }

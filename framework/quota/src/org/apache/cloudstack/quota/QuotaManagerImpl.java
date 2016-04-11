@@ -220,7 +220,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             _quotaBalanceDao.saveQuotaBalance(firstBalance);
         } else {
             QuotaBalanceVO lastRealBalanceEntry = _quotaBalanceDao.findLastBalanceEntry(account.getAccountId(), account.getDomainId(), endDate);
-            aggrUsage = aggrUsage.add(lastRealBalanceEntry.getCreditBalance());
+            if (lastRealBalanceEntry != null){
+                aggrUsage = aggrUsage.add(lastRealBalanceEntry.getCreditBalance());
+            }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Last balance entry  " + lastRealBalanceEntry + " AggrUsage=" + aggrUsage);
             }

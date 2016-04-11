@@ -19,25 +19,17 @@
 package org.apache.cloudstack.storage.test;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
-import com.cloud.storage.Storage;
 
 public class MockStorageMotionStrategy implements DataMotionStrategy {
 
@@ -58,46 +50,13 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        CopyCmdAnswer answer = null;
-        DataTO data = null;
-        if (!success) {
-            CopyCommandResult result = new CopyCommandResult(null, null);
-            result.setResult("Failed");
-            callback.complete(result);
-        }
-        if (destData.getType() == DataObjectType.SNAPSHOT) {
-            SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
-
-            SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-            newSnapshot.setPath(UUID.randomUUID().toString());
-            if (srcSnapshot.getParent() != null) {
-                newSnapshot.setParentSnapshotPath(srcSnapshot.getParent().getPath());
-            }
-            data = newSnapshot;
-        } else if (destData.getType() == DataObjectType.TEMPLATE) {
-            TemplateObjectTO newTemplate = new TemplateObjectTO();
-            newTemplate.setPath(UUID.randomUUID().toString());
-            newTemplate.setFormat(Storage.ImageFormat.QCOW2);
-            newTemplate.setSize(10L);
-            newTemplate.setPhysicalSize(10L);
-            data = newTemplate;
-        }
-        answer = new CopyCmdAnswer(data);
-        CopyCommandResult result = new CopyCommandResult("something", answer);
-        callback.complete(result);
-        return null;
-    }
-
-    @Override
-    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult("something", null);
         callback.complete(result);
-        return null;
     }
 }

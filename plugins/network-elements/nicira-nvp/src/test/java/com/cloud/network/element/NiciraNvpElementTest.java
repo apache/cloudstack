@@ -29,7 +29,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -40,12 +43,17 @@ import javax.naming.ConfigurationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterCommand;
+import com.cloud.agent.api.ConfigureSharedNetworkUuidAnswer;
+import com.cloud.agent.api.ConfigureSharedNetworkVlanIdAnswer;
+import com.cloud.agent.api.CreateLogicalRouterAnswer;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
@@ -61,21 +69,27 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.NiciraNvpRouterMappingVO;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NiciraNvpDao;
 import com.cloud.network.dao.NiciraNvpRouterMappingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ReservationContext;
 
 public class NiciraNvpElementTest {
 
     private static final long NETWORK_ID = 42L;
+    private static final long NICIRA_NVP_HOST_ID = 9L;
+    private static final String NETWORK_CIDR = "10.0.0.0/24";
+    private static final String NETWORK_GATEWAY = "10.0.0.1";
     NiciraNvpElement element = new NiciraNvpElement();
     NetworkOrchestrationService networkManager = mock(NetworkOrchestrationService.class);
     NetworkModel networkModel = mock(NetworkModel.class);
@@ -84,6 +98,8 @@ public class NiciraNvpElementTest {
     HostDao hostDao = mock(HostDao.class);
     NiciraNvpDao niciraNvpDao = mock(NiciraNvpDao.class);
     NiciraNvpRouterMappingDao niciraNvpRouterMappingDao = mock(NiciraNvpRouterMappingDao.class);
+    VlanDao vlanDao = mock(VlanDao.class);
+    IpAddressManager ipAddressManager = mock(IpAddressManager.class);
 
     @Before
     public void setUp() throws ConfigurationException {
@@ -95,6 +111,8 @@ public class NiciraNvpElementTest {
         element.hostDao = hostDao;
         element.niciraNvpDao = niciraNvpDao;
         element.niciraNvpRouterMappingDao = niciraNvpRouterMappingDao;
+        element.vlanDao = vlanDao;
+        element.ipAddrMgr = ipAddressManager;
 
         // Standard responses
         when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
@@ -133,17 +151,32 @@ public class NiciraNvpElementTest {
     }
 
     @Test
-    public void implementTest() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public void implementIsolatedNetworkTest() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, URISyntaxException {
         final Network network = mock(Network.class);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
+        when(network.getBroadcastUri()).thenReturn(new URI("lswitch:aaaaa"));
         when(network.getId()).thenReturn(NETWORK_ID);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+        when(network.getGuestType()).thenReturn(GuestType.Isolated);
+
+        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
+        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+
+        final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+        when(niciraNvpDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+        when(device.getId()).thenReturn(1L);
+        when(device.getHostId()).thenReturn(NICIRA_NVP_HOST_ID);
+
+        HostVO niciraNvpHost = mock(HostVO.class);
+        when(niciraNvpHost.getId()).thenReturn(NICIRA_NVP_HOST_ID);
+        when(hostDao.findById(NICIRA_NVP_HOST_ID)).thenReturn(niciraNvpHost);
 
         final NetworkOffering offering = mock(NetworkOffering.class);
         when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        mock(DeployDestination.class);
+        final DeployDestination dest = mock(DeployDestination.class);
 
         final Domain dom = mock(Domain.class);
         when(dom.getName()).thenReturn("domain");
@@ -152,6 +185,26 @@ public class NiciraNvpElementTest {
         final ReservationContext context = mock(ReservationContext.class);
         when(context.getDomain()).thenReturn(dom);
         when(context.getAccount()).thenReturn(acc);
+
+        //ISOLATED NETWORK
+        when(networkModel.isProviderSupportServiceInNetwork(NETWORK_ID, Service.SourceNat, Provider.NiciraNvp)).thenReturn(true);
+
+        PublicIp sourceNatIp = mock(PublicIp.class);
+        Ip ip = mock(Ip.class);
+        when(ip.addr()).thenReturn("10.0.0.0");
+        when(sourceNatIp.getAddress()).thenReturn(ip);
+        when(sourceNatIp.getVlanNetmask()).thenReturn("255.255.255.0");
+        when(sourceNatIp.getVlanTag()).thenReturn("111");
+
+        when(ipAddressManager.assignSourceNatIpAddressToGuestNetwork(acc, network)).thenReturn(sourceNatIp);
+        when(network.getGateway()).thenReturn(NETWORK_GATEWAY);
+        when(network.getCidr()).thenReturn(NETWORK_CIDR);
+
+        final CreateLogicalRouterAnswer answer = mock(CreateLogicalRouterAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(agentManager.easySend(eq(NICIRA_NVP_HOST_ID), (Command)any())).thenReturn(answer);
+
+        assertTrue(element.implement(network, offering, dest, context));
     }
 
     @Test
@@ -213,5 +266,159 @@ public class NiciraNvpElementTest {
                 return false;
             }
         }));
+    }
+
+    @Test
+    public void implementSharedNetworkUuidVlanIdTest() throws URISyntaxException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // SHARED NETWORKS CASE 1: LOGICAL ROUTER'S UUID AS VLAN ID
+        final Network network = mock(Network.class);
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
+        when(network.getBroadcastUri()).thenReturn(new URI("lswitch:aaaaa"));
+        when(network.getId()).thenReturn(NETWORK_ID);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+        when(network.getGuestType()).thenReturn(GuestType.Shared);
+
+        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
+        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+
+        final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+        when(niciraNvpDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+        when(device.getId()).thenReturn(1L);
+        when(device.getHostId()).thenReturn(NICIRA_NVP_HOST_ID);
+
+        HostVO niciraNvpHost = mock(HostVO.class);
+        when(niciraNvpHost.getId()).thenReturn(NICIRA_NVP_HOST_ID);
+        when(hostDao.findById(NICIRA_NVP_HOST_ID)).thenReturn(niciraNvpHost);
+
+        final NetworkOffering offering = mock(NetworkOffering.class);
+        when(offering.getId()).thenReturn(NETWORK_ID);
+        when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(offering.getGuestType()).thenReturn(GuestType.Shared);
+
+        final DeployDestination dest = mock(DeployDestination.class);
+
+        final Domain dom = mock(Domain.class);
+        when(dom.getName()).thenReturn("domain");
+        final Account acc = mock(Account.class);
+        when(acc.getAccountName()).thenReturn("accountname");
+        final ReservationContext context = mock(ReservationContext.class);
+        when(context.getDomain()).thenReturn(dom);
+        when(context.getAccount()).thenReturn(acc);
+
+        //SHARED NETWORKS CASE 1
+        when(niciraNvpRouterMappingDao.existsMappingForNetworkId(NETWORK_ID)).thenReturn(true);
+        when(network.getCidr()).thenReturn(NETWORK_CIDR);
+        when(network.getGateway()).thenReturn(NETWORK_GATEWAY);
+
+        NiciraNvpRouterMappingVO mapping = mock(NiciraNvpRouterMappingVO.class);
+        when(mapping.getLogicalRouterUuid()).thenReturn("xxxx-xxxx-xxxx");
+        when(niciraNvpRouterMappingDao.findByNetworkId(NETWORK_ID)).thenReturn(mapping);
+
+        final ConfigureSharedNetworkUuidAnswer answer = mock(ConfigureSharedNetworkUuidAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(agentManager.easySend(eq(NICIRA_NVP_HOST_ID), (Command)any())).thenReturn(answer);
+
+        assertTrue(element.implement(network, offering, dest, context));
+    }
+
+    @Test
+    public void implementSharedNetworkNumericalVlanIdTest() throws URISyntaxException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // SHARED NETWORKS CASE 2: NUMERICAL VLAN ID
+        final Network network = mock(Network.class);
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
+        when(network.getBroadcastUri()).thenReturn(new URI("lswitch:aaaaa"));
+        when(network.getId()).thenReturn(NETWORK_ID);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+        when(network.getGuestType()).thenReturn(GuestType.Shared);
+
+        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
+        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+
+        final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+        when(niciraNvpDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+        when(device.getId()).thenReturn(1L);
+        when(device.getHostId()).thenReturn(NICIRA_NVP_HOST_ID);
+
+        HostVO niciraNvpHost = mock(HostVO.class);
+        when(niciraNvpHost.getId()).thenReturn(NICIRA_NVP_HOST_ID);
+        when(hostDao.findById(NICIRA_NVP_HOST_ID)).thenReturn(niciraNvpHost);
+
+        final NetworkOffering offering = mock(NetworkOffering.class);
+        when(offering.getId()).thenReturn(NETWORK_ID);
+        when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(offering.getGuestType()).thenReturn(GuestType.Shared);
+
+        final DeployDestination dest = mock(DeployDestination.class);
+
+        final Domain dom = mock(Domain.class);
+        when(dom.getName()).thenReturn("domain");
+        final Account acc = mock(Account.class);
+        when(acc.getAccountName()).thenReturn("accountname");
+        final ReservationContext context = mock(ReservationContext.class);
+        when(context.getDomain()).thenReturn(dom);
+        when(context.getAccount()).thenReturn(acc);
+
+        //SHARED NETWORKS CASE 2
+        when(niciraNvpRouterMappingDao.existsMappingForNetworkId(NETWORK_ID)).thenReturn(false);
+
+        VlanVO vlanVO = mock(VlanVO.class);
+        when(vlanVO.getVlanTag()).thenReturn("111");
+        when(vlanDao.listVlansByNetworkId(NETWORK_ID)).thenReturn(Arrays.asList(new VlanVO[] {vlanVO}));
+
+        when(niciraNvpHost.getDetail("l2gatewayserviceuuid")).thenReturn("bbbb-bbbb-bbbb");
+
+        final ConfigureSharedNetworkVlanIdAnswer answer = mock(ConfigureSharedNetworkVlanIdAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(agentManager.easySend(eq(NICIRA_NVP_HOST_ID), (Command)any())).thenReturn(answer);
+
+        assertTrue(element.implement(network, offering, dest, context));
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void implementSharedNetworkNumericalVlanIdWithoutL2GatewayService() throws URISyntaxException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+        final Network network = mock(Network.class);
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
+        when(network.getBroadcastUri()).thenReturn(new URI("lswitch:aaaaa"));
+        when(network.getId()).thenReturn(NETWORK_ID);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+        when(network.getGuestType()).thenReturn(GuestType.Shared);
+
+        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
+        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+
+        final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+        when(niciraNvpDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+        when(device.getId()).thenReturn(1L);
+        when(device.getHostId()).thenReturn(NICIRA_NVP_HOST_ID);
+
+        HostVO niciraNvpHost = mock(HostVO.class);
+        when(niciraNvpHost.getId()).thenReturn(NICIRA_NVP_HOST_ID);
+        when(hostDao.findById(NICIRA_NVP_HOST_ID)).thenReturn(niciraNvpHost);
+
+        final NetworkOffering offering = mock(NetworkOffering.class);
+        when(offering.getId()).thenReturn(NETWORK_ID);
+        when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(offering.getGuestType()).thenReturn(GuestType.Shared);
+
+        final DeployDestination dest = mock(DeployDestination.class);
+
+        final Domain dom = mock(Domain.class);
+        when(dom.getName()).thenReturn("domain");
+        final Account acc = mock(Account.class);
+        when(acc.getAccountName()).thenReturn("accountname");
+        final ReservationContext context = mock(ReservationContext.class);
+        when(context.getDomain()).thenReturn(dom);
+        when(context.getAccount()).thenReturn(acc);
+
+        //SHARED NETWORKS CASE 2
+        when(niciraNvpRouterMappingDao.existsMappingForNetworkId(NETWORK_ID)).thenReturn(false);
+
+        VlanVO vlanVO = mock(VlanVO.class);
+        when(vlanVO.getVlanTag()).thenReturn("111");
+        when(vlanDao.listVlansByNetworkId(NETWORK_ID)).thenReturn(Arrays.asList(new VlanVO[] {vlanVO}));
+
+        when(niciraNvpHost.getDetail("l2gatewayserviceuuid")).thenReturn(null);
+
+        element.implement(network, offering, dest, context);
     }
 }

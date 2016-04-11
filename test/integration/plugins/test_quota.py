@@ -30,9 +30,29 @@ from nose.plugins.attrib import attr
 #Import System modules
 import time
 
-#ENABLE THE QUOTA PLUGIN AND RESTART THE MANAGEMENT SERVER TO RUN QUOTA TESTS
-
 class TestQuota(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # Create Account
+        testClient = super(TestQuota, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        # Get Zone, Domain
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+
+        # Create Account
+        cls.account = Account.create(
+                            cls.apiclient,
+                            cls.services["account"],
+                            domainid=cls.domain.id
+                            )
+        cls._cleanup = [
+                        cls.account,
+                        ]
+        return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -55,6 +75,12 @@ class TestQuota(cloudstackTestCase):
     #Check quotaTariffList API returning 22 items
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_01_quota(self):
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='quota.enable.service',
+                 value='true'):
+             self.skipTest('quota.enable.service should be true. skipping')
+             
         cmd = quotaTariffList.quotaTariffListCmd()
         response = self.apiclient.quotaTariffList(cmd)
 
@@ -75,6 +101,12 @@ class TestQuota(cloudstackTestCase):
     #Check quota tariff on a particualr day
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_02_quota(self):
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='quota.enable.service',
+                 value='true'):
+             self.skipTest('quota.enable.service should be true. skipping')
+             
         cmd = quotaTariffList.quotaTariffListCmd()
         cmd.startdate='2015-07-06'
         response = self.apiclient.quotaTariffList(cmd)
@@ -89,6 +121,12 @@ class TestQuota(cloudstackTestCase):
     #check quota tariff of a particular item
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_03_quota(self):
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='quota.enable.service',
+                 value='true'):
+             self.skipTest('quota.enable.service should be true. skipping')
+             
         cmd = quotaTariffList.quotaTariffListCmd()
         cmd.startdate='2015-07-06'
         cmd.usagetype='10'
@@ -107,6 +145,12 @@ class TestQuota(cloudstackTestCase):
     #check the old tariff it should be same
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_04_quota(self):
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='quota.enable.service',
+                 value='true'):
+             self.skipTest('quota.enable.service should be true. skipping')
+             
         cmd = quotaTariffList.quotaTariffListCmd()
         cmd.startdate='2015-07-06'
         cmd.usagetype='10'
@@ -157,9 +201,15 @@ class TestQuota(cloudstackTestCase):
     #Make credit deposit
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_05_quota(self):
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='quota.enable.service',
+                 value='true'):
+             self.skipTest('quota.enable.service should be true. skipping')
+             
         cmd = quotaCredits.quotaCreditsCmd()
-        cmd.domainid = '1'
-        cmd.account = 'admin'
+        cmd.domainid = self.account.domainid
+        cmd.account = self.account.name
         cmd.value = '10'
         cmd.quota_enforce = '1'
         cmd.min_balance = '9'
@@ -173,32 +223,45 @@ class TestQuota(cloudstackTestCase):
     #Make credit deposit and check today balance
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_06_quota(self):
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='quota.enable.service',
+                 value='true'):
+             self.skipTest('quota.enable.service should be true. skipping')
+             
         cmd = quotaBalance.quotaBalanceCmd()
         today = datetime.date.today()
-        cmd.domainid = '1'
-        cmd.account = 'admin'
+        cmd.domainid = self.account.domainid
+        cmd.account = self.account.name
         cmd.startdate = today
         response = self.apiclient.quotaBalance(cmd)
 
         self.debug("Quota Balance on: %s" % response.startdate)
         self.debug("is: %s" % response.startquota)
 
-        self.assertGreater( response.startquota, 9)
+        self.assertEqual( response.startquota, 10)
         return
 
     #make credit deposit and check start and end date balances
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_07_quota(self):
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='quota.enable.service',
+                 value='true'):
+             self.skipTest('quota.enable.service should be true. skipping')
+             
         cmd = quotaBalance.quotaBalanceCmd()
         today = datetime.date.today()
-        cmd.domainid = '1'
-        cmd.account = 'admin'
+        cmd.domainid = self.account.domainid
+        cmd.account = self.account.name
         cmd.startdate = today - datetime.timedelta(days=2)
-        cmd.enddate = today
+        cmd.enddate = today 
         response = self.apiclient.quotaBalance(cmd)
 
         self.debug("Quota Balance on: %s" % response.startdate)
         self.debug("is: %s" % response.startquota)
 
-        self.assertGreater( response.endquota, 9)
+        self.assertEqual( response.startquota, 0)
+        self.assertEqual( response.endquota, 10)
         return

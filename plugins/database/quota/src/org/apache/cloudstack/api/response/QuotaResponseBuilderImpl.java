@@ -174,10 +174,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate, Date endDate) {
         if (quotaBalance == null || quotaBalance.isEmpty()) {
-            new InvalidParameterValueException("The request period does not contain balance entries.");
+            throw new InvalidParameterValueException("The request period does not contain balance entries.");
         }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
             public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
+                o1 = o1 == null ? new QuotaBalanceVO() : o1;
+                o2 = o2 == null ? new QuotaBalanceVO() : o2;
                 return o2.getUpdatedOn().compareTo(o1.getUpdatedOn()); // desc
             }
         });
@@ -186,7 +188,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         //check that there is at least one balance entry
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            if (entry.getCreditsId() > 0) {
+            if (entry.isBalanceEntry()) {
                 have_balance_entries = true;
                 break;
             }

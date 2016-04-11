@@ -172,6 +172,17 @@ public class NetworkVO implements Network {
     @Column(name = "streched_l2")
     boolean strechedL2Network = false;
 
+    @Transient
+    transient String vlanIdAsUUID;
+
+    public String getVlanIdAsUUID() {
+        return vlanIdAsUUID;
+    }
+
+    public void setVlanIdAsUUID(String vlanIdAsUUID) {
+        this.vlanIdAsUUID = vlanIdAsUUID;
+    }
+
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
     }

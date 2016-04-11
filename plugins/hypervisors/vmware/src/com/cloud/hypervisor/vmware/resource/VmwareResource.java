@@ -94,11 +94,13 @@ import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRelocateSpec;
 import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
+import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang.math.NumberUtils;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -1412,7 +1414,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String vmInternalCSName = names.first();
         String vmNameOnVcenter = names.second();
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
-        String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER);
+        String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
 
         // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
         // This helps avoid mix of different scsi subtype controllers in instance.
@@ -1636,12 +1638,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // prepare systemvm patch ISO
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 // attach ISO (for patching of system VM)
-                String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
+                Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
+                String secStoreUrl = secStoreUrlAndId.first();
+                Long secStoreId = secStoreUrlAndId.second();
                 if (secStoreUrl == null) {
                     String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
                     throw new Exception(msg);
                 }
-                mgr.prepareSecondaryStorageStore(secStoreUrl);
+                mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
 
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
                 if (morSecDs == null) {
@@ -1895,6 +1899,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey, iqnToPath, hyperHost, context);
 
+            postVideoCardMemoryConfigBeforeStart(vmMo, vmSpec);
+
             //
             // Power-on VM
             //
@@ -1941,6 +1947,79 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return startAnswer;
         } finally {
         }
+    }
+
+    /**
+     * Sets video card memory to the one provided in detail svga.vramSize (if provided).
+     * 64MB was always set before.
+     * Size must be in KB.
+     * @param vmMo virtual machine mo
+     * @param vmSpec virtual machine specs
+     */
+    protected void postVideoCardMemoryConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec) {
+        String paramVRamSize = "svga.vramSize";
+        if (vmSpec.getDetails().containsKey(paramVRamSize)){
+            String value = vmSpec.getDetails().get(paramVRamSize);
+            try {
+                long svgaVmramSize = Long.parseLong(value);
+                setNewVRamSizeVmVideoCard(vmMo, svgaVmramSize);
+            }
+            catch (NumberFormatException e){
+                s_logger.error("Unexpected value, cannot parse " + value + " to long due to: " + e.getMessage());
+            }
+            catch (Exception e){
+                s_logger.error("Error while reconfiguring vm due to: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Search for vm video card iterating through vm device list
+     * @param vmMo virtual machine mo
+     * @param svgaVmramSize new svga vram size (in KB)
+     */
+    private void setNewVRamSizeVmVideoCard(VirtualMachineMO vmMo, long svgaVmramSize) throws Exception {
+        for (VirtualDevice device : vmMo.getAllDeviceList()){
+            if (device instanceof VirtualMachineVideoCard){
+                VirtualMachineVideoCard videoCard = (VirtualMachineVideoCard) device;
+                modifyVmVideoCardVRamSize(videoCard, vmMo, svgaVmramSize);
+            }
+        }
+    }
+
+    /**
+     * Modifies vm vram size if it was set to a different size to the one provided in svga.vramSize (user_vm_details or template_vm_details)
+     * @param videoCard vm's video card device
+     * @param vmMo virtual machine mo
+     * @param svgaVmramSize new svga vram size (in KB)
+     */
+    private void modifyVmVideoCardVRamSize(VirtualMachineVideoCard videoCard, VirtualMachineMO vmMo, long svgaVmramSize) throws Exception {
+        if (videoCard.getVideoRamSizeInKB().longValue() != svgaVmramSize){
+            s_logger.info("Video card memory was set " + videoCard.getVideoRamSizeInKB().longValue() + "kb instead of " + svgaVmramSize + "kb");
+            VirtualMachineConfigSpec newSizeSpecs = configSpecVideoCardNewVRamSize(videoCard, svgaVmramSize);
+            boolean res = vmMo.configureVm(newSizeSpecs);
+            if (res) {
+                s_logger.info("Video card memory successfully updated to " + svgaVmramSize + "kb");
+            }
+        }
+    }
+
+    /**
+     * Returns a VirtualMachineConfigSpec to edit its svga vram size
+     * @param videoCard video card device to edit providing the svga vram size
+     * @param svgaVmramSize new svga vram size (in KB)
+     */
+    private VirtualMachineConfigSpec configSpecVideoCardNewVRamSize(VirtualMachineVideoCard videoCard, long svgaVmramSize){
+        videoCard.setVideoRamSizeInKB(svgaVmramSize);
+        videoCard.setUseAutoDetect(false);
+
+        VirtualDeviceConfigSpec arrayVideoCardConfigSpecs = new VirtualDeviceConfigSpec();
+        arrayVideoCardConfigSpecs.setDevice(videoCard);
+        arrayVideoCardConfigSpecs.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+
+        VirtualMachineConfigSpec changeVideoCardSpecs = new VirtualMachineConfigSpec();
+        changeVideoCardSpecs.getDeviceChange().add(arrayVideoCardConfigSpecs);
+        return changeVideoCardSpecs;
     }
 
     private void tearDownVm(VirtualMachineMO vmMo) throws Exception{
@@ -2322,14 +2401,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         if (vol.getType() == Volume.Type.ROOT) {
             Map<String, String> vmDetails = vmSpec.getDetails();
-            if (vmDetails != null && vmDetails.get(VmDetailConstants.ROOK_DISK_CONTROLLER) != null) {
-                if (vmDetails.get(VmDetailConstants.ROOK_DISK_CONTROLLER).equalsIgnoreCase("scsi")) {
+            if (vmDetails != null && vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER) != null) {
+                if (vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER).equalsIgnoreCase("scsi")) {
                     s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi, based on root disk controller settings: " +
-                            vmDetails.get(VmDetailConstants.ROOK_DISK_CONTROLLER));
+                            vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER));
                     controllerKey = scsiControllerKey;
                 } else {
                     s_logger.info("Chose disk controller for vol " + vol.getType() + " -> ide, based on root disk controller settings: " +
-                            vmDetails.get(VmDetailConstants.ROOK_DISK_CONTROLLER));
+                            vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER));
                     controllerKey = ideControllerKey;
                 }
             } else {
@@ -3134,12 +3213,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false, cmd.getVirtualMachine().getType());
             }
 
-            String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
+            Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
+            String secStoreUrl = secStoreUrlAndId.first();
+            Long secStoreId = secStoreUrlAndId.second();
             if (secStoreUrl == null) {
                 String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
                 throw new Exception(msg);
             }
-            mgr.prepareSecondaryStorageStore(secStoreUrl);
+            mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
 
             ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
             if (morSecDs == null) {
@@ -3350,12 +3431,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Ensure secondary storage mounted on target host
-            String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
+            Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
+            String secStoreUrl = secStoreUrlAndId.first();
+            Long secStoreId = secStoreUrlAndId.second();
             if (secStoreUrl == null) {
                 String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
                 throw new Exception(msg);
             }
-            mgr.prepareSecondaryStorageStore(secStoreUrl);
+            mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
             ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, tgtHyperHost);
             if (morSecDs == null) {
                 String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
@@ -4862,8 +4945,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         String instanceNameCustomField = "value[" + key + "]";
 
+        final String numCpuStr = "summary.config.numCpu";
+        final String cpuUseStr = "summary.quickStats.overallCpuUsage";
+        final String guestMemUseStr = "summary.quickStats.guestMemoryUsage";
+        final String memLimitStr = "resourceConfig.memoryAllocation.limit";
+        final String memMbStr = "config.hardware.memoryMB";
+
         ObjectContent[] ocs =
-                hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", "summary.config.numCpu", "summary.quickStats.overallCpuUsage", instanceNameCustomField});
+                hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", numCpuStr, cpuUseStr ,guestMemUseStr ,memLimitStr ,memMbStr, instanceNameCustomField});
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
@@ -4871,6 +4960,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     String name = null;
                     String numberCPUs = null;
                     String maxCpuUsage = null;
+                    String memlimit = null;
+                    String memkb = null;
+                    String guestMemusage = null;
                     String vmNameOnVcenter = null;
                     String vmInternalCSName = null;
                     for (DynamicProperty objProp : objProps) {
@@ -4879,10 +4971,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         } else if (objProp.getName().contains(instanceNameCustomField)) {
                             if (objProp.getVal() != null)
                                 vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
-                        } else if (objProp.getName().equals("summary.config.numCpu")) {
+                        }else if(objProp.getName().equals(guestMemusage)){
+                            guestMemusage = objProp.getVal().toString();
+                        }else if (objProp.getName().equals(numCpuStr)) {
                             numberCPUs = objProp.getVal().toString();
-                        } else if (objProp.getName().equals("summary.quickStats.overallCpuUsage")) {
+                        } else if (objProp.getName().equals(cpuUseStr)) {
                             maxCpuUsage = objProp.getVal().toString();
+                        } else if (objProp.getName().equals(memLimitStr)) {
+                            memlimit = objProp.getVal().toString();
+                        } else if (objProp.getName().equals(memMbStr)) {
+                            memkb = objProp.getVal().toString();
                         }
                     }
                     new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
@@ -4951,7 +5049,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             }
                         }
                     }
-                    vmResponseMap.put(name, new VmStatsEntry(Integer.parseInt(maxCpuUsage), networkReadKBs, networkWriteKBs, Integer.parseInt(numberCPUs), "vm"));
+                    vmResponseMap.put(name, new VmStatsEntry( NumberUtils.toDouble(memkb)*1024,NumberUtils.toDouble(guestMemusage)*1024,NumberUtils.toDouble(memlimit)*1024, NumberUtils.toDouble(maxCpuUsage), networkReadKBs, networkWriteKBs, NumberUtils.toInt(numberCPUs), "vm"));
                 }
             }
         }
@@ -5191,8 +5289,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             value = (String)params.get("scripts.timeout");
             int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
-            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null);
-            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor);
+            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null, (String)params.get("nfsVersion"));
+            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor, (String)params.get("nfsVersion"));
 
             _vrResource = new VirtualRoutingResource(this);
             if (!_vrResource.configure(name, params)) {

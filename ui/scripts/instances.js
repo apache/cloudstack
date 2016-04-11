@@ -310,7 +310,7 @@
                             return 'label.metrics';
                         }
                     }
-                },
+                }
             },
 
             dataProvider: function(args) {

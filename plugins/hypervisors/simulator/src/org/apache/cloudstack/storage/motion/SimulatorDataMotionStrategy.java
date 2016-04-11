@@ -43,21 +43,13 @@ public class SimulatorDataMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult("something", null);
         callback.complete(result);
-        return null;
-    }
-
-    @Override
-    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
-        CopyCommandResult result = new CopyCommandResult("something", null);
-        callback.complete(result);
-        return null;
     }
 }

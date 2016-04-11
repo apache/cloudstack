@@ -181,7 +181,7 @@
                         }
                     },
                     error: function(xhr) { // ignore any errors, fallback to the default
-                    },
+                    }
                 });
 
 

@@ -48,9 +48,9 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -82,21 +82,12 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        CopyCommandResult result = new CopyCommandResult(null, null);
-        result.setResult("Unsupported operation requested for copying data.");
-        callback.complete(result);
-
-        return null;
-    }
-
-    @Override
-    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+    public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
             AsyncCompletionCallback<CopyCommandResult> callback) {
         Answer answer = null;
         String errMsg = null;
@@ -115,7 +106,6 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
         CopyCommandResult result = new CopyCommandResult(null, answer);
         result.setResult(errMsg);
         callback.complete(result);
-        return null;
     }
 
     private Answer migrateVmWithVolumes(VMInstanceVO vm, VirtualMachineTO to, Host srcHost,

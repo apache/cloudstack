@@ -28,9 +28,12 @@ import com.cloud.utils.testcase.Log4jEnabledTestCase;
 public class TestProfiler extends Log4jEnabledTestCase {
     protected final static Logger s_logger = Logger.getLogger(TestProfiler.class);
 
-    private static final long ONE_SECOND = 1000l;
     private static final long MILLIS_FACTOR = 1000l;
     private static final int MARGIN = 100;
+    // Profiler uses System.nanoTime which is not reliable on the millisecond
+    // A sleep of 1000 milliseconds CAN be measured as 999 milliseconds
+    // Therefore make the second larger, by 10% of the margin
+    private static final long ONE_SECOND = 1000l + (MARGIN / 10);
     private static final double EXPONENT = 3d;
 
     @Test

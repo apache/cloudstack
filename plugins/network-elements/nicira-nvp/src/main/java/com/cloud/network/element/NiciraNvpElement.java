@@ -33,7 +33,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
@@ -42,6 +41,10 @@ import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterCommand;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterCommand;
+import com.cloud.agent.api.ConfigureSharedNetworkUuidAnswer;
+import com.cloud.agent.api.ConfigureSharedNetworkUuidCommand;
+import com.cloud.agent.api.ConfigureSharedNetworkVlanIdAnswer;
+import com.cloud.agent.api.ConfigureSharedNetworkVlanIdCommand;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalRouterAnswer;
@@ -67,6 +70,7 @@ import com.cloud.api.commands.ListNiciraNvpDevicesCmd;
 import com.cloud.api.response.NiciraNvpDeviceResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -82,6 +86,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
@@ -239,8 +244,14 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
          * multiple operations that should be done only once.
          */
 
-        // Implement SourceNat immediately as we have al the info already
-        if (networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
+        if (network.getGuestType().equals(GuestType.Shared)){
+            //Support Shared Networks
+            String lSwitchUuid = BroadcastDomainType.getValue(network.getBroadcastUri());
+            String ownerName = context.getDomain().getName() + "-" + context.getAccount().getAccountName();
+            return sharedNetworkSupport(network, lSwitchUuid, ownerName, niciraNvpHost);
+        }
+        else if (network.getGuestType().equals(GuestType.Isolated) && networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
+            // Implement SourceNat immediately as we have al the info already
             s_logger.debug("Apparently we are supposed to provide SourceNat on this network");
 
             PublicIp sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
@@ -271,12 +282,72 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                 return false;
             }
 
-            // Store the uuid so we can easily find it during cleanup
             NiciraNvpRouterMappingVO routermapping = new NiciraNvpRouterMappingVO(answer.getLogicalRouterUuid(), network.getId());
             niciraNvpRouterMappingDao.persist(routermapping);
+
         }
 
         return true;
+    }
+
+    private boolean sharedNetworkSupport(Network network, String lSwitchUuid, String ownerName, HostVO niciraNvpHost) {
+        //Support Shared Networks, we won’t be creating logical router, 2 cases:
+        //Case 1) UUID Supplied for VLAN -> This is UUID of the logical router to attach lswitch
+        //Case 2) Numerical ID supplied for VLAN -> lswitch is connected to L2 gateway service that we have as an attribute of the NVP device. If no L2 gateway attribute exists then exception.
+
+        if (niciraNvpRouterMappingDao.existsMappingForNetworkId(network.getId())){
+            //Case 1)
+            return sharedNetworkSupportUUIDVlanId(network, lSwitchUuid, ownerName, niciraNvpHost);
+        }
+        else {
+            //Case 2)
+            return sharedNetworkSupportNumericalVlanId(network, lSwitchUuid, ownerName, niciraNvpHost);
+        }
+    }
+
+    private boolean sharedNetworkSupportUUIDVlanId(Network network, String lSwitchUuid, String ownerName, HostVO niciraNvpHost) {
+        String networkCidr = network.getCidr();
+        String vlanGateway = network.getGateway();
+        String portIpAddress = createLogicalRouterPortIpAddress(networkCidr, vlanGateway);
+        NiciraNvpRouterMappingVO mapRouterNetwork = niciraNvpRouterMappingDao.findByNetworkId(network.getId());
+        String lRouterUuid = mapRouterNetwork.getLogicalRouterUuid();
+        ConfigureSharedNetworkUuidCommand cmd =
+                new ConfigureSharedNetworkUuidCommand(lRouterUuid, lSwitchUuid, portIpAddress, ownerName, network.getId());
+        ConfigureSharedNetworkUuidAnswer answer = (ConfigureSharedNetworkUuidAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
+        if (answer.getResult() == false) {
+            s_logger.error("Failed to configure Logical Router for Shared network " + network.getDisplayText());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean sharedNetworkSupportNumericalVlanId(Network network, String lSwitchUuid, String ownerName, HostVO niciraNvpHost) {
+        List<VlanVO> networkVlans = vlanDao.listVlansByNetworkId(network.getId());
+        if (networkVlans.size() == 1){
+            for (VlanVO vlanVO : networkVlans) {
+                long vlanId = Long.parseLong(vlanVO.getVlanTag());
+                String l2GatewayServiceUuid = niciraNvpHost.getDetail("l2gatewayserviceuuid");
+                if (l2GatewayServiceUuid == null){
+                    throw new CloudRuntimeException("No L2 Gateway Service Uuid found on " + niciraNvpHost.getName());
+                }
+                ConfigureSharedNetworkVlanIdCommand cmd =
+                        new ConfigureSharedNetworkVlanIdCommand(lSwitchUuid, l2GatewayServiceUuid , vlanId, ownerName, network.getId());
+                ConfigureSharedNetworkVlanIdAnswer answer = (ConfigureSharedNetworkVlanIdAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
+                if (answer.getResult() == false) {
+                    s_logger.error("Failed to configure Shared network " + network.getDisplayText());
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
+    private String createLogicalRouterPortIpAddress(String networkCidr, String vlanGateway) {
+        if (networkCidr != null && vlanGateway != null){
+            return networkCidr.replaceFirst("[\\d]{1,3}.[\\d]{1,3}.[\\d]{1,3}.[\\d]{1,3}", vlanGateway);
+        }
+        return null;
     }
 
     @Override
@@ -393,7 +464,8 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
         HostVO niciraNvpHost = hostDao.findById(niciraNvpDevice.getHostId());
 
-        if (networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
+        //Dont destroy logical router when removing Shared Networks
+        if (! network.getGuestType().equals(GuestType.Shared) && networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
             s_logger.debug("Apparently we were providing SourceNat on this network");
 
             // Deleting the LogicalRouter will also take care of all provisioned
@@ -537,6 +609,9 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         if (cmd.getL3GatewayServiceUuid() != null) {
             params.put("l3gatewayserviceuuid", cmd.getL3GatewayServiceUuid());
         }
+        if (cmd.getL2GatewayServiceUuid() != null) {
+            params.put("l2gatewayserviceuuid", cmd.getL2GatewayServiceUuid());
+        }
 
         Map<String, Object> hostdetails = new HashMap<String, Object>();
         hostdetails.putAll(params);
@@ -582,6 +657,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         response.setHostName(niciraNvpHost.getDetail("ip"));
         response.setTransportZoneUuid(niciraNvpHost.getDetail("transportzoneuuid"));
         response.setL3GatewayServiceUuid(niciraNvpHost.getDetail("l3gatewayserviceuuid"));
+        response.setL2GatewayServiceUuid(niciraNvpHost.getDetail("l2gatewayserviceuuid"));
         response.setObjectName("niciranvpdevice");
         return response;
     }
