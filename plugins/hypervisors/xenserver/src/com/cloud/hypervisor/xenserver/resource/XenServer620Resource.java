@@ -37,7 +37,7 @@ public class XenServer620Resource extends XenServer610Resource {
 
     protected boolean hostHasHotFix(final Connection conn, final String hotFixUuid) {
         try {
-            final Host host = Host.getByUuid(conn, _host.getUuid());
+            final Host host = Host.getByUuid(conn, getXenServerHost().getUuid());
             final Host.Record re = host.getRecord(conn);
             final Set<HostPatch> patches = re.patches;
             final PoolPatch poolPatch = PoolPatch.getByUuid(conn, hotFixUuid);
