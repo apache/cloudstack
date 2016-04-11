@@ -940,8 +940,8 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
             return new SecurityGroupRuleAnswer(cmd, false, "programming network rules failed");
         } else {
-            s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ":ingress num rules=" + cmd.getIngressRuleSet().length +
-                ":egress num rules=" + cmd.getEgressRuleSet().length);
+            s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ":ingress num rules=" + cmd.getIngressRuleSet().size() +
+                ":egress num rules=" + cmd.getEgressRuleSet().size());
             return new SecurityGroupRuleAnswer(cmd);
         }
     }

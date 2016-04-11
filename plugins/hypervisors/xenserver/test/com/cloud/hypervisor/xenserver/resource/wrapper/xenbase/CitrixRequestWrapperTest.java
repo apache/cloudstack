@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -101,6 +102,7 @@ import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
@@ -740,7 +742,17 @@ public class CitrixRequestWrapperTest {
         final Connection conn = Mockito.mock(Connection.class);
         final XsHost xsHost = Mockito.mock(XsHost.class);
 
-        final SecurityGroupRulesCmd sshCommand = new SecurityGroupRulesCmd();
+        final String guestIp = "127.0.0.1";
+        final String guestMac = "00:00:00:00";
+        final String vmName = "Test";
+        final Long vmId = 1l;
+        final String signature = "signature";
+        final Long seqNum = 1l;
+        final IpPortAndProto[] ingressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
+        final IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
+        final List<String> secIps = new Vector<String>();
+
+        final SecurityGroupRulesCmd sshCommand = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
