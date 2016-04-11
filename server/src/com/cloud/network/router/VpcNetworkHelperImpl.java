@@ -54,13 +54,13 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
     private static final Logger s_logger = Logger.getLogger(VpcNetworkHelperImpl.class);
 
     @Inject
-    private VlanDao _vlanDao;
+    private VlanDao vlanDao;
     @Inject
-    protected VpcManager vpcMgr;
+    private VpcManager vpcMgr;
     @Inject
-    protected NicProfileHelper nicProfileHelper;
+    private NicProfileHelper nicProfileHelper;
 
-    protected String noHypervisorsErrMsgDetails;
+    private String noHypervisorsErrMsgDetails;
 
     @PostConstruct
     protected void setupNoHypervisorsErrMsgDetails() {
@@ -94,7 +94,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         if (privateGateways != null && !privateGateways.isEmpty()) {
             for (final PrivateGateway privateGateway : privateGateways) {
                 final NicProfile privateNic = nicProfileHelper.createPrivateNicProfileForGateway(privateGateway, router);
-                final Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
+                final Network privateNetwork = networkModel.getNetwork(privateGateway.getNetworkId());
                 networks.put(privateNetwork, new ArrayList<NicProfile>(Arrays.asList(privateNic)));
             }
         }
@@ -102,7 +102,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         //3) allocate nic for guest gateway if needed
         final List<? extends Network> guestNetworks = vpcMgr.getVpcNetworks(vpcId);
         for (final Network guestNetwork : guestNetworks) {
-            if (_networkModel.isPrivateGateway(guestNetwork.getId())) {
+            if (networkModel.isPrivateGateway(guestNetwork.getId())) {
                 continue;
             }
             if (guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup) {
@@ -112,11 +112,11 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         }
 
         //4) allocate nic for additional public network(s)
-        final List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, false);
+        final List<IPAddressVO> ips = ipAddressDao.listByAssociatedVpc(vpcId, false);
         final List<NicProfile> publicNics = new ArrayList<NicProfile>();
         Network publicNetwork = null;
         for (final IPAddressVO ip : ips) {
-            final PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
+            final PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, vlanDao.findById(ip.getVlanId()));
             if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) && vpcMgr.isIpAllocatedToVpc(ip) &&
                     !publicVlans.contains(publicIp.getVlanTag())) {
                 s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
@@ -129,9 +129,10 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
                 publicNic.setBroadcastType(BroadcastDomainType.Vlan);
                 publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
                 publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
-                final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
+                final NetworkOffering publicOffering = networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
                 if (publicNetwork == null) {
-                    final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, vpcRouterDeploymentDefinition.getPlan(), null, null, false);
+                    final List<? extends Network> publicNetworks = networkMgr.setupNetwork(s_systemAccount, publicOffering, vpcRouterDeploymentDefinition.getPlan(), null, null,
+                            false);
                     publicNetwork = publicNetworks.get(0);
                 }
                 publicNics.add(publicNic);
@@ -150,9 +151,9 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
             }
         }
 
-        final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(vpcRouterDeploymentDefinition.getServiceOfferingId());
+        final ServiceOfferingVO routerOffering = serviceOfferingDao.findById(vpcRouterDeploymentDefinition.getServiceOfferingId());
 
-        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, vpcRouterDeploymentDefinition.getPlan(), hType);
+        itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, vpcRouterDeploymentDefinition.getPlan(), hType);
     }
 
     @Override

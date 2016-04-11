@@ -35,7 +35,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
@@ -55,7 +54,7 @@ public interface NetworkHelper {
 
     public abstract VirtualRouter destroyRouter(long routerId, Account caller,
             Long callerUserId) throws ResourceUnavailableException,
-            ConcurrentOperationException;
+    ConcurrentOperationException;
 
     /**
      * Checks if the router is at the required version. Compares MS version and router version.
@@ -70,10 +69,9 @@ public interface NetworkHelper {
                     throws StorageUnavailableException, InsufficientCapacityException,
                     ConcurrentOperationException, ResourceUnavailableException;
 
-    public abstract DomainRouterVO startVirtualRouter(DomainRouterVO router,
-            User user, Account caller, Map<Param, Object> params)
-                    throws StorageUnavailableException, InsufficientCapacityException,
-                    ConcurrentOperationException, ResourceUnavailableException;
+    public abstract DomainRouterVO startVirtualRouter(DomainRouterVO router, Map<Param, Object> params)
+            throws StorageUnavailableException, InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException;
 
     public abstract DomainRouterVO deployRouter(
             RouterDeploymentDefinition routerDeploymentDefinition, boolean startRouter)
