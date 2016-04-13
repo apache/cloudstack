@@ -530,4 +530,9 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return true;
+    }
 }

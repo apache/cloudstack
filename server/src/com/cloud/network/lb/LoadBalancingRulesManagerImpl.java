@@ -1796,8 +1796,24 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             // entries will be rollbacked.
             lbs = Arrays.asList(lb);
         } else {
+            boolean onlyRulesInTransitionState = true;
+            for (LoadBalancingServiceProvider lbElement : _lbProviders) {
+                Provider provider = lbElement.getProvider();
+                boolean isLbProvider = _networkModel.isProviderSupportServiceInNetwork(lb.getNetworkId(), Service.Lb, provider);
+                if (!isLbProvider) {
+                    continue;
+                }
+                onlyRulesInTransitionState = lbElement.handlesOnlyRulesInTransitionState();
+                break;
+            }
+
             // get all rules in transition state
-            lbs = _lbDao.listInTransitionStateByNetworkIdAndScheme(lb.getNetworkId(), lb.getScheme());
+            if (onlyRulesInTransitionState) {
+                lbs = _lbDao.listInTransitionStateByNetworkIdAndScheme(lb.getNetworkId(), lb.getScheme());
+            } else {
+                lbs = _lbDao.listByNetworkIdAndScheme(lb.getNetworkId(), lb.getScheme());
+            }
+
         }
         return applyLoadBalancerRules(lbs, true);
     }
