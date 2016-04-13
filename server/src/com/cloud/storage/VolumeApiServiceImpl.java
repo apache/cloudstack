@@ -1699,10 +1699,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncJob job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId + "to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
+                s_logger.info("Trying to attaching volume " + volume.getId() + "to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
             }
 
-            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
+            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volume.getId());
         }
 
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -1711,12 +1711,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             VmWorkJobVO placeHolder = null;
             placeHolder = createPlaceHolderWork(vmId);
             try {
-                return orchestrateDetachVolumeFromVM(vmId, volumeId);
+                return orchestrateDetachVolumeFromVM(vmId, volume.getId());
             } finally {
                 _workJobDao.expunge(placeHolder.getId());
             }
         } else {
-            Outcome<Volume> outcome = detachVolumeFromVmThroughJobQueue(vmId, volumeId);
+            Outcome<Volume> outcome = detachVolumeFromVmThroughJobQueue(vmId, volume.getId());
 
             Volume vol = null;
             try {
@@ -1744,7 +1744,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private void validateRootVolumeDetachAttach(VolumeVO volume, UserVmVO vm) {
-        if (!(vm.getHypervisorType() == HypervisorType.XenServer || vm.getHypervisorType() == HypervisorType.VMware)) {
+        if (!(vm.getHypervisorType() == HypervisorType.XenServer || vm.getHypervisorType() == HypervisorType.VMware || vm.getHypervisorType() == HypervisorType.KVM)) {
             throw new InvalidParameterValueException("Root volume detach is allowed for hypervisor type " + HypervisorType.XenServer + " only");
         }
         if (!(vm.getState() == State.Stopped) || (vm.getState() == State.Destroyed)) {
