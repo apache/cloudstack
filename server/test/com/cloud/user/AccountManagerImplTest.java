@@ -29,6 +29,9 @@ import javax.inject.Inject;
 
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -78,7 +81,6 @@ import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -391,6 +393,7 @@ public class AccountManagerImplTest {
     }
 
 
+    @SuppressWarnings("unchecked")
     public List<UsageEventVO> deleteUserAccountRootVolumeUsageEvents(boolean vmDestroyedPrior) {
         AccountVO account = new AccountVO();
         account.setId(42l);
@@ -414,9 +417,15 @@ public class AccountManagerImplTest {
                 vmDestroyedPrior
                         ? VirtualMachine.State.Destroyed
                         : VirtualMachine.State.Running);
+
+        SearchBuilder<VolumeVO> sb = (SearchBuilder<VolumeVO>)Mockito.mock(SearchBuilder.class);
+
+        Mockito.when(_volumeDao.createSearchBuilder()).thenReturn(sb);
+        Mockito.when(sb.create()).thenReturn((SearchCriteria<VolumeVO>) Mockito.mock(SearchCriteria.class));
+        Mockito.when(sb.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+
         Mockito.when(
-                _volumeDao.findByInstanceAndType(Mockito.any(Long.class),
-                        Mockito.eq(Volume.Type.ROOT))).thenReturn(
+                _volumeDao.customSearchIncludingRemoved(Mockito.any(SearchCriteria.class), Mockito.isNull(Filter.class))).thenReturn(
                 Arrays.asList(vol));
         Mockito.when(vol.getAccountId()).thenReturn((long) 1);
         Mockito.when(vol.getDataCenterId()).thenReturn((long) 1);

@@ -680,6 +680,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return cleanupAccount(account, callerUserId, caller);
     }
 
+    protected List<VolumeVO> getExpungedInstanceRootVolume(long instanceId) {
+        SearchBuilder<VolumeVO> sb = _volumeDao.createSearchBuilder();
+        sb.and("instanceId", sb.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        sb.and("vType", sb.entity().getVolumeType(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<VolumeVO> c = sb.create();
+        c.setParameters("instanceId", instanceId);
+        c.setParameters("vType", Volume.Type.ROOT);
+        return _volumeDao.customSearchIncludingRemoved(c, null);
+    }
+
     protected boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
@@ -768,7 +779,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     // We have to emit the event here because the state listener is ignoring root volume deletions,
                     // assuming that the UserVMManager is responsible for emitting the usage event for them when
                     // the vm delete command is processed
-                    List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
+                    List<VolumeVO> volumes = getExpungedInstanceRootVolume(vm.getId());
                     for (VolumeVO volume : volumes) {
                         _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                                     Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
