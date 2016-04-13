@@ -46,4 +46,6 @@ public interface LoadBalancingServiceProvider extends NetworkElement, IpDeployin
     boolean validateLBRule(Network network, LoadBalancingRule rule);
 
     List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules);
+
+    boolean handlesOnlyRulesInTransitionState();
 }

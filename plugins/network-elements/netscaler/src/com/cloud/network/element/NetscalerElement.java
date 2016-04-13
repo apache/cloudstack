@@ -946,6 +946,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return true;
+    }
+
+    @Override
     public List<LoadBalancerTO> getLBHealthChecks(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         return super.getLBHealthChecks(network, rules);
     }
