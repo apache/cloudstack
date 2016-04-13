@@ -176,7 +176,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
     }
 
-    private Pair<Long, Long> getAccountDomain(long resourceId, ResourceObjectType resourceType) {
+    protected Pair<Long, Long> getAccountDomain(long resourceId, ResourceObjectType resourceType) {
         Class<?> clazz = s_typeMap.get(resourceType);
 
         Object entity = _entityMgr.findById(clazz, resourceId);
