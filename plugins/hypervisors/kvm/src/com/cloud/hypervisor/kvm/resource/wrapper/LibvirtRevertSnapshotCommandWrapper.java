@@ -27,6 +27,11 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
+
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
