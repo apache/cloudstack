@@ -828,6 +828,7 @@
               <exclude>tools/ngui/static/js/lib/*</exclude>
               <exclude>**/.checkstyle</exclude>
               <exclude>scripts/installer/windows/acs_license.rtf</exclude>
+              <exclude>test/integration/component/test_host_ha.sh</exclude>
             </excludes>
           </configuration>
         </plugin>

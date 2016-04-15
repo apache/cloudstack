@@ -64,6 +64,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -267,6 +268,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         if (vms != null) {
             for (VMInstanceVO vm : vms) {
+                ServiceOfferingVO vmOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+                if (vmOffering.getUseLocalStorage()) {
+                    if (s_logger.isDebugEnabled()){
+                        s_logger.debug("Skipping HA on vm " + vm + ", because it uses local storage. Its fate is tied to the host.");
+                    }
+                    continue;
+                }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Notifying HA Mgr of to restart vm " + vm.getId() + "-" + vm.getInstanceName());
                 }
