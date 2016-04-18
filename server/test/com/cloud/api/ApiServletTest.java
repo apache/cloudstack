@@ -89,7 +89,7 @@ public class ApiServletTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setup() throws SecurityException, NoSuchFieldException,
-            IllegalArgumentException, IllegalAccessException, IOException, UnknownHostException {
+    IllegalArgumentException, IllegalAccessException, IOException, UnknownHostException {
         servlet = new ApiServlet();
         responseWriter = new StringWriter();
         Mockito.when(response.getWriter()).thenReturn(
@@ -98,8 +98,7 @@ public class ApiServletTest {
         Mockito.when(accountService.getSystemUser()).thenReturn(user);
         Mockito.when(accountService.getSystemAccount()).thenReturn(account);
 
-        Field accountMgrField = ApiServlet.class
-                .getDeclaredField("_accountMgr");
+        Field accountMgrField = ApiServlet.class.getDeclaredField("accountMgr");
         accountMgrField.setAccessible(true);
         accountMgrField.set(servlet, accountService);
 
@@ -107,11 +106,11 @@ public class ApiServletTest {
         Mockito.when(authenticator.authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
                 Mockito.same(InetAddress.getByName("127.0.0.1")), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletRequest.class), Mockito.isA(HttpServletResponse.class))).thenReturn("{\"loginresponse\":{}");
 
-        Field authManagerField = ApiServlet.class.getDeclaredField("_authManager");
+        Field authManagerField = ApiServlet.class.getDeclaredField("authManager");
         authManagerField.setAccessible(true);
         authManagerField.set(servlet, authManager);
 
-        Field apiServerField = ApiServlet.class.getDeclaredField("_apiServer");
+        Field apiServerField = ApiServlet.class.getDeclaredField("apiServer");
         apiServerField.setAccessible(true);
         apiServerField.set(servlet, apiServer);
     }
@@ -176,7 +175,7 @@ public class ApiServletTest {
         Mockito.when(request.getMethod()).thenReturn("GET");
         Mockito.when(
                 apiServer.verifyRequest(Mockito.anyMap(), Mockito.anyLong()))
-                .thenReturn(false);
+        .thenReturn(false);
         servlet.processRequestInContext(request, response);
         Mockito.verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         Mockito.verify(apiServer, Mockito.never()).handleRequest(
@@ -190,7 +189,7 @@ public class ApiServletTest {
         Mockito.when(request.getMethod()).thenReturn("GET");
         Mockito.when(
                 apiServer.verifyRequest(Mockito.anyMap(), Mockito.anyLong()))
-                .thenReturn(true);
+        .thenReturn(true);
         servlet.processRequestInContext(request, response);
         Mockito.verify(response).setStatus(HttpServletResponse.SC_OK);
         Mockito.verify(apiServer, Mockito.times(1)).handleRequest(
