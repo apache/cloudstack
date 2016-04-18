@@ -16,6 +16,7 @@
 package com.cloud.hypervisor.xenserver.resource;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -26,11 +27,14 @@ import com.cloud.utils.script.Script;
 @RunWith(PowerMockRunner.class)
 public class XcpOssResourceTest extends CitrixResourceBaseTest{
 
-    private XcpOssResource xcpOssResource = new XcpOssResource();
+    @Before
+    public void beforeTest() {
+        super.citrixResourceBase = new XcpOssResource();
+    }
 
     @Test
     public void testPatchFilePath() {
-        String patchFilePath = xcpOssResource.getPatchFilePath();
+        String patchFilePath = citrixResourceBase.getPatchFilePath();
         String patch = "scripts/vm/hypervisor/xenserver/xcposs/patch";
 
         Assert.assertEquals(patch, patchFilePath);
@@ -39,12 +43,12 @@ public class XcpOssResourceTest extends CitrixResourceBaseTest{
     @Test(expected = CloudRuntimeException.class)
     @PrepareForTest(Script.class )
     public void testGetFiles(){
-        testGetPathFilesExeption(xcpOssResource);
+        testGetPathFilesExeption();
     }
 
     @Test
     @PrepareForTest(Script.class )
     public void testGetFilesListReturned(){
-        testGetPathFilesListReturned(xcpOssResource);
+        testGetPathFilesListReturned();
     }
 }
