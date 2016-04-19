@@ -5,6 +5,8 @@ RewriteEngine On
 #http://<routerIP>/latest/meta-data and .../meta-data/   (dir listing of meta-data)
 RewriteRule ^$ supported-paths [L,NC,QSA]
 RewriteRule ^user-data/?$  ../userdata/%{REMOTE_ADDR}/user-data [L,NC,QSA]
+RewriteRule ^meta-data/public-keys/$ ./public-keys [L,NC,QSA]
+RewriteRule ^meta-data/public-keys/0$  ./public-keys-0 [L,NC,QSA]
 RewriteRule ^meta-data/?$  ../metadata/%{REMOTE_ADDR}/meta-data [L,NC,QSA]
 
 #http://<routerIP/latest/meta-data/foo and .../foo/  (yield metadata/$IP/foo)

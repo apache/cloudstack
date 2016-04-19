@@ -1025,9 +1025,9 @@ public class CommandSetupHelper {
             s_logger.error(String.format("Failed retrieving public key name for metadata. Account id: %d, Domain id: %d, Key: %s",
                     vm.getAccountId(), vm.getDomainId(), publicKey), e);
         }
-        cmd.addVmData("metadata", "public-key", publicKey);
-        cmd.addVmData("metadata", "public-keys", "0=" + keyName);
-        cmd.addVmData("metadata", "public-keys-0", "ssh-key");
+        cmd.addVmData("metadata", "public-keys", publicKey);
+        cmd.addVmData("latest", "public-keys", "0=" + keyName);
+        cmd.addVmData("latest", "public-keys-0", "openssh-key");
         cmd.addVmData("metadata", "public-keys-0-ssh-key", publicKey);
 
 
