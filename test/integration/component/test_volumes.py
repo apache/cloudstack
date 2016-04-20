@@ -606,7 +606,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
             self.fail("Exception occurred: %s" % e)
         return
     
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_02_root_volume_attach_detach(self):
         """Test Root Volume attach/detach to VM
         """
