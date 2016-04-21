@@ -27,7 +27,7 @@ set -e
 TMP=/tmp
 MOUNTPATH=${HOME}/systemvm_mnt
 TMPDIR=${TMP}/cloud/systemvm
-
+umask 022
 
 clean_up() {
   $SUDO umount $MOUNTPATH

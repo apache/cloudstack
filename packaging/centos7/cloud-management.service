@@ -24,6 +24,7 @@ Description=CloudStack Management Server
 After=syslog.target network.target
 
 [Service]
+UMask=0022
 Type=simple
 EnvironmentFile=/etc/tomcat/tomcat.conf
 Environment="NAME=cloudstack-management"
