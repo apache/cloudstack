@@ -1451,8 +1451,12 @@
                                                      }
                                                  },
                                                  action: function(args) {
+                                                     var queryParams = "deleteTemplate&id=" + args.context.templates[0].id;
+                                                     if (!args.context.templates[0].crossZones){
+                                                        queryParams += "&zoneid=" + args.context.zones[0].zoneid;
+                                                     }
                                                      $.ajax({
-                                                         url: createURL("deleteTemplate&id=" + args.context.templates[0].id + "&zoneid=" + args.context.zones[0].zoneid),
+                                                         url: createURL(queryParams),
                                                          dataType: "json",
                                                          async: true,
                                                          success: function(json) {
@@ -2536,12 +2540,12 @@
                                                 }
                                             },
                                             action: function(args) {
-                                                var array1 = [];
-                                                if (args.context.zones[0].zoneid != null)
-                                                    array1.push("&zoneid=" + args.context.zones[0].zoneid);
-
+                                                var queryParams = "deleteIso&id=" + args.context.isos[0].id;
+                                                if (!args.context.isos[0].crossZones){
+                                                    queryParams += "&zoneid=" + args.context.zones[0].zoneid;
+                                                }
                                                 $.ajax({
-                                                    url: createURL("deleteIso&id=" + args.context.isos[0].id + "&zoneid=" + args.context.zones[0].zoneid),
+                                                    url: createURL(queryParams),
                                                     dataType: "json",
                                                     async: true,
                                                     success: function(json) {
