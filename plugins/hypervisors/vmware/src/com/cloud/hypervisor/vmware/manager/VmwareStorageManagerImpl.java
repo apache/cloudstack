@@ -1459,7 +1459,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private boolean isvalidTaskInfoObj(TaskInfo info){
         return !(info == null || info.getEntityName() == null || info.getName() == null);
     }
-
+    
+    /**
+     * This method waits for tasks running on vm to complete
+     *
+     * @param vmName        Name of the vm
+     * @param taskName      Name of the task
+     * @param context       Task context object
+     * 
+     * @return boolean(true or false)   True if it waited for tasks to finish and false when there are no tasks running on the Vm.
+     **/
+     
     private boolean waitForRunningTaskOnVM(String vmName, String taskName, VmwareContext context) throws Exception {
         try {
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
