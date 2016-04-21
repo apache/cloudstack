@@ -87,6 +87,7 @@ handle_pid_file() {
 }
 
 start() {
+    umask 0022
     readpath=$(readlink -f $0)
     source `dirname $readpath`/tomcat.sh
 }
