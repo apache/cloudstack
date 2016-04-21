@@ -34,7 +34,7 @@ public final class LibvirtRebootRouterCommandWrapper extends CommandWrapper<Rebo
     public Answer execute(final RebootRouterCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
 
-        final RebootCommand rebootCommand = new RebootCommand(command.getVmName());
+        final RebootCommand rebootCommand = new RebootCommand(command.getVmName(), true);
         final Answer answer = wrapper.execute(rebootCommand, libvirtComputingResource);
 
         final VirtualRoutingResource virtualRouterResource = libvirtComputingResource.getVirtRouterResource();

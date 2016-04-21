@@ -988,7 +988,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         if (secStorageVm.getState() == State.Running && secStorageVm.getHostId() != null) {
-            final RebootCommand cmd = new RebootCommand(secStorageVm.getInstanceName());
+            final RebootCommand cmd = new RebootCommand(secStorageVm.getInstanceName(), _itMgr.getExecuteInSequence(secStorageVm.getHypervisorType()));
             final Answer answer = _agentMgr.easySend(secStorageVm.getHostId(), cmd);
 
             if (answer != null && answer.getResult()) {

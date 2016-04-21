@@ -26,7 +26,6 @@ public class StopCommand extends RebootCommand {
     private boolean isProxy = false;
     private String urlPort = null;
     private String publicConsoleProxyIpAddress = null;
-    boolean executeInSequence = false;
     private GPUDeviceTO gpuDevice;
     boolean checkBeforeCleanup = false;
 
@@ -34,33 +33,30 @@ public class StopCommand extends RebootCommand {
     }
 
     public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress, boolean executeInSequence, boolean checkBeforeCleanup) {
-        super(vm);
+        super(vm.getInstanceName(), executeInSequence);
         this.isProxy = isProxy;
         this.urlPort = urlPort;
         this.publicConsoleProxyIpAddress = publicConsoleProxyIpAddress;
-        this.executeInSequence = executeInSequence;
         this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
     public StopCommand(VirtualMachine vm, boolean executeInSequence, boolean checkBeforeCleanup) {
-        super(vm);
-        this.executeInSequence = executeInSequence;
+        super(vm.getInstanceName(), executeInSequence);
         this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
     public StopCommand(String vmName, boolean executeInSequence, boolean checkBeforeCleanup) {
-        super(vmName);
-        this.executeInSequence = executeInSequence;
+        super(vmName, executeInSequence);
         this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
     @Override
     public boolean executeInSequence() {
-        //VR stop doesn't go through queue
-        if (vmName != null && vmName.startsWith("r-")) {
+        // VR stop doesn't go through queue
+        if (this.vmName != null && this.vmName.startsWith("r-")) {
             return false;
         }
-        return executeInSequence;
+        return this.executeInSequence;
     }
 
     public boolean isProxy() {
