@@ -530,6 +530,7 @@ div.list-view table tbody td span {
   display: block;
   float: left;
   max-width: 89%;
+  word-break: break-all;
   word-wrap: break-word;
   text-indent: 0;
   margin-left: 12px;
@@ -8291,6 +8292,16 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   background: transparent;
   color: #808B95;
   font-weight: bold;
+}
+
+.multi-edit-add-list div.form-container {
+  width: auto !important;
+  height: auto;
+  text-align: center;
+}
+
+.multi-edit-add-list div.form-container div.name label {
+  display: inline;
 }
 
 .multi-edit .data .data-body {

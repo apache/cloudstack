@@ -334,6 +334,9 @@
                                             }, {
                                                 id: 'udp',
                                                 description: 'udp'
+                                            }, {
+                                                id: 'http',
+                                                description: 'http'
                                             }];
                                             args.response.success({
                                                 data: array1
