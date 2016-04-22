@@ -313,7 +313,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, certs);
                 }
 
-                setupCmd.setNfsVersion(imageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
+                Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
+                setupCmd.setNfsVersion(nfsVersion);
 
                 //template/volume file upload key
                 String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
@@ -1135,7 +1136,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
-        String nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStore.getId()) : null;
+        Integer nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStore.getId()) : null;
         buf.append(" nfsVersion=").append(nfsVersion);
 
         String bootArgs = buf.toString();

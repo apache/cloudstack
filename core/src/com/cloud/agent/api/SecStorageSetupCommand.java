@@ -21,14 +21,14 @@ package com.cloud.agent.api;
 
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 
+import com.cloud.agent.api.storage.StorageNfsVersionCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 
-public class SecStorageSetupCommand extends Command {
+public class SecStorageSetupCommand extends StorageNfsVersionCommand {
     private DataStoreTO store;
     private String secUrl;
     private KeystoreManager.Certificates certs;
     private String postUploadKey;
-    private String nfsVersion;
 
 
     public SecStorageSetupCommand() {
@@ -76,11 +76,4 @@ public class SecStorageSetupCommand extends Command {
         this.postUploadKey = postUploadKey;
     }
 
-    public String getNfsVersion() {
-        return nfsVersion;
-    }
-
-    public void setNfsVersion(String nfsVersion) {
-        this.nfsVersion = nfsVersion;
-    }
 }

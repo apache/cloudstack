@@ -20,17 +20,27 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualMachineConfigSpec;
@@ -38,14 +48,26 @@ import com.vmware.vim25.VirtualMachineVideoCard;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.storage.resource.VmwareStorageProcessor;
+import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(CopyCommand.class)
 public class VmwareResourceTest {
 
+    @Mock
+    VmwareStorageProcessor storageProcessor;
+    @Mock
+    VmwareStorageSubsystemCommandHandler storageHandler;
+
     @Spy
+    @InjectMocks
     VmwareResource _resource = new VmwareResource() {
 
         @Override
@@ -57,6 +79,7 @@ public class VmwareResourceTest {
         public VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd) {
             return hyperHost;
         }
+
     };
 
     @Mock
@@ -75,12 +98,25 @@ public class VmwareResourceTest {
     VirtualMachineMO vmMo3dgpu;
     @Mock
     VirtualMachineTO vmSpec3dgpu;
+    @Mock
+    DataTO srcDataTO;
+    @Mock
+    NfsTO srcDataNfsTO;
+
+    CopyCommand storageCmd;
+
+    private static final Integer NFS_VERSION = Integer.valueOf(3);
+    private static final Integer NFS_VERSION_NOT_PRESENT = null;
 
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
+        storageCmd = PowerMockito.mock(CopyCommand.class);
         doReturn(context).when(_resource).getServiceContext(null);
         when(cmd.getVirtualMachine()).thenReturn(vmSpec);
+        when(storageCmd.getSrcTO()).thenReturn(srcDataTO);
+        when(srcDataTO.getDataStore()).thenReturn(srcDataNfsTO);
+        when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION);
     }
 
     //Test successful scaling up the vm
@@ -115,6 +151,63 @@ public class VmwareResourceTest {
 
         _resource.postVideoCardMemoryConfigBeforeStart(vmMo3dgpu, vmSpec3dgpu);
         verify(vmMo3dgpu).configureVm(any(VirtualMachineConfigSpec.class));
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @Test
+    public void testgetNfsVersionFromNfsTONull(){
+        assertFalse(_resource.getStorageNfsVersionFromNfsTO(null));
+    }
+
+    @Test
+    public void testgetNfsVersionFromNfsTONfsVersionNull(){
+        when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION_NOT_PRESENT);
+        assertFalse(_resource.getStorageNfsVersionFromNfsTO(srcDataNfsTO));
+    }
+
+    @Test
+    public void testgetNfsVersionFromNfsTONfsVersion(){
+        assertTrue(_resource.getStorageNfsVersionFromNfsTO(srcDataNfsTO));
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @Test
+    public void testSetCurrentNfsVersionInProcessorAndHandler(){
+        _resource.setCurrentNfsVersionInProcessorAndHandler();
+        verify(storageHandler).reconfigureNfsVersion(any(Integer.class));
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @Test
+    public void testExamineStorageSubSystemCommandNfsVersionNotPresent(){
+        when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION_NOT_PRESENT);
+        _resource.examineStorageSubSystemCommandNfsVersion(storageCmd);
+        verify(_resource, never()).setCurrentNfsVersionInProcessorAndHandler();
+    }
+
+    @Test
+    public void testExamineStorageSubSystemCommandNfsVersion(){
+        _resource.examineStorageSubSystemCommandNfsVersion(storageCmd);
+        verify(_resource).setCurrentNfsVersionInProcessorAndHandler();
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @Test
+    public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionNotSet(){
+        _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
+        verify(_resource).examineStorageSubSystemCommandNfsVersion(storageCmd);
+        assertEquals(NFS_VERSION, _resource.storageNfsVersion);
+    }
+
+    @Test
+    public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionSet(){
+        _resource.storageNfsVersion = NFS_VERSION;
+        _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
+        verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(storageCmd);
     }
 
 }

@@ -28,7 +28,6 @@ public class CreatePrivateTemplateFromSnapshotCommand extends SnapshotCommand {
     private String origTemplateInstallPath;
     private Long newTemplateId;
     private String templateName;
-    private String nfsVersion;
 
     protected CreatePrivateTemplateFromSnapshotCommand() {
 
@@ -74,11 +73,4 @@ public class CreatePrivateTemplateFromSnapshotCommand extends SnapshotCommand {
         return templateName;
     }
 
-    public String getNfsVersion() {
-        return nfsVersion;
-    }
-
-    public void setNfsVersion(String nfsVersion) {
-        this.nfsVersion = nfsVersion;
-    }
 }

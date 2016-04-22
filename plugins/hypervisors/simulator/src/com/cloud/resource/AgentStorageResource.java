@@ -109,7 +109,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
     }
 
     @Override
-    public String getRootDir(String url, String nfsVersion) {
+    public String getRootDir(String url, Integer nfsVersion) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -38,7 +38,7 @@ public class ImageStoreDetailsUtil {
      * @return {@code null} if {@code nfs.version} is not found for storeId <br/>
      * {@code X} if {@code nfs.version} is found found for storeId
      */
-    public String getNfsVersion(long storeId) {
+    public Integer getNfsVersion(long storeId) throws NumberFormatException {
         String nfsVersion = null;
         if (imageStoreDetailsDao.getDetails(storeId) != null){
             Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
@@ -46,7 +46,7 @@ public class ImageStoreDetailsUtil {
                 nfsVersion = storeDetails.get("nfs.version");
             }
         }
-        return nfsVersion;
+        return (nfsVersion != null ? Integer.valueOf(nfsVersion) : null);
     }
 
     /**
@@ -56,7 +56,7 @@ public class ImageStoreDetailsUtil {
      * @return {@code null} if {@code nfs.version} is not found for storeUuid <br/>
      * {@code X} if {@code nfs.version} is found found for storeUuid
      */
-    public String getNfsVersionByUuid(String storeUuid){
+    public Integer getNfsVersionByUuid(String storeUuid){
         ImageStoreVO imageStore = imageStoreDao.findByUuid(storeUuid);
         if (imageStore != null){
             return getNfsVersion(imageStore.getId());

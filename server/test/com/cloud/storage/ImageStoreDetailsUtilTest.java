@@ -34,7 +34,7 @@ public class ImageStoreDetailsUtilTest {
 
     private final static long STORE_ID = 1l;
     private final static String STORE_UUID = "aaaa-aaaa-aaaa-aaaa";
-    private final static String NFS_VERSION = "3";
+    private final static Integer NFS_VERSION = 3;
 
     ImageStoreDetailsUtil imageStoreDetailsUtil = new ImageStoreDetailsUtil();
 
@@ -44,7 +44,7 @@ public class ImageStoreDetailsUtilTest {
     @Before
     public void setup() throws Exception {
         Map<String, String> imgStoreDetails = new HashMap<String, String>();
-        imgStoreDetails.put("nfs.version", NFS_VERSION);
+        imgStoreDetails.put("nfs.version", String.valueOf(NFS_VERSION));
         when(imgStoreDetailsDao.getDetails(STORE_ID)).thenReturn(imgStoreDetails);
 
         ImageStoreVO imgStoreVO = mock(ImageStoreVO.class);
@@ -57,7 +57,7 @@ public class ImageStoreDetailsUtilTest {
 
     @Test
     public void testGetNfsVersion(){
-        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(STORE_ID);
+        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(STORE_ID);
         assertEquals(NFS_VERSION, nfsVersion);
     }
 
@@ -67,7 +67,7 @@ public class ImageStoreDetailsUtilTest {
         imgStoreDetails.put("other.prop", "propValue");
         when(imgStoreDetailsDao.getDetails(STORE_ID)).thenReturn(imgStoreDetails);
 
-        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(STORE_ID);
+        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(STORE_ID);
         assertNull(nfsVersion);
     }
 
@@ -76,20 +76,20 @@ public class ImageStoreDetailsUtilTest {
         Map<String, String> imgStoreDetails = new HashMap<String, String>();
         when(imgStoreDetailsDao.getDetails(STORE_ID)).thenReturn(imgStoreDetails);
 
-        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(STORE_ID);
+        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(STORE_ID);
         assertNull(nfsVersion);
     }
 
     @Test
     public void testGetNfsVersionByUuid(){
-        String nfsVersion = imageStoreDetailsUtil.getNfsVersionByUuid(STORE_UUID);
+        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersionByUuid(STORE_UUID);
         assertEquals(NFS_VERSION, nfsVersion);
     }
 
     @Test
     public void testGetNfsVersionByUuidNoImgStore(){
         when(imgStoreDao.findByUuid(STORE_UUID)).thenReturn(null);
-        String nfsVersion = imageStoreDetailsUtil.getNfsVersionByUuid(STORE_UUID);
+        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersionByUuid(STORE_UUID);
         assertNull(nfsVersion);
     }
 }

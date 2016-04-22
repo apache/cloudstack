@@ -79,6 +79,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
     AlertManager _alertMgr;
+
     protected String _proxy = null;
 
     protected Proxy getHttpProxy() {
