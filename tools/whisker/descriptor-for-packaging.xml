@@ -2673,7 +2673,7 @@ Copyright (C) 2008      Tóth István &lt;stoty@tvnet.hu&gt;
               2009-2011 Bryan Kearney &lt;bkearney@redhat.com&gt;
             </copyright-notice>
             <by-organisation id='libvirt.org'>
-                <resource name='libvirt-java-0.4.9' />
+                <resource name='libvirt-java-0.5.1' />
             </by-organisation>
         </with-license>
         <with-license id="ApacheLicenseVersion2">
@@ -2683,7 +2683,7 @@ Copyright (c) 2012 The Apache Software Foundation
             <by-organisation id="apache.org.2">
                 <resource name="cloud-axis.jar" source="http://axis.apache.org/axis/" notice='axis2.notice'/>
                 <resource name="cloud-commons-codec-1.5.jar" source="http://commons.apache.org/codec/" notice="codec" />
-                <resource name="cloud-commons-collections-3.2.1.jar" source="http://commons.apache.org/collections/"/>
+                <resource name="cloud-commons-collections-3.2.2.jar" source="http://commons.apache.org/collections/"/>
                 <resource name="cloud-commons-configuration-1.8.jar" source="http://commons.apache.org/configuration/"/>
                 <resource name="cloud-commons-dbcp-1.4.jar" source="http://commons.apache.org/dbcp/" />
                 <resource name="cloud-commons-httpclient-3.1.jar" source="http://hc.apache.org/httpclient-3.x/" />
