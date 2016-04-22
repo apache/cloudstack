@@ -1177,7 +1177,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // TO DO - Make it more granular and have better conversion into capacity type
         if(host.getType() == Type.Routing){
             final CapacityState capacityState =  nextState == ResourceState.Enabled ? CapacityState.Enabled : CapacityState.Disabled;
-            _capacityDao.updateCapacityState(null, null, null, host.getId(), capacityState.toString());
+            final short[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
+            _capacityDao.updateCapacityState(null, null, null, host.getId(), capacityState.toString(), capacityTypes);
         }
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
