@@ -28,11 +28,6 @@
   </parent>
   <dependencies>
     <dependency>
-      <groupId>org.springframework.security.extensions</groupId>
-      <artifactId>spring-security-saml2-core</artifactId>
-      <version>1.0.1.RELEASE</version>
-    </dependency>
-    <dependency>
       <groupId>org.opensaml</groupId>
       <artifactId>opensaml</artifactId>
       <version>${cs.opensaml.version}</version>

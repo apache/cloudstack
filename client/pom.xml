@@ -429,9 +429,8 @@
         </configuration>
       </plugin>
       <plugin>
-         <groupId>org.mortbay.jetty</groupId>
-         <artifactId>maven-jetty-plugin</artifactId>
-         <version>6.1.26</version>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-maven-plugin</artifactId>
          <dependencies>
           <!-- specify the dependent jdbc driver here -->
           <dependency>

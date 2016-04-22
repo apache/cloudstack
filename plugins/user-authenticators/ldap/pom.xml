@@ -97,12 +97,14 @@
       <groupId>org.spockframework</groupId>
       <artifactId>spock-core</artifactId>
       <version>1.0-groovy-2.4</version>
+      <scope>test</scope>
     </dependency>
 
     <!-- Optional dependencies for using Spock -->
     <dependency> <!-- enables mocking of classes (in addition to interfaces) -->
       <groupId>cglib</groupId>
       <artifactId>cglib-nodep</artifactId>
-      </dependency>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
