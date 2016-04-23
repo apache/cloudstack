@@ -635,16 +635,13 @@ class TestAttachDetachVolume(cloudstackTestCase):
                     type='ROOT',
                     listall=True
                 )
-                self.assertNotEqual(
-                    root_volume_response,
-                    None,
-                    "Check if root volume exists in ListVolumes"
-                )
+                
                 self.assertEqual(
-                    isinstance(root_volume_response, list),
-                    True,
-                    "Check list volumes response for valid list"
+                    validateList(root_volume_response)[0],
+                    PASS,
+                    "Invalid response returned for root volume list"
                 )
+                
                 # Grab the root volume for later use
                 root_volume = root_volume_response[0]
                 
@@ -652,13 +649,18 @@ class TestAttachDetachVolume(cloudstackTestCase):
                 self.debug("Stopping the VM: %s" % self.virtual_machine.id)
                 self.virtual_machine.stop(self.apiclient)
                 
-                # Ensure VM is stopped before detaching the root volume
-                time.sleep(self.services["sleep"])
-    
                 vm_response = VirtualMachine.list(
                     self.apiclient,
                     id=self.virtual_machine.id,
                 )
+                
+                # Ensure that vm_response is a valid list
+                self.assertEqual(
+                    validateList(vm_response)[0],
+                    PASS,
+                    "Invalid response returned for vm_response list"
+                )
+                
                 vm = vm_response[0]
                 self.assertEqual(
                     vm.state,
@@ -679,6 +681,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                     type='ROOT',
                     listall=True
                 )
+                
                 self.assertEqual(
                     no_root_volume_response,
                     None,
@@ -699,43 +702,36 @@ class TestAttachDetachVolume(cloudstackTestCase):
                     type='ROOT',
                     listall=True
                 )
-                self.assertNotEqual(
-                    new_root_volume_response,
-                    None,
-                    "Check if root volume exists in ListVolumes"
-                )
+                
+                # Ensure that new_root_volume_response is a valid list
                 self.assertEqual(
-                    isinstance(new_root_volume_response, list),
-                    True,
-                    "Check list volumes response for valid list"
+                    validateList(new_root_volume_response)[0],
+                    PASS,
+                    "Invalid response returned for new_root_volume_response list"
                 )
                 
                 # Start VM
                 self.virtual_machine.start(self.apiclient)
-                # Sleep to ensure that VM is in ready state
-                time.sleep(self.services["sleep"])
     
                 vm_response = VirtualMachine.list(
                     self.apiclient,
                     id=self.virtual_machine.id,
                 )
+                
                 # Verify VM response to check whether VM deployment was successful
                 self.assertEqual(
-                    isinstance(vm_response, list),
-                    True,
-                    "Check list VM response for valid list"
+                    validateList(vm_response)[0],
+                    PASS,
+                    "Invalid response returned for vm_response list during VM start up"
                 )
-                self.assertNotEqual(
-                    len(vm_response),
-                    0,
-                    "Check VMs available in List VMs response"
-                )
+                
                 vm = vm_response[0]
                 self.assertEqual(
                     vm.state,
                     'Running',
-                    "Check the state of VM"
+                    "Ensure the state of VM is running"
                 )
+                
             except Exception as e:
                 self.fail("Exception occurred: %s" % e)
                 
