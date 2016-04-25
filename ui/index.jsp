@@ -1788,6 +1788,7 @@
         <script type="text/javascript" src="scripts/templates.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/accountsWizard.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/ui-custom/accountsWizard.js?t=<%=now%>"></script>
+        <script type="text/javascript" src="scripts/roles.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/accounts.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/configuration.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/globalSettings.js?t=<%=now%>"></script>

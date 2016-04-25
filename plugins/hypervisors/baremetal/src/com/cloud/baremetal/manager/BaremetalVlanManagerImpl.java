@@ -40,6 +40,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.AddBaremetalRctCmd;
 import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
 import org.apache.cloudstack.api.ListBaremetalRctCmd;
@@ -247,6 +248,8 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         acnt.setUuid(UUID.randomUUID().toString());
         acnt.setState(Account.State.enabled);
         acnt.setDomainId(1);
+        acnt.setType(RoleType.User.getAccountType());
+        acnt.setRoleId(RoleType.User.getId());
         acnt = acntDao.persist(acnt);
 
         UserVO user = new UserVO();

@@ -1067,7 +1067,13 @@ dictionary = {
 'label.retry.interval': '<fmt:message key="label.retry.interval" />',
 'label.review': '<fmt:message key="label.review" />',
 'label.revoke.project.invite': '<fmt:message key="label.revoke.project.invite" />',
+'label.permission': '<fmt:message key="label.permission" />',
 'label.role': '<fmt:message key="label.role" />',
+'label.roles': '<fmt:message key="label.roles" />',
+'label.roletype': '<fmt:message key="label.roletype" />',
+'label.add.role': '<fmt:message key="label.add.role" />',
+'label.edit.role': '<fmt:message key="label.edit.role" />',
+'label.delete.role': '<fmt:message key="label.delete.role" />',
 'label.root.disk.controller': '<fmt:message key="label.root.disk.controller" />',
 'label.root.disk.offering': '<fmt:message key="label.root.disk.offering" />',
 };

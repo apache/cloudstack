@@ -16,11 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.account;
 
-import java.util.Collection;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.user.Account;
+import com.cloud.user.UserAccount;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,11 +28,13 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
-import com.cloud.user.Account;
-import com.cloud.user.UserAccount;
+import java.util.Collection;
+import java.util.Map;
 
 
 @APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class, entityType = {Account.class},
@@ -55,9 +55,11 @@ public class CreateAccountCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
                type = CommandType.SHORT,
-               required = true,
                description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Short accountType;
+
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
+    private Long roleId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Creates the user under the specified domain.")
     private Long domainId;
@@ -106,7 +108,11 @@ public class CreateAccountCmd extends BaseCmd {
     }
 
     public Short getAccountType() {
-        return accountType;
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), accountType);
+    }
+
+    public Long getRoleId() {
+        return RoleType.getRoleByAccountType(roleId, accountType);
     }
 
     public Long getDomainId() {
@@ -178,9 +184,12 @@ public class CreateAccountCmd extends BaseCmd {
         if (StringUtils.isEmpty(getPassword())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
         }
+        if (getAccountType() == null && getRoleId() == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Neither account type and role ID are not provided");
+        }
         CallContext.current().setEventDetails("Account Name: " + getAccountName() + ", Domain Id:" + getDomainId());
         UserAccount userAccount =
-            _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(),
+            _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getRoleId(),
                 getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(ResponseView.Full, userAccount);

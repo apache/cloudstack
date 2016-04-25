@@ -2902,6 +2902,15 @@ div.detail-group.actions td {
   background-position: -366px -239px;
 }
 
+#navigation ul li.roles span.icon {
+  background-position: -460px -80px;
+}
+
+#navigation ul li.roles.active span.icon,
+#navigation ul li.roles:hover span.icon {
+  background-position: -469px -750px;
+}
+
 #navigation ul li.accounts span.icon {
   background-position: -458px -19px;
 }
@@ -13116,4 +13125,11 @@ div.gpugroups div.list-view {
 .ui-dialog .ui-button.add span {
   background: transparent url("../images/icons.png") no-repeat -626px -209px;
   padding: 0 0 3px 18px;
+}
+
+ul.ui-autocomplete.ui-menu {
+  width: 250px;
+  background: #ddd;
+  font-size: 13px;
+  padding: 5px;
 }

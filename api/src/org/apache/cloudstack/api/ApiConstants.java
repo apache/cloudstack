@@ -353,6 +353,11 @@ public class ApiConstants {
     public static final String PROJECT_IDS = "projectids";
     public static final String PROJECT = "project";
     public static final String ROLE = "role";
+    public static final String ROLE_ID = "roleid";
+    public static final String ROLE_TYPE = "roletype";
+    public static final String ROLE_NAME = "rolename";
+    public static final String PERMISSION = "permission";
+    public static final String RULE = "rule";
     public static final String USER = "user";
     public static final String ACTIVE_ONLY = "activeonly";
     public static final String TOKEN = "token";

@@ -96,6 +96,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "account_type")
     private short accountType;
 
+    @Column(name = "account_role_id")
+    private Long accountRoleId;
+
     @Column(name = "domain_id")
     private long domainId;
 
@@ -147,6 +150,10 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public short getAccountType() {
         return accountType;
+    }
+
+    public Long getAccountRoleId() {
+        return accountRoleId;
     }
 
     public long getDomainId() {
