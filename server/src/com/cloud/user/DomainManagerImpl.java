@@ -308,6 +308,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
             cleanupDomainOfferings(domain.getId());
             CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+            _messageBus.publish(_name, MESSAGE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domain);
             return true;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domain.getId(), ex);

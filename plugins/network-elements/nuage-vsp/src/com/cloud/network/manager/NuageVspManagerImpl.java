@@ -105,6 +105,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import net.nuage.vsp.acs.NuageVspPluginClientLoader;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -120,7 +121,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,8 +137,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
 
     private static final int ONE_MINUTE_MULTIPLIER = 60 * 1000;
 
-    private static final Set<Network.Provider> NUAGE_VSP_PROVIDERS;
-    private static final Map<Network.Service, Set<Network.Provider>> NUAGE_VSP_VPC_SERVICE_MAP;
+    public static final Map<Network.Service, Set<Network.Provider>> NUAGE_VSP_VPC_SERVICE_MAP;
     private static final ConfigKey[] NUAGE_VSP_CONFIG_KEYS = new ConfigKey<?>[] { NuageVspConfigDns, NuageVspDnsExternal, NuageVspConfigGateway,
             NuageVspSharedNetworkDomainTemplateName, NuageVspVpcDomainTemplateName, NuageVspIsolatedNetworkDomainTemplateName };
 
@@ -195,13 +194,18 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     MessageBus _messageBus;
 
     static {
-        NUAGE_VSP_PROVIDERS = ImmutableSet.of(Network.Provider.NuageVsp);
+        Set<Network.Provider> nuageVspProviders = ImmutableSet.of(Network.Provider.NuageVsp);
+        Set<Network.Provider> userDataProviders = ImmutableSet.of(Network.Provider.VPCVirtualRouter);
+        Set<Network.Provider> lbProviders = ImmutableSet.of(Network.Provider.InternalLbVm);
         NUAGE_VSP_VPC_SERVICE_MAP = ImmutableMap.<Network.Service, Set<Network.Provider>>builder()
-                .put(Network.Service.Connectivity, NUAGE_VSP_PROVIDERS)
-                .put(Network.Service.Dhcp, NUAGE_VSP_PROVIDERS)
-                .put(Network.Service.StaticNat, NUAGE_VSP_PROVIDERS)
-                .put(Network.Service.SourceNat, NUAGE_VSP_PROVIDERS)
-                .put(Network.Service.NetworkACL, NUAGE_VSP_PROVIDERS)
+                .put(Network.Service.Connectivity, nuageVspProviders)
+                .put(Network.Service.Gateway, nuageVspProviders)
+                .put(Network.Service.Dhcp, nuageVspProviders)
+                .put(Network.Service.StaticNat, nuageVspProviders)
+                .put(Network.Service.SourceNat, nuageVspProviders)
+                .put(Network.Service.NetworkACL, nuageVspProviders)
+                .put(Network.Service.UserData, userDataProviders)
+                .put(Network.Service.Lb, lbProviders)
                 .build();
     }
 
@@ -424,6 +428,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         HostVO nuageVspHost = _hostDao.findById(nuageVspDeviceVO.getHostId());
         _hostDao.loadDetails(nuageVspHost);
 
+        NuageVspResource.Configuration resourceConfiguration = NuageVspResource.Configuration.fromConfiguration(nuageVspHost.getDetails());
         NuageVspDeviceResponse response = new NuageVspDeviceResponse();
         response.setDeviceName(nuageVspDeviceVO.getDeviceName());
         PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(nuageVspDeviceVO.getPhysicalNetworkId());
@@ -432,12 +437,13 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         }
         response.setId(nuageVspDeviceVO.getUuid());
         response.setProviderName(nuageVspDeviceVO.getProviderName());
-        response.setHostName(nuageVspHost.getDetail("hostname"));
-        response.setPort(Integer.parseInt(nuageVspHost.getDetail("port")));
-        String apiRelativePath = nuageVspHost.getDetail("apirelativepath");
+        response.setHostName(resourceConfiguration.hostName());
+        response.setPort(Integer.parseInt(resourceConfiguration.port()));
+        String apiRelativePath = resourceConfiguration.apiRelativePath();
         response.setApiVersion(apiRelativePath.substring(apiRelativePath.lastIndexOf('/') + 1));
-        response.setApiRetryCount(Integer.parseInt(nuageVspHost.getDetail("retrycount")));
-        response.setApiRetryInterval(Long.parseLong(nuageVspHost.getDetail("retryinterval")));
+        response.setApiRetryCount(Integer.parseInt(resourceConfiguration.retryCount()));
+        response.setApiRetryInterval(Long.parseLong(resourceConfiguration.retryInterval()));
+        response.setCmsId(resourceConfiguration.nuageVspCmsId());
         response.setObjectName("nuagevspdevice");
         return response;
     }
@@ -770,7 +776,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                     defaultNuageVspSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
                     defaultNuageVspSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNuageVspSharedSGNetworkOffering);
 
-                    Map<Network.Service, Network.Provider> defaultNuageVspSharedSGNetworkOfferingProviders = new HashMap<>();
+                    Map<Network.Service, Network.Provider> defaultNuageVspSharedSGNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
                     defaultNuageVspSharedSGNetworkOfferingProviders.put(Network.Service.Dhcp, Network.Provider.NuageVsp);
                     defaultNuageVspSharedSGNetworkOfferingProviders.put(Network.Service.SecurityGroup, Network.Provider.NuageVsp);
                     defaultNuageVspSharedSGNetworkOfferingProviders.put(Network.Service.Connectivity, Network.Provider.NuageVsp);
@@ -794,16 +800,15 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                if (_vpcOffDao.findByUniqueName(nuageVPCOfferingName) == null) {
+                VpcOffering offering = _vpcOffDao.findByUniqueName(nuageVPCOfferingName);
+                if (offering == null) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Creating default Nuage VPC offering " + nuageVPCOfferingName);
                     }
 
-                    Map<Network.Service, Set<Network.Provider>> svcProviderMap = Maps.newHashMap(NUAGE_VSP_VPC_SERVICE_MAP);
-                    Set<Network.Provider> userDataProviders = Collections.singleton(Network.Provider.VPCVirtualRouter);
-                    svcProviderMap.put(Network.Service.UserData, userDataProviders);
-
-                    createVpcOffering(nuageVPCOfferingName, nuageVPCOfferingDisplayText, svcProviderMap, true, VpcOffering.State.Enabled, null);
+                    createVpcOffering(nuageVPCOfferingName, nuageVPCOfferingDisplayText, NUAGE_VSP_VPC_SERVICE_MAP, true, VpcOffering.State.Enabled, null);
+                } else {
+                    updateVpcOffering(offering, NUAGE_VSP_VPC_SERVICE_MAP);
                 }
             }
         });
@@ -822,7 +827,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                     offering.setState(state);
                 }
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Adding vpc offering " + offering);
+                    s_logger.debug(String.format("Adding vpc offering %s", offering));
                 }
                 offering = _vpcOffDao.persist(offering);
                 // populate services and providers
@@ -834,11 +839,49 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                                 VpcOfferingServiceMapVO offService = new VpcOfferingServiceMapVO(offering.getId(), service, provider);
                                 _vpcOffSvcMapDao.persist(offService);
                                 if (s_logger.isTraceEnabled()) {
-                                    s_logger.trace("Added service for the vpc offering: " + offService + " with provider " + provider.getName());
+                                    s_logger.trace(String.format("Added service for the vpc offering: %s with provider %s", offService, provider.getName()));
                                 }
                             }
                         } else {
-                            throw new InvalidParameterValueException("Provider is missing for the VPC offering service " + service.getName());
+                            throw new InvalidParameterValueException(String.format("Provider is missing for the VPC offering service %s", service.getName()));
+                        }
+                    }
+                }
+                return offering;
+            }
+        });
+    }
+
+    @DB
+    protected void updateVpcOffering(final VpcOffering offering, final Map<Network.Service, Set<Network.Provider>> svcProviderMap) {
+        Transaction.execute(new TransactionCallback<VpcOffering>() {
+            @Override
+            public VpcOffering doInTransaction(TransactionStatus status) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Updating vpc offering %s", offering));
+                }
+
+                List<VpcOfferingServiceMapVO> currentVpcOfferingServices = _vpcOffSvcMapDao.listByVpcOffId(offering.getId());
+                Map<Network.Service, Set<Network.Provider>> currentSvcProviderMap = Maps.newHashMap();
+                for (VpcOfferingServiceMapVO vpcOfferingService : currentVpcOfferingServices) {
+                    Network.Service service = Network.Service.getService(vpcOfferingService.getService());
+                    Network.Provider provider = Network.Provider.getProvider(vpcOfferingService.getProvider());
+
+                    if (!currentSvcProviderMap.containsKey(service)) {
+                        currentSvcProviderMap.put(service, Sets.newHashSet(provider));
+                    } else if (!currentSvcProviderMap.get(service).contains(provider)) {
+                        currentSvcProviderMap.get(service).add(provider);
+                    }
+                }
+
+                for (Network.Service service : svcProviderMap.keySet()) {
+                    for (Network.Provider provider : svcProviderMap.get(service)) {
+                        if (currentSvcProviderMap.get(service) == null || !currentSvcProviderMap.get(service).contains(provider)) {
+                            VpcOfferingServiceMapVO offService = new VpcOfferingServiceMapVO(offering.getId(), service, provider);
+                            _vpcOffSvcMapDao.persist(offService);
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug(String.format("Added service for the vpc offering: %s", offService));
+                            }
                         }
                     }
                 }

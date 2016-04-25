@@ -15,26 +15,29 @@
 # specific language governing permissions and limitations
 # under the License.
 
-""" Component tests for - userdata
+""" Component tests for user data and password reset functionality with Nuage VSP SDN plugin
 """
 # Import Local Modules
-from marvin.lib.base import (Account,
-                             VirtualMachine,
-                             Volume,
-                             Template)
-from nose.plugins.attrib import attr
 from nuageTestCase import nuageTestCase
+from marvin.lib.base import (Account,
+                             Template,
+                             VirtualMachine,
+                             Volume)
+from marvin.lib.common import list_templates
 from marvin.lib.utils import cleanup_resources
-from marvin.cloudstackAPI import startVirtualMachine
+from marvin.cloudstackAPI import updateTemplate
+# Import System Modules
+from nose.plugins.attrib import attr
 import base64
 
 
 class TestNuagePasswordReset(nuageTestCase):
+    """Test user data and password reset functionality with Nuage VSP SDN plugin
+    """
 
     @classmethod
     def setUpClass(cls):
         super(TestNuagePasswordReset, cls).setUpClass()
-
         return
 
     def setUp(self):
@@ -60,16 +63,15 @@ class TestNuagePasswordReset(nuageTestCase):
         self.vm_1.delete(self.apiclient, expunge=True)
         if self.remove_vm2:
             self.vm_2.delete(self.apiclient, expunge=True)
-
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
-            self.debug("Warning: Exception during cleanup : %s" % e)
+            self.debug("Warning: Exception during cleanup: %s" % e)
         return
 
-    # create_template - Takes the VM object as the argument to create the template
+    # create_template - Creates template with the given VM object
     def create_template(self, vm):
-        self.debug("CREATE TEMPLATE")
+        self.debug("Creating template")
         list_volume = Volume.list(self.apiclient,
                                   virtualmachineid=vm.id,
                                   type='ROOT',
@@ -77,18 +79,31 @@ class TestNuagePasswordReset(nuageTestCase):
         if isinstance(list_volume, list):
             self.volume = list_volume[0]
         else:
-            raise Exception("Exception: Unable to find root volume for VM: %s" % vm.id)
-
-        self.test_data["template_pr"]["ostype"] = self.test_data["ostype_pr"]
+            raise Exception("Exception: Unable to find root volume for VM with ID - %s" % vm.id)
         self.pw_enabled_template = Template.create(
             self.apiclient,
-            self.test_data["template_pr"],
+            self.test_data["template"],
             self.volume.id,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(self.pw_enabled_template.passwordenabled, True, "template is not passwordenabled")
         self.cleanup.append(self.pw_enabled_template)
+        self.debug("Created template")
+
+    # updateTemplate - Updates value of template's password enabled setting
+    def updateTemplate(self, value):
+        self.debug("Updating value of template's password enabled setting")
+        cmd = updateTemplate.updateTemplateCmd()
+        cmd.id = self.template.id
+        cmd.passwordenabled = value
+        self.apiclient.updateTemplate(cmd)
+        list_template_response = list_templates(self.apiclient,
+                                                templatefilter="all",
+                                                id=self.template.id
+                                                )
+        self.template = list_template_response[0]
+        self.debug("Updated template")
 
     # VM object is passed as an argument and its interface id is returned
     def get_vm_interface_id(self, vm):
@@ -109,13 +124,13 @@ class TestNuagePasswordReset(nuageTestCase):
 
     # Creates and verifies the firewall rule
     def create_and_verify_fw(self, vm, public_ip, network):
-        self.debug("CREATE AND VERIFY FIREWALL RULE")
+        self.debug("Create and verify firewall rule")
         self.create_StaticNatRule_For_VM(vm, public_ip, network)
 
         # VSD verification
         self.verify_vsp_floating_ip(network, vm, public_ip.ipaddress)
 
-        fw_rule = self.create_firewall_rule(public_ip, self.test_data["ingress_rule"])
+        fw_rule = self.create_FirewallRule(public_ip, self.test_data["ingress_rule"])
         self.verify_vsp_firewall_rule(fw_rule)
         vm_interface_id = self.get_vm_interface_id(vm)
         pd = self.vsd.get_vm_interface_policydecisions(id=vm_interface_id)
@@ -130,7 +145,7 @@ class TestNuagePasswordReset(nuageTestCase):
             raise ValueError('No firewall policy decision in vm interface')
 
     def stop_vm(self, vm):
-        self.debug("STOP VM")
+        self.debug("Stoping VM")
         vm.stop(self.apiclient)
         list_vm_response = VirtualMachine.list(self.apiclient,
                                                id=vm.id)
@@ -159,8 +174,10 @@ class TestNuagePasswordReset(nuageTestCase):
             self.debug("get_set_password_file result " + result)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
-    def test_01_UserDataPasswordReset(self):
-        self.debug("START USER DATA PASSWORD RESET ON VM")
+    def test_nuage_UserDataPasswordReset(self):
+        """Test user data and password reset functionality with Nuage VSP SDN plugin
+        """
+
         """
          Validate the following:
          1) user data
@@ -171,12 +188,12 @@ class TestNuagePasswordReset(nuageTestCase):
          2.  Create an Isolated network - Test Network (10.1.1.1/24).
          3.  Deploy VM1 in Test Network
          4.  Verify domain,zone subnet, vm.
-         5.  create public ip , Create Static Nat rule firewall rule and verify
+         5.  create public IP, Create Static Nat rule firewall rule and verify
          6.  SSH to VM should be successful
          7.  verify userdata
          8.  check cloud-set-guest-password exist.
          9.  if cloud-set-guest-password exist.
-          9.1    change template password enabled to true
+          9.1   change template password enabled to true
           9.2   verify that template is password enbalded
           9.3   SSH with new password should be successful
          10. else cloud-set-guest-password does not exist.
@@ -185,27 +202,30 @@ class TestNuagePasswordReset(nuageTestCase):
           10.3  create a new template with password enabled. Verify that template is password enabled.
           10.4  create vm 2 with new template in Test Network
           10.5  Verify vm.
-          10.6  create public ip , Create Static Nat rule firewall rule and verify
+          10.6  create public IP, Create Static Nat rule firewall rule and verify
           10.7  SSH to VM 2 should be successful
          11. Reset VM password (VM_1 if guest password file exist.  else it is VM2)
          12  Starting VM and SSH to VM to verify new password
         """
+
+        self.debug("TEST USER DATA & PASSWORD RESET ON VM")
 
         self.defaultTemplateVal = self.template.passwordenabled
         if self.template.passwordenabled:
             self.updateTemplate(False)
 
         self.debug("CREATE AN ISOLATED NETWORK")
-        self.network_1 = self.create_Network(self.test_data["network_offering_pr"])
+        net_off = self.create_NetworkOffering(self.test_data["nuagevsp"]["isolated_network_offering"])
+        self.network_1 = self.create_Network(net_off)
         self.cleanup.append(self.network_1)
         expUserData = "hello world vm1"
         userdata = base64.b64encode(expUserData)
-        self.test_data["virtual_machine_pr"]["userdata"] = userdata
+        self.test_data["virtual_machine_userdata"]["userdata"] = userdata
         self.debug("DEPLOY VM 1 IN TEST NETWORK")
         # Pass the network and name of the vm type from the testdata with the configuration for the vm
-        self.vm_1 = self.create_VM_in_Network(self.network_1, "virtual_machine_pr")
+        self.vm_1 = self.create_VM(self.network_1, vm_key="virtual_machine_userdata")
 
-        self.vm_1.password = self.test_data["virtual_machine_pr"]["password"]
+        self.vm_1.password = self.test_data["virtual_machine_userdata"]["password"]
         user_data_cmd = self.get_userdata_url(self.vm_1)
 
         # VSD verification
@@ -214,11 +234,11 @@ class TestNuagePasswordReset(nuageTestCase):
         self.verify_vsp_vm(self.vm_1)
 
         self.debug("CREATE PUBLIC IP, STATIC NAT RULE, FLOATING IP, FIREWALL AND VERIFY")
-        public_ip_1 = self.acquire_Public_IP(self.network_1)
+        public_ip_1 = self.acquire_PublicIPAddress(self.network_1)
         self.create_and_verify_fw(self.vm_1, public_ip_1, self.network_1)
 
         self.debug("SSH TO VM")
-        ssh = self.ssh_into_vm(self.vm_1, public_ip_1)
+        ssh = self.ssh_into_VM(self.vm_1, public_ip_1)
 
         self.debug("VERIFY USER DATA")
         self.debug("Get User Data with command: " + user_data_cmd)
@@ -238,25 +258,23 @@ class TestNuagePasswordReset(nuageTestCase):
             self.stop_vm(self.vm_1)
             self.create_template(self.vm_1)
             self.debug("DEPLOY VM 2 IN TEST NETWORK WITH NEW TEMPLATE")
-            self.vm_2 = self.create_VM_in_Network(self.network_1, "virtual_machine_pr")
+            self.vm_2 = self.create_VM(self.network_1, vm_key="virtual_machine_userdata")
             self.remove_vm2 = True
             self.debug("STARTING VM_2 ")
-            startCmd = startVirtualMachine.startVirtualMachineCmd()
-            startCmd.id = self.vm_2.id
-            vm_2a = self.apiclient.startVirtualMachine(startCmd)
+            vm_2a = self.vm_2.start(self.apiclient)
             self.vm_2.password = vm_2a.password.strip()
             self.vm_2.nic = vm_2a.nic
-            self.debug("VM - %s password %s !" % (self.vm_2.name, self.vm_2.password))
+            self.debug("VM - %s password - %s !" % (self.vm_2.name, self.vm_2.password))
             self.assertNotEqual(self.vm_2.password,
-                                self.test_data["virtual_machine_pr"]["password"],
+                                self.test_data["virtual_machine_userdata"]["password"],
                                 "Password enabled not working. Password same as virtual_machine password "
                                 )
             self.verify_vsp_vm(vm_2a)
             self.debug("GET PUBLIC IP.  CREATE AND VERIFIED FIREWALL RULES")
-            public_ip_2 = self.acquire_Public_IP(self.network_1)
+            public_ip_2 = self.acquire_PublicIPAddress(self.network_1)
             self.create_and_verify_fw(self.vm_2, public_ip_2, self.network_1)
 
-            ssh = self.ssh_into_vm(self.vm_2, public_ip_2)
+            self.ssh_into_VM(self.vm_2, public_ip_2)
             vm_test = self.vm_2
             vm_test_public_ip = public_ip_2
 
@@ -267,10 +285,10 @@ class TestNuagePasswordReset(nuageTestCase):
             vm_test = self.vm_1
             vm_test_public_ip = public_ip_1
 
-        self.debug("RESETTING VM PASSWORD for VM: %s" % vm_test.name)
+        self.debug("RESETTING VM PASSWORD for VM - %s" % vm_test.name)
         vm_test.password = vm_test.resetPassword(self.apiclient)
-        self.debug("Password reset to: %s" % vm_test.password)
+        self.debug("Password reset to - %s" % vm_test.password)
         self.debug("STARTING VM AND SSH TO VM TO VERIFY NEW PASSWORD")
         vm_test.start(self.apiclient)
         self.debug("VM - %s started!" % vm_test.name)
-        self.ssh_into_vm(vm_test, vm_test_public_ip)
+        self.ssh_into_VM(vm_test, vm_test_public_ip)

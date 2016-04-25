@@ -15,16 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-""" P1 tests for NuageVsp network Plugin
+""" P1 tests for Nuage VSP SDN plugin
 """
 # Import Local Modules
-from marvin.lib.base import Account
-from nose.plugins.attrib import attr
 from nuageTestCase import nuageTestCase
+from marvin.lib.base import Account
+# Import System Modules
+from nose.plugins.attrib import attr
 
 
 class TestNuageVsp(nuageTestCase):
-    """ Test NuageVsp network plugin
+    """ Test Nuage VSP SDN plugin
     """
 
     @classmethod
@@ -44,12 +45,12 @@ class TestNuageVsp(nuageTestCase):
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_nuage_vsp(self):
-        """ Test NuageVsp network plugin with basic Isolated Network functionality
+        """ Test Nuage VSP SDN plugin with basic Isolated Network functionality
         """
 
-        # 1. Verify that the NuageVsp network service provider is successfully created and enabled.
-        # 2. Create and enable Nuage Vsp Isolated Network offering, check if it is successfully created and enabled.
-        # 3. Create an Isolated Network with Nuage Vsp Isolated Network offering, check if it is successfully created
+        # 1. Verify that the Nuage VSP network service provider is successfully created and enabled.
+        # 2. Create and enable Nuage VSP Isolated Network offering, check if it is successfully created and enabled.
+        # 3. Create an Isolated Network with Nuage VSP Isolated Network offering, check if it is successfully created
         #    and is in the "Allocated" state.
         # 4. Deploy a VM in the created Isolated network, check if the Isolated network state is changed to
         #    "Implemented", and both the VM & VR are successfully deployed and are in the "Running" state.
@@ -58,49 +59,49 @@ class TestNuageVsp(nuageTestCase):
         # 6. Delete the created Isolated Network after destroying its VMs, check if the Isolated network is successfully
         #    deleted.
 
-        self.debug("Validating the NuageVsp network service provider...")
+        self.debug("Validating the Nuage VSP network service provider...")
         self.validate_NetworkServiceProvider("NuageVsp", state="Enabled")
 
         # Creating a network offering
-        self.debug("Creating and enabling Nuage Vsp Isolated Network offering...")
+        self.debug("Creating and enabling Nuage VSP Isolated Network offering...")
         network_offering = self.create_NetworkOffering(
-            self.test_data["nuage_vsp_services"]["isolated_network_offering"])
-        self.validate_network_offering(network_offering, state="Enabled")
+            self.test_data["nuagevsp"]["isolated_network_offering"])
+        self.validate_NetworkOffering(network_offering, state="Enabled")
 
         # Creating a network
-        self.debug("Creating an Isolated Network with Nuage Vsp Isolated Network offering...")
-        network = self.create_Network(network_offering, gateway='10.1.1.1')
-        self.validate_network(network, state="Allocated")
+        self.debug("Creating an Isolated Network with Nuage VSP Isolated Network offering...")
+        network = self.create_Network(network_offering)
+        self.validate_Network(network, state="Allocated")
 
         # Deploying a VM in the network
-        vm_1 = self.create_VM_in_Network(network)
-        self.validate_network(network, state="Implemented")
-        vr = self.get_network_router(network)
-        self.check_router_state(vr, state="Running")
-        self.check_vm_state(vm_1, state="Running")
+        vm_1 = self.create_VM(network)
+        self.validate_Network(network, state="Implemented")
+        vr = self.get_Router(network)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm_1, state="Running")
 
-        # VSPK verification
+        # VSD verification
         self.verify_vsp_network(self.domain.id, network)
         self.verify_vsp_router(vr)
         self.verify_vsp_vm(vm_1)
 
         # Deploying one more VM in the network
-        vm_2 = self.create_VM_in_Network(network)
-        self.check_vm_state(vm_2, state="Running")
+        vm_2 = self.create_VM(network)
+        self.check_VM_state(vm_2, state="Running")
 
-        # VSPK verification
+        # VSD verification
         self.verify_vsp_vm(vm_2)
 
         # Deleting the network
-        self.debug("Deleting the Isolated Network with Nuage Vsp Isolated Network offering...")
+        self.debug("Deleting the Isolated Network with Nuage VSP Isolated Network offering...")
         self.delete_VM(vm_1)
         self.delete_VM(vm_2)
         self.delete_Network(network)
         with self.assertRaises(Exception):
-            self.validate_network(network)
+            self.validate_Network(network)
         self.debug("Isolated Network successfully deleted in CloudStack")
 
-        # VSPK verification
+        # VSD verification
         with self.assertRaises(Exception):
             self.verify_vsp_network(self.domain.id, network)
         self.debug("Isolated Network successfully deleted in VSD")
