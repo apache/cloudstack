@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.api.auth;
 
+import com.cloud.domain.Domain;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.ApiServerService;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
@@ -156,6 +159,16 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         if (username != null) {
             final String pwd = ((password == null) ? null : password[0]);
             try {
+                final Domain userDomain = _domainService.findDomainByIdOrPath(domainId, domain);
+                if (userDomain != null) {
+                    domainId = userDomain.getId();
+                } else {
+                    throw new CloudAuthenticationException("Unable to find the domain from the path " + domain);
+                }
+                final UserAccount userAccount = _accountService.getActiveUserAccount(username[0], domainId);
+                if (userAccount == null || !(User.Source.UNKNOWN.equals(userAccount.getSource()) || User.Source.LDAP.equals(userAccount.getSource()))) {
+                    throw new CloudAuthenticationException("User is not allowed CloudStack login");
+                }
                 return ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
                         responseType);
             } catch (final CloudAuthenticationException ex) {
