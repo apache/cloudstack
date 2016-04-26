@@ -115,7 +115,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Upload-Monitor"));
         _monitoringInterval = UploadMonitoringInterval.value();
-        _uploadOperationTimeout = UploadOperationTimeout.value() * 60 * 1000;
+        _uploadOperationTimeout = UploadOperationTimeout.value() * 60 * 1000L;
         _nodeId = ManagementServerNode.getManagementServerId();
         return true;
     }
