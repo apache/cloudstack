@@ -24,6 +24,7 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.google.common.base.Strings;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -218,6 +219,25 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Override
     public DomainVO findDomainByPath(String domainPath) {
         return _domainDao.findDomainByPath(domainPath);
+    }
+
+    @Override
+    public Domain findDomainByIdOrPath(final Long id, final String domainPath) {
+        Long domainId = id;
+        if (domainId == null) {
+            if (Strings.isNullOrEmpty(domainPath) || domainPath.trim().isEmpty()) {
+                domainId = Domain.ROOT_DOMAIN;
+            } else {
+                final Domain domainVO = findDomainByPath(domainPath);
+                if (domainVO != null) {
+                    domainId = domainVO.getId();
+                }
+            }
+        }
+        if (domainId != null) {
+            return _domainDao.findById(domainId);
+        }
+        return null;
     }
 
     @Override
