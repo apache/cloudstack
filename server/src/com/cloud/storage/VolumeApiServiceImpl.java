@@ -84,6 +84,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -2569,6 +2570,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (sendCommand) {
                 DiskTO disk = answer.getDisk();
                 _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), disk.getDiskSeq());
+
+                final VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
+                _volumeMgr.updateVolumeDiskChain(vol.getId(), vol.getPath(), vol.getChainInfo());
 
                 volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 

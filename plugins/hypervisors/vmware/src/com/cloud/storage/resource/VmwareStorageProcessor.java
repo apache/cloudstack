@@ -1361,8 +1361,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             disk.setPath(datastoreVolumePath);
 
-            AttachAnswer answer = new AttachAnswer(disk);
-
             if (isAttach) {
                 String diskController = getLegacyVmDataDiskController();
                 if (controllerInfo != null &&
@@ -1373,6 +1371,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
                 vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs, diskController);
+                volumeTO.setChainInfo(_gson.toJson(vmMo.getDiskInfoBuilder().getAllDiskInfo().get(0)));
+                disk.setData(volumeTO);
             } else {
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);
@@ -1384,6 +1384,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
+
+            AttachAnswer answer = new AttachAnswer(disk);
             return answer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
