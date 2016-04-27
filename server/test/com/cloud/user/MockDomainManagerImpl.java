@@ -92,6 +92,11 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
     }
 
     @Override
+    public DomainVO findDomainByIdOrPath(Long id, String domainPath) {
+        return null;
+    }
+
+    @Override
     public Set<Long> getDomainParentIds(long domainId) {
         // TODO Auto-generated method stub
         return null;
