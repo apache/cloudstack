@@ -2625,7 +2625,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final Connect conn = LibvirtConnection.getConnection();
             final NodeInfo hosts = conn.nodeInfo();
             speed = getCpuSpeed(hosts);
-            
+
             /*
             * Some CPUs report a single socket and multiple NUMA cells.
             * We need to multiply them to get the correct socket count.
