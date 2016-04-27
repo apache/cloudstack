@@ -56,4 +56,14 @@ public interface DomainService {
      */
     Domain findDomainByPath(String domainPath);
 
+    /**
+     * finds the domain by either id or provided path
+     *
+     * @param id the domain id
+     * @param domainPath the domain path use to lookup a domain
+     *
+     * @return domainId the long value of the domain ID, or null if no domain id exists with provided id/path
+     */
+    Domain findDomainByIdOrPath(Long id, String domainPath);
+
 }
