@@ -330,7 +330,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             try {
                 SnapshotInfo parent = snapshot.getParent();
                 if (backupedSnapshot != null && parent != null && primaryStore instanceof PrimaryDataStoreImpl) {
-                    if (((PrimaryDataStoreImpl) primaryStore).getPoolType() != StoragePoolType.RBD) {
+                    if (((PrimaryDataStoreImpl)primaryStore).getPoolType() != StoragePoolType.RBD) {
                         Long parentSnapshotId = parent.getId();
                         while (parentSnapshotId != null && parentSnapshotId != 0L) {
                             SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), parentSnapshotId);
@@ -347,8 +347,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                         snapshotDataStoreVO.setParentSnapshotId(0L);
                         snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
                     }
-                }  
-	} catch (Exception e) {
+                }
+            } catch (Exception e) {
                 s_logger.debug("Failed to clean up snapshots on primary storage", e);
             }
             return backupedSnapshot;
