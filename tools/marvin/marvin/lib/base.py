@@ -667,11 +667,15 @@ class VirtualMachine:
             })
         apiclient.migrateVirtualMachineWithVolume(cmd)
 
-    def attach_volume(self, apiclient, volume):
+    def attach_volume(self, apiclient, volume, deviceid=None):
         """Attach volume to instance"""
         cmd = attachVolume.attachVolumeCmd()
         cmd.id = volume.id
         cmd.virtualmachineid = self.id
+
+        if deviceid is not None:
+            cmd.deviceid = deviceid
+
         return apiclient.attachVolume(cmd)
 
     def detach_volume(self, apiclient, volume):
