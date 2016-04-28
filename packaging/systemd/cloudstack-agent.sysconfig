@@ -15,21 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-[Unit]
-Description=CloudStack Agent
-Documentation=http://www.cloudstack.org/
-Requires=libvirtd.service
-After=libvirtd.service
-
-[Service]
-Type=simple
-EnvironmentFile=-/etc/sysconfig/cloudstack-agent
-ExecStart=/bin/sh -ec '\
-    export ACP=`ls /usr/share/cloudstack-agent/lib/*.jar /usr/share/cloudstack-agent/plugins/*.jar 2>/dev/null|tr "\\n" ":"`; \
-    export CLASSPATH="$ACP:/etc/cloudstack/agent:/usr/share/cloudstack-common/scripts"; \
-    ${JAVA_HOME}/bin/java -Xms${JAVA_HEAP_INITIAL} -Xmx${JAVA_HEAP_MAX} -cp "$CLASSPATH" $JAVA_CLASS'
-Restart=always
-RestartSec=10s
-
-[Install]
-WantedBy=multi-user.target
+JAVA_HOME=/usr/lib/jvm/jre
+JAVA_HEAP_INITIAL=256m
+JAVA_HEAP_MAX=2048m
+JAVA_CLASS=com.cloud.agent.AgentShell
