@@ -523,7 +523,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         // If the disc offering has no tags, then check if the service offering has any. if so,
         // make the new disc respect those
-        if (diskOffering.getTags() == null || diskOffering.getTags().length() == 0) {
+        if (diskOffering != null && offering != null && diskOffering.getTags() == null || diskOffering.getTags().length() == 0) {
             dskCh.setTags(offering.getTagsArray());
         }
 
