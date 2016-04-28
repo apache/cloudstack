@@ -603,7 +603,140 @@ class TestAttachDetachVolume(cloudstackTestCase):
                 "Check the state of VM"
             )
         except Exception as e:
-            self.fail("Exception occuered: %s" % e)
+            self.fail("Exception occurred: %s" % e)
+        return
+    
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    def test_02_root_volume_attach_detach(self):
+        """Test Root Volume attach/detach to VM
+        """
+
+        # Validate the following
+        # 1. Deploy a VM
+        # 2. Verify that we are testing a supported hypervisor
+        # 3. Check for root volume
+        # 4. Stop VM
+        # 5. Detach root volume
+        # 6. Verify root volume detached
+        # 7. Attach root volume
+        # 8. Start VM
+        
+        # Verify we are using a supported hypervisor
+        if (self.hypervisor.lower() == 'vmware'
+                or self.hypervisor.lower() == 'kvm'
+                or self.hypervisor.lower() == 'simulator'
+                or self.hypervisor.lower() == 'xenserver'):
+        
+            try:
+                # Check for root volume
+                root_volume_response = Volume.list(
+                    self.apiclient,
+                    virtualmachineid=self.virtual_machine.id,
+                    type='ROOT',
+                    listall=True
+                )
+                
+                self.assertEqual(
+                    validateList(root_volume_response)[0],
+                    PASS,
+                    "Invalid response returned for root volume list"
+                )
+                
+                # Grab the root volume for later use
+                root_volume = root_volume_response[0]
+                
+                # Stop VM
+                self.debug("Stopping the VM: %s" % self.virtual_machine.id)
+                self.virtual_machine.stop(self.apiclient)
+                
+                vm_response = VirtualMachine.list(
+                    self.apiclient,
+                    id=self.virtual_machine.id,
+                )
+                
+                # Ensure that vm_response is a valid list
+                self.assertEqual(
+                    validateList(vm_response)[0],
+                    PASS,
+                    "Invalid response returned for vm_response list"
+                )
+                
+                vm = vm_response[0]
+                self.assertEqual(
+                    vm.state,
+                    'Stopped',
+                    "Check the state of VM"
+                )
+                
+                # Detach root volume from VM
+                self.virtual_machine.detach_volume(
+                    self.apiclient,
+                    root_volume
+                )
+                
+                # Verify that root disk is gone
+                no_root_volume_response = Volume.list(
+                    self.apiclient,
+                    virtualmachineid=self.virtual_machine.id,
+                    type='ROOT',
+                    listall=True
+                )
+                
+                self.assertEqual(
+                    no_root_volume_response,
+                    None,
+                    "Check if root volume exists in ListVolumes"
+                )
+                
+                # Attach root volume to VM
+                self.virtual_machine.attach_volume(
+                    self.apiclient,
+                    root_volume,
+                    0
+                )
+                
+                # Check for root volume
+                new_root_volume_response = Volume.list(
+                    self.apiclient,
+                    virtualmachineid=self.virtual_machine.id,
+                    type='ROOT',
+                    listall=True
+                )
+                
+                # Ensure that new_root_volume_response is a valid list
+                self.assertEqual(
+                    validateList(new_root_volume_response)[0],
+                    PASS,
+                    "Invalid response returned for new_root_volume_response list"
+                )
+                
+                # Start VM
+                self.virtual_machine.start(self.apiclient)
+    
+                vm_response = VirtualMachine.list(
+                    self.apiclient,
+                    id=self.virtual_machine.id,
+                )
+                
+                # Verify VM response to check whether VM deployment was successful
+                self.assertEqual(
+                    validateList(vm_response)[0],
+                    PASS,
+                    "Invalid response returned for vm_response list during VM start up"
+                )
+                
+                vm = vm_response[0]
+                self.assertEqual(
+                    vm.state,
+                    'Running',
+                    "Ensure the state of VM is running"
+                )
+                
+            except Exception as e:
+                self.fail("Exception occurred: %s" % e)
+                
+        else:
+            self.skipTest("Root Volume attach/detach is not supported on %s " % self.hypervisor)
         return
 
 
