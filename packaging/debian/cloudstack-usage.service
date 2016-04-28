@@ -15,15 +15,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/agent/agent.properties
-/etc/cloudstack/agent/environment.properties
-/etc/cloudstack/agent/log4j-cloud.xml
-/etc/default/cloudstack-agent
-/etc/profile.d/cloudstack-agent-profile.sh
-/etc/logrotate.d/cloudstack-agent
-/etc/init.d/cloudstack-agent
-/usr/bin/cloudstack-setup-agent
-/usr/bin/cloudstack-ssh
-/usr/bin/cloudstack-agent-upgrade
-/usr/share/cloudstack-agent/lib/*
-/usr/share/cloudstack-agent/plugins
+[Unit]
+Description=CloudStack Usage Server
+Documentation=http://www.cloudstack.org/
+Wants=network.target network-online.target
+After=network.target network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/cloudstack-usage
+ExecStart=/bin/sh -ec '\
+    export UCP=`ls /usr/share/cloudstack-usage/cloud-usage-*.jar /usr/share/cloudstack-usage/lib/*.jar | tr "\\n" ":"`; \
+    export CLASSPATH="$UCP:/etc/cloudstack/usage:/usr/share/java/mysql-connector-java.jar"; \
+    ${JAVA_HOME}/bin/java -Xms${JAVA_HEAP_INITIAL} -Xmx${JAVA_HEAP_MAX} -cp "$CLASSPATH" $JAVA_CLASS'
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
