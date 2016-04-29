@@ -52,15 +52,17 @@ import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
 import org.libvirt.DomainInfo;
-import org.libvirt.MemoryStatistic;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
+import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
 
 import com.cloud.agent.api.Answer;
@@ -189,7 +191,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _clusterId;
 
     private long _hvVersion;
-    private long _kernelVersion;
     private int _timeout;
     private static final int NUMMEMSTATS =2;
 
@@ -958,13 +959,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
-        final String unameKernelVersion = Script.runSimpleBashScript("uname -r");
-        final String[] kernelVersions = unameKernelVersion.split("[\\.\\-]");
-        _kernelVersion = Integer.parseInt(kernelVersions[0]) * 1000 * 1000 + (long)Integer.parseInt(kernelVersions[1]) * 1000 + Integer.parseInt(kernelVersions[2]);
-
-        /* Disable this, the code using this is pretty bad and non portable
-         * getOsVersion();
-         */
         return true;
     }
 
@@ -3020,9 +3014,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         long _ioWrote;
         long _bytesRead;
         long _bytesWrote;
-        long _intmemfree;
-        long _memory;
-        long _maxmemory;
         Calendar _timestamp;
     }
 
@@ -3030,9 +3021,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Domain dm = null;
         try {
             dm = getDomain(conn, vmName);
-            final DomainInfo info = dm.getInfo();
-            final MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);      //number of memory statistics required.
-
+            if (dm == null) {
+                return null;
+            }
+            DomainInfo info = dm.getInfo();
             final VmStatsEntry stats = new VmStatsEntry();
 
             stats.setNumCPUs(info.nrVirtCpu);
@@ -3040,7 +3032,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             stats.setMemoryKBs(info.maxMem);
             stats.setTargetMemoryKBs(info.memory);
-            stats.setIntFreeMemoryKBs((double) mems[0].getValue());
+            stats.setIntFreeMemoryKBs(getMemoryFreeInKBs(dm));
+
             /* get cpu utilization */
             VmStats oldStats = null;
 
@@ -3125,9 +3118,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             newStat._bytesRead = bytes_rd;
             newStat._bytesWrote = bytes_wr;
             newStat._timestamp = now;
-            newStat._intmemfree = mems[0].getValue();
-            newStat._memory = info.memory;
-            newStat._maxmemory = info.maxMem;
             _vmStats.put(vmName, newStat);
             return stats;
         } finally {
@@ -3135,6 +3125,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 dm.free();
             }
         }
+    }
+
+    /**
+    * This method retrieves the memory statistics from the domain given as parameters.
+    * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
+    * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
+    *
+    * @return the amount of free memory in KBs
+    */
+    protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
+        MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);
+        if (ArrayUtils.isEmpty(mems)) {
+            return NumberUtils.LONG_ZERO;
+        }
+        return mems[0].getValue();
     }
 
     private boolean canBridgeFirewall(final String prvNic) {

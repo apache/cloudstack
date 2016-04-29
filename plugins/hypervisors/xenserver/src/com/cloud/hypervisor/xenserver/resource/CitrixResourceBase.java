@@ -184,6 +184,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
+
     protected static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
@@ -3323,19 +3325,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vmStatsAnswer.setNumCPUs(vmStatsAnswer.getNumCPUs() + 1);
                     vmStatsAnswer.setCPUUtilization(vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows));
                 } else if (param.matches("vif_\\d*_rx")) {
-                    vmStatsAnswer.setNetworkReadKBs(vmStatsAnswer.getNetworkReadKBs() + getDataAverage(dataNode, col, numRows) / 1000);
+                    vmStatsAnswer.setNetworkReadKBs(vmStatsAnswer.getNetworkReadKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 } else if (param.matches("vif_\\d*_tx")) {
-                    vmStatsAnswer.setNetworkWriteKBs(vmStatsAnswer.getNetworkWriteKBs() + getDataAverage(dataNode, col, numRows) / 1000);
+                    vmStatsAnswer.setNetworkWriteKBs(vmStatsAnswer.getNetworkWriteKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 } else if (param.matches("vbd_.*_read")) {
-                    vmStatsAnswer.setDiskReadKBs(vmStatsAnswer.getDiskReadKBs() + getDataAverage(dataNode, col, numRows) / 1000);
+                    vmStatsAnswer.setDiskReadKBs(vmStatsAnswer.getDiskReadKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 } else if (param.matches("vbd_.*_write")) {
-                    vmStatsAnswer.setDiskWriteKBs(vmStatsAnswer.getDiskWriteKBs() + getDataAverage(dataNode, col, numRows) / 1000);
+                    vmStatsAnswer.setDiskWriteKBs(vmStatsAnswer.getDiskWriteKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 } else if (param.contains("memory_internal_free")) {
-                    vmStatsAnswer.setIntFreeMemoryKBs(vmStatsAnswer.getIntFreeMemoryKBs() + getDataAverage(dataNode, col, numRows) / 1024);
+                    vmStatsAnswer.setIntFreeMemoryKBs(vmStatsAnswer.getIntFreeMemoryKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 } else if (param.contains("memory_target")) {
-                    vmStatsAnswer.setTargetMemoryKBs(vmStatsAnswer.getTargetMemoryKBs() + getDataAverage(dataNode, col, numRows) / 1024);
+                    vmStatsAnswer.setTargetMemoryKBs(vmStatsAnswer.getTargetMemoryKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 } else if (param.contains("memory")) {
-                    vmStatsAnswer.setMemoryKBs(vmStatsAnswer.getMemoryKBs() + getDataAverage(dataNode, col, numRows) / 1024);
+                    vmStatsAnswer.setMemoryKBs(vmStatsAnswer.getMemoryKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 }
 
             }

@@ -65,10 +65,10 @@ import org.libvirt.DomainInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
+import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
 import org.libvirt.StorageVol;
-import org.libvirt.MemoryStatistic;
-
+import org.libvirt.jna.virDomainMemoryStats;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -182,8 +182,8 @@ public class LibvirtComputingResourceTest {
     @Mock
     private LibvirtComputingResource libvirtComputingResource;
 
-    String _hyperVisorType = "kvm";
-    Random _random = new Random();
+    String hyperVisorType = "kvm";
+    Random random = new Random();
 
     /**
         This test tests if the Agent can handle a vmSpec coming
@@ -194,10 +194,10 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpecLegacy() {
-        final int id = _random.nextInt(65534);
+        final int id = random.nextInt(65534);
         final String name = "test-instance-1";
 
-        final int cpus = _random.nextInt(2) + 1;
+        final int cpus = random.nextInt(2) + 1;
         final int speed = 1024;
         final int minRam = 256 * 1024;
         final int maxRam = 512 * 1024;
@@ -213,7 +213,7 @@ public class LibvirtComputingResourceTest {
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
-        vm.setHvsType(_hyperVisorType);
+        vm.setHvsType(hyperVisorType);
 
         verifyVm(to, vm);
     }
@@ -223,7 +223,7 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpecWithTopology6() {
-        final int id = _random.nextInt(65534);
+        final int id = random.nextInt(65534);
         final String name = "test-instance-1";
 
         final int cpus = 12;
@@ -243,7 +243,7 @@ public class LibvirtComputingResourceTest {
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
-        vm.setHvsType(_hyperVisorType);
+        vm.setHvsType(hyperVisorType);
 
         verifyVm(to, vm);
     }
@@ -253,7 +253,7 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpecWithTopology4() {
-        final int id = _random.nextInt(65534);
+        final int id = random.nextInt(65534);
         final String name = "test-instance-1";
 
         final int cpus = 8;
@@ -273,7 +273,7 @@ public class LibvirtComputingResourceTest {
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
-        vm.setHvsType(_hyperVisorType);
+        vm.setHvsType(hyperVisorType);
 
         verifyVm(to, vm);
     }
@@ -287,10 +287,10 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpec() {
-        final int id = _random.nextInt(65534);
+        final int id = random.nextInt(65534);
         final String name = "test-instance-1";
 
-        final int cpus = _random.nextInt(2) + 1;
+        final int cpus = random.nextInt(2) + 1;
         final int minSpeed = 1024;
         final int maxSpeed = 2048;
         final int minRam = 256 * 1024;
@@ -308,7 +308,7 @@ public class LibvirtComputingResourceTest {
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
-        vm.setHvsType(_hyperVisorType);
+        vm.setHvsType(hyperVisorType);
 
         verifyVm(to, vm);
     }
@@ -718,10 +718,9 @@ public class LibvirtComputingResourceTest {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Test
+    @SuppressWarnings("unchecked")
     public void testGetVmDiskStatsCommandException() {
-        Mockito.mock(Connect.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
@@ -941,7 +940,6 @@ public class LibvirtComputingResourceTest {
     public void testGetHostStatsCommand() {
         // A bit difficult to test due to the logger being passed and the parser itself relying on the connection.
         // Have to spend some more time afterwards in order to refactor the wrapper itself.
-        Mockito.mock(LibvirtUtilitiesHelper.class);
         final CPUStat cpuStat = Mockito.mock(CPUStat.class);
         final MemStat memStat = Mockito.mock(MemStat.class);
 
@@ -3531,7 +3529,6 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResource, times(1)).configureVPCNetworkUsage(command.getPrivateIP(), command.getGatewayIP(), command.getOption(), command.getVpcCIDR());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testCreatePrivateTemplateFromVolumeCommand() {
         //Simple test used to make sure the flow (LibvirtComputingResource => Request => CommandWrapper) is working.
@@ -5039,5 +5036,41 @@ public class LibvirtComputingResourceTest {
                 assertTrue("The pattern '" + ifNamePattern + "' is expected to be valid for interface " + ifName,lvcr.isInterface(ifName));
             }
         }
+    }
+
+    @Test
+    public void testMemoryFreeInKBsDomainReturningOfSomeMemoryStatistics() throws LibvirtException {
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+
+        MemoryStatistic[] mem = createMemoryStatisticFreeMemory100();
+        Domain domainMock = getDomainConfiguredToReturnMemoryStatistic(mem);
+        long memoryFreeInKBs = libvirtComputingResource.getMemoryFreeInKBs(domainMock);
+
+        Assert.assertEquals(100, memoryFreeInKBs);
+    }
+
+    @Test
+    public void testMemoryFreeInKBsDomainReturningNoMemoryStatistics() throws LibvirtException {
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+
+        Domain domainMock = getDomainConfiguredToReturnMemoryStatistic(null);
+        long memoryFreeInKBs = libvirtComputingResource.getMemoryFreeInKBs(domainMock);
+
+        Assert.assertEquals(0, memoryFreeInKBs);
+    }
+
+    private MemoryStatistic[] createMemoryStatisticFreeMemory100() {
+        virDomainMemoryStats stat = new virDomainMemoryStats();
+        stat.val = 100;
+
+        MemoryStatistic[] mem = new MemoryStatistic[2];
+        mem[0] = new MemoryStatistic(stat);
+        return mem;
+    }
+
+    private Domain getDomainConfiguredToReturnMemoryStatistic(MemoryStatistic[] mem) throws LibvirtException {
+        Domain domainMock = Mockito.mock(Domain.class);
+        when(domainMock.memoryStats(2)).thenReturn(mem);
+        return domainMock;
     }
 }
