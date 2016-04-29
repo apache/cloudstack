@@ -22,6 +22,7 @@ from marvin.lib.base import Account, Role, RolePermission
 from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
+import copy
 import random
 import re
 
@@ -339,34 +340,59 @@ class TestDynamicRoles(cloudstackTestCase):
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_rolepermission_lifecycle_update(self):
         """
-            Tests updation of role permission
+            Tests order updation of role permission
         """
-        new_rule = "some*Rule" + self.getRandomString()
-        self.rolepermission.update(self.apiclient, rule=new_rule, permission='deny')
-        updated_rolepermission = filter(lambda p: p.id == self.rolepermission.id,
-                                        RolePermission.list(self.apiclient, roleid=self.role.id))[0]
-        self.assertEqual(
-            updated_rolepermission.rule,
-            new_rule,
-            msg="Role permission rule does not match updated role permission"
-        )
-        self.assertEqual(
-            updated_rolepermission.permission,
-            'deny',
-            msg="Role permission permission-type does not match updated role permission"
-        )
+        permissions = [self.rolepermission]
+        rules = ['list*', '*Vol*', 'listCapabilities']
+        for rule in rules:
+            data = copy.deepcopy(self.testdata["rolepermission"])
+            data['rule'] = rule
+            permission = RolePermission.create(
+                self.apiclient,
+                data
+            )
+            self.cleanup.append(permission)
+            permissions.append(permission)
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
-    def test_rolepermission_lifecycle_update_invalid_rule(self):
-        """
-            Tests updation of role permission with an invalid rule
-        """
-        for badrule in [" ", "^delete.*$", "some-@p1-!"]:
-            try:
-                self.rolepermission.update(self.apiclient, rule=badrule, permission='deny')
-                self.fail("Invalid role permission rule got updated")
-            except CloudstackAPIException: pass
+        def validate_permissions_list(permissions):
+            list_rolepermissions = RolePermission.list(self.apiclient, roleid=self.role.id)
+            self.assertEqual(
+                len(list_rolepermissions),
+                len(permissions),
+                msg="List of role permissions do not match created list of permissions"
+            )
+
+            for idx, rolepermission in enumerate(list_rolepermissions):
+                self.assertEqual(
+                    rolepermission.rule,
+                    permissions[idx].rule,
+                    msg="Rule permission don't match with expected item at the index"
+                )
+                self.assertEqual(
+                    rolepermission.permission,
+                    permissions[idx].permission,
+                    msg="Rule permission don't match with expected item at the index"
+                )
+
+        # Move last item to the top
+        rule = permissions.pop(len(permissions)-1)
+        permissions = [rule] + permissions
+        rule.update(self.apiclient, parent=0)
+        validate_permissions_list(permissions)
+
+        # Move to the bottom
+        rule = permissions.pop(0)
+        permissions = permissions + [rule]
+        rule.update(self.apiclient, parent=permissions[-2].id)
+        validate_permissions_list(permissions)
+
+        # Move item in mid
+        rule = permissions.pop(1)
+        new_parent = permissions[1]
+        permissions.insert(2, rule)
+        rule.update(self.apiclient, parent=new_parent.id)
+        validate_permissions_list(permissions)
 
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
@@ -374,7 +400,8 @@ class TestDynamicRoles(cloudstackTestCase):
         """
             Tests deletion of role permission
         """
-        self.rolepermission.delete(self.apiclient)
+        permission = self.cleanup.pop(1)
+        permission.delete(self.apiclient)
         list_rolepermissions = RolePermission.list(self.apiclient, roleid=self.role.id)
         self.assertEqual(
             list_rolepermissions,
@@ -390,15 +417,11 @@ class TestDynamicRoles(cloudstackTestCase):
         response = userApiClient.listApis(listApis.listApisCmd())
         allowedApis = map(lambda x: x.name, response)
         for api in allowedApis:
-            # check for allowed
             for rule, perm in apiConfig.items():
-                if perm.lower() == 'allow':
-                    if re.match(rule.replace('*', '.*'), api):
+                if re.match(rule.replace('*', '.*'), api):
+                    if perm.lower() == 'allow':
                         break
-            # check for denied
-            for rule, perm in apiConfig.items():
-                if perm.lower() == 'deny':
-                    if re.match(rule.replace('*', '.*'), api):
+                    else:
                         self.fail('Denied API found to be allowed: ' + api)
 
 
@@ -466,8 +489,10 @@ class TestDynamicRoles(cloudstackTestCase):
         """
         apiConfig = self.testdata["apiConfig"]
         roleId = self.dbclient.execute("select id from roles where uuid='%s'" % self.role.id)[0][0]
+        sortOrder = 1
         for rule, perm in apiConfig.items():
-            self.dbclient.execute("insert into role_permissions (uuid, role_id, rule, permission) values (UUID(), %d, '%s', '%s')" % (roleId, rule, perm.upper()))
+            self.dbclient.execute("insert into role_permissions (uuid, role_id, rule, permission, sort_order) values (UUID(), %d, '%s', '%s', %d)" % (roleId, rule, perm.upper(), sortOrder))
+            sortOrder += 1
 
         userApiClient = self.getUserApiClient(self.account.name, domain=self.account.domain, role_type=self.account.roletype)
 

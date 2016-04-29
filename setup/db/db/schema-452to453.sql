@@ -19,6 +19,7 @@
 -- Schema upgrade from 4.5.2 to 4.5.3;
 --;
 
+-- Dynamic roles
 CREATE TABLE IF NOT EXISTS `cloud`.`roles` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(255) UNIQUE,
@@ -39,12 +40,16 @@ CREATE TABLE IF NOT EXISTS `cloud`.`role_permissions` (
   `rule` varchar(255) NOT NULL COMMENT 'rule for the role, api name or wildcard',
   `permission` varchar(255) NOT NULL COMMENT 'access authority, allow or deny',
   `description` text COMMENT 'description of the rule',
+  `sort_order` bigint(20) unsigned NOT NULL DEFAULT 0 COMMENT 'permission sort order',
   PRIMARY KEY (`id`),
-  KEY `fk_role_details__role_id` (`role_id`),
-  KEY `i_role_details__rule` (`rule`),
-  KEY `i_role_details__permission` (`permission`),
+  KEY `fk_role_permissions__role_id` (`role_id`),
+  KEY `i_role_permissions__sort_order` (`sort_order`),
   UNIQUE KEY (`role_id`, `rule`),
-  CONSTRAINT `fk_role_detail__role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_role_permissions__role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
+-- Default CloudStack roles
+INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) values (1, UUID(), 'Root Admin', 'Admin', 'Default root admin role') ON DUPLICATE KEY UPDATE name=name;
+INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) values (2, UUID(), 'Resource Admin', 'ResourceAdmin', 'Default resource admin role') ON DUPLICATE KEY UPDATE name=name;
+INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) values (3, UUID(), 'Domain Admin', 'DomainAdmin', 'Default domain admin role') ON DUPLICATE KEY UPDATE name=name;
+INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) values (4, UUID(), 'User', 'User', 'Default Root Admin role') ON DUPLICATE KEY UPDATE name=name;

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -25,7 +24,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import com.google.common.base.Strings;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -38,8 +36,6 @@ import java.util.Set;
 
 @Local(value = APIChecker.class)
 public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
-
-    protected static final Logger LOGGER = Logger.getLogger(DynamicRoleBasedAPIAccessChecker.class);
 
     @Inject
     private AccountService accountService;
@@ -59,25 +55,6 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     private void denyApiAccess(final String commandName) throws PermissionDeniedException {
         throw new PermissionDeniedException("The API does not exist or is blacklisted for the account's role. " +
                 "The account with is not allowed to request the api: " + commandName);
-    }
-
-    private boolean checkPermission(final List <? extends RolePermission> permissions, final RolePermission.Permission permissionToCheck, final String commandName) {
-        if (permissions == null || permissions.isEmpty() || Strings.isNullOrEmpty(commandName)) {
-            return false;
-        }
-        for (final RolePermission permission : permissions) {
-            if (permission.getPermission() != permissionToCheck) {
-                continue;
-            }
-            try {
-                if (permission.getRule().matches(commandName)) {
-                    return true;
-                }
-            } catch (InvalidParameterValueException e) {
-                LOGGER.warn("Invalid rule permission, please fix id=" + permission.getId() + " rule=" + permission.getRule());
-            }
-        }
-        return false;
     }
 
     public boolean isDisabled() {
@@ -104,16 +81,15 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             return true;
         }
 
-        final List<RolePermission> rolePermissions = roleService.findAllPermissionsBy(accountRole.getId());
-
-        // Check for allow rules
-        if (checkPermission(rolePermissions, RolePermission.Permission.ALLOW, commandName)) {
-            return true;
-        }
-
-        // Check for deny rules
-        if (checkPermission(rolePermissions, RolePermission.Permission.DENY, commandName)) {
-            denyApiAccess(commandName);
+        // Check against current list of permissions
+        for (final RolePermission permission : roleService.findAllPermissionsBy(accountRole.getId())) {
+            if (permission.getRule().matches(commandName)) {
+                if (RolePermission.Permission.ALLOW.equals(permission.getPermission())) {
+                    return true;
+                } else {
+                    denyApiAccess(commandName);
+                }
+            }
         }
 
         // Check annotations
@@ -122,6 +98,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             return true;
         }
 
+        // Default deny all
         denyApiAccess(commandName);
         return false;
     }

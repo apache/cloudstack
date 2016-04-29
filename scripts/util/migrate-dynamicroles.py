@@ -43,16 +43,18 @@ def runSql(conn, query):
 
 def migrateApiRolePermissions(apis, conn):
     # All allow for root admin role Admin(id:1)
-    runSql(conn, "INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) values (UUID(), 1, '*', 'Allow');")
+    runSql(conn, "INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 1, '*', 'ALLOW', 0);")
     # Migrate rules based on commands.properties rule for ResourceAdmin(id:2), DomainAdmin(id:3), User(id:4)
     octetKey = {2:2, 3:4, 4:8}
     for role in [2, 3, 4]:
+        sortOrder = 0
         for api in sorted(apis.keys()):
             # Ignore auth commands
             if api in ['login', 'logout', 'samlSso', 'samlSlo', 'listIdps', 'listAndSwitchSamlAccount', 'getSPMetadata']:
                 continue
             if (octetKey[role] & int(apis[api])) > 0:
-                runSql(conn, "INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) values (UUID(), %d, '%s', 'Allow');" % (role, api))
+                runSql(conn, "INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), %d, '%s', 'ALLOW', %d);" % (role, api, sortOrder))
+                sortOrder += 1
 
 
 def main():
@@ -93,7 +95,7 @@ def main():
 
     while True:
         choice = raw_input("Running this migration tool will remove any " +
-                           "default-role rules in cloud.role_permissions. " +
+                           "default-role permissions from cloud.role_permissions. " +
                            "Do you want to continue? [y/N]").lower()
         if choice == 'y':
             break

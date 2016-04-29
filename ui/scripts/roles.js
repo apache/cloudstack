@@ -170,6 +170,28 @@
                                 context: context,
                                 noSelect: true,
                                 noHeaderActionsColumn: true,
+                                reorder: {
+                                    moveDrag: {
+                                        action: function(args) {
+                                            var rule = args.context.multiRule[0];
+                                            var newParentId = args.prevItem ? args.prevItem.id : 0;
+                                            $.ajax({
+                                                url: createURL('updateRolePermission'),
+                                                data: {
+                                                    id: rule.id,
+                                                    parent: newParentId
+                                                },
+                                                success: function(json) {
+                                                    args.response.success();
+                                                    $(window).trigger('cloudStack.fullRefresh');
+                                                },
+                                                error: function(json) {
+                                                    args.response.error(parseXMLHttpResponse(json));
+                                                }
+                                            });
+                                        }
+                                    }
+                                },
                                 fields: {
                                     'rule': {
                                         edit: true,
@@ -254,20 +276,9 @@
                                         },
                                         dataType: 'json',
                                         success: function(json) {
-                                            var addRules = function(type, rules, data) {
-                                                $.each(rules, function(idx, rule) {
-                                                    if (rule.permission != type) {
-                                                        return;
-                                                    }
-                                                    data.push(rule);
-                                                });
-                                            }
                                             var rules = json.listrolepermissionsresponse.rolepermission;
-                                            var data = [];
-                                            addRules('allow', rules, data);
-                                            addRules('deny', rules, data);
                                             args.response.success({
-                                                data: data
+                                                data: rules
                                             });
                                         }
                                     });

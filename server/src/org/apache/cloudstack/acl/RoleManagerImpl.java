@@ -49,6 +49,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Local(value = {RoleService.class})
@@ -94,6 +95,14 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             return null;
         }
         return rolePermissionsDao.findById(id);
+    }
+
+    @Override
+    public RolePermission findRolePermissionByUuid(final String uuid) {
+        if (Strings.isNullOrEmpty(uuid)) {
+            return null;
+        }
+        return rolePermissionsDao.findByUuid(uuid);
     }
 
     @Override
@@ -157,7 +166,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             return Transaction.execute(new TransactionCallback<Boolean>() {
                 @Override
                 public Boolean doInTransaction(TransactionStatus status) {
-                    List<? extends RolePermission> rolePermissions = rolePermissionsDao.findAllByRoleId(role.getId());
+                    List<? extends RolePermission> rolePermissions = rolePermissionsDao.findAllByRoleIdSorted(role.getId());
                     if (rolePermissions != null && !rolePermissions.isEmpty()) {
                         for (RolePermission rolePermission : rolePermissions) {
                             rolePermissionsDao.remove(rolePermission.getId());
@@ -183,23 +192,10 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_UPDATE, eventDescription = "updating Role Permission")
-    public boolean updateRolePermission(final RolePermission rolePermission, final Rule rule, final RolePermission.Permission permission, final String description) {
+    @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_UPDATE, eventDescription = "updating Role Permission order")
+    public boolean updateRolePermission(final RolePermission rolePermission, final RolePermission parentRolePermission) {
         checkCallerAccess();
-        if (rolePermission == null) {
-            return false;
-        }
-        RolePermissionVO rolePermissionVO = (RolePermissionVO) rolePermission;
-        if (rule != null) {
-            rolePermissionVO.setRule(rule.toString());
-        }
-        if (permission != null) {
-            rolePermissionVO.setPermission(permission);
-        }
-        if (!Strings.isNullOrEmpty(description)) {
-            rolePermissionVO.setDescription(description);
-        }
-        return rolePermissionsDao.update(rolePermission.getId(), rolePermissionVO);
+        return rolePermission != null && rolePermissionsDao.update((RolePermissionVO) rolePermission, (RolePermissionVO) parentRolePermission);
     }
 
     @Override
@@ -235,11 +231,11 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<RolePermission> findAllPermissionsBy(final Long roleId) {
-        List<? extends RolePermission> permissions = rolePermissionsDao.findAllByRoleId(roleId);
+        List<? extends RolePermission> permissions = rolePermissionsDao.findAllByRoleIdSorted(roleId);
         if (permissions != null) {
             return new ArrayList<>(permissions);
         }
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
