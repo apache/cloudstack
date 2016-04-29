@@ -33,31 +33,31 @@ version="1.0">
 <div id="insidetopbg">
 <div id="inside_wrapper">
 	<div class="uppermenu_panel">
-            <div class="uppermenu_box">       
+            <div class="uppermenu_box">
 </div>
         </div>
-        
+
         <div id="main_master">
             <div id="inside_header">
 
                 <div class="header_top">
                     <a class="cloud_logo" href="http://cloudstack.org"></a>
                     <div class="mainemenu_panel">
-                        
+
                     </div>
-                </div>            
+                </div>
             </div>
 
             <div id="main_content">
-             	
+
                 <div class="inside_apileftpanel">
-                	<div class="inside_contentpanel" style="width:930px;">
-                    	<div class="api_titlebox">
-                        	<div class="api_titlebox_left">
+			<div class="inside_contentpanel" style="width:930px;">
+			<div class="api_titlebox">
+				<div class="api_titlebox_left">
 				<xsl:for-each select="command/command">
-                           		<!-- Modify this line for the release version -->
-                           		<span>
-									Apache CloudStack v4.6.0 Root Admin API Reference
+					<!-- Modify this line for the release version -->
+					<span>
+									Apache CloudStack v4.9.0 Root Admin API Reference
 								</span>
 								<p></p>
                                 <h1><xsl:value-of select="name"/></h1>
@@ -65,16 +65,16 @@ version="1.0">
 				</xsl:for-each>
                             </div>
 
-                            
+
                             <div class="api_titlebox_right">
-                            	<a class="api_backbutton" href="../TOC_Root_Admin.html"></a>
+                                <a class="api_backbutton" href="../index.html"></a>
                             </div>
                         </div>
-                    	<div class="api_tablepanel">     
-                         	<h2>Request parameters</h2>
-                        	<table class="apitable">
-                            	<tr class="hed">
-                                	<td style="width:200px;"><strong>Parameter Name</strong></td>
+			<div class="api_tablepanel">
+				<h2>Request parameters</h2>
+				<table class="apitable">
+				<tr class="hed">
+					<td style="width:200px;"><strong>Parameter Name</strong></td>
 
                                     <td style="width:500px;">Description</td>
                                     <td style="width:180px;">Required</td>
@@ -87,7 +87,7 @@ version="1.0">
                                     <td style="width:180px;"><strong><xsl:value-of select="required"/></strong></td>
 				    </xsl:if>
 				    <xsl:if test="required='false'">
-                			<td style="width:200px;"><i><xsl:value-of select="name"/></i></td>
+					<td style="width:200px;"><i><xsl:value-of select="name"/></i></td>
                                     <td style="width:500px;"><i><xsl:value-of select="description"/></i></td>
                                     <td style="width:180px;"><i><xsl:value-of select="required"/></i></td>
 				    </xsl:if>
@@ -95,16 +95,16 @@ version="1.0">
 				</xsl:for-each>
                             </table>
                         </div>
-                         
-                         
-                         <div class="api_tablepanel">     
-                         	<h2>Response Tags</h2>
-                        	<table class="apitable">
-                            	<tr class="hed">
-                                	<td style="width:200px;"><strong>Response Name</strong></td>
+
+
+                         <div class="api_tablepanel">
+				<h2>Response Tags</h2>
+				<table class="apitable">
+				<tr class="hed">
+					<td style="width:200px;"><strong>Response Name</strong></td>
                                     <td style="width:500px;">Description</td>
                                 </tr>
-                                
+
 				<xsl:for-each select="command/command/response/arg">
                                 <tr>
 					<td style="width:200px;"><strong><xsl:value-of select="name"/></strong></td>
@@ -112,31 +112,31 @@ version="1.0">
 					<xsl:for-each select="./arguments/arg">
 					<tr>
 					<td style="width:180px; padding-left:25px;"><strong><xsl:value-of select="name"/></strong></td>
-                                    	<td style="width:500px;"><xsl:value-of select="description"/></td>
+					<td style="width:500px;"><xsl:value-of select="description"/></td>
 					</tr>
 						<xsl:for-each select="./arguments/arg">
 						<tr>
 						<td style="width:165px; padding-left:40px;"><xsl:value-of select="name"/></td>
-		                            	<td style="width:500px;"><xsl:value-of select="description"/></td>
+						<td style="width:500px;"><xsl:value-of select="description"/></td>
 						</tr>
-					</xsl:for-each>					
-					</xsl:for-each>					
+					</xsl:for-each>
+					</xsl:for-each>
                                 </tr>
 				</xsl:for-each>
-                                
-                         
-                                
-                              
-                            
+
+
+
+
+
                             </table>
 
                         </div>
-                        
-                        
-                </div> 
+
+
                 </div>
-                  
-     
+                </div>
+
+
             </div>
 
         </div><!-- #BeginLibraryItem "/libraries/footer.lbi" -->
@@ -149,10 +149,10 @@ version="1.0">
     </noscript>
   </div>
 
-        	<div id="footer_mainmaster">
+		<div id="footer_mainmaster">
                 <p>Copyright © 2015 The Apache Software Foundation, Licensed under the
                    <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0.</a> <br />
-                Apache, CloudStack, Apache CloudStack, the Apache CloudStack logo, the CloudMonkey logo  and the Apache feather logo are trademarks of The Apache Software Foundation.</p> 
+                Apache, CloudStack, Apache CloudStack, the Apache CloudStack logo, the CloudMonkey logo  and the Apache feather logo are trademarks of The Apache Software Foundation.</p>
            </div>
         </div>
   </div>
@@ -161,4 +161,3 @@ version="1.0">
 </html>
 </xsl:template>
 </xsl:stylesheet>
-
