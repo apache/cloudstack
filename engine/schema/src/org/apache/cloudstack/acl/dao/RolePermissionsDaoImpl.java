@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.acl.dao;
 
+import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -24,6 +25,10 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.acl.RolePermissionVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -31,7 +36,9 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @Local(value = {RolePermissionsDao.class})
@@ -39,14 +46,20 @@ public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Lon
     protected static final Logger LOGGER = Logger.getLogger(RolePermissionsDaoImpl.class);
 
     private final SearchBuilder<RolePermissionVO> RolePermissionsSearch;
+    private Attribute sortOrderAttribute;
 
     public RolePermissionsDaoImpl() {
         super();
 
         RolePermissionsSearch = createSearchBuilder();
+        RolePermissionsSearch.and("uuid", RolePermissionsSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         RolePermissionsSearch.and("roleId", RolePermissionsSearch.entity().getRoleId(), SearchCriteria.Op.EQ);
         RolePermissionsSearch.and("sortOrder", RolePermissionsSearch.entity().getSortOrder(), SearchCriteria.Op.EQ);
         RolePermissionsSearch.done();
+
+        sortOrderAttribute = _allAttributes.get("sortOrder");
+
+        assert (sortOrderAttribute != null) : "Couldn't find one of these attributes";
     }
 
     private boolean updateSortOrder(final RolePermissionVO permissionBeingMoved, final RolePermissionVO parentPermission) {
@@ -83,59 +96,68 @@ public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Lon
         item.setSortOrder(0);
         final List<RolePermissionVO> permissionsList = findAllByRoleIdSorted(item.getRoleId());
         if (permissionsList != null && permissionsList.size() > 0) {
-            item.setSortOrder(permissionsList.size());
+            RolePermission lastRule = permissionsList.get(permissionsList.size() - 1);
+            item.setSortOrder(lastRule.getSortOrder() + 1);
         }
         return super.persist(item);
     }
 
     @Override
-    public boolean remove(Long id) {
-        final RolePermissionVO itemToBeRemoved = findById(id);
-        if (itemToBeRemoved == null) {
+    public boolean update(final Role role, final List<RolePermission> newOrder) {
+        if (role == null || newOrder == null || newOrder.isEmpty()) {
             return false;
         }
-        boolean updateStatus = true;
-        final boolean removal = super.remove(id);
-        if (removal) {
-            long sortOrder = 0L;
-            for (final RolePermissionVO permission : findAllByRoleIdSorted(itemToBeRemoved.getRoleId())) {
-                permission.setSortOrder(sortOrder++);
-                if (!update(permission.getId(), permission)) {
-                    updateStatus = false;
-                    break;
-                }
-            }
-        }
-        return removal && updateStatus;
-    }
-
-    @Override
-    public boolean update(final RolePermissionVO item, final RolePermissionVO parent) {
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                return updateSortOrder(item, parent);
+                final String failMessage = "The role's rule permissions list has changed while you were making updates, aborted re-ordering of rules. Please try again.";
+                final List<RolePermissionVO> currentOrder = findAllByRoleIdSorted(role.getId());
+                if (role.getId() < 1L || newOrder.size() != currentOrder.size()) {
+                    throw new CloudRuntimeException(failMessage);
+                }
+                final Set<Long> newOrderSet = new HashSet<>();
+                for (final RolePermission permission : newOrder) {
+                    if (permission == null) {
+                        continue;
+                    }
+                    newOrderSet.add(permission.getId());
+                }
+                final Set<Long> currentOrderSet = new HashSet<>();
+                for (final RolePermission permission : currentOrder) {
+                    currentOrderSet.add(permission.getId());
+                }
+                if (!newOrderSet.equals(currentOrderSet)) {
+                    throw new CloudRuntimeException(failMessage);
+                }
+                long sortOrder = 0L;
+                for (RolePermission rolePermission : newOrder) {
+                    final SearchCriteria<RolePermissionVO> sc = RolePermissionsSearch.create();
+                    sc.setParameters("uuid", rolePermission.getUuid());
+                    sc.setParameters("roleId", role.getId());
+                    sc.setParameters("sortOrder", rolePermission.getSortOrder());
+
+                    final UpdateBuilder ub = getUpdateBuilder(rolePermission);
+                    ub.set(rolePermission, sortOrderAttribute, sortOrder);
+                    final int result = update(ub, sc, null);
+                    if (result < 1) {
+                        throw new CloudRuntimeException(failMessage);
+                    }
+                    sortOrder++;
+                }
+                return true;
             }
         });
     }
 
-    public List<RolePermissionVO> findAllByRoleAndParentId(final Long parentId, final Long roleId) {
-        if (parentId == null || roleId == null) {
-            return Collections.emptyList();
-        }
-        SearchCriteria<RolePermissionVO> sc = RolePermissionsSearch.create();
-        sc.setParameters("roleId", roleId);
-        sc.setParameters("parentId", parentId);
-        return listBy(sc);
-    }
-
     @Override
     public List<RolePermissionVO> findAllByRoleIdSorted(final Long roleId) {
-        SearchCriteria<RolePermissionVO> sc = RolePermissionsSearch.create();
+        final SearchCriteria<RolePermissionVO> sc = RolePermissionsSearch.create();
         if (roleId != null && roleId > 0L) {
             sc.setParameters("roleId", roleId);
         }
-        List<RolePermissionVO> rolePermissionList = listBy(sc, new Filter(RolePermissionVO.class, "sortOrder", true, null, null));
+        final Filter searchBySorted = new Filter(RolePermissionVO.class, "sortOrder", true, null, null);
+        searchBySorted.addOrderBy(RolePermissionVO.class, "id", true);
+        final List<RolePermissionVO> rolePermissionList = listBy(sc, searchBySorted);
         if (rolePermissionList == null) {
             return Collections.emptyList();
         }

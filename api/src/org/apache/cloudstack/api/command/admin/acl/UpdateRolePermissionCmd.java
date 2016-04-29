@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.admin.acl;
 
 import com.cloud.user.Account;
+import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -28,8 +29,12 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.RolePermissionResponse;
+import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @APICommand(name = UpdateRolePermissionCmd.APINAME, description = "Updates a role permission order", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
@@ -42,32 +47,24 @@ public class UpdateRolePermissionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = RolePermissionResponse.class,
-            description = "ID of the role permission", validations = {ApiArgValidator.PositiveNumber})
-    private Long ruleId;
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, required = true, entityType = RoleResponse.class,
+            description = "ID of the role", validations = {ApiArgValidator.PositiveNumber})
+    private Long roleId;
 
-    @Parameter(name = ApiConstants.PARENT, type = CommandType.STRING, required = true, entityType = RolePermissionResponse.class,
-            description = "The parent role permission uuid, use 0 to move this rule at the top of the list", validations = {ApiArgValidator.NotNullOrEmpty})
-    private String parentRuleUuid;
+    @Parameter(name = ApiConstants.RULE_ORDER, type = CommandType.LIST, collectionType = CommandType.UUID, required = true, entityType = RolePermissionResponse.class,
+            description = "The parent role permission uuid, use 0 to move this rule at the top of the list")
+    private List<Long> rulePermissionOrder;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getRuleId() {
-        return ruleId;
+    public Long getRoleId() {
+        return roleId;
     }
 
-    public RolePermission getParentRolePermission() {
-        // A null or 0 previous id means this rule is moved to the top of the list
-        if (parentRuleUuid.equals("0")) {
-            return null;
-        }
-        final RolePermission parentRolePermission = roleService.findRolePermissionByUuid(parentRuleUuid);
-        if (parentRolePermission == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid parent role permission id provided");
-        }
-        return parentRolePermission;
+    public List<Long> getRulePermissionOrder() {
+        return rulePermissionOrder;
     }
 
     /////////////////////////////////////////////////////
@@ -86,12 +83,20 @@ public class UpdateRolePermissionCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        final RolePermission rolePermission = roleService.findRolePermission(getRuleId());
-        if (rolePermission == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role permission id provided");
+        final Role role = roleService.findRole(getRoleId());
+        if (role == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
         }
-        CallContext.current().setEventDetails("Role permission id: " + rolePermission.getId() + ", parent role permission uuid:" + parentRuleUuid);
-        boolean result = roleService.updateRolePermission(rolePermission, getParentRolePermission());
+        CallContext.current().setEventDetails("Reordering permissions for role id: " + role.getId());
+        final List<RolePermission> rolePermissionsOrder = new ArrayList<>();
+        for (Long rolePermissionId : getRulePermissionOrder()) {
+            final RolePermission rolePermission = roleService.findRolePermission(rolePermissionId);
+            if (rolePermission == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Provided role permission(s) do not exist");
+            }
+            rolePermissionsOrder.add(rolePermission);
+        }
+        boolean result = roleService.updateRolePermission(role, rolePermissionsOrder);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         setResponseObject(response);
