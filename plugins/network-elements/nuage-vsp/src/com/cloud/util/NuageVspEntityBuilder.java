@@ -109,7 +109,9 @@ public class NuageVspEntityBuilder {
         vspNetworkBuilder.domain(vspDomain);
 
         AccountVO account = _accountDao.findById(network.getAccountId());
-        vspNetworkBuilder.accountUuid(account.getUuid()).accountName(account.getAccountName());
+        if (account != null) {
+            vspNetworkBuilder.accountUuid(account.getUuid()).accountName(account.getAccountName());
+        }
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         vspNetworkBuilder.egressDefaultPolicy(networkOffering.getEgressDefaultPolicy());
