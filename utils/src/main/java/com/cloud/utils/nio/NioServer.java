@@ -43,6 +43,10 @@ public class NioServer extends NioConnection {
         _links = new WeakHashMap<InetSocketAddress, Link>(1024);
     }
 
+    public int getPort() {
+        return _serverSocket.socket().getLocalPort();
+    }
+
     @Override
     protected void init() throws IOException {
         _selector = SelectorProvider.provider().openSelector();
@@ -53,9 +57,9 @@ public class NioServer extends NioConnection {
         _localAddr = new InetSocketAddress(_port);
         _serverSocket.socket().bind(_localAddr);
 
-        _serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
+        _serverSocket.register(_selector, SelectionKey.OP_ACCEPT);
 
-        s_logger.info("NioConnection started and listening on " + _localAddr.toString());
+        s_logger.info("NioConnection started and listening on " + _serverSocket.socket().getLocalSocketAddress());
     }
 
     @Override
