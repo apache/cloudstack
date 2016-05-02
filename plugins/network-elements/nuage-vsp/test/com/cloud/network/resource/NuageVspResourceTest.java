@@ -223,8 +223,8 @@ public class NuageVspResourceTest extends NuageTest {
     public void testShutDownVpcVspCommand() throws Exception {
         _resource.configure("NuageVspResource", _hostDetails);
 
-        ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand("domainUuid", "vpcUuid", "domainTemplateName");
-        doAnswer(genericAnswer).when(_mockNuageVspElementClient).shutdownVpc("domainUuid", "vpcUuid", "domainTemplateName");
+        ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand("domainUuid", "vpcUuid", "domainTemplateName", Lists.<String>newArrayList());
+        doAnswer(genericAnswer).when(_mockNuageVspElementClient).shutdownVpc("domainUuid", "vpcUuid", "domainTemplateName", Lists.<String>newArrayList());
         Answer shutVpcAns = _resource.executeRequest(cmd);
         assertTrue(shutVpcAns.getResult());
     }

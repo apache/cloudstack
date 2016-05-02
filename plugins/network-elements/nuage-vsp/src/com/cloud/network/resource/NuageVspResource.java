@@ -423,7 +423,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ShutDownVpcVspCommand cmd) {
         try {
             isNuageVspElementLoaded();
-            _nuageVspElementClient.shutdownVpc(cmd.getDomainUuid(), cmd.getVpcUuid(), cmd.getDomainTemplateName());
+            _nuageVspElementClient.shutdownVpc(cmd.getDomainUuid(), cmd.getVpcUuid(), cmd.getDomainTemplateName(), cmd.getDomainRouterUuids());
             return new Answer(cmd, true, "Shutdown VPC " + cmd.getVpcUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);

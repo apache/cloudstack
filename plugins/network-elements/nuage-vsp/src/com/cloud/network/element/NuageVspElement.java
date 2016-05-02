@@ -82,10 +82,12 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -98,6 +100,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.cloudstack.resourcedetail.VpcDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
@@ -166,6 +169,8 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     NuageVspEntityBuilder _nuageVspEntityBuilder;
     @Inject
     VpcDetailsDao _vpcDetailsDao;
+    @Inject
+    DomainRouterDao _routerDao;
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
@@ -552,6 +557,19 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Override
     public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         if (vpc.getState().equals(Vpc.State.Inactive)) {
+            List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
+            if (CollectionUtils.isEmpty(routers)) {
+                routers = _routerDao.listIncludingRemovedByVpcId(vpc.getId());
+            }
+
+            List<String> domainRouterUuids = Lists.transform(routers, new Function<DomainRouterVO, String>() {
+                @Nullable
+                @Override
+                public String apply(@Nullable DomainRouterVO input) {
+                    return input != null ? input.getUuid() : null;
+                }
+            });
+
             Domain vpcDomain = _domainDao.findById(vpc.getDomainId());
             HostVO nuageVspHost = getNuageVspHost(getPhysicalNetworkId(vpc.getZoneId()));
 
@@ -563,7 +581,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                 preConfiguredDomainTemplateName = _configDao.getValue(NuageVspManager.NuageVspVpcDomainTemplateName.key());
             }
 
-            ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand(vpcDomain.getUuid(), vpc.getUuid(), preConfiguredDomainTemplateName);
+            ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand(vpcDomain.getUuid(), vpc.getUuid(), preConfiguredDomainTemplateName, domainRouterUuids);
             Answer answer =  _agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
                 s_logger.error("ShutDownVpcVspCommand for VPC " + vpc.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));

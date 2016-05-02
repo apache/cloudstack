@@ -60,7 +60,9 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.util.NuageVspEntityBuilder;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.google.common.collect.Lists;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.junit.Before;
@@ -98,6 +100,7 @@ public class NuageVspElementTest extends NuageTest {
     private PhysicalNetworkDao _physicalNetworkDao = mock(PhysicalNetworkDao.class);
     private NuageVspEntityBuilder _nuageVspEntityBuilder = mock(NuageVspEntityBuilder.class);
     private VpcDetailsDao _vpcDetailsDao = mock(VpcDetailsDao.class);
+    private DomainRouterDao _domainRouterDao = mock(DomainRouterDao.class);
 
     @Before
     public void setUp() throws Exception {
@@ -119,6 +122,7 @@ public class NuageVspElementTest extends NuageTest {
         _nuageVspElement._physicalNetworkDao = _physicalNetworkDao;
         _nuageVspElement._nuageVspEntityBuilder = _nuageVspEntityBuilder;
         _nuageVspElement._vpcDetailsDao = _vpcDetailsDao;
+        _nuageVspElement._routerDao = _domainRouterDao;
 
         _nuageVspElement.configure("NuageVspTestElement", Collections.<String, Object>emptyMap());
     }
@@ -314,6 +318,7 @@ public class NuageVspElementTest extends NuageTest {
         when(vpc.getState()).thenReturn(Vpc.State.Inactive);
         when(vpc.getDomainId()).thenReturn(NETWORK_ID);
         when(vpc.getZoneId()).thenReturn(NETWORK_ID);
+        when(vpc.getId()).thenReturn(NETWORK_ID);
 
         final DomainVO dom = mock(DomainVO.class);
         when(dom.getName()).thenReturn("domain");
@@ -333,8 +338,12 @@ public class NuageVspElementTest extends NuageTest {
         when(host.getId()).thenReturn(NETWORK_ID);
         final NuageVspDeviceVO nuageVspDevice = mock(NuageVspDeviceVO.class);
         when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
-        when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
+        when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Lists.newArrayList(nuageVspDevice));
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
+
+        DomainRouterVO domainRouter = mock(DomainRouterVO.class);
+        when(domainRouter.getUuid()).thenReturn("aaaaaa");
+        when(_domainRouterDao.listByVpcId(NETWORK_ID)).thenReturn(Lists.newArrayList(domainRouter));
 
         final Answer answer = mock(Answer.class);
         when(answer.getResult()).thenReturn(true);

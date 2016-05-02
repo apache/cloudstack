@@ -21,17 +21,21 @@ package com.cloud.agent.api.element;
 
 import com.cloud.agent.api.Command;
 
+import java.util.List;
+
 public class ShutDownVpcVspCommand extends Command {
 
     private final String _domainUuid;
     private final String _vpcUuid;
     private final String _domainTemplateName;
+    private final List<String> _domainRouterUuids;
 
-    public ShutDownVpcVspCommand(String domainUuid, String vpcUuid, String domainTemplateName) {
+    public ShutDownVpcVspCommand(String domainUuid, String vpcUuid, String domainTemplateName, List<String> domainRouterUuids) {
         super();
         this._domainUuid = domainUuid;
         this._vpcUuid = vpcUuid;
         this._domainTemplateName = domainTemplateName;
+        this._domainRouterUuids = domainRouterUuids;
     }
 
     public String getDomainUuid() {
@@ -44,6 +48,10 @@ public class ShutDownVpcVspCommand extends Command {
 
     public String getDomainTemplateName() {
         return _domainTemplateName;
+    }
+
+    public List<String> getDomainRouterUuids() {
+        return _domainRouterUuids;
     }
 
     @Override
@@ -59,6 +67,8 @@ public class ShutDownVpcVspCommand extends Command {
 
         ShutDownVpcVspCommand that = (ShutDownVpcVspCommand) o;
 
+        if (_domainRouterUuids != null ? !_domainRouterUuids.equals(that._domainRouterUuids) : that._domainRouterUuids != null)
+            return false;
         if (_domainTemplateName != null ? !_domainTemplateName.equals(that._domainTemplateName) : that._domainTemplateName != null)
             return false;
         if (_domainUuid != null ? !_domainUuid.equals(that._domainUuid) : that._domainUuid != null) return false;
@@ -73,6 +83,7 @@ public class ShutDownVpcVspCommand extends Command {
         result = 31 * result + (_domainUuid != null ? _domainUuid.hashCode() : 0);
         result = 31 * result + (_vpcUuid != null ? _vpcUuid.hashCode() : 0);
         result = 31 * result + (_domainTemplateName != null ? _domainTemplateName.hashCode() : 0);
+        result = 31 * result + (_domainRouterUuids != null ? _domainRouterUuids.hashCode() : 0);
         return result;
     }
 }
