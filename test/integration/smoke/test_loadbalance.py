@@ -134,7 +134,7 @@ class TestLoadBalance(cloudstackTestCase):
                 self.services['lbrule']["publicport"],
                 self.vm_1.username,
                 self.vm_1.password,
-                retries=5
+                retries=10
             )
             unameCmd.append(ssh_1.execute("uname")[0])
             self.debug(unameCmd)
