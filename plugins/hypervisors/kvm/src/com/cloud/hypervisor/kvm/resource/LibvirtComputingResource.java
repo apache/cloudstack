@@ -1600,33 +1600,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             conn = LibvirtConnection.getConnectionByVmName(routerName);
             final IpAddressTO[] ips = cmd.getIpAddresses();
             Integer devNum = 0;
-            final Map<String, Integer> bridgeToNicNum = new HashMap<>();
+            final Map<String, Integer> broadcastUriToNicNum = new HashMap<String, Integer>();
             final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
 
             for (final InterfaceDef pluggedNic : pluggedNics) {
                 final String pluggedVlan = pluggedNic.getBrName();
                 if (pluggedVlan.equalsIgnoreCase(_linkLocalBridgeName)) {
-                    bridgeToNicNum.put(_linkLocalBridgeName, devNum);
-                } else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName)) {
-                    bridgeToNicNum.put(_publicBridgeName, devNum);
-                } else if (pluggedVlan.equalsIgnoreCase(_privBridgeName)) {
-                    bridgeToNicNum.put(_privBridgeName, devNum);
-                } else if (pluggedVlan.equalsIgnoreCase(_guestBridgeName)) {
-                    bridgeToNicNum.put(_guestBridgeName, devNum);
+                    broadcastUriToNicNum.put("LinkLocal", devNum);
+                } else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName) || pluggedVlan.equalsIgnoreCase(_privBridgeName) ||
+                        pluggedVlan.equalsIgnoreCase(_guestBridgeName)) {
+                    broadcastUriToNicNum.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), devNum);
+                } else {
+                    broadcastUriToNicNum.put(getBroadcastUriFromBridge(pluggedVlan), devNum);
                 }
                 devNum++;
             }
 
             for (final IpAddressTO ip : ips) {
-                if (ip.getTrafficType().equals(TrafficType.Public) && bridgeToNicNum.containsKey(_publicBridgeName)) {
-                    ip.setNicDevId(bridgeToNicNum.get(_publicBridgeName));
-                } else if (ip.getTrafficType().equals(TrafficType.Management) && bridgeToNicNum.containsKey(_privBridgeName)) {
-                    ip.setNicDevId(bridgeToNicNum.get(_privBridgeName));
-                } else if (ip.getTrafficType().equals(TrafficType.Guest) && bridgeToNicNum.containsKey(_guestBridgeName)) {
-                    ip.setNicDevId(bridgeToNicNum.get(_guestBridgeName));
-                } else if (ip.getTrafficType().equals(TrafficType.Control) && bridgeToNicNum.containsKey(_linkLocalBridgeName)) {
-                    ip.setNicDevId(bridgeToNicNum.get(_linkLocalBridgeName));
-                }
+                ip.setNicDevId(broadcastUriToNicNum.get(ip.getBroadcastUri()));
             }
 
             return new ExecutionResult(true, null);
