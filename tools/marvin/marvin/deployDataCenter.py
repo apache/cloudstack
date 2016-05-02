@@ -561,7 +561,7 @@ class DeployDataCenters(object):
                     netprov.physicalnetworkid = phynetwrk.id
                     result = self.__apiClient.addNetworkServiceProvider(netprov)
                     self.enableProvider(result.id)
-                elif provider.name in ['Netscaler', 'JuniperSRX', 'F5BigIp', 'NiciraNvp']:
+                elif provider.name in ['Netscaler', 'JuniperSRX', 'F5BigIp', 'NiciraNvp', 'NuageVsp']:
                     netprov = addNetworkServiceProvider.\
                         addNetworkServiceProviderCmd()
                     netprov.name = provider.name
@@ -631,6 +631,21 @@ class DeployDataCenters(object):
                                 self.__tcRunLogger.\
                                     debug("==== AddNiciraNvp Successful =====")
                                 self.__addToCleanUp("NiciraNvp", ret.id)
+                            elif provider.name == 'NuageVsp':
+                                dev = addNuageVspDevice.addNuageVspDeviceCmd()
+                                dev.hostname = device.hostname
+                                dev.port = device.port
+                                dev.username = device.username
+                                dev.password = device.password
+                                dev.retrycount = device.retrycount
+                                dev.retryinterval = device.retryinterval
+                                dev.physicalnetworkid = phynetwrk.id
+                                ret = self.__apiClient.addNuageVspDevice(dev)
+                                if ret.id:
+                                    self.__tcRunLogger.\
+                                        debug("==== addNuageVspDevice "
+                                              "Successful=====")
+                                    self.__addToCleanUp("addNuageVspDevice", ret.id)
                             else:
                                 raise InvalidParameterException(
                                     "Device %s doesn't match "
