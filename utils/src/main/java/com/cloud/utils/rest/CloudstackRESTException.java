@@ -22,12 +22,28 @@ package com.cloud.utils.rest;
 @SuppressWarnings("serial")
 public class CloudstackRESTException extends Exception {
 
+    private int errorCode;
+
     public CloudstackRESTException(final String message) {
         super(message);
     }
 
     public CloudstackRESTException(final String message, final Throwable cause) {
         super(message, cause);
+    }
+
+    public CloudstackRESTException(final String message, final int errorCode) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    public CloudstackRESTException(final String message, final Throwable cause, final int errorCode) {
+        super(message, cause);
+        this.errorCode = errorCode;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
     }
 
 }

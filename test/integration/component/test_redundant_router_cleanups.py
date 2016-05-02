@@ -23,7 +23,7 @@ from marvin.lib.base import (Account,
                              VirtualMachine,
                              Router,
                              Configurations)
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template)
@@ -31,6 +31,7 @@ from marvin.lib.common import (get_domain,
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import startRouter
+from marvin.codes import PASS
 import time
 
 class Services:
@@ -665,4 +666,157 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                              "Stopped",
                              "Router should be in stopped state"
                              )
+        return
+
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    def test_restart_network_with_destroyed_masterVR(self):
+        """Test restarting RvR network without cleanup after destroying master VR
+        """
+
+        # Steps to validate
+        # 1. createNetwork using network offering for redundant virtual router
+        # 2. listRouters in above network
+        # 3. deployVM in above user account in the created network
+        # 4. Destroy master VR
+        # 5. restartNetwork cleanup=false
+        # 6. Verify RVR status after network restart
+
+        # Creating network using the network offering created
+        self.debug("Creating network with network offering: %s" %
+                   self.network_offering.id)
+        network = Network.create(
+            self.apiclient,
+            self.services["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id
+        )
+        self.debug("Created network with ID: %s" % network.id)
+        networks = Network.list(
+            self.apiclient,
+            id=network.id,
+            listall=True
+        )
+        self.assertEqual(
+            validateList(networks)[0],
+            PASS,
+            "List networks should return a valid response for created network"
+        )
+
+        self.debug("Deploying VM in account: %s" % self.account.name)
+        # Spawn an instance in that network
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(network.id)]
+        )
+        self.debug("Deployed VM in network: %s" % network.id)
+        vms = VirtualMachine.list(
+            self.apiclient,
+            id=virtual_machine.id,
+            listall=True
+        )
+        self.assertEqual(
+            validateList(vms)[0],
+            PASS,
+            "List Vms should return a valid list"
+        )
+        vm = vms[0]
+        self.assertEqual(
+            vm.state,
+            "Running",
+            "Vm should be in running state after deployment"
+        )
+
+        self.debug("Listing routers for network: %s" % network.name)
+        routers = Router.list(
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
+        self.assertEqual(
+            validateList(routers)[0],
+            PASS,
+            "list router should return Master and backup routers"
+        )
+        self.assertEqual(
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
+        if routers[0].redundantstate == 'MASTER' and\
+                routers[1].redundantstate == 'BACKUP':
+            master_router = routers[0]
+            backup_router = routers[1]
+        elif routers[1].redundantstate == 'MASTER' and \
+                routers[0].redundantstate == 'BACKUP':
+            master_router = routers[1]
+            backup_router = routers[0]
+        else:
+            self.fail("Both the routers in RVR are in BackupState")
+
+        Router.stop(
+            self.apiclient,
+            id=master_router.id
+        )
+        Router.destroy(
+            self.apiclient,
+            id=master_router.id
+        )
+        masterVR = Router.list(
+            self.apiclient,
+            id=master_router.id
+        )
+        self.assertIsNone(masterVR, "Router is not destroyed")
+        new_master = Router.list(
+            self.apiclient,
+            id=backup_router.id
+        )
+        self.assertEqual(validateList(new_master)[0], PASS, "Invalid response after vr destroy")
+        self.assertEqual(
+            new_master[0].redundantstate,
+            "MASTER",
+            "Backup didn't switch to Master after destroying Master VR"
+        )
+
+        self.debug("restarting network with cleanup=False")
+        try:
+            network.restart(self.apiclient, cleanup=False)
+        except Exception as e:
+            self.fail("Failed to cleanup network - %s" % e)
+
+        self.debug("Listing routers for network: %s" % network.name)
+        routers = Router.list(
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
+        self.assertEqual(
+            validateList(routers)[0],
+            PASS,
+            "list router should return Master and backup routers afrer network restart"
+        )
+        self.assertEqual(
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
+        for router in routers:
+            self.assertEqual(
+                router.state,
+                "Running",
+                "Router state should be running"
+            )
+        if routers[0].redundantstate == 'MASTER' and\
+                routers[1].redundantstate == 'BACKUP':
+            self.debug("Found master and backup VRs after network restart")
+        elif routers[0].redundantstate == 'BACKUP' and \
+                routers[1].redundantstate == 'MASTER':
+            self.debug("Found master and backup routers")
+        else:
+            self.fail("RVR is not in proper start after network restart")
         return

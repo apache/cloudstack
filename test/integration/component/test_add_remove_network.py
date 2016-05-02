@@ -1021,6 +1021,103 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
             self.fail("Failed to delete the nic from vm")
         return
 
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_30_remove_nic_reattach(self):
+        """
+         Test to verify vm start after NIC removal and reattach
+
+         # 1.Create vm which has 3 nics(e.g. #0,#1,#2)
+         # 2.Stop the vm
+         # 3.Remove second nic(#1)
+         # 4.Add/Reattach same network(#1)
+         # 5.Start the instance
+        """
+        self.ntwk2 = Network.create(
+            self.apiclient,
+            self.services["isolated_network"],
+            self.account.name,
+            self.account.domainid,
+            networkofferingid=self.isolated_network_offering.id
+        )
+        self.ntwk3 = Network.create(
+            self.apiclient,
+            self.services["isolated_network"],
+            self.account.name,
+            self.account.domainid,
+            networkofferingid=self.isolated_network_offering.id
+        )
+        self.test_vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            mode=self.zone.networktype,
+            networkids=[self.isolated_network.id, self.ntwk2.id, self.ntwk3.id]
+        )
+        self.assertIsNotNone(self.test_vm, "Failed to create vm with 3 nics")
+        map(lambda x: self.cleanup.append(x), [self.test_vm, self.ntwk2, self.ntwk3])
+        vm_res = VirtualMachine.list(
+            self.apiclient,
+            id=self.test_vm.id
+        )
+        self.assertEqual(validateList(vm_res)[0], PASS, "Invalid list vm response")
+        self.nics = vm_res[0].nic
+        self.assertEqual(
+            validateList(self.nics)[0],
+            PASS,
+            "vm response does not contain nics info"
+        )
+        self.assertEqual(len(self.nics), 3, "Not all nics found in vm response")
+        self.test_vm.stop(self.apiclient)
+        vm_res2 = VirtualMachine.list(
+            self.apiclient,
+            id=self.test_vm.id
+        )
+        self.assertEqual(validateList(vm_res2)[0], PASS, "Invalid response")
+        self.assertEqual(
+            vm_res2[0].state,
+            "Stopped",
+            "VM did not stop properly"
+        )
+
+        """
+        get the network id of the nic which we are remove from the nic, so that we can
+        use that network id for reattach
+        """
+        nic_to_attach = [x for x in [self.isolated_network, self.ntwk2, self.ntwk3]\
+                         if x.id == self.nics[1].networkid]
+        self.assertEqual(validateList(nic_to_attach)[0], PASS, "No matching nics")
+        self.assertEqual(len(nic_to_attach), 1, "More than one nic in same network")
+        try:
+            self.test_vm.remove_nic(self.apiclient, nicId=self.nics[1].id)
+            self.test_vm.add_nic(
+                self.apiclient,
+                nic_to_attach[0].id
+            )
+            self.test_vm.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start vm after nic removal and attachment")
+        vm_res3 = VirtualMachine.list(self.apiclient, id=self.test_vm.id)
+        self.assertEqual(
+            validateList(vm_res3)[0],
+            PASS,
+            "Invalid listvm response after nic detach and attach"
+        )
+        self.assertEqual(
+            vm_res3[0].state,
+            "Running",
+            "VM didn't come to running state after nic detach and attach"
+        )
+        vm_nics = vm_res3[0].nic
+        self.assertEqual(validateList(vm_nics)[0], PASS, "Invalid nics after vm stop/start")
+        self.assertEqual(
+            len(vm_nics),
+            3,
+            "Nic is not attached/detected"
+        )
+        return
+
 class TestUpdateVirtualMachineNIC(cloudstackTestCase):
 
     @classmethod

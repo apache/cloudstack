@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -748,7 +749,7 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
-        final RebootCommand command = new RebootCommand(vmName);
+        final RebootCommand command = new RebootCommand(vmName, true);
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
@@ -777,7 +778,7 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
-        final RebootCommand command = new RebootCommand(vmName);
+        final RebootCommand command = new RebootCommand(vmName, true);
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
@@ -806,7 +807,7 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
-        final RebootCommand command = new RebootCommand(vmName);
+        final RebootCommand command = new RebootCommand(vmName, true);
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
@@ -837,7 +838,7 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
-        final RebootCommand command = new RebootCommand(vmName);
+        final RebootCommand command = new RebootCommand(vmName, true);
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
@@ -2895,8 +2896,11 @@ public class LibvirtComputingResourceTest {
         final Long seqNum = 1l;
         final IpPortAndProto[] ingressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
         final IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
+        final List<String> secIps = new Vector<String>();
+        final List<String> cidrs = new Vector<String>();
+        cidrs.add("0.0.0.0/0");
 
-        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet);
+        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
 
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);
@@ -2916,12 +2920,12 @@ public class LibvirtComputingResourceTest {
         when(ingressRuleSet[0].getProto()).thenReturn("tcp");
         when(ingressRuleSet[0].getStartPort()).thenReturn(22);
         when(ingressRuleSet[0].getEndPort()).thenReturn(22);
-        when(ingressRuleSet[0].getAllowedCidrs()).thenReturn(new String[]{"0.0.0.0/0"});
+        when(ingressRuleSet[0].getAllowedCidrs()).thenReturn(cidrs);
 
         when(egressRuleSet[0].getProto()).thenReturn("tcp");
         when(egressRuleSet[0].getStartPort()).thenReturn(22);
         when(egressRuleSet[0].getEndPort()).thenReturn(22);
-        when(egressRuleSet[0].getAllowedCidrs()).thenReturn(new String[]{"0.0.0.0/0"});
+        when(egressRuleSet[0].getAllowedCidrs()).thenReturn(cidrs);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2947,8 +2951,11 @@ public class LibvirtComputingResourceTest {
         final Long seqNum = 1l;
         final IpPortAndProto[] ingressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
         final IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
+        final List<String> secIps = new Vector<String>();
+        final List<String> cidrs = new Vector<String>();
+        cidrs.add("0.0.0.0/0");
 
-        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet);
+        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
 
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);
@@ -2974,12 +2981,12 @@ public class LibvirtComputingResourceTest {
         when(ingressRuleSet[0].getProto()).thenReturn("tcp");
         when(ingressRuleSet[0].getStartPort()).thenReturn(22);
         when(ingressRuleSet[0].getEndPort()).thenReturn(22);
-        when(ingressRuleSet[0].getAllowedCidrs()).thenReturn(new String[]{"0.0.0.0/0"});
+        when(ingressRuleSet[0].getAllowedCidrs()).thenReturn(cidrs);
 
         when(egressRuleSet[0].getProto()).thenReturn("tcp");
         when(egressRuleSet[0].getStartPort()).thenReturn(22);
         when(egressRuleSet[0].getEndPort()).thenReturn(22);
-        when(egressRuleSet[0].getAllowedCidrs()).thenReturn(new String[]{"0.0.0.0/0"});
+        when(egressRuleSet[0].getAllowedCidrs()).thenReturn(cidrs);
 
         when(libvirtComputingResource.addNetworkRules(command.getVmName(), Long.toString(command.getVmId()), command.getGuestIp(), command.getSignature(),
                 Long.toString(command.getSeqNum()), command.getGuestMac(), command.stringifyRules(), vif, brname, command.getSecIpsString())).thenReturn(true);
@@ -3009,8 +3016,9 @@ public class LibvirtComputingResourceTest {
         final Long seqNum = 1l;
         final IpPortAndProto[] ingressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
         final IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
+        final List<String> secIps = new Vector<String>();
 
-        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet);
+        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
 
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);

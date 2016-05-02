@@ -24,17 +24,17 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.sql.Connection;
 
-public class Upgrade471to472 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade471to472.class);
+public class Upgrade480to481 implements DbUpgrade {
+    final static Logger s_logger = Logger.getLogger(Upgrade480to481.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.7.1", "4.7.2"};
+        return new String[] {"4.8.0", "4.8.1"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "4.7.2";
+        return "4.8.1";
     }
 
     @Override
@@ -44,9 +44,9 @@ public class Upgrade471to472 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-471to472.sql");
+        String script = Script.findScript("", "db/schema-480to481.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-471to472.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-480to481.sql");
         }
         return new File[] {new File(script)};
     }
@@ -57,9 +57,9 @@ public class Upgrade471to472 implements DbUpgrade {
 
     @Override
     public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-471to472-cleanup.sql");
+        String script = Script.findScript("", "db/schema-480to481-cleanup.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-471to472-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-480to481-cleanup.sql");
         }
 
         return new File[] {new File(script)};

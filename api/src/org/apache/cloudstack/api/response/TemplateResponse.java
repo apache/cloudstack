@@ -24,7 +24,7 @@ import java.util.Set;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
@@ -33,7 +33,7 @@ import com.cloud.template.VirtualMachineTemplate;
 
 @EntityReference(value = VirtualMachineTemplate.class)
 @SuppressWarnings("unused")
-public class TemplateResponse extends BaseResponse implements ControlledViewEntityResponse {
+public class TemplateResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the template ID")
     private String id;
@@ -174,10 +174,6 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     // template_zone information in this TemplateZoneResponse set.
     //    @SerializedName("zones")  @Param(description="list of zones associated with tempate", responseObject = TemplateZoneResponse.class)
     //    private Set<TemplateZoneResponse> zones;
-
-    @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
-    private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.SSHKEY_ENABLED)
     @Param(description = "true if template is sshkey enabled, false otherwise")
@@ -346,10 +342,6 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
         this.tags = tags;
     }
 
-    public void addTag(ResourceTagResponse tag) {
-        this.tags.add(tag);
-    }
-
     public void setSshKeyEnabled(boolean sshKeyEnabled) {
         this.sshKeyEnabled = sshKeyEnabled;
     }
@@ -361,4 +353,5 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     public String getZoneId() {
         return zoneId;
     }
+
 }

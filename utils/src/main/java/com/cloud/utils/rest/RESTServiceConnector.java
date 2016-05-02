@@ -127,7 +127,7 @@ public class RESTServiceConnector {
         final HttpEntity entity = response.getEntity();
         try {
             final String stringEntity = EntityUtils.toString(entity);
-            s_logger.debug("Response entity: " + stringEntity);
+            //s_logger.debug("Response entity: " + stringEntity);
             EntityUtils.consumeQuietly(entity);
             return gson.fromJson(stringEntity, type);
         } catch (final IOException e) {

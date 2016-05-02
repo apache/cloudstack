@@ -19,29 +19,25 @@
 
 package com.cloud.agent.api;
 
-import com.cloud.vm.VirtualMachine;
-
 public class RebootCommand extends Command {
     String vmName;
+    protected boolean executeInSequence = false;
 
     protected RebootCommand() {
     }
 
-    public RebootCommand(VirtualMachine vm) {
-        vmName = vm.getInstanceName();
-    }
-
-    public RebootCommand(String vmName) {
+    public RebootCommand(String vmName, boolean executeInSequence) {
         this.vmName = vmName;
+        this.executeInSequence = executeInSequence;
     }
 
     public String getVmName() {
-        return vmName;
+        return this.vmName;
     }
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return this.executeInSequence;
     }
 
 }

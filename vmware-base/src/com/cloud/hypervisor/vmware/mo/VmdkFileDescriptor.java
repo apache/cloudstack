@@ -27,13 +27,15 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.StringUtils;
+
 public class VmdkFileDescriptor {
     private static final Logger s_logger = Logger.getLogger(VmdkFileDescriptor.class);
     private static final String VMDK_PROPERTY_CREATE_TYPE = "createType";
     private static final String VMDK_CREATE_TYPE_VMFSSPARSE = "vmfsSparse";
     private static final String VMDK_PROPERTY_ADAPTER_TYPE = "ddb.adapterType";
 
-    private Properties _properties = new Properties();
+    private final Properties _properties = new Properties();
     private String _baseFileName;
 
     public VmdkFileDescriptor() {
@@ -47,25 +49,28 @@ public class VmdkFileDescriptor {
             while ((line = in.readLine()) != null) {
                 // ignore empty and comment lines
                 line = line.trim();
-                if (line.isEmpty())
+                if (line.isEmpty()) {
                     continue;
-                if (line.charAt(0) == '#')
+                }
+                if (line.charAt(0) == '#') {
                     continue;
+                }
 
-                String[] tokens = line.split("=");
+                final String[] tokens = line.split("=");
                 if (tokens.length == 2) {
-                    String name = tokens[0].trim();
+                    final String name = tokens[0].trim();
                     String value = tokens[1].trim();
-                    if (value.charAt(0) == '\"')
+                    if (value.charAt(0) == '\"') {
                         value = value.substring(1, value.length() - 1);
+                    }
 
                     _properties.put(name, value);
                 } else {
                     if (line.startsWith("RW")) {
-                        int startPos = line.indexOf('\"');
-                        int endPos = line.lastIndexOf('\"');
-                        assert (startPos > 0);
-                        assert (endPos > 0);
+                        final int startPos = line.indexOf('\"');
+                        final int endPos = line.lastIndexOf('\"');
+                        assert startPos > 0;
+                        assert endPos > 0;
 
                         _baseFileName = line.substring(startPos + 1, endPos);
                     } else {
@@ -74,8 +79,9 @@ public class VmdkFileDescriptor {
                 }
             }
         } finally {
-            if (in != null)
+            if (in != null) {
                 in.close();
+            }
         }
     }
 
@@ -88,7 +94,7 @@ public class VmdkFileDescriptor {
     }
 
     public boolean isVmfsSparseFile() {
-        String vmdkCreateType = _properties.getProperty(VMDK_PROPERTY_CREATE_TYPE);
+        final String vmdkCreateType = _properties.getProperty(VMDK_PROPERTY_CREATE_TYPE);
         if (vmdkCreateType.equalsIgnoreCase(VMDK_CREATE_TYPE_VMFSSPARSE)) {
             return true;
         }
@@ -101,15 +107,15 @@ public class VmdkFileDescriptor {
 
 
     public static byte[] changeVmdkAdapterType(byte[] vmdkContent, String newAdapterType) throws IOException {
-        assert (vmdkContent != null);
+        assert vmdkContent != null;
 
         BufferedReader in = null;
         BufferedWriter out = null;
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         try {
-            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent)));
-            out = new BufferedWriter(new OutputStreamWriter(bos));
+            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent), StringUtils.getPreferredCharset()));
+            out = new BufferedWriter(new OutputStreamWriter(bos, StringUtils.getPreferredCharset()));
             String line;
             while ((line = in.readLine()) != null) {
                 // ignore empty and comment lines
@@ -124,12 +130,13 @@ public class VmdkFileDescriptor {
                     continue;
                 }
 
-                String[] tokens = line.split("=");
+                final String[] tokens = line.split("=");
                 if (tokens.length == 2) {
-                    String name = tokens[0].trim();
+                    final String name = tokens[0].trim();
                     String value = tokens[1].trim();
-                    if (value.charAt(0) == '\"')
+                    if (value.charAt(0) == '\"') {
                         value = value.substring(1, value.length() - 1);
+                    }
 
                     if (newAdapterType != null && name.equals(VMDK_PROPERTY_ADAPTER_TYPE)) {
                         out.write(name + "=\"" + newAdapterType + "\"");
@@ -144,10 +151,12 @@ public class VmdkFileDescriptor {
                 }
             }
         } finally {
-            if (in != null)
+            if (in != null) {
                 in.close();
-            if (out != null)
+            }
+            if (out != null) {
                 out.close();
+            }
         }
 
         return bos.toByteArray();
@@ -156,11 +165,11 @@ public class VmdkFileDescriptor {
 
     public static byte[] changeVmdkContentBaseInfo(byte[] vmdkContent, String baseFileName, String parentFileName) throws IOException {
 
-        assert (vmdkContent != null);
+        assert vmdkContent != null;
 
         BufferedReader in = null;
         BufferedWriter out = null;
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         try {
             in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent),"UTF-8"));
@@ -179,12 +188,13 @@ public class VmdkFileDescriptor {
                     continue;
                 }
 
-                String[] tokens = line.split("=");
+                final String[] tokens = line.split("=");
                 if (tokens.length == 2) {
-                    String name = tokens[0].trim();
+                    final String name = tokens[0].trim();
                     String value = tokens[1].trim();
-                    if (value.charAt(0) == '\"')
+                    if (value.charAt(0) == '\"') {
                         value = value.substring(1, value.length() - 1);
+                    }
 
                     if (parentFileName != null && name.equals("parentFileNameHint")) {
                         out.write(name + "=\"" + parentFileName + "\"");
@@ -196,10 +206,10 @@ public class VmdkFileDescriptor {
                 } else {
                     if (line.startsWith("RW")) {
                         if (baseFileName != null) {
-                            int startPos = line.indexOf('\"');
-                            int endPos = line.lastIndexOf('\"');
-                            assert (startPos > 0);
-                            assert (endPos > 0);
+                            final int startPos = line.indexOf('\"');
+                            final int endPos = line.lastIndexOf('\"');
+                            assert startPos > 0;
+                            assert endPos > 0;
 
                             // replace it with base file name
                             out.write(line.substring(0, startPos + 1));
@@ -216,10 +226,12 @@ public class VmdkFileDescriptor {
                 }
             }
         } finally {
-            if (in != null)
+            if (in != null) {
                 in.close();
-            if (out != null)
+            }
+            if (out != null) {
                 out.close();
+            }
         }
 
         return bos.toByteArray();

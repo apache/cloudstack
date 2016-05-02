@@ -53,6 +53,16 @@ public interface CapacityManager {
             "0.85",
             "Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the pool for low allocated storage available.",
             true, ConfigKey.Scope.Zone);
+    static final ConfigKey<Boolean> StorageOperationsExcludeCluster =
+            new ConfigKey<Boolean>(
+                    Boolean.class,
+                    "cluster.storage.operations.exclude",
+                    "Advanced",
+                    "false",
+                    "Exclude cluster from storage operations",
+                    true,
+                    ConfigKey.Scope.Cluster,
+                    null);
 
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 

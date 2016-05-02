@@ -474,7 +474,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm uuid:"+getEntityUuid());
         }
     }
 
@@ -556,7 +556,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
             // Make sure a valid template ID was specified
             if (template == null) {
-                throw new InvalidParameterValueException("Unable to use template " + templateId);
+                throw new InvalidParameterValueException("Unable to find the template " + templateId);
             }
 
             DiskOffering diskOffering = null;

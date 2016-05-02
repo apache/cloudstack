@@ -626,7 +626,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             reason = ", seqno_new";
         }
         s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum() + " signature=" + cmd.getSignature() + " guestIp=" +
-                cmd.getGuestIp() + ", numIngressRules=" + cmd.getIngressRuleSet().length + ", numEgressRules=" + cmd.getEgressRuleSet().length + " total cidrs=" +
+                cmd.getGuestIp() + ", numIngressRules=" + cmd.getIngressRuleSet().size() + ", numEgressRules=" + cmd.getEgressRuleSet().size() + " total cidrs=" +
                 cmd.getTotalNumCidrs() + action + reason);
         return updateSeqnoAndSig;
     }

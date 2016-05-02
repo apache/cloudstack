@@ -301,7 +301,7 @@
                     }),
 
                     // Window options
-                    'menubar=0,resizable=0,' + 'width=' + externalLinkAction.width + ',' + 'height=' + externalLinkAction.height
+                    'menubar=0,resizable=1,' + 'width=' + externalLinkAction.width + ',' + 'height=' + externalLinkAction.height
                 );
             } else {
                 notification.desc = messages.notification(messageArgs);

@@ -142,6 +142,12 @@ public class NuageVspElementTest {
         final Network net = mock(Network.class);
         when(net.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vsp);
         when(net.getId()).thenReturn(NETWORK_ID);
+        when(net.getNetworkOfferingId()).thenReturn(NETWORK_ID);
+
+        final NetworkOfferingVO ntwkoffer = mock(NetworkOfferingVO.class);
+        when(ntwkoffer.getId()).thenReturn(NETWORK_ID);
+        when(ntwkoffer.getIsPersistent()).thenReturn(true);
+        when(ntwkOfferingDao.findById(NETWORK_ID)).thenReturn(ntwkoffer);
 
         when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NuageVsp)).thenReturn(true);
         // Golden path

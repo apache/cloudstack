@@ -1006,6 +1006,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         job.setStatus(JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
                         job.setResult("job cancelled because of management server restart or shutdown");
+                        job.setCompleteMsid(msid);
                         _jobDao.update(job.getId(), job);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());

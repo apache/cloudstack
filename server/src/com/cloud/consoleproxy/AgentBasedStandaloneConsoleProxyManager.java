@@ -18,7 +18,6 @@ package com.cloud.consoleproxy;
 
 import java.util.List;
 
-
 import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
@@ -26,6 +25,10 @@ import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.vm.UserVmVO;
 
+/**
+ * This class is intended to replace the use of console proxy VMs managed by the Apache CloudStack (ACS)
+ * to non ACS console proxy services. The documentation that describe its use and requirements can be found in <a href="https://cwiki.apache.org/confluence/display/CLOUDSTACK/QuickCloud">QuickCloud</a>.
+ */
 public class AgentBasedStandaloneConsoleProxyManager extends AgentBasedConsoleProxyManager {
     private static final Logger s_logger = Logger.getLogger(AgentBasedStandaloneConsoleProxyManager.class);
 
@@ -58,26 +61,30 @@ public class AgentBasedStandaloneConsoleProxyManager extends AgentBasedConsolePr
                 }
             }
             if (allocatedHost == null) {
-                if (s_logger.isDebugEnabled())
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Failed to find a console proxy at host: " + host.getName() + " and in the pod: " + host.getPodId() + " to user vm " + userVmId);
+                }
                 return null;
             }
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Assign standalone console proxy running at " + allocatedHost.getName() + " to user vm " + userVmId + " with public IP " +
-                    allocatedHost.getPublicIpAddress());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Assign standalone console proxy running at " + allocatedHost.getName() + " to user vm " + userVmId + " with public IP "
+                        + allocatedHost.getPublicIpAddress());
+            }
 
             // only private IP, public IP, host id have meaningful values, rest of all are place-holder values
             String publicIp = allocatedHost.getPublicIpAddress();
             if (publicIp == null) {
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Host " + allocatedHost.getName() + "/" + allocatedHost.getPrivateIpAddress() +
-                        " does not have public interface, we will return its private IP for cosole proxy.");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Host " + allocatedHost.getName() + "/" + allocatedHost.getPrivateIpAddress()
+                            + " does not have public interface, we will return its private IP for cosole proxy.");
+                }
                 publicIp = allocatedHost.getPrivateIpAddress();
             }
 
             int urlPort = _consoleProxyUrlPort;
-            if (allocatedHost.getProxyPort() != null && allocatedHost.getProxyPort().intValue() > 0)
+            if (allocatedHost.getProxyPort() != null && allocatedHost.getProxyPort().intValue() > 0) {
                 urlPort = allocatedHost.getProxyPort().intValue();
+            }
 
             return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
         } else {

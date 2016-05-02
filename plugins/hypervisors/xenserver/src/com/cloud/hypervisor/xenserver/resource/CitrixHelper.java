@@ -236,4 +236,15 @@ public class CitrixHelper {
         }
         return prodVersion;
     }
+
+    public static String getPVbootloaderArgs(String guestOS) {
+        if (guestOS.startsWith("SUSE Linux Enterprise Server")) {
+            if (guestOS.contains("64-bit")) {
+                return "--kernel /boot/vmlinuz-xen --ramdisk /boot/initrd-xen";
+            } else if (guestOS.contains("32-bit")) {
+                return "--kernel /boot/vmlinuz-xenpae --ramdisk /boot/initrd-xenpae";
+            }
+        }
+        return "";
+    }
 }

@@ -102,6 +102,14 @@ public class NicResponse extends BaseResponse {
     @Param(description = "Id of the vm to which the nic belongs")
     private String vmId;
 
+    @SerializedName("nsxlogicalswitch")
+    @Param(description = "Id of the NSX Logical Switch (if NSX based), null otherwise", since="4.6.0")
+    private String nsxLogicalSwitch;
+
+    @SerializedName("nsxlogicalswitchport")
+    @Param(description = "Id of the NSX Logical Switch Port (if NSX based), null otherwise", since="4.6.0")
+    private String nsxLogicalSwitchPort;
+
     public void setVmId(String vmId) {
         this.vmId = vmId;
     }
@@ -203,6 +211,14 @@ public class NicResponse extends BaseResponse {
 
     public void setSecondaryIps(List<NicSecondaryIpResponse> ipList) {
         this.secondaryIps = ipList;
+    }
+
+    public void setNsxLogicalSwitch(String nsxLogicalSwitch) {
+        this.nsxLogicalSwitch = nsxLogicalSwitch;
+    }
+
+    public void setNsxLogicalSwitchPort(String nsxLogicalSwitchPort) {
+        this.nsxLogicalSwitchPort = nsxLogicalSwitchPort;
     }
 
 }

@@ -24,7 +24,7 @@ import java.util.Set;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.router.VirtualRouter;
@@ -35,7 +35,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
-public class UserVmResponse extends BaseResponse implements ControlledEntityResponse {
+public class UserVmResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the virtual machine")
     private String id;
@@ -243,10 +243,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.INSTANCE_NAME)
     @Param(description = "instance name of the user vm; this parameter is returned to the ROOT admin only", since = "3.0.1")
     private String instanceName;
-
-    @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
-    private Set<ResourceTagResponse> tags;
 
     transient Set<Long> tagIds;
 
@@ -514,10 +510,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return instanceName;
     }
 
-    public Set<ResourceTagResponse> getTags() {
-        return tags;
-    }
-
     public String getKeyPairName() {
         return keyPairName;
     }
@@ -756,10 +748,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
-    }
-
-    public void addTag(ResourceTagResponse tag) {
-        this.tags.add(tag);
     }
 
     public void setKeyPairName(String keyPairName) {

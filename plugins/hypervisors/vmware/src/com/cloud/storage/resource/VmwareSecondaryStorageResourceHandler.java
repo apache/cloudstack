@@ -66,13 +66,13 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
      * private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
      */
 
-    public VmwareSecondaryStorageResourceHandler(PremiumSecondaryStorageResource resource) {
+    public VmwareSecondaryStorageResourceHandler(PremiumSecondaryStorageResource resource, String nfsVersion) {
         _resource = resource;
-        _storageMgr = new VmwareStorageManagerImpl(this);
+        _storageMgr = new VmwareStorageManagerImpl(this, nfsVersion);
         _gson = GsonHelper.getGsonLogger();
 
-        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor(this, true, this, resource.getTimeout(), null, null, _resource);
-        VmwareStorageSubsystemCommandHandler vmwareStorageSubsystemCommandHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
+        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor(this, true, this, resource.getTimeout(), null, null, _resource, nfsVersion);
+        VmwareStorageSubsystemCommandHandler vmwareStorageSubsystemCommandHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor, nfsVersion);
         vmwareStorageSubsystemCommandHandler.setStorageResource(_resource);
         vmwareStorageSubsystemCommandHandler.setStorageManager(_storageMgr);
         storageSubsystemHandler = vmwareStorageSubsystemCommandHandler;
@@ -304,7 +304,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     @Override
-    public String getMountPoint(String storageUrl) {
-        return _resource.getRootDir(storageUrl);
+    public String getMountPoint(String storageUrl, String nfsVersion) {
+        return _resource.getRootDir(storageUrl, nfsVersion);
     }
 }

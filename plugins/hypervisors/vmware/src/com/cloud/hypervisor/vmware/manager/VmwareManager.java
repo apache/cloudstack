@@ -36,7 +36,7 @@ public interface VmwareManager {
 
     String getSystemVMDefaultNicAdapterType();
 
-    void prepareSecondaryStorageStore(String strStorageUrl);
+    void prepareSecondaryStorageStore(String strStorageUrl, Long storeId);
 
     void setupResourceStartupParams(Map<String, Object> params);
 
@@ -48,7 +48,7 @@ public interface VmwareManager {
 
     String getManagementPortGroupName();
 
-    String getSecondaryStorageStoreUrl(long dcId);
+    Pair<String, Long> getSecondaryStorageStoreUrlAndId(long dcId);
 
     File getSystemVMKeyFile();
 

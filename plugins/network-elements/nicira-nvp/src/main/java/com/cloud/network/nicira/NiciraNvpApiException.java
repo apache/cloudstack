@@ -21,6 +21,8 @@ package com.cloud.network.nicira;
 
 public class NiciraNvpApiException extends Exception {
 
+    private int errorCode;
+
     public NiciraNvpApiException() {
     }
 
@@ -34,6 +36,29 @@ public class NiciraNvpApiException extends Exception {
 
     public NiciraNvpApiException(final String message, final Throwable cause) {
         super(message, cause);
+    }
+
+    public NiciraNvpApiException(final String message, final int errorCode){
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    public NiciraNvpApiException(final Throwable cause, final int errorCode) {
+        super(cause);
+        this.errorCode = errorCode;
+    }
+
+    public NiciraNvpApiException(final String message, final Throwable cause, final int errorCode) {
+        super(message, cause);
+        this.errorCode = errorCode;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
     }
 
 }

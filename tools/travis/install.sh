@@ -34,24 +34,19 @@ if [ $MOD -ne 0 ]; then
  fi
 fi
 
-export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Djava.security.egd=file:/dev/./urandom"
+export MAVEN_OPTS="-Xmx2048m -XX:MaxPermSize=500m -Djava.security.egd=file:/dev/./urandom"
 
 if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
-   mvn -q -Pimpatient -Dsimulator clean install
+   mvn -Pdeveloper,systemvm -Dsimulator clean install -T4 | egrep "Building|Tests|SUCCESS|FAILURE"
 else
-   mvn -q -Pimpatient -Dsimulator clean install -DskipTests=true
+   mvn -Pdeveloper -Dsimulator clean install -DskipTests=true -T4 | egrep "Building|Tests|SUCCESS|FAILURE"
 fi
 
-# Compile API Docs
-cd tools/apidoc
-mvn -q clean install
-cd ../../
+# Install mysql-connector-python
+pip install --user --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df 2>&1 > /dev/null
 
-# Compile marvin
-cd tools/marvin
-mvn -q clean install
-sudo python setup.py install 2>&1 > /dev/null
-cd ../../
+# Install marvin
+pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
 
 # Deploy the database
 mvn -q -Pdeveloper -pl developer -Ddeploydb

@@ -22,6 +22,7 @@ package com.cloud.network.guru;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -78,6 +79,7 @@ import static com.cloud.network.manager.NuageVspManager.NuageVspIsolatedNetworkD
 import static com.cloud.network.manager.NuageVspManager.NuageVspSharedNetworkDomainTemplateName;
 import static com.cloud.network.manager.NuageVspManager.NuageVspVpcDomainTemplateName;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -102,6 +104,7 @@ public class NuageVspGuestNetworkGuruTest {
     ConfigurationDao configDao = mock(ConfigurationDao.class);
     IPAddressDao ipAddressDao = mock(IPAddressDao.class);
     NuageVspManager nuageVspManager = mock(NuageVspManager.class);
+    ConfigurationManager configurationManager = mock(ConfigurationManager.class);
 
     NetworkDao netdao = mock(NetworkDao.class);
     NuageVspGuestNetworkGuru guru;
@@ -126,6 +129,7 @@ public class NuageVspGuestNetworkGuruTest {
         guru._configDao = configDao;
         guru._ipAddressDao = ipAddressDao;
         guru._nuageVspManager = nuageVspManager;
+        guru._configMgr = configurationManager;
 
         final DataCenterVO dc = mock(DataCenterVO.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
@@ -144,6 +148,8 @@ public class NuageVspGuestNetworkGuruTest {
         when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+        when(offering.getIsPersistent()).thenReturn(false);
+        when(configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(false);
 
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VSP"}));
@@ -151,25 +157,28 @@ public class NuageVspGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
 
-        assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet));
 
         // Not supported TrafficType != Guest
         when(offering.getTrafficType()).thenReturn(TrafficType.Management);
-        assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet));
 
         // Supported: GuestType Shared
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Shared);
-        assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet));
 
         // Not supported: Basic networking
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
-        assertFalse(guru.canHandle(offering, NetworkType.Basic, physnet) == true);
+        assertFalse(guru.canHandle(offering, NetworkType.Basic, physnet));
 
         // Not supported: IsolationMethod != STT
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
-        assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet));
 
+        // Not supported: Non-persistent VPC tier
+        when(configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(true);
+        assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet));
     }
 
     @Test
@@ -187,6 +196,8 @@ public class NuageVspGuestNetworkGuruTest {
         when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+        when(offering.getIsPersistent()).thenReturn(false);
+        when(configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(false);
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
 
@@ -197,6 +208,10 @@ public class NuageVspGuestNetworkGuruTest {
         final Network designednetwork = guru.design(offering, plan, network, account);
         assertTrue(designednetwork != null);
         assertTrue(designednetwork.getBroadcastDomainType() == BroadcastDomainType.Vsp);
+
+        // Can't design non-persistent VPC tier
+        when(configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(true);
+        assertNull(guru.design(offering, plan, network, account));
     }
 
     @Test

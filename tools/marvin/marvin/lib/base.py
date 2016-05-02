@@ -1205,6 +1205,9 @@ class Template:
             random_gen()
         ]) if random_name else services["name"]
 
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
+
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
         elif "ostype" in services:
@@ -3861,7 +3864,7 @@ class NiciraNvp:
 
     @classmethod
     def add(cls, apiclient, services, physicalnetworkid,
-            hostname=None, username=None, password=None, transportzoneuuid=None):
+            hostname=None, username=None, password=None, transportzoneuuid=None, l2gatewayserviceuuid=None):
         cmd = addNiciraNvpDevice.addNiciraNvpDeviceCmd()
         cmd.physicalnetworkid = physicalnetworkid
         if hostname:
@@ -3884,7 +3887,12 @@ class NiciraNvp:
         else:
             cmd.transportzoneuuid = services['transportZoneUuid']
 
-        return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
+        if l2gatewayserviceuuid:
+            cmd.l2gatewayserviceuuid = l2gatewayserviceuuid
+        elif services and 'l2gatewayserviceuuid' in services:
+            cmd.l2gatewayserviceuuid = services['l2gatewayserviceuuid']
+
+	return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
 
     def delete(self, apiclient):
         cmd = deleteNiciraNvpDevice.deleteNiciraNvpDeviceCmd()
@@ -3951,6 +3959,61 @@ class NetworkServiceProvider:
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
             cmd.listall = True
         return(apiclient.listNetworkServiceProviders(cmd))
+
+
+class Nuage:
+    """Manage external nuage VSD device"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, services, physicalnetworkid, username=None, password=None):
+        """Add external nuage VSD device to cloudstack"""
+
+        cmd = addNuageVspDevice.addNuageVspDeviceCmd()
+        cmd.physicalnetworkid = physicalnetworkid
+        if username:
+            cmd.username = username
+        else:
+            cmd.username = services["username"]
+
+        if password:
+            cmd.password = password
+        else:
+            cmd.password = services["password"]
+
+        cmd.hostname = services["hostname"]
+        cmd.port = services["port"]
+        cmd.retrycount = services["retrycount"]
+        cmd.retryinterval = services["retryinterval"]
+        cmd.apiversion = services["apiversion"]
+
+        return Nuage(apiclient.addNuageVspDevice(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Deletes a nuage VSD device from CloudStack"""
+
+        cmd = updateNuageVspDevice.updateNuageVspDeviceCmd()
+        cmd.physicalnetworkid = self.physicalnetworkid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateNuageVspDevice(cmd)
+
+    def delete(self, apiclient):
+        """Deletes a nuage VSD device from CloudStack"""
+
+        cmd = deleteNuageVspDevice.deleteNuageVspDeviceCmd()
+        cmd.vspdeviceid = self.vspdeviceid
+        apiclient.deleteNuageVspDevice(cmd)
+        return
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List already registered netscaler devices"""
+
+        cmd = listNuageVspDevices.listNuageVspDevicesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listNuageVspDevices(cmd))
 
 
 class Router:
@@ -4063,9 +4126,9 @@ class VpcOffering:
     @classmethod
     def create(cls, apiclient, services):
         """Create vpc offering"""
-        
+
         import logging
-        
+
         cmd = createVPCOffering.createVPCOfferingCmd()
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.displaytext = services["displaytext"]
@@ -4614,7 +4677,7 @@ class ApplicationLoadBalancer:
     @classmethod
     def create(cls, apiclient, services, name=None, sourceport=None,
                instanceport=22, algorithm="roundrobin", scheme="internal",
-               sourcenetworkid=None, networkid=None):
+               sourcenetworkid=None, networkid=None, sourceipaddress=None):
         """Create Application Load Balancer"""
         cmd = createLoadBalancer.createLoadBalancerCmd()
 
@@ -4652,6 +4715,11 @@ class ApplicationLoadBalancer:
             cmd.networkid = services["networkid"]
         elif networkid:
             cmd.networkid = networkid
+
+        if "sourceipaddress" in services:
+            cmd.sourceipaddress = services["sourceipaddress"]
+        elif sourceipaddress:
+            cmd.sourceipaddress = sourceipaddress
 
         return LoadBalancerRule(apiclient.createLoadBalancer(cmd).__dict__)
 

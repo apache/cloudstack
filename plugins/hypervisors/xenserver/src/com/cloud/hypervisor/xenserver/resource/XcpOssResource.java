@@ -17,16 +17,12 @@
 
 package com.cloud.hypervisor.xenserver.resource;
 
-import javax.ejb.Local;
-
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.resource.ServerResource;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 
-@Local(value = ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
 
     private static final long mem_32m = 33554432L;
@@ -34,18 +30,6 @@ public class XcpOssResource extends CitrixResourceBase {
     @Override
     protected String getPatchFilePath() {
         return "scripts/vm/hypervisor/xenserver/xcposs/patch";
-    }
-
-    @Override
-    protected String getGuestOsType(final String stdType,
-            final String platformEmulator, final boolean bootFromCD) {
-        if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
-            return "Debian Squeeze 6.0 (64-bit)";
-        } else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
-            return "CentOS 5 (64-bit)";
-        } else {
-            return super.getGuestOsType(stdType, platformEmulator, bootFromCD);
-        }
     }
 
     @Override
