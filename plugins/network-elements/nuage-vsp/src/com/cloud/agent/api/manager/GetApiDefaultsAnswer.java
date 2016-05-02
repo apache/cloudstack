@@ -17,44 +17,45 @@
 // under the License.
 //
 
-package com.cloud.agent.api;
+package com.cloud.agent.api.manager;
 
-public class VspResourceAnswer extends Answer {
+import com.cloud.agent.api.Answer;
+import net.nuage.vsp.acs.client.api.model.VspApiDefaults;
 
-    private String _resourceInfo;
+public class GetApiDefaultsAnswer extends Answer {
 
-    public VspResourceAnswer(Command cmd, String resourceInfo, String details) {
-        super(cmd, true, details);
-        this._resourceInfo = resourceInfo;
+    private VspApiDefaults _apiDefaults;
+
+    public GetApiDefaultsAnswer(GetApiDefaultsCommand cmd, VspApiDefaults defaults) {
+        super(cmd);
+        this._apiDefaults = defaults;
     }
 
-    public VspResourceAnswer(VspResourceCommand cmd, boolean success, String details) {
-        super(cmd, success, details);
-    }
-
-    public VspResourceAnswer(VspResourceCommand cmd, Exception e) {
+    public GetApiDefaultsAnswer(GetApiDefaultsCommand cmd, Exception e) {
         super(cmd, e);
     }
 
-    public String getResourceInfo() {
-        return this._resourceInfo;
+    public VspApiDefaults getApiDefaults() {
+        return _apiDefaults;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof GetApiDefaultsAnswer)) return false;
+        if (!super.equals(o)) return false;
 
-        VspResourceAnswer that = (VspResourceAnswer) o;
+        GetApiDefaultsAnswer that = (GetApiDefaultsAnswer) o;
 
-        if (_resourceInfo != null ? !_resourceInfo.equals(that._resourceInfo) : that._resourceInfo != null)
-            return false;
+        if (_apiDefaults != null ? !_apiDefaults.equals(that._apiDefaults) : that._apiDefaults != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return _resourceInfo != null ? _resourceInfo.hashCode() : 0;
+        int result = super.hashCode();
+        result = 31 * result + (_apiDefaults != null ? _apiDefaults.hashCode() : 0);
+        return result;
     }
 }

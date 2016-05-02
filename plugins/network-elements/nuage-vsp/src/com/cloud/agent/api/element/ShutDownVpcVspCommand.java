@@ -19,7 +19,6 @@
 
 package com.cloud.agent.api.element;
 
-import com.cloud.agent.api.CmdBuilder;
 import com.cloud.agent.api.Command;
 
 public class ShutDownVpcVspCommand extends Command {
@@ -28,7 +27,7 @@ public class ShutDownVpcVspCommand extends Command {
     private final String _vpcUuid;
     private final String _domainTemplateName;
 
-    private ShutDownVpcVspCommand(String domainUuid, String vpcUuid, String domainTemplateName) {
+    public ShutDownVpcVspCommand(String domainUuid, String vpcUuid, String domainTemplateName) {
         super();
         this._domainUuid = domainUuid;
         this._vpcUuid = vpcUuid;
@@ -45,32 +44,6 @@ public class ShutDownVpcVspCommand extends Command {
 
     public String getDomainTemplateName() {
         return _domainTemplateName;
-    }
-
-    public static class Builder implements CmdBuilder<ShutDownVpcVspCommand> {
-        private String _domainUuid;
-        private String _vpcUuid;
-        private String _domainTemplateName;
-
-        public Builder domainUuid(String domainUuid) {
-            this._domainUuid = domainUuid;
-            return this;
-        }
-
-        public Builder vpcUuid(String vpcUuid) {
-            this._vpcUuid = vpcUuid;
-            return this;
-        }
-
-        public Builder domainTemplateName(String domainTemplateName) {
-            this._domainTemplateName = domainTemplateName;
-            return this;
-        }
-
-        @Override
-        public ShutDownVpcVspCommand build() {
-            return new ShutDownVpcVspCommand(_domainUuid, _vpcUuid, _domainTemplateName);
-        }
     }
 
     @Override
