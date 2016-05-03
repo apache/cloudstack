@@ -2628,7 +2628,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String cap = null;
         try {
             final Connect conn = LibvirtConnection.getConnection();
-                 throw e;
             final NodeInfo hosts = conn.nodeInfo();
             speed = getCpuSpeed(hosts);
 
