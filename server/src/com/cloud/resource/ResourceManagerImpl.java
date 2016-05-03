@@ -1268,10 +1268,24 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (host.getType() != Host.Type.Storage) {
                 final List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
                 final List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
+
+                for (Iterator<VMInstanceVO> iter = vos.iterator(); iter.hasNext();) {
+                    final VMInstanceVO vo = iter.next();
+                    if (vo.getState() == State.Destroyed) {
+                        iter.remove();
+                    }
+                }
+
                 if (vos.isEmpty() && vosMigrating.isEmpty()) {
                     resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
                     hostInMaintenance = true;
                     ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE, "completed maintenance for host " + hostId, 0);
+                } else {
+                    if (!vosMigrating.isEmpty()) {
+                        s_logger.info(String.format("There are still %d VMs migrating away from the host so it is not yet ready for maintenance mode", vosMigrating.size()));
+                    } else {
+                        s_logger.info(String.format("There are still %d VMs on the host that are neither destroyed nor migrating from the host so it is not yet ready for maintenance mode", vos.size()));
+                    }
                 }
             }
         } catch (final NoTransitionException e) {
