@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -88,7 +89,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
-import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfo;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
@@ -1366,24 +1367,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
-                String dataDiskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
-                String rootDiskController = controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
-                DiskControllerType rootDiskControllerType = DiskControllerType.getType(rootDiskController);
-
-                if (dataDiskController == null) {
-                    dataDiskController = getLegacyVmDataDiskController();
-                } else if ((rootDiskControllerType == DiskControllerType.lsilogic) ||
-                           (rootDiskControllerType == DiskControllerType.lsisas1068) ||
-                           (rootDiskControllerType == DiskControllerType.pvscsi) ||
-                           (rootDiskControllerType == DiskControllerType.buslogic)) {
-                    //TODO: Support mix of SCSI controller types for single VM. If root disk is already over
-                    //a SCSI controller then use the same for data volume as well. This limitation will go once mix
-                    //of SCSI controller types for single VM.
-                    dataDiskController = rootDiskController;
-                } else if (DiskControllerType.getType(dataDiskController) == DiskControllerType.osdefault) {
-                    dataDiskController = vmMo.getRecommendedDiskController(null);
+                String diskController = getLegacyVmDataDiskController();
+                if (controllerInfo != null &&
+                        !Strings.isNullOrEmpty(controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER))) {
+                    diskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
                 }
-                vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs, dataDiskController);
+                if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
+                    diskController = vmMo.getRecommendedDiskController(null);
+                }
+                vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs, diskController);
             } else {
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);

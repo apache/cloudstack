@@ -89,6 +89,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -5449,6 +5450,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             vm.setDetail("Encrypted.Password", encryptedPasswd);
             _vmDao.saveDetails(vm);
+        }
+    }
+
+    public void persistDeviceBusInfo(UserVmVO vm, String rootDiskController) {
+        String existingVmRootDiskController = vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER);
+        if (StringUtils.isEmpty(existingVmRootDiskController) && !StringUtils.isEmpty(rootDiskController)) {
+            vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
+            _vmDao.saveDetails(vm);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Persisted device bus information rootDiskController=" + rootDiskController + " for vm: " + vm.getDisplayName());
+            }
         }
     }
 

@@ -237,7 +237,7 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
-import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfo;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
@@ -1452,7 +1452,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
-
+            String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
             NicTO[] nics = vmSpec.getNics();
@@ -1565,7 +1565,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         tearDownVm(vmMo);
                     }else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
                             getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),
-                            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value(), rootDiskDataStoreDetails.first(), false, controllerInfo, systemVm)) {
+                            guestOsId, rootDiskDataStoreDetails.first(), false, controllerInfo, systemVm)) {
                         throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                     }
                 }
@@ -1589,7 +1589,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs(), vmSpec.getPlatformEmulator()).value();
 
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
                     getReservedCpuMHZ(vmSpec), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),

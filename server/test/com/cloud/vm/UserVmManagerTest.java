@@ -928,4 +928,25 @@ public class UserVmManagerTest {
             CallContext.unregister();
         }
     }
+
+    @Test
+    public void testPersistDeviceBusInfoWithNullController() {
+        when(_vmMock.getDetail(any(String.class))).thenReturn(null);
+        _userVmMgr.persistDeviceBusInfo(_vmMock, null);
+        verify(_vmDao, times(0)).saveDetails(any(UserVmVO.class));
+    }
+
+    @Test
+    public void testPersistDeviceBusInfoWithEmptyController() {
+        when(_vmMock.getDetail(any(String.class))).thenReturn("");
+        _userVmMgr.persistDeviceBusInfo(_vmMock, "");
+        verify(_vmDao, times(0)).saveDetails(any(UserVmVO.class));
+    }
+
+    @Test
+    public void testPersistDeviceBusInfo() {
+        when(_vmMock.getDetail(any(String.class))).thenReturn(null);
+        _userVmMgr.persistDeviceBusInfo(_vmMock, "lsilogic");
+        verify(_vmDao, times(1)).saveDetails(any(UserVmVO.class));
+    }
 }
