@@ -27,7 +27,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
@@ -83,6 +82,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     private ConfigurationDao _configDao;
     @Inject
     private QuotaUsageDao _quotaUsage;
+    @Inject
+    private QuotaManager _quotaManager;
 
     private EmailQuotaAlert _emailQuotaAlert;
     private boolean _lockAccountEnforcement = false;
@@ -159,7 +160,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 }
                 if (accountBalance.compareTo(zeroBalance) < 0) {
                     if (_lockAccountEnforcement && (lockable == 1)) {
-                        if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                        if (_quotaManager.isLockable(account)) {
                             s_logger.info("Locking account " + account.getAccountName() + " due to quota < 0.");
                             lockAccount(account.getId());
                         }
@@ -383,7 +384,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
         public void sendQuotaAlert(List<String> emails, String subject, String body) throws MessagingException, UnsupportedEncodingException {
             if (_smtpSession == null) {
-                throw new CloudRuntimeException("Unable to create smtp session.");
+                s_logger.error("Unable to create smtp session.");
+                return;
             }
             SMTPMessage msg = new SMTPMessage(_smtpSession);
             msg.setSender(new InternetAddress(_emailSender, _emailSender));

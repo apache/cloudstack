@@ -65,7 +65,7 @@ public class QuotaCreditsCmdTest extends TestCase {
         AccountVO acc = new AccountVO();
         acc.setId(2L);
         Mockito.when(accountService.getActiveAccountByName(Mockito.anyString(), Mockito.anyLong())).thenReturn(acc);
-        Mockito.when(responseBuilder.addQuotaCredits(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyDouble(), Mockito.anyLong())).thenReturn(new QuotaCreditsResponse());
+        Mockito.when(responseBuilder.addQuotaCredits(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyDouble(), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(new QuotaCreditsResponse());
 
         // No value provided test
         try {
@@ -79,7 +79,7 @@ public class QuotaCreditsCmdTest extends TestCase {
         cmd.execute();
         Mockito.verify(quotaService, Mockito.times(0)).setLockAccount(Mockito.anyLong(), Mockito.anyBoolean());
         Mockito.verify(quotaService, Mockito.times(1)).setMinBalance(Mockito.anyLong(), Mockito.anyDouble());
-        Mockito.verify(responseBuilder, Mockito.times(1)).addQuotaCredits(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyDouble(), Mockito.anyLong());
+        Mockito.verify(responseBuilder, Mockito.times(1)).addQuotaCredits(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyDouble(), Mockito.anyLong(), Mockito.anyBoolean());
 
 
     }

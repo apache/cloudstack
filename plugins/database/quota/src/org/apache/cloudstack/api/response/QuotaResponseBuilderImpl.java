@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
@@ -98,6 +99,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private AccountManager _accountMgr;
     @Inject
     private QuotaStatement _statement;
+    @Inject
+    private QuotaManager _quotaManager;
 
     @Override
     public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff) {
@@ -385,10 +388,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
+    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Boolean enforce) {
         Date despositedOn = _quotaService.computeAdjustedTime(new Date());
         QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
-
 
         if (qb != null) {
             throw new InvalidParameterValueException("Incorrect deposit date: " + despositedOn + " there are balance entries after this date");
@@ -411,16 +413,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         _quotaService.saveQuotaAccount(account, currentAccountBalance, despositedOn);
         if (lockAccountEnforcement) {
             if (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0) {
-                if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                    if (account.getState() == Account.State.locked) {
-                        s_logger.info("UnLocking account " + account.getAccountName() + " , due to positive balance " + currentAccountBalance);
-                        _accountMgr.enableAccount(account.getAccountName(), domainId, accountId);
-                    }
-                } else {
-                    s_logger.warn("Only normal accounts will get locked " + account.getAccountName() + " even if they have run out of quota " + currentAccountBalance);
+                if (account.getState() == Account.State.locked) {
+                    s_logger.info("UnLocking account " + account.getAccountName() + " , due to positive balance " + currentAccountBalance);
+                    _accountMgr.enableAccount(account.getAccountName(), domainId, accountId);
                 }
             } else { // currentAccountBalance < 0 then lock the account
-                if (account.getState() == Account.State.enabled) {
+                if (_quotaManager.isLockable(account) && account.getState() == Account.State.enabled && enforce) {
                     s_logger.info("Locking account " + account.getAccountName() + " , due to negative balance " + currentAccountBalance);
                     _accountMgr.lockAccount(account.getAccountName(), domainId, accountId);
                 }

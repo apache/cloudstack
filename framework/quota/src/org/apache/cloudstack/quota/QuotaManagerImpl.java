@@ -464,4 +464,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return quota_usage;
     }
 
+    @Override
+    public boolean isLockable(AccountVO account) {
+        return (account.getType() == AccountVO.ACCOUNT_TYPE_NORMAL || account.getType() == AccountVO.ACCOUNT_TYPE_DOMAIN_ADMIN);
+    }
+
 }
