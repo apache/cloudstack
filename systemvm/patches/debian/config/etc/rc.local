@@ -42,7 +42,10 @@ then
    echo 1000000 > /proc/sys/net/nf_conntrack_max
 fi
 
-python /opt/cloud/bin/baremetal-vr.py &
+if [ "$router" != "" ]
+then
+    python /opt/cloud/bin/baremetal-vr.py &
+fi
 
 date > /var/cache/cloud/boot_up_done
 logger -t cloud "Boot up process done"
