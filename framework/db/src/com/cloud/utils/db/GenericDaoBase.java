@@ -969,7 +969,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @Override
     @DB()
     public T findByIdIncludingRemoved(ID id) {
-        return findById(id, true, null);
+        if (_cache != null) {
+            final Element element = _cache.get(id);
+            return element == null ? findById(id, true, null) : (T)element.getObjectValue();
+        } else {
+            return findById(id, true, null);
+        }
     }
 
     @Override
