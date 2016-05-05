@@ -42,6 +42,7 @@ from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
 from cs.CsConfig import CsConfig
 from cs.CsProcess import CsProcess
+from cs.CsStaticRoutes import CsStaticRoutes
 
 
 class CsPassword(CsDataBag):
@@ -72,27 +73,6 @@ class CsPassword(CsDataBag):
                 '-F "token={TOKEN}" >/dev/null 2>/dev/null &'.format(SERVER_IP=server_ip, VM_IP=vm_ip, PASSWORD=password, TOKEN=token)
                 result = CsHelper.execute(update_command)
                 logging.debug("Update password server result ==> %s" % result)
-
-
-class CsStaticRoutes(CsDataBag):
-    
-    def process(self):
-        logging.debug("Processing CsStaticRoutes file ==> %s" % self.dbag)
-        for item in self.dbag:
-            if item == "id":
-                continue
-            self.__update(self.dbag[item])
-
-    def __update(self, route):
-        if route['revoke']:
-            command = "ip route del %s via %s" % (route['network'], route['gateway'])
-            result = CsHelper.execute(command)
-        else:
-            command = "ip route show | grep %s | awk '{print $1, $3}'" % route['network']
-            result = CsHelper.execute(command)
-            if not result:
-                route_command = "ip route add %s via %s" % (route['network'], route['gateway'])
-                result = CsHelper.execute(route_command)
 
 
 class CsAcl(CsDataBag):
