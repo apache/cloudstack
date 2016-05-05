@@ -105,7 +105,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 } else {
                     templateStatus = template.getDownloadPercent() + "% Downloaded";
                 }
-            } else {
+            }else if (template.getErrorString()==null){
+                templateStatus = template.getTemplateState().toString();
+            }else {
                 templateStatus = template.getErrorString();
             }
         } else if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
@@ -404,7 +406,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             }
             SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
             if (!showRemoved) {
-                sc.setParameters("templateState", VirtualMachineTemplate.State.Active, VirtualMachineTemplate.State.NotUploaded, VirtualMachineTemplate.State.UploadInProgress);
+                sc.setParameters("templateState", VirtualMachineTemplate.State.Active, VirtualMachineTemplate.State.UploadAbandoned, VirtualMachineTemplate.State.UploadError ,VirtualMachineTemplate.State.NotUploaded, VirtualMachineTemplate.State.UploadInProgress);
             }
             sc.setParameters("tempZonePairIN", labels);
             List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
