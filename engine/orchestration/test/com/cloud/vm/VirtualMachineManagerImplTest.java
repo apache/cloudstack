@@ -17,6 +17,7 @@
 
 package com.cloud.vm;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.isA;
@@ -29,7 +30,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
+import com.cloud.service.dao.ServiceOfferingDao;
 import junit.framework.Assert;
 
 import org.junit.Before;
@@ -135,6 +138,8 @@ public class VirtualMachineManagerImplTest {
     @Mock
     VMInstanceDao _vmInstanceDao;
     @Mock
+    ServiceOfferingDao _offeringDao;
+    @Mock
     VMTemplateDao _templateDao;
     @Mock
     VolumeDao _volsDao;
@@ -148,6 +153,8 @@ public class VirtualMachineManagerImplTest {
     UserVmVO _vmMock;
     @Mock
     VMInstanceVO _vmInstance;
+    @Mock
+    ServiceOfferingVO _serviceOfferingMock;
     @Mock
     HostVO _host;
     @Mock
@@ -227,6 +234,8 @@ public class VirtualMachineManagerImplTest {
         _vmMgr._uservmDetailsDao = _vmDetailsDao;
         _vmMgr._entityMgr = _entityMgr;
         _vmMgr._configDepot = _configDepot;
+        _vmMgr._offeringDao = _offeringDao;
+        _vmMgr.hostAllocators = new ArrayList<>();
 
         when(_vmMock.getId()).thenReturn(314l);
         when(_vmInstance.getId()).thenReturn(1L);
@@ -504,5 +513,33 @@ public class VirtualMachineManagerImplTest {
         boolean actual = _vmMgr.sendStop(guru, profile, false, false);
 
         Assert.assertFalse(actual);
+    }
+
+    @Test
+    public void testExeceuteInSequence() {
+        assertTrue(_vmMgr.getExecuteInSequence(HypervisorType.XenServer) == false);
+        assertTrue(_vmMgr.getExecuteInSequence(HypervisorType.KVM) == false);
+        assertTrue(_vmMgr.getExecuteInSequence(HypervisorType.VMware) == HypervisorGuru.VmwareFullClone.value());
+        assertTrue(_vmMgr.getExecuteInSequence(HypervisorType.Ovm3) == VirtualMachineManager.ExecuteInSequence.value());
+    }
+
+    @Test
+    public void testCheckIfCanUpgrade() throws Exception {
+        when(_vmInstance.getState()).thenReturn(State.Stopped);
+        when(_serviceOfferingMock.isDynamic()).thenReturn(true);
+        when(_vmInstance.getServiceOfferingId()).thenReturn(1l);
+        when(_serviceOfferingMock.getId()).thenReturn(2l);
+
+        ServiceOfferingVO mockCurrentServiceOffering = mock(ServiceOfferingVO.class);
+
+        when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(mockCurrentServiceOffering);
+        when(mockCurrentServiceOffering.getUseLocalStorage()).thenReturn(true);
+        when(_serviceOfferingMock.getUseLocalStorage()).thenReturn(true);
+        when(mockCurrentServiceOffering.getSystemUse()).thenReturn(true);
+        when(_serviceOfferingMock.getSystemUse()).thenReturn(true);
+        when(mockCurrentServiceOffering.getTags()).thenReturn("x,y");
+        when(_serviceOfferingMock.getTags()).thenReturn("z,x,y");
+
+        _vmMgr.checkIfCanUpgrade(_vmInstance, _serviceOfferingMock);
     }
 }

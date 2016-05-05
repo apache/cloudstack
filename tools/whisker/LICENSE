@@ -2896,7 +2896,7 @@ Within the target/jar directory
             cloud-axis.jar  from http://axis.apache.org/axis/
             cloud-cglib.jar  from http://cglib.sourceforge.net/
             cloud-commons-codec-1.5.jar  from http://commons.apache.org/codec/
-            cloud-commons-collections-3.2.1.jar  from http://commons.apache.org/collections/
+            cloud-commons-collections-3.2.2.jar  from http://commons.apache.org/collections/
             cloud-commons-configuration-1.8.jar  from http://commons.apache.org/configuration/
             cloud-commons-dbcp-1.4.jar  from http://commons.apache.org/dbcp/
             cloud-commons-httpclient-3.1.jar  from http://hc.apache.org/httpclient-3.x/

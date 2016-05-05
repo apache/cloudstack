@@ -59,6 +59,7 @@ import com.cloud.network.dao.NuageVspDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.manager.NuageVspManager;
+import com.cloud.network.manager.NuageVspManagerImpl;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -69,7 +70,9 @@ import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -134,6 +137,8 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     NicDao _nicDao;
     @Inject
     VpcDao _vpcDao;
+    @Inject
+    VpcOfferingServiceMapDao _vpcOfferingSrvcDao;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
@@ -426,6 +431,16 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             }
         }
 
+        if (network.getVpcId() != null) {
+            NetworkOffering networkOffering = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
+            if (!networkOffering.getIsPersistent()) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("NuageVsp can't handle VPC tiers which use a network offering which are not persistent");
+                }
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -586,6 +601,22 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     @Override
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        List<VpcOfferingServiceMapVO> vpcOfferingServices = _vpcOfferingSrvcDao.listByVpcOffId(vpc.getVpcOfferingId());
+        Map<Network.Service, Set<Network.Provider>> supportedVpcServices = NuageVspManagerImpl.NUAGE_VSP_VPC_SERVICE_MAP;
+        for (VpcOfferingServiceMapVO vpcOfferingService : vpcOfferingServices) {
+            Network.Service service = Network.Service.getService(vpcOfferingService.getService());
+            if (!supportedVpcServices.containsKey(service)) {
+                s_logger.warn(String.format("NuageVsp doesn't support service %s for VPCs", service.getName()));
+                return false;
+            }
+
+            Network.Provider provider = Network.Provider.getProvider(vpcOfferingService.getProvider());
+            if (!supportedVpcServices.get(service).contains(provider)) {
+                s_logger.warn(String.format("NuageVsp doesn't support provider %s for service %s for VPCs", provider.getName(), service.getName()));
+                return false;
+            }
+        }
+
         return true;
     }
 

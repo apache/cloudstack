@@ -667,11 +667,15 @@ class VirtualMachine:
             })
         apiclient.migrateVirtualMachineWithVolume(cmd)
 
-    def attach_volume(self, apiclient, volume):
+    def attach_volume(self, apiclient, volume, deviceid=None):
         """Attach volume to instance"""
         cmd = attachVolume.attachVolumeCmd()
         cmd.id = volume.id
         cmd.virtualmachineid = self.id
+
+        if deviceid is not None:
+            cmd.deviceid = deviceid
+
         return apiclient.attachVolume(cmd)
 
     def detach_volume(self, apiclient, volume):
@@ -1201,8 +1205,8 @@ class Template:
             random_gen()
         ]) if random_name else services["name"]
 
-	if services["ispublic"]:
-	    cmd.ispublic = services["ispublic"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
@@ -3957,6 +3961,61 @@ class NetworkServiceProvider:
         return(apiclient.listNetworkServiceProviders(cmd))
 
 
+class Nuage:
+    """Manage external nuage VSD device"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, services, physicalnetworkid, username=None, password=None):
+        """Add external nuage VSD device to cloudstack"""
+
+        cmd = addNuageVspDevice.addNuageVspDeviceCmd()
+        cmd.physicalnetworkid = physicalnetworkid
+        if username:
+            cmd.username = username
+        else:
+            cmd.username = services["username"]
+
+        if password:
+            cmd.password = password
+        else:
+            cmd.password = services["password"]
+
+        cmd.hostname = services["hostname"]
+        cmd.port = services["port"]
+        cmd.retrycount = services["retrycount"]
+        cmd.retryinterval = services["retryinterval"]
+        cmd.apiversion = services["apiversion"]
+
+        return Nuage(apiclient.addNuageVspDevice(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Deletes a nuage VSD device from CloudStack"""
+
+        cmd = updateNuageVspDevice.updateNuageVspDeviceCmd()
+        cmd.physicalnetworkid = self.physicalnetworkid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateNuageVspDevice(cmd)
+
+    def delete(self, apiclient):
+        """Deletes a nuage VSD device from CloudStack"""
+
+        cmd = deleteNuageVspDevice.deleteNuageVspDeviceCmd()
+        cmd.vspdeviceid = self.vspdeviceid
+        apiclient.deleteNuageVspDevice(cmd)
+        return
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List already registered netscaler devices"""
+
+        cmd = listNuageVspDevices.listNuageVspDevicesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listNuageVspDevices(cmd))
+
+
 class Router:
     """Manage router life cycle"""
 
@@ -4618,7 +4677,7 @@ class ApplicationLoadBalancer:
     @classmethod
     def create(cls, apiclient, services, name=None, sourceport=None,
                instanceport=22, algorithm="roundrobin", scheme="internal",
-               sourcenetworkid=None, networkid=None):
+               sourcenetworkid=None, networkid=None, sourceipaddress=None):
         """Create Application Load Balancer"""
         cmd = createLoadBalancer.createLoadBalancerCmd()
 
@@ -4656,6 +4715,11 @@ class ApplicationLoadBalancer:
             cmd.networkid = services["networkid"]
         elif networkid:
             cmd.networkid = networkid
+
+        if "sourceipaddress" in services:
+            cmd.sourceipaddress = services["sourceipaddress"]
+        elif sourceipaddress:
+            cmd.sourceipaddress = sourceipaddress
 
         return LoadBalancerRule(apiclient.createLoadBalancer(cmd).__dict__)
 

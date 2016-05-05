@@ -46,6 +46,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
@@ -402,8 +403,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             svcProviderMap.put(Service.NetworkACL, defaultProviders);
         }
 
-        svcProviderMap.put(Service.Gateway, defaultProviders);
-
         if (serviceProviders != null) {
             for (final Entry<String, List<String>> serviceEntry : serviceProviders.entrySet()) {
                 final Network.Service service = Network.Service.getService(serviceEntry.getKey());
@@ -423,6 +422,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     throw new InvalidParameterValueException("Service " + serviceEntry.getKey() + " is not enabled for the network " + "offering, can't add a provider to it");
                 }
             }
+        }
+
+        // add gateway provider (if sourceNat provider is enabled)
+        final Set<Provider> sourceNatServiceProviders = svcProviderMap.get(Service.SourceNat);
+        if (CollectionUtils.isNotEmpty(sourceNatServiceProviders)) {
+            svcProviderMap.put(Service.Gateway, sourceNatServiceProviders);
         }
 
         validateConnectivtyServiceCapabilities(svcProviderMap.get(Service.Connectivity), serviceCapabilitystList);

@@ -36,6 +36,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -45,11 +46,15 @@ import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -260,6 +265,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                 //snapshot is deleted on backup storage, need to delete it on primary storage
                 SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
                 if (snapshotOnPrimary != null) {
+                    SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+                    if (((PrimaryDataStoreImpl)snapshotOnPrimaryInfo.getDataStore()).getPoolType() == StoragePoolType.RBD) {
+                        snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo);
+                    }
                     snapshotOnPrimary.setState(State.Destroyed);
                     snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
                 }
@@ -279,7 +288,52 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
-        throw new CloudRuntimeException("revert Snapshot is not supported");
+        if (canHandle(snapshot,SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
+            throw new UnsupportedOperationException("Reverting not supported. Create a template or volume based on the snapshot instead.");
+        }
+
+        SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshot.getId());
+
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException("Failed to get lock on snapshot:" + snapshot.getId());
+        }
+
+        try {
+            VolumeInfo volumeInfo = snapshot.getBaseVolume();
+            StoragePool store = (StoragePool)volumeInfo.getDataStore();
+
+            if (store != null && store.getStatus() != StoragePoolStatus.Up) {
+                snapshot.processEvent(Event.OperationFailed);
+
+                throw new CloudRuntimeException("store is not in up state");
+            }
+
+            volumeInfo.stateTransit(Volume.Event.RevertSnapshotRequested);
+
+            boolean result = false;
+
+            try {
+                result =  snapshotSvr.revertSnapshot(snapshot);
+
+                if (!result) {
+                    s_logger.debug("Failed to revert snapshot: " + snapshot.getId());
+
+                    throw new CloudRuntimeException("Failed to revert snapshot: " + snapshot.getId());
+                }
+            } finally {
+                if (result) {
+                    volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
+                } else {
+                    volumeInfo.stateTransit(Volume.Event.OperationFailed);
+                }
+            }
+
+            return result;
+        } finally {
+            if (snapshotVO != null) {
+                snapshotDao.releaseFromLockTable(snapshot.getId());
+            }
+        }
     }
 
     @Override
@@ -323,15 +377,17 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
             try {
                 SnapshotInfo parent = snapshot.getParent();
-                if (backupedSnapshot != null && parent != null) {
-                    Long parentSnapshotId = parent.getId();
-                    while (parentSnapshotId != null && parentSnapshotId != 0L) {
-                        SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), parentSnapshotId);
-                        if (snapshotDataStoreVO != null) {
-                            parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
-                            snapshotStoreDao.remove(snapshotDataStoreVO.getId());
-                        } else {
-                            parentSnapshotId = null;
+                if (backupedSnapshot != null && parent != null && primaryStore instanceof PrimaryDataStoreImpl) {
+                    if (((PrimaryDataStoreImpl)primaryStore).getPoolType() != StoragePoolType.RBD) {
+                        Long parentSnapshotId = parent.getId();
+                        while (parentSnapshotId != null && parentSnapshotId != 0L) {
+                            SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), parentSnapshotId);
+                            if (snapshotDataStoreVO != null) {
+                                parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
+                                snapshotStoreDao.remove(snapshotDataStoreVO.getId());
+                            } else {
+                                parentSnapshotId = null;
+                            }
                         }
                     }
                     SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), snapshot.getId());
@@ -353,7 +409,14 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
-        if (op == SnapshotOperation.REVERT) {
+        if (SnapshotOperation.REVERT.equals(op)) {
+            long volumeId = snapshot.getVolumeId();
+            VolumeVO volumeVO = volumeDao.findById(volumeId);
+
+            if (volumeVO != null && ImageFormat.QCOW2.equals(volumeVO.getFormat())) {
+                return StrategyPriority.DEFAULT;
+            }
+
             return StrategyPriority.CANT_HANDLE;
         }
 

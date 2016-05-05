@@ -360,10 +360,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         BigDecimal rawusage;
         // get service offering details
         ServiceOfferingVO serviceoffering = _serviceOfferingDao.findServiceOffering(usageRecord.getVmInstanceId(), usageRecord.getOfferingId());
+        if (serviceoffering == null) return quotalist;
         rawusage = new BigDecimal(usageRecord.getRawUsage());
 
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.CPU_NUMBER, usageRecord.getEndDate());
-        if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
+        if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0 && serviceoffering.getCpu() != null) {
             BigDecimal cpu = new BigDecimal(serviceoffering.getCpu());
             onehourcostpercpu = tariff.getCurrencyValue().multiply(aggregationRatio);
             cpuquotausgage = rawusage.multiply(onehourcostpercpu).multiply(cpu);
@@ -373,7 +374,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             quotalist.add(quota_usage);
         }
         tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.CPU_CLOCK_RATE, usageRecord.getEndDate());
-        if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
+        if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0 && serviceoffering.getSpeed() != null) {
             BigDecimal speed = new BigDecimal(serviceoffering.getSpeed() / 100.00);
             onehourcostper100mhz = tariff.getCurrencyValue().multiply(aggregationRatio);
             speedquotausage = rawusage.multiply(onehourcostper100mhz).multiply(speed);
@@ -383,7 +384,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             quotalist.add(quota_usage);
         }
         tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.MEMORY, usageRecord.getEndDate());
-        if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0) {
+        if (tariff != null && tariff.getCurrencyValue().compareTo(BigDecimal.ZERO) != 0 && serviceoffering.getRamSize() != null) {
             BigDecimal memory = new BigDecimal(serviceoffering.getRamSize());
             onehourcostper1mb = tariff.getCurrencyValue().multiply(aggregationRatio);
             memoryquotausage = rawusage.multiply(onehourcostper1mb).multiply(memory);
@@ -461,6 +462,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         usageRecord.setQuotaCalculated(1);
         _usageDao.persistUsage(usageRecord);
         return quota_usage;
+    }
+
+    @Override
+    public boolean isLockable(AccountVO account) {
+        return (account.getType() == AccountVO.ACCOUNT_TYPE_NORMAL || account.getType() == AccountVO.ACCOUNT_TYPE_DOMAIN_ADMIN);
     }
 
 }

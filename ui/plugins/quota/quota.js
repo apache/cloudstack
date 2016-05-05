@@ -328,13 +328,6 @@
                           });
                       },
                       detailView: {
-                          viewAll: [{
-                              path: 'quota.quotastatement',
-                              label: 'label.quota.statement.quota'
-                          },{
-                              path: 'quota.balancestatement',
-                              label: 'label.quota.statement.balance'
-                          }],
                           actions: {
                              add: {
                                 label: 'label.quota.add.credits',

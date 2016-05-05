@@ -18,7 +18,11 @@ package com.cloud.storage;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -28,7 +32,10 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.serializer.GsonHelper;
 import com.cloud.user.User;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VirtualMachine;
 import junit.framework.Assert;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.junit.After;
@@ -101,6 +108,8 @@ public class VolumeApiServiceImplTest {
     VolumeService volService;
     @Mock
     CreateVolumeCmd createVol;
+    @Mock
+    UserVmManager _userVmMgr;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
@@ -118,6 +127,8 @@ public class VolumeApiServiceImplTest {
         _svc._jobMgr = _jobMgr;
         _svc.volFactory = _volFactory;
         _svc.volService = volService;
+        _svc._userVmMgr = _userVmMgr;
+        _svc._gson = GsonHelper.getGsonLogger();
 
         // mock caller context
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
@@ -381,6 +392,20 @@ public class VolumeApiServiceImplTest {
     public void testNonEmptyGetVolumeNameFromCmd() {
         when(createVol.getVolumeName()).thenReturn("abc");
         Assert.assertSame(_svc.getVolumeNameFromCommand(createVol), "abc");
+    }
+
+    @Test
+    public void testUpdateMissingRootDiskControllerWithNullChainInfo() {
+        _svc.updateMissingRootDiskController(null, null);
+        verify(_svc._userVmMgr, times(0)).persistDeviceBusInfo(any(UserVmVO.class), anyString());
+    }
+
+    @Test
+    public void testUpdateMissingRootDiskControllerWithValidChainInfo() {
+        UserVmVO vm = _svc._userVmDao.findById(1L);
+        assert vm.getType() == VirtualMachine.Type.User;
+        _svc.updateMissingRootDiskController(vm, "{\"diskDeviceBusName\":\"scsi0:0\",\"diskChain\":[\"[somedatastore] i-3-VM-somePath/ROOT-1.vmdk\"]}");
+        verify(_svc._userVmMgr, times(1)).persistDeviceBusInfo(any(UserVmVO.class), eq("scsi"));
     }
 
     @After

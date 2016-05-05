@@ -1297,7 +1297,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     s_logger.debug("Index already exists on host_details - not adding new one");
                 } else {
                     // add the index
-                    try(PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER IGNORE TABLE `cloud`.`host_details` ADD INDEX `fk_host_details__host_id` (`host_id`)");) {
+                    try(PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER TABLE `cloud`.`host_details` ADD INDEX `fk_host_details__host_id` (`host_id`)");) {
                         pstmtUpdate.executeUpdate();
                         s_logger.debug("Index did not exist on host_details -  added new one");
                     }catch (SQLException e) {

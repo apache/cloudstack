@@ -1241,11 +1241,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-
-    protected boolean getExecuteInSequence(final HypervisorType hypervisorType) {
-        if (HypervisorType.KVM == hypervisorType || HypervisorType.LXC == hypervisorType || HypervisorType.XenServer == hypervisorType) {
+    @Override
+    public boolean getExecuteInSequence(final HypervisorType hypervisorType) {
+        if (HypervisorType.KVM == hypervisorType || HypervisorType.XenServer == hypervisorType || HypervisorType.Hyperv == hypervisorType || HypervisorType.LXC == hypervisorType) {
             return false;
-        } else if(HypervisorType.VMware == hypervisorType) {
+        } else if (HypervisorType.VMware == hypervisorType) {
             final Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
             return fullClone;
         } else {
@@ -2585,7 +2585,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
 
             final Commands cmds = new Commands(Command.OnError.Stop);
-            cmds.addCommand(new RebootCommand(vm.getInstanceName()));
+            cmds.addCommand(new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType())));
             _agentMgr.send(host.getId(), cmds);
 
             final Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
@@ -2909,12 +2909,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
         }
 
-        // Check that the service offering being upgraded to has storage tags subset of the current service offering storage tags, since volume is not migrated.
+        // Check that the service offering being upgraded to has all the tags of the current service offering.
         final List<String> currentTags = StringUtils.csvTagsToList(currentServiceOffering.getTags());
         final List<String> newTags = StringUtils.csvTagsToList(newServiceOffering.getTags());
-        if (!currentTags.containsAll(newTags)) {
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering " + " should have tags as subset of " +
-                    "current service offering tags. Current service offering tags: " + currentTags + "; " + "new service " + "offering tags: " + newTags);
+        if (!newTags.containsAll(currentTags)) {
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine; the current service offering " + " should have tags as subset of " +
+                    "the new service offering tags. Current service offering tags: " + currentTags + "; " + "new service " + "offering tags: " + newTags);
         }
     }
 

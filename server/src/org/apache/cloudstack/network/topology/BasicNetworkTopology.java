@@ -278,7 +278,11 @@ public class BasicNetworkTopology implements NetworkTopology {
         boolean agentResults = true;
 
         for (final DomainRouterVO router : routers) {
-            if (router.getState() != State.Running) {
+            if(router.getState() == State.Stopped || router.getState() == State.Stopping){
+                s_logger.info("The router " + router.getInstanceName()+ " is in the " + router.getState() + " state. So not applying the VPN rules. Will be applied once the router gets restarted.");
+                continue;
+            }
+            else if (router.getState() != State.Running) {
                 s_logger.warn("Failed to add/remove VPN users: router not in running state");
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
                         network.getDataCenterId());

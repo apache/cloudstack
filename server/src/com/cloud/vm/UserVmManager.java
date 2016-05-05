@@ -114,4 +114,6 @@ public interface UserVmManager extends UserVmService {
     public void removeCustomOfferingDetails(long vmId);
 
     void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
+
+    void persistDeviceBusInfo(UserVmVO paramUserVmVO, String paramString);
 }

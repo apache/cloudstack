@@ -44,6 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 
+import com.cloud.capacity.CapacityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -64,9 +65,13 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     HostDao hostDao;
-    private final String findOneHostOnPrimaryStorage =
-        "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and"
-            + " h.id = s.host_id and s.pool_id = ? ";
+    private final String findOneHostOnPrimaryStorage = "select t.id from "
+                            + "(select h.id, cd.value "
+                            + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
+                            + "join cluster c on c.id=h.cluster_id "
+                            + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
+                            + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
+
     private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
@@ -115,6 +120,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             sbuilder.append(scope.getScopeId());
         }
         // TODO: order by rand() is slow if there are lot of hosts
+        sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
         sbuilder.append(" ORDER by rand() limit 1");
         String sql = sbuilder.toString();
         HostVO host = null;

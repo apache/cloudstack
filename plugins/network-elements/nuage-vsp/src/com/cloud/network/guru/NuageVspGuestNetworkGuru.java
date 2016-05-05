@@ -25,6 +25,7 @@ import com.cloud.agent.api.guru.DeallocateVmVspCommand;
 import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
 import com.cloud.agent.api.guru.ReserveVmInterfaceVspCommand;
 import com.cloud.agent.api.guru.TrashNetworkVspCommand;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.VlanVO;
@@ -105,6 +106,8 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     AgentManager _agentMgr;
     @Inject
     NuageVspManager _nuageVspManager;
+    @Inject
+    ConfigurationManager _configMgr;
 
     public NuageVspGuestNetworkGuru() {
         super();
@@ -347,6 +350,12 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && (offering.getGuestType() == Network.GuestType.Isolated || offering.getGuestType() == Network.GuestType.Shared)
                 && isMyIsolationMethod(physicalNetwork)) {
+            if (_configMgr.isOfferingForVpc(offering) && !offering.getIsPersistent()) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("NuageVsp can't handle VPC tiers which use a network offering which are not persistent");
+                }
+                return false;
+            }
             return true;
         } else {
             if (s_logger.isTraceEnabled()) {

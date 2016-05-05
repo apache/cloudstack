@@ -17,6 +17,8 @@
 
 package com.cloud.hypervisor.vmware.mo;
 
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

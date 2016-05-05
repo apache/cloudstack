@@ -274,14 +274,14 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     }
 
     @Override
-    public void setLockAccount(Long accountId, Boolean state) {
+    public void setLockAccount(Long accountId, Boolean enforce) {
         QuotaAccountVO acc = _quotaAcc.findByIdQuotaAccount(accountId);
         if (acc == null) {
             acc = new QuotaAccountVO(accountId);
-            acc.setQuotaEnforce(state ? 1 : 0);
+            acc.setQuotaEnforce(enforce ? 1 : 0);
             _quotaAcc.persistQuotaAccount(acc);
         } else {
-            acc.setQuotaEnforce(state ? 1 : 0);
+            acc.setQuotaEnforce(enforce ? 1 : 0);
             _quotaAcc.updateQuotaAccount(accountId, acc);
         }
     }

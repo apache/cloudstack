@@ -521,3 +521,24 @@ def verifyRouterState(apiclient, routerid, allowedstates):
         return [FAIL, "state of the router should be in %s but is %s" %
             (allowedstates, routers[0].state)]
     return [PASS, None]
+
+
+    
+def wait_until(retry_interval=2, no_of_times=2, callback=None, *callback_args):
+    """ Utility method to try out the callback method at most no_of_times with a interval of retry_interval,
+        Will return immediately if callback returns True. The callback method should be written to return a list of values first being a boolean """
+
+    if callback is None:
+        raise ("Bad value for callback method !")
+            
+    wait_result = False
+    for i in range(0,no_of_times):
+        time.sleep(retry_interval)
+        wait_result, return_val = callback(*callback_args)
+        if not(isinstance(wait_result, bool)):
+            raise ("Bad parameter returned from callback !")
+        if wait_result :
+            break
+
+    return wait_result, return_val
+

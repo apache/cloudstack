@@ -14,29 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.api;
 
-package com.cloud.hypervisor.vmware.mo;
+import java.util.Set;
 
-public class VirtualMachineDiskInfo {
-    String diskDeviceBusName;
-    String[] diskChain;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
 
-    public VirtualMachineDiskInfo() {
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+
+public abstract class BaseResponseWithTagInformation extends BaseResponse {
+
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated", responseObject = ResourceTagResponse.class)
+    protected Set<ResourceTagResponse> tags;
+
+    public void addTag(ResourceTagResponse tag) {
+        this.tags.add(tag);
     }
 
-    public String getDiskDeviceBusName() {
-        return diskDeviceBusName;
+    public Set<ResourceTagResponse> getTags(){
+        return this.tags;
     }
 
-    public void setDiskDeviceBusName(String diskDeviceBusName) {
-        this.diskDeviceBusName = diskDeviceBusName;
-    }
-
-    public String[] getDiskChain() {
-        return diskChain;
-    }
-
-    public void setDiskChain(String[] diskChain) {
-        this.diskChain = diskChain;
-    }
 }
