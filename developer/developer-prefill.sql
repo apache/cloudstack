@@ -116,7 +116,7 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'outofbandmanagement.sync.interval', '2000');
+            'outofbandmanagement.sync.interval', '1000');
 
 -- Enable dynamic RBAC by default for fresh deployments
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)

@@ -70,6 +70,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
             if self.server:
                 self.server.shutdown()
                 self.server.server_close()
+                IpmiServerContext('reset')
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -143,7 +144,13 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cmd.action = action
         if timeout:
             cmd.timeout = timeout
-        return self.apiclient.issueOutOfBandManagementPowerAction(cmd)
+
+        try:
+            return self.apiclient.issueOutOfBandManagementPowerAction(cmd)
+        except Exception as e:
+            if "packet session id 0x0 does not match active session" in str(e):
+                raise self.skipTest("Known ipmitool issue hit, skipping test")
+            raise e
 
 
     def configureAndEnableOobm(self):
@@ -166,8 +173,14 @@ class TestOutOfBandManagement(cloudstackTestCase):
 
 
     def checkSyncToState(self, state, interval):
-        self.debug("Waiting for background thread to update powerstate to " + state)
-        time.sleep(1 + int(interval)*2/1000) # interval is in ms
+        def checkForStateSync(expectedState):
+            response = self.getHost(hostId=self.getHost().id).outofbandmanagement
+            return response.powerstate == expectedState, None
+
+        sync_interval = 1 + int(interval)/1000
+        res, _ = wait_until(sync_interval, 10, checkForStateSync, state)
+        if not res:
+            self.fail("Failed to get host.powerstate synced to expected state:" + state)
         response = self.getHost(hostId=self.getHost().id).outofbandmanagement
         self.assertEqual(response.powerstate, state)
 
