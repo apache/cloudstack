@@ -1744,6 +1744,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (result) {
                 return new Answer(cmd, false, "Heart is still beating...");
             } else {
+                s_logger.warn("Heartbeat failed for : " + cmd.getHost().getPrivateNetwork().getIp().toString());
                 return new Answer(cmd);
             }
         } catch (InterruptedException e) {

@@ -27,7 +27,11 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.AdapterBase;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -43,6 +47,8 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     AgentManager _agentMgr;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject
+    PrimaryDataStoreDao _storagePoolDao;
 
     @Override
     public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
@@ -58,6 +64,20 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             return null;
         }
+
+        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
+        boolean hasNfs = false;
+        for (StoragePoolVO pool : clusterPools) {
+            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+                hasNfs = true;
+                break;
+            }
+        }
+        if (!hasNfs) {
+            s_logger.warn("Agent investigation was requested on host " + agent + ", but host does not support investigation because it has no NFS storage. Skipping investigation.");
+            return Status.Disconnected;
+        }
+
         Status hostStatus = null;
         Status neighbourStatus = null;
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
