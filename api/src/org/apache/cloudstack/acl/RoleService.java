@@ -34,8 +34,16 @@ public interface RoleService {
     boolean deleteRole(final Role role);
 
     RolePermission findRolePermission(final Long id);
+    RolePermission findRolePermissionByUuid(final String uuid);
+
     RolePermission createRolePermission(final Role role, final Rule rule, final RolePermission.Permission permission, final String description);
-    boolean updateRolePermission(final RolePermission rolePermission, final Rule rule, final RolePermission.Permission permission, final String description);
+    /**
+     * updateRolePermission updates the order/position of an role permission
+     * The list of role permissions is treated and consumed as an ordered linked list
+     * @param rolePermission The role permission that needs to be re-ordered
+     * @param parentRolePermission The parent role permission after which the role permission should be placed
+     */
+    boolean updateRolePermission(final RolePermission rolePermission, final RolePermission parentRolePermission);
     boolean deleteRolePermission(final RolePermission rolePermission);
 
     List<Role> listRoles();

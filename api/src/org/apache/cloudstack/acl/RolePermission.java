@@ -27,4 +27,5 @@ public interface RolePermission extends InternalIdentity, Identity {
     Rule getRule();
     Permission getPermission();
     String getDescription();
+    long getSortOrder();
 }

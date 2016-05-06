@@ -51,6 +51,9 @@ public class RolePermissionVO implements RolePermission {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "sort_order")
+    private long sortOrder = 0;
+
     public RolePermissionVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -105,5 +108,13 @@ public class RolePermissionVO implements RolePermission {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public long getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(long sortOrder) {
+        this.sortOrder = sortOrder;
     }
 }

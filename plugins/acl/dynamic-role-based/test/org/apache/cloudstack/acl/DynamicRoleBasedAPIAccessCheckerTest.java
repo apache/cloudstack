@@ -106,7 +106,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
 
     @Test
     public void testInvalidRolePermissionsCheckAccess() {
-        Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(null);
+        Mockito.when(roleService.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.<RolePermission>emptyList());
         try {
             apiAccessChecker.checkAccess(getTestUser(), "someApi");
             fail("Exception was expected");

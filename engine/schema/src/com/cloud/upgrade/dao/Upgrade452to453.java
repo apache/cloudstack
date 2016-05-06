@@ -62,68 +62,21 @@ public class Upgrade452to453 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        setupRolesAndPermissionsForDynamicRBAC(conn);
+        setupRolesAndPermissionsForDynamicChecker(conn);
     }
 
-    private void createDefaultRole(final Connection conn, final Long id, final String name, final RoleType roleType) {
-        final String insertSql = String.format("INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) values (%d, UUID(), '%s', '%s', 'Default %s role');",
-                id, name, roleType.name(), roleType.name().toLowerCase());
-        try ( PreparedStatement updatePstmt = conn.prepareStatement(insertSql) ) {
-            updatePstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to create default role with id: " + id + " name: " + name, e);
-        }
-    }
-
-    private void createRoleMapping(final Connection conn, final Long roleId, final String apiName) {
-        final String insertSql = String.format("INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) values (UUID(), %d, '%s', 'ALLOW') ON DUPLICATE KEY UPDATE rule=rule;",
-                roleId, apiName);
-        try ( PreparedStatement updatePstmt = conn.prepareStatement(insertSql)) {
-            updatePstmt.executeUpdate();
-        } catch (SQLException ignored) {
-            s_logger.debug("Unable to insert mapping for role id:" + roleId + " apiName: " + apiName);
-        }
-    }
-
-    private void addRoleColumnAndMigrateAccountTable(final Connection conn, final RoleType[] roleTypes) {
-        // Add role_id column to account table
-        final String alterTableSql = "ALTER TABLE `cloud`.`account` ADD COLUMN `role_id` bigint(20) unsigned COMMENT 'role id for this account' AFTER `type`, " +
-                "ADD KEY `fk_account__role_id` (`role_id`), " +
-                "ADD CONSTRAINT `fk_account__role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);";
-        try (PreparedStatement pstmt = conn.prepareStatement(alterTableSql)) {
-            pstmt.executeUpdate();
-            s_logger.info("Altered cloud.account table and added column role_id");
-        } catch (SQLException e) {
-            if (e.getMessage().contains("role_id")) {
-                s_logger.warn("cloud.account table already has the role_id column, skipping altering table and migration of accounts");
-                return;
-            } else {
-                throw new CloudRuntimeException("Unable to create column quota_calculated in table cloud_usage.cloud_usage", e);
-            }
-        }
-        // Migrate existing account to one of default roles based on account type
-        migrateAccountsToDefaultRoles(conn, roleTypes);
-    }
-
-    private void migrateAccountsToDefaultRoles(final Connection conn, final RoleType[] roleTypes) {
-        // Migrate existing accounts to default roles based on account type
-        try (PreparedStatement selectStatement = conn.prepareStatement("SELECT `id`, `type` FROM `cloud`.`account`;");
-             ResultSet selectResultSet = selectStatement.executeQuery()) {
+    private void migrateAccountsToDefaultRoles(final Connection conn) {
+        try (final PreparedStatement selectStatement = conn.prepareStatement("SELECT `id`, `type` FROM `cloud`.`account`;");
+             final ResultSet selectResultSet = selectStatement.executeQuery()) {
             while (selectResultSet.next()) {
-                Long accountId = selectResultSet.getLong(1);
-                Short accountType = selectResultSet.getShort(2);
-                Long roleId = null;
-                for (RoleType roleType : roleTypes) {
-                    if (roleType.getAccountType() == accountType) {
-                        roleId = roleType.getId();
-                        break;
-                    }
-                }
-                // Skip is account type does not match any of the default roles
-                if (roleId == null) {
+                final Long accountId = selectResultSet.getLong(1);
+                final Short accountType = selectResultSet.getShort(2);
+                final Long roleId = RoleType.getByAccountType(accountType).getId();
+                if (roleId < 1L || roleId > 4L) {
+                    s_logger.warn("Skipping role ID migration due to invalid role_id resolved for account id=" + accountId);
                     continue;
                 }
-                try (PreparedStatement updateStatement = conn.prepareStatement("UPDATE `cloud`.`account` SET role_id = ? WHERE id = ?;")) {
+                try (final PreparedStatement updateStatement = conn.prepareStatement("UPDATE `cloud`.`account` SET account.role_id = ? WHERE account.id = ? ;")) {
                     updateStatement.setLong(1, roleId);
                     updateStatement.setLong(2, accountId);
                     updateStatement.executeUpdate();
@@ -138,33 +91,25 @@ public class Upgrade452to453 implements DbUpgrade {
         s_logger.debug("Done migrating existing accounts to use one of default roles based on account type");
     }
 
-    private void setupRolesAndPermissionsForDynamicRBAC(final Connection conn) {
-        // If there are existing roles, avoid resetting data
-        try (PreparedStatement selectStatement = conn.prepareStatement("SELECT * FROM `cloud`.`roles`")) {
-            ResultSet resultSet = selectStatement.executeQuery();
-            if (resultSet != null && resultSet.next()) {
-                resultSet.close();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Found existing roles. Skipping migration of commands.properties to dynamic roles table.");
-                }
-                return;
-            }
+    private void setupRolesAndPermissionsForDynamicChecker(final Connection conn) {
+        final String alterTableSql = "ALTER TABLE `cloud`.`account` " +
+                "ADD COLUMN `role_id` bigint(20) unsigned COMMENT 'role id for this account' AFTER `type`, " +
+                "ADD KEY `fk_account__role_id` (`role_id`), " +
+                "ADD CONSTRAINT `fk_account__role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);";
+        try (final PreparedStatement pstmt = conn.prepareStatement(alterTableSql)) {
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            s_logger.error("Unable to find existing roles, if you need to add default roles please add them manually. Giving up!");
-            return;
+            if (e.getMessage().contains("role_id")) {
+                s_logger.warn("cloud.account table already has the role_id column, skipping altering table and migration of accounts");
+                return;
+            } else {
+                throw new CloudRuntimeException("Unable to create column quota_calculated in table cloud_usage.cloud_usage", e);
+            }
         }
 
-        // Add default roles
-        RoleType[] roleTypes = new RoleType[] {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User};
-        for (RoleType roleType: roleTypes) {
-            createDefaultRole(conn, roleType.getId(), roleType.name(), roleType);
-        }
+        migrateAccountsToDefaultRoles(conn);
 
-        // Add role_id column to account and map existing accounts to default roles
-        addRoleColumnAndMigrateAccountTable(conn, roleTypes);
-
-        // Add default set of role-api mapping when commands.properties file is not found
-        Map<String, String> apiMap = PropertiesUtil.processConfigFile(new String[] { PropertiesUtil.getDefaultApiCommandsFileName() });
+        final Map<String, String> apiMap = PropertiesUtil.processConfigFile(new String[] { PropertiesUtil.getDefaultApiCommandsFileName() });
         if (apiMap == null || apiMap.isEmpty()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("The commands.properties file and default role permissions were not found. " +
@@ -175,32 +120,11 @@ public class Upgrade452to453 implements DbUpgrade {
                 s_logger.error("Unable to find default role-api mapping sql file, please configure api per role manually");
                 return;
             }
-            try(FileReader reader = new FileReader(new File(script));) {
+            try(final FileReader reader = new FileReader(new File(script))) {
                 ScriptRunner runner = new ScriptRunner(conn, false, true);
                 runner.runScript(reader);
             } catch (SQLException | IOException e) {
                 s_logger.error("Unable to insert default api-role mappings from file: " + script + ". Please configure api per role manually, giving up!", e);
-            }
-        } else {
-            // If commands.properties file exists, use it to create the mappings
-            for (RoleType roleType : roleTypes) {
-                // Allow all for root admin
-                if (roleType == RoleType.Admin) {
-                    createRoleMapping(conn, roleType.getId(), "*");
-                    continue;
-                }
-                for (Map.Entry<String, String> entry : apiMap.entrySet()) {
-                    String apiName = entry.getKey();
-                    String roleMask = entry.getValue();
-                    try {
-                        short cmdPermissions = Short.parseShort(roleMask);
-                        if ((cmdPermissions & roleType.getMask()) != 0) {
-                            createRoleMapping(conn, roleType.getId(), apiName);
-                        }
-                    } catch (NumberFormatException nfe) {
-                        s_logger.info("Malformed key=value pair for entry: " + entry.toString());
-                    }
-                }
             }
         }
     }

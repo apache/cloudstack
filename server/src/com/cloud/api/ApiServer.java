@@ -796,15 +796,15 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     s_logger.debug(ex.getMessage());
                     throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
                 } catch (final PermissionDeniedException ex) {
-                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
-                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                    s_logger.debug("The user with id:" + userId + " is not allowed to request the API command or the API command does not exist: " + commandName);
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The user is not allowed to request the API command or the API command does not exist");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
                 if (!s_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
-                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
-                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                    s_logger.debug("The user with id:" + userId + " is not allowed to request the API command or the API command does not exist: " + commandName);
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The user is not allowed to request the API command or the API command does not exist");
                 }
             }
 

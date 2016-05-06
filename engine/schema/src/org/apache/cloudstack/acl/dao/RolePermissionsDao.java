@@ -23,5 +23,32 @@ import org.apache.cloudstack.acl.RolePermissionVO;
 import java.util.List;
 
 public interface RolePermissionsDao extends GenericDao<RolePermissionVO, Long> {
-    List<RolePermissionVO> findAllByRoleId(Long roleId);
+    /**
+     * Adds a new role permission at the end of the list of role permissions
+     * @param item the new role permission
+     * @return returns persisted role permission
+     */
+    RolePermissionVO persist(final RolePermissionVO item);
+
+    /**
+     * Moves an existing role permission under a given parent role permission
+     * @param item an existing role permission
+     * @param parentId the new parent ID after move for the role permission
+     * @return returns true on success
+     */
+    boolean update(final RolePermissionVO item, final RolePermissionVO parent);
+
+    /**
+     * Removes an existing role permission and updates the ordered linked-list of role's permissions list
+     * @param id the ID of the role permission to be removed
+     * @return returns true on success
+     */
+    boolean remove(Long id);
+
+    /**
+     * Returns ordered linked-list of role permission for a given role
+     * @param roleId the ID of the role
+     * @return returns list of role permissions
+     */
+    List<RolePermissionVO> findAllByRoleIdSorted(Long roleId);
 }
