@@ -636,6 +636,8 @@ public class ApiConstants {
 
     public static final String ADMIN = "admin";
 
+    public static final String SHOWHIDDEN = "showhidden";
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }
