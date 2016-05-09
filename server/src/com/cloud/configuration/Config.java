@@ -1954,6 +1954,15 @@ public enum Config {
             "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack",
             null),
 
+    AllowShowHiddenConfigViaApi(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "com.cloud.configuration.allowshowhidden",
+            "false",
+            "Whether or not to allow showing hidden values via api",
+            null),
+
     RedundantRouterVrrpInterval(
             "Advanced",
             NetworkOrchestrationService.class,
