@@ -1181,6 +1181,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public boolean start() {
+        //destroy snapshots in destroying state
+        List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Destroying);
+        for (SnapshotVO snapshotVO : snapshots) {
+            try {
+                if (!deleteSnapshot(snapshotVO.getId())) {
+                    s_logger.debug("Failed to delete snapshot in destroying state with id " + snapshotVO.getUuid());
+                }
+            } catch (Exception e) {
+                s_logger.debug("Failed to delete snapshot in destroying state with id " + snapshotVO.getUuid());
+            }
+        }
         return true;
     }
 
