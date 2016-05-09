@@ -2208,7 +2208,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new Pair<String, String>(vmInternalCSName, vmNameOnVcenter);
     }
 
-    private static void configNestedHVSupport(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, VirtualMachineConfigSpec vmConfigSpec) throws Exception {
+    protected void configNestedHVSupport(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, VirtualMachineConfigSpec vmConfigSpec) throws Exception {
 
         VmwareContext context = vmMo.getContext();
         if ("true".equals(vmSpec.getDetails().get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG))) {
