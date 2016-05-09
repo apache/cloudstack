@@ -28,6 +28,8 @@ from CsRoute import CsRoute
 from CsRule import CsRule
 
 VRRP_TYPES = ['guest']
+VPC_PUBLIC_INTERFACE = ['eth1']
+NETWORK_PUBLIC_INTERFACE = ['eth2']
 
 class CsAddress(CsDataBag):
 
@@ -288,14 +290,16 @@ class CsIP:
         """ The steps that must be done after a device is configured """
         route = CsRoute()
         if not self.get_type() in ["control"]:
-            route.add_table(self.dev)
 
-            CsRule(self.dev).addMark()
+            if self.dev != 'eth0':
+                route.add_table(self.dev)
+                CsRule(self.dev).addMark()
+                self.set_mark()
 
             interfaces = [CsInterface(address, self.config)]
             CsHelper.reconfigure_interfaces(self.cl, interfaces)
 
-            self.set_mark()
+            self.check_is_up()
             self.arpPing()
 
             CsRpsrfs(self.dev).enable()
@@ -305,23 +309,46 @@ class CsIP:
         if not self.config.is_vpc():
             self.setup_router_control()
 
-        if self.config.is_vpc() or self.cl.is_redundant():
-            # The code looks redundant here, but we actually have to cater for routers and
-            # VPC routers in a different manner. Please do not remove this block otherwise
-            # The VPC default route will be broken.
-            if self.get_type() in ["public"] and address["device"] == CsHelper.PUBLIC_INTERFACES[self.cl.get_type()]:
-                gateway = str(address["gateway"])
-                route.add_defaultroute(gateway)
+        try:
+            if str(address["gateway"]) == "None":
+                raise ValueError
+        except (KeyError, ValueError):
+            logging.debug("IP %s was not provided with a gateway." % self.ip())
         else:
-            # once we start processing public ip's we need to verify there
-            # is a default route and add if needed
-            if(self.cl.get_gateway()):
-                route.add_defaultroute(self.cl.get_gateway())
+            if self.get_type() in ["public"]:
+                if self.config.is_vpc():
+                    main_public_nic = VPC_PUBLIC_INTERFACE
+                else:
+                    main_public_nic = NETWORK_PUBLIC_INTERFACE
+
+                if self.dev in main_public_nic:
+                    logging.debug("IP %s has the gateway %s that should be in the main routing table." % \
+                                  (self.ip(), address["gateway"]))
+                    route.add_defaultroute(address["gateway"])
+                else:
+                    logging.debug("IP %s has the gateway %s that is not intended for the main routing table." % \
+                                  (self.ip(), address["gateway"]))
+
+
+    def check_is_up(self):
+        """ Ensure device is up """
+        cmd = "ip link show %s | grep 'state DOWN'" % self.getDevice()
+        for i in CsHelper.execute(cmd):
+            if " DOWN " in i:
+                cmd2 = "ip link set %s up" % self.getDevice()
+                # All interfaces should be up on non-redundant or master routers
+                if not self.cl.is_redundant() or self.cl.is_master():
+                    CsHelper.execute(cmd2)
+                # only bring up non-public interfaces on backup redundant routers
+                elif not self.is_public():
+                    CsHelper.execute(cmd2)
+
 
     def set_mark(self):
-        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \
-            (self.getDevice(), self.dnum)
-        self.fw.append(["mangle", "", cmd])
+        if self.get_type() in ['public']:
+            cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \
+                (self.getDevice(), self.dnum)
+            self.fw.append(["mangle", "", cmd])
 
     def get_type(self):
         """ Return the type of the IP
@@ -357,9 +384,13 @@ class CsIP:
     def fw_router(self):
         if self.config.is_vpc():
             return
-        self.fw.append(["mangle", "front", "-A PREROUTING " +
+
+        restore_mark = ["mangle", "front", "-A PREROUTING " +
                         "-m state --state RELATED,ESTABLISHED " +
-                        "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
+                        "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"]
+
+        if restore_mark not in self.fw:
+            self.fw.append(restore_mark)
 
         if self.get_type() in ["public"]:
             self.fw.append(["mangle", "front",
@@ -387,6 +418,10 @@ class CsIP:
                             "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
             self.fw.append(
                 ["mangle", "", "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
+            self.fw.append(
+                ["filter", "", "-A FORWARD -i %s -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
+            self.fw.append(
+                ["filter", "", "-A FORWARD -i eth0 -o %s -j FW_OUTBOUND" % self.dev])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
@@ -411,22 +446,15 @@ class CsIP:
             self.fw.append(
                 ["filter", "", "-A FORWARD -i %s -o %s -m state --state NEW -j ACCEPT" % (self.dev, self.dev)])
             self.fw.append(
-                ["filter", "", "-A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
-            self.fw.append(
                 ["filter", "", "-A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
-            self.fw.append(
-                ["filter", "", "-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND"])
-            self.fw.append(["mangle", "",
-                            "-A PREROUTING -i %s -m state --state NEW " % self.dev +
-                            "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
 
         self.fw.append(['', 'front', '-A FORWARD -j NETWORK_STATS'])
         self.fw.append(['', 'front', '-A INPUT -j NETWORK_STATS'])
         self.fw.append(['', 'front', '-A OUTPUT -j NETWORK_STATS'])
-        self.fw.append(['', '', '-A NETWORK_STATS -i eth0 -o eth2'])
-        self.fw.append(['', '', '-A NETWORK_STATS -i eth2 -o eth0'])
-        self.fw.append(['', '', '-A NETWORK_STATS -o eth2 ! -i eth0 -p tcp'])
-        self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
+        self.fw.append(['', '', '-A NETWORK_STATS -i eth0 -o %s' % self.dev])
+        self.fw.append(['', '', '-A NETWORK_STATS -i %s -o eth0' % self.dev])
+        self.fw.append(['', '', '-A NETWORK_STATS -o %s ! -i eth0 -p tcp' % self.dev])
+        self.fw.append(['', '', '-A NETWORK_STATS -i %s ! -o eth0 -p tcp' % self.dev])
         
     def fw_vpcrouter(self):
         if not self.config.is_vpc():
@@ -507,6 +535,8 @@ class CsIP:
         route = CsRoute()
         if method == "add":
             route.add_table(self.dev)
+            if "gateway" in self.address and self.address["gateway"] != "None":
+                route.add_route(self.dev, "default via %s" % self.address["gateway"])
             route.add_route(self.dev, str(self.address["network"]))
         elif method == "delete":
             logging.warn("delete route not implemented")

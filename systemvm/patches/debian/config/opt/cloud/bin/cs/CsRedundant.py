@@ -36,7 +36,7 @@ import CsHelper
 from CsFile import CsFile
 from CsProcess import CsProcess
 from CsApp import CsPasswdSvc
-from CsAddress import CsDevice
+from CsAddress import CsDevice, VPC_PUBLIC_INTERFACE, NETWORK_PUBLIC_INTERFACE
 from CsRoute import CsRoute
 from CsStaticRoutes import CsStaticRoutes
 import socket
@@ -299,28 +299,7 @@ class CsRedundant(object):
         self.set_lock()
         logging.debug("Setting router to master")
 
-        dev = ''
-        interfaces = [interface for interface in self.address.get_interfaces() if interface.is_public()]
-        route = CsRoute()
-        for interface in interfaces:
-            if dev == interface.get_device():
-                continue
-            dev = interface.get_device()
-            logging.info("Will proceed configuring device ==> %s" % dev)
-            cmd = "ip link set %s up" % dev
-            if CsDevice(dev, self.config).waitfordevice():
-                CsHelper.execute(cmd)
-                logging.info("Bringing public interface %s up" % dev)
-
-                try:
-                    gateway = interface.get_gateway()
-                    logging.info("Adding gateway ==> %s to device ==> %s" % (gateway, dev))
-                    if dev == CsHelper.PUBLIC_INTERFACES[self.cl.get_type()]:
-                        route.add_defaultroute(gateway)
-                except:
-                    logging.error("ERROR getting gateway from device %s" % dev)
-            else:
-                logging.error("Device %s was not ready could not bring it up" % dev)
+        self._bring_public_interfaces_up()
 
         logging.debug("Configuring static routes")
         static_routes = CsStaticRoutes("staticroutes", self.config)
@@ -345,6 +324,71 @@ class CsRedundant(object):
         interfaces = [interface for interface in self.address.get_interfaces() if interface.is_public()]
         CsHelper.reconfigure_interfaces(self.cl, interfaces)
         logging.info("Router switched to master mode")
+
+
+    def _bring_public_interfaces_up(self):
+        '''Brings up all public interfaces and adds routes to the
+        relevant routing tables.
+        '''
+
+        up = []         # devices we've already brought up
+        routes = []     # routes to be added
+
+        is_link_up = "ip link show %s | grep 'state UP'"
+        set_link_up = "ip link set %s up"
+        add_route = "ip route add %s"
+        arping = "arping -c 1 -U %s -I %s"
+
+        if self.config.is_vpc():
+            default_gateway = VPC_PUBLIC_INTERFACE
+        else:
+            default_gateway = NETWORK_PUBLIC_INTERFACE
+
+        public_ips = [ip for ip in self.address.get_ips() if ip.is_public()]
+
+        for ip in public_ips:
+            address = ip.get_ip()
+            device = ip.get_device()
+            gateway = ip.get_gateway()
+
+            logging.debug("Configuring device %s for IP %s" % (device, address))
+
+            if device in up:
+                logging.debug("Device %s already configured. Skipping..." % device)
+                continue
+
+            if not CsDevice(device, self.config).waitfordevice():
+                logging.error("Device %s was not ready could not bring it up." % device)
+                continue
+
+            if CsHelper.execute(is_link_up % device):
+                logging.warn("Device %s was found already up. Assuming routes need configuring.")
+                up.append(device)
+            else:
+                logging.info("Bringing public interface %s up" % device)
+                CsHelper.execute(set_link_up % device)
+
+            logging.debug("Collecting routes for interface %s" % device)
+            routes.append("default via %s dev %s table Table_%s" % (gateway, device, device))
+
+            if device in default_gateway:
+                logging.debug("Determined that the gateway for %s should be in the main routing table." % device)
+                routes.insert(0, "default via %s dev %s" % (gateway, device))
+
+            up.append(device)
+
+        logging.info("Adding all collected routes.")
+        for route in routes:
+            CsHelper.execute(add_route % route)
+
+        logging.info("Sending gratuitous ARP for each Public IP...")
+        for ip in public_ips:
+            address = ip.get_ip()
+            device = ip.get_device()
+            CsHelper.execute(arping % (address, device))
+
+
+
 
     def _collect_ignore_ips(self):
         """
