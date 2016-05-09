@@ -21,6 +21,7 @@ from marvin.cloudstackException import CloudstackAPIException
 from marvin.lib.base import Account, Role, RolePermission
 from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
+from random import shuffle
 
 import copy
 import random
@@ -378,21 +379,54 @@ class TestDynamicRoles(cloudstackTestCase):
         # Move last item to the top
         rule = permissions.pop(len(permissions)-1)
         permissions = [rule] + permissions
-        rule.update(self.apiclient, parent=0)
+        rule.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
         validate_permissions_list(permissions)
 
         # Move to the bottom
         rule = permissions.pop(0)
         permissions = permissions + [rule]
-        rule.update(self.apiclient, parent=permissions[-2].id)
+        rule.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
         validate_permissions_list(permissions)
 
-        # Move item in mid
-        rule = permissions.pop(1)
-        new_parent = permissions[1]
-        permissions.insert(2, rule)
-        rule.update(self.apiclient, parent=new_parent.id)
-        validate_permissions_list(permissions)
+        # Random shuffles
+        for _ in range(3):
+            shuffle(permissions)
+            rule.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
+            validate_permissions_list(permissions)
+
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    def test_rolepermission_lifecycle_concurrent_updates(self):
+        """
+            Tests concurrent order updation of role permission
+        """
+        permissions = [self.rolepermission]
+        rules = ['list*', '*Vol*', 'listCapabilities']
+        for rule in rules:
+            data = copy.deepcopy(self.testdata["rolepermission"])
+            data['rule'] = rule
+            permission = RolePermission.create(
+                self.apiclient,
+                data
+            )
+            self.cleanup.append(permission)
+            permissions.append(permission)
+
+
+        # The following rule is considered to be created by another mgmt server
+        data = copy.deepcopy(self.testdata["rolepermission"])
+        data['rule'] = "someRule*"
+        permission = RolePermission.create(
+            self.apiclient,
+            data
+        )
+        self.cleanup.append(permission)
+
+        shuffle(permissions)
+        try:
+            permission.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
+            self.fail("Reordering should fail in case of concurrent updates by other user")
+        except CloudstackAPIException: pass
 
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)

@@ -156,7 +156,7 @@ class RolePermission:
         """Update the role permission"""
 
         cmd = updateRolePermission.updateRolePermissionCmd()
-        cmd.id = self.id
+        cmd.roleid = self.roleid
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return apiclient.updateRolePermission(cmd)
 

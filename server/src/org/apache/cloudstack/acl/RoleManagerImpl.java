@@ -193,9 +193,9 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_UPDATE, eventDescription = "updating Role Permission order")
-    public boolean updateRolePermission(final RolePermission rolePermission, final RolePermission parentRolePermission) {
+    public boolean updateRolePermission(final Role role, final List<RolePermission> newOrder) {
         checkCallerAccess();
-        return rolePermission != null && rolePermissionsDao.update((RolePermissionVO) rolePermission, (RolePermissionVO) parentRolePermission);
+        return role != null && newOrder != null && rolePermissionsDao.update(role, newOrder);
     }
 
     @Override

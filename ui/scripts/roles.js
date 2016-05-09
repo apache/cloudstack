@@ -16,6 +16,7 @@
 // under the License.
 (function($, cloudStack) {
     var apiList = [];
+    var rolePermissions = [];
     cloudStack.sections.roles = {
         title: 'label.roles',
         id: 'roles',
@@ -174,19 +175,37 @@
                                     moveDrag: {
                                         action: function(args) {
                                             var rule = args.context.multiRule[0];
-                                            var newParentId = args.prevItem ? args.prevItem.id : 0;
+                                            var prevItemId = args.prevItem ? args.prevItem.id : 0;
+
+                                            var ruleOrder = [];
+                                            $.each(rolePermissions, function(idx, item) {
+                                                var itemId = item.id;
+                                                if (idx == 0 && prevItemId == 0) {
+                                                    ruleOrder.push(rule.id);
+                                                }
+                                                if (itemId == rule.id) {
+                                                    return true;
+                                                }
+                                                ruleOrder.push(item.id);
+                                                if (prevItemId == itemId) {
+                                                    ruleOrder.push(rule.id);
+                                                }
+                                            });
+
                                             $.ajax({
                                                 url: createURL('updateRolePermission'),
                                                 data: {
-                                                    id: rule.id,
-                                                    parent: newParentId
+                                                    roleid: rule.roleid,
+                                                    ruleorder: ruleOrder.join()
                                                 },
                                                 success: function(json) {
                                                     args.response.success();
                                                     $(window).trigger('cloudStack.fullRefresh');
                                                 },
                                                 error: function(json) {
-                                                    args.response.error(parseXMLHttpResponse(json));
+                                                    cloudStack.dialog.notice({
+                                                        message: 'message.role.ordering.fail'
+                                                    });
                                                 }
                                             });
                                         }
@@ -277,6 +296,9 @@
                                         dataType: 'json',
                                         success: function(json) {
                                             var rules = json.listrolepermissionsresponse.rolepermission;
+                                            if (rules) {
+                                                rolePermissions = rules;
+                                            }
                                             args.response.success({
                                                 data: rules
                                             });

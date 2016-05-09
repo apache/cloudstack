@@ -39,11 +39,10 @@ public interface RoleService {
     RolePermission createRolePermission(final Role role, final Rule rule, final RolePermission.Permission permission, final String description);
     /**
      * updateRolePermission updates the order/position of an role permission
-     * The list of role permissions is treated and consumed as an ordered linked list
-     * @param rolePermission The role permission that needs to be re-ordered
-     * @param parentRolePermission The parent role permission after which the role permission should be placed
+     * @param role The role whose permissions needs to be re-ordered
+     * @param newOrder The new list of ordered role permissions
      */
-    boolean updateRolePermission(final RolePermission rolePermission, final RolePermission parentRolePermission);
+    boolean updateRolePermission(final Role role, final List<RolePermission> newOrder);
     boolean deleteRolePermission(final RolePermission rolePermission);
 
     List<Role> listRoles();
