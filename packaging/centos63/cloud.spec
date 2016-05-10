@@ -300,6 +300,7 @@ install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}
 install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 install -D packaging/centos63/tomcat.sh ${RPM_BUILD_ROOT}%{_initrddir}/tomcat.sh
+install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 
 chmod 440 ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
@@ -580,6 +581,7 @@ fi
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
+%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
