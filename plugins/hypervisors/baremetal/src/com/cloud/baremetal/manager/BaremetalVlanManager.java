@@ -17,19 +17,30 @@
 //
 package com.cloud.baremetal.manager;
 
+import java.util.List;
+
+import org.apache.cloudstack.api.AddBaremetalRctCmd;
+import org.apache.cloudstack.api.AddBaremetalSwitchCmd;
+import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
+import org.apache.cloudstack.api.DeleteBaremetalSwitchCmd;
+import org.apache.cloudstack.api.UpdateBaremetalSwitchCmd;
+
 import com.cloud.baremetal.networkservice.BaremetalRctResponse;
 import com.cloud.baremetal.networkservice.BaremetalSwitchBackend;
+import com.cloud.baremetal.networkservice.BaremetalSwitchResponse;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.network.Network;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.api.AddBaremetalRctCmd;
-import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
 
 public interface BaremetalVlanManager extends Manager, PluggableService {
 
     BaremetalRctResponse addRct(AddBaremetalRctCmd cmd);
+
+    BaremetalSwitchResponse addSwitch(AddBaremetalSwitchCmd cmd);
+
+    BaremetalSwitchResponse updateSwitch(UpdateBaremetalSwitchCmd cmd);
 
     void prepareVlan(Network nw, DeployDestination destHost);
 
@@ -39,5 +50,9 @@ public interface BaremetalVlanManager extends Manager, PluggableService {
 
     void deleteRct(DeleteBaremetalRctCmd cmd);
 
+    void deleteSwitch(DeleteBaremetalSwitchCmd cmd);
+
     BaremetalRctResponse listRct();
+
+    List<BaremetalSwitchResponse> listSwitches();
 }

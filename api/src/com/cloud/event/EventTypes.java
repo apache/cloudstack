@@ -457,6 +457,9 @@ public class EventTypes {
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
     public static final String EVENT_BAREMETAL_PXE_SERVER_ADD = "PHYSICAL.PXE.ADD";
     public static final String EVENT_BAREMETAL_PXE_SERVER_DELETE = "PHYSICAL.PXE.DELETE";
+    public static final String EVENT_BAREMETAL_SWITCH_ADD = "PHYSICAL.SWITCH.ADD";
+    public static final String EVENT_BAREMETAL_SWITCH_UPDATE = "PHYSICAL.SWITCH.UPDATE";
+    public static final String EVENT_BAREMETAL_SWITCH_DELETE = "PHYSICAL.SWITCH.DELETE";
     public static final String EVENT_BAREMETAL_RCT_ADD = "BAREMETAL.RCT.ADD";
     public static final String EVENT_BAREMETAL_RCT_DELETE = "BAREMETAL.RCT.DELETE";
     public static final String EVENT_BAREMETAL_PROVISION_DONE = "BAREMETAL.PROVISION.DONE";

@@ -18,3 +18,13 @@
 --;
 -- Schema upgrade from 4.7.1 to 4.7.2;
 --;
+CREATE TABLE IF NOT EXISTS `cloud`.`baremetal_switch` (
+  `id` bigint unsigned UNIQUE AUTO_INCREMENT,
+  `uuid` varchar(40) UNIQUE NOT NULL,
+  `ip` varchar(64) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `type` varchar(64) NOT NULL,
+   PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+

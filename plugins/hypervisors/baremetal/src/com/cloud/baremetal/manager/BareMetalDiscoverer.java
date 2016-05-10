@@ -194,6 +194,14 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             if (vmIp != null) {
                 details.put(ApiConstants.IP_ADDRESS, vmIp);
             }
+            String switchPort = (String)params.get("switchport");
+            if (switchPort != null) {
+                details.put("switchPort", switchPort);
+            }
+            String switchUuid = (String)params.get("switchid");
+            if (switchUuid != null) {
+                details.put("switchUuid", switchUuid);
+            }
             String isEchoScAgent = _configDao.getValue(Config.EnableBaremetalSecurityGroupAgentEcho.key());
             details.put(BaremetalManager.EchoSecurityGroupAgent, isEchoScAgent);
 

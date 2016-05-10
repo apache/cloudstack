@@ -49,5 +49,6 @@
     <bean id="baremetalDhcpDaoImpl" class="com.cloud.baremetal.database.BaremetalDhcpDaoImpl" />
     <bean id="baremetalPxeDaoImpl" class="com.cloud.baremetal.database.BaremetalPxeDaoImpl" />
     <bean id="BaremetalRctDaoImpl" class="com.cloud.baremetal.database.BaremetalRctDaoImpl" />
+    <bean id="BaremetalSwitchDaoImpl" class="com.cloud.baremetal.database.BaremetalSwitchDaoImpl" />
 
 </beans>

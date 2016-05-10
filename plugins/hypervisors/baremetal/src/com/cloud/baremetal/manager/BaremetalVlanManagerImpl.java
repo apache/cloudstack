@@ -17,10 +17,35 @@
 //
 package com.cloud.baremetal.manager;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.springframework.web.client.RestTemplate;
+
+import com.google.gson.Gson;
+
+import org.apache.cloudstack.api.AddBaremetalRctCmd;
+import org.apache.cloudstack.api.AddBaremetalSwitchCmd;
+import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
+import org.apache.cloudstack.api.DeleteBaremetalSwitchCmd;
+import org.apache.cloudstack.api.ListBaremetalRctCmd;
+import org.apache.cloudstack.api.ListBaremetalSwitchesCmd;
+import org.apache.cloudstack.api.UpdateBaremetalSwitchCmd;
+import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
+
 import com.cloud.baremetal.database.BaremetalRctDao;
 import com.cloud.baremetal.database.BaremetalRctVO;
+import com.cloud.baremetal.database.BaremetalSwitchDao;
+import com.cloud.baremetal.database.BaremetalSwitchVO;
 import com.cloud.baremetal.networkservice.BaremetalRctResponse;
 import com.cloud.baremetal.networkservice.BaremetalSwitchBackend;
+import com.cloud.baremetal.networkservice.BaremetalSwitchResponse;
 import com.cloud.baremetal.networkservice.BaremetalVlanStruct;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.HostVO;
@@ -35,33 +60,22 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineProfile;
-import com.google.gson.Gson;
-import org.apache.cloudstack.api.AddBaremetalRctCmd;
-import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
-import org.apache.cloudstack.api.ListBaremetalRctCmd;
-import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
-import org.springframework.web.client.RestTemplate;
-
-import javax.inject.Inject;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Created by frank on 5/8/14.
  */
 public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVlanManager {
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
 
     @Inject
     private BaremetalRctDao rctDao;
+    @Inject
+    private BaremetalSwitchDao switchDao;
     @Inject
     private HostDao hostDao;
     @Inject
@@ -119,56 +133,123 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     }
 
     @Override
-    public void prepareVlan(Network nw, DeployDestination destHost) {
-        List<BaremetalRctVO> vos = rctDao.listAll();
-        if (vos.isEmpty()) {
-            throw new CloudRuntimeException("no rack configuration found, please call addBaremetalRct to add one");
+    public BaremetalSwitchResponse addSwitch(AddBaremetalSwitchCmd cmd) {
+        // check whether specified switch type is valid
+        getSwitchBackend(cmd.getType());
+
+        BaremetalSwitchVO vo = new BaremetalSwitchVO();
+        vo.setIp(cmd.getIp());
+        vo.setUsername(cmd.getUsername());
+        vo.setPassword(cmd.getPassword());
+        vo.setType(cmd.getType());
+        vo = switchDao.persist(vo);
+
+        return switchDao.newBaremetalSwitchResponse(vo);
+    }
+
+    @Override
+    public BaremetalSwitchResponse updateSwitch(UpdateBaremetalSwitchCmd cmd) {
+        BaremetalSwitchVO vo = switchDao.findById(cmd.getId());
+        if (null != cmd.getIp()) {
+            vo.setIp(cmd.getIp());
+        }
+        if (null != cmd.getUsername()) {
+            vo.setUsername(cmd.getUsername());
+        }
+        if (null != cmd.getPassword()) {
+            vo.setPassword(cmd.getPassword());
         }
 
-        BaremetalRctVO vo = vos.get(0);
-        BaremetalRct rct = gson.fromJson(vo.getRct(), BaremetalRct.class);
+        if (!switchDao.update(vo.getId(), vo)) {
+            throw new CloudRuntimeException("Unable to update baremetal switch");
+        }
 
-        RackPair rp = findRack(rct, destHost.getHost().getPrivateMacAddress());
-        if (rp == null) {
-            throw new CloudRuntimeException(String.format("cannot find any rack contains host[mac:%s], please double check your rack configuration file, update it and call addBaremetalRct again", destHost.getHost().getPrivateMacAddress()));
+        return switchDao.newBaremetalSwitchResponse(vo);
+    }
+
+    /**
+     * Generates a vlan struct for the specified network and host.
+     * Uses relevant baremetal switch unless specified host does not have details
+     * on its switch and/or vlan port, in which case, the method will fall back
+     * on using RCT for obtaining switch information.
+     *
+     * @param nw
+     * @param host
+     * @return BaremetalVlanStruct for the specified network and host
+     */
+    protected BaremetalVlanStruct generateVlanStruct(Network nw, HostVO host) {
+        if (null == host.getDetails()) {
+            hostDao.loadDetails(host);
+        }
+
+        String switchUuid = null;
+        String switchPort = host.getDetail("switchPort");
+        if (null != switchPort) { // only check for switch uuid if host has vlan port specified
+            switchUuid = host.getDetail("switchUuid");
+        }
+
+        BaremetalVlanStruct struct = null;
+        if (null != switchUuid) {
+            BaremetalSwitchVO sw = switchDao.findByUuid(switchUuid);
+            if (null == sw) {
+                throw new CloudRuntimeException(String.format("switch with uuid %s not found (associated with host with uuid %s)", switchUuid, host.getUuid()));
+            }
+
+            struct = new BaremetalVlanStruct();
+            struct.setSwitchIp(sw.getIp());
+            struct.setSwitchUsername(sw.getUsername());
+            struct.setSwitchPassword(DBEncryptionUtil.decrypt(sw.getPassword()));
+            struct.setSwitchType(sw.getType());
+        } else {
+            List<BaremetalRctVO> vos = rctDao.listAll();
+            if (vos.isEmpty()) {
+                throw new CloudRuntimeException("no rack configuration found, please call addBaremetalRct to add one");
+            }
+
+            BaremetalRctVO vo = vos.get(0);
+            BaremetalRct rct = gson.fromJson(vo.getRct(), BaremetalRct.class);
+            RackPair rp = findRack(rct, host.getPrivateMacAddress());
+            if (rp == null) {
+                throw new CloudRuntimeException(
+                        String.format("cannot find any rack contains host[mac:%s], please double check your rack configuration file, update it and call addBaremetalRct again",
+                                host.getPrivateMacAddress()));
+            }
+
+            struct = new BaremetalVlanStruct();
+            struct.setSwitchIp(rp.rack.getL2Switch().getIp());
+            struct.setSwitchPassword(rp.rack.getL2Switch().getPassword());
+            struct.setSwitchType(rp.rack.getL2Switch().getType());
+            struct.setSwitchUsername(rp.rack.getL2Switch().getUsername());
+            switchPort = rp.host.getPort();
         }
 
         int vlan = Integer.parseInt(Networks.BroadcastDomainType.getValue(nw.getBroadcastUri()));
-        BaremetalSwitchBackend backend = getSwitchBackend(rp.rack.getL2Switch().getType());
-        BaremetalVlanStruct struct = new BaremetalVlanStruct();
-        struct.setHostMac(rp.host.getMac());
-        struct.setPort(rp.host.getPort());
-        struct.setSwitchIp(rp.rack.getL2Switch().getIp());
-        struct.setSwitchPassword(rp.rack.getL2Switch().getPassword());
-        struct.setSwitchType(rp.rack.getL2Switch().getType());
-        struct.setSwitchUsername(rp.rack.getL2Switch().getUsername());
+        struct.setHostMac(host.getPrivateMacAddress());
+        struct.setPort(switchPort);
         struct.setVlan(vlan);
+
+        return struct;
+    }
+
+    @Override
+    public void prepareVlan(Network nw, DeployDestination destHost) {
+        HostVO host = null;
+        if (destHost.getHost() instanceof HostVO) {
+            host = (HostVO)destHost.getHost();
+        } else {
+            host = hostDao.findById(destHost.getHost().getId());
+        }
+
+        BaremetalVlanStruct struct = generateVlanStruct(nw, host);
+        BaremetalSwitchBackend backend = getSwitchBackend(struct.getSwitchType());
         backend.prepareVlan(struct);
     }
 
     @Override
     public void releaseVlan(Network nw, VirtualMachineProfile vm) {
-        List<BaremetalRctVO> vos = rctDao.listAll();
-        if (vos.isEmpty()) {
-            throw new CloudRuntimeException("no rack configuration found, please call addBaremetalRct to add one");
-        }
-
-        BaremetalRctVO vo = vos.get(0);
-        BaremetalRct rct = gson.fromJson(vo.getRct(), BaremetalRct.class);
         HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
-        RackPair rp = findRack(rct, host.getPrivateMacAddress());
-        assert rp != null : String.format("where is my rack???");
-
-        int vlan = Integer.parseInt(Networks.BroadcastDomainType.getValue(nw.getBroadcastUri()));
-        BaremetalVlanStruct struct = new BaremetalVlanStruct();
-        struct.setHostMac(rp.host.getMac());
-        struct.setPort(rp.host.getPort());
-        struct.setSwitchIp(rp.rack.getL2Switch().getIp());
-        struct.setSwitchPassword(rp.rack.getL2Switch().getPassword());
-        struct.setSwitchType(rp.rack.getL2Switch().getType());
-        struct.setSwitchUsername(rp.rack.getL2Switch().getUsername());
-        struct.setVlan(vlan);
-        BaremetalSwitchBackend backend = getSwitchBackend(rp.rack.getL2Switch().getType());
+        BaremetalVlanStruct struct = generateVlanStruct(nw, host);
+        BaremetalSwitchBackend backend = getSwitchBackend(struct.getSwitchType());
         backend.removePortFromVlan(struct);
     }
 
@@ -183,6 +264,11 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     }
 
     @Override
+    public void deleteSwitch(DeleteBaremetalSwitchCmd cmd) {
+        switchDao.remove(cmd.getId());
+    }
+
+    @Override
     public BaremetalRctResponse listRct() {
         List<BaremetalRctVO> vos = rctDao.listAll();
         if (!vos.isEmpty()) {
@@ -194,6 +280,16 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
             return rsp;
         }
         return null;
+    }
+
+    @Override
+    public List<BaremetalSwitchResponse> listSwitches() {
+        List<BaremetalSwitchVO> vos = switchDao.listAll();
+        List<BaremetalSwitchResponse> rsp = new ArrayList<BaremetalSwitchResponse>();
+        for (BaremetalSwitchVO vo : vos) {
+            rsp.add(switchDao.newBaremetalSwitchResponse(vo));
+        }
+        return rsp;
     }
 
     private BaremetalSwitchBackend getSwitchBackend(String type) {
@@ -230,6 +326,10 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         cmds.add(AddBaremetalRctCmd.class);
         cmds.add(ListBaremetalRctCmd.class);
         cmds.add(DeleteBaremetalRctCmd.class);
+        cmds.add(AddBaremetalSwitchCmd.class);
+        cmds.add(UpdateBaremetalSwitchCmd.class);
+        cmds.add(ListBaremetalSwitchesCmd.class);
+        cmds.add(DeleteBaremetalSwitchCmd.class);
         return cmds;
     }
 

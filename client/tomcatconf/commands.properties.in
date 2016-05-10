@@ -698,6 +698,10 @@ listBaremetalPxeServers=1
 addBaremetalRct=1
 deleteBaremetalRct=1
 listBaremetalRct=1
+addBaremetalSwitch=1
+updateBaremetalSwitch=1
+deleteBaremetalSwitch=1
+listBaremetalSwitches=1
 
 #### UCS commands
 addUcsManager=1

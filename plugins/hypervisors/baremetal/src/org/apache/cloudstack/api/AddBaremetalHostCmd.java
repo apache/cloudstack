@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.response.HostResponse;
 
 import com.cloud.baremetal.manager.BareMetalDiscoverer;
+import com.cloud.baremetal.networkservice.BaremetalSwitchResponse;
 
 @APICommand(name = "addBaremetalHost", description = "add a baremetal host", responseObject = HostResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -29,6 +30,12 @@ public class AddBaremetalHostCmd extends AddHostCmd {
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "ip address intentionally allocated to this host after provisioning")
     private String vmIpAddress;
+
+    @Parameter(name = "switchid", type = CommandType.UUID, entityType = BaremetalSwitchResponse.class, description = "the ID of the baremetal switch to which the host is connected")
+    private Long switchId;
+
+    @Parameter(name = "switchport", type = CommandType.STRING, description = "the port to which the host is connected on the baremetal switch")
+    private String switchPort;
 
     public AddBaremetalHostCmd() {
     }
@@ -45,5 +52,21 @@ public class AddBaremetalHostCmd extends AddHostCmd {
 
     public void setVmIpAddress(String vmIpAddress) {
         this.vmIpAddress = vmIpAddress;
+    }
+
+    public Long getSwitchId() {
+        return switchId;
+    }
+
+    public void setSwitchId(Long switchId) {
+        this.switchId = switchId;
+    }
+
+    public String getSwitchPort() {
+        return switchPort;
+    }
+
+    public void setSwitchPort(String switchPort) {
+        this.switchPort = switchPort;
     }
 }
