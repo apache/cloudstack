@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.vm.VirtualMachine;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -1343,6 +1344,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Cluster getCluster(Long clusterId) {
         return _clusterDao.findById(clusterId);
+    }
+
+    @Override
+    public DataCenter getZone(Long zoneId) {
+        return _dcDao.findById(zoneId);
     }
 
     @Override

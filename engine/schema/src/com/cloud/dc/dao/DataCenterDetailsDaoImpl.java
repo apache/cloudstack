@@ -16,18 +16,29 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import javax.ejb.Local;
-
+import com.cloud.dc.DataCenterDetailVO;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-import com.cloud.dc.DataCenterDetailVO;
+import javax.ejb.Local;
 
 @Local(value = DataCenterDetailsDao.class)
 public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterDetailVO> implements DataCenterDetailsDao, ScopedConfigStorage {
+
+    protected final SearchBuilder<DataCenterDetailVO> DetailSearch;
+
+    protected DataCenterDetailsDaoImpl() {
+        DetailSearch = createSearchBuilder();
+        DetailSearch.and("zoneId", DetailSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
+        DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
+        DetailSearch.done();
+    }
 
     @Override
     public Scope getScope() {
@@ -45,4 +56,17 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
         super.addDetail(new DataCenterDetailVO(resourceId, key, value, display));
     }
 
+    @Override
+    public void persist(long zoneId, String name, String value) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        SearchCriteria<DataCenterDetailVO> sc = DetailSearch.create();
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("name", name);
+        expunge(sc);
+
+        DataCenterDetailVO vo = new DataCenterDetailVO(zoneId, name, value, true);
+        persist(vo);
+        txn.commit();
+    }
 }

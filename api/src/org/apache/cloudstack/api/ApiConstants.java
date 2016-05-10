@@ -21,6 +21,7 @@ public class ApiConstants {
     public static final String ACCOUNTS = "accounts";
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
+    public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALLOCATED_ONLY = "allocatedonly";
     public static final String API_KEY = "apikey";
@@ -75,6 +76,7 @@ public class ApiConstants {
     public static final String DEVICE_ID = "deviceid";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String DISK_SIZE = "disksize";
+    public static final String DRIVER = "driver";
     public static final String ROOT_DISK_SIZE = "rootdisksize";
     public static final String DISPLAY_NAME = "displayname";
     public static final String DISPLAY_NETWORK = "displaynetwork";
@@ -176,6 +178,8 @@ public class ApiConstants {
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
+    public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
+    public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
     public static final String PARAMS = "params";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PASSWORD = "password";
@@ -191,6 +195,7 @@ public class ApiConstants {
     public static final String PORTABLE_IP_ADDRESS = "portableipaddress";
     public static final String PORT_FORWARDING_SERVICE_ID = "portforwardingserviceid";
     public static final String PARENT = "parent";
+    public static final String POWER_STATE = "powerstate";
     public static final String PRIVATE_INTERFACE = "privateinterface";
     public static final String PRIVATE_IP = "privateip";
     public static final String PRIVATE_PORT = "privateport";

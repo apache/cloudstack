@@ -22,12 +22,13 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.host.dao.HostDetailsDao;
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -44,8 +45,6 @@ import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StorageStats;
 import com.cloud.utils.db.GenericDaoBase;
@@ -60,7 +59,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     @Inject
     private ConfigurationDao _configDao;
     @Inject
-    private HostDao hostDao;
+    private HostDetailsDao hostDetailsDao;
+    @Inject
+    private OutOfBandManagementDao outOfBandManagementDao;
 
     private final SearchBuilder<HostJoinVO> hostSearch;
 
@@ -191,11 +192,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             if (details.contains(HostDetails.all) && host.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
                 //only kvm has the requirement to return host details
                 try {
-                    HostVO h = hostDao.findById(host.getId());
-                    hostDao.loadDetails(h);
-                    Map<String, String> hostVoDetails;
-                    hostVoDetails = h.getDetails();
-                    hostResponse.setDetails(hostVoDetails);
+                    hostResponse.setDetails(hostDetailsDao.findDetails(host.getId()));
                 } catch (Exception e) {
                     s_logger.debug("failed to get host details", e);
                 }
@@ -227,6 +224,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
 
+        hostResponse.setOutOfBandManagementResponse(outOfBandManagementDao.findByHost(host.getId()));
         hostResponse.setResourceState(host.getResourceState().toString());
 
         // set async job

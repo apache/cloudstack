@@ -550,6 +550,19 @@
                     },
                     compact: true
                 },
+                outofbandmanagementpowerstate: {
+                    label: 'label.metrics.outofbandmanagementpowerstate',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
+                    indicator: {
+                        'On': 'on',
+                        'Off': 'off',
+                        'Unknown': 'warning'
+                    },
+                    compact: true
+                },
                 instances: {
                     label: 'label.instances'
                 },
@@ -633,6 +646,9 @@
                         var items = json.listhostsresponse.host;
                         if (items) {
                             $.each(items, function(idx, host) {
+                                if (host && host.outofbandmanagement) {
+                                    items[idx].outofbandmanagementpowerstate = host.outofbandmanagement.powerstate;
+                                }
                                 items[idx].cores = host.cpunumber;
                                 items[idx].cputotal = (parseFloat(host.cpunumber) * parseFloat(host.cpuspeed) / 1000.0).toFixed(2);
                                 if (host.cpuused) {

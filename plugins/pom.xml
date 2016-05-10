@@ -91,6 +91,7 @@
     <module>network-elements/internal-loadbalancer</module>
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
+    <module>outofbandmanagement-drivers/ipmitool</module>
   </modules>
 
   <dependencies>

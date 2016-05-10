@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
@@ -164,6 +165,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      */
     @Override
     public Cluster getCluster(Long clusterId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public DataCenter getZone(Long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
