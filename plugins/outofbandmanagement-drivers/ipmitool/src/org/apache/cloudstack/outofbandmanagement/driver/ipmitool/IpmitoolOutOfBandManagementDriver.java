@@ -31,11 +31,9 @@ import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDrive
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
-import javax.ejb.Local;
 import java.util.Arrays;
 import java.util.List;
 
-@Local(value = {OutOfBandManagementDriver.class})
 public class IpmitoolOutOfBandManagementDriver extends AdapterBase implements OutOfBandManagementDriver, Configurable {
     public static final Logger LOG = Logger.getLogger(IpmitoolOutOfBandManagementDriver.class);
 

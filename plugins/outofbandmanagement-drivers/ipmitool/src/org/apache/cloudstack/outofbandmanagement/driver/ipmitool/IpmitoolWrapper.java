@@ -104,9 +104,11 @@ public class IpmitoolWrapper {
     }
 
     public static String findIpmiUser(final String usersList, final String username) {
-        // Expected usersList string contains legends on first line and users on rest
-        // ID Name  Callin Link Auth IPMI Msg Channel Priv Limit
-        // 1  admin true   true true ADMINISTRATOR
+        /**
+         * Expected usersList string contains legends on first line and users on rest
+         * ID Name  Callin Link Auth IPMI Msg Channel Priv Limit
+         * 1  admin true   true true ADMINISTRATOR
+         */
 
         // Assuming user 'ID' index on 1st position
         int idIndex = 0;

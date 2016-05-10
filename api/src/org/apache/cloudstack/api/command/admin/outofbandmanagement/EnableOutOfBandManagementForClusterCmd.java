@@ -68,10 +68,11 @@ public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find cluster by ID: " + getClusterId());
         }
 
+        OutOfBandManagementResponse response = outOfBandManagementService.enableOutOfBandManagement(cluster);
+
         CallContext.current().setEventDetails("Cluster Id:" + cluster.getId() + " out-of-band management enabled: true");
         CallContext.current().putContextParameter(Cluster.class, cluster.getUuid());
 
-        final OutOfBandManagementResponse response = outOfBandManagementService.enableDisableOutOfBandManagement(cluster, true);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -92,7 +93,7 @@ public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLEDISABLE;
+        return EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE;
     }
 
     @Override

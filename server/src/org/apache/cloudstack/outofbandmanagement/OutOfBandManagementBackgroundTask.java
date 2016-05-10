@@ -18,8 +18,11 @@
 package org.apache.cloudstack.outofbandmanagement;
 
 import com.cloud.host.Host;
+import org.apache.log4j.Logger;
 
 public class OutOfBandManagementBackgroundTask implements Runnable {
+    public static final Logger LOG = Logger.getLogger(OutOfBandManagementBackgroundTask.class);
+
     final private OutOfBandManagementService service;
     final private Host host;
     final private OutOfBandManagement.PowerOperation powerOperation;
@@ -39,7 +42,9 @@ public class OutOfBandManagementBackgroundTask implements Runnable {
     public void run() {
         try {
             service.executeOutOfBandManagementPowerOperation(host, powerOperation, null);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            LOG.warn(String.format("Out-of-band management background task operation=%s for host id=%d failed with: %s",
+                    powerOperation.name(), host.getId(), e.getMessage()));
         }
     }
 }

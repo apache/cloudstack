@@ -68,10 +68,11 @@ public class EnableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find host by ID: " + getHostId());
         }
 
+        OutOfBandManagementResponse response = outOfBandManagementService.enableOutOfBandManagement(host);
+
         CallContext.current().setEventDetails("Host Id:" + host.getId() + " out-of-band management enabled: true");
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
-        final OutOfBandManagementResponse response = outOfBandManagementService.enableDisableOutOfBandManagement(host, true);
         response.setId(host.getUuid());
         response.setResponseName(getCommandName());
         setResponseObject(response);
@@ -93,7 +94,7 @@ public class EnableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLEDISABLE;
+        return EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE;
     }
 
     @Override
