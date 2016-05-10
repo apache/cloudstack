@@ -27,13 +27,13 @@ import java.util.List;
 
 public interface OutOfBandManagementService {
 
-    ConfigKey<Long> OutOfBandManagementActionTimeout = new ConfigKey<Long>("Advanced", Long.class, "outofbandmanagement.action.timeout", "60",
+    ConfigKey<Long> ActionTimeout = new ConfigKey<Long>("Advanced", Long.class, "outofbandmanagement.action.timeout", "60",
                     "The out of band management action timeout in seconds, configurable by cluster", true, ConfigKey.Scope.Cluster);
 
-    ConfigKey<Long> OutOfBandManagementSyncThreadInterval = new ConfigKey<Long>("Advanced", Long.class, "outofbandmanagement.sync.interval", "300000",
+    ConfigKey<Long> SyncThreadInterval = new ConfigKey<Long>("Advanced", Long.class, "outofbandmanagement.sync.interval", "300000",
             "The interval (in milliseconds) when the out-of-band management background sync are retrieved", true, ConfigKey.Scope.Global);
 
-    ConfigKey<Integer> OutOfBandManagementSyncThreadPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, "outofbandmanagement.sync.poolsize", "50",
+    ConfigKey<Integer> SyncThreadPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, "outofbandmanagement.sync.poolsize", "50",
             "The out of band management background sync thread pool size", true, ConfigKey.Scope.Global);
 
     long getId();
@@ -41,11 +41,15 @@ public interface OutOfBandManagementService {
     void submitBackgroundPowerSyncTask(Host host);
     boolean transitionPowerStateToDisabled(List<? extends Host> hosts);
 
-    OutOfBandManagementResponse enableDisableOutOfBandManagement(DataCenter zone, boolean enabled);
-    OutOfBandManagementResponse enableDisableOutOfBandManagement(Cluster cluster, boolean enabled);
-    OutOfBandManagementResponse enableDisableOutOfBandManagement(Host host, boolean enabled);
+    OutOfBandManagementResponse enableOutOfBandManagement(DataCenter zone);
+    OutOfBandManagementResponse enableOutOfBandManagement(Cluster cluster);
+    OutOfBandManagementResponse enableOutOfBandManagement(Host host);
+
+    OutOfBandManagementResponse disableOutOfBandManagement(DataCenter zone);
+    OutOfBandManagementResponse disableOutOfBandManagement(Cluster cluster);
+    OutOfBandManagementResponse disableOutOfBandManagement(Host host);
 
     OutOfBandManagementResponse configureOutOfBandManagement(Host host, ImmutableMap<OutOfBandManagement.Option, String> options);
-    OutOfBandManagementResponse changeOutOfBandManagementPassword(Host host, String password);
     OutOfBandManagementResponse executeOutOfBandManagementPowerOperation(Host host, OutOfBandManagement.PowerOperation operation, Long timeout);
+    OutOfBandManagementResponse changeOutOfBandManagementPassword(Host host, String password);
 }

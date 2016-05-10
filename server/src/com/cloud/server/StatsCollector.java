@@ -237,7 +237,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private void init(Map<String, String> configs) {
         _executor = Executors.newScheduledThreadPool(6, new NamedThreadFactory("StatsCollector"));
 
-        hostOutOfBandManagementStatsInterval = OutOfBandManagementService.OutOfBandManagementSyncThreadInterval.value();
+        hostOutOfBandManagementStatsInterval = OutOfBandManagementService.SyncThreadInterval.value();
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), 60000L);
         hostAndVmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), 60000L);
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), 60000L);

@@ -53,7 +53,6 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
@@ -67,7 +66,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Component
-@Local(value = {OutOfBandManagementService.class})
 public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOfBandManagementService, Manager, Configurable {
     public static final Logger LOG = Logger.getLogger(OutOfBandManagementServiceImpl.class);
 
@@ -86,13 +84,13 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     private long serviceId;
 
     private List<OutOfBandManagementDriver> outOfBandManagementDrivers = new ArrayList<>();
-    private Map<String, OutOfBandManagementDriver> outOfBandManagementDriversMap = new HashMap<String, OutOfBandManagementDriver>();
+    private final Map<String, OutOfBandManagementDriver> outOfBandManagementDriversMap = new HashMap<String, OutOfBandManagementDriver>();
 
     private static final String OOBM_ENABLED_DETAIL = "outOfBandManagementEnabled";
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_HOST = 120;
 
-    private Cache<Long, Long> hostAlertCache;
-    private static ExecutorService backgroundSyncExecutor;
+    private static Cache<Long, Long> hostAlertCache;
+    private static ExecutorService backgroundSyncBlockingExecutor;
 
     private String getOutOfBandManagementHostLock(long id) {
         return "oobm.host." + id;
@@ -282,8 +280,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
 
     public void submitBackgroundPowerSyncTask(final Host host) {
         if (host != null) {
-            // Note: This is a blocking queue based executor
-            backgroundSyncExecutor.submit(new OutOfBandManagementBackgroundTask(this, host, OutOfBandManagement.PowerOperation.STATUS));
+            backgroundSyncBlockingExecutor.submit(new OutOfBandManagementBackgroundTask(this, host, OutOfBandManagement.PowerOperation.STATUS));
         }
     }
 
@@ -295,42 +292,68 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLEDISABLE, eventDescription = "enabling/disabling out-of-band management on a zone")
-    public OutOfBandManagementResponse enableDisableOutOfBandManagement(final DataCenter zone, final boolean enabled) {
-        dataCenterDetailsDao.persist(zone.getId(), OOBM_ENABLED_DETAIL, String.valueOf(enabled));
-        if (!enabled) {
-            transitionPowerStateToDisabled(hostDao.findByDataCenterId(zone.getId()));
-        }
-        return buildEnableDisableResponse(enabled);
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE, eventDescription = "enabling out-of-band management on a zone")
+    public OutOfBandManagementResponse enableOutOfBandManagement(final DataCenter zone) {
+        dataCenterDetailsDao.persist(zone.getId(), OOBM_ENABLED_DETAIL, String.valueOf(true));
+        return buildEnableDisableResponse(true);
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLEDISABLE, eventDescription = "enabling/disabling out-of-band management on a cluster")
-    public OutOfBandManagementResponse enableDisableOutOfBandManagement(final Cluster cluster, final boolean enabled) {
-        clusterDetailsDao.persist(cluster.getId(), OOBM_ENABLED_DETAIL, String.valueOf(enabled));
-        if (!enabled) {
-            transitionPowerStateToDisabled(hostDao.findByClusterId(cluster.getId()));
-        }
-        return buildEnableDisableResponse(enabled);
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_DISABLE, eventDescription = "disabling out-of-band management on a zone")
+    public OutOfBandManagementResponse disableOutOfBandManagement(final DataCenter zone) {
+        dataCenterDetailsDao.persist(zone.getId(), OOBM_ENABLED_DETAIL, String.valueOf(false));
+        transitionPowerStateToDisabled(hostDao.findByDataCenterId(zone.getId()));
+
+        return buildEnableDisableResponse(false);
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLEDISABLE, eventDescription = "enabling/disabling out-of-band management on a host")
-    public OutOfBandManagementResponse enableDisableOutOfBandManagement(final Host host, final boolean enabled) {
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE, eventDescription = "enabling out-of-band management on a cluster")
+    public OutOfBandManagementResponse enableOutOfBandManagement(final Cluster cluster) {
+        clusterDetailsDao.persist(cluster.getId(), OOBM_ENABLED_DETAIL, String.valueOf(true));
+        return buildEnableDisableResponse(true);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_DISABLE, eventDescription = "disabling out-of-band management on a cluster")
+    public OutOfBandManagementResponse disableOutOfBandManagement(final Cluster cluster) {
+        clusterDetailsDao.persist(cluster.getId(), OOBM_ENABLED_DETAIL, String.valueOf(false));
+        transitionPowerStateToDisabled(hostDao.findByClusterId(cluster.getId()));
+        return buildEnableDisableResponse(false);
+    }
+
+    private OutOfBandManagement getConfigForHost(final Host host) {
         final OutOfBandManagement outOfBandManagementConfig = outOfBandManagementDao.findByHost(host.getId());
         if (outOfBandManagementConfig == null) {
-            final OutOfBandManagementResponse response = new OutOfBandManagementResponse(null);
-            response.setSuccess(false);
-            response.setResultDescription("Out-of-band management is not configured for the host. Please configure the host before enabling/disabling it.");
-            return response;
+            throw new CloudRuntimeException("Out-of-band management is not configured for the host. Please configure the host before enabling/disabling it.");
         }
+        return outOfBandManagementConfig;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE, eventDescription = "enabling out-of-band management on a host")
+    public OutOfBandManagementResponse enableOutOfBandManagement(final Host host) {
+        final OutOfBandManagement outOfBandManagementConfig = getConfigForHost(host);
         hostAlertCache.invalidate(host.getId());
-        outOfBandManagementConfig.setEnabled(enabled);
+        outOfBandManagementConfig.setEnabled(true);
         boolean updateResult = outOfBandManagementDao.update(outOfBandManagementConfig.getId(), (OutOfBandManagementVO) outOfBandManagementConfig);
-        if (updateResult && !enabled) {
+        if (updateResult) {
             transitionPowerStateToDisabled(Collections.singletonList(host));
         }
-        return buildEnableDisableResponse(enabled && updateResult);
+        return buildEnableDisableResponse(true);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_DISABLE, eventDescription = "disabling out-of-band management on a host")
+    public OutOfBandManagementResponse disableOutOfBandManagement(final Host host) {
+        final OutOfBandManagement outOfBandManagementConfig = getConfigForHost(host);
+        hostAlertCache.invalidate(host.getId());
+        outOfBandManagementConfig.setEnabled(false);
+        boolean updateResult = outOfBandManagementDao.update(outOfBandManagementConfig.getId(), (OutOfBandManagementVO) outOfBandManagementConfig);
+        if (updateResult) {
+            transitionPowerStateToDisabled(Collections.singletonList(host));
+        }
+        return buildEnableDisableResponse(false);
     }
 
     @Override
@@ -362,16 +385,16 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, eventDescription = "issuing Host out-of-band management action", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, eventDescription = "issuing host out-of-band management action", async = true)
     public OutOfBandManagementResponse executeOutOfBandManagementPowerOperation(final Host host, final OutOfBandManagement.PowerOperation powerOperation, final Long timeout) {
         checkOutOfBandManagementEnabledByZoneClusterHost(host);
-        final OutOfBandManagement outOfBandManagementConfig = outOfBandManagementDao.findByHost(host.getId());
+        final OutOfBandManagement outOfBandManagementConfig = getConfigForHost(host);
         final ImmutableMap<OutOfBandManagement.Option, String> options = getOptions(outOfBandManagementConfig);
         final OutOfBandManagementDriver driver = getDriver(outOfBandManagementConfig);
 
         Long actionTimeOut = timeout;
         if (actionTimeOut == null) {
-            actionTimeOut = OutOfBandManagementActionTimeout.valueIn(host.getClusterId());
+            actionTimeOut = ActionTimeout.valueIn(host.getClusterId());
         }
 
         final OutOfBandManagementDriverPowerCommand cmd = new OutOfBandManagementDriverPowerCommand(options, actionTimeOut, powerOperation);
@@ -424,7 +447,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
                     }
                     final OutOfBandManagementDriver driver = getDriver(outOfBandManagementConfig);
 
-                    final OutOfBandManagementDriverChangePasswordCommand cmd = new OutOfBandManagementDriverChangePasswordCommand(options, OutOfBandManagementActionTimeout.valueIn(host.getClusterId()), newPassword);
+                    final OutOfBandManagementDriverChangePasswordCommand cmd = new OutOfBandManagementDriverChangePasswordCommand(options, ActionTimeout.valueIn(host.getClusterId()), newPassword);
                     final OutOfBandManagementDriverResponse driverResponse;
                     try {
                         driverResponse = driver.execute(cmd);
@@ -482,7 +505,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
         this.name = name;
         this.serviceId = ManagementServerNode.getManagementServerId();
 
-        final int poolSize = OutOfBandManagementSyncThreadPoolSize.value();
+        final int poolSize = SyncThreadPoolSize.value();
 
         hostAlertCache = CacheBuilder.newBuilder()
                 .concurrencyLevel(4)
@@ -491,11 +514,11 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
                 .expireAfterWrite(1, TimeUnit.DAYS)
                 .build();
 
-        backgroundSyncExecutor = new ThreadPoolExecutor(poolSize, poolSize,
+        backgroundSyncBlockingExecutor = new ThreadPoolExecutor(poolSize, poolSize,
                 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<Runnable>(10 * poolSize, true), new ThreadPoolExecutor.CallerRunsPolicy());
 
-        LOG.info("Starting out-of-band management background sync executor with thread pool-size=" + poolSize + " and background sync thread interval=" + OutOfBandManagementSyncThreadInterval.value() + "s");
+        LOG.info("Starting out-of-band management background sync executor with thread pool-size=" + poolSize + " and background sync thread interval=" + SyncThreadInterval.value() + "s");
         return true;
     }
 
@@ -507,7 +530,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
 
     @Override
     public boolean stop() {
-        backgroundSyncExecutor.shutdown();
+        backgroundSyncBlockingExecutor.shutdown();
         outOfBandManagementDao.expireOutOfBandManagementOwnershipByServer(getId());
         return true;
     }
@@ -519,7 +542,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {OutOfBandManagementActionTimeout, OutOfBandManagementSyncThreadInterval, OutOfBandManagementSyncThreadPoolSize};
+        return new ConfigKey<?>[] {ActionTimeout, SyncThreadInterval, SyncThreadPoolSize};
     }
 
     public List<OutOfBandManagementDriver> getOutOfBandManagementDrivers() {

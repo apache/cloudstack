@@ -68,10 +68,11 @@ public class EnableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find zone by ID: " + getZoneId());
         }
 
+        OutOfBandManagementResponse response = outOfBandManagementService.enableOutOfBandManagement(zone);
+
         CallContext.current().setEventDetails("Zone Id:" + zone.getId() + " out-of-band management enabled: true");
         CallContext.current().putContextParameter(DataCenter.class, zone.getUuid());
 
-        final OutOfBandManagementResponse response = outOfBandManagementService.enableDisableOutOfBandManagement(zone, true);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -92,7 +93,7 @@ public class EnableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLEDISABLE;
+        return EventTypes.EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE;
     }
 
     @Override

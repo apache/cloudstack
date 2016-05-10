@@ -24,22 +24,22 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UpdateBuilder;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
 @DB
 @Component
-@Local(value = {OutOfBandManagementDao.class})
 public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManagementVO, Long> implements OutOfBandManagementDao {
     private static final Logger LOG = Logger.getLogger(OutOfBandManagementDaoImpl.class);
 
@@ -93,24 +93,20 @@ public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManageme
         return listBy(sc, new Filter(OutOfBandManagementVO.class, "updateTime", true, null, null));
     }
 
-    private void executeExpireOwnershipSql(final String sql, long resource) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try {
-            txn.start();
-            PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, resource);
-            pstmt.executeUpdate();
-            txn.commit();
-        } catch (SQLException e) {
-            txn.rollback();
-            throw new CloudRuntimeException("Unable to reset out-of-band management ownership based on resource:" + resource);
-        }
-    }
-
-    @Override
-    public void expireOutOfBandManagementOwnershipByHours(long hours) {
-        final String resetOwnerSql = "UPDATE oobm set mgmt_server_id=NULL where update_time<= (NOW() - INTERVAL ? HOUR)";
-        executeExpireOwnershipSql(resetOwnerSql, hours);
+    private void executeExpireOwnershipSql(final String sql, final long resource) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                TransactionLegacy txn = TransactionLegacy.currentTxn();
+                try (final PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);) {
+                    pstmt.setLong(1, resource);
+                    pstmt.executeUpdate();
+                } catch (SQLException e) {
+                    txn.rollback();
+                    LOG.warn("Failed to expire ownership for out-of-band management server id: " + resource);
+                }
+            }
+        });
     }
 
     @Override
