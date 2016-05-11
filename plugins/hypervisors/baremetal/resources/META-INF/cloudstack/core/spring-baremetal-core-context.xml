@@ -32,10 +32,12 @@
        <property name="backends">
            <map>
                <entry key="Force10" value-ref="Force10BaremetalSwitchBackend"/>
+               <entry key="DellS4810" value-ref="DellS4810BaremetalSwitchBackend"/>
            </map>
        </property>
     </bean>
     <bean id="Force10BaremetalSwitchBackend" class="com.cloud.baremetal.networkservice.Force10BaremetalSwitchBackend" />
+    <bean id="DellS4810BaremetalSwitchBackend" class="com.cloud.baremetal.networkservice.DellS4810BaremetalSwitchBackend" />
 
     <bean id="BaremetalKickStartPxeService"
         class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl" />
