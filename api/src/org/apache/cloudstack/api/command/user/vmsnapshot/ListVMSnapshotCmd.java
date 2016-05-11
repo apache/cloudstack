@@ -39,6 +39,9 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, entityType = VMSnapshotResponse.class, description = "The ID of the VM snapshot")
     private Long id;
 
+    @Parameter(name=ApiConstants.VM_SNAPSHOT_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=VMSnapshotResponse.class, description="the IDs of the vm snapshots, mutually exclusive with vmsnapshotid", since = "4.9")
+    private List<Long> ids;
+
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine snapshot")
     private String state;
 
@@ -82,6 +85,10 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+
+    public List<Long> getIds() {
+        return ids;
     }
 
 }
