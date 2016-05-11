@@ -23,9 +23,10 @@ import marvin
 from marvin.cloudstackAPI import *
 from marvin.codes import (FAILED, FAIL, PASS, RUNNING, STOPPED,
                           STARTING, DESTROYED, EXPUNGING,
-                          STOPPING, BACKED_UP, BACKING_UP)
+                          STOPPING, BACKED_UP, BACKING_UP,
+                          HOST_RS_MAINTENANCE)
 from marvin.cloudstackException import GetDetailExceptionInfo, CloudstackAPIException
-from marvin.lib.utils import validateList, is_server_ssh_ready, random_gen
+from marvin.lib.utils import validateList, is_server_ssh_ready, random_gen, wait_until
 # Import System modules
 import time
 import hashlib
@@ -2459,13 +2460,40 @@ class Host:
                   GetDetailExceptionInfo(e)
             return FAILED
 
+    @staticmethod
+    def _check_resource_state(apiclient, hostid, resourcestate):
+        hosts = Host.list(apiclient, id=hostid, listall=True)
+
+        validationresult = validateList(hosts)
+
+        assert validationresult is not None, "'validationresult' should not be equal to 'None'."
+
+        assert isinstance(validationresult, list), "'validationresult' should be a 'list'."
+
+        assert len(validationresult) == 3, "'validationresult' should be a list with three items in it."
+
+        if validationresult[0] == FAIL:
+            raise Exception("Host list validation failed: %s" % validationresult[2])
+
+        if str(hosts[0].resourcestate).lower().decode("string_escape") == str(resourcestate).lower():
+            return True, None
+
+        return False, "Host is not in the following state: " + str(resourcestate)
+
     def delete(self, apiclient):
         """Delete Host"""
         # Host must be in maintenance mode before deletion
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = self.id
         apiclient.prepareHostForMaintenance(cmd)
-        time.sleep(30)
+
+        retry_interval = 10
+        num_tries = 10
+
+        wait_result, return_val = wait_until(retry_interval, num_tries, Host._check_resource_state, apiclient, self.id, HOST_RS_MAINTENANCE)
+
+        if not wait_result:
+            raise Exception(return_val)
 
         cmd = deleteHost.deleteHostCmd()
         cmd.id = self.id
@@ -2711,7 +2739,7 @@ class StoragePool:
                           id=poolid, listAll=True)
                 validationresult = validateList(pools)
                 if validationresult[0] == FAIL:
-                    raise Exception("Host list validation failed: %s" % validationresult[2])
+                    raise Exception("Pool list validation failed: %s" % validationresult[2])
                 elif str(pools[0].state).lower().decode("string_escape") == str(state).lower():
                     returnValue = [PASS, None]
                     break
