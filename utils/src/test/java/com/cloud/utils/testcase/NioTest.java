@@ -44,26 +44,11 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * NioTest demonstrates that NioServer can function without getting its main IO
- * loop blocked when an aggressive or malicious client connects to the server but
- * fail to participate in SSL handshake. In this test, we run bunch of clients
- * that send a known payload to the server, to which multiple malicious clients
- * also try to connect and hang.
- * A malicious client could cause denial-of-service if the server's main IO loop
- * along with SSL handshake was blocking. A passing tests shows that NioServer
- * can still function in case of connection load and that the main IO loop along
- * with SSL handshake is non-blocking with some internal timeout mechanism.
- */
-
 public class NioTest {
 
     private static final Logger LOGGER = Logger.getLogger(NioTest.class);
 
-    // Test should fail in due time instead of looping forever
-    private static final int TESTTIMEOUT = 60000;
-
-    final private int totalTestCount = 4;
+    final private int totalTestCount = 10;
     private int completedTestCount = 0;
 
     private NioServer server;
@@ -71,7 +56,7 @@ public class NioTest {
     private List<NioClient> maliciousClients = new ArrayList<>();
 
     private ExecutorService clientExecutor = Executors.newFixedThreadPool(totalTestCount, new NamedThreadFactory("NioClientHandler"));;
-    private ExecutorService maliciousExecutor = Executors.newFixedThreadPool(totalTestCount, new NamedThreadFactory("MaliciousNioClientHandler"));;
+    private ExecutorService maliciousExecutor = Executors.newFixedThreadPool(5*totalTestCount, new NamedThreadFactory("MaliciousNioClientHandler"));;
 
     private Random randomGenerator = new Random();
     private byte[] testBytes;
@@ -98,26 +83,22 @@ public class NioTest {
         testBytes = new byte[1000000];
         randomGenerator.nextBytes(testBytes);
 
-        server = new NioServer("NioTestServer", 0, 1, new NioTestServer());
+        // Server configured with one worker
+        server = new NioServer("NioTestServer", 7777, 1, new NioTestServer());
         try {
             server.start();
         } catch (final NioConnectionException e) {
             Assert.fail(e.getMessage());
         }
 
-        /**
-         * The malicious client(s) tries to block NioServer's main IO loop
-         * thread until SSL handshake timeout value (from Link class, 15s) after
-         * which the valid NioClient(s) get the opportunity to make connection(s)
-         */
+        // 5 malicious clients per valid client
         for (int i = 0; i < totalTestCount; i++) {
-            final NioClient maliciousClient = new NioMaliciousClient("NioMaliciousTestClient-" + i, "127.0.0.1", server.getPort(), 1, new NioMaliciousTestClient());
-            maliciousClients.add(maliciousClient);
-            maliciousExecutor.submit(new ThreadedNioClient(maliciousClient));
-        }
-
-        for (int i = 0; i < totalTestCount; i++) {
-            final NioClient client = new NioClient("NioTestClient-" + i, "127.0.0.1", server.getPort(), 1, new NioTestClient());
+            for (int j = 0; j < 5; j++) {
+                final NioClient maliciousClient = new NioMaliciousClient("NioMaliciousTestClient-" + i, "127.0.0.1", 7777, 1, new NioMaliciousTestClient());
+                maliciousClients.add(maliciousClient);
+                maliciousExecutor.submit(new ThreadedNioClient(maliciousClient));
+            }
+            final NioClient client = new NioClient("NioTestClient-" + i, "127.0.0.1", 7777, 1, new NioTestClient());
             clients.add(client);
             clientExecutor.submit(new ThreadedNioClient(client));
         }
@@ -144,9 +125,13 @@ public class NioTest {
         LOGGER.info("Server stopped.");
     }
 
-    @Test(timeout=TESTTIMEOUT)
+    @Test
     public void testConnection() {
+        final long currentTime = System.currentTimeMillis();
         while (!isTestsDone()) {
+            if (System.currentTimeMillis() - currentTime > 600000) {
+                Assert.fail("Failed to complete test within 600s");
+            }
             try {
                 LOGGER.debug(completedTestCount + "/" + totalTestCount + " tests done. Waiting for completion");
                 Thread.sleep(1000);
@@ -197,9 +182,8 @@ public class NioTest {
                 LOGGER.info("Connecting to " + _host + ":" + _port);
                 final InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
                 _clientConnection.connect(peerAddr);
-                // This is done on purpose, the malicious client would connect
-                // to the server and then do nothing, hence using a large sleep value
-                Thread.sleep(Long.MAX_VALUE);
+                // Hang in there don't do anything
+                Thread.sleep(3600000);
             } catch (final IOException e) {
                 _selector.close();
                 throw e;
@@ -292,6 +276,7 @@ public class NioTest {
                     LOGGER.info("Server: Received OTHER task");
                 }
             }
+
         }
     }
 }
