@@ -106,6 +106,11 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
             'direct.agent.load.size', '1000');
 
+-- Enable dynamic RBAC by default for fresh deployments
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'RoleService',
+            'dynamic.apichecker.enabled', 'true');
+
 -- Add developer configuration entry; allows management server to be run as a user other than "cloud"
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',

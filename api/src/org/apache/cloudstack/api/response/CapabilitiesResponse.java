@@ -28,6 +28,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if security groups support is enabled, false otherwise")
     private boolean securityGroupsEnabled;
 
+    @SerializedName("dynamicrolesenabled")
+    @Param(description = "true if dynamic role-based api checker is enabled, false otherwise")
+    private boolean dynamicRolesEnabled;
+
     @SerializedName("cloudstackversion")
     @Param(description = "version of the cloud stack")
     private String cloudStackVersion;
@@ -82,6 +86,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
+    }
+
+    public void setDynamicRolesEnabled(boolean dynamicRolesEnabled) {
+        this.dynamicRolesEnabled = dynamicRolesEnabled;
     }
 
     public void setCloudStackVersion(String cloudStackVersion) {

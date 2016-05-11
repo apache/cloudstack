@@ -17,6 +17,7 @@
 (function(cloudStack) {
 
     var domainObjs;
+    var roleObjs;
 
     cloudStack.sections.accounts = {
         title: 'label.accounts',
@@ -38,11 +39,11 @@
                         name: {
                             label: 'label.name'
                         },
-                        accounttype: {
-                            label: 'label.role',
-                            converter: function(args) {
-                                return cloudStack.converters.toRole(args);
-                            }
+                        rolename: {
+                            label: 'label.role'
+                        },
+                        roletype: {
+                            label: 'label.roletype'
                         },
                         domain: {
                             label: 'label.domain'
@@ -678,11 +679,11 @@
                                     id: {
                                         label: 'label.id'
                                     },
-                                    accounttype: {
-                                        label: 'label.role',
-                                        converter: function(args) {
-                                            return cloudStack.converters.toRole(args);
-                                        }
+                                    rolename: {
+                                        label: 'label.role'
+                                    },
+                                    roletype: {
+                                        label: 'label.roletype'
                                     },
                                     domain: {
                                         label: 'label.domain'
@@ -1570,11 +1571,11 @@
                                     account: {
                                         label: 'label.account.name'
                                     },
-                                    accounttype: {
-                                        label: 'label.role',
-                                        converter: function(args) {
-                                            return cloudStack.converters.toRole(args);
-                                        }
+                                    rolename: {
+                                        label: 'label.role'
+                                    },
+                                    roletype: {
+                                        label: 'label.roletype'
                                     },
                                     domain: {
                                         label: 'label.domain'

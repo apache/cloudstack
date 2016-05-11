@@ -41,18 +41,20 @@ import com.cloud.utils.component.PluggableService;
 // based on the account type, access is granted
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
-    protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
+    protected static final Logger LOGGER = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
 
-    Set<String> commandPropertyFiles = new HashSet<String>();
-    Set<String> commandsPropertiesOverrides = new HashSet<String>();
-    Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
-    Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
+    private Set<String> commandPropertyFiles = new HashSet<String>();
+    private Set<String> commandsPropertiesOverrides = new HashSet<String>();
+    private Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
+    private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
+    private List<PluggableService> services;
 
-    List<PluggableService> _services;
     @Inject
-    AccountService _accountService;
+    private AccountService accountService;
+    @Inject
+    private RoleService roleService;
 
-    protected StaticRoleBasedAPIAccessChecker() {
+    public StaticRoleBasedAPIAccessChecker() {
         super();
         for (RoleType roleType : RoleType.values()) {
             commandsPropertiesRoleBasedApisMap.put(roleType, new HashSet<String>());
@@ -60,23 +62,31 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
         }
     }
 
+    public boolean isDisabled() {
+        return roleService.isEnabled();
+    }
+
     @Override
     public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
-        Account account = _accountService.getAccount(user.getAccountId());
+        if (isDisabled()) {
+            return true;
+        }
+
+        Account account = accountService.getAccount(user.getAccountId());
         if (account == null) {
             throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
         }
 
-        RoleType roleType = _accountService.getRoleType(account);
+        RoleType roleType = accountService.getRoleType(account);
         boolean isAllowed =
             commandsPropertiesOverrides.contains(commandName) ? commandsPropertiesRoleBasedApisMap.get(roleType).contains(commandName) : annotationRoleBasedApisMap.get(
                 roleType).contains(commandName);
 
-        if (!isAllowed) {
-            throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " +
-                commandName);
+        if (isAllowed) {
+            return true;
         }
-        return isAllowed;
+
+        throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
     }
 
     @Override
@@ -91,7 +101,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
 
     @Override
     public boolean start() {
-        for (PluggableService service : _services) {
+        for (PluggableService service : services) {
             for (Class<?> clz : service.getCommands()) {
                 APICommand command = clz.getAnnotation(APICommand.class);
                 for (RoleType role : command.authorized()) {
@@ -112,22 +122,22 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
             try {
                 short cmdPermissions = Short.parseShort(roleMask);
                 for (RoleType roleType : RoleType.values()) {
-                    if ((cmdPermissions & roleType.getValue()) != 0)
+                    if ((cmdPermissions & roleType.getMask()) != 0)
                         commandsPropertiesRoleBasedApisMap.get(roleType).add(apiName);
                 }
             } catch (NumberFormatException nfe) {
-                s_logger.info("Malformed key=value pair for entry: " + entry.toString());
+                LOGGER.info("Malformed key=value pair for entry: " + entry.toString());
             }
         }
     }
 
     public List<PluggableService> getServices() {
-        return _services;
+        return services;
     }
 
     @Inject
     public void setServices(List<PluggableService> services) {
-        this._services = services;
+        this.services = services;
     }
 
     public Set<String> getCommandPropertyFiles() {

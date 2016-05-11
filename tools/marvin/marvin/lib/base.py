@@ -87,13 +87,96 @@ class Domain:
         return(apiclient.listDomains(cmd))
 
 
+class Role:
+    """Manage Role"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, domainid=None):
+        """Create role"""
+        cmd = createRole.createRoleCmd()
+        cmd.name = services["name"]
+        cmd.type = services["type"]
+        if "description" in services:
+            cmd.description = services["description"]
+
+        return Role(apiclient.createRole(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Role"""
+
+        cmd = deleteRole.deleteRoleCmd()
+        cmd.id = self.id
+        apiclient.deleteRole(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update the role"""
+
+        cmd = updateRole.updateRoleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateRole(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all Roles matching criteria"""
+
+        cmd = listRoles.listRolesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRoles(cmd))
+
+
+class RolePermission:
+    """Manage Role Permission"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, domainid=None):
+        """Create role permission"""
+        cmd = createRolePermission.createRolePermissionCmd()
+        cmd.roleid = services["roleid"]
+        cmd.rule = services["rule"]
+        cmd.permission = services["permission"]
+        if "description" in services:
+            cmd.description = services["description"]
+
+        return RolePermission(apiclient.createRolePermission(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete role permission"""
+
+        cmd = deleteRolePermission.deleteRolePermissionCmd()
+        cmd.id = self.id
+        apiclient.deleteRolePermission(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update the role permission"""
+
+        cmd = updateRolePermission.updateRolePermissionCmd()
+        cmd.roleid = self.roleid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateRolePermission(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all role permissions matching criteria"""
+
+        cmd = listRolePermissions.listRolePermissionsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRolePermissions(cmd))
+
+
 class Account:
     """ Account Life Cycle """
     def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, admin=False, domainid=None):
+    def create(cls, apiclient, services, admin=False, domainid=None, roleid=None):
         """Creates an account"""
         cmd = createAccount.createAccountCmd()
 
@@ -121,6 +204,10 @@ class Account:
 
         if domainid:
             cmd.domainid = domainid
+
+        if roleid:
+            cmd.roleid = roleid
+
         account = apiclient.createAccount(cmd)
 
         return Account(account.__dict__)
