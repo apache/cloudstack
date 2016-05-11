@@ -1427,6 +1427,9 @@
                                                                 jsonObj.xenserverToolsVersion61plus = false;
                                                         }
                                                     }
+                                                    if (!'zonename' in jsonObj) {
+                                                        jsonObj.zonename = 'All Zones';
+                                                    }
                                                 }
 
                                                 args.response.success({
