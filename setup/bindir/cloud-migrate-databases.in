@@ -20,7 +20,7 @@
 
 import os,logging,sys
 from optparse import OptionParser
-import MySQLdb
+import mysql.connector
 import subprocess
 import glob
 
@@ -72,10 +72,10 @@ class CloudContext(cloud_utils.MigrationContext):
 		self.database = database
 		self.configdir = configdir
 		self.resourcedir = resourcedir
-		self.conn = MySQLdb.connect(host=self.host,
+		self.conn = mysql.connector.connect(host=self.host,
 			user=self.username,
-			passwd=self.password,
-			db=self.database,
+			password=self.password,
+			database=self.database,
 			port=self.port)
 		self.conn.autocommit(False)
 		self.db = self.conn.cursor()
