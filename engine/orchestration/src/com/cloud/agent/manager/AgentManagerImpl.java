@@ -196,6 +196,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.",
                     true);
 
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 

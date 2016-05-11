@@ -24,8 +24,11 @@ import java.util.ArrayList;
 
 import javax.inject.Inject;
 
+import com.cloud.acl.DomainChecker;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -186,24 +189,32 @@ public class AccountManagerImplTest {
     GlobalLoadBalancerRuleDao _gslbRuleDao;
     @Mock
     MessageBus _messageBus;
-
     @Mock
     VMSnapshotManager _vmSnapshotMgr;
     @Mock
     VMSnapshotDao _vmSnapshotDao;
-
     @Mock
     User callingUser;
     @Mock
-    Account callingAccount;
-
-    AccountManagerImpl accountManager;
-
+    AccountVO callingAccount;
     @Mock
     SecurityChecker securityChecker;
-
+    @Mock
+    DomainChecker domainChecker;
+    @Mock
+    AccountService accountService;
     @Mock
     private UserAuthenticator userAuthenticator;
+    @Mock
+    private GetUserKeysCmd _listkeyscmd;
+    @Mock
+    private Account _account;
+    @Mock
+    private User _user;
+    @Mock
+    private UserAccountVO userAccountVO;
+
+    AccountManagerImpl accountManager;
 
     @Before
     public void setup() throws NoSuchFieldException, SecurityException,
@@ -353,6 +364,24 @@ public class AccountManagerImplTest {
         Mockito.verify(userAuthenticator, Mockito.times(1)).authenticate("test", "fail", 1L, null);
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", null, 1L, null);
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", "", 1L, null);
+
+    }
+    @Test (expected = PermissionDeniedException.class)
+    public void testgetUserCmd(){
+        CallContext.register(callingUser, callingAccount); // Calling account is user account i.e normal account
+        Mockito.when(_listkeyscmd.getID()).thenReturn(1L);
+        Mockito.when(accountManager.getActiveUser(1L)).thenReturn(_user);
+        Mockito.when(accountManager.getUserAccountById(1L)).thenReturn(userAccountVO);
+        Mockito.when(userAccountVO.getAccountId()).thenReturn(1L);
+        Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(_account); // Queried account - admin account
+
+        Mockito.when(callingUser.getAccountId()).thenReturn(1L);
+        Mockito.when(_accountDao.findById(1L)).thenReturn(callingAccount);
+
+        Mockito.when(accountService.isNormalUser(Mockito.anyLong())).thenReturn(Boolean.TRUE);
+        Mockito.when(_account.getAccountId()).thenReturn(2L);
+
+        accountManager.getKeys(_listkeyscmd);
 
     }
 }

@@ -211,6 +211,7 @@ import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserCmd;
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
@@ -3021,6 +3022,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateLBHealthCheckPolicyCmd.class);
         cmdList.add(GetUploadParamsForTemplateCmd.class);
         cmdList.add(GetUploadParamsForVolumeCmd.class);
+        cmdList.add(GetUserKeysCmd.class);
         return cmdList;
     }
 
