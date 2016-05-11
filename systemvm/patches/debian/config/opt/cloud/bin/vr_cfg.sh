@@ -91,7 +91,7 @@ do
 done < $cfg
 
 #remove the configuration file, log file should have all the records as well
-mv $cfg /var/cache/cloud/processed/
+rm -f $cfg
 
 # Flush kernel conntrack table
 log_it "VR config: Flushing conntrack table"
