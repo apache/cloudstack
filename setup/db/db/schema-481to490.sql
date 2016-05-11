@@ -413,3 +413,26 @@ VIEW `user_vm_view` AS
 
 -- Add cluster.storage.operations.exclude property
 INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `description`, `default_value`, `updated`, `scope`, `is_dynamic`) VALUES ('Advanced', 'DEFAULT', 'CapacityManager', 'cluster.storage.operations.exclude', 'Exclude cluster from storage operations', 'false', now(), 'Cluster', '1');
+
+----- 3) Missing indexes (Add indexes to avoid full table scans)
+ALTER TABLE `cloud`.`op_it_work` ADD INDEX `i_type_and_updated` (`type` ASC, `updated_at` ASC);
+ALTER TABLE `cloud`.`vm_root_disk_tags` ADD INDEX `i_vm_id` (`vm_id` ASC);
+ALTER TABLE `cloud`.`vm_compute_tags` ADD INDEX `i_vm_id` (`vm_id` ASC);
+ALTER TABLE `cloud`.`vm_network_map` ADD INDEX `i_vm_id` (`vm_id` ASC);
+ALTER TABLE `cloud`.`ssh_keypairs` ADD INDEX `i_public_key` (`public_key` (64) ASC);
+ALTER TABLE `cloud`.`user_vm_details` ADD INDEX `i_name_vm_id` (`vm_id` ASC, `name` ASC);
+ALTER TABLE `cloud`.`instance_group` ADD INDEX `i_name` (`name` ASC);
+
+----- 4) Some views query (Change view to improve account retrieval speed) 
+CREATE OR REPLACE
+VIEW `account_vmstats_view` AS
+    SELECT 
+        `vm_instance`.`account_id` AS `account_id`,
+        `vm_instance`.`state` AS `state`,
+        COUNT(0) AS `vmcount`
+    FROM
+        `vm_instance`
+    WHERE
+        (`vm_instance`.`vm_type` = 'User' and `vm_instance`.`removed` is NULL)
+    GROUP BY `vm_instance`.`account_id` , `vm_instance`.`state`;
+-- End CLOUDSTACK-9340
