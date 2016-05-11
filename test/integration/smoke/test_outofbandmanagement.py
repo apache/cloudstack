@@ -70,7 +70,6 @@ class TestOutOfBandManagement(cloudstackTestCase):
             if self.server:
                 self.server.shutdown()
                 self.server.server_close()
-                IpmiServerContext('reset')
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 

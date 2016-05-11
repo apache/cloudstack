@@ -31,11 +31,18 @@ import org.joda.time.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
-public class IpmitoolWrapper {
+public final class IpmitoolWrapper {
     public static final Logger LOG = Logger.getLogger(IpmitoolWrapper.class);
 
-    public static String parsePowerCommand(OutOfBandManagement.PowerOperation operation) {
+    private final ProcessRunner RUNNER;
+
+    public IpmitoolWrapper(ExecutorService executor) {
+        this.RUNNER = new ProcessRunner(executor);
+    }
+
+    public String parsePowerCommand(OutOfBandManagement.PowerOperation operation) {
         if (operation == null) {
             throw new IllegalStateException("Invalid power operation requested");
         }
@@ -53,7 +60,7 @@ public class IpmitoolWrapper {
         return operation.toString().toLowerCase();
     }
 
-    public static OutOfBandManagement.PowerState parsePowerState(final String standardOutput) {
+    public OutOfBandManagement.PowerState parsePowerState(final String standardOutput) {
         if (Strings.isNullOrEmpty(standardOutput)) {
             return OutOfBandManagement.PowerState.Unknown;
         }
@@ -65,10 +72,10 @@ public class IpmitoolWrapper {
         return OutOfBandManagement.PowerState.Unknown;
     }
 
-    public static List<String> getIpmiToolCommandArgs(final String ipmiToolPath, final String ipmiInterface, final String retries,
+    public List<String> getIpmiToolCommandArgs(final String ipmiToolPath, final String ipmiInterface, final String retries,
                                                       final ImmutableMap<OutOfBandManagement.Option, String> options, String... commands) {
 
-        ImmutableList.Builder<String> ipmiToolCommands = ImmutableList.<String>builder()
+        final ImmutableList.Builder<String> ipmiToolCommands = ImmutableList.<String>builder()
                                                             .add(ipmiToolPath)
                                                             .add("-I")
                                                             .add(ipmiInterface)
@@ -103,7 +110,7 @@ public class IpmitoolWrapper {
         return ipmiToolCommands.build();
     }
 
-    public static String findIpmiUser(final String usersList, final String username) {
+    public String findIpmiUser(final String usersList, final String username) {
         /**
          * Expected usersList string contains legends on first line and users on rest
          * ID Name  Callin Link Auth IPMI Msg Channel Priv Limit
@@ -116,12 +123,12 @@ public class IpmitoolWrapper {
         // Assuming  user 'Name' index on 2nd position
         int usernameIndex = 1;
 
-        String[] lines = usersList.split("\\r?\\n");
+        final String[] lines = usersList.split("\\r?\\n");
         if (lines.length < 2) {
             throw new CloudRuntimeException("Error parsing user ID from ipmi user listing");
         }
         // Find user and name indexes from the 1st line if not on default position
-        String[] legends = lines[0].split(" +");
+        final String[] legends = lines[0].split(" +");
         for (int idx = 0; idx < legends.length; idx++) {
             if (legends[idx].equals("ID")) {
                 idIndex = idx;
@@ -133,7 +140,7 @@ public class IpmitoolWrapper {
         // Find user 'ID' based on provided username and ID/Name positions
         String userId = null;
         for (int idx = 1; idx < lines.length; idx++) {
-            String[] words = lines[idx].split(" +");
+            final String[] words = lines[idx].split(" +");
             if (usernameIndex < words.length && idIndex < words.length) {
                 if (words[usernameIndex].equals(username)) {
                     userId = words[idIndex];
@@ -143,8 +150,12 @@ public class IpmitoolWrapper {
         return userId;
     }
 
-    public static OutOfBandManagementDriverResponse executeCommands(final List<String> commands, final Duration timeOut) {
-        final ProcessResult result = ProcessRunner.executeCommands(commands, timeOut);
+    public OutOfBandManagementDriverResponse executeCommands(final List<String> commands) {
+        return executeCommands(commands, ProcessRunner.DEFAULT_MAX_TIMEOUT);
+    }
+
+    public OutOfBandManagementDriverResponse executeCommands(final List<String> commands, final Duration timeOut) {
+        final ProcessResult result = RUNNER.executeCommands(commands, timeOut);
         if (LOG.isTraceEnabled()) {
             List<String> cleanedCommands = new ArrayList<String>();
             int maskNextCommand = 0;
