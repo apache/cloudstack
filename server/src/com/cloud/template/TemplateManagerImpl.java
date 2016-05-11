@@ -926,7 +926,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String disableExtraction = _configDao.getValue(Config.DisableExtraction.toString());
         _disableExtraction = (disableExtraction == null) ? false : Boolean.parseBoolean(disableExtraction);
 
-        _preloadExecutor = Executors.newFixedThreadPool(8, new NamedThreadFactory("Template-Preloader"));
+        _preloadExecutor = Executors.newFixedThreadPool(TemplatePreloaderPoolSize.value(), new NamedThreadFactory("Template-Preloader"));
 
         return true;
     }
@@ -1975,7 +1975,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowPublicUserTemplates};
+        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {
