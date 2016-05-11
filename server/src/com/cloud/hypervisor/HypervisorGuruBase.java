@@ -33,11 +33,9 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
@@ -55,29 +53,21 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
-    VMTemplateDetailsDao _templateDetailsDao;
+    private NicDao _nicDao;
     @Inject
-    NicDao _nicDao;
+    private NetworkDao _networkDao;
     @Inject
-    NetworkDao  _networkDao;
+    private VMInstanceDao _virtualMachineDao;
     @Inject
-    VMInstanceDao _virtualMachineDao;
+    private UserVmDetailsDao _userVmDetailsDao;
     @Inject
-    UserVmDetailsDao _userVmDetailsDao;
+    private NicSecondaryIpDao _nicSecIpDao;
     @Inject
-    NicSecondaryIpDao _nicSecIpDao;
+    private ResourceManager _resourceMgr;
     @Inject
-    ConfigurationServer _configServer;
+    private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
-    ResourceManager _resourceMgr;
-    @Inject
-    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
-    @Inject
-    ServiceOfferingDao _serviceOfferingDao;
-
-    protected HypervisorGuruBase() {
-        super();
-    }
+    private ServiceOfferingDao _serviceOfferingDao;
 
     @Override
     public NicTO toNicTO(NicProfile profile) {
