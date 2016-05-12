@@ -21,8 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
@@ -30,6 +28,7 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachineTemplate.class)
 @SuppressWarnings("unused")
@@ -170,11 +169,6 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "additional key/value details tied with template")
     private Map details;
 
-    // To avoid breaking backwards compatibility, we still treat a template at different zones as different templates, so not embedding
-    // template_zone information in this TemplateZoneResponse set.
-    //    @SerializedName("zones")  @Param(description="list of zones associated with tempate", responseObject = TemplateZoneResponse.class)
-    //    private Set<TemplateZoneResponse> zones;
-
     @SerializedName(ApiConstants.SSHKEY_ENABLED)
     @Param(description = "true if template is sshkey enabled, false otherwise")
     private Boolean sshKeyEnabled;
@@ -184,7 +178,6 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private Boolean isDynamicallyScalable;
 
     public TemplateResponse() {
-        //  zones = new LinkedHashSet<TemplateZoneResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
 
