@@ -2587,13 +2587,6 @@ class Host:
         apiclient.deleteHost(cmd)
         return
 
-    def enableMaintenance(self, apiclient):
-        """enables maintenance mode Host"""
-
-        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
-        cmd.id = self.id
-        return apiclient.prepareHostForMaintenance(cmd)
-
     @classmethod
     def enableMaintenance(cls, apiclient, id):
         """enables maintenance mode Host"""
@@ -2601,13 +2594,6 @@ class Host:
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = id
         return apiclient.prepareHostForMaintenance(cmd)
-
-    def cancelMaintenance(self, apiclient):
-        """Cancels maintenance mode Host"""
-
-        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
-        cmd.id = self.id
-        return apiclient.cancelHostMaintenance(cmd)
 
     @classmethod
     def cancelMaintenance(cls, apiclient, id):
@@ -2757,13 +2743,6 @@ class StoragePool:
         cmd.id = self.id
         apiclient.deleteStoragePool(cmd)
         return
-
-    def enableMaintenance(self, apiclient):
-        """enables maintenance mode Storage pool"""
-
-        cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
-        cmd.id = self.id
-        return apiclient.enableStorageMaintenance(cmd)
 
     @classmethod
     def enableMaintenance(cls, apiclient, id):
