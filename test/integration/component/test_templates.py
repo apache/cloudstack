@@ -22,6 +22,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import listZones
 from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account,
+                             Domain,
                              Template,
                              ServiceOffering,
                              VirtualMachine,
@@ -49,8 +50,18 @@ class Services:
                                     # Random characters are appended for unique
                                     # username
                                     "password": "password",
-                         },
-                         "service_offering": {
+                        },
+                        "account1": {
+                                    "email": "test@test.com",
+                                    "firstname": "Test1",
+                                    "lastname": "User1",
+                                    "username": "test1",
+                                    # Random characters are appended for unique
+                                    # username
+                                    "password": "password",
+                        },
+                        "testdomain": {"name": "test"},
+                        "service_offering": {
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
@@ -109,7 +120,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo() 
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -193,7 +204,7 @@ class TestCreateTemplate(cloudstackTestCase):
                                         zoneid=self.zone.id,
                                         account=self.account.name,
                                         domainid=self.account.domainid,
-                                        hypervisor=self.hypervisor 
+                                        hypervisor=self.hypervisor
                                         )
         self.debug(
                 "Registered a template of format: %s with ID: %s" % (
@@ -581,3 +592,77 @@ class TestTemplates(cloudstackTestCase):
                             "Check the state of VM created from Template"
                         )
         return
+
+
+class TestListTemplate(cloudstackTestCase):
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+        self.services = Services().services
+        # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient)
+        self.account = Account.create(
+                            self.apiclient,
+                            self.services["account"],
+                            domainid=self.domain.id
+                            )
+        self.newdomain = Domain.create(
+                           self.apiclient,
+                           self.services["testdomain"],
+                           parentdomainid=self.domain.id
+                           )
+        self.newdomain_account = Account.create(
+                           self.apiclient,
+                           self.services["account1"],
+                           admin=True,
+                           domainid=self.newdomain.id
+                           )
+        self.cleanup = [
+                        self.account,
+                        self.newdomain_account,
+                        self.newdomain,
+                        ]
+
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the created templates
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_01_list_templates_with_templatefilter_all_normal_user(self):
+        """
+            Test list templates with templatefilter=all is not permitted for normal user
+        """
+
+        user_api_client = self.testClient.getUserApiClient(
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
+        try:
+            list_template_response = Template.list(self.user_api_client, templatefilter='all')
+            self.fail("Regular User is able to use templatefilter='all' in listTemplates API call")
+        except Exception as e:
+            self.debug("ListTemplates API with templatefilter='all' is not permitted for normal user")
+
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_02_list_templates_with_templatefilter_all_domain_admin(self):
+        """
+            Test list templates with templatefilter=all is not permitted for domain admin
+        """
+
+        domain_user_api_client = self.testClient.getUserApiClient(
+                                    UserName=self.newdomain_account.name,
+                                    DomainName=self.newdomain_account.domain)
+        try:
+            list_template_response = Template.list(self.domain_user_api_client, templatefilter='all')
+            self.fail("Domain admin is able to use templatefilter='all' in listTemplates API call")
+        except Exception as e:
+            self.debug("ListTemplates API with templatefilter='all' is not permitted for domain admin user")
