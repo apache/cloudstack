@@ -17,7 +17,9 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -85,6 +87,10 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("ovm3vip")
     @Param(description = "Ovm3 VIP to use for pooling and/or clustering")
     private String ovm3vip;
+
+    @SerializedName(ApiConstants.RESOURCE_DETAILS)
+    @Param(description = "Meta data associated with the zone (key/value pairs)")
+    private Map<String, String> resourceDetails;
 
     public String getId() {
         return id;
@@ -196,5 +202,12 @@ public class ClusterResponse extends BaseResponse {
 
     public String getOvm3Vip() {
         return ovm3vip;
+    }
+
+    public void setResourceDetails(Map<String, String> details) {
+        if (details == null) {
+            return;
+        }
+        this.resourceDetails = new HashMap<>(details);
     }
 }

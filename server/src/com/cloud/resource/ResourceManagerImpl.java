@@ -76,6 +76,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -1347,6 +1348,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Cluster getCluster(final Long clusterId) {
         return _clusterDao.findById(clusterId);
+    }
+
+    @Override
+    public DataCenter getZone(Long zoneId) {
+        return _dcDao.findById(zoneId);
     }
 
     @Override

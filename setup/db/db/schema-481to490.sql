@@ -471,3 +471,26 @@ INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) v
 INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) values (2, UUID(), 'Resource Admin', 'ResourceAdmin', 'Default resource admin role') ON DUPLICATE KEY UPDATE name=name;
 INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) values (3, UUID(), 'Domain Admin', 'DomainAdmin', 'Default domain admin role') ON DUPLICATE KEY UPDATE name=name;
 INSERT INTO `cloud`.`roles` (`id`, `uuid`, `name`, `role_type`, `description`) values (4, UUID(), 'User', 'User', 'Default Root Admin role') ON DUPLICATE KEY UPDATE name=name;
+
+-- Out-of-band management
+CREATE TABLE IF NOT EXISTS `cloud`.`oobm` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `host_id` bigint(20) unsigned DEFAULT NULL COMMENT 'foreign key to host',
+  `enabled` int(1) unsigned DEFAULT '0' COMMENT 'is out-of-band management enabled for host',
+  `power_state` varchar(32) DEFAULT 'Disabled' COMMENT 'out-of-band management power status',
+  `driver` varchar(32) DEFAULT NULL COMMENT 'out-of-band management driver',
+  `address` varchar(255) DEFAULT NULL COMMENT 'out-of-band management interface address',
+  `port` int(10) unsigned DEFAULT NULL COMMENT 'out-of-band management interface port',
+  `username` varchar(255) DEFAULT NULL COMMENT 'out-of-band management interface username',
+  `password` varchar(255) DEFAULT NULL COMMENT 'out-of-band management interface password',
+  `update_count` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'atomic increase count making status update operation atomical',
+  `update_time` datetime COMMENT 'last power state update datetime',
+  `mgmt_server_id` bigint(20) unsigned DEFAULT NULL COMMENT 'management server id which owns out-of-band management for the host',
+  PRIMARY KEY (`id`),
+  KEY `fk_oobm__host_id` (`host_id`),
+  KEY `i_oobm__enabled` (`enabled`),
+  KEY `i_oobm__power_state` (`power_state`),
+  KEY `i_oobm__update_time` (`update_time`),
+  KEY `i_oobm__mgmt_server_id` (`mgmt_server_id`),
+  CONSTRAINT `fk_oobm__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -233,6 +234,9 @@ public class ZoneResponse extends BaseResponse {
     }
 
     public void setResourceDetails(Map<String, String> details) {
-        this.resourceDetails = details;
+        if (details == null) {
+            return;
+        }
+        this.resourceDetails = new HashMap<>(details);
     }
 }

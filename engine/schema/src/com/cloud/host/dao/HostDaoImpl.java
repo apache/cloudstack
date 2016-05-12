@@ -1049,6 +1049,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> findByDataCenterId(Long zoneId) {
+        SearchCriteria<HostVO> sc = DcSearch.create();
+        sc.setParameters("dc", zoneId);
+        sc.setParameters("type", Type.Routing);
+        return listBy(sc);
+    }
+
+    @Override
     public List<HostVO> findByPodId(Long podId) {
         SearchCriteria<HostVO> sc = PodSearch.create();
         sc.setParameters("podId", podId);
@@ -1086,5 +1094,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<Long> sc = HostIdSearch.create();
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<HostVO> listAllHostsByType(Host.Type type) {
+        SearchCriteria<HostVO> sc = TypeSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+
+        return listBy(sc);
     }
 }

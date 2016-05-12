@@ -1577,6 +1577,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object cluster = cmd.getClusterId();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
+        Object outOfBandManagementEnabled = cmd.isOutOfBandManagementEnabled();
+        Object powerState = cmd.getHostOutOfBandManagementPowerState();
         Object resourceState = cmd.getResourceState();
         Object haHosts = cmd.getHaHost();
         Long startIndex = cmd.getStartIndex();
@@ -1595,6 +1597,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("oobmEnabled", sb.entity().isOutOfBandManagementEnabled(), SearchCriteria.Op.EQ);
+        sb.and("powerState", sb.entity().getOutOfBandManagementPowerState(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
         sb.and("hypervisor_type", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
 
@@ -1642,6 +1646,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (cluster != null) {
             sc.setParameters("clusterId", cluster);
+        }
+
+        if (outOfBandManagementEnabled != null) {
+            sc.setParameters("oobmEnabled", outOfBandManagementEnabled);
+        }
+
+        if (powerState != null) {
+            sc.setParameters("powerState", powerState);
         }
 
         if (resourceState != null) {
