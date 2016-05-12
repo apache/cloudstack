@@ -541,6 +541,17 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    @Override
+    public void notifyMonitorsOfNewlyAddedHost(long hostId) {
+        for (final Pair<Integer, Listener> monitor : _hostMonitors) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending host added to listener: " + monitor.second().getClass().getSimpleName());
+            }
+
+            monitor.second().processHostAdded(hostId);
+        }
+    }
+
     protected AgentAttache notifyMonitorsOfConnection(final AgentAttache attache, final StartupCommand[] cmd, final boolean forRebalance) throws ConnectionException {
         final long hostId = attache.getId();
         final HostVO host = _hostDao.findById(hostId);
@@ -1002,6 +1013,28 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
         return true;
+    }
+
+    @Override
+    public void notifyMonitorsOfHostAboutToBeRemoved(long hostId) {
+        for (final Pair<Integer, Listener> monitor : _hostMonitors) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending host about to be removed to listener: " + monitor.second().getClass().getSimpleName());
+            }
+
+            monitor.second().processHostAboutToBeRemoved(hostId);
+        }
+    }
+
+    @Override
+    public void notifyMonitorsOfRemovedHost(long hostId, long clusterId) {
+        for (final Pair<Integer, Listener> monitor : _hostMonitors) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending host removed to listener: " + monitor.second().getClass().getSimpleName());
+            }
+
+            monitor.second().processHostRemoved(hostId, clusterId);
+        }
     }
 
     public boolean executeUserRequest(final long hostId, final Event event) throws AgentUnavailableException {
@@ -1467,7 +1500,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public boolean handleDirectConnectAgent(final Host host, final StartupCommand[] cmds, final ServerResource resource, final boolean forRebalance) throws ConnectionException {
+    public boolean handleDirectConnectAgent(final Host host, final StartupCommand[] cmds, final ServerResource resource,
+            final boolean forRebalance, boolean newHost) throws ConnectionException {
         AgentAttache attache;
 
         attache = createAttacheForDirectConnect(host, resource);
@@ -1476,6 +1510,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             answers[i] = new StartupAnswer(cmds[i], attache.getId(), PingInterval.value());
         }
         attache.process(answers);
+
+        if (newHost) {
+            notifyMonitorsOfNewlyAddedHost(host.getId());
+        }
+
         attache = notifyMonitorsOfConnection(attache, cmds, forRebalance);
 
         return attache != null;
@@ -1621,6 +1660,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         @Override
+        public void processHostAdded(long hostId) {
+        }
+
+        @Override
         public void processConnect(final Host host, final StartupCommand cmd, final boolean forRebalance) {
             if (host.getType().equals(Host.Type.TrafficMonitor) || host.getType().equals(Host.Type.SecondaryStorage)) {
                 return;
@@ -1634,6 +1677,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         public boolean processDisconnect(final long agentId, final Status state) {
             _pingMap.remove(agentId);
             return true;
+        }
+
+        @Override
+        public void processHostAboutToBeRemoved(long hostId) {
+        }
+
+        @Override
+        public void processHostRemoved(long hostId, long clusterId) {
         }
 
         @Override

@@ -76,7 +76,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
-    private static final int s_lockTimeInSeconds = 300;
     private static final int s_lowestHypervisorSnapshotReserve = 10;
 
     @Inject private AccountDao _accountDao;
@@ -141,8 +140,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         GlobalLock lock = GlobalLock.getInternLock(cluster.getUuid());
 
-        if (!lock.lock(s_lockTimeInSeconds)) {
-            s_logger.debug("Couldn't lock the DB (in grantAccess) on the following string: " + cluster.getUuid());
+        if (!lock.lock(SolidFireUtil.s_lockTimeInSeconds)) {
+            String errMsg = "Couldn't lock the DB (in grantAccess) on the following string: " + cluster.getUuid();
+
+            s_logger.debug(errMsg);
+
+            throw new CloudRuntimeException(errMsg);
         }
 
         try {
@@ -161,10 +164,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (vagId != null) {
                 SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getSolidFireVag(sfConnection, Long.parseLong(vagId));
 
-                String[] hostIqns = SolidFireUtil.getNewHostIqns(sfVag.getInitiators(), SolidFireUtil.getIqnsFromHosts(hosts));
                 long[] volumeIds = SolidFireUtil.getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, true);
 
-                SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), hostIqns, volumeIds);
+                SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), sfVag.getInitiators(), volumeIds);
             }
             else {
                 SolidFireUtil.placeVolumeInVolumeAccessGroup(sfConnection, sfVolumeId, storagePoolId, cluster.getUuid(), hosts, _clusterDetailsDao);
@@ -196,8 +198,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         GlobalLock lock = GlobalLock.getInternLock(cluster.getUuid());
 
-        if (!lock.lock(s_lockTimeInSeconds)) {
-            s_logger.debug("Couldn't lock the DB (in revokeAccess) on the following string: " + cluster.getUuid());
+        if (!lock.lock(SolidFireUtil.s_lockTimeInSeconds)) {
+            String errMsg = "Couldn't lock the DB (in revokeAccess) on the following string: " + cluster.getUuid();
+
+            s_logger.debug(errMsg);
+
+            throw new CloudRuntimeException(errMsg);
         }
 
         try {
@@ -206,16 +212,13 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             String vagId = clusterDetail != null ? clusterDetail.getValue() : null;
 
             if (vagId != null) {
-                List<HostVO> hosts = _hostDao.findByClusterId(clusterId);
-
                 SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
 
                 SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getSolidFireVag(sfConnection, Long.parseLong(vagId));
 
-                String[] hostIqns = SolidFireUtil.getNewHostIqns(sfVag.getInitiators(), SolidFireUtil.getIqnsFromHosts(hosts));
                 long[] volumeIds = SolidFireUtil.getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, false);
 
-                SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), hostIqns, volumeIds);
+                SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), sfVag.getInitiators(), volumeIds);
             }
         }
         finally {
@@ -701,7 +704,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
+    public void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
         throw new UnsupportedOperationException("Reverting not supported. Create a template or volume based on the snapshot instead.");
     }
 

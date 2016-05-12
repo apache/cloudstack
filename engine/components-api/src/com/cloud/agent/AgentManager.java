@@ -42,7 +42,7 @@ public interface AgentManager {
         Add, Del, Contains,
     }
 
-    boolean handleDirectConnectAgent(Host host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
+    boolean handleDirectConnectAgent(Host host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance, boolean newHost) throws ConnectionException;
 
     /**
      * easy send method that returns null if there's any errors. It handles all exceptions.
@@ -131,8 +131,6 @@ public interface AgentManager {
 
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
 
-//    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
-
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
 
     boolean isAgentAttached(long hostId);
@@ -146,4 +144,10 @@ public interface AgentManager {
     boolean reconnect(long hostId);
 
     void rescan();
+
+    void notifyMonitorsOfNewlyAddedHost(long hostId);
+
+    void notifyMonitorsOfHostAboutToBeRemoved(long hostId);
+
+    void notifyMonitorsOfRemovedHost(long hostId, long clusterId);
 }

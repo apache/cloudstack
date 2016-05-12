@@ -18,18 +18,33 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -37,56 +52,168 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireSharedHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
+    private static final Logger s_logger = Logger.getLogger(SolidFireSharedHostListener.class);
 
-    @Inject private AgentManager agentMgr;
-    @Inject private DataStoreManager dataStoreMgr;
-    @Inject private AlertManager alertMgr;
-    @Inject private StoragePoolHostDao storagePoolHostDao;
-    @Inject private PrimaryDataStoreDao primaryStoreDao;
+    @Inject private AgentManager _agentMgr;
+    @Inject private AlertManager _alertMgr;
+    @Inject private ClusterDao _clusterDao;
+    @Inject private ClusterDetailsDao _clusterDetailsDao;
+    @Inject private DataStoreManager _dataStoreMgr;
+    @Inject private HostDao _hostDao;
+    @Inject private PrimaryDataStoreDao _storagePoolDao;
+    @Inject private StoragePoolHostDao _storagePoolHostDao;
+    @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
+
+    @Override
+    public boolean hostAdded(long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+
+        SolidFireUtil.hostAddedToOrRemovedFromCluster(hostId, host.getClusterId(), true, SolidFireUtil.SHARED_PROVIDER_NAME,
+                _clusterDao, _clusterDetailsDao, _storagePoolDao, _storagePoolDetailsDao, _hostDao);
+
+        handleVMware(hostId, true);
+
+        return true;
+    }
 
     @Override
     public boolean hostConnect(long hostId, long storagePoolId) {
-        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
-
-        if (storagePoolHost == null) {
-            storagePoolHost = new StoragePoolHostVO(storagePoolId, hostId, "");
-
-            storagePoolHostDao.persist(storagePoolHost);
-        }
-
-        StoragePool storagePool = (StoragePool)dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        StoragePool storagePool = (StoragePool)_dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, storagePool);
-        Answer answer = agentMgr.easySend(hostId, cmd);
 
-        if (answer == null) {
-            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command for storage pool: " + storagePool.getId());
+        ModifyStoragePoolAnswer answer = sendModifyStoragePoolCommand(cmd, storagePool, hostId);
+
+        StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
+
+        if (storagePoolHost != null) {
+            storagePoolHost.setLocalPath(answer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
+        } else {
+            storagePoolHost = new StoragePoolHostVO(storagePoolId, hostId, answer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
+
+            _storagePoolHostDao.persist(storagePoolHost);
         }
 
-        if (!answer.getResult()) {
-            String msg = "Unable to attach storage pool " + storagePoolId + " to the host " + hostId;
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
 
-            alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
+        storagePoolVO.setCapacityBytes(answer.getPoolInfo().getCapacityBytes());
+        storagePoolVO.setUsedBytes(answer.getPoolInfo().getCapacityBytes() - answer.getPoolInfo().getAvailableBytes());
 
-            throw new CloudRuntimeException(msg);
-        }
-
-        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer not returned from ModifyStoragePoolCommand; Storage pool = " +
-            storagePool.getId() + "; Host=" + hostId;
-
-        s_logger.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
+        _storagePoolDao.update(storagePoolId, storagePoolVO);
 
         return true;
     }
 
     @Override
     public boolean hostDisconnected(long hostId, long storagePoolId) {
-        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
+        StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
 
         if (storagePoolHost != null) {
-            storagePoolHostDao.deleteStoragePoolHostDetails(hostId, storagePoolId);
+            _storagePoolHostDao.deleteStoragePoolHostDetails(hostId, storagePoolId);
         }
 
         return true;
+    }
+
+    @Override
+    public boolean hostAboutToBeRemoved(long hostId) {
+        handleVMware(hostId, false);
+
+        return true;
+    }
+
+    @Override
+    public boolean hostRemoved(long hostId, long clusterId) {
+        SolidFireUtil.hostAddedToOrRemovedFromCluster(hostId, clusterId, false, SolidFireUtil.SHARED_PROVIDER_NAME,
+                _clusterDao, _clusterDetailsDao, _storagePoolDao, _storagePoolDetailsDao, _hostDao);
+
+        return true;
+    }
+
+    private void handleVMware(long hostId, boolean add) {
+        HostVO host = _hostDao.findById(hostId);
+
+        if (HypervisorType.VMware.equals(host.getHypervisorType())) {
+            List<StoragePoolVO> storagePools = _storagePoolDao.findPoolsByProvider(SolidFireUtil.SHARED_PROVIDER_NAME);
+
+            if (storagePools != null && storagePools.size() > 0) {
+                List<Map<String, String>> targets = new ArrayList<>();
+
+                for (StoragePoolVO storagePool : storagePools) {
+                    if (storagePool.getClusterId().equals(host.getClusterId())) {
+                        long storagePoolId = storagePool.getId();
+
+                        StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.IQN);
+
+                        String iqn = storagePoolDetail.getValue();
+
+                        storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.STORAGE_VIP);
+
+                        String sVip = storagePoolDetail.getValue();
+
+                        storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.STORAGE_PORT);
+
+                        String sPort = storagePoolDetail.getValue();
+
+                        Map<String, String> details = new HashMap<>();
+
+                        details.put(ModifyTargetsCommand.IQN, iqn);
+                        details.put(ModifyTargetsCommand.STORAGE_HOST, sVip);
+                        details.put(ModifyTargetsCommand.STORAGE_PORT, sPort);
+
+                        targets.add(details);
+                    }
+                }
+
+                if (targets.size() > 0) {
+                    ModifyTargetsCommand cmd = new ModifyTargetsCommand();
+
+                    cmd.setAdd(add);
+                    cmd.setTargets(targets);
+
+                    sendModifyTargetsCommand(cmd, hostId);
+                }
+            }
+        }
+    }
+
+    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        if (answer == null) {
+            throw new CloudRuntimeException("Unable to get an answer to the modify targets command");
+        }
+
+        if (!answer.getResult()) {
+            String msg = "Unable to modify targets on the following host: " + hostId;
+
+            HostVO host = _hostDao.findById(hostId);
+
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), msg, msg);
+
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private ModifyStoragePoolAnswer sendModifyStoragePoolCommand(ModifyStoragePoolCommand cmd, StoragePool storagePool, long hostId) {
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        if (answer == null) {
+            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command for storage pool: " + storagePool.getId());
+        }
+
+        if (!answer.getResult()) {
+            String msg = "Unable to attach storage pool " + storagePool.getId() + " to the host " + hostId;
+
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
+
+            throw new CloudRuntimeException(msg);
+        }
+
+        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer not returned from ModifyStoragePoolCommand; Storage pool = " +
+            storagePool.getId() + "; Host = " + hostId;
+
+        s_logger.info("Connection established between storage pool " + storagePool + " and host " + hostId);
+
+        return (ModifyStoragePoolAnswer)answer;
     }
 }

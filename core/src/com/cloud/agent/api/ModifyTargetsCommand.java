@@ -19,36 +19,39 @@
 
 package com.cloud.agent.api;
 
+import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.StoragePool;
-
-public class CreateStoragePoolCommand extends ModifyStoragePoolCommand {
-    public static final String DATASTORE_NAME = "datastoreName";
+public class ModifyTargetsCommand extends Command {
     public static final String IQN = "iqn";
     public static final String STORAGE_HOST = "storageHost";
     public static final String STORAGE_PORT = "storagePort";
+    public static final String CHAP_NAME = "chapName";
+    public static final String CHAP_SECRET = "chapSecret";
+    public static final String MUTUAL_CHAP_NAME = "mutualChapName";
+    public static final String MUTUAL_CHAP_SECRET = "mutualChapSecret";
 
-    private boolean _createDatastore;
-    private Map<String, String> _details;
+    private boolean _add;
+    private List<Map<String, String>> _targets;
 
-    public CreateStoragePoolCommand(boolean add, StoragePool pool) {
-        super(add, pool);
+    public void setAdd(boolean add) {
+        _add = add;
     }
 
-    public void setCreateDatastore(boolean createDatastore) {
-        _createDatastore = createDatastore;
+    public boolean getAdd() {
+        return _add;
     }
 
-    public boolean getCreateDatastore() {
-        return _createDatastore;
+    public void setTargets(List<Map<String, String>> targets) {
+        _targets = targets;
     }
 
-    public void setDetails(Map<String, String> details) {
-        _details = details;
+    public List<Map<String, String>> getTargets() {
+        return _targets;
     }
 
-    public Map<String, String> getDetails() {
-        return _details;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 }

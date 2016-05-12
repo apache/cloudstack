@@ -113,8 +113,6 @@ public class UploadListener implements Listener {
 
     private DataStore sserver;
 
-    private boolean uploadActive = true;
-
     private UploadDao uploadDao;
 
     private final UploadMonitorImpl uploadMonitor;
@@ -251,6 +249,10 @@ public class UploadListener implements Listener {
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
         if (!(cmd instanceof StartupStorageCommand)) {
             return;
@@ -270,7 +272,6 @@ public class UploadListener implements Listener {
     }
 
     public void setUploadInactive(Status reason) {
-        uploadActive = false;
         uploadMonitor.handleUploadEvent(accountId, typeName, type, uploadId, reason, eventId);
     }
 
@@ -292,6 +293,14 @@ public class UploadListener implements Listener {
     public boolean processDisconnect(long agentId, com.cloud.host.Status state) {
         setDisconnected();
         return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

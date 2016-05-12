@@ -153,6 +153,14 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     }
 
     @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
+    }
+
+    @Override
     public boolean isRecurring() {
         return false;
     }
@@ -165,6 +173,10 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
+    }
+
+    @Override
+    public void processHostAdded(long hostId) {
     }
 
     @Override

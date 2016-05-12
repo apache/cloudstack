@@ -16515,8 +16515,11 @@
                                                 }
                                             });
 
-                                            if (args.context.hosts[0].hypervisor == "XenServer"){
-                                                cloudStack.dialog.notice({ message: _s("The host has been deleted. Please eject the host from XenServer Pool") })
+                                            if (args.context.hosts[0].hypervisor == "XenServer") {
+                                                cloudStack.dialog.notice({ message: _s("The host has been removed. Please eject the host from the XenServer Resource Pool.") })
+                                            }
+                                            else if (args.context.hosts[0].hypervisor == "VMware") {
+                                                cloudStack.dialog.notice({ message: _s("The host has been removed. Please eject the host from the vSphere Cluster.") })
                                             }
                                         }
                                     });
