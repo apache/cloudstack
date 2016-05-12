@@ -148,3 +148,9 @@ class CsCmdLine(CsDataBag):
         if "gateway" in self.idata():
             return self.idata()['gateway']
         return False
+
+    def get_use_ext_dns(self):
+        if "useextdns" in self.idata():
+            return self.idata()['useextdns']
+        return False
+

@@ -68,8 +68,11 @@ class CsConfig(object):
 
     def get_dns(self):
         dns = []
-        # Check what happens with use_ext_dns
-        dns.append(self.address().get_guest_ip())
+        if not self.cl.get_use_ext_dns():
+            if not self.is_vpc() and self.cl.is_redundant():
+                dns.append(self.cl.get_guest_gw())
+            else:
+                dns.append(self.address().get_guest_ip())
         names = ["dns1", "dns2"]
         for name in names:
             if name in self.cmdline().idata():
