@@ -797,6 +797,8 @@
               <exclude>CONTRIBUTING.md</exclude>
               <exclude>tools/docker/Dockerfile</exclude>
               <exclude>tools/docker/supervisord.conf</exclude>
+              <exclude>.java-version</exclude>
+              <exclude>.python-version</exclude>
               <exclude>.idea/</exclude>
               <exclude>**/*.log</exclude>
               <exclude>**/*.patch</exclude>

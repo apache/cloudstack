@@ -38,6 +38,23 @@ Start the MySQL service:
 
     $ service mysqld start
 
+### Using jenv and/or pyenv for Version Management
+
+CloudStack is built using Java and Python.  To make selection of these tools versions more consistent and ease installation for developers, optional support for [jenv](http://www.jenv.be/) and [pyenv](https://github.com/yyuu/pyenv) with [virtualenv]|(https://github.com/yyuu/pyenv-virtualenv) is provided.  jenv installation instructions are available here and pyenv installation instructions are available here.  For users of [oh-my-zsh](http://ohmyz.sh/) there is a pyenv plugin available to trigger configuration of pyenv in a shell session.
+
+Following installation, execute the following commands to configure jenv and pyenv for use with CloudStack development:
+
+'''
+  # pyenv install 2.7.11                                          # Install Python 2.7.11
+  # pyenv virtualenv 2.7.11 cloudstack                            # Create a cloidstack virtualenv using Python 2.7.11
+  # pip install -r <root CloudStack source tree>/requirements.txt # Install cloudstack Python dependencies
+  # jenv add <path to JDK 1.7 installation>                       # Add Java7 to jenv
+'''
+
+*N.B.* If you are running Linux, you may need to install additional packages to allow pyenv to build Python.
+
+Following these steps, jenv and pyenv will use .java-version and .python-version files in the root of the CloudStack source tree to switch to the correct Java version and the cloudstack Python virtualenv for CloudStack development.
+
 ## Getting the Source Code
 
 You may get the source code from the repository hosted on Apache:
