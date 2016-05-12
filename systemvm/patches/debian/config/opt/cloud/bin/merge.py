@@ -18,8 +18,10 @@
 
 import json
 import os
-import time
+import uuid
 import logging
+import gzip
+import shutil
 import cs_ip
 import cs_guestnetwork
 import cs_cmdline
@@ -35,8 +37,6 @@ import cs_site2sitevpn
 import cs_remoteaccessvpn
 import cs_vpnusers
 import cs_staticroutes
-
-from pprint import pprint
 
 
 class DataBag:
@@ -243,21 +243,26 @@ class QueueFile:
         if data is not None:
             self.data = data
             self.type = self.data["type"]
-            proc = updateDataBag(self)
+            updateDataBag(self)
+
             return
-        fn = self.configCache + '/' + self.fileName
+        filename = '{cache_location}/{json_file}'.format(cache_location = self.configCache, json_file = self.fileName)
         try:
-            handle = open(fn)
-        except IOError:
-            logging.error("Could not open %s", fn)
+            handle = open(filename)
+        except IOError as exception:
+            error_message = ("Exception occurred with the following exception error '{error}'. Could not open '{file}'. "
+                              "It seems that the file has already been moved.".format(error = exception, file = filename))
+            logging.error(error_message)
         else:
+            logging.info("Continuing with the processing of file '{file}'".format(file = filename))
+
             self.data = json.load(handle)
             self.type = self.data["type"]
             handle.close()
             if self.keep:
-                self.__moveFile(fn, self.configCache + "/processed")
+               self.__moveFile(filename, self.configCache + "/processed")
             else:
-                os.remove(fn)
+                os.remove(filename)
             proc = updateDataBag(self)
 
     def setFile(self, name):
@@ -275,9 +280,19 @@ class QueueFile:
     def __moveFile(self, origPath, path):
         if not os.path.exists(path):
             os.makedirs(path)
-        timestamp = str(int(round(time.time())))
-        os.rename(origPath, path + "/" + self.fileName + "." + timestamp)
+  
+        originalName = os.path.basename(origPath)
 
+        if originalName.count(".") == 1:
+            originalName += "." + str(uuid.uuid4())
+
+        zipped_file_name = path + "/" + originalName + ".gz"
+
+        with open(origPath, 'rb') as f_in, gzip.open(zipped_file_name, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        os.remove(origPath)
+
+        logging.debug("Processed file written to %s", zipped_file_name)
 
 class PrivateGatewayHack:
 
