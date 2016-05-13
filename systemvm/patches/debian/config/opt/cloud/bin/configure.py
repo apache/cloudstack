@@ -19,7 +19,7 @@
 import sys
 import base64
 
-from collections import OrderdDict
+from collections import OrderedDict
 
 import logging
 import re
