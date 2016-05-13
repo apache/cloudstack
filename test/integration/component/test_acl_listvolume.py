@@ -357,9 +357,9 @@ class TestVolumeList(cloudstackTestCase):
         cls.apiclient = super(TestVolumeList, cls).getClsTestClient().getApiClient()
         cls.apiclient.connection.apiKey = cls.default_apikey
         cls.apiclient.connection.securityKey = cls.default_secretkey
+        cleanup_resources(cls.apiclient, cls.cleanup)
         cls.domain_1.delete(cls.apiclient,cleanup="true")
         cls.domain_2.delete(cls.apiclient,cleanup="true")
-        cleanup_resources(cls.apiclient, cls.cleanup)
         return
 
     def setUp(cls):
