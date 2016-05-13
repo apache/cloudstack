@@ -245,7 +245,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     ClusterDetailsDao _clusterDetailsDao;
     @Inject
     StorageManager storageMgr;
-    
+
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -2451,7 +2451,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
 
             deviceId = getDeviceId(vm.getId(), deviceId);
-            
+
             DiskTO disk = null;
             if (volTO != null && volTO instanceof VolumeObjectTO) {
                 VolumeObjectTO volumeTO = (VolumeObjectTO) volTO;
