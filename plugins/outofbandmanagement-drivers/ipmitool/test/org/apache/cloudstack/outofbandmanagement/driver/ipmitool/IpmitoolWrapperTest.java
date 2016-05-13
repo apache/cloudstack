@@ -23,13 +23,11 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.collect.ImmutableMap;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
-import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverResponse;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -104,12 +102,5 @@ public class IpmitoolWrapperTest {
         Assert.assertEquals(IPMITOOL.findIpmiUser(usersList, "admin"), "1");
         Assert.assertEquals(IPMITOOL.findIpmiUser(usersList, "operator"), "2");
         Assert.assertEquals(IPMITOOL.findIpmiUser(usersList, "user"), "3");
-    }
-
-    @Test
-    public void testExecuteCommands() {
-        OutOfBandManagementDriverResponse r = IPMITOOL.executeCommands(Arrays.asList("ls", "/tmp"));
-        Assert.assertTrue(r.isSuccess());
-        Assert.assertTrue(r.getResult().length() > 0);
     }
 }
