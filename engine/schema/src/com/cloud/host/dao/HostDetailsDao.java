@@ -24,8 +24,6 @@ import com.cloud.utils.db.GenericDao;
 public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
     Map<String, String> findDetails(long hostId);
 
-    Map<Long, String> findDetails(String name);
-
     void persist(long hostId, Map<String, String> details);
 
     DetailVO findDetail(long hostId, String name);

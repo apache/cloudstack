@@ -186,7 +186,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             HostVO hostVO = getHost(volumeInfo.getId());
 
             boolean canStorageSystemCreateVolumeFromSnapshot = canStorageSystemCreateVolumeFromSnapshot(volumeInfo.getPoolId());
-            boolean computeClusterSupportsResign = clusterDao.computeWhetherClusterSupportsResigning(hostVO.getClusterId());
+            boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
 
             // if canStorageSystemCreateVolumeFromSnapshot && computeClusterSupportsResign, then take a back-end snapshot or create a back-end clone;
             // else, just create a new back-end volume (eventually used to create a new SR on and to copy a VDI to)
@@ -468,7 +468,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                     for (HostVO host : hosts) {
                         if (host.getResourceState() == ResourceState.Enabled) {
                             if (computeClusterMustSupportResign) {
-                                if (clusterDao.computeWhetherClusterSupportsResigning(cluster.getId())) {
+                                if (clusterDao.getSupportsResigning(cluster.getId())) {
                                     return Optional.of(host);
                                 }
                                 else {

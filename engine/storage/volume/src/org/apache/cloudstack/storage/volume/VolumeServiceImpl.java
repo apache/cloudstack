@@ -1093,7 +1093,7 @@ public class VolumeServiceImpl implements VolumeService {
                     for (HostVO host : hosts) {
                         if (host.getResourceState() == ResourceState.Enabled) {
                             if (computeClusterMustSupportResign) {
-                                if (clusterDao.computeWhetherClusterSupportsResigning(cluster.getId())) {
+                                if (clusterDao.getSupportsResigning(cluster.getId())) {
                                     return host;
                                 }
                                 else {

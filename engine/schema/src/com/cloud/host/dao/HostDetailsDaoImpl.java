@@ -37,7 +37,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements HostDetailsDao {
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;
-    protected final SearchBuilder<DetailVO> NameSearch;
 
     public HostDetailsDaoImpl() {
         HostSearch = createSearchBuilder();
@@ -48,10 +47,6 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         DetailSearch.and("hostId", DetailSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.done();
-
-        NameSearch = createSearchBuilder();
-        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        NameSearch.done();
     }
 
     @Override
@@ -82,27 +77,6 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
                 details.put(result.getName(), DBEncryptionUtil.decrypt(result.getValue()));
             } else {
                 details.put(result.getName(), result.getValue());
-            }
-        }
-
-        return details;
-    }
-
-    @Override
-    public Map<Long, String> findDetails(String name) {
-        SearchCriteria<DetailVO> sc = NameSearch.create();
-
-        sc.setParameters("name", name);
-
-        List<DetailVO> results = search(sc, null);
-
-        Map<Long, String> details = new HashMap<>(results.size());
-
-        for (DetailVO result : results) {
-            if ("password".equals(result.getName())) {
-                details.put(result.getHostId(), DBEncryptionUtil.decrypt(result.getValue()));
-            } else {
-                details.put(result.getHostId(), result.getValue());
             }
         }
 

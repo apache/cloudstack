@@ -1736,7 +1736,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (startup instanceof StartupRoutingCommand) {
             final StartupRoutingCommand ssCmd = (StartupRoutingCommand)startup;
 
-            updateHostDetails(host, ssCmd);
+            updateSupportsClonedVolumes(host, ssCmd.getSupportsClonedVolumes());
         }
 
         try {
@@ -1756,21 +1756,61 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return host;
     }
 
-    private void updateHostDetails(HostVO host, StartupRoutingCommand startupRoutingCmd) {
+    private void updateSupportsClonedVolumes(HostVO host, boolean supportsClonedVolumes) {
         final String name = "supportsResign";
-        final String value = String.valueOf(startupRoutingCmd.getSupportsClonedVolumes());
 
         DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), name);
 
         if (hostDetail != null) {
-            hostDetail.setValue(value);
+            if (supportsClonedVolumes) {
+                hostDetail.setValue(Boolean.TRUE.toString());
 
-            _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+                _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+            }
+            else {
+                _hostDetailsDao.remove(hostDetail.getId());
+            }
         }
         else {
-            hostDetail = new DetailVO(host.getId(), name, value);
+            if (supportsClonedVolumes) {
+                hostDetail = new DetailVO(host.getId(), name, Boolean.TRUE.toString());
 
-            _hostDetailsDao.persist(hostDetail);
+                _hostDetailsDao.persist(hostDetail);
+            }
+        }
+
+        boolean clusterSupportsResigning = true;
+
+        List<HostVO> hostVOs = _hostDao.findByClusterId(host.getClusterId());
+
+        for (HostVO hostVO : hostVOs) {
+            DetailVO hostDetailVO = _hostDetailsDao.findDetail(hostVO.getId(), name);
+
+            if (hostDetailVO == null || Boolean.parseBoolean(hostDetailVO.getValue()) == false) {
+                clusterSupportsResigning = false;
+
+                break;
+            }
+        }
+
+        ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(host.getClusterId(), name);
+
+        if (clusterDetailsVO != null) {
+            if (clusterSupportsResigning) {
+                clusterDetailsVO.setValue(Boolean.TRUE.toString());
+
+                _clusterDetailsDao.update(clusterDetailsVO.getId(), clusterDetailsVO);
+            }
+            else {
+                _clusterDetailsDao.remove(clusterDetailsVO.getId());
+            }
+        }
+        else {
+            if (clusterSupportsResigning) {
+                clusterDetailsVO = new ClusterDetailsVO(host.getClusterId(), name, Boolean.TRUE.toString());
+
+                _clusterDetailsDao.persist(clusterDetailsVO);
+            }
         }
     }
 

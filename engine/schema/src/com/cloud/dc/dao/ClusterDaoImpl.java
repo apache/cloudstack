@@ -28,11 +28,10 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.utils.db.GenericDaoBase;
@@ -60,9 +59,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
     @Inject
-    private HostDao hostDao;
-    @Inject
-    private HostDetailsDao hostDetailsDao;
+    private ClusterDetailsDao clusterDetailsDao;
     @Inject
     protected HostPodDao hostPodDao;
 
@@ -269,33 +266,21 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public boolean computeWhetherClusterSupportsResigning(long clusterId) {
+    public boolean getSupportsResigning(long clusterId) {
         ClusterVO cluster = findById(clusterId);
 
         if (cluster == null || cluster.getAllocationState() != Grouping.AllocationState.Enabled) {
             return false;
         }
 
-        List<HostVO> hosts = hostDao.findByClusterId(clusterId);
+        ClusterDetailsVO clusterDetailsVO = clusterDetailsDao.findDetail(clusterId, "supportsResign");
 
-        if (hosts == null) {
-            return false;
+        if (clusterDetailsVO != null) {
+            String value = clusterDetailsVO.getValue();
+
+            return Boolean.parseBoolean(value);
         }
 
-        Map<Long, String> mapSupportsResign = hostDetailsDao.findDetails("supportsResign");
-
-        for (HostVO host : hosts) {
-            if (host == null) {
-                return false;
-            }
-
-            String value = mapSupportsResign.get(host.getId());
-
-            if (Boolean.parseBoolean(value) == false) {
-                return false;
-            }
-        }
-
-        return true;
+        return false;
     }
 }

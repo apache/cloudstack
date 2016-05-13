@@ -291,7 +291,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         HostVO hostVO = getHost(snapshotInfo);
 
         boolean usingBackendSnapshot = usingBackendSnapshotFor(snapshotInfo);
-        boolean computeClusterSupportsResign = clusterDao.computeWhetherClusterSupportsResigning(hostVO.getClusterId());
+        boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
 
         if (usingBackendSnapshot && !computeClusterSupportsResign) {
             String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " + hostVO.getClusterId();
@@ -399,7 +399,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException("Unable to locate a host capable of resigning in the zone with the following ID: " + volumeInfo.getDataCenterId());
         }
 
-        boolean computeClusterSupportsResign = clusterDao.computeWhetherClusterSupportsResigning(hostVO.getClusterId());
+        boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
 
         if (!computeClusterSupportsResign) {
             String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " + hostVO.getClusterId();
@@ -467,7 +467,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             HostVO hostVO = getHost(snapshotInfo);
 
             boolean usingBackendSnapshot = usingBackendSnapshotFor(snapshotInfo);
-            boolean computeClusterSupportsResign = clusterDao.computeWhetherClusterSupportsResigning(hostVO.getClusterId());
+            boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
 
             if (usingBackendSnapshot && !computeClusterSupportsResign) {
                 String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " + hostVO.getClusterId();
@@ -711,7 +711,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                if (clusterDao.computeWhetherClusterSupportsResigning(clusterId)) {
+                if (clusterDao.getSupportsResigning(clusterId)) {
                     return host;
                 }
                 else {

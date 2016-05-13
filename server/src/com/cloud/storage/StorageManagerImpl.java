@@ -1751,7 +1751,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         // This next call leads to CloudStack asking how many more bytes it will need for the template (if the template is
                         // already stored on the primary storage, then the answer is 0).
 
-                        if (clusterId != null && _clusterDao.computeWhetherClusterSupportsResigning(clusterId)) {
+                        if (clusterId != null && _clusterDao.getSupportsResigning(clusterId)) {
                             totalAskingSize += getBytesRequiredForTemplate(tmpl, pool);
                         }
                     }
