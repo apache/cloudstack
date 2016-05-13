@@ -31,7 +31,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -121,7 +123,7 @@ public class DeploymentPlanningManagerImplTest {
     @Inject
     DataCenterDao _dcDao;
 
-    @Inject
+    @Mock
     FirstFitPlanner _planner;
 
     @Inject
@@ -140,6 +142,8 @@ public class DeploymentPlanningManagerImplTest {
 
     @Before
     public void testSetUp() {
+        MockitoAnnotations.initMocks(this);
+
         ComponentContext.initComponentsLifeCycle();
 
         PlannerHostReservationVO reservationVO = new PlannerHostReservationVO(200L, 1L, 2L, 3L, PlannerResourceUsage.Shared);
