@@ -961,24 +961,24 @@ def main(argv):
     config.address().compare()
     config.address().process()
 
-     databag_map = OrderedDict([("guest_network.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                                ("vm_password.json", {"process_iptables" : False, "executor" : CsPassword("vmpassword", config)}),
-                                ("vm_metadata.json", {"process_iptables" : False, "executor" : CsVmMetadata('vmdata', config)}),
-                                ("network_acl.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                                ("firewall_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                                ("forwarding_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                                ("staticnat_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                                ("site_2_site_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                                ("remote_access_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                                ("vpn_user_list.json", {"process_iptables" : False, "executor" : CsVpnUser("vpnuserlist", config)}),
-                                ("vm_dhcp_entry.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
-                                ("dhcp.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
-                                ("load_balancer.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                                ("monitor_service.json", {"process_iptables" : False, "executor" : CsMonitor("monitorservice", config)}),
-                                ("static_routes.json", {"process_iptables" : False, "executor" : CsStaticRoutes("staticroutes", config)})
-                                ])
+    databag_map = OrderedDict([("guest_network.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("vm_password.json", {"process_iptables" : False, "executor" : CsPassword("vmpassword", config)}),
+                               ("vm_metadata.json", {"process_iptables" : False, "executor" : CsVmMetadata('vmdata', config)}),
+                               ("network_acl.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("firewall_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("forwarding_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("staticnat_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("site_2_site_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("remote_access_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("vpn_user_list.json", {"process_iptables" : False, "executor" : CsVpnUser("vpnuserlist", config)}),
+                               ("vm_dhcp_entry.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
+                               ("dhcp.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
+                               ("load_balancer.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("monitor_service.json", {"process_iptables" : False, "executor" : CsMonitor("monitorservice", config)}),
+                               ("static_routes.json", {"process_iptables" : False, "executor" : CsStaticRoutes("staticroutes", config)})
+                               ])
  
-     if process_file.count("cmd_line.json") == OCCURRENCES:
+    if process_file.count("cmd_line.json") == OCCURRENCES:
          logging.debug("cmd_line.json changed. All other files will be processed as well.")
  
          while databag_map:
@@ -991,7 +991,7 @@ def main(argv):
  
          iptables_executor = IpTablesExecutor(config)
          iptables_executor.process()
-     else:
+    else:
          while databag_map:
              item = databag_map.popitem(last = False)
              item_name = item[0]
