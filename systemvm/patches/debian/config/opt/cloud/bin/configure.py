@@ -926,7 +926,7 @@ class IpTablesExecutor:
         lb.process()
 
         logging.debug("Configuring iptables rules")
-        nf = CsNetfilters(False)
+        nf = CsNetfilters(True)
         nf.compare(self.config.get_fw())
 
         logging.debug("Configuring iptables rules done ...saving rules")
@@ -961,50 +961,50 @@ def main(argv):
     config.address().compare()
     config.address().process()
 
-    databag_map = OrderedDict([("guest_network.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                               ("vm_password.json", {"process_iptables" : False, "executor" : CsPassword("vmpassword", config)}),
-                               ("vm_metadata.json", {"process_iptables" : False, "executor" : CsVmMetadata('vmdata', config)}),
-                               ("network_acl.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                               ("firewall_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                               ("forwarding_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                               ("staticnat_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                               ("site_2_site_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                               ("remote_access_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                               ("vpn_user_list.json", {"process_iptables" : False, "executor" : CsVpnUser("vpnuserlist", config)}),
-                               ("vm_dhcp_entry.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
-                               ("dhcp.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
-                               ("load_balancer.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
-                               ("monitor_service.json", {"process_iptables" : False, "executor" : CsMonitor("monitorservice", config)}),
-                               ("static_routes.json", {"process_iptables" : False, "executor" : CsStaticRoutes("staticroutes", config)})
-                               ])
-
-    if process_file.count("cmd_line.json") == OCCURRENCES:
-        logging.debug("cmd_line.json changed. All other files will be processed as well.")
-
-        while databag_map:
-            item = databag_map.popitem(last = False)
-            item_name = item[0]
-            item_dict = item[1]
-            if not item_dict["process_iptables"]:
-                executor = item_dict["executor"]
-                executor.process()
-
-        iptables_executor = IpTablesExecutor(config)
-        iptables_executor.process()
-    else:
-        while databag_map:
-            item = databag_map.popitem(last = False)
-            item_name = item[0]
-            item_dict = item[1]
-            if process_file.count(item_name) == OCCURRENCES:
-                executor = item_dict["executor"]
-                executor.process()
-
-                if item_dict["process_iptables"]:
-                    iptables_executor = IpTablesExecutor(config)
-                    iptables_executor.process()
-
-                break
+     databag_map = OrderedDict([("guest_network.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                                ("vm_password.json", {"process_iptables" : False, "executor" : CsPassword("vmpassword", config)}),
+                                ("vm_metadata.json", {"process_iptables" : False, "executor" : CsVmMetadata('vmdata', config)}),
+                                ("network_acl.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                                ("firewall_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                                ("forwarding_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                                ("staticnat_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                                ("site_2_site_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                                ("remote_access_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                                ("vpn_user_list.json", {"process_iptables" : False, "executor" : CsVpnUser("vpnuserlist", config)}),
+                                ("vm_dhcp_entry.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
+                                ("dhcp.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
+                                ("load_balancer.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                                ("monitor_service.json", {"process_iptables" : False, "executor" : CsMonitor("monitorservice", config)}),
+                                ("static_routes.json", {"process_iptables" : False, "executor" : CsStaticRoutes("staticroutes", config)})
+                                ])
+ 
+     if process_file.count("cmd_line.json") == OCCURRENCES:
+         logging.debug("cmd_line.json changed. All other files will be processed as well.")
+ 
+         while databag_map:
+             item = databag_map.popitem(last = False)
+             item_name = item[0]
+             item_dict = item[1]
+             if not item_dict["process_iptables"]:
+                 executor = item_dict["executor"]
+                 executor.process()
+ 
+         iptables_executor = IpTablesExecutor(config)
+         iptables_executor.process()
+     else:
+         while databag_map:
+             item = databag_map.popitem(last = False)
+             item_name = item[0]
+             item_dict = item[1]
+             if process_file.count(item_name) == OCCURRENCES:
+                 executor = item_dict["executor"]
+                 executor.process()
+ 
+                 if item_dict["process_iptables"]:
+                     iptables_executor = IpTablesExecutor(config)
+                     iptables_executor.process()
+ 
+                 break
 
     red = CsRedundant(config)
     red.set()
