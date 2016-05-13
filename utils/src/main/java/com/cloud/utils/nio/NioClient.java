@@ -36,16 +36,11 @@ public class NioClient extends NioConnection {
     private static final Logger s_logger = Logger.getLogger(NioClient.class);
 
     protected String _host;
-    protected String _bindAddress;
     protected SocketChannel _clientConnection;
 
     public NioClient(final String name, final String host, final int port, final int workers, final HandlerFactory factory) {
         super(name, port, workers, factory);
         _host = host;
-    }
-
-    public void setBindAddress(final String ipAddress) {
-        _bindAddress = ipAddress;
     }
 
     @Override
@@ -55,33 +50,25 @@ public class NioClient extends NioConnection {
 
         try {
             _clientConnection = SocketChannel.open();
-            _clientConnection.configureBlocking(true);
+
             s_logger.info("Connecting to " + _host + ":" + _port);
-
-            if (_bindAddress != null) {
-                s_logger.info("Binding outbound interface at " + _bindAddress);
-
-                final InetSocketAddress bindAddr = new InetSocketAddress(_bindAddress, 0);
-                _clientConnection.socket().bind(bindAddr);
-            }
-
             final InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
             _clientConnection.connect(peerAddr);
-
-            SSLEngine sslEngine = null;
-            // Begin SSL handshake in BLOCKING mode
-            _clientConnection.configureBlocking(true);
+            _clientConnection.configureBlocking(false);
 
             final SSLContext sslContext = Link.initSSLContext(true);
-            sslEngine = sslContext.createSSLEngine(_host, _port);
+            SSLEngine sslEngine = sslContext.createSSLEngine(_host, _port);
             sslEngine.setUseClientMode(true);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
-
-            Link.doHandshake(_clientConnection, sslEngine, true);
+            sslEngine.beginHandshake();
+            if (!Link.doHandshake(_clientConnection, sslEngine, true)) {
+                s_logger.error("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
+                _selector.close();
+                throw new IOException("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
+            }
             s_logger.info("SSL: Handshake done");
             s_logger.info("Connected to " + _host + ":" + _port);
 
-            _clientConnection.configureBlocking(false);
             final Link link = new Link(peerAddr, this);
             link.setSSLEngine(sslEngine);
             final SelectionKey key = _clientConnection.register(_selector, SelectionKey.OP_READ);
