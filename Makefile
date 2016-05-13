@@ -1,5 +1,5 @@
 test:
-	mvn -T16 clean install cobertura:cobertura
+	docker run --rm -vi ${CURDIR}:/repo qstack-cloudstack-build /bin/bash -c "cd /repo && MAVEN_OPTS='-Dmaven.repo.local=/repo/.m2' mvn -T16 install cobertura:cobertura"
 
 bash:
 	docker run --rm -vit ${CURDIR}:/repo qstack-cloudstack-build /bin/bash
