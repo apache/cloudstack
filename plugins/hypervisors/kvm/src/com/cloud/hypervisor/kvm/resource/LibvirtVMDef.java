@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -1209,25 +1210,95 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class VirtioSerialDef {
-        private final String _name;
-        private String _path;
+    public final static class ChannelDef {
+        enum ChannelType {
+            UNIX("unix"), SERIAL("serial");
+            String type;
 
-        public VirtioSerialDef(String name, String path) {
-            _name = name;
-            _path = path;
+            ChannelType(String type) {
+                this.type = type;
+            }
+
+            @Override
+            public String toString() {
+                return this.type;
+            }
+        }
+
+        enum ChannelState {
+            DISCONNECTED("disconnected"), CONNECTED("connected");
+            String type;
+
+            ChannelState(String type) {
+                this.type = type;
+            }
+
+            @Override
+            public String toString() {
+                return type;
+            }
+        }
+
+        private final String name;
+        private File path = new File("");
+        private final ChannelType type;
+        private ChannelState state;
+
+        public ChannelDef(String name, ChannelType type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, File path) {
+            this.name = name;
+            this.path = path;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state) {
+            this.name = name;
+            this.state = state;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state, File path) {
+            this.name = name;
+            this.path = path;
+            this.state = state;
+            this.type = type;
+        }
+
+        public ChannelType getChannelType() {
+            return type;
+        }
+
+        public ChannelState getChannelState() {
+            return state;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public File getPath() {
+            return path;
         }
 
         @Override
         public String toString() {
             StringBuilder virtioSerialBuilder = new StringBuilder();
-            if (_path == null) {
-                _path = "/var/lib/libvirt/qemu";
+            virtioSerialBuilder.append("<channel type='" + type.toString() + "'>\n");
+            if (path == null) {
+                virtioSerialBuilder.append("<source mode='bind'/>\n");
+            } else {
+                virtioSerialBuilder.append("<source mode='bind' path='" + path.toString() + "'/>\n");
             }
-            virtioSerialBuilder.append("<channel type='unix'>\n");
-            virtioSerialBuilder.append("<source mode='bind' path='" + _path + "/" + _name + ".agent'/>\n");
-            virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
             virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
+            if (state == null) {
+                virtioSerialBuilder.append("<target type='virtio' name='" + name + "'/>\n");
+            } else {
+                virtioSerialBuilder.append("<target type='virtio' name='" + name + "' state='" + state.toString() + "'/>\n");
+            }
             virtioSerialBuilder.append("</channel>\n");
             return virtioSerialBuilder.toString();
         }

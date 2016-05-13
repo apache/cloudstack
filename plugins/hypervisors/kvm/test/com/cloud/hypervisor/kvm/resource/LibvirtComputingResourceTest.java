@@ -150,6 +150,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
@@ -335,6 +336,19 @@ public class LibvirtComputingResourceTest {
         assertXpath(domainDoc, "/domain/devices/console/target/@port", "0");
         assertXpath(domainDoc, "/domain/devices/input/@type", "tablet");
         assertXpath(domainDoc, "/domain/devices/input/@bus", "usb");
+
+        assertNodeExists(domainDoc, "/domain/devices/channel");
+        assertXpath(domainDoc, "/domain/devices/channel/@type", ChannelDef.ChannelType.UNIX.toString());
+
+        /*
+           The configure() method of LibvirtComputingResource has not been called, so the default path for the sockets
+           hasn't been initialized. That's why we check for 'null'
+
+           Calling configure is also not possible since that looks for certain files on the system which are not present
+           during testing
+         */
+        assertXpath(domainDoc, "/domain/devices/channel/source/@path", "null/" + to.getName() + ".org.qemu.guest_agent.0");
+        assertXpath(domainDoc, "/domain/devices/channel/target/@name", "org.qemu.guest_agent.0");
 
         assertXpath(domainDoc, "/domain/memory/text()", String.valueOf( to.getMaxRam() / 1024 ));
         assertXpath(domainDoc, "/domain/currentMemory/text()", String.valueOf( to.getMinRam() / 1024 ));

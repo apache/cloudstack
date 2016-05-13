@@ -114,8 +114,14 @@ get_boot_params() {
           sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
      kvm)
-          if [ ! -e /dev/vport0p1 ]; then
-            log_it "/dev/vport0p1 not loaded, perhaps guest kernel is too old." && exit 2
+          VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
+
+          if [ -z "$VPORT" ]; then
+            log_it "No suitable VirtIO port was found in /dev/virtio-ports" && exit 2
+          fi
+
+          if [ ! -e "$VPORT" ]; then
+            log_it "${VPORT} not loaded, perhaps guest kernel is too old." && exit 2
           fi
 
 	      local factor=2
@@ -131,7 +137,7 @@ get_boot_params() {
 	            echo $pubkey > /var/cache/cloud/authorized_keys
 	            echo $pubkey > /root/.ssh/authorized_keys
               fi
-	        done < /dev/vport0p1
+	        done < $VPORT
 	        # In case of reboot we do not send the boot args again.
 	        # So, no need to wait for them, as the boot args are already set at startup
 	        if [ -s /var/cache/cloud/cmdline  ]
