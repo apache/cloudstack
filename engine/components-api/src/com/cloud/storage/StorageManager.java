@@ -23,6 +23,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -34,9 +35,11 @@ import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.service.ServiceOfferingVO;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public interface StorageManager extends StorageService {
@@ -116,13 +119,18 @@ public interface StorageManager extends StorageService {
 
     BigDecimal getStorageOverProvisioningFactor(Long dcId);
 
-    Long getDiskBytesReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskBytesReadRate(ServiceOffering offering, DiskOffering diskOffering);
 
-    Long getDiskBytesWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskBytesWriteRate(ServiceOffering offering, DiskOffering diskOffering);
 
-    Long getDiskIopsReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskIopsReadRate(ServiceOffering offering, DiskOffering diskOffering);
 
-    Long getDiskIopsWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskIopsWriteRate(ServiceOffering offering, DiskOffering diskOffering);
 
     void cleanupDownloadUrls();
+
+    void setDiskProfileThrottling(DiskProfile dskCh, ServiceOffering offering, DiskOffering diskOffering);
+
+    void setVolumeObjectTOThrottling(VolumeObjectTO volumeTO, ServiceOffering offering, DiskOffering diskOffering);
+
 }
