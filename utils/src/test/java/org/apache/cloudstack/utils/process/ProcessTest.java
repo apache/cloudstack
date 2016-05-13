@@ -39,10 +39,9 @@ public class ProcessTest {
 
     @Test
     public void testProcessRunner() {
-        ProcessResult result = RUNNER.executeCommands(Arrays.asList("ls", "/tmp"));
+        ProcessResult result = RUNNER.executeCommands(Arrays.asList("sleep", "0"));
         Assert.assertEquals(result.getReturnCode(), 0);
         Assert.assertTrue(Strings.isNullOrEmpty(result.getStdError()));
-        Assert.assertTrue(result.getStdOutput().length() > 0);
     }
 
     @Test

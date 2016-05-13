@@ -557,8 +557,13 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cmd = changeOutOfBandManagementPassword.changeOutOfBandManagementPasswordCmd()
         cmd.hostid = self.getHost().id
         cmd.password = "Password12345"
-        response = self.apiclient.changeOutOfBandManagementPassword(cmd)
-        self.assertEqual(response.status, True)
+        try:
+            response = self.apiclient.changeOutOfBandManagementPassword(cmd)
+            self.assertEqual(response.status, True)
+        except Exception as e:
+            if "packet session id 0x0 does not match active session" in str(e):
+                raise self.skipTest("Known ipmitool issue hit, skipping test")
+            raise e
 
         bmc = IpmiServerContext().bmc
         bmc.powerstate = 'on'
