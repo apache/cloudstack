@@ -129,6 +129,13 @@ class updateDataBag:
             dbag = self.process_vpnusers(self.db.getDataBag())
         elif self.qFile.type == 'staticroutes':
             dbag = self.process_staticroutes(self.db.getDataBag())
+        elif self.qFile.type == 'ipaliases':
+            self.db.setKey('ips')
+            self.db.load()
+            dbag = self.process_ipaliases(self.db.getDataBag())
+        elif self.qFile.type == 'dhcpconfig':
+            logging.error("I don't think I need %s anymore", self.qFile.type)
+            return
         else:
             logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
             return
@@ -231,6 +238,30 @@ class updateDataBag:
         cs_vmdata.merge(dbag, self.qFile.data)
         return dbag
 
+    def process_ipaliases(self, dbag):
+        nic_dev = None
+        # Should be a way to deal with this better
+        for intf, data in dbag.items():
+            if intf == 'id':
+                continue
+            elif any([net['nw_type'] == 'guest' for net in data]):
+                nic_dev = intf
+                break
+
+        assert nic_dev is not None, 'Unable to determine Guest interface'
+
+        nic_dev_id = nic_dev[3:]
+
+        for alias in self.qFile.data['aliases']:
+            ip = {
+                'add': not alias['revoke'],
+                'nw_type': 'guest',
+                'public_ip': alias['ip_address'],
+                'netmask': alias['netmask'],
+                'nic_dev_id': nic_dev_id
+            }
+            dbag = cs_ip.merge(dbag, ip)
+        return dbag
 
 class QueueFile:
 
