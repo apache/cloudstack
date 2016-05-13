@@ -52,13 +52,13 @@
   </repositories>
 
   <properties>
-    <cs.jdk.version>1.7</cs.jdk.version>
+    <cs.jdk.version>1.8</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <cs.log4j.version>1.2.17</cs.log4j.version>
     <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
-    <cs.cglib.version>3.2.1</cs.cglib.version>
+    <cs.cglib.version>3.2.2</cs.cglib.version>
     <cs.dbcp.version>1.4</cs.dbcp.version>
     <cs.pool.version>1.6</cs.pool.version>
     <cs.codec.version>1.10</cs.codec.version>
@@ -92,19 +92,19 @@
     <cs.rampart.version>1.5.1</cs.rampart.version>
     <cs.axiom.version>1.2.8</cs.axiom.version>
     <cs.neethi.version>2.0.4</cs.neethi.version>
-    <cs.servlet.version>2.5</cs.servlet.version>
+    <cs.servlet.version>3.1.0</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>6.0</cs.vmware.api.version>
-    <org.springframework.version>3.2.16.RELEASE</org.springframework.version>
+    <org.springframework.version>4.2.6.RELEASE</org.springframework.version>
     <cs.mockito.version>1.10.19</cs.mockito.version>
     <cs.powermock.version>1.6.4</cs.powermock.version>
-    <cs.aws.sdk.version>1.10.64</cs.aws.sdk.version>
+    <cs.aws.sdk.version>1.10.77</cs.aws.sdk.version>
     <cs.jackson.version>2.7.1</cs.jackson.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-lang3.version>3.4</cs.commons-lang3.version>
-    <cs.commons-io.version>2.4</cs.commons-io.version>
+    <cs.commons-io.version>2.5</cs.commons-io.version>
     <cs.commons-fileupload.version>1.3.1</cs.commons-fileupload.version>
     <cs.commons-collections.version>3.2.2</cs.commons-collections.version>
     <cs.commons-validator.version>1.5.0</cs.commons-validator.version>
@@ -125,10 +125,10 @@
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
     <cs.batik.version>1.8</cs.batik.version>
     <cs.servicemix.version>2.3.4_1</cs.servicemix.version>
-    <cs.jetty.version>9.2.15.v20160210</cs.jetty.version>
+    <cs.jetty.version>9.3.8.v20160314</cs.jetty.version>
+    <cs.apache-jsp.version>9.3.8.v20160314</cs.apache-jsp.version>
     <cs.cxf.version>3.1.4</cs.cxf.version>
     <cs.groovy.version>2.4.6</cs.groovy.version>
-    <cs.apache-jsp.version>9.2.15.v20160210</cs.apache-jsp.version>
     <cs.nitro.version>10.1</cs.nitro.version>
   </properties>
 
@@ -387,7 +387,7 @@
       </dependency>
       <dependency>
         <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
+        <artifactId>javax.servlet-api</artifactId>
         <version>${cs.servlet.version}</version>
       </dependency>
       <dependency>

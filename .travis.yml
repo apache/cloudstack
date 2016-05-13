@@ -21,7 +21,7 @@ cache:
   directories:
   - $HOME/.cache
 jdk:
-- oraclejdk7
+- oraclejdk8
 python:
   - "2.7"
 cache:

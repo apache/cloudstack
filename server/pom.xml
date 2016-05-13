@@ -44,7 +44,7 @@
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
-      <artifactId>servlet-api</artifactId>
+      <artifactId>javax.servlet-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -197,6 +197,7 @@
             <exclude>com/cloud/vpc/VpcTestConfiguration.java</exclude>
             <exclude>com/cloud/vpc/VpcApiUnitTest.java</exclude>
             <exclude>com/cloud/vpc/VpcManagerTest.java</exclude>
+            <exclude>com/cloud/vm/DeploymentPlanningManagerImplTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>
