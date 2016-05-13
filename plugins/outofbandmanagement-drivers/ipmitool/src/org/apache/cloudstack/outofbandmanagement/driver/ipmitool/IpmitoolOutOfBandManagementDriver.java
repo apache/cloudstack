@@ -17,6 +17,7 @@
 package org.apache.cloudstack.outofbandmanagement.driver.ipmitool;
 
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -24,6 +25,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementDriver;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverChangePasswordCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverPowerCommand;
@@ -33,20 +35,25 @@ import org.joda.time.Duration;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class IpmitoolOutOfBandManagementDriver extends AdapterBase implements OutOfBandManagementDriver, Configurable {
+public final class IpmitoolOutOfBandManagementDriver extends AdapterBase implements OutOfBandManagementDriver, Configurable {
     public static final Logger LOG = Logger.getLogger(IpmitoolOutOfBandManagementDriver.class);
 
     private static volatile boolean isDriverEnabled = false;
     private static boolean isIpmiToolBinAvailable = false;
 
-    ConfigKey<String> IpmiToolPath = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.path", "/usr/bin/ipmitool",
+    private final ExecutorService ipmitoolExecutor = Executors.newFixedThreadPool(OutOfBandManagementService.SyncThreadPoolSize.value(), new NamedThreadFactory("IpmiToolDriver"));
+    private final IpmitoolWrapper IPMITOOL = new IpmitoolWrapper(ipmitoolExecutor);
+
+    public final ConfigKey<String> IpmiToolPath = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.path", "/usr/bin/ipmitool",
             "The out of band management ipmitool path used by the IpmiTool driver. Default: /usr/bin/ipmitool.", true, ConfigKey.Scope.Global);
 
-    ConfigKey<String> IpmiToolInterface = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.interface", "lanplus",
+    public final ConfigKey<String> IpmiToolInterface = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.interface", "lanplus",
             "The out of band management IpmiTool driver interface to use. Default: lanplus. Valid values are: lan, lanplus, open etc.", true, ConfigKey.Scope.Global);
 
-    ConfigKey<String> IpmiToolRetries = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.retries", "1",
+    public final ConfigKey<String> IpmiToolRetries = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.retries", "1",
             "The out of band management IpmiTool driver retries option -R. Default 1.", true, ConfigKey.Scope.Global);
 
     private String getIpmiUserId(ImmutableMap<OutOfBandManagement.Option, String> options, final Duration timeOut) {
@@ -55,16 +62,16 @@ public class IpmitoolOutOfBandManagementDriver extends AdapterBase implements Ou
             throw new CloudRuntimeException("Empty IPMI user configured, cannot proceed to find user's ID");
         }
 
-        final List<String> ipmiToolCommands = IpmitoolWrapper.getIpmiToolCommandArgs(IpmiToolPath.value(),
+        final List<String> ipmiToolCommands = IPMITOOL.getIpmiToolCommandArgs(IpmiToolPath.value(),
                 IpmiToolInterface.value(),
                 IpmiToolRetries.value(),
                 options, "user", "list");
-        OutOfBandManagementDriverResponse output = IpmitoolWrapper.executeCommands(ipmiToolCommands, timeOut);
+        final OutOfBandManagementDriverResponse output = IPMITOOL.executeCommands(ipmiToolCommands, timeOut);
         if (!output.isSuccess()) {
             throw new CloudRuntimeException("Failed to find IPMI user to change password, error: " + output.getError());
         }
 
-        final String userId = IpmitoolWrapper.findIpmiUser(output.getResult(), username);
+        final String userId = IPMITOOL.findIpmiUser(output.getResult(), username);
         if (Strings.isNullOrEmpty(userId)) {
             throw new CloudRuntimeException("No IPMI user ID found for the username: " + username);
         }
@@ -97,30 +104,31 @@ public class IpmitoolOutOfBandManagementDriver extends AdapterBase implements Ou
     }
 
     private OutOfBandManagementDriverResponse execute(final OutOfBandManagementDriverPowerCommand cmd) {
-        List<String> ipmiToolCommands = IpmitoolWrapper.getIpmiToolCommandArgs(IpmiToolPath.value(),
+        List<String> ipmiToolCommands = IPMITOOL.getIpmiToolCommandArgs(IpmiToolPath.value(),
                 IpmiToolInterface.value(),
                 IpmiToolRetries.value(),
-                cmd.getOptions(), "chassis", "power", IpmitoolWrapper.parsePowerCommand(cmd.getPowerOperation()));
-        OutOfBandManagementDriverResponse response = IpmitoolWrapper.executeCommands(ipmiToolCommands, cmd.getTimeout());
+                cmd.getOptions(), "chassis", "power", IPMITOOL.parsePowerCommand(cmd.getPowerOperation()));
+
+        final OutOfBandManagementDriverResponse response = IPMITOOL.executeCommands(ipmiToolCommands, cmd.getTimeout());
 
         if (response.isSuccess() && cmd.getPowerOperation().equals(OutOfBandManagement.PowerOperation.STATUS)) {
-            response.setPowerState(IpmitoolWrapper.parsePowerState(response.getResult().trim()));
+            response.setPowerState(IPMITOOL.parsePowerState(response.getResult().trim()));
         }
         return response;
     }
 
     private OutOfBandManagementDriverResponse execute(final OutOfBandManagementDriverChangePasswordCommand cmd) {
-        String outOfBandManagementUserId = getIpmiUserId(cmd.getOptions(), cmd.getTimeout());
+        final String outOfBandManagementUserId = getIpmiUserId(cmd.getOptions(), cmd.getTimeout());
 
-        List<String> ipmiToolCommands = IpmitoolWrapper.getIpmiToolCommandArgs(IpmiToolPath.value(),
+        final List<String> ipmiToolCommands = IPMITOOL.getIpmiToolCommandArgs(IpmiToolPath.value(),
                 IpmiToolInterface.value(), IpmiToolRetries.value(),
                 cmd.getOptions(), "user", "set", "password", outOfBandManagementUserId, cmd.getNewPassword());
-        return IpmitoolWrapper.executeCommands(ipmiToolCommands, cmd.getTimeout());
+        return IPMITOOL.executeCommands(ipmiToolCommands, cmd.getTimeout());
     }
 
     private void initDriver() {
         isDriverEnabled = true;
-        OutOfBandManagementDriverResponse output = IpmitoolWrapper.executeCommands(Arrays.asList(IpmiToolPath.value(), "-V"), Duration.ZERO);
+        final OutOfBandManagementDriverResponse output = IPMITOOL.executeCommands(Arrays.asList(IpmiToolPath.value(), "-V"));
         if (output.isSuccess() && output.getResult().startsWith("ipmitool version")) {
             isIpmiToolBinAvailable = true;
             LOG.debug("OutOfBandManagementDriver ipmitool initialized: " + output.getResult());
@@ -142,6 +150,7 @@ public class IpmitoolOutOfBandManagementDriver extends AdapterBase implements Ou
 
     @Override
     public boolean stop() {
+        ipmitoolExecutor.shutdown();
         stopDriver();
         return true;
     }

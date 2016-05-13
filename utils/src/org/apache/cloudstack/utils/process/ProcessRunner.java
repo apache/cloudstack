@@ -19,43 +19,55 @@
 
 package org.apache.cloudstack.utils.process;
 
-import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.io.CharStreams;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class ProcessRunner {
+public final class ProcessRunner {
     public static final Logger LOG = Logger.getLogger(ProcessRunner.class);
 
-    private static final ExecutorService processExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("ProcessRunner"));
+    // Default maximum timeout of 5 minutes for any command
+    public static final Duration DEFAULT_MAX_TIMEOUT = new Duration(5 * 60 * 1000);
+    private final ExecutorService executor;
 
-    private static String readStream(final InputStream inputStream) throws IOException {
-        final StringBuilder sb = new StringBuilder();
-        final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        String line;
-        while ((line = bufferedReader.readLine()) != null) {
-            sb.append(line);
-            sb.append("\n");
-        }
-        return sb.toString();
+    public ProcessRunner(ExecutorService executor) {
+        this.executor = executor;
     }
 
-    public static ProcessResult executeCommands(final List<String> commands, final Duration timeOut) {
-        Preconditions.checkArgument(commands != null && timeOut != null);
+    /**
+     * Executes a process with provided list of commands with a max default timeout
+     * of 5 minutes
+     * @param commands list of string commands
+     * @return returns process result
+     */
+    public ProcessResult executeCommands(final List<String> commands) {
+        return executeCommands(commands, DEFAULT_MAX_TIMEOUT);
+    }
+
+    /**
+     * Executes a process with provided list of commands with a given timeout that is less
+     * than or equal to DEFAULT_MAX_TIMEOUT
+     * @param commands list of string commands
+     * @param timeOut timeout duration
+     * @return returns process result
+     */
+    public ProcessResult executeCommands(final List<String> commands, final Duration timeOut) {
+        Preconditions.checkArgument(commands != null && timeOut != null
+                && timeOut.getStandardSeconds() > 0L
+                && (timeOut.compareTo(DEFAULT_MAX_TIMEOUT) <= 0)
+                && executor != null);
 
         int retVal = -2;
         String stdOutput = null;
@@ -63,38 +75,32 @@ public class ProcessRunner {
 
         try {
             final Process process = new ProcessBuilder().command(commands).start();
-            if (timeOut.getStandardSeconds() > 0) {
-                final Future<Integer> processFuture = processExecutor.submit(new Callable<Integer>() {
-                    @Override
-                    public Integer call() throws Exception {
-                        return process.waitFor();
-                    }
-                });
-                try {
-                    retVal = processFuture.get(timeOut.getStandardSeconds(), TimeUnit.SECONDS);
-                } catch (ExecutionException e) {
-                    retVal = -1;
-                    stdError = e.getMessage();
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace("Failed to complete the requested command due to execution error: " + e.getMessage());
-                    }
-                } catch (TimeoutException e) {
-                    retVal = -1;
-                    stdError = "Operation timed out, aborted";
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace("Failed to complete the requested command within timeout: " + e.getMessage());
-                    }
-                } finally {
-                    if (Strings.isNullOrEmpty(stdError)) {
-                        stdOutput = readStream(process.getInputStream());
-                        stdError = readStream(process.getErrorStream());
-                    }
-                    process.destroy();
+            final Future<Integer> processFuture = executor.submit(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                    return process.waitFor();
                 }
-            } else {
-                retVal = process.waitFor();
-                stdOutput = readStream(process.getInputStream());
-                stdError = readStream(process.getErrorStream());
+            });
+            try {
+                retVal = processFuture.get(timeOut.getStandardSeconds(), TimeUnit.SECONDS);
+            } catch (ExecutionException e) {
+                retVal = -2;
+                stdError = e.getMessage();
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("Failed to complete the requested command due to execution error: " + e.getMessage());
+                }
+            } catch (TimeoutException e) {
+                retVal = -1;
+                stdError = "Operation timed out, aborted";
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("Failed to complete the requested command within timeout: " + e.getMessage());
+                }
+            } finally {
+                if (Strings.isNullOrEmpty(stdError)) {
+                    stdOutput = CharStreams.toString(new InputStreamReader(process.getInputStream()));
+                    stdError = CharStreams.toString(new InputStreamReader(process.getErrorStream()));
+                }
+                process.destroy();
             }
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Process standard output: " + stdOutput);

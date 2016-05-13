@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.utils.process;
 
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.google.common.base.Strings;
 import org.joda.time.Duration;
 import org.junit.Assert;
@@ -27,13 +28,18 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProcessTest {
 
+    private static final ExecutorService executor = Executors.newFixedThreadPool(10, new NamedThreadFactory("IpmiToolDriverTest"));
+    private static final ProcessRunner RUNNER = new ProcessRunner(executor);
+
     @Test
     public void testProcessRunner() {
-        ProcessResult result = ProcessRunner.executeCommands(Arrays.asList("ls", "/tmp"), Duration.ZERO);
+        ProcessResult result = RUNNER.executeCommands(Arrays.asList("ls", "/tmp"));
         Assert.assertEquals(result.getReturnCode(), 0);
         Assert.assertTrue(Strings.isNullOrEmpty(result.getStdError()));
         Assert.assertTrue(result.getStdOutput().length() > 0);
@@ -41,7 +47,7 @@ public class ProcessTest {
 
     @Test
     public void testProcessRunnerWithTimeout() {
-        ProcessResult result = ProcessRunner.executeCommands(Arrays.asList("sleep", "5"), Duration.standardSeconds(1));
+        ProcessResult result = RUNNER.executeCommands(Arrays.asList("sleep", "5"), Duration.standardSeconds(1));
         Assert.assertNotEquals(result.getReturnCode(), 0);
         Assert.assertTrue(result.getStdError().length() > 0);
         Assert.assertEquals(result.getStdError(), "Operation timed out, aborted");
@@ -49,9 +55,15 @@ public class ProcessTest {
 
     @Test
     public void testProcessRunnerWithTimeoutAndException() {
-        ProcessResult result = ProcessRunner.executeCommands(Arrays.asList("ls", "/some/dir/that/should/not/exist"), Duration.standardSeconds(2));
+        ProcessResult result = RUNNER.executeCommands(Arrays.asList("ls", "/some/dir/that/should/not/exist"), Duration.standardSeconds(2));
         Assert.assertNotEquals(result.getReturnCode(), 0);
         Assert.assertTrue(result.getStdError().length() > 0);
         Assert.assertNotEquals(result.getStdError(), "Operation timed out, aborted");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testProcessRunnerWithMoreThanMaxAllowedTimeout() {
+        RUNNER.executeCommands(Arrays.asList("ls", "/some/dir/that/should/not/exist"), ProcessRunner.DEFAULT_MAX_TIMEOUT.plus(1000));
+        Assert.fail("Illegal argument exception was expected");
     }
 }
