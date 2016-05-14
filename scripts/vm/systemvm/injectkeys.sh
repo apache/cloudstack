@@ -86,7 +86,7 @@ systemvmpath=$3
 command -v mkisofs > /dev/null   || (echo "$(basename $0): mkisofs not found, please install or ensure PATH is accurate" ; exit 4)
 
 # if running into Docker as unprivileges, skip ssh verification as iso cannot be mounted due to missing loop device.
-if [ -f /.dockerinit ]; then
+if [ -f /.dockerenv ]; then
   if [ -e /dev/loop0 ]; then
     # it's a docker instance with privileges.
     inject_into_iso systemvm.iso $newpubkey
