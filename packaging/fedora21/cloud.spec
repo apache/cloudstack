@@ -234,7 +234,6 @@ mkdir -p ${RPM_BUILD_ROOT}%{python_sitearch}/
 mkdir -p ${RPM_BUILD_ROOT}%/usr/bin
 cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D systemvm/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
-install -D systemvm/dist/systemvm.zip ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.zip
 install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
 python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
@@ -610,7 +609,6 @@ fi
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts
 %attr(0755,root,root) /usr/bin/cloudstack-sccs
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
-%attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.zip
 %attr(0644,root,root) %{python_sitearch}/cloud_utils.py
 %attr(0644,root,root) %{python_sitearch}/cloud_utils.pyc
 %attr(0644,root,root) %{python_sitearch}/cloudutils/*
