@@ -209,7 +209,7 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
+          <groupId>org.eclipse.jetty</groupId>
           <artifactId>servlet-api</artifactId>
         </exclusion>
       </exclusions>
@@ -468,7 +468,7 @@
           <stopPort>9966</stopPort>
           <stopKey>stop-jetty</stopKey>
           <connectors>
-            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+            <connector implementation="org.eclipse.jetty.nio.SelectChannelConnector">
               <port>8080</port>
               <maxIdleTime>60000</maxIdleTime>
             </connector>
@@ -477,9 +477,8 @@
           <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
-            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+            <extraClasspath>${project.build.directory}/conf;${project.build.directory}/../../setup/db/;${project.build.directory}/../../setup/db/db/</extraClasspath>
           </webAppConfig>
-          
           <systemProperties>
               <systemProperty>
                  <name>log4j.configuration</name>

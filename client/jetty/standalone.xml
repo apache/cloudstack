@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<assembly>
+  <id>standalone</id>
+  <formats>
+    <format>dir</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <baseDirectory></baseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>src/main/jetty/bin</directory>
+        <outputDirectory>/bin</outputDirectory>
+        <fileMode>755</fileMode>
+    </fileSet>
+  </fileSets>
+  <dependencySets>
+    <dependencySet>
+      <useProjectArtifact>false</useProjectArtifact>
+      <outputDirectory>/lib</outputDirectory>
+      <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+    </dependencySet>
+    <dependencySet>
+      <useProjectArtifact>true</useProjectArtifact>
+      <scope>runtime</scope>
+      <includes>
+        <include>org.eclipse.jetty:jetty-start:*</include>
+        </includes>
+      <outputDirectory>/bin</outputDirectory>
+      <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+    </dependencySet>
+  </dependencySets>
+</assembly>

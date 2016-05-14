@@ -87,6 +87,10 @@ override_dh_auto_install:
 	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management
 	install -D client/target/utilities/bin/cloud-update-xenserver-licenses $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
+
+	# WIP jetty support
+	cp -r client/jetty/target/cloudstack-jetty-standalone/* $(DESTDIR)/usr/share/$(PACKAGE)-management/
+
 	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
 	# This should all be in /etc/cloudstack/management
 	rm $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/WEB-INF/classes/*.*
