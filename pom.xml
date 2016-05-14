@@ -214,6 +214,7 @@
     <module>plugins</module>
     <module>framework</module>
     <module>client</module>
+    <module>client/jetty</module>
     <module>services</module>
     <module>maven-standard</module>
     <module>quickcloud</module>
@@ -831,6 +832,7 @@
               <exclude>**/.vagrant</exclude>
               <exclude>**/*.json</exclude>
               <exclude>build/build.number</exclude>
+              <exclude>client/jetty/standalone.xml</exclude>
               <exclude>services/console-proxy/server/js/jquery.js</exclude>
               <exclude>debian/compat</exclude>
               <exclude>debian/control</exclude>
