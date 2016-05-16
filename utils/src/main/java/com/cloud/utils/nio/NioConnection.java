@@ -171,6 +171,8 @@ public abstract class NioConnection implements Callable<Boolean> {
             } catch (final IOException e) {
                 s_logger.error("Agent will die due to this IOException!", e);
                 throw new NioConnectionException(e.getMessage(), e);
+            } finally {
+                _selector.wakeup();
             }
         }
         _isStartup = false;

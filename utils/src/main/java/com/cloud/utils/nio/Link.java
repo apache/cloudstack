@@ -615,10 +615,7 @@ public class Link {
                 case NEED_TASK:
                     Runnable task;
                     while ((task = sslEngine.getDelegatedTask()) != null) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("SSL: Running delegated task!");
-                        }
-                        task.run();
+                        new Thread(task).run();
                     }
                     break;
                 case FINISHED:
