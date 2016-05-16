@@ -617,7 +617,7 @@ public class Link {
                 case NEED_TASK:
                     Runnable task;
                     while ((task = sslEngine.getDelegatedTask()) != null) {
-                        new Thread(task).run();
+                        task.run();
                     }
                     break;
                 case FINISHED:

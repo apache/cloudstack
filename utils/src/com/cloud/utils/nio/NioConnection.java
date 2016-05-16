@@ -170,8 +170,6 @@ public abstract class NioConnection implements Runnable {
                 processTodos();
             } catch (Throwable e) {
                 s_logger.warn("Caught an exception but continuing on.", e);
-            } finally {
-                _selector.wakeup();
             }
         }
         synchronized (_thread) {
