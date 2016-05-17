@@ -32,7 +32,7 @@ NON_EXISTING_FILE = "must-not-exist"
 
 
 def write_key_file():
-    tmpfile = tempfile.mktemp(".sck")
+    _, tmpfile = tempfile.mkstemp(".sck")
     with open(tmpfile, "w") as f:
         f.write(KEY_DATA)
     return tmpfile
@@ -42,7 +42,8 @@ class SocketThread(threading.Thread):
     def __init__(self):
         super(SocketThread, self).__init__()
         self._data = ""
-        self._file = tempfile.mktemp(".sck")
+        self._folder = tempfile.mkdtemp(".sck")
+        self._file = os.path.join(self._folder, "socket")
         self._ready = False
 
     def data(self):
@@ -60,18 +61,21 @@ class SocketThread(threading.Thread):
         MAX_SIZE = 10 * 1024
 
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.bind(self._file)
-        s.listen(1)
-        s.settimeout(TIMEOUT)
         try:
-            self._ready = True
-            client, address = s.accept()
-            self._data = client.recv(MAX_SIZE)
-            client.close()
-        except socket.timeout:
-            pass
-        s.close()
-        os.remove(self._file)
+            s.bind(self._file)
+            s.listen(1)
+            s.settimeout(TIMEOUT)
+            try:
+                self._ready = True
+                client, address = s.accept()
+                self._data = client.recv(MAX_SIZE)
+                client.close()
+            except socket.timeout:
+                pass
+        finally:
+            s.close()
+            os.remove(self._file)
+            os.rmdir(self._folder)
 
 
 class TestPatchViaSocket(unittest.TestCase):
@@ -87,15 +91,6 @@ class TestPatchViaSocket(unittest.TestCase):
     def tearDown(self):
         os.remove(self._key_file)
         os.remove(self._unreadable)
-
-    def test_read_file(self):
-        pub_key = patchviasocket.read_pub_key(self._key_file)
-        self.assertEqual(KEY_DATA, pub_key)
-
-    def test_read_file_error(self):
-        self.assertIsNone(patchviasocket.read_pub_key(NON_EXISTING_FILE))
-        self.assertIsNone(patchviasocket.read_pub_key(self._unreadable))
-        self.assertIsNone(patchviasocket.read_pub_key("/tmp"))              # folder is not a file
 
     def test_write_to_socket(self):
         reader = SocketThread()
@@ -114,6 +109,13 @@ class TestPatchViaSocket(unittest.TestCase):
         reader.start()
         reader.wait_until_ready()
         self.assertEquals(1, patchviasocket.send_to_socket(reader.file(), NON_EXISTING_FILE, CMD_DATA))
+        reader.join()   # timeout
+
+    def test_host_key_access_denied(self):
+        reader = SocketThread()
+        reader.start()
+        reader.wait_until_ready()
+        self.assertEquals(1, patchviasocket.send_to_socket(reader.file(), self._unreadable, CMD_DATA))
         reader.join()   # timeout
 
     def test_nonexistant_socket_error(self):

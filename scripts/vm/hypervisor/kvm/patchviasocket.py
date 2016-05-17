@@ -31,20 +31,16 @@ PUB_KEY_FILE = "/root/.ssh/id_rsa.pub.cloud"
 MESSAGE = "pubkey:{key}\ncmdline:{cmdline}\n"
 
 
-def read_pub_key(key_file):
-    try:
-        if os.path.isfile(key_file):
-            with open(key_file, "r") as f:
-                return f.read()
-    except IOError:
-        return None
-
-
 def send_to_socket(sock_file, key_file, cmdline):
-    pub_key = read_pub_key(key_file)
-
-    if not pub_key:
+    if not os.path.exists(key_file):
         print("ERROR: ssh public key not found on host at {0}".format(key_file))
+        return 1
+
+    try:
+        with open(key_file, "r") as f:
+            pub_key = f.read()
+    except IOError as e:
+        print("ERROR: unable to open {0} - {1}".format(key_file, e.strerror))
         return 1
 
     # Keep old substitution from perl code:
