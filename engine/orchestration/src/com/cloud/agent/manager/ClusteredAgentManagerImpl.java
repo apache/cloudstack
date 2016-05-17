@@ -499,7 +499,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 SocketChannel ch1 = null;
                 try {
                     ch1 = SocketChannel.open(new InetSocketAddress(addr, Port.value()));
-                    ch1.configureBlocking(false);
+                    ch1.configureBlocking(true); // make sure we are working at blocking mode
                     ch1.socket().setKeepAlive(true);
                     ch1.socket().setSoTimeout(60 * 1000);
                     try {
@@ -507,11 +507,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         sslEngine = sslContext.createSSLEngine(ip, Port.value());
                         sslEngine.setUseClientMode(true);
                         sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
-                        sslEngine.beginHandshake();
-                        if (!Link.doHandshake(ch1, sslEngine, true)) {
-                            ch1.close();
-                            throw new IOException("SSL handshake failed!");
-                        }
+
+                        Link.doHandshake(ch1, sslEngine, true);
                         s_logger.info("SSL: Handshake done");
                     } catch (final Exception e) {
                         ch1.close();

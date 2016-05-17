@@ -19,7 +19,14 @@
 
 package com.cloud.utils.testcase;
 
-import com.cloud.utils.concurrency.NamedThreadFactory;
+import java.nio.channels.ClosedChannelException;
+import java.util.Random;
+
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
 import com.cloud.utils.exception.NioConnectionException;
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
@@ -27,206 +34,131 @@ import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.nio.Task.Type;
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
- * NioTest demonstrates that NioServer can function without getting its main IO
- * loop blocked when an aggressive or malicious client connects to the server but
- * fail to participate in SSL handshake. In this test, we run bunch of clients
- * that send a known payload to the server, to which multiple malicious clients
- * also try to connect and hang.
- * A malicious client could cause denial-of-service if the server's main IO loop
- * along with SSL handshake was blocking. A passing tests shows that NioServer
- * can still function in case of connection load and that the main IO loop along
- * with SSL handshake is non-blocking with some internal timeout mechanism.
+ *
+ *
+ *
+ *
  */
 
-public class NioTest {
+public class NioTest extends TestCase {
 
-    private static final Logger LOGGER = Logger.getLogger(NioTest.class);
+    private static final Logger s_logger = Logger.getLogger(NioTest.class);
 
-    // Test should fail in due time instead of looping forever
-    private static final int TESTTIMEOUT = 60000;
+    private NioServer _server;
+    private NioClient _client;
 
-    final private int totalTestCount = 4;
-    private int completedTestCount = 0;
+    private Link _clientLink;
 
-    private NioServer server;
-    private List<NioClient> clients = new ArrayList<>();
-    private List<NioClient> maliciousClients = new ArrayList<>();
-
-    private ExecutorService clientExecutor = Executors.newFixedThreadPool(totalTestCount, new NamedThreadFactory("NioClientHandler"));;
-    private ExecutorService maliciousExecutor = Executors.newFixedThreadPool(totalTestCount, new NamedThreadFactory("MaliciousNioClientHandler"));;
-
-    private Random randomGenerator = new Random();
-    private byte[] testBytes;
+    private int _testCount;
+    private int _completedCount;
 
     private boolean isTestsDone() {
         boolean result;
         synchronized (this) {
-            result = totalTestCount == completedTestCount;
+            result = _testCount == _completedCount;
         }
         return result;
     }
 
+    private void getOneMoreTest() {
+        synchronized (this) {
+            _testCount++;
+        }
+    }
+
     private void oneMoreTestDone() {
         synchronized (this) {
-            completedTestCount++;
+            _completedCount++;
         }
     }
 
-    @Before
+    @Override
     public void setUp() {
-        LOGGER.info("Setting up Benchmark Test");
+        s_logger.info("Test");
 
-        completedTestCount = 0;
-        testBytes = new byte[1000000];
-        randomGenerator.nextBytes(testBytes);
+        _testCount = 0;
+        _completedCount = 0;
 
-        server = new NioServer("NioTestServer", 0, 1, new NioTestServer());
+        _server = new NioServer("NioTestServer", 7777, 5, new NioTestServer());
         try {
-            server.start();
+            _server.start();
         } catch (final NioConnectionException e) {
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
 
-        /**
-         * The malicious client(s) tries to block NioServer's main IO loop
-         * thread until SSL handshake timeout value (from Link class, 15s) after
-         * which the valid NioClient(s) get the opportunity to make connection(s)
-         */
-        for (int i = 0; i < totalTestCount; i++) {
-            final NioClient maliciousClient = new NioMaliciousClient("NioMaliciousTestClient-" + i, "127.0.0.1", server.getPort(), 1, new NioMaliciousTestClient());
-            maliciousClients.add(maliciousClient);
-            maliciousExecutor.submit(new ThreadedNioClient(maliciousClient));
+        _client = new NioClient("NioTestServer", "127.0.0.1", 7777, 5, new NioTestClient());
+        try {
+            _client.start();
+        } catch (final NioConnectionException e) {
+            fail(e.getMessage());
         }
 
-        for (int i = 0; i < totalTestCount; i++) {
-            final NioClient client = new NioClient("NioTestClient-" + i, "127.0.0.1", server.getPort(), 1, new NioTestClient());
-            clients.add(client);
-            clientExecutor.submit(new ThreadedNioClient(client));
+        while (_clientLink == null) {
+            try {
+                s_logger.debug("Link is not up! Waiting ...");
+                Thread.sleep(1000);
+            } catch (final InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 
-    @After
+    @Override
     public void tearDown() {
+        while (!isTestsDone()) {
+            try {
+                s_logger.debug(_completedCount + "/" + _testCount + " tests done. Waiting for completion");
+                Thread.sleep(1000);
+            } catch (final InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
         stopClient();
         stopServer();
     }
 
     protected void stopClient() {
-        for (NioClient client : clients) {
-            client.stop();
-        }
-        for (NioClient maliciousClient : maliciousClients) {
-            maliciousClient.stop();
-        }
-        LOGGER.info("Clients stopped.");
+        _client.stop();
+        s_logger.info("Client stopped.");
     }
 
     protected void stopServer() {
-        server.stop();
-        LOGGER.info("Server stopped.");
+        _server.stop();
+        s_logger.info("Server stopped.");
     }
 
-    @Test(timeout=TESTTIMEOUT)
+    protected void setClientLink(final Link link) {
+        _clientLink = link;
+    }
+
+    Random randomGenerator = new Random();
+
+    byte[] _testBytes;
+
     public void testConnection() {
-        while (!isTestsDone()) {
-            try {
-                LOGGER.debug(completedTestCount + "/" + totalTestCount + " tests done. Waiting for completion");
-                Thread.sleep(1000);
-            } catch (final InterruptedException e) {
-                Assert.fail(e.getMessage());
-            }
+        _testBytes = new byte[1000000];
+        randomGenerator.nextBytes(_testBytes);
+        try {
+            getOneMoreTest();
+            _clientLink.send(_testBytes);
+            s_logger.info("Client: Data sent");
+            getOneMoreTest();
+            _clientLink.send(_testBytes);
+            s_logger.info("Client: Data sent");
+        } catch (final ClosedChannelException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-        LOGGER.debug(completedTestCount + "/" + totalTestCount + " tests done.");
     }
 
     protected void doServerProcess(final byte[] data) {
         oneMoreTestDone();
-        Assert.assertArrayEquals(testBytes, data);
-        LOGGER.info("Verify data received by server done.");
-    }
-
-    public byte[] getTestBytes() {
-        return testBytes;
-    }
-
-    public class ThreadedNioClient implements Runnable {
-        final private NioClient client;
-        ThreadedNioClient(final NioClient client) {
-            this.client = client;
-        }
-
-        @Override
-        public void run() {
-            try {
-                client.start();
-            } catch (NioConnectionException e) {
-                Assert.fail(e.getMessage());
-            }
-        }
-    }
-
-    public class NioMaliciousClient extends NioClient {
-
-        public NioMaliciousClient(String name, String host, int port, int workers, HandlerFactory factory) {
-            super(name, host, port, workers, factory);
-        }
-
-        @Override
-        protected void init() throws IOException {
-            _selector = Selector.open();
-            try {
-                _clientConnection = SocketChannel.open();
-                LOGGER.info("Connecting to " + _host + ":" + _port);
-                final InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
-                _clientConnection.connect(peerAddr);
-                // This is done on purpose, the malicious client would connect
-                // to the server and then do nothing, hence using a large sleep value
-                Thread.sleep(Long.MAX_VALUE);
-            } catch (final IOException e) {
-                _selector.close();
-                throw e;
-            } catch (InterruptedException e) {
-                LOGGER.debug(e.getMessage());
-            }
-        }
-    }
-
-    public class NioMaliciousTestClient implements HandlerFactory {
-
-        @Override
-        public Task create(final Type type, final Link link, final byte[] data) {
-            return new NioMaliciousTestClientHandler(type, link, data);
-        }
-
-        public class NioMaliciousTestClientHandler extends Task {
-
-            public NioMaliciousTestClientHandler(final Type type, final Link link, final byte[] data) {
-                super(type, link, data);
-            }
-
-            @Override
-            public void doTask(final Task task) {
-                LOGGER.info("Malicious Client: Received task " + task.getType().toString());
-            }
-        }
+        Assert.assertArrayEquals(_testBytes, data);
+        s_logger.info("Verify done.");
     }
 
     public class NioTestClient implements HandlerFactory {
@@ -245,23 +177,18 @@ public class NioTest {
             @Override
             public void doTask(final Task task) {
                 if (task.getType() == Task.Type.CONNECT) {
-                    LOGGER.info("Client: Received CONNECT task");
-                    try {
-                        LOGGER.info("Sending data to server");
-                        task.getLink().send(getTestBytes());
-                    } catch (ClosedChannelException e) {
-                        LOGGER.error(e.getMessage());
-                        e.printStackTrace();
-                    }
+                    s_logger.info("Client: Received CONNECT task");
+                    setClientLink(task.getLink());
                 } else if (task.getType() == Task.Type.DATA) {
-                    LOGGER.info("Client: Received DATA task");
+                    s_logger.info("Client: Received DATA task");
                 } else if (task.getType() == Task.Type.DISCONNECT) {
-                    LOGGER.info("Client: Received DISCONNECT task");
+                    s_logger.info("Client: Received DISCONNECT task");
                     stopClient();
                 } else if (task.getType() == Task.Type.OTHER) {
-                    LOGGER.info("Client: Received OTHER task");
+                    s_logger.info("Client: Received OTHER task");
                 }
             }
+
         }
     }
 
@@ -281,17 +208,18 @@ public class NioTest {
             @Override
             public void doTask(final Task task) {
                 if (task.getType() == Task.Type.CONNECT) {
-                    LOGGER.info("Server: Received CONNECT task");
+                    s_logger.info("Server: Received CONNECT task");
                 } else if (task.getType() == Task.Type.DATA) {
-                    LOGGER.info("Server: Received DATA task");
+                    s_logger.info("Server: Received DATA task");
                     doServerProcess(task.getData());
                 } else if (task.getType() == Task.Type.DISCONNECT) {
-                    LOGGER.info("Server: Received DISCONNECT task");
+                    s_logger.info("Server: Received DISCONNECT task");
                     stopServer();
                 } else if (task.getType() == Task.Type.OTHER) {
-                    LOGGER.info("Server: Received OTHER task");
+                    s_logger.info("Server: Received OTHER task");
                 }
             }
+
         }
     }
 }
