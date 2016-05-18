@@ -1598,6 +1598,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (isRedundant) {
             buf.append(" redundant_router=1");
 
+            final int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
+            buf.append(" advert_int=").append(advertInt);
+
             final Long vpcId = router.getVpcId();
             final List<DomainRouterVO> routers;
             if (vpcId != null) {
