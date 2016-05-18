@@ -18,6 +18,7 @@
 package com.cloud.vm.snapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -603,9 +604,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         _accountMgr.checkAccess(caller, null, true, vmSnapshot);
 
-        // check VM snapshot states, only allow to delete vm snapshots in created and error state
-        if (VMSnapshot.State.Ready != vmSnapshot.getState() && VMSnapshot.State.Expunging != vmSnapshot.getState() && VMSnapshot.State.Error != vmSnapshot.getState()) {
-            throw new InvalidParameterValueException("Can't delete the vm snapshotshot " + vmSnapshotId + " due to it is not in Created or Error, or Expunging State");
+        List<VMSnapshot.State> validStates = Arrays.asList(VMSnapshot.State.Ready, VMSnapshot.State.Expunging, VMSnapshot.State.Error, VMSnapshot.State.Allocated);
+        // check VM snapshot states, only allow to delete vm snapshots in ready, expunging, allocated and error state
+        if (!validStates.contains(vmSnapshot.getState())) {
+            throw new InvalidParameterValueException("Can't delete the vm snapshot " + vmSnapshotId + " due to it is not in " + validStates.toString()  + "States");
         }
 
         // check if there are other active VM snapshot tasks
