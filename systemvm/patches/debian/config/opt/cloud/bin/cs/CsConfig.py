@@ -82,7 +82,10 @@ class CsConfig(object):
         conf = self.cmdline().idata()
         dns = []
         if not self.use_extdns():
-            dns.append(self.address().get_guest_ip())
+            if not self.is_vpc() and self.cl.is_redundant() and self.cl.get_guest_gw():
+                dns.append(self.cl.get_guest_gw())
+            else:
+                dns.append(self.address().get_guest_ip())
 
         for name in ('dns1', 'dns2'):
             if name in conf:
