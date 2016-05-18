@@ -41,11 +41,10 @@ class CsApache(CsApp):
             CsHelper.service("apache2", "restart")
 
     def setup(self):
-        CsHelper.copy_if_needed("/etc/apache2/vhostexample.conf",
+        CsHelper.copy_if_needed("/etc/apache2/vhost.template",
                                 "/etc/apache2/sites-enabled/vhost-%s.conf" % self.ip)
 
         file = CsFile("/etc/apache2/sites-enabled/vhost-%s.conf" % (self.ip))
-        file.search("<VirtualHost.*:80>", "\t<VirtualHost %s:80>" % (self.ip))
         file.search("<VirtualHost.*:80>", "\t<VirtualHost %s:80>" % (self.ip))
         file.search("<VirtualHost.*:443>", "\t<VirtualHost %s:443>" % (self.ip))
         file.search("Listen .*:80", "Listen %s:80" % (self.ip))
@@ -58,6 +57,11 @@ class CsApache(CsApp):
         self.fw.append([
             "", "front",
             "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
+        ])
+
+        self.fw.append([
+            "", "front",
+            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 443 -j ACCEPT" % (self.dev, self.ip)
         ])
 
 
