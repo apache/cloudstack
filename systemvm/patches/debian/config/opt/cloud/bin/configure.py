@@ -17,16 +17,27 @@
 # specific language governing permissions and limitations
 # under the License.
 import sys
+import os
 import base64
 
+from merge import DataBag
+from pprint import pprint
+import subprocess
+import logging
 import re
+import time
+import shutil
+import os.path
+import os
 from fcntl import flock, LOCK_EX, LOCK_UN
 
-from cs.CsDatabag import CsDataBag
+from cs.CsDatabag import CsDataBag, CsCmdLine
+import cs.CsHelper
 from cs.CsNetfilter import CsNetfilters
 from cs.CsDhcp import CsDhcp
 from cs.CsRedundant import *
 from cs.CsFile import CsFile
+from cs.CsApp import CsApache, CsDnsmasq
 from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
 from cs.CsConfig import CsConfig
@@ -197,23 +208,7 @@ class CsAcl(CsDataBag):
 
         def process(self, direction, rule_list, base):
             count = base
-            rule_list_splitted = []
-            for rule in rule_list:
-                if ',' in rule['cidr']:
-                    cidrs = rule['cidr'].split(',')
-                    for cidr in cidrs:
-                        new_rule = {
-                            'cidr': cidr,
-                            'last_port': rule['last_port'],
-                            'type': rule['type'],
-                            'first_port': rule['first_port'],
-                            'allowed': rule['allowed']
-                        }
-                        rule_list_splitted.append(new_rule)
-                else:
-                    rule_list_splitted.append(rule)
-
-            for i in rule_list_splitted:
+            for i in rule_list:
                 r = self.AclRule(direction, self, i, self.config, count)
                 r.create()
                 count += 1
@@ -266,7 +261,7 @@ class CsAcl(CsDataBag):
                     rstr = "%s -m icmp --icmp-type %s" % (rstr, self.icmp_type)
                 rstr = "%s %s -j %s" % (rstr, self.dport, self.action)
                 rstr = rstr.replace("  ", " ").lstrip()
-                self.fw.append([self.table, "", rstr])
+                self.fw.append([self.table, self.count, rstr])
 
     def process(self):
         for item in self.dbag:
@@ -480,7 +475,7 @@ class CsSite2SiteVpn(CsDataBag):
         self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
         self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
         self.fw.append(["", "front", "-A INPUT -i %s -p esp -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
-        self.fw.append(["nat", "front", "-A POSTROUTING -o %s -m mark --mark 0x525 -j ACCEPT" % dev])
+        self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s -m mark --mark 0x525 -j ACCEPT" % dev])
         for net in obj['peer_guest_cidr_list'].lstrip().rstrip().split(','):
             self.fw.append(["mangle", "front",
                             "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
@@ -796,7 +791,7 @@ class CsForwardingRules(CsDataBag):
                 rule['internal_ip'],
                 internal_fwports
               )
-        fw4 = "-A POSTROUTING -j SNAT --to-source %s -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
+        fw4 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
               (
                 self.getGuestIp(),
                 self.getNetworkByIp(rule['internal_ip']),
@@ -991,7 +986,7 @@ def main(argv):
         lb.process()
 
         logging.debug("Configuring iptables rules")
-        nf = CsNetfilters(False)
+        nf = CsNetfilters()
         nf.compare(config.get_fw())
 
         logging.debug("Configuring iptables rules done ...saving rules")
