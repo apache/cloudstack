@@ -130,7 +130,7 @@ public abstract class NioConnection implements Runnable {
 
         while (_isRunning) {
             try {
-                _selector.select();
+                _selector.select(1000);
 
                 // Someone is ready for I/O, get the ready keys
                 Set<SelectionKey> readyKeys = _selector.selectedKeys();
