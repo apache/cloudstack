@@ -156,7 +156,6 @@ public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Lon
             sc.setParameters("roleId", roleId);
         }
         final Filter searchBySorted = new Filter(RolePermissionVO.class, "sortOrder", true, null, null);
-        searchBySorted.addOrderBy(RolePermissionVO.class, "id", true);
         final List<RolePermissionVO> rolePermissionList = listBy(sc, searchBySorted);
         if (rolePermissionList == null) {
             return Collections.emptyList();
