@@ -20,8 +20,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -38,6 +36,7 @@ import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -111,7 +110,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
         }
     }
 
-    public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
+    public void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
         /*
          * CreateCmdResult result = null; CreateObjectAnswer volAnswer =
          * (CreateObjectAnswer) callback.getResult(); if (volAnswer.getResult())
@@ -121,7 +120,6 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
          *
          * context.getParentCallback().complete(result);
          */
-        return null;
     }
 
     @Override
@@ -138,14 +136,13 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
          */
     }
 
-    public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcContext<CommandResult> context) {
+    public void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcContext<CommandResult> context) {
         CommandResult result = new CommandResult();
         Answer answer = callback.getResult();
         if (!answer.getResult()) {
             result.setResult(answer.getDetails());
         }
         context.getParentCallback().complete(result);
-        return null;
     }
 
     /*

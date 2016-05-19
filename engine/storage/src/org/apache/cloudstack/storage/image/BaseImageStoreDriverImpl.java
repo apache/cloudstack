@@ -141,7 +141,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
-    protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
+    protected void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
         CreateContext<CreateCmdResult> context) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Performing image store createTemplate async callback");
@@ -156,7 +156,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
-                return null;
             }
             TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
             updateBuilder.setDownloadPercent(answer.getDownloadPct());
@@ -196,11 +195,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
         }
-        return null;
     }
 
-    protected Void
-        createVolumeAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback, CreateContext<CreateCmdResult> context) {
+    protected void createVolumeAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback, CreateContext<CreateCmdResult> context) {
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
@@ -211,7 +208,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Volume is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
-                return null;
             }
             VolumeDataStoreVO updateBuilder = _volumeStoreDao.createForUpdate();
             updateBuilder.setDownloadPercent(answer.getDownloadPct());
@@ -246,7 +242,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
         }
-        return null;
     }
 
     @Override

@@ -122,7 +122,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     }
 
-    protected Void createSnapshotAsyncCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> callback, CreateSnapshotContext<CreateCmdResult> context) {
+    protected void createSnapshotAsyncCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> callback, CreateSnapshotContext<CreateCmdResult> context) {
         CreateCmdResult result = callback.getResult();
         SnapshotObject snapshot = (SnapshotObject)context.snapshot;
         AsyncCallFuture<SnapshotResult> future = context.future;
@@ -138,9 +138,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
             snapResult.setResult(result.getResult());
             future.complete(snapResult);
-            return null;
         }
-
         try {
             snapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
             snapshot.processEvent(Snapshot.Event.OperationSucceeded);
@@ -153,9 +151,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 s_logger.debug("Failed to change snapshot state: " + e1.toString());
             }
         }
-
         future.complete(snapResult);
-        return null;
     }
 
     @Override
@@ -296,7 +292,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     }
 
-    protected Void copySnapshotAsyncCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> callback, CopySnapshotContext<CommandResult> context) {
+    protected void copySnapshotAsyncCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> callback, CopySnapshotContext<CommandResult> context) {
         CopyCommandResult result = callback.getResult();
         SnapshotInfo destSnapshot = context.destSnapshot;
         SnapshotObject srcSnapshot = (SnapshotObject)context.srcSnapshot;
@@ -316,9 +312,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             }
             snapResult.setResult(result.getResult());
             future.complete(snapResult);
-            return null;
         }
-
         try {
             CopyCmdAnswer copyCmdAnswer = (CopyCmdAnswer)result.getAnswer();
             destSnapshot.processEvent(Event.OperationSuccessed, copyCmdAnswer);
@@ -330,11 +324,9 @@ public class SnapshotServiceImpl implements SnapshotService {
             snapResult.setResult(e.toString());
             future.complete(snapResult);
         }
-        return null;
     }
 
-    protected Void deleteSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback, DeleteSnapshotContext<CommandResult> context) {
-
+    protected void deleteSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback, DeleteSnapshotContext<CommandResult> context) {
         CommandResult result = callback.getResult();
         AsyncCallFuture<SnapshotResult> future = context.future;
         SnapshotInfo snapshot = context.snapshot;
@@ -354,11 +346,9 @@ public class SnapshotServiceImpl implements SnapshotService {
             res.setResult(e.toString());
         }
         future.complete(res);
-        return null;
     }
 
-    protected Void revertSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback, RevertSnapshotContext<CommandResult> context) {
-
+    protected void revertSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback, RevertSnapshotContext<CommandResult> context) {
         CommandResult result = callback.getResult();
         AsyncCallFuture<SnapshotResult> future = context.future;
         SnapshotResult res = null;
@@ -375,7 +365,6 @@ public class SnapshotServiceImpl implements SnapshotService {
             res.setResult(e.toString());
         }
         future.complete(res);
-        return null;
     }
 
     @Override
@@ -523,12 +512,11 @@ public class SnapshotServiceImpl implements SnapshotService {
         return future;
     }
 
-    protected Void syncSnapshotCallBack(AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> callback,
+    protected void syncSnapshotCallBack(AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> callback,
             CopySnapshotContext<CommandResult> context) {
         CopyCommandResult result = callback.getResult();
         SnapshotInfo destSnapshot = context.destSnapshot;
         SnapshotResult res = new SnapshotResult(destSnapshot, null);
-
         AsyncCallFuture<SnapshotResult> future = context.future;
         try {
             if (result.isFailed()) {
@@ -544,7 +532,5 @@ public class SnapshotServiceImpl implements SnapshotService {
             res.setResult(e.toString());
             future.complete(res);
         }
-
-        return null;
     }
 }

@@ -166,16 +166,14 @@ public class DataObjectManagerImpl implements DataObjectManager {
         return;
     }
 
-    protected Void createAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CreateCmdResult> callback, CreateContext<CreateCmdResult> context) {
+    protected void createAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CreateCmdResult> callback, CreateContext<CreateCmdResult> context) {
         CreateCmdResult result = callback.getResult();
         DataObject objInStrore = context.objInStrore;
         CreateCmdResult upResult = new CreateCmdResult(null, null);
         if (result.isFailed()) {
             upResult.setResult(result.getResult());
             context.getParentCallback().complete(upResult);
-            return null;
         }
-
         try {
             objectInDataStoreMgr.update(objInStrore, ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (NoTransitionException e) {
@@ -184,24 +182,18 @@ public class DataObjectManagerImpl implements DataObjectManager {
             } catch (Exception e1) {
                 s_logger.debug("failed to change state", e1);
             }
-
             upResult.setResult(e.toString());
             context.getParentCallback().complete(upResult);
-            return null;
         } catch (ConcurrentOperationException e) {
             try {
                 objectInDataStoreMgr.update(objInStrore, ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (Exception e1) {
                 s_logger.debug("failed to change state", e1);
             }
-
             upResult.setResult(e.toString());
             context.getParentCallback().complete(upResult);
-            return null;
         }
-
         context.getParentCallback().complete(result);
-        return null;
     }
 
     class CopyContext<T> extends AsyncRpcContext<T> {
@@ -248,10 +240,9 @@ public class DataObjectManagerImpl implements DataObjectManager {
         motionSrv.copyAsync(srcData, destData, caller);
     }
 
-    protected Void copyCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CopyCommandResult> callback, CopyContext<CreateCmdResult> context) {
+    protected void copyCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CopyCommandResult> callback, CopyContext<CreateCmdResult> context) {
         CopyCommandResult result = callback.getResult();
         DataObject destObj = context.destObj;
-
         if (result.isFailed()) {
             try {
                 objectInDataStoreMgr.update(destObj, Event.OperationFailed);
@@ -264,7 +255,6 @@ public class DataObjectManagerImpl implements DataObjectManager {
             res.setResult(result.getResult());
             context.getParentCallback().complete(res);
         }
-
         try {
             objectInDataStoreMgr.update(destObj, ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (NoTransitionException e) {
@@ -290,7 +280,6 @@ public class DataObjectManagerImpl implements DataObjectManager {
         }
         CreateCmdResult res = new CreateCmdResult(result.getPath(), null);
         context.getParentCallback().complete(res);
-        return null;
     }
 
     class DeleteContext<T> extends AsyncRpcContext<T> {
@@ -325,9 +314,8 @@ public class DataObjectManagerImpl implements DataObjectManager {
         return;
     }
 
-    protected Void deleteAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CommandResult> callback, DeleteContext<CommandResult> context) {
+    protected void deleteAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CommandResult> callback, DeleteContext<CommandResult> context) {
         DataObject destObj = context.obj;
-
         CommandResult res = callback.getResult();
         if (res.isFailed()) {
             try {
@@ -337,7 +325,6 @@ public class DataObjectManagerImpl implements DataObjectManager {
             } catch (ConcurrentOperationException e) {
                 s_logger.debug("delete failed", e);
             }
-
         } else {
             try {
                 objectInDataStoreMgr.update(destObj, Event.OperationSuccessed);
@@ -347,9 +334,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
                 s_logger.debug("delete failed", e);
             }
         }
-
         context.getParentCallback().complete(res);
-        return null;
     }
 
     @Override
