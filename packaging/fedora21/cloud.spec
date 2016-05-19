@@ -395,6 +395,13 @@ if [ -d "%{_sysconfdir}/cloud" ] ; then
     mv %{_sysconfdir}/cloud %{_sysconfdir}/cloud.rpmsave
 fi
 
+# in case of upgrade to 4.9+ copy commands.properties if not exists in /etc/cloudstack/management/
+if [ "$1" == "2" ] ; then
+    if [ -f "%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/commands.properties" ] && [ ! -f "%{_sysconfdir}/%{name}/management/commands.properties" ] ; then
+        cp -p %{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/commands.properties %{_sysconfdir}/%{name}/management/commands.properties
+    fi
+fi
+
 %post management
 if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add cloudstack-management > /dev/null 2>&1 || true

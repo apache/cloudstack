@@ -352,6 +352,13 @@ id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged us
 
 rm -rf %{_localstatedir}/cache/cloudstack
 
+# in case of upgrade to 4.9+ copy commands.properties if not exists in /etc/cloudstack/management/
+if [ "$1" == "2" ] ; then
+    if [ -f "%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/commands.properties" ] && [ ! -f "%{_sysconfdir}/%{name}/management/commands.properties" ] ; then
+        cp -p %{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/commands.properties %{_sysconfdir}/%{name}/management/commands.properties
+    fi
+fi
+
 %post management
 if [ "$1" == "1" ] ; then
     /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
