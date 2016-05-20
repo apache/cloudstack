@@ -27,6 +27,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Matchers.eq;
 
 import java.util.ArrayList;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +47,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
@@ -55,15 +58,21 @@ import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(CopyCommand.class)
+@PrepareForTest({CopyCommand.class, DatacenterMO.class, VmwareResource.class})
 public class VmwareResourceTest {
+
+    private static final String VOLUME_PATH = "XXXXXXXXXXXX";
 
     @Mock
     VmwareStorageProcessor storageProcessor;
@@ -110,6 +119,12 @@ public class VmwareResourceTest {
     DataTO srcDataTO;
     @Mock
     NfsTO srcDataNfsTO;
+    @Mock
+    VolumeTO volume;
+    @Mock
+    ManagedObjectReference mor;
+    @Mock
+    DatacenterMO datacenter;
 
     CopyCommand storageCmd;
 
@@ -128,6 +143,7 @@ public class VmwareResourceTest {
         when(srcDataTO.getDataStore()).thenReturn(srcDataNfsTO);
         when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION);
         when(videoCard.getVideoRamSizeInKB()).thenReturn(VIDEO_CARD_MEMORY_SIZE);
+        when(volume.getPath()).thenReturn(VOLUME_PATH);
     }
 
     //Test successful scaling up the vm
@@ -258,4 +274,19 @@ public class VmwareResourceTest {
         verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(storageCmd);
     }
 
+    @Test(expected=CloudRuntimeException.class)
+    public void testFindVmOnDatacenterNullHyperHostReference() throws Exception {
+        when(hyperHost.getMor()).thenReturn(null);
+        _resource.findVmOnDatacenter(context, hyperHost, volume);
+    }
+
+    @Test
+    public void testFindVmOnDatacenter() throws Exception {
+        when(hyperHost.getHyperHostDatacenter()).thenReturn(mor);
+        when(datacenter.getMor()).thenReturn(mor);
+        when(datacenter.findVm(VOLUME_PATH)).thenReturn(vmMo);
+        whenNew(DatacenterMO.class).withArguments(context, mor).thenReturn(datacenter);
+        VirtualMachineMO result = _resource.findVmOnDatacenter(context, hyperHost, volume);
+        assertEquals(vmMo, result);
+    }
 }
