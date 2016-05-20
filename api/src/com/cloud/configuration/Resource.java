@@ -71,6 +71,15 @@ public interface Resource {
         public int getOrdinal() {
             return ordinal;
         }
+
+        public static ResourceType fromOrdinal(int ordinal) {
+            for (ResourceType r : ResourceType.values()) {
+                if (r.ordinal == ordinal) {
+                    return r;
+                }
+            }
+            return null;
+        }
     }
 
     public static class ResourceOwnerType {

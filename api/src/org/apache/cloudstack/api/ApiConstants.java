@@ -216,6 +216,7 @@ public class ApiConstants {
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_TYPE = "resourcetype";
+    public static final String RESOURCE_TYPE_NAME = "resourcetypename";
     public static final String RESPONSE = "response";
     public static final String REVERTABLE = "revertable";
     public static final String REGISTERED = "registered";
