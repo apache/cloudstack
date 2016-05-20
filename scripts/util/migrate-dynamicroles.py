@@ -25,9 +25,9 @@ from contextlib import closing
 from optparse import OptionParser
 
 try:
-    import MySQLdb
+    import mysql.connector
 except ImportError:
-    print("MySQLdb cannot be imported, please install python-mysqldb(apt) or mysql-python(yum)")
+    print("mysql.connector cannot be imported, please install mysql-connector-python")
     sys.exit(1)
 
 dryrun = False
@@ -82,7 +82,7 @@ def main():
     if options.dryrun:
         dryrun = True
 
-    conn = MySQLdb.connect(
+    conn = mysql.connector.connect(
             host=options.host,
             user=options.user,
             passwd=options.password,
