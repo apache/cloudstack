@@ -16,14 +16,16 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
@@ -38,11 +40,15 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import org.springframework.stereotype.Component;
+
+import com.google.common.base.Optional;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -71,18 +77,18 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     private static final Logger s_logger = Logger.getLogger(StorageSystemSnapshotStrategy.class);
 
-    @Inject private AgentManager _agentMgr;
-    @Inject private DataStoreManager _dataStoreMgr;
-    @Inject private HostDao _hostDao;
-    @Inject private ManagementService _mgr;
-    @Inject private PrimaryDataStoreDao _storagePoolDao;
-    @Inject private SnapshotDao _snapshotDao;
-    @Inject private SnapshotDataFactory _snapshotDataFactory;
-    @Inject private SnapshotDataStoreDao _snapshotStoreDao;
-    @Inject private SnapshotDetailsDao _snapshotDetailsDao;
-    @Inject private VMInstanceDao _vmInstanceDao;
-    @Inject private VolumeDao _volumeDao;
-    @Inject private VolumeService _volService;
+    @Inject private AgentManager agentMgr;
+    @Inject private ClusterDao clusterDao;
+    @Inject private DataStoreManager dataStoreMgr;
+    @Inject private HostDao hostDao;
+    @Inject private ManagementService mgr;
+    @Inject private PrimaryDataStoreDao storagePoolDao;
+    @Inject private SnapshotDao snapshotDao;
+    @Inject private SnapshotDataFactory snapshotDataFactory;
+    @Inject private SnapshotDetailsDao snapshotDetailsDao;
+    @Inject private VMInstanceDao vmInstanceDao;
+    @Inject private VolumeDao volumeDao;
+    @Inject private VolumeService volService;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshotInfo) {
@@ -91,14 +97,14 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public boolean deleteSnapshot(Long snapshotId) {
-        SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
+        SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
 
         if (Snapshot.State.Destroyed.equals(snapshotVO.getState())) {
             return true;
         }
 
         if (Snapshot.State.Error.equals(snapshotVO.getState())) {
-            _snapshotDao.remove(snapshotId);
+            snapshotDao.remove(snapshotId);
 
             return true;
         }
@@ -107,12 +113,12 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             throw new InvalidParameterValueException("Unable to delete snapshotshot " + snapshotId + " because it is in the following state: " + snapshotVO.getState());
         }
 
-        SnapshotObject snapshotObj = (SnapshotObject)_snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
 
         if (snapshotObj == null) {
             s_logger.debug("Can't find snapshot; deleting it in DB");
 
-            _snapshotDao.remove(snapshotId);
+            snapshotDao.remove(snapshotId);
 
             return true;
         }
@@ -165,7 +171,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             throw new CloudRuntimeException("Only the " + ImageFormat.VHD.toString() + " image type is currently supported.");
         }
 
-        SnapshotVO snapshotVO = _snapshotDao.acquireInLockTable(snapshotInfo.getId());
+        SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshotInfo.getId());
 
         if (snapshotVO == null) {
             throw new CloudRuntimeException("Failed to acquire lock on the following snapshot: " + snapshotInfo.getId());
@@ -176,7 +182,24 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         try {
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
 
-            // tell the storage driver to create a back-end volume (eventually used to create a new SR on and to copy the VM snapshot VDI to)
+            // only XenServer is currently supported
+            HostVO hostVO = getHost(volumeInfo.getId());
+
+            boolean canStorageSystemCreateVolumeFromSnapshot = canStorageSystemCreateVolumeFromSnapshot(volumeInfo.getPoolId());
+            boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
+
+            // if canStorageSystemCreateVolumeFromSnapshot && computeClusterSupportsResign, then take a back-end snapshot or create a back-end clone;
+            // else, just create a new back-end volume (eventually used to create a new SR on and to copy a VDI to)
+
+            if (canStorageSystemCreateVolumeFromSnapshot && computeClusterSupportsResign) {
+                SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(snapshotInfo.getId(),
+                    "takeSnapshot",
+                    Boolean.TRUE.toString(),
+                    false);
+
+                snapshotDetailsDao.persist(snapshotDetail);
+            }
+
             result = snapshotSvr.takeSnapshot(snapshotInfo);
 
             if (result.isFailed()) {
@@ -185,9 +208,9 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 throw new CloudRuntimeException(result.getResult());
             }
 
-            // send a command to XenServer to create a VM snapshot on the applicable SR (get back the VDI UUID of the VM snapshot)
-
-            performSnapshotAndCopyOnHostSide(volumeInfo, snapshotInfo);
+            if (!canStorageSystemCreateVolumeFromSnapshot || !computeClusterSupportsResign) {
+                performSnapshotAndCopyOnHostSide(volumeInfo, snapshotInfo);
+            }
 
             markAsBackedUp((SnapshotObject)result.getSnashot());
         }
@@ -199,19 +222,35 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 volumeInfo.stateTransit(Volume.Event.OperationFailed);
             }
 
-            _snapshotDao.releaseFromLockTable(snapshotInfo.getId());
+            snapshotDao.releaseFromLockTable(snapshotInfo.getId());
         }
 
         return snapshotInfo;
     }
 
+    private boolean canStorageSystemCreateVolumeFromSnapshot(long storagePoolId) {
+        boolean supportsCloningVolumeFromSnapshot = false;
+
+        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+
+        if (mapCapabilities != null) {
+            String value = mapCapabilities.get(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString());
+
+            supportsCloningVolumeFromSnapshot = Boolean.valueOf(value);
+        }
+
+        return supportsCloningVolumeFromSnapshot;
+    }
+
     private void performSnapshotAndCopyOnHostSide(VolumeInfo volumeInfo, SnapshotInfo snapshotInfo) {
         Map<String, String> sourceDetails = null;
 
-        VolumeVO volumeVO = _volumeDao.findById(volumeInfo.getId());
+        VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
 
         Long vmInstanceId = volumeVO.getInstanceId();
-        VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vmInstanceId);
+        VMInstanceVO vmInstanceVO = vmInstanceDao.findById(vmInstanceId);
 
         Long hostId = null;
 
@@ -233,11 +272,30 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             sourceDetails = getSourceDetails(volumeInfo);
         }
 
-        HostVO hostVO = getHost(hostId, volumeVO);
+        HostVO hostVO = null;
+
+        if (hostId != null) {
+            hostVO = hostDao.findById(hostId);
+        }
+        else {
+            Optional<HostVO> optHostVO = getHost(volumeInfo.getDataCenterId(), false);
+
+            if (optHostVO.isPresent()) {
+                hostVO = optHostVO.get();
+            }
+        }
+
+        if (hostVO == null) {
+            final String errMsg = "Unable to locate an applicable host";
+
+            s_logger.error("performSnapshotAndCopyOnHostSide: " + errMsg);
+
+            throw new CloudRuntimeException(errMsg);
+        }
 
         long storagePoolId = volumeVO.getPoolId();
-        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
-        DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
+        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> destDetails = getDestDetails(storagePoolVO, snapshotInfo);
 
@@ -248,23 +306,23 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         try {
             // if sourceDetails != null, we need to connect the host(s) to the volume
             if (sourceDetails != null) {
-                _volService.grantAccess(volumeInfo, hostVO, dataStore);
+                volService.grantAccess(volumeInfo, hostVO, dataStore);
             }
 
-            _volService.grantAccess(snapshotInfo, hostVO, dataStore);
+            volService.grantAccess(snapshotInfo, hostVO, dataStore);
 
-            snapshotAndCopyAnswer = (SnapshotAndCopyAnswer)_agentMgr.send(hostVO.getId(), snapshotAndCopyCommand);
+            snapshotAndCopyAnswer = (SnapshotAndCopyAnswer)agentMgr.send(hostVO.getId(), snapshotAndCopyCommand);
         }
         catch (Exception ex) {
             throw new CloudRuntimeException(ex.getMessage());
         }
         finally {
             try {
-                _volService.revokeAccess(snapshotInfo, hostVO, dataStore);
+                volService.revokeAccess(snapshotInfo, hostVO, dataStore);
 
                 // if sourceDetails != null, we need to disconnect the host(s) from the volume
                 if (sourceDetails != null) {
-                    _volService.revokeAccess(volumeInfo, hostVO, dataStore);
+                    volService.revokeAccess(volumeInfo, hostVO, dataStore);
                 }
             }
             catch (Exception ex) {
@@ -292,22 +350,22 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 path,
                 false);
 
-        _snapshotDetailsDao.persist(snapshotDetail);
+        snapshotDetailsDao.persist(snapshotDetail);
     }
 
     private Map<String, String> getSourceDetails(VolumeInfo volumeInfo) {
-        Map<String, String> sourceDetails = new HashMap<String, String>();
+        Map<String, String> sourceDetails = new HashMap<>();
 
-        VolumeVO volumeVO = _volumeDao.findById(volumeInfo.getId());
+        VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
 
         long storagePoolId = volumeVO.getPoolId();
-        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+        StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
 
         sourceDetails.put(DiskTO.STORAGE_HOST, storagePoolVO.getHostAddress());
         sourceDetails.put(DiskTO.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
         sourceDetails.put(DiskTO.IQN, volumeVO.get_iScsiName());
 
-        ChapInfo chapInfo = _volService.getChapInfo(volumeInfo, volumeInfo.getDataStore());
+        ChapInfo chapInfo = volService.getChapInfo(volumeInfo, volumeInfo.getDataStore());
 
         if (chapInfo != null) {
             sourceDetails.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());
@@ -320,7 +378,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     private Map<String, String> getDestDetails(StoragePoolVO storagePoolVO, SnapshotInfo snapshotInfo) {
-        Map<String, String> destDetails = new HashMap<String, String>();
+        Map<String, String> destDetails = new HashMap<>();
 
         destDetails.put(DiskTO.STORAGE_HOST, storagePoolVO.getHostAddress());
         destDetails.put(DiskTO.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
@@ -338,7 +396,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     private String getProperty(long snapshotId, String property) {
-        SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, property);
+        SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(snapshotId, property);
 
         if (snapshotDetails != null) {
             return snapshotDetails.getValue();
@@ -347,38 +405,87 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         return null;
     }
 
-    private HostVO getHost(Long hostId, VolumeVO volumeVO) {
-        HostVO hostVO = _hostDao.findById(hostId);
+    private HostVO getHost(long volumeId) {
+        VolumeVO volumeVO = volumeDao.findById(volumeId);
+
+        Long vmInstanceId = volumeVO.getInstanceId();
+        VMInstanceVO vmInstanceVO = vmInstanceDao.findById(vmInstanceId);
+
+        Long hostId = null;
+
+        // if the volume to snapshot is associated with a VM
+        if (vmInstanceVO != null) {
+            hostId = vmInstanceVO.getHostId();
+
+            // if the VM is not associated with a host
+            if (hostId == null) {
+                hostId = vmInstanceVO.getLastHostId();
+            }
+        }
+
+        return getHost(volumeVO.getDataCenterId(), hostId);
+    }
+
+    private HostVO getHost(long zoneId, Long hostId) {
+        Optional<HostVO> optHostVO = getHost(zoneId, true);
+
+        if (optHostVO.isPresent()) {
+            return optHostVO.get();
+        }
+
+        HostVO hostVO = hostDao.findById(hostId);
 
         if (hostVO != null) {
             return hostVO;
         }
 
-        // pick a host in any XenServer cluster that's in the applicable zone
+        optHostVO = getHost(zoneId, false);
 
-        long zoneId = volumeVO.getDataCenterId();
-
-        List<? extends Cluster> clusters = _mgr.searchForClusters(zoneId, new Long(0), Long.MAX_VALUE, HypervisorType.XenServer.toString());
-
-        if (clusters == null) {
-            throw new CloudRuntimeException("Unable to locate an applicable cluster");
+        if (optHostVO.isPresent()) {
+            return optHostVO.get();
         }
 
+        throw new CloudRuntimeException("Unable to locate an applicable host");
+    }
+
+    private Optional<HostVO> getHost(long zoneId, boolean computeClusterMustSupportResign) {
+        List<? extends Cluster> clusters = mgr.searchForClusters(zoneId, 0L, Long.MAX_VALUE, HypervisorType.XenServer.toString());
+
+        if (clusters == null) {
+            clusters = new ArrayList<>();
+        }
+
+        Collections.shuffle(clusters, new Random(System.nanoTime()));
+
+        clusters:
         for (Cluster cluster : clusters) {
             if (cluster.getAllocationState() == AllocationState.Enabled) {
-                List<HostVO> hosts = _hostDao.findByClusterId(cluster.getId());
+                List<HostVO> hosts = hostDao.findByClusterId(cluster.getId());
 
                 if (hosts != null) {
+                    Collections.shuffle(hosts, new Random(System.nanoTime()));
+
                     for (HostVO host : hosts) {
                         if (host.getResourceState() == ResourceState.Enabled) {
-                            return host;
+                            if (computeClusterMustSupportResign) {
+                                if (clusterDao.getSupportsResigning(cluster.getId())) {
+                                    return Optional.of(host);
+                                }
+                                else {
+                                    // no other host in the cluster in question should be able to satisfy our requirements here, so move on to the next cluster
+                                    continue clusters;
+                                }
+                            }
+                            else {
+                                return Optional.of(host);
+                            }
                         }
                     }
                 }
             }
         }
 
-        throw new CloudRuntimeException("Unable to locate an applicable cluster");
+        return Optional.absent();
     }
 
     private void markAsBackedUp(SnapshotObject snapshotObj) {
@@ -406,18 +513,18 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         long volumeId = snapshot.getVolumeId();
 
-        VolumeVO volumeVO = _volumeDao.findByIdIncludingRemoved(volumeId);
+        VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
 
         long storagePoolId = volumeVO.getPoolId();
 
-        DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         if (dataStore != null) {
             Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
 
             if (mapCapabilities != null) {
                 String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-                Boolean supportsStorageSystemSnapshots = new Boolean(value);
+                Boolean supportsStorageSystemSnapshots = Boolean.valueOf(value);
 
                 if (supportsStorageSystemSnapshots) {
                     return StrategyPriority.HIGHEST;

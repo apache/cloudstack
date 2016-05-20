@@ -1734,6 +1734,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             _hostDao.update(host.getId(), host);
         }
 
+        if (startup instanceof StartupRoutingCommand) {
+            final StartupRoutingCommand ssCmd = (StartupRoutingCommand)startup;
+
+            updateSupportsClonedVolumes(host, ssCmd.getSupportsClonedVolumes());
+        }
+
         try {
             resourceStateTransitTo(host, ResourceState.Event.InternalCreated, _nodeId);
             /* Agent goes to Connecting status */
@@ -1749,6 +1755,64 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return host;
+    }
+
+    private void updateSupportsClonedVolumes(HostVO host, boolean supportsClonedVolumes) {
+        final String name = "supportsResign";
+
+        DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), name);
+
+        if (hostDetail != null) {
+            if (supportsClonedVolumes) {
+                hostDetail.setValue(Boolean.TRUE.toString());
+
+                _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+            }
+            else {
+                _hostDetailsDao.remove(hostDetail.getId());
+            }
+        }
+        else {
+            if (supportsClonedVolumes) {
+                hostDetail = new DetailVO(host.getId(), name, Boolean.TRUE.toString());
+
+                _hostDetailsDao.persist(hostDetail);
+            }
+        }
+
+        boolean clusterSupportsResigning = true;
+
+        List<HostVO> hostVOs = _hostDao.findByClusterId(host.getClusterId());
+
+        for (HostVO hostVO : hostVOs) {
+            DetailVO hostDetailVO = _hostDetailsDao.findDetail(hostVO.getId(), name);
+
+            if (hostDetailVO == null || Boolean.parseBoolean(hostDetailVO.getValue()) == false) {
+                clusterSupportsResigning = false;
+
+                break;
+            }
+        }
+
+        ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(host.getClusterId(), name);
+
+        if (clusterDetailsVO != null) {
+            if (clusterSupportsResigning) {
+                clusterDetailsVO.setValue(Boolean.TRUE.toString());
+
+                _clusterDetailsDao.update(clusterDetailsVO.getId(), clusterDetailsVO);
+            }
+            else {
+                _clusterDetailsDao.remove(clusterDetailsVO.getId());
+            }
+        }
+        else {
+            if (clusterSupportsResigning) {
+                clusterDetailsVO = new ClusterDetailsVO(host.getClusterId(), name, Boolean.TRUE.toString());
+
+                _clusterDetailsDao.persist(clusterDetailsVO);
+            }
+        }
     }
 
     private boolean isFirstHostInCluster(final HostVO host) {

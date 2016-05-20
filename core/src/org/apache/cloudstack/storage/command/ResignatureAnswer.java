@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,24 +15,46 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response;
+//
 
-import com.cloud.serializer.Param;
+package org.apache.cloudstack.storage.command;
 
-import com.google.gson.annotations.SerializedName;
+import com.cloud.agent.api.Answer;
+import com.cloud.storage.Storage.ImageFormat;
 
-import org.apache.cloudstack.api.BaseResponse;
+public class ResignatureAnswer extends Answer {
+    private long size;
+    private String path;
+    private ImageFormat format;
 
-public class ApiSolidFireVolumeIscsiNameResponse extends BaseResponse {
-    @SerializedName("solidFireVolumeIscsiName")
-    @Param(description = "SolidFire Volume Iscsi Name")
-    private String solidFireVolumeIscsiName;
-
-    public ApiSolidFireVolumeIscsiNameResponse(String sfVolumeIscsiName) {
-        solidFireVolumeIscsiName = sfVolumeIscsiName;
+    public ResignatureAnswer() {
     }
 
-    public String getSolidFireVolumeIscsiName() {
-        return solidFireVolumeIscsiName;
+    public ResignatureAnswer(String errMsg) {
+        super(null, false, errMsg);
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setFormat(ImageFormat format) {
+        this.format = format;
+    }
+
+    public ImageFormat getFormat() {
+        return format;
     }
 }

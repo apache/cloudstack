@@ -32,6 +32,7 @@ public interface TemplateService {
 
         public TemplateApiResult(TemplateInfo template) {
             super();
+
             this.template = template;
         }
 
@@ -51,6 +52,8 @@ public interface TemplateService {
     AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore);
 
     AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool);
+
+    AsyncCallFuture<TemplateApiResult> deleteTemplateOnPrimary(TemplateInfo template, StoragePool pool);
 
     void syncTemplateToRegionStore(long templateId, DataStore store);
 

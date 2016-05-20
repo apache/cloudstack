@@ -47,7 +47,9 @@ import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.info.RunningHostCountInfo;
+import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.DateUtil;
@@ -417,6 +419,37 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("status", Status.Up);
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("resourceState", ResourceState.Enabled);
+
+        return listBy(sc);
+    }
+
+    @Override
+    public List<HostVO> listByDataCenterIdAndHypervisorType(long zoneId, Hypervisor.HypervisorType hypervisorType) {
+        SearchBuilder<ClusterVO> clusterSearch = _clusterDao.createSearchBuilder();
+
+        clusterSearch.and("allocationState", clusterSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        clusterSearch.and("hypervisorType", clusterSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<HostVO> hostSearch = createSearchBuilder();
+
+        hostSearch.and("dc", hostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("type", hostSearch.entity().getType(), Op.EQ);
+        hostSearch.and("status", hostSearch.entity().getStatus(), Op.EQ);
+        hostSearch.and("resourceState", hostSearch.entity().getResourceState(), Op.EQ);
+
+        hostSearch.join("clusterSearch", clusterSearch, hostSearch.entity().getClusterId(), clusterSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        hostSearch.done();
+
+        SearchCriteria<HostVO> sc = hostSearch.create();
+
+        sc.setParameters("dc", zoneId);
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+
+        sc.setJoinParameters("clusterSearch", "allocationState", Grouping.AllocationState.Enabled);
+        sc.setJoinParameters("clusterSearch", "hypervisorType", hypervisorType.toString());
 
         return listBy(sc);
     }

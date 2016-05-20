@@ -549,26 +549,33 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             return getUsedBytes(pool);
         }
         else {
-            // Get size for all the non-destroyed volumes
+            // Get size for all the non-destroyed volumes.
             Pair<Long, Long> sizes = _volumeDao.getNonDestroyedCountAndTotalByPool(pool.getId());
 
             totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
         }
 
-        // Get size for VM Snapshots
-        totalAllocatedSize = totalAllocatedSize + _volumeDao.getVMSnapshotSizeByPool(pool.getId());
+        // Get size for VM Snapshots.
+        totalAllocatedSize += _volumeDao.getVMSnapshotSizeByPool(pool.getId());
 
-        // Iterate through all templates on this storage pool
-        boolean tmpinstalled = false;
-        List<VMTemplateStoragePoolVO> templatePoolVOs;
-        templatePoolVOs = _templatePoolDao.listByPoolId(pool.getId());
+        boolean tmpInstalled = false;
+        // Iterate through all templates on this storage pool.
+        List<VMTemplateStoragePoolVO> templatePoolVOs = _templatePoolDao.listByPoolId(pool.getId());
 
         for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {
-            if ((templateForVmCreation != null) && !tmpinstalled && (templatePoolVO.getTemplateId() == templateForVmCreation.getId())) {
-                tmpinstalled = true;
+            if ((templateForVmCreation != null) && !tmpInstalled && (templatePoolVO.getTemplateId() == templateForVmCreation.getId())) {
+                tmpInstalled = true;
             }
+
             long templateSize = templatePoolVO.getTemplateSize();
+
             totalAllocatedSize += templateSize + _extraBytesPerVolume;
+        }
+
+        if ((templateForVmCreation != null) && !tmpInstalled) {
+            long templateForVmCreationSize = templateForVmCreation.getSize() != null ? templateForVmCreation.getSize() : 0;
+
+            totalAllocatedSize += templateForVmCreationSize + _extraBytesPerVolume;
         }
 
         return totalAllocatedSize;

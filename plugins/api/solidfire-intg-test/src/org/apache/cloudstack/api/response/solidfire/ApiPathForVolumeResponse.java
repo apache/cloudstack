@@ -14,24 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response;
+package org.apache.cloudstack.api.response.solidfire;
 
-import com.cloud.serializer.Param;
-
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-public class ApiSolidFireVolumeSizeResponse extends BaseResponse {
-    @SerializedName("solidFireVolumeSize")
-    @Param(description = "SolidFire Volume Size Including Hypervisor Snapshot Reserve")
-    private long solidFireVolumeSize;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
-    public ApiSolidFireVolumeSizeResponse(long sfVolumeSize) {
-        solidFireVolumeSize = sfVolumeSize;
-    }
+public class ApiPathForVolumeResponse extends BaseResponse {
+    @SerializedName(ApiConstants.PATH)
+    @Param(description = "The path field for the volume")
+    private String path;
 
-    public long getSolidFireVolumeSize() {
-        return solidFireVolumeSize;
+    public ApiPathForVolumeResponse(String path) {
+        this.path = path;
     }
 }
