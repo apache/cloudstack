@@ -31,23 +31,23 @@ public class ModifyTargetsCommand extends Command {
     public static final String MUTUAL_CHAP_NAME = "mutualChapName";
     public static final String MUTUAL_CHAP_SECRET = "mutualChapSecret";
 
-    private boolean _add;
-    private List<Map<String, String>> _targets;
+    private boolean add;
+    private List<Map<String, String>> targets;
 
     public void setAdd(boolean add) {
-        _add = add;
+        this.add = add;
     }
 
     public boolean getAdd() {
-        return _add;
+        return add;
     }
 
     public void setTargets(List<Map<String, String>> targets) {
-        _targets = targets;
+        this.targets = targets;
     }
 
     public List<Map<String, String>> getTargets() {
-        return _targets;
+        return targets;
     }
 
     @Override
