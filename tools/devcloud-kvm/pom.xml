@@ -83,7 +83,7 @@
             </dependencies>
             <configuration>
               <driver>org.gjt.mm.mysql.Driver</driver>
-              <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}/cloud</url>
+              <url>${db.cloud.driver}://${db.cloud.host}:${db.cloud.port}/cloud</url>
               <username>${db.cloud.username}</username>
               <password>${db.cloud.password}</password>
               <!--all executions are ignored if -Dmaven.test.skip=true -->
