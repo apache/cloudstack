@@ -20,11 +20,13 @@ package com.cloud.network;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
 import javax.inject.Inject;
 
+import com.cloud.host.Host;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
@@ -206,5 +208,16 @@ public class ExternalLoadBalancerDeviceManagerImplTest {
         Mockito.when(lbDevice.getHostId()).thenReturn(99l);
         HostVO hostVo = Mockito.mock(HostVO.class);
         Mockito.when(_hostDao.findById(Mockito.anyLong())).thenReturn(hostVo);
+    }
+
+
+    @Test
+    public void testUsageTask()  {
+        ExternalDeviceUsageManagerImpl.ExternalDeviceNetworkUsageTask usageTask = Mockito
+                .mock(ExternalDeviceUsageManagerImpl.ExternalDeviceNetworkUsageTask.class);
+        Mockito.when(_hostDao.listByType(Host.Type.ExternalFirewall)).thenReturn(new ArrayList<HostVO>());
+        Mockito.when(_hostDao.listByType(Host.Type.ExternalLoadBalancer)).thenReturn(new ArrayList<HostVO>());
+        usageTask.runInContext();
+        Mockito.verify(usageTask, Mockito.times(0)).runExternalDeviceNetworkUsageTask();
     }
 }
