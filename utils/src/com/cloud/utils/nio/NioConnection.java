@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -63,6 +64,7 @@ public abstract class NioConnection implements Runnable {
     protected HandlerFactory _factory;
     protected String _name;
     protected ExecutorService _executor;
+    protected ExecutorService _sslHandshakeExecutor;
 
     public NioConnection(String name, int port, int workers, HandlerFactory factory) {
         _name = name;
@@ -72,6 +74,7 @@ public abstract class NioConnection implements Runnable {
         _port = port;
         _factory = factory;
         _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(name + "-Handler"));
+        _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(name + "-SSLHandshakeHandler"));
     }
 
     public void start() {
@@ -127,7 +130,7 @@ public abstract class NioConnection implements Runnable {
 
         while (_isRunning) {
             try {
-                _selector.select();
+                _selector.select(1000);
 
                 // Someone is ready for I/O, get the ready keys
                 Set<SelectionKey> readyKeys = _selector.selectedKeys();
@@ -180,53 +183,69 @@ public abstract class NioConnection implements Runnable {
 
     abstract void unregisterLink(InetSocketAddress saddr);
 
-    protected void accept(SelectionKey key) throws IOException {
-        ServerSocketChannel serverSocketChannel = (ServerSocketChannel)key.channel();
+    protected void accept(final SelectionKey key) throws IOException {
+        final ServerSocketChannel serverSocketChannel = (ServerSocketChannel)key.channel();
 
-        SocketChannel socketChannel = serverSocketChannel.accept();
-        Socket socket = socketChannel.socket();
+        final SocketChannel socketChannel = serverSocketChannel.accept();
+        socketChannel.configureBlocking(false);
+        final Socket socket = socketChannel.socket();
         socket.setKeepAlive(true);
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Connection accepted for " + socket);
-        }
-
-        // Begin SSL handshake in BLOCKING mode
-        socketChannel.configureBlocking(true);
-
-        SSLEngine sslEngine = null;
+        final SSLEngine sslEngine;
         try {
-            SSLContext sslContext = Link.initSSLContext(false);
+            final SSLContext sslContext = Link.initSSLContext(false);
             sslEngine = sslContext.createSSLEngine();
             sslEngine.setUseClientMode(false);
             sslEngine.setNeedClientAuth(false);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
 
-            Link.doHandshake(socketChannel, sslEngine, false);
-
-        } catch (Exception e) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
-            }
+            final NioConnection nioConnection = this;
+            _sslHandshakeExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    _selector.wakeup();
+                    try {
+                        sslEngine.beginHandshake();
+                        if (!Link.doHandshake(socketChannel, sslEngine, false)) {
+                            throw new IOException("SSL handshake timed out with " + socketChannel.getRemoteAddress());
+                        }
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("SSL: Handshake done");
+                        }
+                        final InetSocketAddress saddr = (InetSocketAddress)socket.getRemoteSocketAddress();
+                        final Link link = new Link(saddr, nioConnection);
+                        link.setSSLEngine(sslEngine);
+                        link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
+                        final Task task = _factory.create(Task.Type.CONNECT, link, null);
+                        registerLink(saddr, link);
+                        _executor.submit(task);
+                    } catch (IOException e) {
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Connection closed due to failure: " + e.getMessage());
+                        }
+                        try {
+                            socketChannel.close();
+                            socket.close();
+                        } catch (IOException ignore) {
+                        }
+                    } finally {
+                        _selector.wakeup();
+                    }
+                }
+            });
+         } catch (final Exception e) {
+             if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Connection closed due to failure: " + e.getMessage());
+             }
             try {
                 socketChannel.close();
                 socket.close();
             } catch (IOException ignore) {
             }
             return;
+        } finally {
+            _selector.wakeup();
         }
-
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("SSL: Handshake done");
-        }
-        socketChannel.configureBlocking(false);
-        InetSocketAddress saddr = (InetSocketAddress)socket.getRemoteSocketAddress();
-        Link link = new Link(saddr, this);
-        link.setSSLEngine(sslEngine);
-        link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
-        Task task = _factory.create(Task.Type.CONNECT, link, null);
-        registerLink(saddr, link);
-        _executor.execute(task);
     }
 
     protected void terminate(SelectionKey key) {
