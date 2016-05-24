@@ -28,6 +28,7 @@ import java.util.Properties;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.StringUtils;
+import com.google.common.base.Preconditions;
 
 public class VmdkFileDescriptor {
     private static final Logger s_logger = Logger.getLogger(VmdkFileDescriptor.class);
@@ -42,17 +43,12 @@ public class VmdkFileDescriptor {
     }
 
     public void parse(byte[] vmdkFileContent) throws IOException {
-        BufferedReader in = null;
-        try {
-            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkFileContent),"UTF-8"));
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkFileContent),"UTF-8"));) {
             String line;
             while ((line = in.readLine()) != null) {
                 // ignore empty and comment lines
                 line = line.trim();
-                if (line.isEmpty()) {
-                    continue;
-                }
-                if (line.charAt(0) == '#') {
+                if (line.isEmpty() || line.charAt(0) == '#') {
                     continue;
                 }
 
@@ -69,18 +65,14 @@ public class VmdkFileDescriptor {
                     if (line.startsWith("RW")) {
                         final int startPos = line.indexOf('\"');
                         final int endPos = line.lastIndexOf('\"');
-                        assert startPos > 0;
-                        assert endPos > 0;
+                        Preconditions.checkState(startPos > 0);
+                        Preconditions.checkState(startPos < endPos);
 
                         _baseFileName = line.substring(startPos + 1, endPos);
                     } else {
                         s_logger.warn("Unrecognized vmdk line content: " + line);
                     }
                 }
-            }
-        } finally {
-            if (in != null) {
-                in.close();
             }
         }
     }
