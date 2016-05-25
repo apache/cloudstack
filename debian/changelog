@@ -2,6 +2,12 @@ cloudstack (4.5.2.1) unstable; urgency=low
 
   * Update the version to 4.5.2.1
 
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 25 May 2016 12:07:30 +0530
+
+cloudstack (4.5.2.1) unstable; urgency=low
+
+  * Update the version to 4.5.2.1
+
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 25 May 2016 12:06:12 +0530
 
 cloudstack (4.5.2.1) unstable; urgency=low
