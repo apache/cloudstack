@@ -47,8 +47,10 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
     private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
@@ -67,6 +69,8 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
     @Inject
     protected HostDao _hostDao;
     @Inject
+    protected VMInstanceDao _vmDao;
+    @Inject
     protected ConfigurationDao _configDao;
     @Inject
     protected CapacityManager _capacityMgr;
@@ -83,6 +87,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
 
+        //If we have a last host ID, use that.
         if (vm.getLastHostId() != null && haVmTag == null) {
             HostVO h = _hostDao.findById(vm.getLastHostId());
             DataCenter dc = _dcDao.findById(h.getDataCenterId());
@@ -92,6 +97,8 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             return new DeployDestination(dc, pod, c, h);
         }
 
+        //If there is an HA tag, set the host tag to that. Otherwise load any normal host tags if they exist.
+        //Only the first tag is used.
         if (haVmTag != null) {
             hostTag = haVmTag;
         } else if (offering.getHostTag() != null) {
@@ -101,6 +108,8 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             }
         }
 
+        //First loop through the clusters and check if there is a tagged host that fits our tag.
+        //Used to determine requested CPU and RAM.
         List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterId(), HypervisorType.BareMetal.toString());
         int cpu_requested;
         long ram_requested;
@@ -132,6 +141,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             }
         }
 
+        //Fall back to getting the requested CPU/RAM from offering if we did not find a tagged host.
         if (target == null) {
             s_logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
             cpu_requested = offering.getCpu() * offering.getSpeed();
@@ -141,16 +151,16 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             ram_requested = target.getTotalMemory();
         }
 
+        //Now really pick a target host.
         for (ClusterVO cluster : clusters) {
             if (haVmTag == null) {
                 hosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
             } else {
-                s_logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" +
-                    cluster.getDataCenterId());
+                s_logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" + cluster.getDataCenterId());
                 return null;
             }
 
-            //Are we looking for tagged hosts?
+            //Are we looking for tagged hosts? Check with target (verified at least one tagged host exists)
             boolean useTagged = false;
             if (target != null) {
                 s_logger.info("Host tag " + hostTag + " was specified. Using only tagged hosts.");
@@ -158,6 +168,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                 useTagged = true;
             }
 
+            //Loop through the host untli we find one with capacity, then return it.
             for (HostVO h : hosts) {
                 long cluster_id = h.getClusterId();
                 ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
@@ -171,6 +182,19 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                     if (_exclusiveMode && h.getDetail("hostTag") != null) {
                         continue;
                     }
+                }
+
+                if (avoid.shouldAvoid(h)) {
+                    s_logger.info("Host " + h.getId() + " is in avoid set. Ignoring.");
+                    continue;
+                }
+
+                //Check if there is already something on the VM.
+                List<VMInstanceVO> existingVMs = _vmDao.listByHostId(h.getId());
+                if (existingVMs.size() > 0) {
+                    s_logger.info("Bare metal host " + h.getId() + " has something running on it already. Adding to avoid set.");
+                    avoid.addHost(h.getId());
+                    continue;
                 }
 
                 if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
