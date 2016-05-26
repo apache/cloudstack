@@ -1392,7 +1392,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
         List<TemplateJoinVO> tvo = null;
-        if (zoneId == null || zoneId == -1) {
+        if (zoneId == null || zoneId == -1 || result.isCrossZones()) {
             tvo = ApiDBUtils.newTemplateView(result);
         } else {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);
