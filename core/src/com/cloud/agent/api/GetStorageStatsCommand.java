@@ -20,17 +20,17 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.agent.api.storage.StorageNfsVersionCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.Storage.StoragePoolType;
 
 @LogLevel(Log4jLevel.Trace)
-public class GetStorageStatsCommand extends Command {
+public class GetStorageStatsCommand extends StorageNfsVersionCommand {
     private String id;
     private String localPath;
     private StoragePoolType pooltype;
     private String secUrl;
     private DataStoreTO store;
-    private String nfsVersion;
 
     public String getSecUrl() {
         return secUrl;
@@ -55,9 +55,9 @@ public class GetStorageStatsCommand extends Command {
         this.store = store;
     }
 
-    public GetStorageStatsCommand(DataStoreTO store, String nfsVersion) {
+    public GetStorageStatsCommand(DataStoreTO store, Integer nfsVersion) {
+        super(nfsVersion);
         this.store = store;
-        this.nfsVersion = nfsVersion;
     }
 
     public GetStorageStatsCommand(String secUrl) {
@@ -85,14 +85,6 @@ public class GetStorageStatsCommand extends Command {
 
     public DataStoreTO getStore() {
         return this.store;
-    }
-
-    public String getNfsVersion() {
-        return nfsVersion;
-    }
-
-    public void setNfsVersion(String nfsVersion) {
-        this.nfsVersion = nfsVersion;
     }
 
     @Override

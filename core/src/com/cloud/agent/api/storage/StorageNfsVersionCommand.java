@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,64 +15,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.to;
+//
+package com.cloud.agent.api.storage;
 
-import com.cloud.storage.DataStoreRole;
+import com.cloud.agent.api.Command;
 
-public class NfsTO implements DataStoreTO {
+public abstract class StorageNfsVersionCommand extends Command {
 
-    private String _url;
-    private DataStoreRole _role;
-    private String uuid;
-    private static final String pathSeparator = "/";
+    protected StorageNfsVersionCommand(){
+        super();
+    }
+
+    protected StorageNfsVersionCommand(Integer nfsVersion){
+        super();
+        this.nfsVersion = nfsVersion;
+    }
+
     private Integer nfsVersion;
-
-    public NfsTO() {
-
-        super();
-
-    }
-
-    public NfsTO(String url, DataStoreRole role) {
-
-        super();
-
-        this._url = url;
-        this._role = role;
-
-    }
-
-    @Override
-    public String getUrl() {
-        return _url;
-    }
-
-    public void setUrl(String url) {
-        this._url = url;
-    }
-
-    @Override
-    public DataStoreRole getRole() {
-        return _role;
-    }
-
-    public void setRole(DataStoreRole role) {
-        this._role = role;
-    }
-
-    @Override
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    @Override
-    public String getPathSeparator() {
-        return pathSeparator;
-    }
 
     public Integer getNfsVersion() {
         return nfsVersion;
@@ -80,4 +40,5 @@ public class NfsTO implements DataStoreTO {
     public void setNfsVersion(Integer nfsVersion) {
         this.nfsVersion = nfsVersion;
     }
+
 }

@@ -97,7 +97,9 @@ import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.math.NumberUtils;
@@ -306,6 +308,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String _password;
     protected String _guid;
     protected String _vCenterAddress;
+    protected Integer storageNfsVersion;
 
     protected String _privateNetworkVSwitchName;
     protected VmwareTrafficLabel _guestTrafficInfo = new VmwareTrafficLabel(TrafficType.Guest);
@@ -475,6 +478,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
+                checkStorageProcessorAndHandlerNfsVersionAttribute((StorageSubSystemCommand)cmd);
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
             } else if (clz == ScaleVmCommand.class) {
                 return execute((ScaleVmCommand)cmd);
@@ -521,6 +525,64 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+
+    /**
+     * Check if storage NFS version is already set or needs to be reconfigured.<br>
+     * If _storageNfsVersion is not null -> nothing to do, version already set.<br>
+     * If _storageNfsVersion is null -> examine StorageSubSystemCommand to get NFS version and set it
+     * to the storage processor and storage handler.
+     * @param cmd command to execute
+     */
+    protected void checkStorageProcessorAndHandlerNfsVersionAttribute(StorageSubSystemCommand cmd) {
+        if (storageNfsVersion != null) return;
+        if (cmd instanceof CopyCommand){
+            examineStorageSubSystemCommandNfsVersion((CopyCommand) cmd);
+        }
+    }
+
+    /**
+     * Examine StorageSubSystem command to get storage NFS version, if provided
+     * @param cmd command to execute
+     */
+    protected void examineStorageSubSystemCommandNfsVersion(CopyCommand cmd){
+        DataStoreTO srcDataStore = cmd.getSrcTO().getDataStore();
+        boolean nfsVersionFound = false;
+
+        if (srcDataStore instanceof NfsTO){
+            nfsVersionFound = getStorageNfsVersionFromNfsTO((NfsTO) srcDataStore);
+        }
+
+        if (nfsVersionFound){
+            setCurrentNfsVersionInProcessorAndHandler();
+        }
+    }
+
+    /**
+     * Get storage NFS version from NfsTO
+     * @param nfsTO nfsTO
+     * @return true if NFS version was found and not null, false in other case
+     */
+    protected boolean getStorageNfsVersionFromNfsTO(NfsTO nfsTO){
+        if (nfsTO != null && nfsTO.getNfsVersion() != null){
+            storageNfsVersion = nfsTO.getNfsVersion();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Sets _storageNfsVersion into storage processor and storage handler by calling reconfigureNfsVersion on the storage handler,
+     * which will set NFS version into it and the storage processor.
+     */
+    protected void setCurrentNfsVersionInProcessorAndHandler() {
+        VmwareStorageSubsystemCommandHandler handler = (VmwareStorageSubsystemCommandHandler) storageHandler;
+        boolean success = handler.reconfigureNfsVersion(storageNfsVersion);
+        if (success){
+            s_logger.info("NFS version " + storageNfsVersion + " successfully set in VmwareStorageProcessor and VmwareStorageSubsystemCommandHandler");
+        } else {
+            s_logger.error("Error while setting NFS version " + storageNfsVersion);
+        }
     }
 
     /**
@@ -5311,8 +5373,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             value = (String)params.get("scripts.timeout");
             int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
-            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null, (String)params.get("nfsVersion"));
-            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor, (String)params.get("nfsVersion"));
+
+            storageNfsVersion = NfsSecondaryStorageResource.retrieveNfsVersionFromParams(params);
+            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null, storageNfsVersion);
+            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor, storageNfsVersion);
 
             _vrResource = new VirtualRoutingResource(this);
             if (!_vrResource.configure(name, params)) {

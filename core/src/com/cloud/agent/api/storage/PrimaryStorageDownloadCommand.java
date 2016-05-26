@@ -35,7 +35,6 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
 
     String secondaryStorageUrl;
     String primaryStorageUrl;
-    String nfsVersion;
 
     protected PrimaryStorageDownloadCommand() {
     }
@@ -89,11 +88,4 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
         return true;
     }
 
-    public String getNfsVersion() {
-        return nfsVersion;
-    }
-
-    public void setNfsVersion(String nfsVersion) {
-        this.nfsVersion = nfsVersion;
-    }
 }

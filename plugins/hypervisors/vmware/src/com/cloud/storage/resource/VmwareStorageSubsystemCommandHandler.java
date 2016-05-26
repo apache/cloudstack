@@ -43,7 +43,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
     private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
-    private String _nfsVersion;
+    private Integer _nfsVersion;
 
     public PremiumSecondaryStorageResource getStorageResource() {
         return storageResource;
@@ -61,9 +61,26 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         this.storageManager = storageManager;
     }
 
-    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor, String nfsVersion) {
+    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor, Integer nfsVersion) {
         super(processor);
         this._nfsVersion = nfsVersion;
+    }
+
+    /**
+     * Reconfigure NFS version for storage operations
+     * @param nfsVersion NFS version to set
+     * @return true if NFS version could be configured, false in other case
+     */
+    public boolean reconfigureNfsVersion(Integer nfsVersion){
+        try {
+            VmwareStorageProcessor processor = (VmwareStorageProcessor) this.processor;
+            processor.setNfsVersion(nfsVersion);
+            this._nfsVersion = nfsVersion;
+            return true;
+        } catch (Exception e){
+            s_logger.error("Error while reconfiguring NFS version " + nfsVersion);
+            return false;
+        }
     }
 
     @Override

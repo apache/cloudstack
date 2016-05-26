@@ -205,7 +205,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private String _storageIp;
     private String _storageNetmask;
     private String _storageGateway;
-    private String _nfsVersion;
+    private Integer _nfsVersion;
     private final List<String> nfsIps = new ArrayList<String>();
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
@@ -227,6 +227,26 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     public void setInSystemVM(boolean inSystemVM) {
         _inSystemVM = inSystemVM;
+    }
+
+    /**
+     * Retrieve converted "nfsVersion" value from params
+     * @param params
+     * @return nfsVersion value if exists, null in other case
+     */
+    public static Integer retrieveNfsVersionFromParams(Map<String, Object> params){
+        Integer nfsVersion = null;
+        if (params.get("nfsVersion") != null){
+            String nfsVersionParam = (String)params.get("nfsVersion");
+            try {
+                nfsVersion = Integer.valueOf(nfsVersionParam);
+            }
+            catch (NumberFormatException e){
+                s_logger.error("Couldn't cast " + nfsVersionParam + " to integer");
+                return null;
+            }
+        }
+        return nfsVersion;
     }
 
     @Override
@@ -559,7 +579,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new CopyCmdAnswer("");
     }
 
-    protected File getFile(String path, String nfsPath, String nfsVersion) {
+    protected File getFile(String path, String nfsPath, Integer nfsVersion) {
         String filePath = getRootDir(nfsPath, nfsVersion) + File.separator + path;
         File f = new File(filePath);
         if (!f.exists()) {
@@ -688,7 +708,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return Long.parseLong(StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR));
     }
 
-    private String determineStorageTemplatePath(final String storagePath, String dataPath, String nfsVersion) {
+    private String determineStorageTemplatePath(final String storagePath, String dataPath, Integer nfsVersion) {
         return join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
     }
 
@@ -2046,7 +2066,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     @Override
-    synchronized public String getRootDir(String secUrl, String nfsVersion) {
+    synchronized public String getRootDir(String secUrl, Integer nfsVersion) {
         if (!_inSystemVM) {
             return _parent;
         }
@@ -2209,7 +2229,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             startAdditionalServices();
             _params.put("install.numthreads", "50");
             _params.put("secondary.storage.vm", "true");
-            _nfsVersion = (String)params.get("nfsVersion");
+            _nfsVersion = retrieveNfsVersionFromParams(params);
         }
 
         try {
@@ -2385,10 +2405,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      *            crresponding to the remote device. Will throw for unsupported
      *            scheme.
      * @param imgStoreId
+     * @param nfsVersion NFS version to use in mount command
      * @return name of folder in _parent that device was mounted.
      * @throws UnknownHostException
      */
-    protected String mountUri(URI uri, String nfsVersion) throws UnknownHostException {
+    protected String mountUri(URI uri, Integer nfsVersion) throws UnknownHostException {
         String uriHostIp = getUriHostIp(uri);
         String nfsPath = uriHostIp + ":" + uri.getPath();
 
@@ -2432,7 +2453,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         s_logger.debug("Successfully umounted " + localRootPath);
     }
 
-    protected void mount(String localRootPath, String remoteDevice, URI uri, String nfsVersion) {
+    protected void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
         s_logger.debug("mount " + uri.toString() + " on " + localRootPath + ((nfsVersion != null) ? " nfsVersion="+nfsVersion : ""));
         ensureLocalRootPathExists(localRootPath, uri);
 
@@ -2448,7 +2469,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         checkForVolumesDir(localRootPath);
     }
 
-    protected void attemptMount(String localRootPath, String remoteDevice, URI uri, String nfsVersion) {
+    protected void attemptMount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
         String result;
         s_logger.debug("Make cmdline call to mount " + remoteDevice + " at " + localRootPath + " based on uri " + uri
                 + ((nfsVersion != null) ? " nfsVersion=" + nfsVersion : ""));

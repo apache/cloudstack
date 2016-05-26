@@ -44,6 +44,7 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
@@ -89,7 +90,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     StorageLayer _storage;
     public Map<String, Processor> _processors;
 
-    private String _nfsVersion;
+    private Integer _nfsVersion;
 
     public class Completion implements DownloadCompleteCallback {
         private final String jobId;
@@ -984,7 +985,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
             s_logger.info("DownloadManager: starting additional services since we are inside system vm");
-            _nfsVersion = (String)params.get("nfsVersion");
+            _nfsVersion = NfsSecondaryStorageResource.retrieveNfsVersionFromParams(params);
             startAdditionalServices();
             blockOutgoingOnPrivate();
         }

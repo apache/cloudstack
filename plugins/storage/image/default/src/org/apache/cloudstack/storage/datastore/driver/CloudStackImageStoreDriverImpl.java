@@ -32,7 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
+import org.apache.cloudstack.storage.image.NfsImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 
@@ -44,7 +44,7 @@ import com.cloud.configuration.Config;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
+public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(CloudStackImageStoreDriverImpl.class);
 
     @Inject
@@ -60,6 +60,7 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         NfsTO nfsTO = new NfsTO();
         nfsTO.setRole(store.getRole());
         nfsTO.setUrl(nfsStore.getUri());
+        nfsTO.setNfsVersion(getNfsVersion(nfsStore.getId()));
         return nfsTO;
     }
 
