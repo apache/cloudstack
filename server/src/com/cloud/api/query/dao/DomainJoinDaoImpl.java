@@ -110,7 +110,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
 
         long volumeLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVolumeLimit(), fullView, ResourceType.volume, domain.getId());
         String volumeLimitDisplay = (fullView || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit);
-        long volumeTotal = (domain.getVolumeTotal() == 0) ? 0 : domain.getVolumeTotal();
+        long volumeTotal = (domain.getVolumeTotal() == null) ? 0 : domain.getVolumeTotal();
         String volumeAvail = (fullView || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit - volumeTotal);
         response.setVolumeLimit(volumeLimitDisplay);
         response.setVolumeTotal(volumeTotal);
