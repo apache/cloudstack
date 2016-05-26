@@ -340,6 +340,15 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
         @Override
         protected void runInContext() {
+
+            // Check if there are any external devices
+            // Skip external device usage collection if none exist
+
+            if(_hostDao.listByType(Host.Type.ExternalFirewall).isEmpty() && _hostDao.listByType(Host.Type.ExternalLoadBalancer).isEmpty()){
+                s_logger.debug("External devices are not used. Skipping external device usage collection");
+                return;
+            }
+
             GlobalLock scanLock = GlobalLock.getInternLock("ExternalDeviceNetworkUsageManagerImpl");
             try {
                 if (scanLock.lock(20)) {
@@ -356,7 +365,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             }
         }
 
-        private void runExternalDeviceNetworkUsageTask() {
+        protected void runExternalDeviceNetworkUsageTask() {
             s_logger.debug("External devices stats collector is running...");
 
             for (DataCenterVO zone : _dcDao.listAll()) {

@@ -97,4 +97,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listAllHostsByType(Host.Type type);
 
     HostVO findByPublicIp(String publicIp);
+
+    List<HostVO> listByType(Type type);
 }
