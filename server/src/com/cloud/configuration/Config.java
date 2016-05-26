@@ -1811,6 +1811,14 @@ public enum Config {
             "8080",
             "the port that listens baremetal provision done notification. Should be the same to port management server listening on for now. Please change it to management server port if it's not default 8080",
             null),
+    BaremetalDeploymentPlannerExclusive(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "baremetal.deployment.planner.exclusive",
+            "false",
+            "If set to true, the baremetal planner will ignore tagged hosts when using untagged service offerings. Tagged hosts will still be used for tagged offerings",
+            null),
     ExternalBaremetalSystemUrl(
             "Advanced",
             ManagementServer.class,

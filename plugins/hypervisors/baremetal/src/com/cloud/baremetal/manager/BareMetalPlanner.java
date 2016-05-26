@@ -26,6 +26,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -51,6 +52,12 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
     private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
+
+    //If true, the bare metal planner will ignore tagged hosts
+    //when using untagged service offerings.
+    //Tagged hosts will still be used for tagged offerings.
+    private boolean _exclusiveMode;
+
     @Inject
     protected DataCenterDao _dcDao;
     @Inject
@@ -102,11 +109,24 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
         for (ClusterVO cluster : clusters) {
             hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
             if (hostTag != null) {
+                outer:
                 for (HostVO h : hosts) {
-                    _hostDao.loadDetails(h);
-                    if (h.getDetail("hostTag") != null && h.getDetail("hostTag").equalsIgnoreCase(hostTag)) {
-                        target = h;
-                        break;
+                    _hostDao.loadHostTags(h);
+
+                    //If only there was a .containsIgnoreCase...
+                    if (h.getHostTags() != null) {
+                        boolean foundTag = false;
+                        for (String tag : h.getHostTags()) {
+                            if (tag.equalsIgnoreCase(hostTag)) {
+                                foundTag = true;
+                                break;
+                            }
+                        }
+
+                        if (foundTag) {
+                            target = h;
+                            break outer;
+                        }
                     }
                 }
             }
@@ -129,12 +149,29 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                     cluster.getDataCenterId());
                 return null;
             }
+
+            //Are we looking for tagged hosts?
+            boolean useTagged = false;
+            if (target != null) {
+                s_logger.info("Host tag " + hostTag + " was specified. Using only tagged hosts.");
+                hosts = _hostDao.listByHostTag(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId(), hostTag);
+                useTagged = true;
+            }
+
             for (HostVO h : hosts) {
                 long cluster_id = h.getClusterId();
                 ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
                 ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
                 Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
+
+                //Untagged offerings: If exclusive mode is on and this host has a tag,
+                //ignore it.
+                if (!useTagged) {
+                    if (_exclusiveMode && h.getDetail("hostTag") != null) {
+                        continue;
+                    }
+                }
 
                 if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
                     s_logger.debug("Find host " + h.getId() + " has enough capacity");
@@ -156,6 +193,16 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        String exclusive = _configDao.getValue(Config.BaremetalDeploymentPlannerExclusive.key());
+
+        if (exclusive != null) {
+            _exclusiveMode = Boolean.parseBoolean(exclusive);
+        }
+        else {
+            _exclusiveMode = false;
+        }
+
+        s_logger.info("Baremetal planner exclusive mode = " + _exclusiveMode);
         return true;
     }
 
