@@ -19,8 +19,13 @@
 
 package com.cloud.agent.api.guru;
 
-import com.cloud.agent.api.Command;
+import java.util.Objects;
+
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
+
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.cloud.agent.api.Command;
 
 public class TrashNetworkVspCommand extends Command {
 
@@ -42,21 +47,25 @@ public class TrashNetworkVspCommand extends Command {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TrashNetworkVspCommand)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof TrashNetworkVspCommand)) {
+            return false;
+        }
 
         TrashNetworkVspCommand that = (TrashNetworkVspCommand) o;
 
-        if (_network != null ? !_network.equals(that._network) : that._network != null) return false;
-
-        return true;
+        return super.equals(that)
+                && Objects.equals(_network, that._network);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_network != null ? _network.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_network)
+                .toHashCode();
     }
 }

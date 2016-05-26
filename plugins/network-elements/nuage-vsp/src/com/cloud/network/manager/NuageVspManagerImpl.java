@@ -191,7 +191,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
 
     static {
         Set<Network.Provider> nuageVspProviders = ImmutableSet.of(Network.Provider.NuageVsp);
-        Set<Network.Provider> userDataProviders = ImmutableSet.of(Network.Provider.VPCVirtualRouter);
+        Set<Network.Provider> vrProviders = ImmutableSet.of(Network.Provider.VPCVirtualRouter);
         Set<Network.Provider> lbProviders = ImmutableSet.of(Network.Provider.InternalLbVm);
         NUAGE_VSP_VPC_SERVICE_MAP = ImmutableMap.<Network.Service, Set<Network.Provider>>builder()
                 .put(Network.Service.Connectivity, nuageVspProviders)
@@ -200,8 +200,9 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                 .put(Network.Service.StaticNat, nuageVspProviders)
                 .put(Network.Service.SourceNat, nuageVspProviders)
                 .put(Network.Service.NetworkACL, nuageVspProviders)
-                .put(Network.Service.UserData, userDataProviders)
+                .put(Network.Service.UserData, vrProviders)
                 .put(Network.Service.Lb, lbProviders)
+                .put(Network.Service.Dns, vrProviders)
                 .build();
     }
 
@@ -304,7 +305,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             resource.configure(cmd.getHostName(), Maps.<String, Object>newHashMap(resourceConfiguration.build()));
 
             if (matchingNuageVspDevice == null) {
-                auditDomainsOnVsp((HostVO) host, true, false);
+                auditDomainsOnVsp((HostVO) host, true);
             }
 
             return nuageVspDevice;
@@ -486,7 +487,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         HostVO host = findNuageVspHost(nuageVspDevice.getHostId());
         String nuageVspCmsId = findNuageVspCmsIdForDevice(nuageVspDevice.getId(), cmsIdConfig);
         if (matchingNuageVspDevice == null) {
-            if (!auditDomainsOnVsp(host, false, true)) {
+            if (!auditDomainsOnVsp(host, false)) {
                 return false;
             }
 
@@ -603,11 +604,11 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         }
 
         if (validateDomains) {
-            auditDomainsOnVsp(host, true, false);
+            auditDomainsOnVsp(host, true);
         }
     }
 
-    private boolean auditDomainsOnVsp(HostVO host, boolean add, boolean remove) {
+    private boolean auditDomainsOnVsp(HostVO host, boolean add) {
         List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByHost(host.getId());
         if (CollectionUtils.isEmpty(nuageVspDevices)) {
             return true;
@@ -617,7 +618,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         List<DomainVO> allDomains = _domainDao.listAll();
         for (DomainVO domain : allDomains) {
             VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
-            SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, add, remove);
+            SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, add ? SyncDomainCommand.Type.ADD :  SyncDomainCommand.Type.REMOVE);
             SyncDomainAnswer answer = (SyncDomainAnswer) _agentMgr.easySend(host.getId(), cmd);
             return answer.getSuccess();
         }
@@ -714,10 +715,9 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
 
                     List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
                     for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
-                        HostVO host = findNuageVspHost(nuageVspDevice.getHostId());
                         VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
-                        SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, true, false);
-                        _agentMgr.easySend(host.getId(), cmd);
+                        SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, SyncDomainCommand.Type.ADD);
+                        _agentMgr.easySend(nuageVspDevice.getHostId(), cmd);
                     }
                 } finally {
                     _domainDao.releaseFromLockTable(domain.getId());
@@ -732,10 +732,9 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                 DomainVO domain = (DomainVO) args;
                 List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
                 for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
-                    HostVO host = findNuageVspHost(nuageVspDevice.getHostId());
                     VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
-                    SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, false, true);
-                    _agentMgr.easySend(host.getId(), cmd);
+                    SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, SyncDomainCommand.Type.REMOVE);
+                    _agentMgr.easySend(nuageVspDevice.getHostId(), cmd);
                 }
             }
         });

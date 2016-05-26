@@ -32,11 +32,8 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import com.cloud.network.Networks;
 
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
@@ -59,7 +56,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -115,6 +111,7 @@ import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkStateListener;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -141,6 +138,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.AggregatedCommandExecutor;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
@@ -1276,6 +1274,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     return false;
                 }
             }
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns)
+                    && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, element.getProvider()) && element instanceof DnsServiceProvider) {
+                final DnsServiceProvider sp = (DnsServiceProvider)element;
+                if (profile.getIPv6Address() == null) {
+                    if (!sp.configDnsSupportForSubnet(network, profile, vmProfile, dest, context)) {
+                        return false;
+                    }
+                }
+                if(!sp.addDnsEntry(network, profile, vmProfile, dest, context)) {
+                    return false;
+                }
+            }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)
                     && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) && element instanceof UserDataServiceProvider) {
                 final UserDataServiceProvider sp = (UserDataServiceProvider)element;
@@ -1885,15 +1895,29 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         if (vm.getType() == Type.User
-                && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
                 && network.getTrafficType() == TrafficType.Guest
                 && network.getGuestType() == GuestType.Shared
                 && isLastNicInSubnet(nic)) {
-            // remove the dhcpservice ip if this is the last nic in subnet.
-            final DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
-            if (dhcpServiceProvider != null
-                    && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)) {
-                removeDhcpServiceInSubnet(nic);
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
+                // remove the dhcpservice ip if this is the last nic in subnet.
+                final DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
+                if (dhcpServiceProvider != null
+                        && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)) {
+                    removeDhcpServiceInSubnet(nic);
+                }
+            }
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns)){
+                final DnsServiceProvider dnsServiceProvider = getDnsServiceProvider(network);
+                if (dnsServiceProvider != null) {
+                    try {
+                        if(!dnsServiceProvider.removeDnsSupportForSubnet(network)) {
+                            s_logger.warn("Failed to remove the ip alias on the dns server");
+                        }
+                    } catch (final ResourceUnavailableException e) {
+                        //failed to remove the dnsconfig.
+                        s_logger.info("Unable to delete the ip alias due to unable to contact the dns server.");
+                    }
+                }
             }
         }
 
@@ -2805,6 +2829,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } else {
             return null;
         }
+    }
+
+    @Override
+    public DnsServiceProvider getDnsServiceProvider(final Network network) {
+        final String dnsProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Dns);
+
+        if (dnsProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.Dhcp.getName());
+            return null;
+        }
+
+        return  (DnsServiceProvider) _networkModel.getElementImplementingProvider(dnsProvider);
     }
 
     protected boolean isSharedNetworkWithServices(final Network network) {

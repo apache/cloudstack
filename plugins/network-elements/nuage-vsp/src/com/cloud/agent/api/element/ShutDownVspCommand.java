@@ -19,45 +19,32 @@
 
 package com.cloud.agent.api.element;
 
-import java.util.List;
 import java.util.Objects;
 
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.cloud.agent.api.Command;
 
-public class ApplyAclRuleVspCommand extends Command {
+public class ShutDownVspCommand extends Command {
 
-    private final VspAclRule.ACLType _aclType;
     private final VspNetwork _network;
-    private final List<VspAclRule> _aclRules;
-    private final boolean _networkReset;
+    private final VspDhcpDomainOption _dhcpOptions;
 
-    public ApplyAclRuleVspCommand(VspAclRule.ACLType aclType, VspNetwork network, List<VspAclRule> aclRules, boolean networkReset) {
+    public ShutDownVspCommand(VspNetwork network, VspDhcpDomainOption dhcpOptions) {
         super();
-        this._aclType = aclType;
         this._network = network;
-        this._aclRules = aclRules;
-        this._networkReset = networkReset;
-    }
-
-    public VspAclRule.ACLType getAclType() {
-        return _aclType;
+        this._dhcpOptions = dhcpOptions;
     }
 
     public VspNetwork getNetwork() {
         return _network;
     }
 
-    public List<VspAclRule> getAclRules() {
-        return _aclRules;
-    }
-
-    public boolean isNetworkReset() {
-        return _networkReset;
+    public VspDhcpDomainOption getDhcpOptions() {
+        return _dhcpOptions;
     }
 
     @Override
@@ -70,27 +57,28 @@ public class ApplyAclRuleVspCommand extends Command {
         if (this == o) {
             return true;
         }
-
-        if (!(o instanceof ApplyAclRuleVspCommand)) {
+        if (!(o instanceof ShutDownVspCommand)) {
             return false;
         }
 
-        ApplyAclRuleVspCommand that = (ApplyAclRuleVspCommand) o;
+        ShutDownVspCommand that = (ShutDownVspCommand) o;
 
         return super.equals(that)
-                && _networkReset == that._networkReset
-                && Objects.equals(_aclType, that._aclType)
-                && Objects.equals(_network, that._network)
-                && Objects.equals(_aclRules, that._aclRules);
+                && Objects.equals(_dhcpOptions, that._dhcpOptions)
+                && Objects.equals(_network, that._network);
     }
+
+
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder()
-                .appendSuper(super.hashCode())
-                .append(_aclType)
-                .append(_network)
-                .append(_networkReset)
-                .toHashCode();
+        return Objects.hash(_network, _dhcpOptions);
+    }
+
+    public String toDetailString() {
+        return new ToStringBuilder(this)
+                .append("network", _network)
+                .append("dhcpOptions", _dhcpOptions)
+                .toString();
     }
 }

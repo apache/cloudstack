@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 import com.cloud.host.Host;
 
 public class PingNuageVspCommand extends PingCommand {
@@ -38,19 +40,18 @@ public class PingNuageVspCommand extends PingCommand {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PingNuageVspCommand)) return false;
-        if (!super.equals(o)) return false;
 
         PingNuageVspCommand that = (PingNuageVspCommand) o;
 
-        if (shouldAudit != that.shouldAudit) return false;
-
-        return true;
+        return super.equals(that)
+                && shouldAudit == that.shouldAudit;
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (shouldAudit ? 1 : 0);
-        return result;
+        return new HashCodeBuilder()
+            .appendSuper(super.hashCode())
+            .append(shouldAudit)
+            .toHashCode();
     }
 }

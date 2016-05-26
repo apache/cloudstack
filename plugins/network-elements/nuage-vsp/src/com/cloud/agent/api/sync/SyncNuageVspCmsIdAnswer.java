@@ -19,6 +19,10 @@
 
 package com.cloud.agent.api.sync;
 
+import java.util.Objects;
+
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 import com.cloud.agent.api.Answer;
 
 public class SyncNuageVspCmsIdAnswer extends Answer {
@@ -48,26 +52,29 @@ public class SyncNuageVspCmsIdAnswer extends Answer {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SyncNuageVspCmsIdAnswer)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof SyncNuageVspCmsIdAnswer)) {
+            return false;
+        }
 
         SyncNuageVspCmsIdAnswer that = (SyncNuageVspCmsIdAnswer) o;
 
-        if (_success != that._success) return false;
-        if (_nuageVspCmsId != null ? !_nuageVspCmsId.equals(that._nuageVspCmsId) : that._nuageVspCmsId != null)
-            return false;
-        if (_syncType != that._syncType) return false;
-
-        return true;
+        return super.equals(that)
+                && _success == that._success
+                && Objects.equals(_syncType, that._syncType)
+                && Objects.equals(_nuageVspCmsId, that._nuageVspCmsId);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_success ? 1 : 0);
-        result = 31 * result + (_nuageVspCmsId != null ? _nuageVspCmsId.hashCode() : 0);
-        result = 31 * result + (_syncType != null ? _syncType.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_syncType)
+                .append(_nuageVspCmsId)
+                .append(_success)
+                .toHashCode();
     }
 }

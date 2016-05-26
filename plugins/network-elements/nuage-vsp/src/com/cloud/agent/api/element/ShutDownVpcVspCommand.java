@@ -19,9 +19,12 @@
 
 package com.cloud.agent.api.element;
 
-import com.cloud.agent.api.Command;
-
 import java.util.List;
+import java.util.Objects;
+
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.cloud.agent.api.Command;
 
 public class ShutDownVpcVspCommand extends Command {
 
@@ -61,29 +64,30 @@ public class ShutDownVpcVspCommand extends Command {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ShutDownVpcVspCommand)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ShutDownVpcVspCommand)) {
+            return false;
+        }
         if (!super.equals(o)) return false;
 
         ShutDownVpcVspCommand that = (ShutDownVpcVspCommand) o;
 
-        if (_domainRouterUuids != null ? !_domainRouterUuids.equals(that._domainRouterUuids) : that._domainRouterUuids != null)
-            return false;
-        if (_domainTemplateName != null ? !_domainTemplateName.equals(that._domainTemplateName) : that._domainTemplateName != null)
-            return false;
-        if (_domainUuid != null ? !_domainUuid.equals(that._domainUuid) : that._domainUuid != null) return false;
-        if (_vpcUuid != null ? !_vpcUuid.equals(that._vpcUuid) : that._vpcUuid != null) return false;
-
-        return true;
+        return super.equals(that)
+            && Objects.equals(_domainUuid, that._domainUuid)
+            && Objects.equals(_vpcUuid, that._vpcUuid)
+            && Objects.equals(_domainTemplateName, that._domainTemplateName)
+            && Objects.equals(_domainRouterUuids, that._domainRouterUuids);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_domainUuid != null ? _domainUuid.hashCode() : 0);
-        result = 31 * result + (_vpcUuid != null ? _vpcUuid.hashCode() : 0);
-        result = 31 * result + (_domainTemplateName != null ? _domainTemplateName.hashCode() : 0);
-        result = 31 * result + (_domainRouterUuids != null ? _domainRouterUuids.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_domainUuid)
+                .append(_vpcUuid)
+                .append(_domainTemplateName)
+                .toHashCode();
     }
 }
