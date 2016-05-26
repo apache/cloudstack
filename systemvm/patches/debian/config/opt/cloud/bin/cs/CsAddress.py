@@ -235,8 +235,7 @@ class CsDevice:
                 continue
             self.devlist.append(vals[0])
 
-    def waitfordevice(self, timeout=15):
-        """ Wait up to 15 seconds for a device to become available """
+    def waitfordevice(self, timeout=2):
         count = 0
         while count < timeout:
             if self.dev in self.devlist:
