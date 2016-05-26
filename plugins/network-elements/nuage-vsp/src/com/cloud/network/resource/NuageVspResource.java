@@ -30,8 +30,6 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupVspCommand;
-import com.cloud.agent.api.VspResourceAnswer;
-import com.cloud.agent.api.VspResourceCommand;
 import com.cloud.agent.api.element.ApplyAclRuleVspCommand;
 import com.cloud.agent.api.element.ApplyStaticNatVspCommand;
 import com.cloud.agent.api.element.ImplementVspCommand;
@@ -40,14 +38,13 @@ import com.cloud.agent.api.guru.DeallocateVmVspCommand;
 import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
 import com.cloud.agent.api.guru.ReserveVmInterfaceVspCommand;
 import com.cloud.agent.api.guru.TrashNetworkVspCommand;
-import com.cloud.agent.api.manager.GetClientDefaultsAnswer;
-import com.cloud.agent.api.manager.GetClientDefaultsCommand;
+import com.cloud.agent.api.manager.GetApiDefaultsAnswer;
+import com.cloud.agent.api.manager.GetApiDefaultsCommand;
 import com.cloud.agent.api.manager.SupportedApiVersionCommand;
 import com.cloud.agent.api.sync.SyncDomainAnswer;
 import com.cloud.agent.api.sync.SyncDomainCommand;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdAnswer;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
-import com.cloud.agent.api.sync.SyncVspCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.util.NuageVspUtil;
@@ -56,12 +53,11 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
 import net.nuage.vsp.acs.NuageVspPluginClientLoader;
-import net.nuage.vsp.acs.client.NuageVspApiClient;
-import net.nuage.vsp.acs.client.NuageVspElementClient;
-import net.nuage.vsp.acs.client.NuageVspGuruClient;
-import net.nuage.vsp.acs.client.NuageVspManagerClient;
-import net.nuage.vsp.acs.client.NuageVspSyncClient;
-import org.apache.commons.lang3.tuple.Pair;
+import net.nuage.vsp.acs.client.api.NuageVspApiClient;
+import net.nuage.vsp.acs.client.api.NuageVspElementClient;
+import net.nuage.vsp.acs.client.api.NuageVspGuruClient;
+import net.nuage.vsp.acs.client.api.NuageVspManagerClient;
+import net.nuage.vsp.acs.client.common.model.Pair;
 import org.apache.log4j.Logger;
 
 import javax.naming.ConfigurationException;
@@ -91,7 +87,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private String _name;
     private String _guid;
     private String _zoneId;
-    private String[] _cmsUserInfo;
+    private String _cmsUserLogin;
+    private String _cmsUserPassword;
     private String _hostName;
     private String _relativePath;
     private int _numRetries;
@@ -102,7 +99,6 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     protected NuageVspApiClient _nuageVspApiClient;
     protected NuageVspGuruClient _nuageVspGuruClient;
     protected NuageVspElementClient _nuageVspElementClient;
-    protected NuageVspSyncClient _nuageVspSyncClient;
     protected NuageVspManagerClient _nuageVspManagerClient;
     protected boolean _isNuageVspClientLoaded;
 
@@ -190,7 +186,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         _relativePath = new StringBuffer().append("https://").append(_hostName).append(":").append(port).append(apiRelativePath).toString();
 
         String cmsUserPass = NuageVspUtil.decodePassword(cmsUserPassBase64);
-        _cmsUserInfo = new String[] {CMS_USER_ENTEPRISE_NAME, cmsUser, cmsUserPass};
+        _cmsUserLogin = cmsUser;
+        _cmsUserPassword = cmsUserPass;
 
         _nuageVspCmsId = (String)params.get(NUAGE_VSP_CMS_ID);
 
@@ -199,8 +196,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         try {
             login();
         } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failed to login to Nuage VSD on " + name + " as user " + cmsUser, e);
-            throw new CloudRuntimeException("Failed to login to Nuage VSD on " + name + " as user " + cmsUser, e);
+            s_logger.error(e.getMessage(), e);
+            throw new CloudRuntimeException(e.getMessage(), e);
         }
 
         return true;
@@ -211,23 +208,14 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         _nuageVspApiClient.login();
     }
 
-    protected <A extends NuageVspApiClient, B extends NuageVspElementClient, C extends NuageVspSyncClient, D extends NuageVspGuruClient> void loadNuageClient() {
-
-        try {
-            NuageVspPluginClientLoader clientLoader = NuageVspPluginClientLoader.getClientLoader(_relativePath, _cmsUserInfo, _numRetries, _retryInterval, _nuageVspCmsId);
-            _nuageVspApiClient = clientLoader.getNuageVspApiClient();
-            _nuageVspSyncClient = clientLoader.getNuageVspSyncClient();
-            _nuageVspGuruClient = clientLoader.getNuageVspGuruClient();
-            _nuageVspElementClient = clientLoader.getNuageVspElementClient();
-            _nuageVspManagerClient = clientLoader.getNuageVspManagerClient();
-            _isNuageVspClientLoaded = true;
-        } catch (ConfigurationException e) {
-            _isNuageVspClientLoaded = false;
-            String errorMessage = "Nuage Vsp Plugin client is not yet installed. Please install NuageVsp plugin client to use NuageVsp plugin in Cloudstack. ";
-            s_logger.error(errorMessage, e);
-            throw new CloudRuntimeException(errorMessage, e);
-        }
-
+    protected <A extends NuageVspApiClient, B extends NuageVspElementClient, C extends NuageVspGuruClient> void loadNuageClient() {
+        NuageVspPluginClientLoader clientLoader = NuageVspPluginClientLoader.getClientLoader(_relativePath, CMS_USER_ENTEPRISE_NAME,
+                _cmsUserLogin, _cmsUserPassword, _numRetries, _retryInterval, _nuageVspCmsId);
+        _nuageVspApiClient = clientLoader.getNuageVspApiClient();
+        _nuageVspGuruClient = clientLoader.getNuageVspGuruClient();
+        _nuageVspElementClient = clientLoader.getNuageVspElementClient();
+        _nuageVspManagerClient = clientLoader.getNuageVspManagerClient();
+        _isNuageVspClientLoaded = true;
     }
 
     @Override
@@ -265,12 +253,12 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        if (_relativePath == null || _relativePath.isEmpty()) {
+        if (Strings.isNullOrEmpty(_relativePath)) {
             s_logger.error("Refusing to ping Nuage VSD because the resource configuration is missing the relative path information");
             _shouldAudit = true;
             return null;
         }
-        if (_cmsUserInfo == null || _cmsUserInfo.length < 2) {
+        if (Strings.isNullOrEmpty(_cmsUserLogin) || Strings.isNullOrEmpty(_cmsUserPassword)) {
             s_logger.error("Refusing to ping Nuage VSD because the resource configuration is missing the CMS user information");
             _shouldAudit = true;
             return null;
@@ -278,7 +266,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         try {
             login();
         } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failed to ping to Nuage VSD on " + _name + " as user " + _cmsUserInfo[1], e);
+            s_logger.error("Failed to ping to Nuage VSD on " + _name + " as user " + _cmsUserLogin, e);
             _shouldAudit = true;
             return null;
         }
@@ -293,8 +281,6 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             return executeRequest((ReadyCommand)cmd);
         } else if (cmd instanceof MaintainCommand) {
             return executeRequest((MaintainCommand)cmd);
-        } else if (cmd instanceof VspResourceCommand) {
-            return executeRequest((VspResourceCommand)cmd);
         }
         //Guru commands
         else if (cmd instanceof ImplementNetworkVspCommand) {
@@ -317,16 +303,14 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             return executeRequest((ShutDownVpcVspCommand)cmd);
         }
         //Sync Commands
-        else if (cmd instanceof SyncVspCommand) {
-            return executeRequest((SyncVspCommand)cmd);
-        } else if (cmd instanceof SyncNuageVspCmsIdCommand) {
+        else if (cmd instanceof SyncNuageVspCmsIdCommand) {
             return executeRequest((SyncNuageVspCmsIdCommand)cmd);
         } else if (cmd instanceof SyncDomainCommand) {
             return executeRequest((SyncDomainCommand)cmd);
         }
         //Other commands
-        else if (cmd instanceof GetClientDefaultsCommand) {
-            return executeRequest((GetClientDefaultsCommand)cmd);
+        else if (cmd instanceof GetApiDefaultsCommand) {
+            return executeRequest((GetApiDefaultsCommand)cmd);
         } else if (cmd instanceof SupportedApiVersionCommand) {
             return executeRequest((SupportedApiVersionCommand)cmd);
         }
@@ -357,29 +341,11 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         return new MaintainAnswer(cmd);
     }
 
-    private Answer executeRequest(VspResourceCommand cmd) {
-        try {
-            isNuageVspApiLoaded();
-            if (cmd.getRequestType().equalsIgnoreCase("GETALL") || cmd.getRequestType().equalsIgnoreCase("GET") || cmd.getRequestType().equalsIgnoreCase("GETRELATED")) {
-                String resourceInfo = _nuageVspApiClient.executeRestApi(cmd.getRequestType(), cmd.getResource(), cmd.getResourceId(), cmd.getChildResource(),
-                        cmd.getEntityDetails(), cmd.getResourceFilter(), cmd.getProxyUserUuid(), cmd.getProxyUserDomainuuid());
-                return new VspResourceAnswer(cmd, resourceInfo, "Executed Issue Resource command");
-            }
-            return new VspResourceAnswer(cmd, false, cmd.getRequestType() + " is not yet supported");
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new VspResourceAnswer(cmd, e);
-        }
-    }
-
     private Answer executeRequest(ImplementNetworkVspCommand cmd) {
         try {
             isNuageVspGuruLoaded();
-            _nuageVspGuruClient.implement(cmd.getNetworkDomainName(), cmd.getNetworkDomainPath(), cmd.getNetworkDomainUuid(), cmd.getNetworkAccountName(),
-                    cmd.getNetworkAccountUuid(), cmd.getNetworkName(), cmd.getNetworkCidr(), cmd.getNetworkGateway(), cmd.getNetworkAclId(), cmd.getDnsServers(),
-                    cmd.getGatewaySystemIds(), cmd.isL3Network(), cmd.isVpc(), cmd.isSharedNetwork(), cmd.getNetworkUuid(), cmd.getVpcName(), cmd.getVpcUuid(),
-                    cmd.isDefaultEgressPolicy(), cmd.getIpAddressRange(), cmd.getDomainTemplateName());
-            return new Answer(cmd, true, "Created network mapping to " + cmd.getNetworkName() + " on Nuage VSD " + _hostName);
+            _nuageVspGuruClient.implement(cmd.getNetwork(), cmd.getDnsServers());
+            return new Answer(cmd, true, "Created network mapping to " + cmd.getNetwork().getName() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
@@ -389,11 +355,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ReserveVmInterfaceVspCommand cmd) {
         try {
             isNuageVspGuruLoaded();
-            _nuageVspGuruClient.reserve(cmd.getNicUuid(), cmd.getNicMacAddress(), cmd.getNetworkUuid(), cmd.isL3Network(),
-                    cmd.isSharedNetwork(), cmd.getVpcUuid(), cmd.getNetworkDomainUuid(), cmd.getNetworksAccountUuid(), cmd.isDomainRouter(), cmd.getDomainRouterIp(),
-                    cmd.getVmInstanceName(), cmd.getVmUuid(), cmd.useStaticIp(), cmd.getStaticIp(), cmd.getStaticNatIpUuid(), cmd.getStaticNatIpAddress(), cmd.isStaticNatIpAllocated(),
-                    cmd.isOneToOneNat(), cmd.getStaticNatVlanUuid(), cmd.getStaticNatVlanGateway(), cmd.getStaticNatVlanNetmask());
-            return new Answer(cmd, true, "Created NIC that maps to nicUuid" + cmd.getNicUuid() + " on Nuage VSD " + _hostName);
+            _nuageVspGuruClient.reserve(cmd.getNetwork(), cmd.getVm(), cmd.getNic(), cmd.getStaticNat());
+            return new Answer(cmd, true, "Created NIC that maps to nicUuid" + cmd.getNic().getUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
@@ -403,9 +366,9 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(DeallocateVmVspCommand cmd) {
         try {
             isNuageVspGuruLoaded();
-            _nuageVspGuruClient.deallocate(cmd.getNetworkUuid(), cmd.getNicFromDdUuid(), cmd.getNicMacAddress(), cmd.getNicIp4Address(), cmd.isL3Network(), cmd.isSharedNetwork(),
-                    cmd.getVpcUuid(), cmd.getNetworksDomainUuid(), cmd.getVmInstanceName(), cmd.getVmUuid(), cmd.isExpungingState());
-            return new Answer(cmd, true, "Deallocated VM " + cmd.getVmInstanceName() + " on Nuage VSD " + _hostName);
+
+            _nuageVspGuruClient.deallocate(cmd.getNetwork(), cmd.getVm(), cmd.getNic());
+            return new Answer(cmd, true, "Deallocated VM " + cmd.getVm().getName() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
@@ -415,8 +378,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(TrashNetworkVspCommand cmd) {
         try {
             isNuageVspGuruLoaded();
-            _nuageVspGuruClient.trash(cmd.getDomainUuid(), cmd.getNetworkUuid(), cmd.isL3Network(), cmd.isSharedNetwork(), cmd.getVpcUuid(), cmd.getDomainTemplateName());
-            return new Answer(cmd, true, "Deleted network mapping to " + cmd.getNetworkUuid() + " on Nuage VSD " + _hostName);
+            _nuageVspGuruClient.trash(cmd.getNetwork());
+            return new Answer(cmd, true, "Deleted network mapping to " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
@@ -426,9 +389,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ApplyStaticNatVspCommand cmd) {
         try {
             isNuageVspElementLoaded();
-            _nuageVspElementClient.applyStaticNats(cmd.getNetworkDomainUuid(), cmd.getNetworkUuid(), cmd.getVpcOrSubnetUuid(), cmd.isL3Network(),
-                    cmd.isVpc(), cmd.getStaticNatDetails());
-            return new Answer(cmd, true, "Applied Static NAT to network mapping " + cmd.getVpcOrSubnetUuid() + " on Nuage VSD " + _hostName);
+            _nuageVspElementClient.applyStaticNats(cmd.getNetwork(), cmd.getStaticNatDetails());
+            return new Answer(cmd, true, "Applied Static NAT to network mapping " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
@@ -438,10 +400,9 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ImplementVspCommand cmd) {
         try {
             isNuageVspElementLoaded();
-            boolean success = _nuageVspElementClient.implement(cmd.getNetworkId(), cmd.getNetworkDomainUuid(), cmd.getNetworkUuid(), cmd.getNetworkName(), cmd.getVpcOrSubnetUuid(), cmd.isL2Network(),
-                    cmd.isL3Network(), cmd.isVpc(), cmd.isShared(), cmd.getDomainTemplateName(), cmd.isFirewallServiceSupported(), cmd.getDnsServers(), cmd.getIngressFirewallRules(),
-                    cmd.getEgressFirewallRules(), cmd.getAcsFipUuid(), cmd.isEgressDefaultPolicy());
-            return new Answer(cmd, success, "Implemented network " + cmd.getNetworkUuid() + " on Nuage VSD " + _hostName);
+            boolean success = _nuageVspElementClient.implement(cmd.getNetwork(), cmd.getDnsServers(), cmd.getIngressFirewallRules(),
+                    cmd.getEgressFirewallRules(), cmd.getFloatingIpUuids());
+            return new Answer(cmd, success, "Implemented network " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
@@ -451,9 +412,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ApplyAclRuleVspCommand cmd) {
         try {
             isNuageVspElementLoaded();
-            _nuageVspElementClient.applyAclRules(cmd.isNetworkAcl(), cmd.getNetworkUuid(), cmd.getNetworkDomainUuid(), cmd.getVpcOrSubnetUuid(), cmd.getNetworkName(),
-                    cmd.isL2Network(), cmd.getAclRules(), cmd.getNetworkId(), cmd.isEgressDefaultPolicy(), cmd.getAcsIngressAcl(), cmd.isNetworkReset(), cmd.getDomainTemplateName());
-            return new Answer(cmd, true, "Applied ACL Rule to network mapping " + cmd.getVpcOrSubnetUuid() + " on Nuage VSD " + _hostName);
+            _nuageVspElementClient.applyAclRules(cmd.getAclType(), cmd.getNetwork(), cmd.getAclRules(), cmd.isNetworkReset());
+            return new Answer(cmd, true, "Applied ACL Rule to network mapping " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
@@ -463,19 +423,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ShutDownVpcVspCommand cmd) {
         try {
             isNuageVspElementLoaded();
-            _nuageVspElementClient.shutdownVpc(cmd.getDomainUuid(), cmd.getVpcUuid(), cmd.getDomainTemplateName());
+            _nuageVspElementClient.shutdownVpc(cmd.getDomainUuid(), cmd.getVpcUuid(), cmd.getDomainTemplateName(), cmd.getDomainRouterUuids());
             return new Answer(cmd, true, "Shutdown VPC " + cmd.getVpcUuid() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(SyncVspCommand cmd) {
-        try {
-            isNuageVspSyncLoaded();
-            _nuageVspSyncClient.syncWithNuageVsp(cmd.getNuageVspEntity());
-            return new Answer(cmd, true, "Synced " + cmd.getNuageVspEntity() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
@@ -504,7 +453,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(SyncDomainCommand cmd) {
         try {
             isNuageVspManagerLoaded();
-            boolean success = _nuageVspManagerClient.syncDomainWithNuageVsp(cmd.getDomainUuid(), cmd.getDomainName(), cmd.getDomainPath(), cmd.isToAdd(), cmd.isToRemove());
+            boolean success = _nuageVspManagerClient.syncDomainWithNuageVsp(cmd.getDomain(), cmd.isToAdd(), cmd.isToRemove());
             return new SyncDomainAnswer(success);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
@@ -512,14 +461,13 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         }
     }
 
-    private Answer executeRequest(GetClientDefaultsCommand cmd) {
+    private Answer executeRequest(GetApiDefaultsCommand cmd) {
         try {
             isNuageVspManagerLoaded();
-            Map<String, Object> clientDefaults = _nuageVspManagerClient.getClientDefaults();
-            return new GetClientDefaultsAnswer(cmd, clientDefaults);
+            return new GetApiDefaultsAnswer(cmd, _nuageVspManagerClient.getApiDefaults());
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new GetClientDefaultsAnswer(cmd, e);
+            return new GetApiDefaultsAnswer(cmd, e);
         }
     }
 
@@ -548,12 +496,6 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
 
     protected void isNuageVspElementLoaded() throws ConfigurationException {
         if (!_isNuageVspClientLoaded || _nuageVspElementClient == null) {
-            throw new ConfigurationException(NUAGE_VSP_PLUGIN_ERROR_MESSAGE);
-        }
-    }
-
-    protected void isNuageVspSyncLoaded() throws ConfigurationException {
-        if (!_isNuageVspClientLoaded || _nuageVspSyncClient == null) {
             throw new ConfigurationException(NUAGE_VSP_PLUGIN_ERROR_MESSAGE);
         }
     }

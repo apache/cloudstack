@@ -28,9 +28,11 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,9 +43,13 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listNuageVspDevices", responseObject = NuageVspDeviceResponse.class, description = "Lists Nuage VSP devices", since = "4.5")
+@APICommand(name = ListNuageVspDevicesCmd.APINAME, description = "Lists Nuage VSP devices", responseObject = NuageVspDeviceResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.5",
+        authorized = {RoleType.Admin})
 public class ListNuageVspDevicesCmd extends BaseListCmd {
-    private static final String s_name = "listnuagevspdeviceresponse";
+    public static final String APINAME = "listNuageVspDevices";
+
     @Inject
     NuageVspManager _nuageVspManager;
 
@@ -99,7 +105,7 @@ public class ListNuageVspDevicesCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
 }

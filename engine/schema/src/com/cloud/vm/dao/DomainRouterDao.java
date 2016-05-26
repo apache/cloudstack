@@ -156,4 +156,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     List<DomainRouterVO> listRunningByDataCenter(long dcId);
 
     List<DomainRouterVO> listStopped(long networkId);
+
+    List<DomainRouterVO> listIncludingRemovedByVpcId(long vpcId);
 }

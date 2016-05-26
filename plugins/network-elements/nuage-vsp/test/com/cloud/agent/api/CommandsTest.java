@@ -30,43 +30,41 @@ import com.cloud.agent.api.guru.TrashNetworkVspCommand;
 import com.cloud.agent.api.manager.SupportedApiVersionCommand;
 import com.cloud.agent.api.sync.SyncDomainCommand;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
-import com.cloud.agent.api.sync.SyncVspCommand;
 import com.google.common.collect.Maps;
 import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Map;
 
 public class CommandsTest {
 
     @Test
     public void testCommandEquals() throws IllegalAccessException, InvocationTargetException, InstantiationException {
-        ApplyAclRuleVspCommand applyAclRuleVspCommand = fillBuilderObject(new ApplyAclRuleVspCommand.Builder()).build();
-        ApplyAclRuleVspCommand otherApplyAclRuleVspCommand = fillBuilderObject(new ApplyAclRuleVspCommand.Builder()).build();
+        ApplyAclRuleVspCommand applyAclRuleVspCommand = fillObject(ApplyAclRuleVspCommand.class);
+        ApplyAclRuleVspCommand otherApplyAclRuleVspCommand = fillObject(ApplyAclRuleVspCommand.class);
 
-        ApplyStaticNatVspCommand applyStaticNatVspCommand = fillBuilderObject(new ApplyStaticNatVspCommand.Builder()).build();
-        ApplyStaticNatVspCommand otherApplyStaticNatVspCommand = fillBuilderObject(new ApplyStaticNatVspCommand.Builder()).build();
+        ApplyStaticNatVspCommand applyStaticNatVspCommand = fillObject(ApplyStaticNatVspCommand.class);
+        ApplyStaticNatVspCommand otherApplyStaticNatVspCommand = fillObject(ApplyStaticNatVspCommand.class);
 
-        ImplementVspCommand implementVspCommand = fillBuilderObject(new ImplementVspCommand.Builder()).build();
-        ImplementVspCommand otherImplementVspCommand = fillBuilderObject(new ImplementVspCommand.Builder()).build();
+        ImplementVspCommand implementVspCommand = fillObject(ImplementVspCommand.class);
+        ImplementVspCommand otherImplementVspCommand = fillObject(ImplementVspCommand.class);
 
-        ShutDownVpcVspCommand shutDownVpcVspCommand = fillBuilderObject(new ShutDownVpcVspCommand.Builder()).build();
-        ShutDownVpcVspCommand otherShutDownVpcVspCommand = fillBuilderObject(new ShutDownVpcVspCommand.Builder()).build();
+        ShutDownVpcVspCommand shutDownVpcVspCommand = fillObject(ShutDownVpcVspCommand.class);
+        ShutDownVpcVspCommand otherShutDownVpcVspCommand = fillObject(ShutDownVpcVspCommand.class);
 
-        DeallocateVmVspCommand deallocateVmVspCommand = fillBuilderObject(new DeallocateVmVspCommand.Builder()).build();
-        DeallocateVmVspCommand otherDeallocateVmVspCommand = fillBuilderObject(new DeallocateVmVspCommand.Builder()).build();
+        DeallocateVmVspCommand deallocateVmVspCommand = fillObject(DeallocateVmVspCommand.class);
+        DeallocateVmVspCommand otherDeallocateVmVspCommand = fillObject(DeallocateVmVspCommand.class);
 
-        ImplementNetworkVspCommand implementNetworkVspCommand = fillBuilderObject(new ImplementNetworkVspCommand.Builder()).build();
-        ImplementNetworkVspCommand otherImplementNetworkVspCommand = fillBuilderObject(new ImplementNetworkVspCommand.Builder()).build();
+        ImplementNetworkVspCommand implementNetworkVspCommand = fillObject(ImplementNetworkVspCommand.class);
+        ImplementNetworkVspCommand otherImplementNetworkVspCommand = fillObject(ImplementNetworkVspCommand.class);
 
-        ReserveVmInterfaceVspCommand reserveVmInterfaceVspCommand = fillBuilderObject(new ReserveVmInterfaceVspCommand.Builder()).build();
-        ReserveVmInterfaceVspCommand otherReserveVmInterfaceVspCommand = fillBuilderObject(new ReserveVmInterfaceVspCommand.Builder()).build();
+        ReserveVmInterfaceVspCommand reserveVmInterfaceVspCommand = fillObject(ReserveVmInterfaceVspCommand.class);
+        ReserveVmInterfaceVspCommand otherReserveVmInterfaceVspCommand = fillObject(ReserveVmInterfaceVspCommand.class);
 
-        TrashNetworkVspCommand trashNetworkVspCommand = fillBuilderObject(new TrashNetworkVspCommand.Builder()).build();
-        TrashNetworkVspCommand otherTrashNetworkVspCommand  = fillBuilderObject(new TrashNetworkVspCommand.Builder()).build();
+        TrashNetworkVspCommand trashNetworkVspCommand = fillObject(TrashNetworkVspCommand.class);
+        TrashNetworkVspCommand otherTrashNetworkVspCommand  = fillObject(TrashNetworkVspCommand.class);
 
         SupportedApiVersionCommand supportedApiVersionCommand = new SupportedApiVersionCommand("3.2");
         SupportedApiVersionCommand otherSupportedApiVersionCommand = new SupportedApiVersionCommand("3.2");
@@ -77,14 +75,8 @@ public class CommandsTest {
         SyncNuageVspCmsIdCommand syncNuageVspCmsIdCommand = fillObject(SyncNuageVspCmsIdCommand.class);
         SyncNuageVspCmsIdCommand otherSyncNuageVspCmsIdCommand = fillObject(SyncNuageVspCmsIdCommand.class);
 
-        SyncVspCommand syncVspCommand = fillObject(SyncVspCommand.class);
-        SyncVspCommand otherSyncVspCommand = fillObject(SyncVspCommand.class);
-
         PingNuageVspCommand pingNuageVspCommand = fillObject(PingNuageVspCommand.class);
         PingNuageVspCommand otherPingNuageVspCommand = fillObject(PingNuageVspCommand.class);
-
-        VspResourceCommand vspResourceCommand = fillObject(VspResourceCommand.class);
-        VspResourceCommand otherVspResourceCommand = fillObject(VspResourceCommand.class);
 
         new EqualsTester()
                 .addEqualityGroup(applyAclRuleVspCommand, otherApplyAclRuleVspCommand)
@@ -98,31 +90,8 @@ public class CommandsTest {
                 .addEqualityGroup(supportedApiVersionCommand, otherSupportedApiVersionCommand)
                 .addEqualityGroup(syncDomainCommand, otherSyncDomainCommand)
                 .addEqualityGroup(syncNuageVspCmsIdCommand, otherSyncNuageVspCmsIdCommand)
-                .addEqualityGroup(syncVspCommand, otherSyncVspCommand)
                 .addEqualityGroup(pingNuageVspCommand, otherPingNuageVspCommand)
-                .addEqualityGroup(vspResourceCommand, otherVspResourceCommand)
                 .testEquals();
-    }
-
-    private <T extends CmdBuilder> T fillBuilderObject(T obj) throws IllegalAccessException, InvocationTargetException {
-        Class clazz = obj.getClass();
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (method.getParameterTypes().length == 1) {
-                Class paramType = method.getParameterTypes()[0];
-                if (isNumericType(paramType)) {
-                    if (Long.class.isAssignableFrom(paramType)) {
-                        method.invoke(obj, Long.valueOf(method.getName().length()));
-                    } else {
-                        method.invoke(obj, method.getName().length());
-                    }
-                } else if (String.class.isAssignableFrom(paramType)) {
-                    method.invoke(obj, method.getName());
-                } else if (Boolean.class.isAssignableFrom(paramType) || boolean.class.isAssignableFrom(paramType)) {
-                    method.invoke(obj, method.getName().length() % 2 == 0);
-                }
-            }
-        }
-        return obj;
     }
 
     private <T> T fillObject(Class<T> clazz) throws IllegalAccessException, InvocationTargetException, InstantiationException {

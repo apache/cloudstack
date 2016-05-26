@@ -20,34 +20,23 @@
 package com.cloud.agent.api.sync;
 
 import com.cloud.agent.api.Command;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
 
 public class SyncDomainCommand extends Command {
 
-    private final String _domainUuid;
-    private final String _domainName;
-    private final String _domainPath;
+    private final VspDomain _domain;
     private final boolean _toAdd;
     private final boolean _toRemove;
 
-    public SyncDomainCommand(String domainUuid, String domainName, String domainPath, boolean toAdd, boolean toRemove) {
+    public SyncDomainCommand(VspDomain domain, boolean toAdd, boolean toRemove) {
         super();
-        this._domainUuid = domainUuid;
-        this._domainName = domainName;
-        this._domainPath = domainPath;
+        this._domain = domain;
         this._toAdd = toAdd;
         this._toRemove = toRemove;
     }
 
-    public String getDomainUuid() {
-        return _domainUuid;
-    }
-
-    public String getDomainName() {
-        return _domainName;
-    }
-
-    public String getDomainPath() {
-        return _domainPath;
+    public VspDomain getDomain() {
+        return _domain;
     }
 
     public boolean isToAdd() {
@@ -73,9 +62,7 @@ public class SyncDomainCommand extends Command {
 
         if (_toAdd != that._toAdd) return false;
         if (_toRemove != that._toRemove) return false;
-        if (_domainName != null ? !_domainName.equals(that._domainName) : that._domainName != null) return false;
-        if (_domainPath != null ? !_domainPath.equals(that._domainPath) : that._domainPath != null) return false;
-        if (_domainUuid != null ? !_domainUuid.equals(that._domainUuid) : that._domainUuid != null) return false;
+        if (_domain != null ? !_domain.equals(that._domain) : that._domain != null) return false;
 
         return true;
     }
@@ -83,9 +70,7 @@ public class SyncDomainCommand extends Command {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (_domainUuid != null ? _domainUuid.hashCode() : 0);
-        result = 31 * result + (_domainName != null ? _domainName.hashCode() : 0);
-        result = 31 * result + (_domainPath != null ? _domainPath.hashCode() : 0);
+        result = 31 * result + (_domain != null ? _domain.hashCode() : 0);
         result = 31 * result + (_toAdd ? 1 : 0);
         result = 31 * result + (_toRemove ? 1 : 0);
         return result;

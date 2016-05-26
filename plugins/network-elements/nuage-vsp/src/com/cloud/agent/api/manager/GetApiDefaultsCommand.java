@@ -25,9 +25,9 @@ import com.cloud.agent.api.Command;
  * The super class implementations for equals and hashCode are acceptable because this class does not track any state
  * in addition to the super class.
  */
-public class GetClientDefaultsCommand extends Command {
+public class GetApiDefaultsCommand extends Command {
 
-    public GetClientDefaultsCommand() {
+    public GetApiDefaultsCommand() {
         super();
     }
 

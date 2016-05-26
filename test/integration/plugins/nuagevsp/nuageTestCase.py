@@ -50,7 +50,7 @@ import socket
 class nuageTestCase(cloudstackTestCase):
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls, zone=None):
         cls.debug("setUpClass nuageTestCase")
 
         # We want to fail quicker, if it's a failure
@@ -60,9 +60,11 @@ class nuageTestCase(cloudstackTestCase):
         cls.api_client = test_client.getApiClient()
         cls.db_client = test_client.getDbConnection()
         cls.test_data = test_client.getParsedTestDataConfig()
-
         # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client)
+        cls.zone = get_zone(cls.api_client,
+                            zone_name=zone.name if zone else None,
+                            zone_id=zone.id if zone else None
+                            )
         cls.domain = get_domain(cls.api_client)
         cls.template = get_template(cls.api_client,
                                     cls.zone.id,
