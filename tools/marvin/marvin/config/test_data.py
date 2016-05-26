@@ -914,6 +914,7 @@ test_data = {
         "vlan": "untagged",
     },
     "ostype": "CentOS 5.6 (64-bit)",
+    "verify_ping_success": "received",
     "sleep": 90,
     "timeout": 10,
     "page": 1,

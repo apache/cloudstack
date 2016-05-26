@@ -270,7 +270,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         # Test SSH after closing port 22
         expected = 1
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "3 packets received"
+        check_string = "3" + " " + self.services["verify_ping_success"]
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -434,7 +434,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
 
         expected = 0
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "3 packets received"
+        check_string = "3" + " " + self.services["verify_ping_success"]
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -601,7 +601,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                             self.apiclient.connection.user,
                             self.apiclient.connection.passwd,
                             router.linklocalip,
-                            "sh /opt/cloud/bin/checkrouter.sh ",
+                            "bash /opt/cloud/bin/checkrouter.sh ",
                             hypervisor=hypervisor
                         ))
                 else:
@@ -614,7 +614,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                             host.user,
                             host.passwd,
                             router.linklocalip,
-                            "sh /opt/cloud/bin/checkrouter.sh "
+                            "bash /opt/cloud/bin/checkrouter.sh "
                         ))
 
                     except KeyError:
@@ -822,7 +822,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
         # Test SSH after closing port 22
         expected = 1
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "3 packets received"
+        check_string = "3" + " " + self.services["verify_ping_success"]
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -977,7 +977,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
 
         expected = 0
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "3 packets received"
+        check_string = "3" + " " + self.services["verify_ping_success"]
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
