@@ -59,6 +59,8 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
         response.setAllowUserViewDestroyedVM((Boolean)capabilities.get("allowUserViewDestroyedVM"));
         response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
+        response.setDefaultPageSize((Integer)capabilities.get("defaultPageSize"));
+        response.setEnableMetricsUI((Boolean)capabilities.get("enableMetricsUI"));
         if (capabilities.containsKey("apiLimitInterval")) {
             response.setApiLimitInterval((Integer)capabilities.get("apiLimitInterval"));
         }

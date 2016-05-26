@@ -7851,9 +7851,14 @@
                                             data: zoneObjs
                                         });
                                     }
-                                });
+                               });
                             },
-
+                            actionPreFilter: function(args){
+                                if (g_enablemetricsui)
+                                    return ['add', 'viewMetrics'];
+                                else
+                                    return ['add'];
+                            },
                             actions: {
                                 add: {
                                     label: 'label.add.zone',
@@ -14074,6 +14079,12 @@
                             }
                         });
                     },
+                    actionPreFilter: function(args){
+                        if (g_enablemetricsui)
+                            return ['add', 'viewMetrics'];
+                        else
+                            return ['add'];
+                    },
 
                     actions: {
                         add: {
@@ -15567,7 +15578,12 @@
                             }
                         });
                     },
-
+                    actionPreFilter: function(args){
+                        if (g_enablemetricsui)
+                            return ['add', 'viewMetrics'];
+                        else
+                            return ['add'];
+                    },
                     actions: {
                         add: {
                             label: 'label.add.host',
@@ -17295,7 +17311,12 @@
                             }
                         });
                     },
-
+                    actionPreFilter: function(args){
+                        if (g_enablemetricsui)
+                            return ['add', 'viewMetrics'];
+                        else
+                            return ['add'];
+                    },
                     actions: {
                         add: {
                             label: 'label.add.primary.storage',
@@ -20942,7 +20963,7 @@
         if (l3GatewayServiceUuid != null && l3GatewayServiceUuid.length > 0) {
             array1.push("&l3gatewayserviceuuid=" + todb(args.data.l3gatewayserviceuuid));
         }
-		
+
 		var l2GatewayServiceUuid = args.data.l2gatewayserviceuuid;
         if (l2GatewayServiceUuid != null && l2GatewayServiceUuid.length > 0) {
             array1.push("&l2gatewayserviceuuid=" + todb(args.data.l2gatewayserviceuuid));
