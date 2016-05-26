@@ -84,6 +84,14 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if the user can recover and expunge virtualmachines, false otherwise", since = "4.6.0")
     private boolean allowUserExpungeRecoverVM;
 
+    @SerializedName("defaultpagesize")
+    @Param(description = "Default page size global configuration parameter", since="4.7.1")
+    private Integer defaultPageSize;
+
+    @SerializedName("enablemetricsui")
+    @Param(description = "True if metrics UI needs to be shown. False otherwise.", since="4.7.1")
+    private Boolean enableMetricsUI;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -142,5 +150,13 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAllowUserExpungeRecoverVM(boolean allowUserExpungeRecoverVM) {
         this.allowUserExpungeRecoverVM = allowUserExpungeRecoverVM;
+    }
+
+    public void setDefaultPageSize(Integer defaultPageSize) {
+        this.defaultPageSize = defaultPageSize;
+    }
+
+    public void setEnableMetricsUI(Boolean enableMetricsUI) {
+        this.enableMetricsUI = enableMetricsUI;
     }
 }

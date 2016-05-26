@@ -1922,7 +1922,14 @@
 
         // List view header actions
         if (listViewData.actions) {
+            // If a preFilter is set, then get the values. Else set this to null
+            var filteredActions = listViewData.actionPreFilter == undefined ?
+                        null : listViewData.actionPreFilter();
             $.each(listViewData.actions, function(actionName, action) {
+                // filter out those actions that shouldn't be shown
+                if (filteredActions != null
+                        && (filteredActions.indexOf(actionName) < 0))
+                    return false;
                 var preFilter = function(extendContext) {
                     var context = $.extend(true, {},
                         $listView.data('view-args').context ? $listView.data('view-args').context : cloudStack.context);
