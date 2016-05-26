@@ -95,11 +95,14 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.TemplateJoinDao;
@@ -138,13 +141,14 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
@@ -173,6 +177,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -185,6 +190,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -280,6 +286,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private DiskOfferingDao _diskOfferingDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    EntityManager _entityMgr;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -2237,7 +2245,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate
     @Override
-    public Long getDiskBytesReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
+    public Long getDiskBytesReadRate(final ServiceOffering offering, final DiskOffering diskOffering) {
         if ((offering != null) && (offering.getBytesReadRate() != null) && (offering.getBytesReadRate() > 0)) {
             return offering.getBytesReadRate();
         } else if ((diskOffering != null) && (diskOffering.getBytesReadRate() != null) && (diskOffering.getBytesReadRate() > 0)) {
@@ -2253,7 +2261,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     // get bytesWriteRate from service_offering, disk_offering and vm.disk.throttling.bytes_write_rate
     @Override
-    public Long getDiskBytesWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
+    public Long getDiskBytesWriteRate(final ServiceOffering offering, final DiskOffering diskOffering) {
         if ((offering != null) && (offering.getBytesWriteRate() != null) && (offering.getBytesWriteRate() > 0)) {
             return offering.getBytesWriteRate();
         } else if ((diskOffering != null) && (diskOffering.getBytesWriteRate() != null) && (diskOffering.getBytesWriteRate() > 0)) {
@@ -2269,7 +2277,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     // get iopsReadRate from service_offering, disk_offering and vm.disk.throttling.iops_read_rate
     @Override
-    public Long getDiskIopsReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
+    public Long getDiskIopsReadRate(final ServiceOffering offering, final DiskOffering diskOffering) {
         if ((offering != null) && (offering.getIopsReadRate() != null) && (offering.getIopsReadRate() > 0)) {
             return offering.getIopsReadRate();
         } else if ((diskOffering != null) && (diskOffering.getIopsReadRate() != null) && (diskOffering.getIopsReadRate() > 0)) {
@@ -2285,7 +2293,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     // get iopsWriteRate from service_offering, disk_offering and vm.disk.throttling.iops_write_rate
     @Override
-    public Long getDiskIopsWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
+    public Long getDiskIopsWriteRate(final ServiceOffering offering, final DiskOffering diskOffering) {
         if ((offering != null) && (offering.getIopsWriteRate() != null) && (offering.getIopsWriteRate() > 0)) {
             return offering.getIopsWriteRate();
         } else if ((diskOffering != null) && (diskOffering.getIopsWriteRate() != null) && (diskOffering.getIopsWriteRate() > 0)) {
@@ -2308,4 +2316,39 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {StorageCleanupInterval, StorageCleanupDelay, StorageCleanupEnabled};
     }
+
+    @Override
+    public void setDiskProfileThrottling(DiskProfile dskCh, final ServiceOffering offering, final DiskOffering diskOffering) {
+        dskCh.setBytesReadRate(getDiskBytesReadRate(offering, diskOffering));
+        dskCh.setBytesWriteRate(getDiskBytesWriteRate(offering, diskOffering));
+        dskCh.setIopsReadRate(getDiskIopsReadRate(offering, diskOffering));
+        dskCh.setIopsWriteRate(getDiskIopsWriteRate(offering, diskOffering));
+    }
+
+    @Override
+    public DiskTO getDiskWithThrottling(final DataTO volTO, final Volume.Type volumeType, final long deviceId, final String path, final long offeringId, final long diskOfferingId) {
+        DiskTO disk = null;
+        if (volTO != null && volTO instanceof VolumeObjectTO) {
+            VolumeObjectTO volumeTO = (VolumeObjectTO) volTO;
+            ServiceOffering offering = _entityMgr.findById(ServiceOffering.class, offeringId);
+            DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
+            if (volumeType == Volume.Type.ROOT) {
+                setVolumeObjectTOThrottling(volumeTO, offering, diskOffering);
+            } else {
+                setVolumeObjectTOThrottling(volumeTO, null, diskOffering);
+            }
+            disk = new DiskTO(volumeTO, deviceId, path, volumeType);
+        } else {
+            disk = new DiskTO(volTO, deviceId, path, volumeType);
+        }
+        return disk;
+    }
+
+    private void setVolumeObjectTOThrottling(VolumeObjectTO volumeTO, final ServiceOffering offering, final DiskOffering diskOffering) {
+        volumeTO.setBytesReadRate(getDiskBytesReadRate(offering, diskOffering));
+        volumeTO.setBytesWriteRate(getDiskBytesWriteRate(offering, diskOffering));
+        volumeTO.setIopsReadRate(getDiskIopsReadRate(offering, diskOffering));
+        volumeTO.setIopsWriteRate(getDiskIopsWriteRate(offering, diskOffering));
+    }
+
 }

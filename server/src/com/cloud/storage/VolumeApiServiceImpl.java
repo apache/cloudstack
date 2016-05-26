@@ -251,6 +251,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     UserVmManager _userVmMgr;
     protected Gson _gson;
+    @Inject
+    StorageManager storageMgr;
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -2479,7 +2481,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             deviceId = getDeviceId(vm.getId(), deviceId);
 
-            DiskTO disk = new DiskTO(volTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType());
+            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, volumeToAttach.getVolumeType(), deviceId, volumeToAttach.getPath(),
+                    vm.getServiceOfferingId(), volumeToAttach.getDiskOfferingId());
 
             AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
 
