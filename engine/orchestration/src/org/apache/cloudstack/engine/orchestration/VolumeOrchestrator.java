@@ -94,6 +94,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
@@ -175,6 +176,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     protected AsyncJobManager _jobMgr;
     @Inject
     ClusterManager clusterManager;
+    @Inject
+    StorageManager storageMgr;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -207,10 +210,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         // Find a destination storage pool with the specified criteria
         DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
-        ;
         DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSize(),
                 diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
         dskCh.setHyperType(dataDiskHyperType);
+        storageMgr.setDiskProfileThrottling(dskCh, null, diskOffering);
+
         DataCenter destPoolDataCenter = _entityMgr.findById(DataCenter.class, destPoolDcId);
         Pod destPoolPod = _entityMgr.findById(Pod.class, destPoolPodId);
 
@@ -458,6 +462,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
         DiskProfile dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
         dskCh.setHyperType(vm.getHypervisorType());
+        storageMgr.setDiskProfileThrottling(dskCh, null, diskOffering);
+
         // Find a suitable storage to create volume on
         StoragePool destPool = findStoragePool(dskCh, dc, pod, clusterId, null, vm, avoidPools);
         DataStore destStore = dataStoreMgr.getDataStore(destPool.getId(), DataStoreRole.Primary);
@@ -490,8 +496,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
+            storageMgr.setDiskProfileThrottling(dskCh, offering, diskOffering);
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
+            storageMgr.setDiskProfileThrottling(dskCh, null, diskOffering);
         }
 
         if (diskOffering != null && diskOffering.isCustomized()) {
@@ -1054,9 +1062,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         for (VolumeVO vol : vols) {
-            DataTO volTO = volFactory.getVolume(vol.getId()).getTO();
-            DiskTO disk = new DiskTO(volTO, vol.getDeviceId(), vol.getPath(), vol.getVolumeType());
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+            DataTO volTO = volumeInfo.getTO();
+            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(),
+                    vm.getServiceOfferingId(), vol.getDiskOfferingId());
             DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
 
             disk.setDetails(getDetails(volumeInfo, dataStore));
@@ -1337,9 +1346,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
-            DataTO volumeTO = volFactory.getVolume(vol.getId()).getTO();
-            DiskTO disk = new DiskTO(volumeTO, vol.getDeviceId(), vol.getPath(), vol.getVolumeType());
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+            DataTO volTO = volumeInfo.getTO();
+            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(),
+                    vm.getServiceOfferingId(), vol.getDiskOfferingId());
             DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
 
             disk.setDetails(getDetails(volumeInfo, dataStore));
