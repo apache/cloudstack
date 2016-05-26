@@ -24,41 +24,41 @@ import java.util.Map;
 import com.cloud.storage.template.TemplateProp;
 
 public class ModifyStoragePoolAnswer extends Answer {
-    private StoragePoolInfo _poolInfo;
-    private Map<String, TemplateProp> _templateInfo;
-    private String _localDatastoreName;
+    private StoragePoolInfo poolInfo;
+    private Map<String, TemplateProp> templateInfo;
+    private String localDatastoreName;
 
     public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo) {
         super(cmd);
 
         result = true;
 
-        _poolInfo = new StoragePoolInfo(null, cmd.getPool().getHost(), cmd.getPool().getPath(), cmd.getLocalPath(), cmd.getPool().getType(), capacityBytes, availableBytes);
+        poolInfo = new StoragePoolInfo(null, cmd.getPool().getHost(), cmd.getPool().getPath(), cmd.getLocalPath(), cmd.getPool().getType(), capacityBytes, availableBytes);
 
-        _templateInfo = tInfo;
+        templateInfo = tInfo;
     }
 
     public void setPoolInfo(StoragePoolInfo poolInfo) {
-        _poolInfo = poolInfo;
+        this.poolInfo = poolInfo;
     }
 
     public StoragePoolInfo getPoolInfo() {
-        return _poolInfo;
+        return poolInfo;
     }
 
     public void setTemplateInfo(Map<String, TemplateProp> templateInfo) {
-        _templateInfo = templateInfo;
+        this.templateInfo = templateInfo;
     }
 
     public Map<String, TemplateProp> getTemplateInfo() {
-        return _templateInfo;
+        return templateInfo;
     }
 
     public void setLocalDatastoreName(String localDatastoreName) {
-        _localDatastoreName = localDatastoreName;
+        this.localDatastoreName = localDatastoreName;
     }
 
     public String getLocalDatastoreName() {
-        return _localDatastoreName;
+        return localDatastoreName;
     }
 }

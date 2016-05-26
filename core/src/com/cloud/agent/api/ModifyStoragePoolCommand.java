@@ -28,15 +28,15 @@ import com.cloud.storage.StoragePool;
 public class ModifyStoragePoolCommand extends Command {
     public static final String LOCAL_PATH_PREFIX = "/mnt/";
 
-    private boolean _add;
-    private StorageFilerTO _pool;
-    private String _localPath;
-    private String _storagePath;
+    private boolean add;
+    private StorageFilerTO pool;
+    private String localPath;
+    private String storagePath;
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath) {
-        _add = add;
-        _pool = new StorageFilerTO(pool);
-        _localPath = localPath;
+        this.add = add;
+        this.pool = new StorageFilerTO(pool);
+        this.localPath = localPath;
     }
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
@@ -44,27 +44,27 @@ public class ModifyStoragePoolCommand extends Command {
     }
 
     public boolean getAdd() {
-        return _add;
+        return add;
     }
 
     public void setPool(StoragePool pool) {
-        _pool = new StorageFilerTO(pool);
+        this.pool = new StorageFilerTO(pool);
     }
 
     public StorageFilerTO getPool() {
-        return _pool;
+        return pool;
     }
 
     public String getLocalPath() {
-        return _localPath;
+        return localPath;
     }
 
     public void setStoragePath(String storagePath) {
-        _storagePath = storagePath;
+        this.storagePath = storagePath;
     }
 
     public String getStoragePath() {
-        return _storagePath;
+        return storagePath;
     }
 
     @Override
