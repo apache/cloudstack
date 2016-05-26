@@ -1160,7 +1160,7 @@ public enum Config {
             ManagementServer.class,
             Boolean.class,
             "vmware.create.full.clone",
-            "true",
+            "false",
             "If set to true, creates guest VMs as full clones on ESX",
             null),
     VmwareServiceConsole(

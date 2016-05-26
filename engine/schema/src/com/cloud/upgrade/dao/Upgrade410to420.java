@@ -116,32 +116,12 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void createFullCloneFlag(Connection conn) {
-        String update_sql;
-        int numRows = 0;
-        try (PreparedStatement delete = conn.prepareStatement("delete from `cloud`.`configuration` where name='vmware.create.full.clone';");)
-        {
+        try (PreparedStatement delete = conn.prepareStatement("delete from `cloud`.`configuration` where name='vmware.create.full.clone';");) {
             delete.executeUpdate();
-            try(PreparedStatement query = conn.prepareStatement("select count(*) from `cloud`.`data_center`");)
-            {
-                try(ResultSet rs = query.executeQuery();) {
-                    if (rs.next()) {
-                        numRows = rs.getInt(1);
-                    }
-                    if (numRows > 0) {
-                        update_sql = "insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');";
-                    } else {
-                        update_sql = "insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'true', 'If set to true, creates VMs as full clones on ESX hypervisor');";
-                    }
-                    try(PreparedStatement update_pstmt =  conn.prepareStatement(update_sql);) {
-                        update_pstmt.executeUpdate();
-                    }catch (SQLException e) {
-                        throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
-                    }
-                }catch (SQLException e) {
-                    throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
-                }
-            }catch (SQLException e) {
-                 throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
+            try (PreparedStatement update_pstmt =  conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');");) {
+                update_pstmt.executeUpdate();
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
