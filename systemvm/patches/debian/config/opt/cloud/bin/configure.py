@@ -43,6 +43,7 @@ from cs.CsLoadBalancer import CsLoadBalancer
 from cs.CsConfig import CsConfig
 from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
+from cs.CsQuagga import CsQuagga
 
 
 class CsPassword(CsDataBag):
@@ -897,6 +898,7 @@ def main(argv):
 
     # Track if changes need to be committed to NetFilter
     iptables_change = False
+    quagga_rules = False
 
     # The "GLOBAL" Configuration object
     config = CsConfig()
@@ -960,6 +962,13 @@ def main(argv):
         logging.debug("Configuring load balancer")
         iptables_change = True
 
+    if process_file in ["cmd_line.json", "quagga.json"]:
+        logging.debug("Configuring quagga ")
+        quagga = CsQuagga("quagga", config)
+        quagga.process()
+        iptables_change = True
+        quagga_rules = True
+
     if process_file in ["cmd_line.json", "monitor_service.json"]:
         logging.debug("Configuring monitor service")
         mon = CsMonitor("monitorservice", config)
@@ -967,6 +976,10 @@ def main(argv):
 
     # If iptable rules have changed, apply them.
     if iptables_change:
+        if quagga_rules:
+            logging.debug("applying quagga iptable rules ..")
+            quagga.applyFwRules()
+
         acls = CsAcl('networkacl', config)
         acls.process()
 

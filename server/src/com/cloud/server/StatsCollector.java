@@ -432,7 +432,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                s_logger.debug("HostOutOfBandManagementStatsCollector is running...");
+                s_logger.trace("HostOutOfBandManagementStatsCollector is running...");
                 List<OutOfBandManagementVO> outOfBandManagementHosts = outOfBandManagementDao.findAllByManagementServer(ManagementServerNode.getManagementServerId());
                 if (outOfBandManagementHosts == null) {
                     return;

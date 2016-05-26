@@ -267,6 +267,8 @@ import org.apache.cloudstack.api.command.admin.vpc.DeleteVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.ListVPCsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vpc.VPCOSPFConfigCmd;
+import org.apache.cloudstack.api.command.admin.vpc.VPCOSPFConfigUpdateCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
@@ -2705,6 +2707,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeletePrivateGatewayCmd.class);
         cmdList.add(DeleteVPCOfferingCmd.class);
         cmdList.add(UpdateVPCOfferingCmd.class);
+        cmdList.add(VPCOSPFConfigCmd.class);
+        cmdList.add(VPCOSPFConfigUpdateCmd.class);
         cmdList.add(CreateZoneCmd.class);
         cmdList.add(DeleteZoneCmd.class);
         cmdList.add(MarkDefaultZoneForAccountCmd.class);

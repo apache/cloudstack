@@ -494,3 +494,5 @@ CREATE TABLE IF NOT EXISTS `cloud`.`oobm` (
   KEY `i_oobm__mgmt_server_id` (`mgmt_server_id`),
   CONSTRAINT `fk_oobm__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ALTER TABLE `cloud`.`physical_network_service_providers` 
+ADD COLUMN `dynamic_routing_provided` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' AFTER `networkacl_service_provided`;
