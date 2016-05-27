@@ -78,7 +78,7 @@ public class RegisterIsoCmd extends BaseCmd {
                description = "the ID of the OS type that best represents the OS of this ISO. If the ISO is bootable this parameter needs to be passed")
     private Long osTypeId;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL to where the ISO is currently being hosted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, length = 2048, description = "the URL to where the ISO is currently being hosted")
     private String url;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,

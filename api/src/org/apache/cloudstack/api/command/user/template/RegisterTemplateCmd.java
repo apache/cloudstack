@@ -104,6 +104,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL,
                type = CommandType.STRING,
                required = true,
+               length = 2048,
                description = "the URL of where the template is hosted. Possible URL include http:// and https://")
     private String url;
 
