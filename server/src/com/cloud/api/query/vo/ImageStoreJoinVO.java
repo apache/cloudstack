@@ -50,7 +50,7 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Column(name = "name")
     private String name;
 
-    @Column(name = "url")
+    @Column(name = "url", length = 2048)
     private String url;
 
     @Column(name = "protocol")

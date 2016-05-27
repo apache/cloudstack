@@ -93,7 +93,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
     @Column(name = "install_path")
     private String installPath;
 
-    @Column(name = "url")
+    @Column(name = "url", length = 2048)
     private String downloadUrl;
 
     @Column(name = "format")
