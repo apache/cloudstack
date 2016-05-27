@@ -192,6 +192,7 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
+import org.apache.cloudstack.api.response.CapabilitiesResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
@@ -459,6 +460,33 @@ public class ApiResponseHelper implements ResponseGenerator {
         cfgResponse.setObjectName("configuration");
 
         return cfgResponse;
+    }
+
+    @Override
+    public CapabilitiesResponse createCapabilitiesResponse(Map<String, Object> capabilities) {
+        CapabilitiesResponse response = new CapabilitiesResponse();
+        response.setSecurityGroupsEnabled((Boolean)capabilities.get("securityGroupsEnabled"));
+        response.setCloudStackVersion((String)capabilities.get("cloudStackVersion"));
+        response.setUserPublicTemplateEnabled((Boolean)capabilities.get("userPublicTemplateEnabled"));
+        response.setSupportELB((String)capabilities.get("supportELB"));
+        response.setProjectInviteRequired((Boolean)capabilities.get("projectInviteRequired"));
+        response.setAllowUsersCreateProjects((Boolean)capabilities.get("allowusercreateprojects"));
+        response.setDiskOffMinSize((Long)capabilities.get("customDiskOffMinSize"));
+        response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
+        response.setRegionSecondaryEnabled((Boolean)capabilities.get("regionSecondaryEnabled"));
+        response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
+        response.setAllowUserViewDestroyedVM((Boolean)capabilities.get("allowUserViewDestroyedVM"));
+        response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
+        response.setDefaultPageSize((Integer)capabilities.get("defaultPageSize"));
+        response.setEnableMetricsUI((Boolean)capabilities.get("enableMetricsUI"));
+        if (capabilities.containsKey("apiLimitInterval")) {
+            response.setApiLimitInterval((Integer)capabilities.get("apiLimitInterval"));
+        }
+        if (capabilities.containsKey("apiLimitMax")) {
+            response.setApiLimitMax((Integer)capabilities.get("apiLimitMax"));
+        }
+        return response;
+
     }
 
     @Override
