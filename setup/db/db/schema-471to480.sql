@@ -28,4 +28,3 @@ ALTER TABLE `cloud`.`template_store_ref` MODIFY COLUMN `url` varchar(2048);
 ALTER TABLE `cloud`.`volume_store_ref` MODIFY COLUMN `url` varchar(2048);
 ALTER TABLE `cloud`.`volume_store_ref` MODIFY COLUMN `download_url` varchar(2048);
 ALTER TABLE `cloud`.`upload` MODIFY COLUMN `url` varchar(2048);
-ALTER TABLE `cloud`.`host` MODIFY COLUMN `url` varchar(2048);
