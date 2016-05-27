@@ -1003,7 +1003,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
         // We will always use domainId first. If that does not exist, we will use domain name. If THAT doesn't exist
         // we will default to ROOT
-        final Domain userDomain = _domainMgr.findDomainByIdOrPath(domainId, domainPath);
+        final Domain userDomain = domainMgr.findDomainByIdOrPath(domainId, domainPath);
         if (userDomain == null || userDomain.getId() < 1L) {
             throw new CloudAuthenticationException("Unable to find the domain from the path " + domainPath);
         } else {
