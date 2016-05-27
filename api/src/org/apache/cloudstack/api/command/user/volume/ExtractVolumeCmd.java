@@ -54,7 +54,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
             required=true, description="the ID of the volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the url to which the volume would be extracted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "the url to which the volume would be extracted")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID,

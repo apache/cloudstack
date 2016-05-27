@@ -62,6 +62,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.URL,
                type = CommandType.STRING,
                required = true,
+               length = 2048,
                description = "the URL of where the volume is hosted. Possible URL include http:// and https://")
     private String url;
 

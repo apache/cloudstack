@@ -49,7 +49,7 @@ public class AddImageStoreCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name for the image store")
     private String name;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "the URL for the image store")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, length = 2048, description = "the URL for the image store")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the image store")
