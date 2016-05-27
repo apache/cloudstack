@@ -241,9 +241,7 @@ class CsRedundant(object):
         CsHelper.service("xl2tpd", "stop")
         CsHelper.service("dnsmasq", "stop")
 
-        interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
-        for interface in interfaces:
-            CsPasswdSvc(interface.get_gateway()).stop()
+        self._restart_password_server()
 
         self.cl.set_fault_state()
         self.cl.save()
@@ -276,11 +274,9 @@ class CsRedundant(object):
         CsHelper.execute("%s -d" % cmd)
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
-
-        interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
-        for interface in interfaces:
-            CsPasswdSvc(interface.get_gateway()).stop()
         CsHelper.service("dnsmasq", "stop")
+
+        self._restart_password_server()
 
         self.cl.set_master_state(False)
         self.cl.save()
@@ -333,11 +329,10 @@ class CsRedundant(object):
         CsHelper.execute("%s -B" % cmd)
         CsHelper.service("ipsec", "restart")
         CsHelper.service("xl2tpd", "restart")
-        interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
-        for interface in interfaces:
-            CsPasswdSvc(interface.get_gateway()).restart()
-
         CsHelper.service("dnsmasq", "restart")
+
+        self._restart_password_server()
+
         self.cl.set_master_state(True)
         self.cl.save()
         self.release_lock()
@@ -345,6 +340,25 @@ class CsRedundant(object):
         interfaces = [interface for interface in self.address.get_interfaces() if interface.is_public()]
         CsHelper.reconfigure_interfaces(self.cl, interfaces)
         logging.info("Router switched to master mode")
+
+
+    def _restart_password_server(self):
+        '''
+        CLOUDSTACK-9385
+        Redundant virtual routers should have the password server running.
+        '''
+        if self.config.is_vpc():
+            vrrp_addresses = [address for address in self.address.get_ips() if address.needs_vrrp()]
+
+            for address in vrrp_addresses:
+                CsPasswdSvc(address.get_gateway()).restart()
+                CsPasswdSvc(address.get_ip()).restart()
+        else:
+            guest_addresses = [address for address in self.address.get_ips() if address.is_guest()]
+
+            for address in guest_addresses:
+            CsPasswdSvc(address.get_ip()).restart()
+
 
     def _collect_ignore_ips(self):
         """
