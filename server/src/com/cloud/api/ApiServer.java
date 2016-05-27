@@ -831,9 +831,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     }
 
                     if (unsignedRequest == null) {
-                        unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, HttpUtils.UTF_8).replaceAll("\\+", "%20");
+                        unsignedRequest = URLEncoder.encode(paramName, HttpUtils.UTF_8).replaceAll("\\+", "%20") + "=" + URLEncoder.encode(paramValue, HttpUtils.UTF_8).replaceAll("\\+", "%20");
                     } else {
-                        unsignedRequest = unsignedRequest + "&" + paramName + "=" + URLEncoder.encode(paramValue, HttpUtils.UTF_8).replaceAll("\\+", "%20");
+                        unsignedRequest = unsignedRequest + "&" + URLEncoder.encode(paramName, HttpUtils.UTF_8).replaceAll("\\+", "%20") + "=" + URLEncoder.encode(paramValue, HttpUtils.UTF_8).replaceAll("\\+", "%20");
                     }
                 }
             }
