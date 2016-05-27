@@ -394,7 +394,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 // publish zone-wide usage event
                 Long sZoneId = ((ImageStoreEntity)imageStore).getDataCenterId();
                 if (sZoneId != null) {
-                    UsageEventUtils.publishUsageEvent(eventType, template.getAccountId(), sZoneId, template.getId(), null, null, null);
+                    UsageEventUtils.publishUsageEvent(eventType, template.getAccountId(), sZoneId, template.getId(), null, VirtualMachineTemplate.class.getName(), template.getUuid());
                 }
 
                 s_logger.info("Delete template from image store: " + imageStore.getName());
