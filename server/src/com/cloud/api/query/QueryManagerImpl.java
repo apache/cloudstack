@@ -3070,9 +3070,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all
-                        + " can be specified by admin only");
+                        + " can be specified by root admin only");
             }
             listAll = true;
         }
