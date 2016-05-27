@@ -38,6 +38,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.AddressFormat;
@@ -102,15 +103,20 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             rsStrategy = ReservationStrategy.Create;
         }
 
-        if (nic != null && nic.getRequestedIPv4() != null) {
-            throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
+        // Only BareMetal supports custom IP allocation
+        if (nic != null && nic.getRequestedIPv4() != null && vm.getHypervisorType() != HypervisorType.BareMetal) {
+           throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
 
         if (nic == null) {
             nic = new NicProfile(rsStrategy, null, null, null, null);
         } else if (nic.getIPv4Address() == null) {
+            s_logger.debug(String.format("Requested IP Address: %s, Existing IP Address: %s", nic.getRequestedIPv4(), nic.getIPv4Address()));
+            nic.setIPv4Address(nic.getRequestedIPv4());
             nic.setReservationStrategy(ReservationStrategy.Start);
         } else {
+            s_logger.info(String.format("Requested IP Address: %s, Existing IP Address: %s", nic.getRequestedIPv4(), nic.getIPv4Address()));
+            nic.setIPv4Address(nic.getRequestedIPv4());
             nic.setReservationStrategy(ReservationStrategy.Create);
         }
 
