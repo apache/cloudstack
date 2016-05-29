@@ -596,8 +596,8 @@ public class Link {
         while (handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED
                 && handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
             final long timeTaken = System.currentTimeMillis() - startTimeMills;
-            if (timeTaken > 60000L) {
-                s_logger.warn("SSL Handshake has taken more than 60s to connect to: " + socketChannel.getRemoteAddress() +
+            if (timeTaken > 15000L) {
+                s_logger.warn("SSL Handshake has taken more than 15s to connect to: " + socketChannel.getRemoteAddress() +
                         ". Please investigate this connection.");
                 return false;
             }
@@ -615,7 +615,10 @@ public class Link {
                 case NEED_TASK:
                     Runnable task;
                     while ((task = sslEngine.getDelegatedTask()) != null) {
-                        new Thread(task).run();
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("SSL: Running delegated task!");
+                        }
+                        task.run();
                     }
                     break;
                 case FINISHED:

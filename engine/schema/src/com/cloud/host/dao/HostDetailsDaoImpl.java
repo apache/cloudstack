@@ -65,10 +65,13 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
     @Override
     public Map<String, String> findDetails(long hostId) {
         SearchCriteria<DetailVO> sc = HostSearch.create();
+
         sc.setParameters("hostId", hostId);
 
         List<DetailVO> results = search(sc, null);
+
         Map<String, String> details = new HashMap<String, String>(results.size());
+
         for (DetailVO result : results) {
             if ("password".equals(result.getName())) {
                 details.put(result.getName(), DBEncryptionUtil.decrypt(result.getValue()));
@@ -76,6 +79,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
                 details.put(result.getName(), result.getValue());
             }
         }
+
         return details;
     }
 

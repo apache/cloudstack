@@ -21,6 +21,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -119,7 +120,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
 
     private void createCloudStackUserAccount(LdapUser user, long domainId, short accountType) {
         String username = user.getUsername();
-        _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username, accountType, domainId, null, null,
+        _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username,
+                                          accountType, RoleType.getByAccountType(accountType).getId(), domainId, null, null,
                                           UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
     }
 

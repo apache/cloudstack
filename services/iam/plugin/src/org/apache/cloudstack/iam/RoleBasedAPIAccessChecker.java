@@ -196,7 +196,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             try {
                 short cmdPermissions = Short.parseShort(roleMask);
                 for (RoleType roleType : RoleType.values()) {
-                    if ((cmdPermissions & roleType.getValue()) != 0)
+                    if ((cmdPermissions & roleType.getMask()) != 0)
                         commandsPropertiesRoleBasedApisMap.get(roleType).add(apiName);
                 }
             } catch (NumberFormatException nfe) {

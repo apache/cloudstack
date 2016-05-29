@@ -28,6 +28,7 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 
@@ -64,6 +65,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return processor.introduceObject((IntroduceObjectCmd)command);
         } else if (command instanceof SnapshotAndCopyCommand) {
             return processor.snapshotAndCopy((SnapshotAndCopyCommand)command);
+        } else if (command instanceof ResignatureCommand) {
+            return processor.resignature((ResignatureCommand)command);
         }
 
         return new Answer((Command)command, false, "not implemented yet");

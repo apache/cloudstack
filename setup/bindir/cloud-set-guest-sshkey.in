@@ -27,7 +27,7 @@
 user=root
 
 # Add your DHCP lease folders here
-DHCP_FOLDERS="/var/lib/dhclient/* /var/lib/dhcp3/*"
+DHCP_FOLDERS="/var/lib/dhclient/* /var/lib/dhcp3/* /var/lib/dhcp/*"
 keys_received=0
 file_count=0
 

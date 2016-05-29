@@ -2904,6 +2904,15 @@ div.detail-group.actions td {
   background-position: -366px -239px;
 }
 
+#navigation ul li.roles span.icon {
+  background-position: -460px -80px;
+}
+
+#navigation ul li.roles.active span.icon,
+#navigation ul li.roles:hover span.icon {
+  background-position: -469px -750px;
+}
+
 #navigation ul li.accounts span.icon {
   background-position: -458px -19px;
 }
@@ -12694,6 +12703,54 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -137px -614px;
 }
 
+.blankOutOfBandManagement .icon {
+  background-position: -266px -31px;
+}
+
+.blankOutOfBandManagement:hover .icon {
+  background-position: -266px -31px;
+}
+
+.configureOutOfBandManagement .icon {
+  background-position: -168px -31px;
+}
+
+.configureOutOfBandManagement:hover .icon {
+  background-position: -168px -613px;
+}
+
+.enableOutOfBandManagement .icon {
+  background-position: -138px -65px;
+}
+
+.enableOutOfBandManagement:hover .icon {
+  background-position: -138px -647px;
+}
+
+.disableOutOfBandManagement .icon {
+  background-position: -138px -123px;
+}
+
+.disableOutOfBandManagement:hover .icon {
+  background-position: -138px -705px;
+}
+
+.issueOutOfBandManagementPowerAction .icon {
+  background-position: -266px -3px;
+}
+
+.issueOutOfBandManagementPowerAction:hover .icon {
+  background-position: -265px -584px;
+}
+
+.changeOutOfBandManagementPassword .icon {
+  background-position: -68px -30px;
+}
+
+.changeOutOfBandManagementPassword:hover .icon {
+  background-position: -68px -612px;
+}
+
 .enableMaintenanceMode .icon {
   background-position: -138px -65px;
 }
@@ -13161,4 +13218,11 @@ div.gpugroups div.list-view {
 .ui-dialog .ui-button.add span {
   background: transparent url("../images/icons.png") no-repeat -626px -209px;
   padding: 0 0 3px 18px;
+}
+
+ul.ui-autocomplete.ui-menu {
+  width: 250px;
+  background: #ddd;
+  font-size: 13px;
+  padding: 5px;
 }

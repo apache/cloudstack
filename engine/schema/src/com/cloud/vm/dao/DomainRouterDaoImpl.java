@@ -432,4 +432,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("states", State.Stopped);
         return listBy(sc);
     }
+
+    @Override
+    public List<DomainRouterVO> listIncludingRemovedByVpcId(long vpcId) {
+        SearchCriteria<DomainRouterVO> sc = VpcSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setParameters("role", Role.VIRTUAL_ROUTER);
+        return listIncludingRemovedBy(sc);
+    }
 }

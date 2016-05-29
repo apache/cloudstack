@@ -43,6 +43,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 import org.slf4j.MDC;
@@ -138,6 +139,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected NioServer _connection;
     @Inject
     protected HostDao _hostDao = null;
+    @Inject
+    protected OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     protected DataCenterDao _dcDao = null;
     @Inject
@@ -535,6 +538,17 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 s_logger.debug("Sending Disconnect to listener: " + monitor.second().getClass().getName());
             }
             monitor.second().processDisconnect(hostId, nextState);
+        }
+    }
+
+    @Override
+    public void notifyMonitorsOfNewlyAddedHost(long hostId) {
+        for (final Pair<Integer, Listener> monitor : _hostMonitors) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending host added to listener: " + monitor.second().getClass().getSimpleName());
+            }
+
+            monitor.second().processHostAdded(hostId);
         }
     }
 
@@ -1001,6 +1015,28 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return true;
     }
 
+    @Override
+    public void notifyMonitorsOfHostAboutToBeRemoved(long hostId) {
+        for (final Pair<Integer, Listener> monitor : _hostMonitors) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending host about to be removed to listener: " + monitor.second().getClass().getSimpleName());
+            }
+
+            monitor.second().processHostAboutToBeRemoved(hostId);
+        }
+    }
+
+    @Override
+    public void notifyMonitorsOfRemovedHost(long hostId, long clusterId) {
+        for (final Pair<Integer, Listener> monitor : _hostMonitors) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending host removed to listener: " + monitor.second().getClass().getSimpleName());
+            }
+
+            monitor.second().processHostRemoved(hostId, clusterId);
+        }
+    }
+
     public boolean executeUserRequest(final long hostId, final Event event) throws AgentUnavailableException {
         if (event == Event.AgentDisconnected) {
             if (s_logger.isDebugEnabled()) {
@@ -1464,7 +1500,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public boolean handleDirectConnectAgent(final Host host, final StartupCommand[] cmds, final ServerResource resource, final boolean forRebalance) throws ConnectionException {
+    public boolean handleDirectConnectAgent(final Host host, final StartupCommand[] cmds, final ServerResource resource,
+            final boolean forRebalance, boolean newHost) throws ConnectionException {
         AgentAttache attache;
 
         attache = createAttacheForDirectConnect(host, resource);
@@ -1473,6 +1510,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             answers[i] = new StartupAnswer(cmds[i], attache.getId(), PingInterval.value());
         }
         attache.process(answers);
+
+        if (newHost) {
+            notifyMonitorsOfNewlyAddedHost(host.getId());
+        }
+
         attache = notifyMonitorsOfConnection(attache, cmds, forRebalance);
 
         return attache != null;
@@ -1618,6 +1660,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         @Override
+        public void processHostAdded(long hostId) {
+        }
+
+        @Override
         public void processConnect(final Host host, final StartupCommand cmd, final boolean forRebalance) {
             if (host.getType().equals(Host.Type.TrafficMonitor) || host.getType().equals(Host.Type.SecondaryStorage)) {
                 return;
@@ -1631,6 +1677,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         public boolean processDisconnect(final long agentId, final Status state) {
             _pingMap.remove(agentId);
             return true;
+        }
+
+        @Override
+        public void processHostAboutToBeRemoved(long hostId) {
+        }
+
+        @Override
+        public void processHostRemoved(long hostId, long clusterId) {
         }
 
         @Override

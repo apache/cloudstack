@@ -19,11 +19,10 @@
 
 package com.cloud.agent.api.storage;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
 
-public class CopyVolumeCommand extends Command {
+public class CopyVolumeCommand extends StorageNfsVersionCommand {
 
     long volumeId;
     String volumePath;
@@ -32,7 +31,6 @@ public class CopyVolumeCommand extends Command {
     boolean toSecondaryStorage;
     String vmName;
     boolean executeInSequence = false;
-    String nfsVersion;
 
     public CopyVolumeCommand() {
     }
@@ -77,11 +75,4 @@ public class CopyVolumeCommand extends Command {
         return vmName;
     }
 
-    public String getNfsVersion() {
-        return nfsVersion;
-    }
-
-    public void setNfsVersion(String nfsVersion) {
-        this.nfsVersion = nfsVersion;
-    }
 }

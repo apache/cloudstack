@@ -37,6 +37,8 @@
                   value="#{pluggableAPIAuthenticatorsRegistry.registered}" />
     </bean>
 
+    <bean id="roleManagerImpl" class="org.apache.cloudstack.acl.RoleManagerImpl" />
+
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
@@ -139,6 +141,10 @@
     <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
 
     <bean id="oCFS2ManagerImpl" class="com.cloud.storage.OCFS2ManagerImpl" />
+
+    <bean id="outOfBandManagementServiceImpl" class="org.apache.cloudstack.outofbandmanagement.OutOfBandManagementServiceImpl">
+        <property name="outOfBandManagementDrivers" value="#{outOfBandManagementDriversRegistry.registered}" />
+    </bean>
 
     <bean id="projectManagerImpl" class="com.cloud.projects.ProjectManagerImpl" />
 

@@ -27,9 +27,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -38,11 +35,12 @@ import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -200,20 +198,16 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
             if (vmStats != null) {
                 userVmResponse.setCpuUsed(new DecimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
-
                 userVmResponse.setNetworkKbsRead((long)vmStats.getNetworkReadKBs());
-
                 userVmResponse.setNetworkKbsWrite((long)vmStats.getNetworkWriteKBs());
+                userVmResponse.setDiskKbsRead((long)vmStats.getDiskReadKBs());
+                userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
+                userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
+                userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
+                userVmResponse.setMemoryKBs((long)vmStats.getMemoryKBs());
+                userVmResponse.setMemoryIntFreeKBs((long)vmStats.getIntFreeMemoryKBs());
+                userVmResponse.setMemoryTargetKBs((long)vmStats.getTargetMemoryKBs());
 
-                if ((userVm.getHypervisorType() != null) && (userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
-                    userVmResponse.setDiskKbsRead((long)vmStats.getDiskReadKBs());
-
-                    userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
-
-                    userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
-
-                    userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
-                }
             }
         }
 

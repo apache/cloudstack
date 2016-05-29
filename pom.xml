@@ -86,7 +86,8 @@
     <cs.axiom.version>1.2.8</cs.axiom.version>
     <cs.neethi.version>2.0.4</cs.neethi.version>
     <cs.servlet.version>2.5</cs.servlet.version>
-    <cs.jstl.version>1.2.1</cs.jstl.version>
+    <cs.jstl.version>1.2</cs.jstl.version>
+    <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>6.0</cs.vmware.api.version>
     <org.springframework.version>3.2.16.RELEASE</org.springframework.version>
@@ -796,6 +797,8 @@
               <exclude>CONTRIBUTING.md</exclude>
               <exclude>tools/docker/Dockerfile</exclude>
               <exclude>tools/docker/supervisord.conf</exclude>
+              <exclude>.java-version</exclude>
+              <exclude>.python-version</exclude>
               <exclude>.idea/</exclude>
               <exclude>**/*.log</exclude>
               <exclude>**/*.patch</exclude>
@@ -882,6 +885,7 @@
               <exclude>ui/lib/qunit/qunit.js</exclude>
               <exclude>ui/lib/reset.css</exclude>
               <exclude>ui/lib/require.js</exclude>
+              <exclude>utils/testsmallfileinactive</exclude>
               <exclude>systemvm/conf/agent.properties</exclude>
               <exclude>systemvm/conf/environment.properties</exclude>
               <exclude>systemvm/js/jquery.js</exclude>
@@ -921,6 +925,7 @@
               <exclude>**/.checkstyle</exclude>
               <exclude>scripts/installer/windows/acs_license.rtf</exclude>
               <exclude>**/*.md</exclude>
+              <exclude>test/integration/component/test_host_ha.sh</exclude>
             </excludes>
           </configuration>
         </plugin>

@@ -205,7 +205,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -222,7 +221,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class QueryManagerImpl extends ManagerBase implements QueryService, Configurable {
+public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
 
     public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
 
@@ -1578,6 +1577,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
         Object cluster = cmd.getClusterId();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
+        Object outOfBandManagementEnabled = cmd.isOutOfBandManagementEnabled();
+        Object powerState = cmd.getHostOutOfBandManagementPowerState();
         Object resourceState = cmd.getResourceState();
         Object haHosts = cmd.getHaHost();
         Long startIndex = cmd.getStartIndex();
@@ -1596,6 +1597,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("oobmEnabled", sb.entity().isOutOfBandManagementEnabled(), SearchCriteria.Op.EQ);
+        sb.and("powerState", sb.entity().getOutOfBandManagementPowerState(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
         sb.and("hypervisor_type", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
 
@@ -1643,6 +1646,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
         }
         if (cluster != null) {
             sc.setParameters("clusterId", cluster);
+        }
+
+        if (outOfBandManagementEnabled != null) {
+            sc.setParameters("oobmEnabled", outOfBandManagementEnabled);
+        }
+
+        if (powerState != null) {
+            sc.setParameters("powerState", powerState);
         }
 
         if (resourceState != null) {
@@ -1731,6 +1742,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
 
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
@@ -1754,6 +1767,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
 
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -1789,6 +1803,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
         if (display != null) {
             sc.setParameters("display", display);
         }
+
+        setIdsListToSearchCriteria(sc, ids);
 
         sc.setParameters("systemUse", 1);
 
@@ -3054,9 +3070,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
 
         boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all
-                        + " can be specified by admin only");
+                        + " can be specified by root admin only");
             }
             listAll = true;
         }
@@ -3077,14 +3093,15 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
 
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null,
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
-                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl);
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl,
+                cmd.getIds());
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name,
             String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
             List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria,
-            Map<String, String> tags, boolean showRemovedTmpl) {
+            Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -3104,6 +3121,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
 
         SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
+        if (ids != null && !ids.isEmpty()){
+            sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
+        }
         SearchCriteria<TemplateJoinVO> sc = sb.create();
 
         // verify templateId parameter and specially handle it
@@ -3148,6 +3168,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
             // if (!isIso) {
             // hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
             // }
+
+            setIdsListToSearchCriteria(sc, ids);
 
             // add criteria for project or not
             if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
@@ -3386,7 +3408,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
 
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true,
                 cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true,
-                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO);
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO,
+                null);
     }
 
     @Override

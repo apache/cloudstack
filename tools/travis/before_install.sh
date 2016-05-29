@@ -90,6 +90,19 @@ sudo apt-get -q -y install uuid-runtime genisoimage netcat > /dev/null
 if [[ $? -ne 0 ]]; then
   echo -e "\napt-get packages failed to install"
 fi
+
+# Use latest ipmitool 1.8.16 dependencies
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1397BC53640DB551
+sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" >> /etc/apt/sources.list'
+sudo apt-get update -q -y > /dev/null
+sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0  --no-install-recommends > /dev/null
+
+# Installed version 1.8.16 with patch: https://bugzilla.redhat.com/show_bug.cgi?id=1286035
+wget http://packages.shapeblue.com/contribs/ipmitool_1.8.16_travis_amd64.deb -O ipmitool.deb > /dev/null
+sudo dpkg -i ipmitool.deb
+
+ipmitool -V
+
 echo "<settings>
   <mirrors>
     <mirror>
@@ -107,7 +120,7 @@ pip install --user --upgrade pip
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  pip install --user --upgrade lxml paramiko nose texttable > /tmp/piplog
+  pip install --user --upgrade lxml paramiko nose texttable ipmisim > /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;

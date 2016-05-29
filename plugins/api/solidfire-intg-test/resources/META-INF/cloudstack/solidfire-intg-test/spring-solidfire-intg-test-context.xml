@@ -27,6 +27,8 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd"
                       >
 
-      <bean id="apiSolidFireServiceImpl" class="org.apache.cloudstack.solidfire.ApiSolidFireServiceImpl"/>
+      <bean id="sfIntgTestUtil" class="org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil"/>
+      <bean id="solidFireIntegrationTestManagerImpl" class="org.apache.cloudstack.solidfire.SolidFireIntegrationTestManagerImpl"/>
+      <bean id="apiSolidFireIntegrationTestServiceImpl" class="org.apache.cloudstack.api.solidfire.ApiSolidFireIntegrationTestServiceImpl" />
 
 </beans>

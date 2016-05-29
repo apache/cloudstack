@@ -79,6 +79,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         AllFieldSearch.and("path", AllFieldSearch.entity().getPath(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("podId", AllFieldSearch.entity().getPodId(), Op.EQ);
         AllFieldSearch.and("clusterId", AllFieldSearch.entity().getClusterId(), Op.EQ);
+        AllFieldSearch.and("storage_provider_name", AllFieldSearch.entity().getStorageProviderName(), Op.EQ);
         AllFieldSearch.done();
 
         DcPodSearch = createSearchBuilder();
@@ -126,6 +127,13 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
         sc.setParameters("name", name);
         return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> findPoolsByProvider(String provider) {
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+        sc.setParameters("storage_provider_name", provider);
+        return listBy(sc);
     }
 
     @Override

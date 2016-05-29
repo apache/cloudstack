@@ -46,6 +46,7 @@ import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
+import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -77,7 +78,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -99,7 +99,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
-public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotManager, VMSnapshotService, VmWorkJobHandler {
+public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements VMSnapshotManager, VMSnapshotService, VmWorkJobHandler {
     private static final Logger s_logger = Logger.getLogger(VMSnapshotManagerImpl.class);
 
     public static final String VM_WORK_JOB_HANDLER = VMSnapshotManagerImpl.class.getSimpleName();
@@ -176,6 +176,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         String name = cmd.getVmSnapshotName();
         String accountName = cmd.getAccountName();
 
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll,
@@ -193,6 +195,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         sb.and("status", sb.entity().getState(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("display_name", sb.entity().getDisplayName(), SearchCriteria.Op.EQ);
         sb.and("account_id", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.done();
@@ -208,6 +211,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if (vmId != null) {
             sc.setParameters("vm_id", vmId);
         }
+
+        setIdsListToSearchCriteria(sc, ids);
 
         if (domainId != null) {
             sc.setParameters("domain_id", domainId);

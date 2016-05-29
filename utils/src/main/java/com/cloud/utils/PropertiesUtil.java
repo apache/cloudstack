@@ -34,6 +34,10 @@ import org.apache.log4j.Logger;
 public class PropertiesUtil {
     private static final Logger s_logger = Logger.getLogger(PropertiesUtil.class);
 
+    public static String getDefaultApiCommandsFileName() {
+        return "commands.properties";
+    }
+
     /**
      * Searches the class path and local paths to find the config file.
      * @param path path to find.  if it starts with / then it's absolute path.

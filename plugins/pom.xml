@@ -50,6 +50,7 @@
     <module>api/solidfire-intg-test</module>
     <module>api/discovery</module>
     <module>acl/static-role-based</module>
+    <module>acl/dynamic-role-based</module>
     <module>affinity-group-processors/host-anti-affinity</module>
     <module>affinity-group-processors/explicit-dedication</module>
     <module>deployment-planners/user-concentrated-pod</module>
@@ -74,11 +75,13 @@
     <module>network-elements/palo-alto</module>
     <module>network-elements/netscaler</module>
     <module>network-elements/nicira-nvp</module>
+    <module>network-elements/nuage-vsp</module>
     <module>network-elements/bigswitch</module>
     <module>network-elements/brocade-vcs</module>
     <module>network-elements/midonet</module>
     <module>network-elements/stratosphere-ssp</module>
     <module>network-elements/opendaylight</module>
+    <module>outofbandmanagement-drivers/ipmitool</module>
     <module>storage-allocators/random</module>
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
@@ -166,17 +169,6 @@
       </activation>
       <modules>
         <module>network-elements/juniper-srx</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>nuagevsp</id>
-      <activation>
-        <property>
-          <name>noredist</name>
-        </property>
-      </activation>
-      <modules>
-        <module>network-elements/nuage-vsp</module>
       </modules>
     </profile>
     <profile>

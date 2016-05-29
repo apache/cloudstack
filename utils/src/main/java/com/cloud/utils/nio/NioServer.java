@@ -57,7 +57,7 @@ public class NioServer extends NioConnection {
         _localAddr = new InetSocketAddress(_port);
         _serverSocket.socket().bind(_localAddr);
 
-        _serverSocket.register(_selector, SelectionKey.OP_ACCEPT);
+        _serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
 
         s_logger.info("NioConnection started and listening on " + _serverSocket.socket().getLocalSocketAddress());
     }

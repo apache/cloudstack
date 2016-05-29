@@ -20,6 +20,8 @@
 package com.cloud.util;
 
 import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.StringUtils;
@@ -28,7 +30,12 @@ import org.apache.commons.codec.binary.Base64;
 
 public class NuageVspUtil {
 
-    public static String getPreConfiguredDomainTemplateName(ConfigurationDao configDao, Network network, NetworkOffering networkOffering) {
+    public static String getPreConfiguredDomainTemplateName(ConfigurationDao configDao, NetworkDetailsDao networkDetailsDao, Network network, NetworkOffering networkOffering) {
+        NetworkDetailVO domainTemplateNetworkDetail = networkDetailsDao.findDetail(network.getId(), NuageVspManager.nuageDomainTemplateDetailName);
+        if (domainTemplateNetworkDetail != null) {
+            return domainTemplateNetworkDetail.getValue();
+        }
+
         String configKey;
         if (network.getVpcId() != null) {
             configKey = NuageVspManager.NuageVspVpcDomainTemplateName.key();

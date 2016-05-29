@@ -93,7 +93,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
-    private String _nfsVersion;
+    private Integer _nfsVersion;
 
     @Override
     public boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd) {
@@ -141,7 +141,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         _mountService = mountService;
     }
 
-    public VmwareStorageManagerImpl(VmwareStorageMount mountService, String nfsVersion) {
+    public VmwareStorageManagerImpl(VmwareStorageMount mountService, Integer nfsVersion) {
         assert (mountService != null);
         _mountService = mountService;
         _nfsVersion = nfsVersion;
@@ -555,7 +555,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     // templateName: name in secondary storage
     // templateUuid: will be used at hypervisor layer
     private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-            String templatePathAtSecondaryStorage, String templateName, String templateUuid, String nfsVersion) throws Exception {
+            String templatePathAtSecondaryStorage, String templateName, String templateUuid, Integer nfsVersion) throws Exception {
 
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
                 templatePathAtSecondaryStorage + ", templateName: " + templateName);
@@ -611,7 +611,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, long accountId, long templateId, String templateUniqueName, String secStorageUrl,
-            String volumePath, String workerVmName, String nfsVersion) throws Exception {
+            String volumePath, String workerVmName, Integer nfsVersion) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
         String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
@@ -676,7 +676,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private Ternary<String, Long, Long> createTemplateFromSnapshot(long accountId, long templateId, String templateUniqueName, String secStorageUrl, long volumeId,
-            String backedUpSnapshotUuid, String nfsVersion) throws Exception {
+            String backedUpSnapshotUuid, Integer nfsVersion) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
         String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
@@ -860,14 +860,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private String createVolumeFromSnapshot(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, long accountId, long volumeId,
-            String secStorageUrl, String snapshotBackupUuid, String nfsVersion) throws Exception {
+            String secStorageUrl, String snapshotBackupUuid, Integer nfsVersion) throws Exception {
 
         restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), snapshotBackupUuid, nfsVersion);
         return null;
     }
 
     private void restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, String secStorageUrl, String secStorageDir,
-            String backupName, String nfsVersion) throws Exception {
+            String backupName, Integer nfsVersion) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
         String srcOVAFileName = secondaryMountPoint + "/" + secStorageDir + "/" + backupName + "." + ImageFormat.OVA.getFileExtension();
@@ -927,7 +927,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private String backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, long accountId, long volumeId, String volumePath, String snapshotUuid, String secStorageUrl,
-            String prevSnapshotUuid, String prevBackupUuid, String workerVmName, String nfsVersion) throws Exception {
+            String prevSnapshotUuid, String prevBackupUuid, String workerVmName, Integer nfsVersion) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
         exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), backupUuid, workerVmName, nfsVersion);
@@ -935,7 +935,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir, String exportName,
-            String workerVmName, String nfsVersion) throws Exception {
+            String workerVmName, Integer nfsVersion) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
         String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
@@ -980,7 +980,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private Pair<String, String> copyVolumeToSecStorage(VmwareHostService hostService, VmwareHypervisorHost hyperHost, CopyVolumeCommand cmd, String vmName,
-            long volumeId, String poolId, String volumePath, String secStorageUrl, String workerVmName, String nfsVersion) throws Exception {
+            long volumeId, String poolId, String volumePath, String secStorageUrl, String workerVmName, Integer nfsVersion) throws Exception {
 
         String volumeFolder = String.valueOf(volumeId) + "/";
         VirtualMachineMO workerVm = null;
@@ -1038,7 +1038,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return datastoreVolumePath;
     }
 
-    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, long volumeId, DatastoreMO dsMo, String secStorageUrl, String exportName, String nfsVersion)
+    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, long volumeId, DatastoreMO dsMo, String secStorageUrl, String exportName, Integer nfsVersion)
             throws Exception {
 
         String volumeFolder = String.valueOf(volumeId) + "/";
@@ -1458,7 +1458,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private String deleteVolumeDirOnSecondaryStorage(long volumeId, String secStorageUrl, String nfsVersion) throws Exception {
+    private String deleteVolumeDirOnSecondaryStorage(long volumeId, String secStorageUrl, Integer nfsVersion) throws Exception {
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
         String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStroage(volumeId);
 

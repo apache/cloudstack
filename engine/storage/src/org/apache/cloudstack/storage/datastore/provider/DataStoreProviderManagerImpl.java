@@ -218,6 +218,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         this.imageStoreProviderMgr = imageDataStoreProviderMgr;
     }
 
+    @Override
     public List<DataStoreProvider> getProviders() {
         return providers;
     }

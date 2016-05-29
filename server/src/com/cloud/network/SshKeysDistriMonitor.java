@@ -40,12 +40,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 public class SshKeysDistriMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
     AgentManager _agentMgr;
-    private final HostDao _hostDao;
     private ConfigurationDao _configDao;
 
     public SshKeysDistriMonitor(AgentManager mgr, HostDao host, ConfigurationDao config) {
-        this._agentMgr = mgr;
-        _hostDao = host;
+        _agentMgr = mgr;
         _configDao = config;
     }
 
@@ -65,6 +63,18 @@ public class SshKeysDistriMonitor implements Listener {
             s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
 
         return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
+    }
+
+    @Override
+    public void processHostAdded(long hostId) {
     }
 
     @Override

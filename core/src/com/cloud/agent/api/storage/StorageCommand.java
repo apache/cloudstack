@@ -19,11 +19,13 @@
 
 package com.cloud.agent.api.storage;
 
-import com.cloud.agent.api.Command;
-
-public abstract class StorageCommand extends Command {
+public abstract class StorageCommand extends StorageNfsVersionCommand {
     protected StorageCommand() {
         super();
+    }
+
+    protected StorageCommand(Integer nfsVersion){
+        super(nfsVersion);
     }
 
 }

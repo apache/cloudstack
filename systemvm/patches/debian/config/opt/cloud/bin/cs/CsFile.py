@@ -113,6 +113,7 @@ class CsFile:
         self.new_config[sind:eind] = content
 
     def greplace(self, search, replace):
+        logging.debug("Searching for %s and replacing with %s" % (search, replace))
         self.new_config = [w.replace(search, replace) for w in self.new_config]
 
     def search(self, search, replace):

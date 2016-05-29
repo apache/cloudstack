@@ -251,159 +251,98 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
-    @Inject
-    EntityManager _entityMgr;
-    @Inject
-    DataCenterDao _dcDao = null;
-    @Inject
-    VlanDao _vlanDao = null;
-    @Inject
-    FirewallRulesDao _rulesDao = null;
-    @Inject
-    LoadBalancerDao _loadBalancerDao = null;
-    @Inject
-    LoadBalancerVMMapDao _loadBalancerVMMapDao = null;
-    @Inject
-    IPAddressDao _ipAddressDao = null;
-    @Inject
-    VMTemplateDao _templateDao = null;
-    @Inject
-    DomainRouterDao _routerDao = null;
-    @Inject
-    UserDao _userDao = null;
-    @Inject
-    UserStatisticsDao _userStatsDao = null;
-    @Inject
-    HostDao _hostDao = null;
-    @Inject
-    ConfigurationDao _configDao;
-    @Inject
-    HostPodDao _podDao = null;
-    @Inject
-    UserStatsLogDao _userStatsLogDao = null;
-    @Inject
-    AgentManager _agentMgr;
-    @Inject
-    AlertManager _alertMgr;
-    @Inject
-    AccountManager _accountMgr;
-    @Inject
-    ConfigurationManager _configMgr;
-    @Inject
-    ConfigurationServer _configServer;
-    @Inject
-    ServiceOfferingDao _serviceOfferingDao = null;
-    @Inject
-    UserVmDao _userVmDao;
-    @Inject
-    VMInstanceDao _vmDao;
-    @Inject
-    NetworkOfferingDao _networkOfferingDao = null;
-    @Inject
-    GuestOSDao _guestOSDao = null;
-    @Inject
-    NetworkOrchestrationService _networkMgr;
-    @Inject
-    NetworkModel _networkModel;
-    @Inject
-    VirtualMachineManager _itMgr;
-    @Inject
-    VpnUserDao _vpnUsersDao;
-    @Inject
-    RulesManager _rulesMgr;
-    @Inject
-    NetworkDao _networkDao;
-    @Inject
-    LoadBalancingRulesManager _lbMgr;
-    @Inject
-    PortForwardingRulesDao _pfRulesDao;
-    @Inject
-    RemoteAccessVpnDao _vpnDao;
-    @Inject
-    NicDao _nicDao;
-    @Inject
-    NicIpAliasDao _nicIpAliasDao;
-    @Inject
-    VolumeDao _volumeDao = null;
-    @Inject
-    UserVmDetailsDao _vmDetailsDao;
-    @Inject
-    ClusterDao _clusterDao;
-    @Inject
-    ResourceManager _resourceMgr;
-    @Inject
-    PhysicalNetworkServiceProviderDao _physicalProviderDao;
-    @Inject
-    VirtualRouterProviderDao _vrProviderDao;
-    @Inject
-    ManagementServerHostDao _msHostDao;
-    @Inject
-    Site2SiteCustomerGatewayDao _s2sCustomerGatewayDao;
-    @Inject
-    Site2SiteVpnGatewayDao _s2sVpnGatewayDao;
-    @Inject
-    Site2SiteVpnConnectionDao _s2sVpnConnectionDao;
-    @Inject
-    Site2SiteVpnManager _s2sVpnMgr;
-    @Inject
-    UserIpv6AddressDao _ipv6Dao;
-    @Inject
-    NetworkService _networkSvc;
-    @Inject
-    IpAddressManager _ipAddrMgr;
-    @Inject
-    ConfigDepot _configDepot;
-    @Inject
-    MonitoringServiceDao _monitorServiceDao;
-    @Inject
-    AsyncJobManager _asyncMgr;
-    @Inject
-    protected VpcDao _vpcDao;
-    @Inject
-    protected ApiAsyncJobDispatcher _asyncDispatcher;
-    @Inject
-    OpRouterMonitorServiceDao _opRouterMonitorServiceDao;
+    @Inject private EntityManager _entityMgr;
+    @Inject private DataCenterDao _dcDao;
+    @Inject protected VlanDao _vlanDao;
+    @Inject private FirewallRulesDao _rulesDao;
+    @Inject private LoadBalancerDao _loadBalancerDao;
+    @Inject private LoadBalancerVMMapDao _loadBalancerVMMapDao;
+    @Inject protected IPAddressDao _ipAddressDao;
+    @Inject private VMTemplateDao _templateDao;
+    @Inject protected DomainRouterDao _routerDao;
+    @Inject private UserDao _userDao;
+    @Inject protected UserStatisticsDao _userStatsDao;
+    @Inject private HostDao _hostDao;
+    @Inject private ConfigurationDao _configDao;
+    @Inject private HostPodDao _podDao;
+    @Inject private UserStatsLogDao _userStatsLogDao;
+    @Inject protected AgentManager _agentMgr;
+    @Inject private AlertManager _alertMgr;
+    @Inject private AccountManager _accountMgr;
+    @Inject private ConfigurationManager _configMgr;
+    @Inject private ConfigurationServer _configServer;
+    @Inject private ServiceOfferingDao _serviceOfferingDao;
+    @Inject private UserVmDao _userVmDao;
+    @Inject private VMInstanceDao _vmDao;
+    @Inject private NetworkOfferingDao _networkOfferingDao;
+    @Inject private GuestOSDao _guestOSDao;
+    @Inject private NetworkOrchestrationService _networkMgr;
+    @Inject protected NetworkModel _networkModel;
+    @Inject protected VirtualMachineManager _itMgr;
+    @Inject private VpnUserDao _vpnUsersDao;
+    @Inject private RulesManager _rulesMgr;
+    @Inject protected NetworkDao _networkDao;
+    @Inject private LoadBalancingRulesManager _lbMgr;
+    @Inject private PortForwardingRulesDao _pfRulesDao;
+    @Inject protected RemoteAccessVpnDao _vpnDao;
+    @Inject protected NicDao _nicDao;
+    @Inject private NicIpAliasDao _nicIpAliasDao;
+    @Inject private VolumeDao _volumeDao;
+    @Inject private UserVmDetailsDao _vmDetailsDao;
+    @Inject private ClusterDao _clusterDao;
+    @Inject private ResourceManager _resourceMgr;
+    @Inject private PhysicalNetworkServiceProviderDao _physicalProviderDao;
+    @Inject protected VirtualRouterProviderDao _vrProviderDao;
+    @Inject private ManagementServerHostDao _msHostDao;
+    @Inject private Site2SiteCustomerGatewayDao _s2sCustomerGatewayDao;
+    @Inject private Site2SiteVpnGatewayDao _s2sVpnGatewayDao;
+    @Inject private Site2SiteVpnConnectionDao _s2sVpnConnectionDao;
+    @Inject private Site2SiteVpnManager _s2sVpnMgr;
+    @Inject private UserIpv6AddressDao _ipv6Dao;
+    @Inject private NetworkService _networkSvc;
+    @Inject private IpAddressManager _ipAddrMgr;
+    @Inject private ConfigDepot _configDepot;
+    @Inject private MonitoringServiceDao _monitorServiceDao;
+    @Inject private AsyncJobManager _asyncMgr;
+    @Inject protected VpcDao _vpcDao;
+    @Inject protected ApiAsyncJobDispatcher _asyncDispatcher;
+    @Inject private OpRouterMonitorServiceDao _opRouterMonitorServiceDao;
 
-    @Inject
-    protected NetworkTopologyContext _networkTopologyContext;
+    @Inject protected NetworkTopologyContext _networkTopologyContext;
 
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _nwHelper;
 
-    @Inject
-    protected RouterControlHelper _routerControlHelper;
+    @Inject protected RouterControlHelper _routerControlHelper;
 
-    @Inject
-    protected CommandSetupHelper _commandSetupHelper;
-    @Inject
-    protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
+    @Inject protected CommandSetupHelper _commandSetupHelper;
+    @Inject protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
 
-    int _routerRamSize;
-    int _routerCpuMHz;
-    int _retry = 2;
-    String _mgmtCidr;
+    private int _routerRamSize;
+    private int _routerCpuMHz;
+    private String _mgmtCidr;
 
-    int _routerStatsInterval = 300;
-    int _routerCheckInterval = 30;
-    int _rvrStatusUpdatePoolSize = 10;
+    private int _routerStatsInterval = 300;
+    private int _routerCheckInterval = 30;
+    private int _rvrStatusUpdatePoolSize = 10;
     private String _dnsBasicZoneUpdates = "all";
-    private final Set<String> _guestOSNeedGatewayOnNonDefaultNetwork = new HashSet<String>();
+    private final Set<String> _guestOSNeedGatewayOnNonDefaultNetwork = new HashSet<>();
 
     private boolean _disableRpFilter = false;
-    int _routerExtraPublicNics = 2;
+    private int _routerExtraPublicNics = 2;
     private int _usageAggregationRange = 1440;
     private String _usageTimeZone = "GMT";
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5 seconds
     private boolean _dailyOrHourly = false;
 
-    ScheduledExecutorService _executor;
-    ScheduledExecutorService _checkExecutor;
-    ScheduledExecutorService _networkStatsUpdateExecutor;
-    ExecutorService _rvrStatusUpdateExecutor;
+    private ScheduledExecutorService _executor;
+    private ScheduledExecutorService _checkExecutor;
+    private ScheduledExecutorService _networkStatsUpdateExecutor;
+    private ExecutorService _rvrStatusUpdateExecutor;
 
-    BlockingQueue<Long> _vrUpdateQueue = null;
+    private BlockingQueue<Long> _vrUpdateQueue;
 
     @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
@@ -586,10 +525,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
-        String value = configs.get("start.retry");
-        _retry = NumbersUtil.parseInt(value, 2);
-
-        value = configs.get("router.stats.interval");
+        String value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
 
         value = configs.get("router.check.interval");
@@ -1591,12 +1527,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     protected StringBuilder createRedundantRouterArgs(final NicProfile nic, final DomainRouterVO router) {
         final StringBuilder buf = new StringBuilder();
 
-        final long networkId = nic.getNetworkId();
-        final NetworkVO network = _networkDao.findById(networkId);
-
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(" redundant_router=1");
+
+            final int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
+            buf.append(" advert_int=").append(advertInt);
 
             final Long vpcId = router.getVpcId();
             final List<DomainRouterVO> routers;
@@ -2362,6 +2298,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(final Host host, final StartupCommand cmd, final boolean forRebalance) throws ConnectionException {
         final List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(host.getId());
         for (DomainRouterVO router : routers) {
@@ -2393,6 +2333,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Override
     public boolean processDisconnect(final long agentId, final Status state) {
         return false;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

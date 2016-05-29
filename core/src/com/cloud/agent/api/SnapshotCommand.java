@@ -19,6 +19,7 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.storage.StorageNfsVersionCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
 
@@ -26,7 +27,7 @@ import com.cloud.storage.StoragePool;
  * This currently assumes that both primary and secondary storage are mounted on
  * the XenServer.
  */
-public class SnapshotCommand extends Command {
+public class SnapshotCommand extends StorageNfsVersionCommand {
     protected String primaryStoragePoolNameLabel;
     StorageFilerTO primaryPool;
     private String snapshotUuid;

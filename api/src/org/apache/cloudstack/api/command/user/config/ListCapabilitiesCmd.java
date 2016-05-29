@@ -47,6 +47,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         Map<String, Object> capabilities = _mgr.listCapabilities(this);
         CapabilitiesResponse response = new CapabilitiesResponse();
         response.setSecurityGroupsEnabled((Boolean)capabilities.get("securityGroupsEnabled"));
+        response.setDynamicRolesEnabled(roleService.isEnabled());
         response.setCloudStackVersion((String)capabilities.get("cloudStackVersion"));
         response.setUserPublicTemplateEnabled((Boolean)capabilities.get("userPublicTemplateEnabled"));
         response.setSupportELB((String)capabilities.get("supportELB"));

@@ -270,9 +270,7 @@ public class DownloadListener implements Listener {
     }
 
     @Override
-    public boolean processDisconnect(long agentId, com.cloud.host.Status state) {
-        setDisconnected();
-        return true;
+    public void processHostAdded(long hostId) {
     }
 
     @Override
@@ -308,6 +306,20 @@ public class DownloadListener implements Listener {
                 s_logger.error("Caught exception while doing template/volume sync ", e);
             }
         }
+    }
+
+    @Override
+    public boolean processDisconnect(long agentId, com.cloud.host.Status state) {
+        setDisconnected();
+        return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     public void setCommand(DownloadCommand cmd) {

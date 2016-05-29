@@ -23,9 +23,10 @@ import marvin
 from marvin.cloudstackAPI import *
 from marvin.codes import (FAILED, FAIL, PASS, RUNNING, STOPPED,
                           STARTING, DESTROYED, EXPUNGING,
-                          STOPPING, BACKED_UP, BACKING_UP)
+                          STOPPING, BACKED_UP, BACKING_UP,
+                          HOST_RS_MAINTENANCE)
 from marvin.cloudstackException import GetDetailExceptionInfo, CloudstackAPIException
-from marvin.lib.utils import validateList, is_server_ssh_ready, random_gen
+from marvin.lib.utils import validateList, is_server_ssh_ready, random_gen, wait_until
 # Import System modules
 import time
 import hashlib
@@ -86,13 +87,96 @@ class Domain:
         return(apiclient.listDomains(cmd))
 
 
+class Role:
+    """Manage Role"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, domainid=None):
+        """Create role"""
+        cmd = createRole.createRoleCmd()
+        cmd.name = services["name"]
+        cmd.type = services["type"]
+        if "description" in services:
+            cmd.description = services["description"]
+
+        return Role(apiclient.createRole(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Role"""
+
+        cmd = deleteRole.deleteRoleCmd()
+        cmd.id = self.id
+        apiclient.deleteRole(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update the role"""
+
+        cmd = updateRole.updateRoleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateRole(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all Roles matching criteria"""
+
+        cmd = listRoles.listRolesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRoles(cmd))
+
+
+class RolePermission:
+    """Manage Role Permission"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, domainid=None):
+        """Create role permission"""
+        cmd = createRolePermission.createRolePermissionCmd()
+        cmd.roleid = services["roleid"]
+        cmd.rule = services["rule"]
+        cmd.permission = services["permission"]
+        if "description" in services:
+            cmd.description = services["description"]
+
+        return RolePermission(apiclient.createRolePermission(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete role permission"""
+
+        cmd = deleteRolePermission.deleteRolePermissionCmd()
+        cmd.id = self.id
+        apiclient.deleteRolePermission(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update the role permission"""
+
+        cmd = updateRolePermission.updateRolePermissionCmd()
+        cmd.roleid = self.roleid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateRolePermission(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all role permissions matching criteria"""
+
+        cmd = listRolePermissions.listRolePermissionsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRolePermissions(cmd))
+
+
 class Account:
     """ Account Life Cycle """
     def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, admin=False, domainid=None):
+    def create(cls, apiclient, services, admin=False, domainid=None, roleid=None):
         """Creates an account"""
         cmd = createAccount.createAccountCmd()
 
@@ -120,6 +204,10 @@ class Account:
 
         if domainid:
             cmd.domainid = domainid
+
+        if roleid:
+            cmd.roleid = roleid
+
         account = apiclient.createAccount(cmd)
 
         return Account(account.__dict__)
@@ -2459,25 +2547,45 @@ class Host:
                   GetDetailExceptionInfo(e)
             return FAILED
 
+    @staticmethod
+    def _check_resource_state(apiclient, hostid, resourcestate):
+        hosts = Host.list(apiclient, id=hostid, listall=True)
+
+        validationresult = validateList(hosts)
+
+        assert validationresult is not None, "'validationresult' should not be equal to 'None'."
+
+        assert isinstance(validationresult, list), "'validationresult' should be a 'list'."
+
+        assert len(validationresult) == 3, "'validationresult' should be a list with three items in it."
+
+        if validationresult[0] == FAIL:
+            raise Exception("Host list validation failed: %s" % validationresult[2])
+
+        if str(hosts[0].resourcestate).lower().decode("string_escape") == str(resourcestate).lower():
+            return True, None
+
+        return False, "Host is not in the following state: " + str(resourcestate)
+
     def delete(self, apiclient):
         """Delete Host"""
         # Host must be in maintenance mode before deletion
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = self.id
         apiclient.prepareHostForMaintenance(cmd)
-        time.sleep(30)
+
+        retry_interval = 10
+        num_tries = 10
+
+        wait_result, return_val = wait_until(retry_interval, num_tries, Host._check_resource_state, apiclient, self.id, HOST_RS_MAINTENANCE)
+
+        if not wait_result:
+            raise Exception(return_val)
 
         cmd = deleteHost.deleteHostCmd()
         cmd.id = self.id
         apiclient.deleteHost(cmd)
         return
-
-    def enableMaintenance(self, apiclient):
-        """enables maintenance mode Host"""
-
-        cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
-        cmd.id = self.id
-        return apiclient.prepareHostForMaintenance(cmd)
 
     @classmethod
     def enableMaintenance(cls, apiclient, id):
@@ -2486,13 +2594,6 @@ class Host:
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = id
         return apiclient.prepareHostForMaintenance(cmd)
-
-    def cancelMaintenance(self, apiclient):
-        """Cancels maintenance mode Host"""
-
-        cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
-        cmd.id = self.id
-        return apiclient.cancelHostMaintenance(cmd)
 
     @classmethod
     def cancelMaintenance(cls, apiclient, id):
@@ -2643,13 +2744,6 @@ class StoragePool:
         apiclient.deleteStoragePool(cmd)
         return
 
-    def enableMaintenance(self, apiclient):
-        """enables maintenance mode Storage pool"""
-
-        cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
-        cmd.id = self.id
-        return apiclient.enableStorageMaintenance(cmd)
-
     @classmethod
     def enableMaintenance(cls, apiclient, id):
         """enables maintenance mode Storage pool"""
@@ -2711,7 +2805,7 @@ class StoragePool:
                           id=poolid, listAll=True)
                 validationresult = validateList(pools)
                 if validationresult[0] == FAIL:
-                    raise Exception("Host list validation failed: %s" % validationresult[2])
+                    raise Exception("Pool list validation failed: %s" % validationresult[2])
                 elif str(pools[0].state).lower().decode("string_escape") == str(state).lower():
                     returnValue = [PASS, None]
                     break

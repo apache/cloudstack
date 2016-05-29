@@ -62,6 +62,8 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.ResignatureAnswer;
+import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -71,6 +73,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -122,10 +125,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
     protected Integer _shutdownWaitMs;
     private final Gson _gson;
     private final StorageLayer _storage = new JavaStorageLayer();
-    private String _nfsVersion;
+    private Integer _nfsVersion;
 
     public VmwareStorageProcessor(VmwareHostService hostService, boolean fullCloneFlag, VmwareStorageMount mountService, Integer timeout, VmwareResource resource,
-            Integer shutdownWaitMs, PremiumSecondaryStorageResource storageResource, String nfsVersion) {
+            Integer shutdownWaitMs, PremiumSecondaryStorageResource storageResource, Integer nfsVersion) {
         this.hostService = hostService;
         _fullCloneFlag = fullCloneFlag;
         this.mountService = mountService;
@@ -141,6 +144,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
         s_logger.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for VmwareStorageProcessor");
 
         return new SnapshotAndCopyAnswer();
+    }
+
+    @Override
+    public ResignatureAnswer resignature(ResignatureCommand cmd) {
+        s_logger.info("'ResignatureAnswer resignature(ResignatureCommand)' not currently used for VmwareStorageProcessor");
+
+        return new ResignatureAnswer();
     }
 
     private String getOVFFilePath(String srcOVAFileName) {
@@ -159,7 +169,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private VirtualMachineMO copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-            String templatePathAtSecondaryStorage, String templateName, String templateUuid, boolean createSnapshot, String nfsVersion) throws Exception {
+            String templatePathAtSecondaryStorage, String templateName, String templateUuid, boolean createSnapshot, Integer nfsVersion) throws Exception {
 
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
                 templatePathAtSecondaryStorage + ", templateName: " + templateName);
@@ -522,7 +532,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, String srcVolumePath, DatastoreMO dsMo, String secStorageUrl, long wait, String nfsVersion) throws Exception {
+    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, String srcVolumePath, DatastoreMO dsMo, String secStorageUrl, long wait, Integer nfsVersion) throws Exception {
 
         String volumeFolder = null;
         String volumeName = null;
@@ -542,7 +552,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return new Pair<String, String>(volumeFolder, newVolume);
     }
 
-    private String deleteVolumeDirOnSecondaryStorage(String volumeDir, String secStorageUrl, String nfsVersion) throws Exception {
+    private String deleteVolumeDirOnSecondaryStorage(String volumeDir, String secStorageUrl, Integer nfsVersion) throws Exception {
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
         String volumeMountRoot = secondaryMountPoint + File.separator + volumeDir;
 
@@ -724,7 +734,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, String installPath, long templateId, String templateUniqueName,
-            String secStorageUrl, String volumePath, String workerVmName, String nfsVersion) throws Exception {
+            String secStorageUrl, String volumePath, String workerVmName, Integer nfsVersion) throws Exception {
 
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
         String installFullPath = secondaryMountPoint + "/" + installPath;
@@ -889,7 +899,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private Ternary<String, Long, Long> createTemplateFromSnapshot(String installPath, String templateUniqueName, String secStorageUrl, String snapshotPath,
-            Long templateId, long wait, String nfsVersion) throws Exception {
+            Long templateId, long wait, Integer nfsVersion) throws Exception {
         //Snapshot path is decoded in this form: /snapshots/account/volumeId/uuid/uuid
         String backupSSUuid;
         String snapshotFolder;
@@ -1056,7 +1066,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     // return Pair<String(divice bus name), String[](disk chain)>
     private Pair<String, String[]> exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir,
-            String exportName, String workerVmName, String nfsVersion) throws Exception {
+            String exportName, String workerVmName, Integer nfsVersion) throws Exception {
 
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, nfsVersion);
         String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
@@ -1100,7 +1110,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     // Ternary<String(backup uuid in secondary storage), String(device bus name), String[](original disk chain in the snapshot)>
     private Ternary<String, String, String[]> backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, String installPath, String volumePath, String snapshotUuid,
-            String secStorageUrl, String prevSnapshotUuid, String prevBackupUuid, String workerVmName, String nfsVersion) throws Exception {
+            String secStorageUrl, String prevSnapshotUuid, String prevBackupUuid, String workerVmName, Integer nfsVersion) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
         Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, installPath, backupUuid, workerVmName, nfsVersion);
@@ -1911,14 +1921,77 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return (int)(bytes / (1024L * 1024L));
     }
 
-    private void addRemoveInternetScsiTargetsToAllHosts(VmwareContext context, final boolean add, final List<HostInternetScsiHbaStaticTarget> lstTargets,
-            List<Pair<ManagedObjectReference, String>> lstHosts) throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(lstHosts.size());
+    public void handleTargetsForHost(boolean add, List<Map<String, String>> targets, HostMO host) throws Exception {
+        List<HostInternetScsiHbaStaticTarget> lstTargets = new ArrayList<HostInternetScsiHbaStaticTarget>();
+
+        for (Map<String, String> mapTarget : targets) {
+            HostInternetScsiHbaStaticTarget target = new HostInternetScsiHbaStaticTarget();
+
+            String targetAddress = mapTarget.get(ModifyTargetsCommand.STORAGE_HOST);
+            Integer targetPort = Integer.parseInt(mapTarget.get(ModifyTargetsCommand.STORAGE_PORT));
+            String iScsiName = trimIqn(mapTarget.get(ModifyTargetsCommand.IQN));
+
+            target.setAddress(targetAddress);
+            target.setPort(targetPort);
+            target.setIScsiName(iScsiName);
+
+            String chapName = mapTarget.get(ModifyTargetsCommand.CHAP_NAME);
+            String chapSecret = mapTarget.get(ModifyTargetsCommand.CHAP_SECRET);
+
+            if (StringUtils.isNotBlank(chapName) && StringUtils.isNotBlank(chapSecret)) {
+                HostInternetScsiHbaAuthenticationProperties auth = new HostInternetScsiHbaAuthenticationProperties();
+
+                String strAuthType = "chapRequired";
+
+                auth.setChapAuthEnabled(true);
+                auth.setChapInherited(false);
+                auth.setChapAuthenticationType(strAuthType);
+                auth.setChapName(chapName);
+                auth.setChapSecret(chapSecret);
+
+                String mutualChapName = mapTarget.get(ModifyTargetsCommand.MUTUAL_CHAP_NAME);
+                String mutualChapSecret = mapTarget.get(ModifyTargetsCommand.MUTUAL_CHAP_SECRET);
+
+                if (StringUtils.isNotBlank(mutualChapName) && StringUtils.isNotBlank(mutualChapSecret)) {
+                    auth.setMutualChapInherited(false);
+                    auth.setMutualChapAuthenticationType(strAuthType);
+                    auth.setMutualChapName(mutualChapName);
+                    auth.setMutualChapSecret(mutualChapSecret);
+                }
+
+                target.setAuthenticationProperties(auth);
+            }
+
+            lstTargets.add(target);
+        }
+
+        List<HostMO> hosts = new ArrayList<>();
+
+        hosts.add(host);
+
+        addRemoveInternetScsiTargetsToAllHosts(add, lstTargets, hosts);
+    }
+
+    private void addRemoveInternetScsiTargetsToAllHosts(VmwareContext context, final boolean add, final List<HostInternetScsiHbaStaticTarget> targets,
+            List<Pair<ManagedObjectReference, String>> hostPairs) throws Exception {
+        List<HostMO> hosts = new ArrayList<>();
+
+        for (Pair<ManagedObjectReference, String> hostPair : hostPairs) {
+            HostMO host = new HostMO(context, hostPair.first());
+
+            hosts.add(host);
+        }
+
+        addRemoveInternetScsiTargetsToAllHosts(add, targets, hosts);
+    }
+
+    private void addRemoveInternetScsiTargetsToAllHosts(final boolean add, final List<HostInternetScsiHbaStaticTarget> targets,
+            List<HostMO> hosts) throws Exception {
+        ExecutorService executorService = Executors.newFixedThreadPool(hosts.size());
 
         final List<Exception> exceptions = new ArrayList<Exception>();
 
-        for (Pair<ManagedObjectReference, String> hostPair : lstHosts) {
-            HostMO host = new HostMO(context, hostPair.first());
+        for (HostMO host : hosts) {
             HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
 
             boolean iScsiHbaConfigured = false;
@@ -1938,9 +2011,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         public void run() {
                             try {
                                 if (add) {
-                                    hss.addInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
+                                    hss.addInternetScsiStaticTargets(iScsiHbaDevice, targets);
                                 } else {
-                                    hss.removeInternetScsiStaticTargets(iScsiHbaDevice, lstTargets);
+                                    hss.removeInternetScsiStaticTargets(iScsiHbaDevice, targets);
                                 }
 
                                 hss.rescanHba(iScsiHbaDevice);
@@ -2139,7 +2212,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, String secStorageUrl, String secStorageDir,
-            String backupName, long wait, String nfsVersion) throws Exception {
+            String backupName, long wait, Integer nfsVersion) throws Exception {
 
         String secondaryMountPoint = mountService.getMountPoint(secStorageUrl, null);
         String srcOVAFileName = null;
@@ -2315,5 +2388,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private String getLegacyVmDataDiskController() throws Exception {
         return DiskControllerType.lsilogic.toString();
+    }
+
+    public void setNfsVersion(Integer nfsVersion){
+        this._nfsVersion = nfsVersion;
+        s_logger.debug("VmwareProcessor instance now using NFS version: " + nfsVersion);
     }
 }

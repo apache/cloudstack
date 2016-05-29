@@ -20,6 +20,7 @@ import java.util.Date;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -64,6 +65,18 @@ public class UserResponse extends BaseResponse {
     @SerializedName("accounttype")
     @Param(description = "the account type of the user")
     private Short accountType;
+
+    @SerializedName(ApiConstants.ROLE_ID)
+    @Param(description = "the ID of the role")
+    private String roleId;
+
+    @SerializedName(ApiConstants.ROLE_TYPE)
+    @Param(description = "the type of the role")
+    private String roleType;
+
+    @SerializedName(ApiConstants.ROLE_NAME)
+    @Param(description = "the name of the role")
+    private String roleName;
 
     @SerializedName("domainid")
     @Param(description = "the domain ID of the user")
@@ -172,6 +185,20 @@ public class UserResponse extends BaseResponse {
 
     public void setAccountType(Short accountType) {
         this.accountType = accountType;
+    }
+
+    public void setRoleId(String roleId) {
+        this.roleId = roleId;
+    }
+
+    public void setRoleType(RoleType roleType) {
+        if (roleType != null) {
+            this.roleType = roleType.name();
+        }
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
     }
 
     public String getDomainId() {

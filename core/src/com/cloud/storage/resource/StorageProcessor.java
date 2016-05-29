@@ -26,6 +26,7 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 
 import com.cloud.agent.api.Answer;
@@ -68,4 +69,6 @@ public interface StorageProcessor {
     public Answer forgetObject(ForgetObjectCmd cmd);
 
     public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd);
+
+    public Answer resignature(ResignatureCommand cmd);
 }

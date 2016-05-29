@@ -97,9 +97,12 @@ import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang.math.NumberUtils;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -148,6 +151,8 @@ import com.cloud.agent.api.MigrateWithStorageCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.ModifyTargetsAnswer;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
@@ -303,6 +308,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String _password;
     protected String _guid;
     protected String _vCenterAddress;
+    protected Integer storageNfsVersion;
 
     protected String _privateNetworkVSwitchName;
     protected VmwareTrafficLabel _guestTrafficInfo = new VmwareTrafficLabel(TrafficType.Guest);
@@ -409,6 +415,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((DestroyCommand)cmd);
             } else if (clz == CreateStoragePoolCommand.class) {
                 return execute((CreateStoragePoolCommand)cmd);
+            } else if (clz == ModifyTargetsCommand.class) {
+                answer = execute((ModifyTargetsCommand)cmd);
             } else if (clz == ModifyStoragePoolCommand.class) {
                 answer = execute((ModifyStoragePoolCommand)cmd);
             } else if (clz == DeleteStoragePoolCommand.class) {
@@ -470,6 +478,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
+                checkStorageProcessorAndHandlerNfsVersionAttribute((StorageSubSystemCommand)cmd);
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
             } else if (clz == ScaleVmCommand.class) {
                 return execute((ScaleVmCommand)cmd);
@@ -516,6 +525,64 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+
+    /**
+     * Check if storage NFS version is already set or needs to be reconfigured.<br>
+     * If _storageNfsVersion is not null -> nothing to do, version already set.<br>
+     * If _storageNfsVersion is null -> examine StorageSubSystemCommand to get NFS version and set it
+     * to the storage processor and storage handler.
+     * @param cmd command to execute
+     */
+    protected void checkStorageProcessorAndHandlerNfsVersionAttribute(StorageSubSystemCommand cmd) {
+        if (storageNfsVersion != null) return;
+        if (cmd instanceof CopyCommand){
+            examineStorageSubSystemCommandNfsVersion((CopyCommand) cmd);
+        }
+    }
+
+    /**
+     * Examine StorageSubSystem command to get storage NFS version, if provided
+     * @param cmd command to execute
+     */
+    protected void examineStorageSubSystemCommandNfsVersion(CopyCommand cmd){
+        DataStoreTO srcDataStore = cmd.getSrcTO().getDataStore();
+        boolean nfsVersionFound = false;
+
+        if (srcDataStore instanceof NfsTO){
+            nfsVersionFound = getStorageNfsVersionFromNfsTO((NfsTO) srcDataStore);
+        }
+
+        if (nfsVersionFound){
+            setCurrentNfsVersionInProcessorAndHandler();
+        }
+    }
+
+    /**
+     * Get storage NFS version from NfsTO
+     * @param nfsTO nfsTO
+     * @return true if NFS version was found and not null, false in other case
+     */
+    protected boolean getStorageNfsVersionFromNfsTO(NfsTO nfsTO){
+        if (nfsTO != null && nfsTO.getNfsVersion() != null){
+            storageNfsVersion = nfsTO.getNfsVersion();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Sets _storageNfsVersion into storage processor and storage handler by calling reconfigureNfsVersion on the storage handler,
+     * which will set NFS version into it and the storage processor.
+     */
+    protected void setCurrentNfsVersionInProcessorAndHandler() {
+        VmwareStorageSubsystemCommandHandler handler = (VmwareStorageSubsystemCommandHandler) storageHandler;
+        boolean success = handler.reconfigureNfsVersion(storageNfsVersion);
+        if (success){
+            s_logger.info("NFS version " + storageNfsVersion + " successfully set in VmwareStorageProcessor and VmwareStorageSubsystemCommandHandler");
+        } else {
+            s_logger.error("Error while setting NFS version " + storageNfsVersion);
+        }
     }
 
     /**
@@ -933,7 +1000,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
              */
             // Fallback to E1000 if no specific nicAdapter is passed
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
-            Map details = cmd.getDetails();
+            Map<String, String> details = cmd.getDetails();
             if (details != null) {
                 nicDeviceType = VirtualEthernetCardType.valueOf((String) details.get("nicAdapter"));
             }
@@ -3527,7 +3594,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Answer execute(MigrateVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
         StorageFilerTO poolTo = cmd.getPool();
-        Volume.Type volumeType = cmd.getVolumeType();
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource MigrateVolumeCommand: " + _gson.toJson(cmd));
@@ -3608,7 +3674,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // Consolidate VM disks.
             // In case of a linked clone VM, if VM's disks are not consolidated,
             // further volume operations on the ROOT volume such as volume snapshot etc. will result in DB inconsistencies.
-            String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
             if (!vmMo.consolidateVmDisks()) {
                 s_logger.warn("VM disk consolidation failed after storage migration.");
             } else {
@@ -3677,6 +3742,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new Answer(cmd, true, "success");
     }
 
+    protected Answer execute(ModifyTargetsCommand cmd) {
+        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+        handleTargets(cmd.getAdd(), cmd.getTargets(), (HostMO)hyperHost);
+
+        return new ModifyTargetsAnswer();
+    }
+
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource ModifyStoragePoolCommand: " + _gson.toJson(cmd));
@@ -3690,31 +3763,50 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Unsupported storage pool type " + pool.getType());
             }
 
-            ManagedObjectReference morDatastore = null;
-            morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
-            if (morDatastore == null)
-                morDatastore =
-                hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+
+            if (morDatastore == null) {
+                morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
+            }
 
             assert (morDatastore != null);
+
             DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
+
             long capacity = summary.getCapacity();
             long available = summary.getFreeSpace();
+
             Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
+
             if (cmd.getAdd() && pool.getType() == StoragePoolType.VMFS) {
                 answer.setLocalDatastoreName(morDatastore.getValue());
             }
+
             return answer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+
                 invalidateServiceContext();
             }
 
             String msg = "ModifyStoragePoolCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+
             s_logger.error(msg, e);
+
             return new Answer(cmd, false, msg);
+        }
+    }
+
+    private void handleTargets(boolean add, List<Map<String, String>> targets, HostMO host) {
+        if (targets != null && targets.size() > 0) {
+            try {
+                _storageProcessor.handleTargetsForHost(add, targets, host);
+            }
+            catch (Exception ex) {
+                s_logger.warn(ex.getMessage());
+            }
         }
     }
 
@@ -4701,12 +4793,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private boolean isVmInCluster(String vmName) throws Exception {
-        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-
-        return hyperHost.findVmOnPeerHyperHost(vmName) != null;
-    }
-
     protected OptionValue[] configureVnc(OptionValue[] optionsToMerge, VmwareHypervisorHost hyperHost, String vmName, String vncPassword, String keyboardLayout)
             throws Exception {
 
@@ -4943,8 +5029,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         String instanceNameCustomField = "value[" + key + "]";
 
+        final String numCpuStr = "summary.config.numCpu";
+        final String cpuUseStr = "summary.quickStats.overallCpuUsage";
+        final String guestMemUseStr = "summary.quickStats.guestMemoryUsage";
+        final String memLimitStr = "resourceConfig.memoryAllocation.limit";
+        final String memMbStr = "config.hardware.memoryMB";
+
         ObjectContent[] ocs =
-                hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", "summary.config.numCpu", "summary.quickStats.overallCpuUsage", instanceNameCustomField});
+                hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", numCpuStr, cpuUseStr ,guestMemUseStr ,memLimitStr ,memMbStr, instanceNameCustomField});
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
@@ -4952,6 +5044,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     String name = null;
                     String numberCPUs = null;
                     String maxCpuUsage = null;
+                    String memlimit = null;
+                    String memkb = null;
+                    String guestMemusage = null;
                     String vmNameOnVcenter = null;
                     String vmInternalCSName = null;
                     for (DynamicProperty objProp : objProps) {
@@ -4960,10 +5055,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         } else if (objProp.getName().contains(instanceNameCustomField)) {
                             if (objProp.getVal() != null)
                                 vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
-                        } else if (objProp.getName().equals("summary.config.numCpu")) {
+                        }else if(objProp.getName().equals(guestMemusage)){
+                            guestMemusage = objProp.getVal().toString();
+                        }else if (objProp.getName().equals(numCpuStr)) {
                             numberCPUs = objProp.getVal().toString();
-                        } else if (objProp.getName().equals("summary.quickStats.overallCpuUsage")) {
+                        } else if (objProp.getName().equals(cpuUseStr)) {
                             maxCpuUsage = objProp.getVal().toString();
+                        } else if (objProp.getName().equals(memLimitStr)) {
+                            memlimit = objProp.getVal().toString();
+                        } else if (objProp.getName().equals(memMbStr)) {
+                            memkb = objProp.getVal().toString();
                         }
                     }
                     new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
@@ -5032,7 +5133,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             }
                         }
                     }
-                    vmResponseMap.put(name, new VmStatsEntry(Integer.parseInt(maxCpuUsage), networkReadKBs, networkWriteKBs, Integer.parseInt(numberCPUs), "vm"));
+                    vmResponseMap.put(name, new VmStatsEntry( NumberUtils.toDouble(memkb)*1024,NumberUtils.toDouble(guestMemusage)*1024,NumberUtils.toDouble(memlimit)*1024, NumberUtils.toDouble(maxCpuUsage), networkReadKBs, networkWriteKBs, NumberUtils.toInt(numberCPUs), "vm"));
                 }
             }
         }
@@ -5272,8 +5373,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             value = (String)params.get("scripts.timeout");
             int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
-            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null, (String)params.get("nfsVersion"));
-            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor, (String)params.get("nfsVersion"));
+
+            storageNfsVersion = NfsSecondaryStorageResource.retrieveNfsVersionFromParams(params);
+            _storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr, timeout, this, _shutdownWaitMs, null, storageNfsVersion);
+            storageHandler = new VmwareStorageSubsystemCommandHandler(_storageProcessor, storageNfsVersion);
 
             _vrResource = new VirtualRoutingResource(this);
             if (!_vrResource.configure(name, params)) {

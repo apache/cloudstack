@@ -449,7 +449,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 TransactionLegacy txn = TransactionLegacy.currentTxn();
                 // insert system account
-                String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, account.default) VALUES (1, UUID(), 'system', '1', '1', 1)";
+                String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, role_id, domain_id, account.default) VALUES (1, UUID(), 'system', '1', '1', '1', 1)";
 
                 try {
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -476,8 +476,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 String lastname = "cloud";
 
                 // create an account for the admin user first
-                insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, account.default) VALUES (" + id + ", UUID(), '" + username
-                        + "', '1', '1', 1)";
+                insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, role_id, domain_id, account.default) VALUES (" + id + ", UUID(), '" + username
+                        + "', '1', '1', '1', 1)";
                 try {
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();

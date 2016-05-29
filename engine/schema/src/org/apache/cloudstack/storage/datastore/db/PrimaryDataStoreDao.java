@@ -64,6 +64,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      */
     List<StoragePoolVO> findPoolByName(String name);
 
+    List<StoragePoolVO> findPoolsByProvider(String provider);
+
     /**
      * Find pools by the pod that matches the details.
      *

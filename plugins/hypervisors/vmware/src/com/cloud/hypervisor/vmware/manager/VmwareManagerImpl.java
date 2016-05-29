@@ -553,7 +553,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public void prepareSecondaryStorageStore(String storageUrl, Long storeId) {
-        String mountPoint = getMountPoint(storageUrl, imageStoreDetailsUtil.getNfsVersion(storeId));
+        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(storeId);
+        String mountPoint = getMountPoint(storageUrl, nfsVersion);
 
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
         try {
@@ -661,7 +662,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public String getMountPoint(String storageUrl, String nfsVersion) {
+    public String getMountPoint(String storageUrl, Integer nfsVersion) {
         String mountPoint = null;
         synchronized (_storageMounts) {
             mountPoint = _storageMounts.get(storageUrl);
@@ -752,7 +753,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
-    protected String mount(String path, String parent, String nfsVersion) {
+    protected String mount(String path, String parent, Integer nfsVersion) {
         String mountPoint = setupMountPoint(parent);
         if (mountPoint == null) {
             s_logger.warn("Unable to create a mount point");
@@ -842,6 +843,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         if (cmd instanceof StartupCommand) {
             if (host.getHypervisorType() == HypervisorType.VMware) {
@@ -880,6 +885,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         return false;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

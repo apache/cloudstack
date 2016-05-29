@@ -55,6 +55,7 @@ import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
+import org.apache.cloudstack.api.command.user.vm.SecurityGroupAction;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
@@ -194,6 +195,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
@@ -2289,6 +2291,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String hostName = cmd.getHostName();
         Map<String,String> details = cmd.getDetails();
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> securityGroupIdList = getSecurityGroupIdList(cmd);
 
         // Input validation and permission checks
         UserVmVO vmInstance = _vmDao.findById(id);
@@ -2339,7 +2342,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable,
-                cmd.getHttpMethod(), cmd.getCustomId(), hostName, cmd.getInstanceName());
+                cmd.getHttpMethod(), cmd.getCustomId(), hostName, cmd.getInstanceName(), securityGroupIdList);
     }
 
     private void saveUsageEvent(UserVmVO vm) {
@@ -2389,10 +2392,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-            Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName) throws ResourceUnavailableException, InsufficientCapacityException {
+            Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList)
+                    throws ResourceUnavailableException, InsufficientCapacityException {
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
-            throw new CloudRuntimeException("Unable to find virual machine with id " + id);
+            throw new CloudRuntimeException("Unable to find virtual machine with id " + id);
         }
 
         if(instanceName != null){
@@ -2451,6 +2455,44 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             isDynamicallyScalable = vm.isDynamicallyScalable();
         }
 
+        boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
+
+        if (securityGroupIdList != null && isVMware) {
+            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+        } else {
+            // Get default guest network in Basic zone
+            Network defaultNetwork = null;
+            try {
+                DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
+
+                if (zone.getNetworkType() == NetworkType.Basic) {
+                    // Get default guest network in Basic zone
+                    defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
+                } else if (zone.isSecurityGroupEnabled()) {
+                    NicVO defaultNic = _nicDao.findDefaultNicForVM(vm.getId());
+                    if (defaultNic != null) {
+                        defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
+                    }
+                }
+            } catch (InvalidParameterValueException e) {
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug(e.getMessage(),e);
+                }
+                defaultNetwork = _networkModel.getDefaultNetworkForVm(id);
+            }
+
+            if (securityGroupIdList != null && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
+                if (vm.getState() == State.Stopped) {
+                    // Remove instance from security groups
+                    _securityGroupMgr.removeInstanceFromGroups(id);
+                    // Add instance in provided groups
+                    _securityGroupMgr.addInstanceToGroups(id, securityGroupIdList);
+                } else {
+                    throw new InvalidParameterValueException("Virtual machine must be stopped prior to update security groups ");
+                }
+            }
+        }
+
         if (hostName != null) {
             // Check is hostName is RFC compliant
             checkNameForRFCCompliance(hostName);
@@ -2492,24 +2534,34 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
            return false;
         }
 
+        boolean userDataApplied = false;
         for (Nic nic : nics) {
-             Network network = _networkDao.findById(nic.getNetworkId());
-            NicProfile nicProfile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
-                    template.getHypervisorType(), network));
-
-             VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
-
-             UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(network);
-             if (element == null) {
-                 throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
-             }
-             boolean result = element.saveUserData(network, nicProfile, vmProfile);
-             if (!result) {
-                 s_logger.error("Failed to update userdata for vm " + vm + " and nic " + nic);
-             }
+            userDataApplied |= applyUserData(template.getHypervisorType(), vm, nic);
         }
+        return userDataApplied;
+    }
 
-        return true;
+    protected boolean applyUserData(HypervisorType hyperVisorType, UserVm vm, Nic nic) throws ResourceUnavailableException, InsufficientCapacityException {
+        Network network = _networkDao.findById(nic.getNetworkId());
+        NicProfile nicProfile = new NicProfile(nic, network, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(
+                hyperVisorType, network));
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
+
+        if (_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.UserData)) {
+            UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(network);
+            if (element == null) {
+                throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
+            }
+            boolean result = element.saveUserData(network, nicProfile, vmProfile);
+            if (!result) {
+                s_logger.error("Failed to update userdata for vm " + vm + " and nic " + nic);
+            } else {
+                return true;
+            }
+        } else {
+            s_logger.debug("Not applying userdata for nic id=" + nic.getId() + " in vm id=" + vmProfile.getId() + " because it is not supported in network id=" + network.getId());
+        }
+        return false;
     }
 
     @Override
@@ -4270,8 +4322,172 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
             StorageUnavailableException, ResourceAllocationException {
-        // TODO Auto-generated method stub
-        return null;
+        //Verify that all objects exist before passing them to the service
+        Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
+
+        verifyDetails(cmd.getDetails());
+
+        Long zoneId = cmd.getZoneId();
+
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+        }
+
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+
+        ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+        }
+
+        Long templateId = cmd.getTemplateId();
+
+        if(!serviceOffering.isDynamic()) {
+            for(String detail: cmd.getDetails().keySet()) {
+                if(detail.equalsIgnoreCase("cpuNumber") || detail.equalsIgnoreCase("cpuSpeed") || detail.equalsIgnoreCase("memory")) {
+                    throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
+                }
+            }
+        }
+
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
+        // Make sure a valid template ID was specified
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to use template " + templateId);
+        }
+
+        Long diskOfferingId = cmd.getDiskOfferingId();
+        DiskOffering diskOffering = null;
+        if (diskOfferingId != null) {
+            diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
+            if (diskOffering == null) {
+                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+            }
+        }
+
+        if (!zone.isLocalStorageEnabled()) {
+            if (serviceOffering.getUseLocalStorage()) {
+                throw new InvalidParameterValueException("Zone is not configured to use local storage but service offering " + serviceOffering.getName() + " uses it");
+            }
+            if (diskOffering != null && diskOffering.getUseLocalStorage()) {
+                throw new InvalidParameterValueException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
+            }
+        }
+
+        String ipAddress = cmd.getIpAddress();
+        String ip6Address = cmd.getIp6Address();
+        String name = cmd.getName();
+        String displayName = cmd.getDisplayName();
+        UserVm vm = null;
+        IpAddresses addrs = new IpAddresses(ipAddress, ip6Address);
+        Long size = cmd.getSize();
+        String group = cmd.getGroup();
+        String userData = cmd.getUserData();
+        String sshKeyPairName = cmd.getSSHKeyPairName();
+        Boolean displayVm = cmd.getDisplayVm();
+        String keyboard = cmd.getKeyboard();
+        if (zone.getNetworkType() == NetworkType.Basic) {
+            if (cmd.getNetworkIds() != null) {
+                throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
+            } else {
+                vm = createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(cmd), owner, name, displayName, diskOfferingId,
+                        size , group , cmd.getHypervisor(), cmd.getHttpMethod(), userData , sshKeyPairName , cmd.getIpToNetworkMap(), addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
+                        cmd.getDetails(), cmd.getCustomId());
+            }
+        } else {
+            if (zone.isSecurityGroupEnabled())  {
+                vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, cmd.getNetworkIds(), getSecurityGroupIdList(cmd), owner, name,
+                        displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairName, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
+                        cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId());
+
+            } else {
+                if (cmd.getSecurityGroupIdList() != null && !cmd.getSecurityGroupIdList().isEmpty()) {
+                    throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
+                }
+                vm = createAdvancedVirtualMachine(zone, serviceOffering, template, cmd.getNetworkIds(), owner, name, displayName, diskOfferingId, size, group,
+                        cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairName, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard, cmd.getAffinityGroupIdList(), cmd.getDetails(),
+                        cmd.getCustomId());
+            }
+        }
+        return vm;
+    }
+
+    private List<Long> getSecurityGroupIdList(SecurityGroupAction cmd) {
+        if (cmd.getSecurityGroupNameList() != null && cmd.getSecurityGroupIdList() != null) {
+            throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
+        }
+
+       //transform group names to ids here
+       if (cmd.getSecurityGroupNameList() != null) {
+            List<Long> securityGroupIds = new ArrayList<Long>();
+            for (String groupName : cmd.getSecurityGroupNameList()) {
+                SecurityGroup sg = _securityGroupMgr.getSecurityGroup(groupName, cmd.getEntityOwnerId());
+                if (sg == null) {
+                    throw new InvalidParameterValueException("Unable to find group by name " + groupName);
+                } else {
+                    securityGroupIds.add(sg.getId());
+                }
+            }
+            return securityGroupIds;
+        } else {
+            return cmd.getSecurityGroupIdList();
+        }
+    }
+
+    // this is an opportunity to verify that parameters that came in via the Details Map are OK
+    // for example, minIops and maxIops should either both be specified or neither be specified and,
+    // if specified, minIops should be <= maxIops
+    private void verifyDetails(Map<String,String> details) {
+        if (details != null) {
+            String minIops = (String)details.get("minIops");
+            String maxIops = (String)details.get("maxIops");
+
+            verifyMinAndMaxIops(minIops, maxIops);
+
+            minIops = (String)details.get("minIopsDo");
+            maxIops = (String)details.get("maxIopsDo");
+
+            verifyMinAndMaxIops(minIops, maxIops);
+        }
+    }
+
+    private void verifyMinAndMaxIops(String minIops, String maxIops) {
+        if ((minIops != null && maxIops == null) || (minIops == null && maxIops != null)) {
+            throw new InvalidParameterValueException("Either 'Min IOPS' and 'Max IOPS' must both be specified or neither be specified.");
+        }
+
+        long lMinIops;
+
+        try {
+            if (minIops != null) {
+                lMinIops = Long.parseLong(minIops);
+            }
+            else {
+                lMinIops = 0;
+            }
+        }
+        catch (NumberFormatException ex) {
+            throw new InvalidParameterValueException("'Min IOPS' must be a whole number.");
+        }
+
+        long lMaxIops;
+
+        try {
+            if (maxIops != null) {
+                lMaxIops = Long.parseLong(maxIops);
+            }
+            else {
+                lMaxIops = 0;
+            }
+        }
+        catch (NumberFormatException ex) {
+            throw new InvalidParameterValueException("'Max IOPS' must be a whole number.");
+        }
+
+        if (lMinIops > lMaxIops) {
+            throw new InvalidParameterValueException("'Min IOPS' must be less than or equal to 'Max IOPS'.");
+        }
     }
 
     @Override

@@ -32,7 +32,6 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     StorageFilerTO _primaryPool;
     // For XenServer
     private String _secondaryStorageUrl;
-    private String nfsVersion;
 
     public CreatePrivateTemplateFromVolumeCommand() {
     }
@@ -101,11 +100,4 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
         _templateId = templateId;
     }
 
-    public String getNfsVersion() {
-        return nfsVersion;
-    }
-
-    public void setNfsVersion(String nfsVersion) {
-        this.nfsVersion = nfsVersion;
-    }
 }

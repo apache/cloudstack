@@ -25,13 +25,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.network.topology.NetworkTopology;
-import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinition;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DeployDestination;
@@ -78,6 +71,13 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
+
+import org.apache.cloudstack.network.topology.NetworkTopology;
+import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider {
 
@@ -466,7 +466,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             }
         }
 
-        return result > 0 ? true : false;
+        return result == routers.size() ? true : false;
     }
 
     @Override
@@ -559,9 +559,16 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
+        final Network privateNetwork = _networkModel.getNetwork(gateway.getNetworkId());
+
         boolean result = true;
         for (final DomainRouterVO domainRouterVO : routers) {
-            result = result && networkTopology.applyNetworkACLs(network, rules, domainRouterVO, isPrivateGateway);
+            final NicProfile nicProfile = _networkModel.getNicProfile(domainRouterVO, privateNetwork.getId(), null);
+            if (nicProfile != null) {
+                result = result && networkTopology.applyNetworkACLs(network, rules, domainRouterVO, isPrivateGateway);
+            } else {
+                s_logger.warn("Nic Profile for router '" + domainRouterVO + "' has already been removed. Router is redundant = " + domainRouterVO.getIsRedundantRouter());
+            }
         }
         return result;
     }

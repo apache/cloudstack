@@ -78,6 +78,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     VolumeDao volumeDao;
     @Inject
     SnapshotDataFactory snapshotDataFactory;
+    @Inject
+    private SnapshotDao _snapshotDao;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
@@ -289,7 +291,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
         if (canHandle(snapshot,SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
-            throw new UnsupportedOperationException("Reverting not supported. Create a template or volume based on the snapshot instead.");
+            throw new CloudRuntimeException("Reverting not supported. Create a template or volume based on the snapshot instead.");
         }
 
         SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshot.getId());

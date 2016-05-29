@@ -18,91 +18,67 @@
  */
 package org.apache.cloudstack.storage.resource;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.naming.ConfigurationException;
-
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
+import com.cloud.test.TestAppender;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.StringWriter;
 
-public class NfsSecondaryStorageResourceTest extends TestCase {
-    private static Map<String, Object> testParams;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
-    private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResourceTest.class.getName());
+@RunWith(PowerMockRunner.class)
+public class NfsSecondaryStorageResourceTest {
 
-    NfsSecondaryStorageResource resource;
+    private NfsSecondaryStorageResource resource;
 
     @Before
-    @Override
-    public void setUp() throws ConfigurationException {
-        s_logger.setLevel(Level.ALL);
+    public void setUp() {
         resource = new NfsSecondaryStorageResource();
-        resource.setInSystemVM(true);
-        testParams = PropertiesUtil.toMap(loadProperties());
-        resource.configureStorageLayerClass(testParams);
-        Object testLocalRoot = testParams.get("testLocalRoot");
-        if (testLocalRoot != null) {
-            resource.setParentPath((String)testLocalRoot);
-        }
     }
 
     @Test
-    public void testMount() throws Exception {
-        String sampleUriStr = "cifs://192.168.1.128/CSHV3?user=administrator&password=1pass%40word1&foo=bar";
-        URI sampleUri = new URI(sampleUriStr);
+    @PrepareForTest(NfsSecondaryStorageResource.class)
+    public void testSwiftWriteMetadataFile() throws Exception {
+        String expected = "uniquename=test\nfilename=testfile\nsize=100\nvirtualsize=1000";
 
-        s_logger.info("Check HostIp parsing");
-        String hostIpStr = resource.getUriHostIp(sampleUri);
-        Assert.assertEquals("Expected host IP " + sampleUri.getHost() + " and actual host IP " + hostIpStr + " differ.", sampleUri.getHost(), hostIpStr);
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter bufferWriter = new BufferedWriter(stringWriter);
+        PowerMockito.whenNew(BufferedWriter.class).withArguments(any(FileWriter.class)).thenReturn(bufferWriter);
 
-        s_logger.info("Check option parsing");
-        String expected = "user=administrator,password=1pass@word1,foo=bar,";
-        String actualOpts = resource.parseCifsMountOptions(sampleUri);
-        Assert.assertEquals("Options should be " + expected + " and not " + actualOpts, expected, actualOpts);
+        resource.swiftWriteMetadataFile("testfile", "test", "testfile", 100, 1000);
 
-        // attempt a configured mount
-        final Map<String, Object> params = PropertiesUtil.toMap(loadProperties());
-        String sampleMount = (String)params.get("testCifsMount");
-        if (!sampleMount.isEmpty()) {
-            s_logger.info("functional test, mount " + sampleMount);
-            URI realMntUri = new URI(sampleMount);
-            String mntSubDir = resource.mountUri(realMntUri, null);
-            s_logger.info("functional test, umount " + mntSubDir);
-            resource.umount(resource.getMountingRoot() + mntSubDir, realMntUri);
-        } else {
-            s_logger.info("no entry for testCifsMount in " + "./conf/agent.properties - skip functional test");
-        }
+        Assert.assertEquals(expected, stringWriter.toString());
     }
 
-    public static Properties loadProperties() throws ConfigurationException {
-        Properties properties = new Properties();
-        final File file = PropertiesUtil.findConfigFile("agent.properties");
-        if (file == null) {
-            throw new ConfigurationException("Unable to find agent.properties.");
-        }
-        s_logger.info("agent.properties found at " + file.getAbsolutePath());
-        try(FileInputStream fs = new FileInputStream(file);) {
-            properties.load(fs);
-        } catch (final FileNotFoundException ex) {
-            throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
-        } catch (final IOException ex) {
-            throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
-        }
-        return properties;
-    }
+    @Test
+    public void testCleanupStagingNfs() throws Exception{
 
+        NfsSecondaryStorageResource spyResource = spy(resource);
+        RuntimeException exception = new RuntimeException();
+        doThrow(exception).when(spyResource).execute(any(DeleteCommand.class));
+        TemplateObjectTO mockTemplate = Mockito.mock(TemplateObjectTO.class);
+
+        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
+        appenderBuilder.addExpectedPattern(Level.DEBUG, "Failed to clean up staging area:");
+        TestAppender testLogAppender = appenderBuilder.build();
+        TestAppender.safeAddAppender(NfsSecondaryStorageResource.s_logger, testLogAppender);
+
+        spyResource.cleanupStagingNfs(mockTemplate);
+
+        testLogAppender.assertMessagesLogged();
+
+    }
 }

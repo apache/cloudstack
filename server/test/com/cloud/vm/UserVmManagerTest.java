@@ -17,6 +17,8 @@
 
 package com.cloud.vm;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyFloat;
@@ -37,9 +39,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.storage.Storage;
 import com.cloud.user.User;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.uservm.UserVm;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -927,6 +931,54 @@ public class UserVmManagerTest {
         } finally {
             CallContext.unregister();
         }
+    }
+
+    @Test
+    public void testApplyUserDataInNetworkWithoutUserDataSupport() throws Exception {
+        UserVm userVm = mock(UserVm.class);
+        when(userVm.getId()).thenReturn(1L);
+
+        when(_nicMock.getNetworkId()).thenReturn(2L);
+        when(_networkMock.getNetworkOfferingId()).thenReturn(3L);
+        when(_networkDao.findById(2L)).thenReturn(_networkMock);
+
+        // No userdata support
+        assertFalse(_userVmMgr.applyUserData(HypervisorType.KVM, userVm, _nicMock));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyUserDataInNetworkWithoutElement() throws Exception {
+        UserVm userVm = mock(UserVm.class);
+        when(userVm.getId()).thenReturn(1L);
+
+        when(_nicMock.getNetworkId()).thenReturn(2L);
+        when(_networkMock.getNetworkOfferingId()).thenReturn(3L);
+        when(_networkDao.findById(2L)).thenReturn(_networkMock);
+
+        UserDataServiceProvider userDataServiceProvider = mock(UserDataServiceProvider.class);
+        when(userDataServiceProvider.saveUserData(any(Network.class), any(NicProfile.class), any(VirtualMachineProfile.class))).thenReturn(true);
+
+        // Userdata support, but no implementing element
+        when(_networkModel.areServicesSupportedByNetworkOffering(3L, Service.UserData)).thenReturn(true);
+        _userVmMgr.applyUserData(HypervisorType.KVM, userVm, _nicMock);
+    }
+
+    @Test
+    public void testApplyUserDataSuccessful() throws Exception {
+        UserVm userVm = mock(UserVm.class);
+        when(userVm.getId()).thenReturn(1L);
+
+        when(_nicMock.getNetworkId()).thenReturn(2L);
+        when(_networkMock.getNetworkOfferingId()).thenReturn(3L);
+        when(_networkDao.findById(2L)).thenReturn(_networkMock);
+
+        UserDataServiceProvider userDataServiceProvider = mock(UserDataServiceProvider.class);
+        when(userDataServiceProvider.saveUserData(any(Network.class), any(NicProfile.class), any(VirtualMachineProfile.class))).thenReturn(true);
+
+        // Userdata support with implementing element
+        when(_networkModel.areServicesSupportedByNetworkOffering(3L, Service.UserData)).thenReturn(true);
+        when(_networkModel.getUserDataUpdateProvider(_networkMock)).thenReturn(userDataServiceProvider);
+        assertTrue(_userVmMgr.applyUserData(HypervisorType.KVM, userVm, _nicMock));
     }
 
     @Test

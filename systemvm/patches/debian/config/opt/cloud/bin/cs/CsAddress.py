@@ -28,7 +28,6 @@ from CsRoute import CsRoute
 from CsRule import CsRule
 
 VRRP_TYPES = ['guest']
-PUBLIC_INTERFACE = ['eth1']
 
 class CsAddress(CsDataBag):
 
@@ -37,14 +36,14 @@ class CsAddress(CsDataBag):
             ip = CsIP(dev, self.config)
             ip.compare(self.dbag)
 
-    def get_ips(self):
-        ret = []
+    def get_interfaces(self):
+        interfaces = []
         for dev in self.dbag:
             if dev == "id":
                 continue
             for ip in self.dbag[dev]:
-                ret.append(CsInterface(ip, self.config))
-        return ret
+                interfaces.append(CsInterface(ip, self.config))
+        return interfaces
 
     def get_guest_if(self):
         """
@@ -52,13 +51,13 @@ class CsAddress(CsDataBag):
         """
         guest_interface = None
         lowest_device = 1000
-        for ip in self.get_ips():
-            if ip.is_guest() and ip.is_added():
-                device = ip.get_device()
+        for interface in self.get_interfaces():
+            if interface.is_guest() and interface.is_added():
+                device = interface.get_device()
                 device_suffix = int(''.join([digit for digit in device if digit.isdigit()]))
                 if device_suffix < lowest_device:
                     lowest_device = device_suffix
-                    guest_interface = ip
+                    guest_interface = interface
                     logging.debug("Guest interface will be set on device '%s' and IP '%s'" % (guest_interface.get_device(), guest_interface.get_ip()))
         return guest_interface
 
@@ -94,9 +93,9 @@ class CsAddress(CsDataBag):
         """
         Return the address object that has the control interface
         """
-        for ip in self.get_ips():
-            if ip.is_control():
-                return ip
+        for interface in self.get_interfaces():
+            if interface.is_control():
+                return interface
         return None
 
     def process(self):
@@ -117,6 +116,7 @@ class CsAddress(CsDataBag):
                 else:
                     logging.info(
                         "Address %s on device %s not configured", ip.ip(), dev)
+                    
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure(address)
 
@@ -235,8 +235,7 @@ class CsDevice:
                 continue
             self.devlist.append(vals[0])
 
-    def waitfordevice(self, timeout=15):
-        """ Wait up to 15 seconds for a device to become available """
+    def waitfordevice(self, timeout=2):
         count = 0
         while count < timeout:
             if self.dev in self.devlist:
@@ -276,7 +275,7 @@ class CsIP:
             try:
                 logging.info("Configuring address %s on device %s", self.ip(), self.dev)
                 cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
-                subprocess.call(cmd, shell=True)
+                CsHelper.execute(cmd)
             except Exception as e:
                 logging.info("Exception occurred ==> %s" % e)
 
@@ -289,24 +288,27 @@ class CsIP:
         route = CsRoute()
         if not self.get_type() in ["control"]:
             route.add_table(self.dev)
-            
+
             CsRule(self.dev).addMark()
-            self.check_is_up()
+
+            interfaces = [CsInterface(address, self.config)]
+            CsHelper.reconfigure_interfaces(self.cl, interfaces)
+
             self.set_mark()
             self.arpPing()
-            
+
             CsRpsrfs(self.dev).enable()
             self.post_config_change("add")
 
         '''For isolated/redundant and dhcpsrvr routers, call this method after the post_config is complete '''
         if not self.config.is_vpc():
             self.setup_router_control()
-        
+
         if self.config.is_vpc() or self.cl.is_redundant():
             # The code looks redundant here, but we actually have to cater for routers and
             # VPC routers in a different manner. Please do not remove this block otherwise
             # The VPC default route will be broken.
-            if self.get_type() in ["public"]:
+            if self.get_type() in ["public"] and address["device"] == CsHelper.PUBLIC_INTERFACES[self.cl.get_type()]:
                 gateway = str(address["gateway"])
                 route.add_defaultroute(gateway)
         else:
@@ -314,21 +316,6 @@ class CsIP:
             # is a default route and add if needed
             if(self.cl.get_gateway()):
                 route.add_defaultroute(self.cl.get_gateway())
-
-    def check_is_up(self):
-        """ Ensure device is up """
-        cmd = "ip link show %s | grep 'state DOWN'" % self.getDevice()
-        for i in CsHelper.execute(cmd):
-            if " DOWN " in i:
-                cmd2 = "ip link set %s up" % self.getDevice()
-                # If redundant only bring up public interfaces that are not eth1.
-                # Reason: private gateways are public interfaces.
-                # master.py and keepalived will deal with eth1 public interface.
-                if self.cl.is_redundant() and (not self.is_public() or self.getDevice() not in PUBLIC_INTERFACE):
-                    CsHelper.execute(cmd2)
-                # if not redundant bring everything up
-                if not self.cl.is_redundant():
-                    CsHelper.execute(cmd2)
 
     def set_mark(self):
         cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \
@@ -356,12 +343,12 @@ class CsIP:
     def setup_router_control(self):
         if self.config.is_vpc():
             return
-        
+
         self.fw.append(
             ["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])
         self.fw.append(
             ["filter", "", "-A INPUT -i eth1 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
-        
+
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 

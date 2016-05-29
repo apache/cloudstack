@@ -28,11 +28,17 @@
     <version>4.9.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
+  <repositories>
+    <repository>
+      <id>nuage-vsp</id>
+      <url>http://cs.mv.nuagenetworks.net/releases/</url>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>${cs.commons-lang3.version}</version>
+      <groupId>net.nuage.vsp</groupId>
+      <artifactId>nuage-vsp-acs-client</artifactId>
+      <version>3.2.8.0</version>
     </dependency>
   </dependencies>
   <build>

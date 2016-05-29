@@ -66,6 +66,8 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.usage.Usage;
 
@@ -165,6 +167,14 @@ public class EventTypes {
     public static final String EVENT_GLOBAL_LOAD_BALANCER_CREATE = "GLOBAL.LB.CREATE";
     public static final String EVENT_GLOBAL_LOAD_BALANCER_DELETE = "GLOBAL.LB.DELETE";
     public static final String EVENT_GLOBAL_LOAD_BALANCER_UPDATE = "GLOBAL.LB.UPDATE";
+
+    // Role events
+    public static final String EVENT_ROLE_CREATE = "ROLE.CREATE";
+    public static final String EVENT_ROLE_UPDATE = "ROLE.UPDATE";
+    public static final String EVENT_ROLE_DELETE = "ROLE.DELETE";
+    public static final String EVENT_ROLE_PERMISSION_CREATE = "ROLE.PERMISSION.CREATE";
+    public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
+    public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
 
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";
@@ -298,6 +308,14 @@ public class EventTypes {
 
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
+
+    // Host Out-of-band management
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE = "HOST.OOBM.ENABLE";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_DISABLE = "HOST.OOBM.DISABLE";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_CONFIGURE = "HOST.OOBM.CONFIGURE";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION = "HOST.OOBM.ACTION";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD = "HOST.OOBM.CHANGEPASSWORD";
+    public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION = "HOST.OOBM.POWERSTATE.TRANSITION";
 
     // Maintenance
     public static final String EVENT_MAINTENANCE_CANCEL = "MAINT.CANCEL";
@@ -605,6 +623,14 @@ public class EventTypes {
         entityEventDetails.put(EVENT_LB_CERT_ASSIGN, LoadBalancer.class);
         entityEventDetails.put(EVENT_LB_CERT_REMOVE, LoadBalancer.class);
 
+        // Role events
+        entityEventDetails.put(EVENT_ROLE_CREATE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_UPDATE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_DELETE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_PERMISSION_CREATE, RolePermission.class);
+        entityEventDetails.put(EVENT_ROLE_PERMISSION_UPDATE, RolePermission.class);
+        entityEventDetails.put(EVENT_ROLE_PERMISSION_DELETE, RolePermission.class);
+
         // Account events
         entityEventDetails.put(EVENT_ACCOUNT_ENABLE, Account.class);
         entityEventDetails.put(EVENT_ACCOUNT_DISABLE, Account.class);
@@ -726,6 +752,14 @@ public class EventTypes {
 
         // Host
         entityEventDetails.put(EVENT_HOST_RECONNECT, Host.class);
+
+        // Host Out-of-band management
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_DISABLE, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_CONFIGURE, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD, Host.class);
+        entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION, Host.class);
 
         // Maintenance
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL, Host.class);

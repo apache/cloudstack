@@ -19,6 +19,7 @@ package com.cloud.api;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -176,6 +177,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
+import com.google.gson.reflect.TypeToken;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
@@ -264,10 +266,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         String info = job.getCmdInfo();
         String cmdEventType = "unknown";
         if (info != null) {
-            String marker = "\"cmdEventType\"";
-            int begin = info.indexOf(marker);
-            if (begin >= 0) {
-                cmdEventType = info.substring(begin + marker.length() + 2, info.indexOf(",", begin) - 1);
+            Type type = new TypeToken<Map<String, String>>(){}.getType();
+            Map<String, String> cmdInfo = ApiGsonHelper.getBuilder().create().fromJson(info, type);
+            String eventTypeObj = cmdInfo.get("cmdEventType");
+            if (eventTypeObj != null) {
+                cmdEventType = eventTypeObj;
 
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("Retrieved cmdEventType from job info: " + cmdEventType);
@@ -797,15 +800,15 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     s_logger.debug(ex.getMessage());
                     throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
                 } catch (final PermissionDeniedException ex) {
-                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
-                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                    s_logger.debug("The user with id:" + userId + " is not allowed to request the API command or the API command does not exist: " + commandName);
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The user is not allowed to request the API command or the API command does not exist");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
                 if (!s_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
-                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
-                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                    s_logger.debug("The user with id:" + userId + " is not allowed to request the API command or the API command does not exist: " + commandName);
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The user is not allowed to request the API command or the API command does not exist");
                 }
             }
 
@@ -1000,17 +1003,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
         // We will always use domainId first. If that does not exist, we will use domain name. If THAT doesn't exist
         // we will default to ROOT
-        if (domainId == null) {
-            if (domainPath == null || domainPath.trim().length() == 0) {
-                domainId = Domain.ROOT_DOMAIN;
-            } else {
-                final Domain domainObj = domainMgr.findDomainByPath(domainPath);
-                if (domainObj != null) {
-                    domainId = domainObj.getId();
-                } else { // if an unknown path is passed in, fail the login call
-                    throw new CloudAuthenticationException("Unable to find the domain from the path " + domainPath);
-                }
-            }
+        final Domain userDomain = domainMgr.findDomainByIdOrPath(domainId, domainPath);
+        if (userDomain == null || userDomain.getId() < 1L) {
+            throw new CloudAuthenticationException("Unable to find the domain from the path " + domainPath);
+        } else {
+            domainId = userDomain.getId();
         }
 
         final UserAccount userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);

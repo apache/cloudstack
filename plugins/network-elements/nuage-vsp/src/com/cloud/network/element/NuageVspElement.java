@@ -74,28 +74,36 @@ import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.util.NuageVspUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import com.cloud.util.NuageVspEntityBuilder;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
@@ -126,9 +134,9 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Inject
     NetworkDao _networkDao;
     @Inject
-    protected DomainDao _domainDao;
+    DomainDao _domainDao;
     @Inject
-    protected DataCenterDao _dcDao;
+    DataCenterDao _dcDao;
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
@@ -157,6 +165,12 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     NetworkACLItemDao _networkACLItemDao;
+    @Inject
+    NuageVspEntityBuilder _nuageVspEntityBuilder;
+    @Inject
+    VpcDetailsDao _vpcDetailsDao;
+    @Inject
+    DomainRouterDao _routerDao;
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
@@ -242,53 +256,21 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             return false;
         }
 
-        boolean egressDefaultPolicy = offering.getEgressDefaultPolicy();
-        Domain networkDomain = _domainDao.findById(network.getDomainId());
-        boolean isFirewallServiceSupported = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.Firewall);
+
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
         List<String> dnsServers = _nuageVspManager.getDnsDetails(network);
-
-        boolean isL2Network = false, isL3Network = false, isShared = false;
-        String subnetUuid = network.getUuid();
-        if (offering.getGuestType() == Network.GuestType.Shared) {
-            isShared = true;
-            subnetUuid = networkDomain.getUuid();
-        } else if (_ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)
-                || _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.StaticNat)
-                || _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Connectivity)) {
-            isL3Network = true;
-        } else {
-            isL2Network = true;
-        }
-
-        String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configDao, network, offering);
-        List<Map<String, Object>> ingressFirewallRules = getFirewallRulesToApply(network.getId(), FirewallRule.TrafficType.Ingress, egressDefaultPolicy);
-        List<Map<String, Object>> egressFirewallRules = getFirewallRulesToApply(network.getId(), FirewallRule.TrafficType.Egress, egressDefaultPolicy);
+        List<VspAclRule> ingressFirewallRules = getFirewallRulesToApply(network, FirewallRule.TrafficType.Ingress);
+        List<VspAclRule> egressFirewallRules = getFirewallRulesToApply(network, FirewallRule.TrafficType.Egress);
 
         List<IPAddressVO> ips = _ipAddressDao.listStaticNatPublicIps(network.getId());
-        List<String> acsFipUuid = new ArrayList<String>();
+        List<String> floatingIpUuids = new ArrayList<String>();
         for (IPAddressVO ip : ips) {
-            acsFipUuid.add(ip.getUuid());
+            floatingIpUuids.add(ip.getUuid());
         }
 
         HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
-        ImplementVspCommand.Builder cmdBuilder = new ImplementVspCommand.Builder()
-                .networkId(network.getId())
-                .networkDomainUuid(networkDomain.getUuid())
-                .networkUuid(network.getUuid())
-                .networkName(network.getName())
-                .vpcOrSubnetUuid(subnetUuid)
-                .isL2Network(isL2Network)
-                .isL3Network(isL3Network)
-                .isVpc(false)
-                .isShared(isShared)
-                .domainTemplateName(preConfiguredDomainTemplateName)
-                .isFirewallServiceSupported(isFirewallServiceSupported)
-                .dnsServers(dnsServers)
-                .ingressFirewallRules(ingressFirewallRules)
-                .egressFirewallRules(egressFirewallRules)
-                .acsFipUuid(acsFipUuid)
-                .egressDefaultPolicy(egressDefaultPolicy);
-        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmdBuilder.build());
+        ImplementVspCommand cmd = new ImplementVspCommand(vspNetwork, dnsServers, ingressFirewallRules, egressFirewallRules, floatingIpUuids);
+        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
         if (answer == null || !answer.getResult()) {
             s_logger.error("ImplementVspCommand for network " + network.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
             if ((null != answer) && (null != answer.getDetails())) {
@@ -302,23 +284,21 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     private boolean applyACLRulesForVpc(Network network, NetworkOffering offering) throws ResourceUnavailableException {
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(network.getNetworkACLId());
         if (_networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.NetworkACL)) {
-            applyACLRules(network, rules, true, null, false);
+            applyACLRules(network, rules, true, false);
         }
         return true;
     }
 
-    private List<Map<String, Object>> getFirewallRulesToApply(long networkId, FirewallRule.TrafficType trafficType, final boolean egressDefaultPolicy) {
-        List<FirewallRuleVO> firewallRulesToApply = _firewallRulesDao.listByNetworkPurposeTrafficType(networkId, FirewallRule.Purpose.Firewall, trafficType);
+    private List<VspAclRule> getFirewallRulesToApply(final Network network, FirewallRule.TrafficType trafficType) {
+        List<FirewallRuleVO> firewallRulesToApply = _firewallRulesDao.listByNetworkPurposeTrafficType(network.getId(), FirewallRule.Purpose.Firewall, trafficType);
+        List<VspAclRule> vspAclRulesToApply = Lists.newArrayListWithExpectedSize(firewallRulesToApply.size());
+
         for (FirewallRuleVO rule : firewallRulesToApply) {
-            // load cidrs if any
             rule.setSourceCidrList(_firewallRulesCidrsDao.getSourceCidrs(rule.getId()));
+            VspAclRule vspAclRule = _nuageVspEntityBuilder.buildVspAclRule(rule, network);
+            vspAclRulesToApply.add(vspAclRule);
         }
-        return Lists.transform(firewallRulesToApply, new Function<FirewallRuleVO, Map<String, Object>>() {
-            @Override
-            public Map<String, Object> apply(FirewallRuleVO firewallRuleVO) {
-                return getACLRuleDetails(firewallRuleVO, egressDefaultPolicy);
-            }
-        });
+        return vspAclRulesToApply;
     }
 
     @Override
@@ -463,48 +443,19 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        //Check if the network is associated to a VPC
-        Long vpcId = config.getVpcId();
-        String vpcOrSubnetUuid = null;
-        if (vpcId != null) {
-            Vpc vpcObj = _vpcDao.findById(vpcId);
-            vpcOrSubnetUuid = vpcObj.getUuid();
-        } else {
-            vpcOrSubnetUuid = config.getUuid();
-        }
-        Domain networkDomain = _domainDao.findById(config.getDomainId());
-
-        long networkOfferingId = _ntwkOfferingDao.findById(config.getNetworkOfferingId()).getId();
-        boolean isL3Network = isL3Network(networkOfferingId);
-
-        List<Map<String, Object>> sourceNatDetails = new ArrayList<Map<String, Object>>();
+        List<VspStaticNat> vspStaticNatDetails = new ArrayList<VspStaticNat>();
         for (StaticNat staticNat : rules) {
-            Map<String, Object> sourceNatDetail = new HashMap<String, Object>();
             IPAddressVO sourceNatIp = _ipAddressDao.findById(staticNat.getSourceIpAddressId());
-            VlanVO sourceNatVan = _vlanDao.findById(sourceNatIp.getVlanId());
+            VlanVO sourceNatVlan = _vlanDao.findById(sourceNatIp.getVlanId());
             NicVO nicVO = _nicDao.findByIp4AddressAndNetworkId(staticNat.getDestIpAddress(), staticNat.getNetworkId());
-            //Just get all the information about the sourceNat which will be used by NuageVsp
-            //client to process the request
-            sourceNatDetail.put("sourceNatIpUuid", sourceNatIp.getUuid());
-            sourceNatDetail.put("sourceNatIpAddress", sourceNatIp.getAddress().addr());
-            sourceNatDetail.put("nicUuid", nicVO == null ? null : nicVO.getUuid());
-            sourceNatDetail.put("nicMacAddress", nicVO == null ? null : nicVO.getMacAddress());
-            sourceNatDetail.put("isRevoke", staticNat.isForRevoke());
-            sourceNatDetail.put("sourceNatVlanUuid", sourceNatVan.getUuid());
-            sourceNatDetail.put("sourceNatVlanGateway", sourceNatVan.getVlanGateway());
-            sourceNatDetail.put("sourceNatVlanNetmask", sourceNatVan.getVlanNetmask());
-            sourceNatDetails.add(sourceNatDetail);
+            VspStaticNat vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(staticNat.isForRevoke(), sourceNatIp, sourceNatVlan, nicVO);
+            vspStaticNatDetails.add(vspStaticNat);
         }
 
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(config, false);
         HostVO nuageVspHost = getNuageVspHost(config.getPhysicalNetworkId());
-        ApplyStaticNatVspCommand.Builder cmdBuilder = new ApplyStaticNatVspCommand.Builder()
-                .networkDomainUuid(networkDomain.getUuid())
-                .networkUuid(config.getUuid())
-                .vpcOrSubnetUuid(vpcOrSubnetUuid)
-                .isL3Network(isL3Network)
-                .isVpc(vpcId != null)
-                .staticNatDetails(sourceNatDetails);
-        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmdBuilder.build());
+        ApplyStaticNatVspCommand cmd = new ApplyStaticNatVspCommand(vspNetwork, vspStaticNatDetails);
+        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
         if (answer == null || !answer.getResult()) {
             s_logger.error("ApplyStaticNatNuageVspCommand for network " + config.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
             if ((null != answer) && (null != answer.getDetails())) {
@@ -534,44 +485,27 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         }
 
         s_logger.info("Applying " + rules.size() + " Firewall Rules for network " + network.getName());
-        return applyACLRules(network, rules, false, rules.iterator().next().getTrafficType().equals(FirewallRule.TrafficType.Ingress), false);
+        return applyACLRules(network, rules, false, false);
     }
 
-    protected boolean applyACLRules(Network network, List<? extends InternalIdentity> rules, boolean isNetworkAcl, Boolean isAcsIngressAcl, boolean networkReset)
+    protected boolean applyACLRules(final Network network, List<? extends InternalIdentity> rules, boolean isNetworkAcl, boolean networkReset)
             throws ResourceUnavailableException {
-        Domain networksDomain = _domainDao.findById(network.getDomainId());
-        NetworkOfferingVO networkOfferingVO = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
-        Long vpcId = network.getVpcId();
-        String vpcOrSubnetUuid = null;
-        if (vpcId != null) {
-            Vpc vpcObj = _vpcDao.findById(vpcId);
-            vpcOrSubnetUuid = vpcObj.getUuid();
-        } else {
-            vpcOrSubnetUuid = network.getUuid();
-        }
-        boolean egressDefaultPolicy = networkOfferingVO.getEgressDefaultPolicy();
-        List<Map<String, Object>> aclRules = new ArrayList<Map<String, Object>>();
-        for (InternalIdentity acl : rules) {
-            aclRules.add(getACLRuleDetails(acl, egressDefaultPolicy));
-        }
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
+        List<VspAclRule> vspAclRules = Lists.transform(rules, new Function<InternalIdentity, VspAclRule>() {
+            @Nullable
+            @Override
+            public VspAclRule apply(@Nullable InternalIdentity input) {
+                if (input instanceof FirewallRule) {
+                    return _nuageVspEntityBuilder.buildVspAclRule((FirewallRule) input, network);
+                }
+                return _nuageVspEntityBuilder.buildVspAclRule((NetworkACLItem) input);
+            }
+        });
 
-        boolean isL3Network = isL3Network(network.getNetworkOfferingId());
         HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
-        String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configDao, network, networkOfferingVO);
-        ApplyAclRuleVspCommand.Builder cmdBuilder = new ApplyAclRuleVspCommand.Builder()
-                .networkAcl(isNetworkAcl)
-                .networkUuid(network.getUuid())
-                .networkDomainUuid(networksDomain.getUuid())
-                .vpcOrSubnetUuid(vpcOrSubnetUuid)
-                .networkName(network.getName())
-                .isL2Network(!isL3Network)
-                .aclRules(aclRules)
-                .networkId(network.getId())
-                .egressDefaultPolicy(networkOfferingVO.getEgressDefaultPolicy())
-                .acsIngressAcl(isAcsIngressAcl)
-                .networkReset(networkReset)
-                .domainTemplateName(preConfiguredDomainTemplateName);
-        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmdBuilder.build());
+        VspAclRule.ACLType vspAclType = isNetworkAcl ? VspAclRule.ACLType.NetworkACL : VspAclRule.ACLType.Firewall;
+        ApplyAclRuleVspCommand cmd = new ApplyAclRuleVspCommand(vspAclType, vspNetwork, vspAclRules, networkReset);
+        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
         if (answer == null || !answer.getResult()) {
             s_logger.error("ApplyAclRuleNuageVspCommand for network " + network.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
             if ((null != answer) && (null != answer.getDetails())) {
@@ -594,7 +528,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         }
         if (rules != null) {
             s_logger.info("Applying " + rules.size() + " Network ACLs for network " + config.getName());
-            applyACLRules(config, rules, true, null, rules.isEmpty());
+            applyACLRules(config, rules, true, rules.isEmpty());
         }
         return true;
     }
@@ -623,14 +557,32 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Override
     public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         if (vpc.getState().equals(Vpc.State.Inactive)) {
+            List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
+            if (CollectionUtils.isEmpty(routers)) {
+                routers = _routerDao.listIncludingRemovedByVpcId(vpc.getId());
+            }
+
+            List<String> domainRouterUuids = Lists.transform(routers, new Function<DomainRouterVO, String>() {
+                @Nullable
+                @Override
+                public String apply(@Nullable DomainRouterVO input) {
+                    return input != null ? input.getUuid() : null;
+                }
+            });
+
             Domain vpcDomain = _domainDao.findById(vpc.getDomainId());
             HostVO nuageVspHost = getNuageVspHost(getPhysicalNetworkId(vpc.getZoneId()));
-            String preConfiguredDomainTemplateName = _configDao.getValue(NuageVspManager.NuageVspVpcDomainTemplateName.key());
-            ShutDownVpcVspCommand.Builder cmdBuilder = new ShutDownVpcVspCommand.Builder()
-                    .domainUuid(vpcDomain.getUuid())
-                    .vpcUuid(vpc.getUuid())
-                    .domainTemplateName(preConfiguredDomainTemplateName);
-            Answer answer =  _agentMgr.easySend(nuageVspHost.getId(), cmdBuilder.build());
+
+            String preConfiguredDomainTemplateName;
+            VpcDetailVO domainTemplateNameDetail = _vpcDetailsDao.findDetail(vpc.getId(), NuageVspManager.nuageDomainTemplateDetailName);
+            if (domainTemplateNameDetail != null) {
+                preConfiguredDomainTemplateName = domainTemplateNameDetail.getValue();
+            } else {
+                preConfiguredDomainTemplateName = _configDao.getValue(NuageVspManager.NuageVspVpcDomainTemplateName.key());
+            }
+
+            ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand(vpcDomain.getUuid(), vpc.getUuid(), preConfiguredDomainTemplateName, domainRouterUuids);
+            Answer answer =  _agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
                 s_logger.error("ShutDownVpcVspCommand for VPC " + vpc.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
                 if ((null != answer) && (null != answer.getDetails())) {
@@ -706,51 +658,5 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             throw new CloudRuntimeException("There is no Nuage VSP device configured on physical network " + physicalNetworkId);
         }
         return nuageVspHost;
-    }
-
-    protected boolean isL3Network(Long offeringId) {
-        return _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offeringId, Service.SourceNat)
-                || _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offeringId, Service.StaticNat);
-    }
-
-    private Map<String, Object> getACLRuleDetails(Object aclRule, boolean egressDefaultPolicy) {
-        Map<String, Object> aclDetails = new HashMap<String, Object>();
-        if (aclRule instanceof FirewallRule) {
-            FirewallRule firewallRule = (FirewallRule)aclRule;
-            aclDetails.put("sourceCidrList", firewallRule.getSourceCidrList());
-            aclDetails.put("uuid", firewallRule.getUuid());
-            aclDetails.put("protocol", firewallRule.getProtocol());
-            aclDetails.put("startPort", firewallRule.getSourcePortStart());
-            aclDetails.put("endPort", firewallRule.getSourcePortEnd());
-            aclDetails.put("state", firewallRule.getState().name());
-            aclDetails.put("trafficType", firewallRule.getTrafficType().name());
-            if (firewallRule.getSourceIpAddressId() != null) {
-                //add the source IP
-                IPAddressVO ipaddress = _ipAddressDao.findById(((FirewallRule)aclRule).getSourceIpAddressId());
-                aclDetails.put("sourceIpAddress", ipaddress != null ? ipaddress.getVmIp() + "/32" : null);
-            }
-            if (firewallRule.getTrafficType().equals(FirewallRule.TrafficType.Egress) && egressDefaultPolicy) {
-                aclDetails.put("action", "Deny");
-            } else {
-                aclDetails.put("action", "Allow");
-            }
-            aclDetails.put("priority", -1);
-            aclDetails.put("type", "Firewall");
-        } else {
-            NetworkACLItem networkAcl = (NetworkACLItem)aclRule;
-            aclDetails.put("sourceCidrList", networkAcl.getSourceCidrList());
-            aclDetails.put("uuid", networkAcl.getUuid());
-            aclDetails.put("protocol", networkAcl.getProtocol());
-            aclDetails.put("startPort", networkAcl.getSourcePortStart());
-            aclDetails.put("endPort", networkAcl.getSourcePortEnd());
-            aclDetails.put("state", networkAcl.getState().name());
-            aclDetails.put("trafficType", networkAcl.getTrafficType().name());
-            //Set sourceIP to null as it is not applicable
-            aclDetails.put("sourceIpAddress", null);
-            aclDetails.put("action", networkAcl.getAction().name());
-            aclDetails.put("priority", networkAcl.getNumber());
-            aclDetails.put("type", "NetworkACL");
-        }
-        return aclDetails;
     }
 }

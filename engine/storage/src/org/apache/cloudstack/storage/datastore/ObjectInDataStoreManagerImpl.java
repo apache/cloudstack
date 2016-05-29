@@ -156,6 +156,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                         // template.properties
                         // there
                     }
+
                     ts.setInstallPath(installPath);
                     ts.setState(ObjectInDataStoreStateMachine.State.Allocated);
                     ts = templateDataStoreDao.persist(ts);

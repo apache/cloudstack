@@ -31,18 +31,14 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.VlanVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
-import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks;
@@ -50,11 +46,12 @@ import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NuageVspDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.manager.NuageVspManager;
-import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -62,28 +59,25 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.util.NuageVspUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.common.base.Strings;
-import org.apache.commons.lang.StringUtils;
+import com.cloud.util.NuageVspEntityBuilder;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     public static final Logger s_logger = Logger.getLogger(NuageVspGuestNetworkGuru.class);
@@ -108,6 +102,12 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     NuageVspManager _nuageVspManager;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    NuageVspEntityBuilder _nuageVspEntityBuilder;
+    @Inject
+    NetworkDetailsDao _networkDetailsDao;
+    @Inject
+    VpcDetailsDao _vpcDetailsDao;
 
     public NuageVspGuestNetworkGuru() {
         super();
@@ -148,33 +148,6 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 throw new IllegalStateException("Network " + networkId + " is not in expected state Implementing, but is in state " + network.getState());
             }
 
-            long dcId = dest.getDataCenter().getId();
-            //Get physical network id
-            Long physicalNetworkId = network.getPhysicalNetworkId();
-            //Physical network id can be null in Guest Network in Basic zone, so locate the physical network
-            if (physicalNetworkId == null) {
-                physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
-            }
-            implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-                    network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
-            if (network.getGateway() != null) {
-                implemented.setGateway(network.getGateway());
-            }
-            if (network.getCidr() != null) {
-                implemented.setCidr(network.getCidr());
-            }
-            List<String[]> ipAddressRanges = new ArrayList<String[]>();
-            String virtualRouterIp = getVirtualRouterIP(network, ipAddressRanges);
-            String networkUuid = implemented.getUuid();
-            String tenantId = context.getDomain().getName() + "-" + context.getAccount().getAccountId();
-            String broadcastUriStr = networkUuid + "/" + virtualRouterIp;
-            implemented.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
-            implemented.setBroadcastDomainType(Networks.BroadcastDomainType.Vsp);
-            //Check if the network is associated to a VPC
-            Long vpcId = network.getVpcId();
-            boolean isVpc = (vpcId != null);
-            //Check owner of the Network
-            Domain networksDomain = _domainDao.findById(network.getDomainId());
             //Get the Account details and find the type
             AccountVO networksAccount = _accountDao.findById(network.getAccountId());
             if (networksAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -183,52 +156,37 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 s_logger.error(errorMessage);
                 throw new InsufficientVirtualNetworkCapacityException(errorMessage, Account.class, network.getAccountId());
             }
-            String vpcName = null;
-            String vpcUuid = null;
-            String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configDao, network, offering);
-            boolean isSharedNetwork = offering.getGuestType() == GuestType.Shared;
-            boolean isL3Network = !isVpc && (isSharedNetwork || isL3Network(network));
 
-            if (isVpc) {
-                Vpc vpcObj = _vpcDao.findById(vpcId);
-                vpcName = vpcObj.getName();
-                vpcUuid = vpcObj.getUuid();
+            long dcId = dest.getDataCenter().getId();
+            //Get physical network id
+            Long physicalNetworkId = network.getPhysicalNetworkId();
+            //Physical network id can be null in Guest Network in Basic zone, so locate the physical network
+            if (physicalNetworkId == null) {
+                physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
             }
 
-            if (isSharedNetwork) {
-                List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
-                for (VlanVO vlan : vlans) {
-                    boolean isIpv4 = StringUtils.isNotBlank(vlan.getIpRange());
-                    String[] range = isIpv4 ? vlan.getIpRange().split("-") : vlan.getIp6Range().split("-");
-                    ipAddressRanges.add(range);
-                }
+            implemented = new NetworkVO(network.getId(), network, network.getNetworkOfferingId(), network.getGuruName(), network.getDomainId(), network.getAccountId(),
+                    network.getRelated(), network.getName(), network.getDisplayText(), network.getNetworkDomain(), network.getGuestType(), network.getDataCenterId(),
+                    physicalNetworkId, network.getAclType(), network.getSpecifyIpRanges(), network.getVpcId(), offering.getRedundantRouter());
+            implemented.setUuid(network.getUuid());
+            implemented.setState(State.Allocated);
+            if (network.getGateway() != null) {
+                implemented.setGateway(network.getGateway());
             }
+            if (network.getCidr() != null) {
+                implemented.setCidr(network.getCidr());
+            }
+
+            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(implemented, true);
+            String tenantId = context.getDomain().getName() + "-" + context.getAccount().getAccountId();
+            String broadcastUriStr = implemented.getUuid() + "/" + vspNetwork.getVirtualRouterIp();
+            implemented.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
+            implemented.setBroadcastDomainType(Networks.BroadcastDomainType.Vsp);
 
             HostVO nuageVspHost = getNuageVspHost(physicalNetworkId);
             List<String> dnsServers = _nuageVspManager.getDnsDetails(network);
-            List<String> gatewaySystemIds = _nuageVspManager.getGatewaySystemIds();
-            ImplementNetworkVspCommand.Builder cmdBuilder = new ImplementNetworkVspCommand.Builder()
-                    .networkDomainName(networksDomain.getName())
-                    .networkDomainPath(networksDomain.getPath())
-                    .networkDomainUuid(networksDomain.getUuid())
-                    .networkAccountName(networksAccount.getAccountName())
-                    .networkAccountUuid(networksAccount.getUuid())
-                    .networkName(network.getName())
-                    .networkCidr(network.getCidr())
-                    .networkGateway(network.getGateway())
-                    .networkAclId(network.getNetworkACLId())
-                    .dnsServers(dnsServers)
-                    .gatewaySystemIds(gatewaySystemIds)
-                    .networkUuid(network.getUuid())
-                    .isL3Network(isL3Network)
-                    .isVpc(isVpc)
-                    .isSharedNetwork(isSharedNetwork)
-                    .vpcName(vpcName)
-                    .vpcUuid(vpcUuid)
-                    .defaultEgressPolicy(offering.getEgressDefaultPolicy())
-                    .ipAddressRange(ipAddressRanges)
-                    .domainTemplateName(preConfiguredDomainTemplateName);
-            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmdBuilder.build());
+            ImplementNetworkVspCommand cmd = new ImplementNetworkVspCommand(vspNetwork, dnsServers);
+            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
 
             if (answer == null || !answer.getResult()) {
                 s_logger.error("ImplementNetworkVspCommand for network " + network.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
@@ -237,7 +195,18 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 }
                 return null;
             }
-            s_logger.info("Implemented OK, network " + networkUuid + " in tenant " + tenantId + " linked to " + implemented.getBroadcastUri());
+
+            if (StringUtils.isNotBlank(vspNetwork.getDomainTemplateName())) {
+                if (network.getVpcId() != null) {
+                    VpcDetailVO vpcDetail = new VpcDetailVO(network.getVpcId(), NuageVspManager.nuageDomainTemplateDetailName, vspNetwork.getDomainTemplateName(), false);
+                    _vpcDetailsDao.persist(vpcDetail);
+                } else {
+                    NetworkDetailVO networkDetail = new NetworkDetailVO(implemented.getId(), NuageVspManager.nuageDomainTemplateDetailName, vspNetwork.getDomainTemplateName(), false);
+                    _networkDetailsDao.persist(networkDetail);
+                }
+            }
+
+            s_logger.info("Implemented OK, network " + implemented.getUuid() + " in tenant " + tenantId + " linked to " + implemented.getBroadcastUri());
         } finally {
             _networkDao.releaseFromLockTable(network.getId());
         }
@@ -262,68 +231,38 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Handling reserve() call back to with Create a new VM or add an interface to existing VM in network " + network.getName());
             }
-            nic.setBroadcastUri(network.getBroadcastUri());
-            nic.setIsolationUri(network.getBroadcastUri());
+
             DataCenter dc = _dcDao.findById(network.getDataCenterId());
-            Account networksAccount = _accountDao.findById(network.getAccountId());
-            DomainVO networksDomain = _domainDao.findById(network.getDomainId());
-            //Get the Account details and find the type
-            long networkOwnedBy = network.getAccountId();
-            AccountVO neworkAccountDetails = _accountDao.findById(networkOwnedBy);
+            AccountVO neworkAccountDetails = _accountDao.findById(network.getAccountId());
             if (neworkAccountDetails.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 throw new InsufficientVirtualNetworkCapacityException("CS project support is not yet implemented in NuageVsp", DataCenter.class, dc.getId());
             }
 
-            //NicProfile does not contain the NIC UUID. We need this information to set it in the VMInterface and VPort
-            //that we create in VSP
-            NicVO nicFrmDB = _nicDao.findById(nic.getId());
-            NetworkOffering networkOffering = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
-            boolean isDomainRouter = vm.getType().equals(VirtualMachine.Type.DomainRouter);
-            URI broadcastUri = network.getBroadcastUri();
-            if (Strings.isNullOrEmpty(broadcastUri.getPath()) || !broadcastUri.getPath().startsWith("/")) {
+            if (Strings.isNullOrEmpty(network.getBroadcastUri().getPath()) || !network.getBroadcastUri().getPath().startsWith("/")) {
                 throw new IllegalStateException("The broadcast URI path " + network.getBroadcastUri() + " is empty or in an incorrect format.");
             }
-            String domainRouterIp = network.getBroadcastUri().getPath().substring(1);
-            boolean isL3Network = isL3Network(network);
-            boolean isSharedNetwork = networkOffering.getGuestType() == GuestType.Shared;
-            Long vpcId = network.getVpcId();
-            String vpcUuid = null;
-            if (vpcId != null) {
-                Vpc vpcObj = _vpcDao.findById(vpcId);
-                vpcUuid = vpcObj.getUuid();
-            }
-            HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
+
+            nic.setBroadcastUri(network.getBroadcastUri());
+            nic.setIsolationUri(network.getBroadcastUri());
+
+            //NicProfile does not contain the NIC UUID. We need this information to set it in the VMInterface and VPort
+            //that we create in VSP
+            NicVO nicFromDb = _nicDao.findById(nic.getId());
             IPAddressVO staticNatIp = _ipAddressDao.findByVmIdAndNetworkId(network.getId(), vm.getId());
 
-            ReserveVmInterfaceVspCommand.Builder cmdBuilder = new ReserveVmInterfaceVspCommand.Builder()
-                    .nicUuid(nicFrmDB.getUuid())
-                    .nicMacAddress(nic.getMacAddress())
-                    .networkUuid(network.getUuid())
-                    .isL3Network(isL3Network)
-                    .isSharedNetwork(isSharedNetwork)
-                    .vpcUuid(vpcUuid)
-                    .networkDomainUuid(networksDomain.getUuid())
-                    .networksAccountUuid(networksAccount.getUuid())
-                    .isDomainRouter(isDomainRouter)
-                    .domainRouterIp(domainRouterIp)
-                    .vmInstanceName(vm.getInstanceName())
-                    .vmUuid(vm.getUuid())
-                    .vmUserName(networksDomain.getUuid())
-                    .vmUserDomainName(networksAccount.getUuid())
-                    .useStaticIp(true)
-                    .staticIp(nic.getIPv4Address());
+            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
+            VspVm vspVm = _nuageVspEntityBuilder.buildVspVm(vm.getVirtualMachine(), network);
+            VspNic vspNic = _nuageVspEntityBuilder.buildVspNic(nicFromDb.getUuid(), nic);
+            VspStaticNat vspStaticNat = null;
             if (staticNatIp != null) {
                 VlanVO staticNatVlan = _vlanDao.findById(staticNatIp.getVlanId());
-                cmdBuilder = cmdBuilder.staticNatIpUuid(staticNatIp.getUuid())
-                        .staticNatIpAddress(staticNatIp.getAddress().addr())
-                        .isStaticNatIpAllocated(staticNatIp.getState().equals(IpAddress.State.Allocated))
-                        .isOneToOneNat(staticNatIp.isOneToOneNat())
-                        .staticNatVlanUuid(staticNatVlan.getUuid())
-                        .staticNatVlanGateway(staticNatVlan.getVlanGateway())
-                        .staticNatVlanNetmask(staticNatVlan.getVlanNetmask());
+                vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(null, staticNatIp, staticNatVlan, null);
             }
 
-            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmdBuilder.build());
+            HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
+            ReserveVmInterfaceVspCommand cmd = new ReserveVmInterfaceVspCommand(vspNetwork, vspVm, vspNic, vspStaticNat);
+            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
+
             if (answer == null || !answer.getResult()) {
                 s_logger.error("ReserveVmInterfaceNuageVspCommand failed for NIC " + nic.getId() + " attached to VM " + vm.getId() + " in network " + network.getId());
                 if ((null != answer) && (null != answer.getDetails())) {
@@ -332,8 +271,8 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 throw new InsufficientVirtualNetworkCapacityException("Failed to reserve VM in Nuage VSP.", Network.class, network.getId());
             }
 
-            if (isDomainRouter) {
-                nic.setIPv4Address(domainRouterIp);
+            if (vspVm.getDomainRouter() == Boolean.TRUE) {
+                nic.setIPv4Address(vspVm.getDomainRouterIp());
             }
 
         } finally {
@@ -378,32 +317,16 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 s_logger.debug("Handling deallocate() call back, which is called when a VM is destroyed or interface is removed, " + "to delete VM Interface with IP "
                         + nic.getIPv4Address() + " from a VM " + vm.getInstanceName() + " with state " + vm.getVirtualMachine().getState());
             }
-            DomainVO networksDomain = _domainDao.findById(network.getDomainId());
-            NicVO nicFrmDd = _nicDao.findById(nic.getId());
-            NetworkOffering networkOffering = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
-            boolean isL3Network = isL3Network(network);
-            boolean isSharedNetwork = networkOffering.getGuestType() == GuestType.Shared;
-            boolean isExpunging = vm.getVirtualMachine().getState() == VirtualMachine.State.Expunging;
-            Long vpcId = network.getVpcId();
-            String vpcUuid = null;
-            if (vpcId != null) {
-                Vpc vpcObj = _vpcDao.findById(vpcId);
-                vpcUuid = vpcObj.getUuid();
-            }
+
+            NicVO nicFromDb = _nicDao.findById(nic.getId());
+
+            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
+            VspVm vspVm = _nuageVspEntityBuilder.buildVspVm(vm.getVirtualMachine(), network);
+            VspNic vspNic = _nuageVspEntityBuilder.buildVspNic(nicFromDb.getUuid(), nic);
             HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
-            DeallocateVmVspCommand.Builder cmdBuilder = new DeallocateVmVspCommand.Builder()
-                    .networkUuid(network.getUuid())
-                    .nicFromDbUuid(nicFrmDd.getUuid())
-                    .nicMacAddress(nic.getMacAddress())
-                    .nicIp4Address(nic.getIPv4Address())
-                    .isL3Network(isL3Network)
-                    .isSharedNetwork(isSharedNetwork)
-                    .vpcUuid(vpcUuid)
-                    .networksDomainUuid(networksDomain.getUuid())
-                    .vmInstanceName(vm.getInstanceName())
-                    .vmUuid(vm.getUuid())
-                    .isExpungingState(isExpunging);
-            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmdBuilder.build());
+
+            DeallocateVmVspCommand cmd = new DeallocateVmVspCommand(vspNetwork, vspVm, vspNic);
+            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
                 s_logger.error("DeallocateVmNuageVspCommand for VM " + vm.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
                 if ((null != answer) && (null != answer.getDetails())) {
@@ -451,27 +374,10 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Handling trash() call back to delete the network " + network.getName() + " with uuid " + network.getUuid() + " from VSP");
             }
-            long domainId = network.getDomainId();
-            Domain domain = _domainDao.findById(domainId);
-            boolean isL3Network = isL3Network(network);
-            boolean isSharedNetwork = offering.getGuestType() == GuestType.Shared;
-            Long vpcId = network.getVpcId();
-            String vpcUuid = null;
-            if (vpcId != null) {
-                Vpc vpcObj = _vpcDao.findById(vpcId);
-                vpcUuid = vpcObj.getUuid();
-            }
-
-            String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configDao, network, offering);
+            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
             HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
-            TrashNetworkVspCommand.Builder cmdBuilder = new TrashNetworkVspCommand.Builder()
-                    .domainUuid(domain.getUuid())
-                    .networkUuid(network.getUuid())
-                    .isL3Network(isL3Network)
-                    .isSharedNetwork(isSharedNetwork)
-                    .vpcUuid(vpcUuid)
-                    .domainTemplateName(preConfiguredDomainTemplateName);
-            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmdBuilder.build());
+            TrashNetworkVspCommand cmd = new TrashNetworkVspCommand(vspNetwork);
+            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
                 s_logger.error("TrashNetworkNuageVspCommand for network " + network.getUuid() + " failed");
                 if ((null != answer) && (null != answer.getDetails())) {
@@ -483,51 +389,6 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             _networkDao.releaseFromLockTable(network.getId());
         }
         return super.trash(network, offering);
-    }
-
-    private String getVirtualRouterIP(Network network, Collection<String[]> ipAddressRanges) throws InsufficientVirtualNetworkCapacityException {
-        String virtualRouterIp;
-        //Check if the subnet has minimum 5 host in it.
-        String subnet = NetUtils.getCidrSubNet(network.getCidr());
-        String netmask = NetUtils.getCidrNetmask(network.getCidr());
-        long cidrSize = NetUtils.getCidrSize(netmask);
-
-        Set<Long> allIPsInCidr = NetUtils.getAllIpsFromCidr(subnet, cidrSize, new HashSet<Long>());
-        if (allIPsInCidr == null || !(allIPsInCidr instanceof TreeSet)) {
-            throw new IllegalStateException("The IPs in CIDR for subnet " + subnet + " where null or returned in a non-ordered set.");
-        }
-
-        if (allIPsInCidr.size() > 3) {
-            //get the second IP and see if it the networks GatewayIP
-            Iterator<Long> ipIterator = allIPsInCidr.iterator();
-            long vip = ipIterator.next();
-            if (NetUtils.ip2Long(network.getGateway()) == vip) {
-                vip = ipIterator.next();
-                virtualRouterIp = NetUtils.long2Ip(vip);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("1st IP is used as gateway IP. Reserving " + virtualRouterIp + " for the Virtual Router IP for Network(" + network.getName() + ")");
-                }
-            } else {
-                virtualRouterIp = NetUtils.long2Ip(vip);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("1st IP is not used as the gateway IP. Reserving" + virtualRouterIp + " for the Virtual Router IP for Network(" + network.getName() + ")");
-                }
-            }
-            ipAddressRanges.add(new String[] {
-                NetUtils.long2Ip(ipIterator.next()),
-                NetUtils.getIpRangeEndIpFromCidr(subnet, cidrSize)
-            });
-            return virtualRouterIp;
-        }
-
-        throw new InsufficientVirtualNetworkCapacityException("VSP allocates an IP for VirtualRouter." + " So, subnet should have atleast minimum 4 hosts ", Network.class,
-                network.getId());
-    }
-
-    private boolean isL3Network(Network network) {
-        return _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat)
-                || _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.StaticNat)
-                || network.getGuestType() == GuestType.Shared;
     }
 
     private HostVO getNuageVspHost(long physicalNetworkId) {

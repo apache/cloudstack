@@ -153,7 +153,7 @@
 
                                 $.ajax({
                                     url: createURL('listClusters'),
-                                    data: {zoneid: zone.id},
+                                    data: {zoneid: zone.id, pagesize: -1},
                                     success: function(json) {
                                         if (json && json.listclustersresponse && json.listclustersresponse.cluster && json.listclustersresponse.count) {
                                             items[idx].clusters += parseInt(json.listclustersresponse.count);
@@ -163,7 +163,7 @@
                                                 }
                                                 $.ajax({
                                                     url: createURL('listHosts'),
-                                                    data: {clusterid: cluster.id, type: 'routing'},
+                                                    data: {clusterid: cluster.id, type: 'routing', pagesize: -1},
                                                     success: function(json) {
                                                         if (json && json.listhostsresponse && json.listhostsresponse.host && json.listhostsresponse.count) {
                                                             items[idx].hosts += parseInt(json.listhostsresponse.count);
@@ -415,7 +415,7 @@
 
                                 $.ajax({
                                     url: createURL('listHosts'),
-                                    data: {clusterid: cluster.id, type: 'routing'},
+                                    data: {clusterid: cluster.id, type: 'routing', pagesize: -1},
                                     success: function(json) {
                                         if (json && json.listhostsresponse && json.listhostsresponse.host && json.listhostsresponse.count) {
                                             items[idx].hosts += parseInt(json.listhostsresponse.count);
@@ -550,6 +550,19 @@
                     },
                     compact: true
                 },
+                outofbandmanagementpowerstate: {
+                    label: 'label.metrics.outofbandmanagementpowerstate',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
+                    indicator: {
+                        'On': 'on',
+                        'Off': 'off',
+                        'Unknown': 'warning'
+                    },
+                    compact: true
+                },
                 instances: {
                     label: 'label.instances'
                 },
@@ -633,6 +646,9 @@
                         var items = json.listhostsresponse.host;
                         if (items) {
                             $.each(items, function(idx, host) {
+                                if (host && host.outofbandmanagement) {
+                                    items[idx].outofbandmanagementpowerstate = host.outofbandmanagement.powerstate;
+                                }
                                 items[idx].cores = host.cpunumber;
                                 items[idx].cputotal = (parseFloat(host.cpunumber) * parseFloat(host.cpuspeed) / 1000.0).toFixed(2);
                                 if (host.cpuused) {

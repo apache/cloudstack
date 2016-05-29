@@ -24,6 +24,7 @@ public class NfsTO implements DataStoreTO {
     private DataStoreRole _role;
     private String uuid;
     private static final String pathSeparator = "/";
+    private Integer nfsVersion;
 
     public NfsTO() {
 
@@ -70,5 +71,13 @@ public class NfsTO implements DataStoreTO {
     @Override
     public String getPathSeparator() {
         return pathSeparator;
+    }
+
+    public Integer getNfsVersion() {
+        return nfsVersion;
+    }
+
+    public void setNfsVersion(Integer nfsVersion) {
+        this.nfsVersion = nfsVersion;
     }
 }

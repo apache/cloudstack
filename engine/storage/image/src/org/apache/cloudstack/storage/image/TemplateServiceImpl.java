@@ -638,7 +638,8 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
-        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), imageStoreDetailsUtil.getNfsVersion(ssStore.getId()));
+        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
+        ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO(), nfsVersion);
         EndPoint ep = _epSelector.select(ssStore);
         Answer answer = null;
         if (ep == null) {
@@ -916,6 +917,25 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool) {
         return copyAsync(srcTemplate, srcTemplate, (DataStore)pool);
+    }
+
+    @Override
+    public AsyncCallFuture<TemplateApiResult> deleteTemplateOnPrimary(TemplateInfo template, StoragePool pool) {
+        TemplateObject templateObject = (TemplateObject)_templateFactory.getTemplate(template.getId(), (DataStore)pool);
+
+        templateObject.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
+
+        DataStore dataStore = _storeMgr.getPrimaryDataStore(pool.getId());
+
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<>();
+        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<>(null, templateObject, future);
+        AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
+
+        caller.setCallback(caller.getTarget().deleteTemplateCallback(null, null)).setContext(context);
+
+        dataStore.getDriver().deleteAsync(dataStore, templateObject, caller);
+
+        return future;
     }
 
     protected Void copyTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback, TemplateOpContext<TemplateApiResult> context) {

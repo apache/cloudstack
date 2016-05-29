@@ -68,7 +68,7 @@ public class ApiResponseGsonHelper {
                     boolean permittedParameter = false;
                     Account caller = CallContext.current().getCallingAccount();
                     for (RoleType allowedRole : allowedRoles) {
-                        if (allowedRole.getValue() == caller.getType()) {
+                        if (allowedRole.getAccountType() == caller.getType()) {
                             permittedParameter = true;
                             break;
                         }
