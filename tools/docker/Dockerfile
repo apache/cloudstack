@@ -24,6 +24,8 @@ LABEL Vendor="Apache.org" License="ApacheV2" Version="4.9.0-SNAPSHOT"
 
 RUN apt-get -y update && apt-get install -y \
     genisoimage \
+    libffi-dev \
+    libssl-dev \
     git \
     maven \
     openjdk-7-jdk \
