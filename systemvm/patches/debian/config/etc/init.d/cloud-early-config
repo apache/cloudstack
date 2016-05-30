@@ -818,9 +818,17 @@ setup_vpc_apache2() {
 
 
 clean_ipalias_config() {
+# Old
 rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
 rm -f /etc/apache2/sites-available/ipAlias*
 rm -f /etc/apache2/sites-enabled/ipAlias*
+
+# New
+rm -f /etc/apache2/sites-enabled/vhost-*.conf
+rm -f /etc/apache2/ports.conf
+rm -f /etc/apache2/sites-available/default
+rm -f /etc/apache2/sites-available/default-ssl
+
 rm -rf /etc/failure_config
 }
 
