@@ -1212,33 +1212,27 @@ setup_secstorage() {
   fi
   setup_apache2 $ETH2_IP
 
+  # Deprecated, should move to Cs Python all of it
+  sed -e "s/<VirtualHost .*:80>/<VirtualHost $ETH2_IP:80>/" \
+    -e "s/<VirtualHost .*:443>/<VirtualHost $ETH2_IP:443>/" \
+    -e "s/Listen .*:80/Listen $ETH2_IP:80/g" \
+    -e "s/Listen .*:443/Listen $ETH2_IP:443/g" \
+    -e "s/NameVirtualHost .*:80/NameVirtualHost $ETH2_IP:80/g" /etc/apache2/vhost.template > /etc/apache2/sites-enabled/vhost-${ETH2_IP}.conf
+
   log_it "setting up apache2 for post upload of volume/template"
   a2enmod proxy
   a2enmod proxy_http
   a2enmod headers
 
-  SSL_FILE="/etc/apache2/sites-available/default-ssl"
-  PATTERN="RewriteRule ^\/upload\/(.*)"
-  CORS_PATTERN="Header set Access-Control-Allow-Origin"
-  if [ -f $SSL_FILE ]; then
-    if grep -q "$PATTERN" $SSL_FILE ; then
-      log_it "rewrite rules already exist in file $SSL_FILE"
-    else
-        log_it "adding rewrite rules to file: $SSL_FILE"
-        sed -i -e "s/<\/VirtualHost>/RewriteEngine On \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/RewriteCond %{HTTPS} =on \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/RewriteCond %{REQUEST_METHOD} =POST \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/RewriteRule ^\/upload\/(.*) http:\/\/127.0.0.1:8210\/upload?uuid=\$1 [P,L] \n&/" $SSL_FILE
-    fi
-    if grep -q "$CORS_PATTERN" $SSL_FILE ; then
-      log_it "cors rules already exist in file $SSL_FILE"
-    else
-        log_it "adding cors rules to file: $SSL_FILE"
-        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Origin \"*\" \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Methods \"POST, OPTIONS\" \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Headers \"x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires\" \n&/" $SSL_FILE
-    fi
-  fi
+  cat >/etc/apache2/cors.conf <<CORS
+RewriteEngine On
+RewriteCond %{HTTPS} =on
+RewriteCond %{REQUEST_METHOD} =POST
+RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=\$1 [P,L]
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "POST, OPTIONS"
+Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
+CORS
 
   service apache2 restart
 

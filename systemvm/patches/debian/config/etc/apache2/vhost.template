@@ -83,6 +83,9 @@
 		Allow from 127.0.0.0/255.0.0.0 ::1/128
 	</Directory>
 
+    # Include CORS configuration if set
+    IncludeOptional /etc/apache2/cors.conf
+
 	#   SSL Engine Switch:
 	#   Enable/Disable SSL for this virtual host.
 	SSLEngine on
@@ -225,6 +228,7 @@
 # README.Debian.gz
 
 Listen 10.1.1.1:80
+NameVirtualHost 10.1.1.1:80
 
 <IfModule mod_ssl.c>
     # If you add NameVirtualHost *:443 here, you will also have to change
