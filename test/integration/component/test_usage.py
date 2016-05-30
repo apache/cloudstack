@@ -117,6 +117,13 @@ class Services:
                 "username": "test",
                 "password": "test",
             },
+            "coreos_volume": {
+                "diskname": "Volume_core",
+                "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
+                "urlxen":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
+                "urlkvm": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
+                "urlhyperv":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-hyperv.vhd.zip"
+            },
             "ostype": 'CentOS 5.3 (64-bit)',
             # Cent OS 5.3 (64 bit)
             "sleep": 60,
@@ -695,7 +702,7 @@ class TestVolumeUsage(cloudstackTestCase):
 
         volume_uploaded = Volume.upload(
             self.apiclient,
-            self.testdata["coreos_volume"],
+            self.services["coreos_volume"],
             self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid)
