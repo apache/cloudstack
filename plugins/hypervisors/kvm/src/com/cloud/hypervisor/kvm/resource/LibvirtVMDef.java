@@ -1366,6 +1366,107 @@ public class LibvirtVMDef {
         }
     }
 
+    public static class RngDef {
+        enum RngModel {
+            VIRTIO("virtio");
+            String model;
+
+            RngModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum RngBackendModel {
+            RANDOM("random"), EGD("egd");
+            String model;
+
+            RngBackendModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        private String path = "/dev/random";
+        private RngModel rngModel = RngModel.VIRTIO;
+        private RngBackendModel rngBackendModel = RngBackendModel.RANDOM;
+        private int rngRateBytes = 2048;
+        private int rngRatePeriod = 1000;
+
+        public RngDef(String path) {
+            this.path = path;
+        }
+
+        public RngDef(String path, int rngRateBytes, int rngRatePeriod) {
+            this.path = path;
+            this.rngRateBytes = rngRateBytes;
+            this.rngRatePeriod = rngRatePeriod;
+        }
+
+        public RngDef(RngModel rngModel) {
+            this.rngModel = rngModel;
+        }
+
+        public RngDef(RngBackendModel rngBackendModel) {
+            this.rngBackendModel = rngBackendModel;
+        }
+
+        public RngDef(String path, RngBackendModel rngBackendModel) {
+            this.path = path;
+            this.rngBackendModel = rngBackendModel;
+        }
+
+        public RngDef(String path, RngBackendModel rngBackendModel, int rngRateBytes, int rngRatePeriod) {
+            this.path = path;
+            this.rngBackendModel = rngBackendModel;
+            this.rngRateBytes = rngRateBytes;
+            this.rngRatePeriod = rngRatePeriod;
+        }
+
+        public RngDef(String path, RngModel rngModel) {
+            this.path = path;
+            this.rngModel = rngModel;
+        }
+
+        public String getPath() {
+           return path;
+        }
+
+        public RngBackendModel getRngBackendModel() {
+            return rngBackendModel;
+        }
+
+        public RngModel getRngModel() {
+            return rngModel;
+        }
+
+        public int getRngRateBytes() {
+            return rngRateBytes;
+        }
+
+        public int getRngRatePeriod() {
+            return rngRatePeriod;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder rngBuilder = new StringBuilder();
+            rngBuilder.append("<rng model='" + rngModel + "'>\n");
+            rngBuilder.append("<rate period='" + rngRatePeriod + "' bytes='" + rngRateBytes + "' />\n");
+            rngBuilder.append("<backend model='" + rngBackendModel + "'>" + path + "</backend>");
+            rngBuilder.append("</rng>\n");
+            return rngBuilder.toString();
+        }
+    }
+
     public void setHvsType(String hvs) {
         _hvsType = hvs;
     }

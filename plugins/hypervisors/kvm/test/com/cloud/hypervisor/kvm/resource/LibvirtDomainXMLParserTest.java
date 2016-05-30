@@ -23,6 +23,7 @@ import junit.framework.TestCase;
 import java.util.List;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
 
@@ -164,6 +165,10 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<alias name='balloon0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>" +
                      "</memballoon>" +
+                     "<rng model='virtio'>" +
+                     "<rate period='5000' bytes='4096' />" +
+                     "<backend model='random'>/dev/random</backend>" +
+                     "</rng>" +
                      "</devices>" +
                      "<seclabel type='none'/>" +
                      "</domain>";
@@ -190,5 +195,11 @@ public class LibvirtDomainXMLParserTest extends TestCase {
             assertEquals(ifModel, ifs.get(i).getModel());
             assertEquals(ifType, ifs.get(i).getNetType());
         }
+
+        List<RngDef> rngs = parser.getRngs();
+        assertEquals("/dev/random", rngs.get(0).getPath());
+        assertEquals(RngDef.RngBackendModel.RANDOM, rngs.get(0).getRngBackendModel());
+        assertEquals(4096, rngs.get(0).getRngRateBytes());
+        assertEquals(5000, rngs.get(0).getRngRatePeriod());
     }
 }
