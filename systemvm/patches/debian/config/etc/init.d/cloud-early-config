@@ -342,6 +342,7 @@ cat << "EOF" > /usr/local/cloud/systemvm/conf/temp.xml
 EOF
 mv /usr/local/cloud/systemvm/conf/temp.xml /usr/local/cloud/systemvm/conf/log4j-cloud.xml
 }
+
 setup_interface() {
   local intfnum=$1
   local ip=$2
@@ -801,19 +802,8 @@ setup_sshd(){
 setup_vpc_apache2() {
   log_it "Setting up apache web server for VPC"
   chkconfig apache2 off
-  rm -f /etc/apache2/conf.d/vhost*.conf
-  [ -f /etc/apache2/sites-available/default ] && echo "" >/etc/apache2/sites-available/default
-  [ -f /etc/apache2/sites-available/default-ssl ] && echo "">/etc/apache2/sites-available/default-ssl
-  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
-  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
-  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
-
-  # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
-  [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
-
-  echo "Options -Indexes" > /var/www/html/.htaccess
+  clean_ipalias_config
+  setup_apache2_common
 }
 
 
@@ -822,6 +812,7 @@ clean_ipalias_config() {
 rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
 rm -f /etc/apache2/sites-available/ipAlias*
 rm -f /etc/apache2/sites-enabled/ipAlias*
+rm -f /etc/apache2/conf.d/vhost*.conf
 
 # New
 rm -f /etc/apache2/sites-enabled/vhost-*.conf
@@ -832,15 +823,7 @@ rm -f /etc/apache2/sites-available/default-ssl
 rm -rf /etc/failure_config
 }
 
-setup_apache2() {
-  clean_ipalias_config
-  log_it "Setting up apache web server"
-  local ip=$1
-  [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
-  [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
+setup_apache2_common() {
   [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
   [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
 
@@ -848,6 +831,20 @@ setup_apache2() {
   [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
 
   echo "Options -Indexes" > /var/www/html/.htaccess
+}
+
+setup_apache2() {
+  log_it "Setting up apache web server"
+  clean_ipalias_config
+  setup_apache2_common
+  local ip=$1
+
+  # Deprecated, functionality moved to Cs Python code
+  # [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
+  # [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
+  # [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
+  # [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
+  # [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
 }
 
 setup_redundant_router() {
