@@ -367,6 +367,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.apiclient.connection.securityKey = self.user_root_secretkey
 	self.acldata["network"]["name"] = "root"
 	self.acldata["network"]["displayname"] = "root"
+	self.acldata["network"]["vlan"] = None
 
         network = Network.create(
                          self.apiclient,
@@ -390,6 +391,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.apiclient.connection.securityKey = self.user_root_secretkey
 	self.acldata["network"]["name"] = "root_roota"
 	self.acldata["network"]["displayname"] = "root_roota"
+	self.acldata["network"]["vlan"] = None
 
         network = Network.create(
                          self.apiclient,
@@ -414,6 +416,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.apiclient.connection.securityKey = self.user_root_secretkey
 	self.acldata["network"]["name"] = "root_d11a"
 	self.acldata["network"]["displayname"] = "root_d11a"
+	self.acldata["network"]["vlan"] = None
 
         network = Network.create(
                          self.apiclient,
