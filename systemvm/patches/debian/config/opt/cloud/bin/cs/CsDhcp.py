@@ -14,10 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
 import logging
+
 from netaddr import IPAddress
-from CsGuestNetwork import CsGuestNetwork
+
+from cs import CsHelper
+from cs.CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
 
@@ -28,6 +30,11 @@ CLOUD_CONF = "/etc/dnsmasq.d/cloud.conf"
 
 class CsDhcp(CsDataBag):
     """ Manage dhcp entries """
+    conf = None
+    changed = None
+    hosts = None
+    cloud = None
+    devinfo = None
 
     def process(self):
         self.hosts = {}
@@ -44,7 +51,7 @@ class CsDhcp(CsDataBag):
                 continue
             self.add(self.dbag[item])
         self.write_hosts()
-        
+
         if self.cloud.is_changed():
             self.delete_leases()
 
@@ -53,7 +60,8 @@ class CsDhcp(CsDataBag):
         self.conf.commit()
         self.cloud.commit()
 
-        # We restart DNSMASQ every time the configure.py is called in order to avoid lease problems.
+        # We restart DNSMASQ every time the configure.py is called
+	# in order to avoid lease problems.
         if not self.cl.is_redundant() or self.cl.is_master():
             CsHelper.service("dnsmasq", "restart")
 
@@ -96,7 +104,8 @@ class CsDhcp(CsDataBag):
             line = "dhcp-option=tag:interface-%s,1,%s" % (device, netmask)
             self.conf.search(sline, line)
 
-    def delete_leases(self):
+    @staticmethod
+    def delete_leases():
         try:
             open(LEASES, 'w').close()
         except IOError:
@@ -104,21 +113,24 @@ class CsDhcp(CsDataBag):
 
     def preseed(self):
         self.add_host("127.0.0.1", "localhost")
-        self.add_host("::1",     "localhost ip6-localhost ip6-loopback")
+        self.add_host("::1", "localhost ip6-localhost ip6-loopback")
         self.add_host("ff02::1", "ip6-allnodes")
         self.add_host("ff02::2", "ip6-allrouters")
         if self.config.is_vpc():
             self.add_host("127.0.0.1", CsHelper.get_hostname())
         if self.config.is_router():
-            self.add_host(self.config.address().get_guest_ip(), "%s data-server" % CsHelper.get_hostname())
+            self.add_host(
+                self.config.address().get_guest_ip(),
+                "%s data-server" % CsHelper.get_hostname()
+            )
 
     def write_hosts(self):
-        file = CsFile("/etc/hosts")
-        file.repopulate()
+        cs_file = CsFile("/etc/hosts")
+        cs_file.repopulate()
         for ip in self.hosts:
-            file.add("%s\t%s" % (ip, self.hosts[ip]))
-        if file.is_changed():
-            file.commit()
+            cs_file.add("%s\t%s" % (ip, self.hosts[ip]))
+        if cs_file.is_changed():
+            cs_file.commit()
             logging.info("Updated hosts file")
         else:
             logging.debug("Hosts file unchanged")

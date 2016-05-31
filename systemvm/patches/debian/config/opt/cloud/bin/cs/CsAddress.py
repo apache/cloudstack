@@ -16,16 +16,17 @@
 # specific language governing permissions and limitations
 # under the License.
 from pprint import pprint
-from CsDatabag import CsDataBag
-from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
-import CsHelper
-import logging
-from netaddr import IPAddress, IPNetwork
-
 import subprocess
 import time
-from CsRoute import CsRoute
-from CsRule import CsRule
+import logging
+
+from netaddr import IPAddress, IPNetwork
+
+from cs import CsHelper
+from cs.CsDatabag import CsDataBag
+from cs.CsApp import CsApache, CsDnsmasq, CsPasswdSvc
+from cs.CsRoute import CsRoute
+from cs.CsRule import CsRule
 
 VRRP_TYPES = ['guest']
 
@@ -58,7 +59,7 @@ class CsAddress(CsDataBag):
                 if device_suffix < lowest_device:
                     lowest_device = device_suffix
                     guest_interface = interface
-                    logging.debug("Guest interface will be set on device '%s' and IP '%s'" % (guest_interface.get_device(), guest_interface.get_ip()))
+                    logging.debug("Guest interface will be set on device '%s' and IP '%s'", guest_interface.get_device(), guest_interface.get_ip())
         return guest_interface
 
     def get_guest_ip(self):
@@ -81,13 +82,12 @@ class CsAddress(CsDataBag):
             return ip.get_netmask()
         return "255.255.255.0"
 
-    def needs_vrrp(self, o):
+    @staticmethod
+    def needs_vrrp(o):
         """
         Returns if the ip needs to be managed by keepalived or not
         """
-        if "nw_type" in o and o['nw_type'] in VRRP_TYPES:
-            return True
-        return False
+        return "nw_type" in o and o['nw_type'] in VRRP_TYPES
 
     def get_control_if(self):
         """
@@ -106,7 +106,7 @@ class CsAddress(CsDataBag):
 
             for address in self.dbag[dev]:
                 ip.setAddress(address)
-                logging.info("Address found in DataBag ==> %s" % address)
+                logging.info("Address found in DataBag ==> %s", address)
 
                 if ip.configured():
                     logging.info(
@@ -116,7 +116,7 @@ class CsAddress(CsDataBag):
                 else:
                     logging.info(
                         "Address %s on device %s not configured", ip.ip(), dev)
-                    
+
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure(address)
 
@@ -193,7 +193,7 @@ class CsInterface:
         if "nw_type" in self.address and self.address['nw_type'] in ['public']:
             return True
         return False
-    
+
     def is_added(self):
         return self.get_attr("add")
 
@@ -231,7 +231,7 @@ class CsDevice:
         self.devlist = []
         for line in open('/proc/net/dev'):
             vals = line.lstrip().split(':')
-            if (not vals[0].startswith("eth")):
+            if not vals[0].startswith("eth"):
                 continue
             self.devlist.append(vals[0])
 
@@ -277,7 +277,7 @@ class CsIP:
                 cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
                 CsHelper.execute(cmd)
             except Exception as e:
-                logging.info("Exception occurred ==> %s" % e)
+                logging.info("Exception occurred ==> %s", e)
 
         else:
             self.delete(self.ip())
@@ -286,7 +286,7 @@ class CsIP:
     def post_configure(self, address):
         """ The steps that must be done after a device is configured """
         route = CsRoute()
-        if not self.get_type() in ["control"]:
+        if self.get_type() not in ["control"]:
             route.add_table(self.dev)
 
             CsRule(self.dev).addMark()
@@ -300,7 +300,7 @@ class CsIP:
             CsRpsrfs(self.dev).enable()
             self.post_config_change("add")
 
-        '''For isolated/redundant and dhcpsrvr routers, call this method after the post_config is complete '''
+        # For isolated/redundant and dhcpsrvr routers, call this method after the post_config is complete
         if not self.config.is_vpc():
             self.setup_router_control()
 
@@ -314,7 +314,7 @@ class CsIP:
         else:
             # once we start processing public ip's we need to verify there
             # is a default route and add if needed
-            if(self.cl.get_gateway()):
+            if self.cl.get_gateway():
                 route.add_defaultroute(self.cl.get_gateway())
 
     def set_mark(self):
@@ -352,7 +352,7 @@ class CsIP:
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
-        
+
     def fw_router(self):
         if self.config.is_vpc():
             return
@@ -426,7 +426,7 @@ class CsIP:
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 -o eth0'])
         self.fw.append(['', '', '-A NETWORK_STATS -o eth2 ! -i eth0 -p tcp'])
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
-        
+
     def fw_vpcrouter(self):
         if not self.config.is_vpc():
             return
@@ -457,9 +457,8 @@ class CsIP:
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -m state --state NEW -j ACCEPT" % self.dev])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
-                            (self.dev, self.address[
-                             'network'], self.address['gateway'], self.dev)
-                            ])
+                            (self.dev, self.address['network'], self.address['gateway'], self.dev)
+                           ])
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" %
                             ("eth1", "eth1", self.address['network'])])
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -d %s" %
@@ -468,13 +467,13 @@ class CsIP:
                             "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
                             (self.address['network'], self.dev,
                              self.address['public_ip'])
-                            ])
+                           ])
 
         if self.get_type() in ["public"]:
             self.fw.append(["", "front",
                             "-A FORWARD -o %s -d %s -j ACL_INBOUND_%s" % (
                                 self.dev, self.address['network'], self.dev)
-                            ])
+                           ])
             self.fw.append(
                 ["mangle", "", "-A FORWARD -j VPN_STATS_%s" % self.dev])
             self.fw.append(
@@ -543,13 +542,12 @@ class CsIP:
         cmd = ("ip addr show dev " + self.dev)
         for i in CsHelper.execute(cmd):
             vals = i.lstrip().split()
-            if (vals[0] == 'inet'):
-                
+            if vals[0] == 'inet':
                 cidr = vals[1]
                 for ip, device in self.iplist.iteritems():
                     logging.info(
-                                 "Iterating over the existing IPs. CIDR to be configured ==> %s, existing IP ==> %s on device ==> %s",
-                                 cidr, ip, device)
+                        "Iterating over the existing IPs. CIDR to be configured ==> %s, existing IP ==> %s on device ==> %s",
+                        cidr, ip, device)
 
                     if cidr[0] != ip[0] and device != self.dev:
                         self.iplist[cidr] = self.dev
@@ -609,7 +607,7 @@ class CsIP:
                 for address in bag[self.dev]:
                     self.setAddress(address)
                     if (self.hasIP(ip) or self.is_guest_gateway(address, ip)) and address["add"]:
-                        logging.debug("The IP address in '%s' will be configured" % address)
+                        logging.debug("The IP address in '%s' will be configured", address)
                         found = True
             if not found:
                 self.delete(ip)
@@ -664,9 +662,10 @@ class CsRpsrfs:
             "/proc/sys/net/core/rps_sock_flow_entries", "256", "w+")
         filename = "/sys/class/net/%s/queues/rx-0/rps_flow_cnt" % (self.dev)
         CsHelper.updatefile(filename, "256", "w+")
-        logging.debug("rpsfr is configured for %s cpus" % (cpus))
+        logging.debug("rpsfr is configured for %s cpus", cpus)
 
-    def inKernel(self):
+    @staticmethod
+    def inKernel():
         try:
             open('/etc/rpsrfsenable')
         except IOError:
@@ -676,7 +675,8 @@ class CsRpsrfs:
             logging.debug("rpsfr is present in the kernel")
             return True
 
-    def cpus(self):
+    @staticmethod
+    def cpus():
         count = 0
         for line in open('/proc/cpuinfo'):
             if "processor" not in line:

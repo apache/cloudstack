@@ -127,17 +127,22 @@ class CsCmdLine(CsDataBag):
         return 1
 
     def get_router_password(self):
+        '''
+        Generate a password based on the router ID, just to avoid hard-coded
+	passwords
+
+	.. Note::
+	   If for some reason one router gets configured,
+	   the other one will have a different password.
+	   This is slightly difficult to happen, but if it does;
+	   destroy the router with the password generated with the code below
+	   and restart the VPC without the clean-up option.
+        '''
         if "router_password" in self.idata():
             return self.idata()['router_password']
 
-        '''
-        Generate a password based on the router id just to avoid hard-coded passwd.
-        Remark: if for some reason 1 router gets configured, the other one will have a different password.
-        This is slightly difficult to happen, but if it does, destroy the router with the password generated with the
-        code below and restart the VPC with out the clean up option.
-        '''
-        if(self.get_type()=='router'):
-            passwd="%s-%s" % (self.get_eth2_ip(), self.get_router_id())
+        if self.get_type() == 'router':
+            passwd = "%s-%s" % (self.get_eth2_ip(), self.get_router_id())
         else:
             passwd = "%s-%s" % (self.get_vpccidr(), self.get_router_id())
         md5 = hashlib.md5()

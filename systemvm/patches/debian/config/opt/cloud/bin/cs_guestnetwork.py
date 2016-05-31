@@ -29,9 +29,9 @@ def merge(dbag, gn):
                 dbag[device].remove(device_to_die)
             except ValueError:
                 print "[WARN] cs_guestnetwork.py :: Error occurred removing item from databag. => %s" % device_to_die
-                del(dbag[device])
+                del dbag[device]
         else:
-            del(dbag[device])
+            del dbag[device]
 
     else:
         dbag.setdefault(device, []).append(gn)

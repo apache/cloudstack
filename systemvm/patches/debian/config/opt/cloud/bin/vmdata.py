@@ -29,7 +29,7 @@ def main(argv):
     b64data = ''
 
     try:
-        opts, args = getopt.getopt(argv, "f:d:")
+        opts = getopt.getopt(argv, "f:d:")[0]
     except getopt.GetoptError:
         print 'params: -f <filename> -d <b64jsondata>'
         sys.exit(2)
@@ -52,22 +52,22 @@ def main(argv):
     for ip in json_data:
         for item in json_data[ip]:
             folder = item[0]
-            file = item[1]
+            filename = item[1]
             data = item[2]
 
             # process only valid data
             if folder != "userdata" and folder != "metadata":
                 continue
 
-            if file == "":
+            if filename == "":
                 continue
 
-            htaccess(ip, folder, file)
+            htaccess(ip, folder, filename)
 
             if data == "":
-                deletefile(ip, folder, file)
+                deletefile(ip, folder, filename)
             else:
-                createfile(ip, folder, file, data)
+                createfile(ip, folder, filename, data)
 
     if fpath != '':
         fh.close()
@@ -110,7 +110,7 @@ def createfile(ip, folder, file, data):
                 print "failed to make directories " + metamanifestdir + " due to :" + e.strerror
                 sys.exit(1)
         if os.path.exists(metamanifest):
-            fh = open(metamanifest, "r+a")
+            fh = open(metamanifest, "a+")
             exflock(fh)
             if file not in fh.read():
                 fh.write(file + '\n')

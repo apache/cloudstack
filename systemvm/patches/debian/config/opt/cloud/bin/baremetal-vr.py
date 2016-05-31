@@ -15,8 +15,6 @@
 #specific language governing permissions and limitations
 #under the License.
 
-__author__ = 'frank'
-
 import subprocess
 import urllib
 import hmac
@@ -26,6 +24,8 @@ import traceback
 import logging
 
 from flask import Flask
+
+__author__ = 'frank'
 
 app = Flask(__name__)
 

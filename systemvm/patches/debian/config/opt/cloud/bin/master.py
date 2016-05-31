@@ -17,11 +17,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import logging
+from optparse import OptionParser
+
 from cs.CsRedundant import CsRedundant
 from cs.CsDatabag import CsCmdLine
 from cs.CsConfig import CsConfig
-import logging
-from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-m", "--master",
@@ -41,7 +42,8 @@ logging.basicConfig(filename=config.get_logger(),
                     format=config.get_format())
 config.cmdline()
 cl = CsCmdLine("cmdline", config)
-#Update the configuration to set state as backup and let keepalived decide who the real Master is!
+# Update the configuration to set state as backup and let keepalived decide
+# who the real Master is!
 cl.set_master_state(False)
 cl.save()
 

@@ -15,15 +15,27 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
-# Client usage examples;
-# Getting password:
-#   wget -q -t 3 -T 20 -O - --header 'DomU_Request: send_my_password' <routerIP>:8080
-# Send ack:
-#   wget -t 3 -T 20 -O - --header 'DomU_Request: saved_password' localhost:8080
-# Save password only from within router:
-#   /opt/cloud/bin/savepassword.sh -v <IP> -p <password>
-#   curl --header 'DomU_Request: save_password' http://localhost:8080/ -F ip=<IP> -F password=<passwd>
+'''
+Client usage examples
+=====================
+
+Getting password::
+
+    wget -q -t 3 -T 20 -O- --header 'DomU_Request: send_my_password' \
+        <routerIP>:8080
+
+Send ack::
+
+    wget -t 3 -T 20 -O- --header 'DomU_Request: saved_password' \
+        localhost:8080
+
+Save password only from within router::
+
+   /opt/cloud/bin/savepassword.sh -v <IP> -p <password>
+
+   curl -H 'DomU_Request: save_password' -F ip=<IP> -F password=<passwd> \
+       http://localhost:8080/
+'''
 
 import binascii
 import cgi
@@ -64,7 +76,8 @@ def loadPasswordFile():
     try:
         with file(getPasswordFile()) as f:
             for line in f:
-                if '=' not in line: continue
+                if '=' not in line:
+                    continue
                 key, value = line.strip().split('=', 1)
                 passMap[key] = value
     except IOError:
@@ -130,11 +143,12 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         form = cgi.FieldStorage(
-                    fp=self.rfile,
-                    headers=self.headers,
-                    environ={'REQUEST_METHOD':'POST',
-                             'CONTENT_TYPE':self.headers['Content-Type'],
-                    })
+            fp=self.rfile,
+            headers=self.headers,
+            environ={
+                'REQUEST_METHOD':'POST',
+                'CONTENT_TYPE':self.headers['Content-Type'],
+            })
         self.send_response(200)
         self.end_headers()
         clientAddress = self.client_address[0]
@@ -142,7 +156,10 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
             syslog.syslog('serve_password: non-localhost IP trying to save password: %s' % clientAddress)
             self.send_response(403)
             return
-        if 'ip' not in form or 'password' not in form or 'token' not in form or self.headers.get('DomU_Request') != 'save_password':
+        if 'ip' not in form \
+        or 'password' not in form \
+        or 'token' not in form \
+        or self.headers.get('DomU_Request') != 'save_password':
             syslog.syslog('serve_password: request trying to save password does not contain both ip and password')
             self.send_response(403)
             return
@@ -162,11 +179,11 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         return
 
     def log_message(self, format, *args):
-            return
+        return
 
 
-def serve(HandlerClass = PasswordRequestHandler,
-          ServerClass = ThreadedHTTPServer):
+def serve(HandlerClass=PasswordRequestHandler,
+          ServerClass=ThreadedHTTPServer):
 
     global listeningAddress
     if len(sys.argv) > 1:
