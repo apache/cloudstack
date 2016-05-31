@@ -814,8 +814,11 @@ clean_ipalias_config() {
   rm -f /etc/apache2/sites-enabled/ipAlias*
   rm -f /etc/apache2/conf.d/vhost*.conf
   rm -f /etc/apache2/ports.conf
+  rm -f /etc/apache2/vhostexample.conf
   rm -f /etc/apache2/sites-available/default
   rm -f /etc/apache2/sites-available/default-ssl
+  rm -f /etc/apache2/sites-enabled/default
+  rm -f /etc/apache2/sites-enabled/default-ssl
 
   # New
   rm -f /etc/apache2/sites-enabled/vhost-*.conf
