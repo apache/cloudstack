@@ -27,6 +27,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
 
@@ -185,6 +186,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<alias name='channel0'/>" +
                      "<address type='virtio-serial' controller='0' bus='0' port='1'/>" +
                      "</channel>" +
+                     "<watchdog model='i6300esb' action='reset'/>" +
                      "</devices>" +
                      "<seclabel type='none'/>" +
                      "</domain>";
@@ -232,5 +234,9 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         assertEquals(RngDef.RngBackendModel.RANDOM, rngs.get(0).getRngBackendModel());
         assertEquals(4096, rngs.get(0).getRngRateBytes());
         assertEquals(5000, rngs.get(0).getRngRatePeriod());
+
+        List<WatchDogDef> watchDogs = parser.getWatchDogs();
+        assertEquals(WatchDogDef.WatchDogModel.I6300ESB, watchDogs.get(0).getModel());
+        assertEquals(WatchDogDef.WatchDogAction.RESET, watchDogs.get(0).getAction());
     }
 }

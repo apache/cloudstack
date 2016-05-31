@@ -149,4 +149,13 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(path, channelDef.getPath());
     }
 
+    public void testWatchDogDef() {
+        LibvirtVMDef.WatchDogDef.WatchDogModel model = LibvirtVMDef.WatchDogDef.WatchDogModel.I6300ESB;
+        LibvirtVMDef.WatchDogDef.WatchDogAction action = LibvirtVMDef.WatchDogDef.WatchDogAction.RESET;
+
+        LibvirtVMDef.WatchDogDef def = new LibvirtVMDef.WatchDogDef(action, model);
+        assertEquals(def.getModel(), model);
+        assertEquals(def.getAction(), action);
+    }
+
 }

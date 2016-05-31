@@ -133,6 +133,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -274,6 +277,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
     private long _totalMemory;
+    protected WatchDogAction _watchDogAction = WatchDogAction.NONE;
+    protected WatchDogModel _watchDogModel = WatchDogModel.I6300ESB;
 
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
@@ -868,6 +873,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             value = (String) params.get("vm.rng.rate.period");
             _rngRatePeriod = NumbersUtil.parseInt(value, new Integer(_rngRatePeriod));
+        }
+
+        value = (String) params.get("vm.watchdog.model");
+        if (!Strings.isNullOrEmpty(value)) {
+            _watchDogModel = WatchDogModel.valueOf(value.toUpperCase());
+        }
+
+        value = (String) params.get("vm.watchdog.action");
+        if (!Strings.isNullOrEmpty(value)) {
+            _watchDogAction = WatchDogAction.valueOf(value.toUpperCase());
         }
 
         LibvirtConnection.initialize(_hypervisorURI);
@@ -2065,6 +2080,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         /* Add a VirtIO channel for the Qemu Guest Agent tools */
         devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX,
                           new File(_qemuSocketsPath + "/" + vmTO.getName() + "." + _qemuGuestAgentSocketName)));
+
+        devices.addDevice(new WatchDogDef(_watchDogAction, _watchDogModel));
 
         final VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
         devices.addDevice(videoCard);

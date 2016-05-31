@@ -366,6 +366,9 @@ public class LibvirtComputingResourceTest {
         assertXpath(domainDoc, "/domain/on_reboot/text()", "restart");
         assertXpath(domainDoc, "/domain/on_poweroff/text()", "destroy");
         assertXpath(domainDoc, "/domain/on_crash/text()", "destroy");
+
+        assertXpath(domainDoc, "/domain/devices/watchdog/@model", "i6300esb");
+        assertXpath(domainDoc, "/domain/devices/watchdog/@action", "none");
     }
 
     static Document parse(final String input) {
