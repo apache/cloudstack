@@ -230,12 +230,9 @@ class updateDataBag:
             dp['add'] = True
             dp['one_to_one_nat'] = False
             if nw_type == "public":
-                dp['gateway'] = self.qFile.data['cmd_line']['gateway']
+                dp['gateway'] = self.qFile.data['cmd_line'].get('gateway', 'None')
             else:
-                if('localgw' in self.qFile.data['cmd_line']):
-                    dp['gateway'] = self.qFile.data['cmd_line']['localgw']
-                else:
-                    dp['gateway'] = 'None'
+                dp['gateway'] = self.qFile.data['cmd_line'].get('localgw', 'None')
             dp['nic_dev_id'] = num
             dp['nw_type'] = nw_type
             qf = QueueFile()

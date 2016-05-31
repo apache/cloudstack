@@ -593,9 +593,11 @@ class CsIP:
         return ip in self.address.values()
 
     def arpPing(self):
+        if not self.address['gateway'] or self.address['gateway'] == 'None':
+            return
         cmd = "arping -c 1 -I %s -A -U -s %s %s" % (
             self.dev, self.address['public_ip'], self.address['gateway'])
-        CsHelper.execute(cmd)
+        CsHelper.execute_background(cmd)
 
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
