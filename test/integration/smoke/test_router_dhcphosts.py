@@ -181,7 +181,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def test_ssh_command(self, vm, nat_rule, rule_label):
+    def ssh_command(self, vm, nat_rule, rule_label):
         result = 'failed'
         try:
             ssh_command = "ping -c 3 8.8.8.8"
@@ -189,18 +189,18 @@ class TestRouterDHCPHosts(cloudstackTestCase):
 
             ssh = vm.get_ssh_client(ipaddress=nat_rule.ipaddress, port=self.services[rule_label]["publicport"], retries=5)
             result = str(ssh.execute(ssh_command))
-
-            self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
+            check_string = "3" + " " + self.services["verify_ping_success"]
+            self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count(check_string)))
         except:
             self.fail("Failed to SSH into VM - %s" % (nat_rule.ipaddress))
 
         self.assertEqual(
-                         result.count("3 packets received"),
+                         result.count(check_string),
                          1,
                          "Ping to outside world from VM should be successful"
                          )
 
-    def test_dhcphosts(self, vm, router):
+    def dhcphosts(self, vm, router):
         hosts = list_hosts(
             self.apiclient,
             id=router.hostid)
@@ -215,23 +215,36 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         host.passwd = self.services["configurableData"]["host"]["password"]
         host.port = self.services["configurableData"]["host"]["port"]
         #mac1,10.7.32.101,infinite
-        try:
-            result = get_process_status(
-                host.ipaddress,
-                host.port,
-                host.user,
-                host.passwd,
-                router.linklocalip,
-                "cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $2}'" % (vm.nic[0].ipaddress))
-        except KeyError:
-            self.skipTest(
-                "Provide a marvin config file with host\
-                        credentials to run %s" %
-                self._testMethodName)
+        hypervisor = self.testClient.getHypervisorInfo()
+        if hypervisor.lower() in ('vmware', 'hyperv'):
+                        result = get_process_status(
+                            self.apiclient.connection.mgtSvr,
+                            22,
+                            self.apiclient.connection.user,
+                            self.apiclient.connection.passwd,
+                            router.linklocalip,
+                            "cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $3}'" % (vm.nic[0].ipaddress),
+                            hypervisor='vmware'
+                        )
+        else:
+            try:
+                result = get_process_status(
+                                        host.ipaddress,
+                                        host.port,
+                                        host.user,
+                                        host.passwd,
+                                        router.linklocalip,
+                                        "cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $3}'" % (vm.nic[0].ipaddress)
+                                    )
 
-        self.logger.debug("cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $2}' RESULT IS ==> %s" % (vm.nic[0].ipaddress, result))
+            except KeyError:
+                        self.skipTest(
+                            "Provide a marvin config file with host\
+                             credentials to run %s" %self._testMethodName)
+
+        self.logger.debug("cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $3}' RESULT IS ==> %s" % (vm.nic[0].ipaddress, result))
         res = str(result)
-        
+
         self.assertEqual(
             res.count(vm.nic[0].ipaddress),
             1,
@@ -335,7 +348,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             'Active',
             "Check list port forwarding rules"
         )
-        
+
         nat_rules = list_nat_rules(
             self.apiclient,
             id=nat_rule2.id
@@ -352,16 +365,16 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         )
 
         self.logger.debug("Testing SSH to VMs %s and %s" % (self.vm_1.id, self.vm_2.id))
-        self.test_ssh_command(self.vm_1, nat_rule1, "natrule1")
-        self.test_ssh_command(self.vm_2, nat_rule2, "natrule2")
+        self.ssh_command(self.vm_1, nat_rule1, "natrule1")
+        self.ssh_command(self.vm_2, nat_rule2, "natrule2")
 
         self.logger.debug("Testing DHCP hosts for VMs %s and %s" % (self.vm_1.id, self.vm_2.id))
-        self.test_dhcphosts(self.vm_1, router)
-        self.test_dhcphosts(self.vm_2, router)
+        self.dhcphosts(self.vm_1, router)
+        self.dhcphosts(self.vm_2, router)
 
         self.logger.debug("Deleting and Expunging VM %s with ip %s" % (self.vm_1.id, self.vm_1.nic[0].ipaddress))
         self.vm_1.delete(self.apiclient)
-        
+
         self.logger.debug("Creating new VM using the same IP as the one which was deleted => IP 10.1.1.50")
         self.vm_1 = VirtualMachine.create(self.apiclient,
                                          self.services["virtual_machine"],
@@ -375,7 +388,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         self.cleanup.append(self.vm_1)
 
         self.logger.debug("Testing DHCP hosts for VMs %s and %s" % (self.vm_1.id, self.vm_2.id))
-        self.test_dhcphosts(self.vm_1, router)
-        self.test_dhcphosts(self.vm_2, router)
+        self.dhcphosts(self.vm_1, router)
+        self.dhcphosts(self.vm_2, router)
 
         return
