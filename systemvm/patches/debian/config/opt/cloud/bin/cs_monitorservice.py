@@ -15,9 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pprint import pprint
-from netaddr import *
-
 
 def merge(dbag, data):
 

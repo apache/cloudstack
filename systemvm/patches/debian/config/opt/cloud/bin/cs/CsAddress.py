@@ -15,12 +15,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from CsDatabag import CsDataBag, CsCmdLine
+from pprint import pprint
+from CsDatabag import CsDataBag
 from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
 import CsHelper
 import logging
 from netaddr import IPAddress, IPNetwork
-import CsHelper
 
 import subprocess
 import time
@@ -528,7 +528,7 @@ class CsIP:
         cmdline = self.config.cmdline()
         # If redundant then this is dealt with by the master backup functions
         if self.get_type() in ["guest"] and not cmdline.is_redundant():
-            pwdsvc = CsPasswdSvc(self.address['public_ip']).start()
+            CsPasswdSvc(self.address['public_ip']).start()
 
         if self.get_type() == "public" and self.config.is_vpc():
             if self.address["source_nat"]:

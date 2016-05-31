@@ -15,12 +15,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from pprint import pprint
-from netaddr import *
+import netaddr
 
 
 def merge(dbag, ip):
-    added = False
     for dev in dbag:
         if dev == "id":
             continue
@@ -28,7 +26,7 @@ def merge(dbag, ip):
             if address['public_ip'] == ip['public_ip']:
                 dbag[dev].remove(address)
 
-    ipo = IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
+    ipo = netaddr.IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
     ip['device'] = 'eth' + str(ip['nic_dev_id'])
     ip['broadcast'] = str(ipo.broadcast)
     ip['cidr'] = str(ipo.ip) + '/' + str(ipo.prefixlen)

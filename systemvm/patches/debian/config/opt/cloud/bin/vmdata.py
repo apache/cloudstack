@@ -159,7 +159,7 @@ def exflock(file):
 def unflock(file):
     try:
         flock(file, LOCK_UN)
-    except IOError:
+    except IOError as e:
         print "failed to unlock file" + file.name + " due to : " + e.strerror
         sys.exit(1)
     return True

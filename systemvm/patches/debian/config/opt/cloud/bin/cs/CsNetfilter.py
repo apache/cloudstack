@@ -16,8 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import CsHelper
-from pprint import pprint
-from CsDatabag import CsDataBag, CsCmdLine
+from CsDatabag import CsCmdLine
 import logging
 
 

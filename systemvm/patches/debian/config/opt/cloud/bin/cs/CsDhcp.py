@@ -16,7 +16,7 @@
 # under the License.
 import CsHelper
 import logging
-from netaddr import *
+from netaddr import IPAddress
 from CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile

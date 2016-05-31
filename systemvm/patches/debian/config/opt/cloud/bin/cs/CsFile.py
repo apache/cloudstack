@@ -17,7 +17,6 @@
 # under the License.
 import logging
 import re
-import copy
 
 
 class CsFile:
@@ -151,7 +150,6 @@ class CsFile:
 
 
     def deleteLine(self, search):
-        found = False
         logging.debug("Searching for %s to remove the line " % search)
         temp_config = []
         for index, line in enumerate(self.new_config):

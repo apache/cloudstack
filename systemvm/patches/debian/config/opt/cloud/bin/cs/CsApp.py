@@ -19,7 +19,6 @@ import os
 import CsHelper
 from CsFile import CsFile
 from CsProcess import CsProcess
-import CsHelper
 
 
 class CsApp:

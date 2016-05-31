@@ -20,24 +20,18 @@ import sys
 import os
 import base64
 
-from merge import DataBag
-from pprint import pprint
-import subprocess
 import logging
 import re
-import time
-import shutil
 import os.path
 import os
 from fcntl import flock, LOCK_EX, LOCK_UN
 
-from cs.CsDatabag import CsDataBag, CsCmdLine
-import cs.CsHelper
+from cs.CsDatabag import CsDataBag
+from cs.CsHelper import CsHelper
 from cs.CsNetfilter import CsNetfilters
 from cs.CsDhcp import CsDhcp
-from cs.CsRedundant import *
+from cs.CsRedundant import CsRedundant
 from cs.CsFile import CsFile
-from cs.CsApp import CsApache, CsDnsmasq
 from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
 from cs.CsConfig import CsConfig
@@ -419,7 +413,7 @@ class CsVmMetadata(CsDataBag):
     def __unflock(self, file):
         try:
             flock(file, LOCK_UN)
-        except IOError:
+        except IOError as e:
             print "failed to unlock file" + file.name + " due to : " + e.strerror
             sys.exit(1)  # FIXME
         return True
@@ -566,7 +560,6 @@ class CsVpnUser(CsDataBag):
 
 
     def del_l2tp_ipsec_user(self, user, obj):
-        userfound = False
         password = obj['password']
         userentry = "%s \* %s \*"%(user,password)
 
@@ -637,8 +630,6 @@ class CsRemoteAccessVpn(CsDataBag):
 
         file = CsFile(vpnconffile)
         localip=obj['local_ip']
-        localcidr=obj['local_cidr']
-        publicIface=obj['public_interface']
         iprange=obj['ip_range']
         psk=obj['preshared_key']
 
