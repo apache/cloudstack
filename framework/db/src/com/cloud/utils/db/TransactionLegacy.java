@@ -20,8 +20,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1078,7 +1076,7 @@ public class TransactionLegacy implements Closeable {
             final String cloudConnectionUri = cloudDriver + "://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
                     "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
                     (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
-            loadDbDriver(cloudConnectionUri);
+            DriverLoader.loadDriver(cloudDriver);
 
             final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory(cloudConnectionUri, cloudUsername, cloudPassword);
 
@@ -1109,7 +1107,7 @@ public class TransactionLegacy implements Closeable {
             final String usageConnectionUri = usageDriver + "://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
                     "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
                     (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
-            loadDbDriver(usageConnectionUri);
+            DriverLoader.loadDriver(usageDriver);
 
             final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory(usageConnectionUri, usageUsername, usagePassword);
 
@@ -1137,7 +1135,7 @@ public class TransactionLegacy implements Closeable {
 
                 final String simulatorConnectionUri = simulatorDriver + "://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
                         simulatorAutoReconnect;
-                loadDbDriver(simulatorConnectionUri);
+                DriverLoader.loadDriver(simulatorDriver);
 
                 final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory(simulatorConnectionUri, simulatorUsername, simulatorPassword);
 
@@ -1154,16 +1152,6 @@ public class TransactionLegacy implements Closeable {
             s_logger.warn(
                     "Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration",
                     e);
-        }
-    }
-
-    private static void loadDbDriver(String dbConnectionUri) {
-        try {
-            Driver driver = DriverManager.getDriver(dbConnectionUri);
-            s_logger.debug("Successfully loaded DB driver " + driver.getClass().getName() + " for connection " + dbConnectionUri);
-        } catch (SQLException e) {
-            s_logger.error("Failed to load DB driver for connection " + dbConnectionUri, e);
-            throw new CloudRuntimeException("Failed to load DB driver for connection " + dbConnectionUri, e);
         }
     }
 
