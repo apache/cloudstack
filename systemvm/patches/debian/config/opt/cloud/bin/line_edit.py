@@ -30,8 +30,11 @@ class LineEdit(object):
         flags = kwargs.get('flags', 0)
         self.pattern = re.compile(search, flags=flags)
         self.sub = sub
-        self.count = kwargs.get('count', 0)                            # max subs to make
-        self.subs = 0                                                  # subs made so far
+
+        # max subs to make
+        self.count = kwargs.get('count', 0)
+        # subs made so far
+        self.subs = 0
 
 
 class LineEditingFile(object):
@@ -125,7 +128,8 @@ class LineEditingFile(object):
     # noinspection PyUnusedLocal
     def __exit__(self, exc, value, traceback):
         if exc is not None:
-            return False                                               # return false results in re-raise
+            # return false results in re-raise
+            return False
 
         self.commit()
 
@@ -154,41 +158,49 @@ class LineEditingFile(object):
                             edit.sub, line, remaining_count)
                         if changed_line != line:
                             if changed_file is None:
-                                logging.debug("Editing file %s" % self.filename)
-                            logging.debug("  - %s" % line[:-1])
-                            logging.debug("  + %s" % changed_line[:-1])
+                                logging.debug("Editing file %s", self.filename)
+                            logging.debug("  - %s", line[:-1])
+                            logging.debug("  + %s", changed_line[:-1])
                             changes += subs
                             edit.subs += subs
-                    if changes == 0:                                   # buffer until we find a change
+                    if changes == 0:
+                        # buffer until we find a change
                         lines.append(changed_line)
-                    elif changed_file is None:                         # found first change, flush buffer
+                    elif changed_file is None:
+                        # found first change, flush buffer
                         changed_file = open(changed_filename, 'w')
                         if hasattr(os, 'fchmod'):
-                            os.fchmod(changed_file.fileno(),           # can cause OSError which aborts
+                            # can cause OSError which aborts
+                            os.fchmod(changed_file.fileno(),
                                       stat.st_mode)
                         if hasattr(os, 'fchown'):
-                            os.fchown(changed_file.fileno(),           # can cause OSError which aborts
+                            # can cause OSError which aborts
+                            os.fchown(changed_file.fileno(),
                                       stat.st_uid, stat.st_gid)
                         changed_file.writelines(lines)
                         changed_file.write(changed_line)
-                        del lines                                      # reclaim buffer memory
-                    else:                                              # already flushed, just write
+                        # reclaim buffer memory
+                        del lines
+                    else:
+                        # already flushed, just write
                         changed_file.write(changed_line)
 
             if changes == 0:
-                logging.info("No edits need for file %s" %
-                             self.filename)
+                logging.info("No edits need for file %s", self.filename)
             else:
                 changed_file.close()
                 changed_file = None
-                if os.path.exists(backup_filename):                    # back up the original
+                if os.path.exists(backup_filename):
+                    # back up the original
                     os.unlink(backup_filename)
                 shutil.copy(self.filename, backup_filename)
-                os.rename(changed_filename, self.filename)             # the swap
-                logging.info("Edited file %s (%d changes)" %
-                             (self.filename, changes))
+                # the swap
+                os.rename(changed_filename, self.filename)
+                logging.info("Edited file %s (%d changes)",
+                             self.filename, changes)
         finally:
-            if changed_file is not None:                               # failed, clean up
+            if changed_file is not None:
+                # failed, clean up
                 changed_file.close()
                 os.unlink(changed_filename)
         return changes

@@ -54,13 +54,17 @@ class CsGuestNetwork:
         self.data['router_guest_gateway'] = val
 
     def get_netmask(self):
-        # We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
+        # FIXME: We need to fix it properly.
+        # I just added the if, as Ian did in some other files,
+        # to avoid the exception.
         if 'router_guest_netmask' in self.data:
             return self.data['router_guest_netmask']
         return ''
 
     def get_gateway(self):
-        # We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
+        # FIXME: We need to fix it properly.
+        # I just added the if, as Ian did in some other files,
+        # to avoid the exception.
         if 'router_guest_gateway' in self.data:
             return self.data['router_guest_gateway']
         return ''

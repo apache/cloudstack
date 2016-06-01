@@ -34,11 +34,11 @@ def merge(dbag, data):
         userrec = dbagc[user]
         add = userrec['add']
         if not add:
-            del(dbagc[user])
+            del dbagc[user]
 
     for user in data['vpn_users']:
-        username=user['user']
-        add=user['add']
+        username = user['user']
+        add = user['add']
         if username not in dbagc.keys():
             dbagc[username] = user
         elif username in dbagc.keys() and not add:

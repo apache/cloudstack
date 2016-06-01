@@ -15,10 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 import logging
+
 from cs.CsDatabag import CsDataBag
-from CsProcess import CsProcess
-from CsFile import CsFile
-import CsHelper
+from cs.CsProcess import CsProcess
+from cs.CsFile import CsFile
+from cs import CsHelper
 
 HAPROXY_CONF_T = "/etc/haproxy/haproxy.cfg.new"
 HAPROXY_CONF_P = "/etc/haproxy/haproxy.cfg"
@@ -36,7 +37,8 @@ class CsLoadBalancer(CsDataBag):
         file1 = CsFile(HAPROXY_CONF_T)
         file1.empty()
         for x in config:
-            [file1.append(w, -1) for w in x.split('\n')]
+            for w in x.split('\n'):
+                file1.append(w, -1)
 
         file1.commit()
         file2 = CsFile(HAPROXY_CONF_P)
@@ -59,9 +61,9 @@ class CsLoadBalancer(CsDataBag):
     def _configure_firewall(self, add_rules, remove_rules, stat_rules):
         firewall = self.config.get_fw()
 
-        logging.debug("CsLoadBalancer:: configuring firewall. Add rules ==> %s" % add_rules)
-        logging.debug("CsLoadBalancer:: configuring firewall. Remove rules ==> %s" % remove_rules)
-        logging.debug("CsLoadBalancer:: configuring firewall. Stat rules ==> %s" % stat_rules)
+        logging.debug("CsLoadBalancer:: configuring firewall. Add rules ==> %s", add_rules)
+        logging.debug("CsLoadBalancer:: configuring firewall. Remove rules ==> %s", remove_rules)
+        logging.debug("CsLoadBalancer:: configuring firewall. Stat rules ==> %s", stat_rules)
 
         for rules in add_rules:
             path = rules.split(':')

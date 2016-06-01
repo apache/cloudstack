@@ -19,20 +19,21 @@
 
 import logging
 
-from CsDatabag import CsDataBag
-import CsHelper
+from cs.CsDatabag import CsDataBag
+from cs import CsHelper
 
 
 class CsStaticRoutes(CsDataBag):
 
     def process(self):
-        logging.debug("Processing CsStaticRoutes file ==> %s" % self.dbag)
+        logging.debug("Processing CsStaticRoutes file ==> %s", self.dbag)
         for item in self.dbag:
             if item == "id":
                 continue
             self.__update(self.dbag[item])
 
-    def __update(self, route):
+    @staticmethod
+    def __update(route):
         if route['revoke']:
             command = "ip route del %s via %s" % (route['network'], route['gateway'])
             CsHelper.execute(command)
