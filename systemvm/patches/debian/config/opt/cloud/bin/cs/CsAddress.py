@@ -541,7 +541,7 @@ class CsIP:
         cmdline = self.config.cmdline()
         # If redundant then this is dealt with by the master backup functions
         if self.get_type() in ["guest"] and not cmdline.is_redundant():
-            pwdsvc = CsPasswdSvc(self.address['public_ip']).start()
+            CsPasswdSvc(self.address['public_ip']).start()
 
         if self.get_type() == "public" and self.config.is_vpc():
             if self.address["source_nat"]:

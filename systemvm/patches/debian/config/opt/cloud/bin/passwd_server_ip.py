@@ -31,7 +31,6 @@ import os
 import sys
 import syslog
 import threading
-import urlparse
 
 from BaseHTTPServer   import BaseHTTPRequestHandler, HTTPServer
 from SocketServer     import ThreadingMixIn #, ForkingMixIn

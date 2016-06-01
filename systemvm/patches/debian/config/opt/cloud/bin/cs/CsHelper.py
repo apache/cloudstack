@@ -24,8 +24,8 @@ import logging
 import os.path
 import re
 import shutil
-from netaddr import *
-from pprint import pprint
+import sys
+from netaddr import IPNetwork
 
 PUBLIC_INTERFACES = {"router" : "eth2", "vpcrouter" : "eth1"}
 

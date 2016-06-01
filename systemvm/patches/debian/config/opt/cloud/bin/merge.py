@@ -36,8 +36,6 @@ import cs_remoteaccessvpn
 import cs_vpnusers
 import cs_staticroutes
 
-from pprint import pprint
-
 
 class DataBag:
 
@@ -274,7 +272,7 @@ class QueueFile:
         if data is not None:
             self.data = data
             self.type = self.data["type"]
-            proc = updateDataBag(self)
+            updateDataBag(self)
             return
         fn = self.configCache + '/' + self.fileName
         try:
@@ -289,7 +287,7 @@ class QueueFile:
                 self.__moveFile(fn, self.configCache + "/processed")
             else:
                 os.remove(fn)
-            proc = updateDataBag(self)
+            updateDataBag(self)
 
     def setFile(self, name):
         self.fileName = name

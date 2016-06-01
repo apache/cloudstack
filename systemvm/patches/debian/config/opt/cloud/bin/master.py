@@ -19,7 +19,6 @@
 
 from cs.CsRedundant import CsRedundant
 from cs.CsDatabag import CsCmdLine
-from cs.CsAddress import CsAddress
 from cs.CsConfig import CsConfig
 import logging
 from optparse import OptionParser
