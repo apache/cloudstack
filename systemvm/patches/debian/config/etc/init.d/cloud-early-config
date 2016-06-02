@@ -822,6 +822,7 @@ clean_ipalias_config() {
 
   # New
   rm -f /etc/apache2/sites-enabled/vhost-*.conf
+  rm -f /etc/apache2/sites-enabled/000-default
 
   rm -rf /etc/failure_config
 }
