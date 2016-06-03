@@ -13256,7 +13256,7 @@
                             dataType: "json",
                             async: false,
                             success: function(json) {
-                                var items = json.listnuagevspdeviceresponse.nuagevspdevice;
+                                var items = json.listnuagevspdevicesresponse.nuagevspdevice;
                                 args.response.success({
                                     data: items
                                 });
@@ -13325,7 +13325,7 @@
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var item = json.listnuagevspdeviceresponse.nuagevspdevice[0];
+                                            var item = json.listnuagevspdevicesresponse.nuagevspdevice[0];
                                             args.response.success({
                                                 data: item
                                             });
