@@ -1577,8 +1577,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         try {
-            _networkMgr.release(profile, cleanUpEvenIfUnableToStop);
-            s_logger.debug("Successfully released network resources for the vm " + vm);
+            s_logger.debug("Not releasing network resources until expunge command is sent");
+            //_networkMgr.release(profile, cleanUpEvenIfUnableToStop);
+            //s_logger.debug("Successfully released network resources for the vm " + vm);
         } catch (final Exception e) {
             s_logger.warn("Unable to release some network resources.", e);
         }
