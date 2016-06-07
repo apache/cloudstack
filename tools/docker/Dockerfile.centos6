@@ -34,7 +34,7 @@ RUN cd /etc/cloudstack/management; \
     ln -s server-nonssl.xml server.xml; \
     ln -s log4j-cloud.xml log4j.xml; \
     wget -O /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util \
-    http://cloudstack.apt-get.eu/tools/vhd-util
+    http://download.cloudstack.org/tools/vhd-util
 
 COPY init.sh_centos6 /root/init.sh
 COPY systemtpl.sh /root/systemtpl.sh

@@ -105,13 +105,13 @@ fi
 
 if [[ "$uflag" == "1" && "$rflag" != "1" ]] 
 then
-  rttmplt=http://download.cloud.com/templates/builtin/a88232bf-6a18-38e7-aeee-c1702725079f.qcow2.bz2
+  rttmplt=http://download.cloudstack.org/templates/builtin/a88232bf-6a18-38e7-aeee-c1702725079f.qcow2.bz2
   echo "download routing template from $rttmplt"
 fi
 
 if [[ "$uflag" == "1" && "$vflag" != "1" ]] 
 then
-  vmtmplt=http://download.cloud.com/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2
+  vmtmplt=http://download.cloudstack.org/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2
   echo "download cnetos template from $vmtmplt"
 fi
 

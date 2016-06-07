@@ -23,7 +23,7 @@
   <parameter name="devcloud-host-ip" value="192.168.56.2"/>
   <parameter name="devcloud-host-gateway" value="192.168.56.1"/>
   <parameter name="devcloud-host-cidr" value="192.168.56.0/24"/>
-  <parameter name="template-url" value="http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2"/>
+  <parameter name="template-url" value="http://download.cloudstack.org/templates/acton/acton-systemvm-02062012.vhd.bz2"/>
   <parameter name="primary-storage-want-to-add" value="nfs://192.168.56.2/opt/storage/primarynfs"/>
   <parameter name="devcloud-local-storage-uuid" value="cd10cac1-4772-92e5-5da6-c2bc16b1ce1b"/>
   <parameter name="devcloud-host-uuid" value="759ee4c9-a15a-297b-67c6-ac267d8aa429"/>
