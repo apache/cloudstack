@@ -54,7 +54,7 @@ do
   grep 'stop' /usr/local/cloud/systemvm/user_request &>/dev/null
   if [ $? -eq 0 ]; then
       timestamp=$(date)
-      echo "$timestamp User stops cloud.com service" >> /var/log/cloud.log
+      echo "$timestamp User stops Apache CloudStack service" >> /var/log/cloud.log
       exit 0
   fi
   sleep 5

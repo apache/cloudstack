@@ -54,7 +54,7 @@ vagrant up
 
 	```bash
 	cd /path/to/cloudstack/repo
-	wget http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -P scripts/vm/hypervisor/xenserver/
+	wget http://cloudstack.apt-get.eu/tools/vhd-util -P scripts/vm/hypervisor/xenserver/
 	chmod +x scripts/vm/hypervisor/xenserver/vhd-util
 	```
 
