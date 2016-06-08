@@ -103,8 +103,14 @@ public class Upgrade481to490 implements DbUpgrade {
                 s_logger.warn("cloud.account table already has the role_id column, skipping altering table and migration of accounts");
                 return;
             } else {
-                throw new CloudRuntimeException("Unable to create column quota_calculated in table cloud_usage.cloud_usage", e);
+                throw new CloudRuntimeException("Unable to create column role_id in table cloud.account", e);
             }
+        }
+
+        try (final PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud_usage`.`account` ADD COLUMN `role_id` bigint(20) unsigned AFTER `type`")) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to create column role_id in table cloud_usage.account", e);
         }
 
         migrateAccountsToDefaultRoles(conn);
