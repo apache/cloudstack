@@ -166,16 +166,16 @@ class TestNuageVsp(nuageTestCase):
         self.check_VM_state(vm_1, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, network)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(vm_1)
+        self.verify_vsd_network(self.domain.id, network)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm_1)
 
         # Deploying one more VM in the network
         vm_2 = self.create_VM(network)
         self.check_VM_state(vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_vm(vm_2)
+        self.verify_vsd_vm(vm_2)
 
         # Deleting the network
         self.debug("Deleting the Isolated Network with Nuage VSP Isolated Network offering...")
@@ -188,5 +188,5 @@ class TestNuageVsp(nuageTestCase):
 
         # VSD verification
         with self.assertRaises(Exception):
-            self.verify_vsp_network(self.domain.id, network)
+            self.verify_vsd_network(self.domain.id, network)
         self.debug("Isolated Network successfully deleted in VSD")

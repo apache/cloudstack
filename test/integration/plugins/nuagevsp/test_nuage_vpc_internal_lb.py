@@ -136,7 +136,7 @@ class TestNuageInternalLb(nuageTestCase):
         cmd.id = int_lb_vm.id
         self.api_client.startInternalLoadBalancerVM(cmd)
 
-    # check_InternalLbVm_state - Checks if the Internal LB VM instance of the given VPC network and source ip is in the
+    # check_InternalLbVm_state - Checks if the Internal LB VM instance of the given VPC network and source IP is in the
     # expected state form the list of fetched Internal LB VM instances
     def check_InternalLbVm_state(self, network, source_ip, state=None):
         self.debug("Check if the InternalLbVm is in state - %s" % state)
@@ -220,7 +220,7 @@ class TestNuageInternalLb(nuageTestCase):
         # 4. Create Nuage VSP VPC offering with LB service provider as "Netscaler", check if it is successfully
         #    created and enabled. Verify that the VPC creation fails with this VPC offering as Nuage VSP does not
         #    support provider "Netscaler" for service LB.
-        # 5. Delete the created VPC offerings (cleanup).
+        # 5. Delete all the created objects (cleanup).
 
         self.debug("Validating network service providers supported by Nuage VSP for VPC Internal LB functionality")
         providers = ["NuageVsp", "VpcVirtualRouter", "InternalLbVm"]
@@ -271,7 +271,7 @@ class TestNuageInternalLb(nuageTestCase):
         """Test Nuage VSP VPC Network Offering with and without Internal LB service
         """
 
-        # 1. Create Nuage Vsp VPC Network offering with LB Service Provider as "InternalLbVm" and LB Service Capability
+        # 1. Create Nuage VSP VPC Network offering with LB Service Provider as "InternalLbVm" and LB Service Capability
         #    "lbSchemes" as "internal", check if it is successfully created and enabled. Verify that the VPC network
         #    creation succeeds with this Network offering.
         # 2. Recreate above Network offering with ispersistent False, check if it is successfully created and enabled.
@@ -279,17 +279,17 @@ class TestNuageInternalLb(nuageTestCase):
         #    persistent VPC networks.
         # 3. Recreate above Network offering with conserve mode On, check if the network offering creation failed
         #    as only networks with conserve mode Off can belong to VPC.
-        # 4. Create Nuage Vsp VPC Network offering with LB Service Provider as "InternalLbVm" and LB Service Capability
+        # 4. Create Nuage VSP VPC Network offering with LB Service Provider as "InternalLbVm" and LB Service Capability
         #    "lbSchemes" as "public", check if the network offering creation failed as "public" lbScheme is not
         #    supported for LB Service Provider "InternalLbVm".
-        # 5. Create Nuage Vsp VPC Network offering without Internal LB Service, check if it is successfully created and
+        # 5. Create Nuage VSP VPC Network offering without Internal LB Service, check if it is successfully created and
         #    enabled. Verify that the VPC network creation succeeds with this Network offering.
         # 6. Recreate above Network offering with ispersistent False, check if it is successfully created and enabled.
         #    Verify that the VPC network creation fails with this Network offering as Nuage VSP does not support non
         #    persistent VPC networks.
         # 7. Recreate the above Network offering with conserve mode On, check if the network offering creation failed
         #    as only networks with conserve mode Off can belong to VPC.
-        # 8. Delete the created Network offerings (cleanup).
+        # 8. Delete all the created objects (cleanup).
 
         # Creating VPC offering
         self.debug("Creating Nuage VSP VPC offering with Internal LB service...")
@@ -328,7 +328,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.debug("Network offering creation failed as public lbScheme is not supported for LB Service Provider "
                    "InternalLbVm")
 
-        self.debug("Creating Nuage Vsp VPC Network offering without Internal LB service...")
+        self.debug("Creating Nuage VSP VPC Network offering without Internal LB service...")
         net_off_3 = self.create_NetworkOffering(self.test_data["nuagevsp"]["vpc_network_offering"])
         self.validate_NetworkOffering(net_off_3, state="Enabled")
 
@@ -351,8 +351,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_Router_state(vr, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
 
         self.debug("Creating a non persistent VPC network with Internal LB service...")
         with self.assertRaises(Exception):
@@ -366,8 +366,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_Router_state(vr, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_router(vr)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_router(vr)
 
         self.debug("Creating a non persistent VPC network without Internal LB service...")
         with self.assertRaises(Exception):
@@ -437,14 +437,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr_1 = self.get_Router(internal_tier_1)
         self.check_Router_state(vr_1, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % internal_tier_1.name)
+        self.debug("Deploying a VM in the created VPC network...")
         internal_vm_1 = self.create_VM(internal_tier_1)
         self.check_VM_state(internal_vm_1, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier_1, vpc_1)
-        self.verify_vsp_router(vr_1)
-        self.verify_vsp_vm(internal_vm_1)
+        self.verify_vsd_network(self.domain.id, internal_tier_1, vpc_1)
+        self.verify_vsd_router(vr_1)
+        self.verify_vsd_vm(internal_vm_1)
 
         self.debug("Creating one more VPC network in vpc_1 with Internal LB service...")
         internal_tier_2 = self.create_Network(net_off_1, gateway='10.1.2.1', vpc=vpc_1)
@@ -452,14 +452,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr_1 = self.get_Router(internal_tier_2)
         self.check_Router_state(vr_1, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % internal_tier_2.name)
+        self.debug("Deploying a VM in the created VPC network...")
         internal_vm_2 = self.create_VM(internal_tier_2)
         self.check_VM_state(internal_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier_2, vpc_1)
-        self.verify_vsp_router(vr_1)
-        self.verify_vsp_vm(internal_vm_2)
+        self.verify_vsd_network(self.domain.id, internal_tier_2, vpc_1)
+        self.verify_vsd_router(vr_1)
+        self.verify_vsd_vm(internal_vm_2)
 
         self.debug("Creating a VPC network in vpc_2 with Internal LB service...")
         with self.assertRaises(Exception):
@@ -472,14 +472,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr_1 = self.get_Router(public_tier_1)
         self.check_Router_state(vr_1, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % public_tier_1.name)
+        self.debug("Deploying a VM in the created VPC network...")
         public_vm_1 = self.create_VM(public_tier_1)
         self.check_VM_state(public_vm_1, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier_1, vpc_1)
-        self.verify_vsp_router(vr_1)
-        self.verify_vsp_vm(public_vm_1)
+        self.verify_vsd_network(self.domain.id, public_tier_1, vpc_1)
+        self.verify_vsd_router(vr_1)
+        self.verify_vsd_vm(public_vm_1)
 
         self.debug("Creating a VPC network in vpc_2 without Internal LB service...")
         public_tier_2 = self.create_Network(net_off_2, gateway='10.1.1.1', vpc=vpc_2)
@@ -487,14 +487,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr_2 = self.get_Router(public_tier_2)
         self.check_Router_state(vr_2, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % public_tier_2.name)
+        self.debug("Deploying a VM in the created VPC network...")
         public_vm_2 = self.create_VM(public_tier_2)
         self.check_VM_state(public_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier_2, vpc_2)
-        self.verify_vsp_router(vr_2)
-        self.verify_vsp_vm(public_vm_2)
+        self.verify_vsd_network(self.domain.id, public_tier_2, vpc_2)
+        self.verify_vsd_router(vr_2)
+        self.verify_vsd_vm(public_vm_2)
 
         # Upgrading a VPC network
         self.debug("Upgrading a VPC network with Internal LB Service to one without Internal LB Service...")
@@ -505,9 +505,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_VM_state(internal_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier_2, vpc_1)
-        self.verify_vsp_router(vr_1)
-        self.verify_vsp_vm(internal_vm_2)
+        self.verify_vsd_network(self.domain.id, internal_tier_2, vpc_1)
+        self.verify_vsd_router(vr_1)
+        self.verify_vsd_vm(internal_vm_2)
 
         self.debug("Upgrading a VPC network without Internal LB Service to one with Internal LB Service...")
         self.upgrade_Network(net_off_1, internal_tier_2)
@@ -517,9 +517,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_VM_state(internal_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier_2, vpc_1)
-        self.verify_vsp_router(vr_1)
-        self.verify_vsp_vm(internal_vm_2)
+        self.verify_vsd_network(self.domain.id, internal_tier_2, vpc_1)
+        self.verify_vsd_router(vr_1)
+        self.verify_vsd_vm(internal_vm_2)
 
         # Deleting and re-creating a VPC network
         self.debug("Deleting a VPC network with Internal LB Service...")
@@ -531,7 +531,7 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD verification
         with self.assertRaises(Exception):
-            self.verify_vsp_network(self.domain.id, internal_tier_2, vpc_1)
+            self.verify_vsd_network(self.domain.id, internal_tier_2, vpc_1)
         self.debug("VPC network successfully deleted in VSD")
 
         self.debug("Recreating a VPC network with Internal LB Service...")
@@ -543,9 +543,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_VM_state(internal_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier_2, vpc_1)
-        self.verify_vsp_router(vr_1)
-        self.verify_vsp_vm(internal_vm_2)
+        self.verify_vsd_network(self.domain.id, internal_tier_2, vpc_1)
+        self.verify_vsd_router(vr_1)
+        self.verify_vsd_vm(internal_vm_2)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_04_nuage_internallb_rules(self):
@@ -576,6 +576,7 @@ class TestNuageInternalLb(nuageTestCase):
         #     VM to it.
         # 11. Verify the failure of attaching a VM from a different tier to an Internal LB Rule created on a tier.
         # 12. Delete the above created Internal LB Rules, check if the Internal LB Rules are successfully deleted.
+        # 13. Delete all the created objects (cleanup).
 
         # Creating a VPC offering
         self.debug("Creating Nuage VSP VPC offering with Internal LB service...")
@@ -604,14 +605,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(internal_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % internal_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         internal_vm = self.create_VM(internal_tier)
         self.check_VM_state(internal_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm)
 
         self.debug("Creating a VPC network without Internal LB service...")
         public_tier = self.create_Network(net_off_2, gateway='10.1.2.1', vpc=vpc)
@@ -619,14 +620,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(public_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % public_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         public_vm = self.create_VM(public_tier)
         self.check_VM_state(public_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
 
         # Creating Internal LB Rules
         self.debug("Creating an Internal LB Rule without source IP Address specified...")
@@ -691,8 +692,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_2.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_1)
-        self.verify_vsp_LB_device(int_lb_vm_2)
+        self.verify_vsd_lb_device(int_lb_vm_1)
+        self.verify_vsd_lb_device(int_lb_vm_2)
 
         self.debug('Removing VMs from the Internal LB Rules - %s, %s' % (int_lb_rule_1.name, int_lb_rule_2.name))
         int_lb_rule_1.remove(self.api_client, vms=[internal_vm])
@@ -709,8 +710,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_2.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_1)
-        self.verify_vsp_LB_device(int_lb_vm_2)
+        self.verify_vsd_lb_device(int_lb_vm_1)
+        self.verify_vsd_lb_device(int_lb_vm_2)
 
         self.debug('Deleting the Internal LB Rules - %s, %s' % (int_lb_rule_1.name, int_lb_rule_2.name))
         int_lb_rule_1.delete(self.api_client)
@@ -732,10 +733,10 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         with self.assertRaises(Exception):
-            self.verify_vsp_LB_device(int_lb_vm_1)
+            self.verify_vsd_lb_device(int_lb_vm_1)
         self.debug("InternalLbVm successfully destroyed in VSD")
         with self.assertRaises(Exception):
-            self.verify_vsp_LB_device(int_lb_vm_2)
+            self.verify_vsd_lb_device(int_lb_vm_2)
         self.debug("InternalLbVm successfully destroyed in VSD")
 
         self.debug("Creating multiple Internal LB Rules with different ports but using the same Load Balancing source "
@@ -754,7 +755,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         self.debug('Removing VMs from the Internal LB Rules - %s, %s' % (int_lb_rule_1.name, int_lb_rule_2.name))
         int_lb_rule_1.remove(self.api_client, vms=[internal_vm])
@@ -770,7 +771,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         self.debug('Deleting the Internal LB Rules - %s, %s' % (int_lb_rule_1.name, int_lb_rule_2.name))
         int_lb_rule_1.delete(self.api_client)
@@ -789,10 +790,10 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         with self.assertRaises(Exception):
-            self.verify_vsp_LB_device(int_lb_vm)
+            self.verify_vsd_lb_device(int_lb_vm)
         self.debug("InternalLbVm successfully destroyed in VSD")
 
-        self.debug("Creating multiple Internal LB Rules with same ports and using the same Load Balacing source IP "
+        self.debug("Creating multiple Internal LB Rules with same ports and using the same Load Balancing source IP "
                    "Address...")
         int_lb_rule = self.create_Internal_LB_Rule(internal_tier, vm_array=[internal_vm])
         self.validate_Internal_LB_Rule(int_lb_rule, state="Active", vm_array=[internal_vm])
@@ -805,7 +806,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         self.debug('Removing VMs from the Internal LB Rule - %s' % int_lb_rule.name)
         int_lb_rule.remove(self.api_client, vms=[internal_vm])
@@ -817,7 +818,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         self.debug('Deleting the Internal LB Rule - %s' % int_lb_rule.name)
         int_lb_rule.delete(self.api_client)
@@ -832,7 +833,7 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         with self.assertRaises(Exception):
-            self.verify_vsp_LB_device(int_lb_vm)
+            self.verify_vsd_lb_device(int_lb_vm)
         self.debug("InternalLbVm successfully destroyed in VSD")
 
         self.debug("Attaching a VM from a different tier to an Internal LB Rule created on a tier...")
@@ -862,6 +863,7 @@ class TestNuageInternalLb(nuageTestCase):
         # 8. Verify that the InternalLbVm gets destroyed when the last Internal LB rule is removed from the Internal
         #    tier.
         # 9. Repeat the above steps for one more Internal tier as well, validate the Internal LB functionality.
+        # 10. Delete all the created objects (cleanup).
 
         # Creating a VPC offering
         self.debug("Creating Nuage VSP VPC offering with Internal LB service...")
@@ -890,14 +892,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(internal_tier_1)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % internal_tier_1.name)
+        self.debug("Deploying a VM in the created VPC network...")
         internal_vm_1 = self.create_VM(internal_tier_1)
         self.check_VM_state(internal_vm_1, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier_1, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm_1)
+        self.verify_vsd_network(self.domain.id, internal_tier_1, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm_1)
 
         self.debug("Creating one more VPC network with Internal LB service...")
         internal_tier_2 = self.create_Network(net_off_1, gateway='10.1.2.1', vpc=vpc)
@@ -905,14 +907,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(internal_tier_2)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % internal_tier_2.name)
+        self.debug("Deploying a VM in the created VPC network...")
         internal_vm_2 = self.create_VM(internal_tier_2)
         self.check_VM_state(internal_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier_2, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm_2)
+        self.verify_vsd_network(self.domain.id, internal_tier_2, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm_2)
 
         self.debug("Creating a VPC network without Internal LB service...")
         public_tier = self.create_Network(net_off_2, gateway='10.1.3.1', vpc=vpc)
@@ -920,14 +922,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(public_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % public_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         public_vm = self.create_VM(public_tier)
         self.check_VM_state(public_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
 
         # Creating Internal LB Rules in the Internal tiers
         self.debug("Creating two Internal LB Rules (SSH & HTTP) using the same Load Balancing source IP Address...")
@@ -945,7 +947,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier_1, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_1)
+        self.verify_vsd_lb_device(int_lb_vm_1)
 
         # Deploying more VMs in the Internal tier
         self.debug("Deploying two more VMs in network - %s" % internal_tier_1.name)
@@ -953,8 +955,8 @@ class TestNuageInternalLb(nuageTestCase):
         internal_vm_1_2 = self.create_VM(internal_tier_1)
 
         # VSD verification
-        self.verify_vsp_vm(internal_vm_1_1)
-        self.verify_vsp_vm(internal_vm_1_2)
+        self.verify_vsd_vm(internal_vm_1_1)
+        self.verify_vsd_vm(internal_vm_1_2)
 
         # Adding newly deployed VMs to the created Internal LB rules
         self.debug("Adding two more virtual machines to the created Internal LB rules...")
@@ -969,7 +971,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier_1, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_1)
+        self.verify_vsd_lb_device(int_lb_vm_1)
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB rules (SSH & HTTP) accessible...")
@@ -977,8 +979,8 @@ class TestNuageInternalLb(nuageTestCase):
         http_rule = self.create_NetworkAclRule(self.test_data["http_rule"], network=internal_tier_1)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
         # Creating Internal LB Rules in the Internal tier
         self.debug("Creating two Internal LB Rules (SSH & HTTP) using the same Load Balancing source IP Address...")
@@ -996,7 +998,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier_2, int_lb_rule_3.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_2)
+        self.verify_vsd_lb_device(int_lb_vm_2)
 
         # Deploying more VMs in the Internal tier
         self.debug("Deploying two more VMs in network - %s" % internal_tier_2.name)
@@ -1004,8 +1006,8 @@ class TestNuageInternalLb(nuageTestCase):
         internal_vm_2_2 = self.create_VM(internal_tier_2)
 
         # VSD verification
-        self.verify_vsp_vm(internal_vm_2_1)
-        self.verify_vsp_vm(internal_vm_2_2)
+        self.verify_vsd_vm(internal_vm_2_1)
+        self.verify_vsd_vm(internal_vm_2_2)
 
         # Adding newly deployed VMs to the created Internal LB rules
         self.debug("Adding two more virtual machines to the created Internal LB rules...")
@@ -1020,7 +1022,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier_2, int_lb_rule_3.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_2)
+        self.verify_vsd_lb_device(int_lb_vm_2)
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB rules (SSH & HTTP) accessible...")
@@ -1028,24 +1030,24 @@ class TestNuageInternalLb(nuageTestCase):
         http_rule = self.create_NetworkAclRule(self.test_data["http_rule"], network=internal_tier_2)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
-        # Creating Static NAT Rule for the VM in the Public tier
+        # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
         self.validate_PublicIPAddress(public_ip, public_tier)
         self.create_StaticNatRule_For_VM(public_vm, public_ip, public_tier)
         self.validate_PublicIPAddress(public_ip, public_tier, static_nat=True, vm=public_vm)
 
         # VSD verification
-        self.verify_vsp_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
+        self.verify_vsd_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
 
         # Adding Network ACL rule in the Public tier
         self.debug("Adding Network ACL rule to make the created NAT rule (SSH) accessible...")
         public_ssh_rule = self.create_NetworkAclRule(self.test_data["ingress_rule"], network=public_tier)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(public_ssh_rule)
+        self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Internal LB (wget) traffic tests
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1074,6 +1076,7 @@ class TestNuageInternalLb(nuageTestCase):
         # 2. Least connections
         # 3. Source
         # Verify the above Internal LB algorithms by performing multiple (wget) traffic tests within a VPC.
+        # Delete all the created objects (cleanup).
 
         # Creating a VPC offering
         self.debug("Creating Nuage VSP VPC offering with Internal LB service...")
@@ -1102,14 +1105,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(internal_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % internal_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         internal_vm = self.create_VM(internal_tier)
         self.check_VM_state(internal_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm)
 
         self.debug("Creating a VPC network without Internal LB service...")
         public_tier = self.create_Network(net_off_2, gateway='10.1.2.1', vpc=vpc)
@@ -1117,14 +1120,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(public_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % public_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         public_vm = self.create_VM(public_tier)
         self.check_VM_state(public_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
 
         # Creating Internal LB Rules in the Internal tier with Round Robin Algorithm
         self.debug("Creating two Internal LB Rules (SSH & HTTP) with Round Robin Algorithm...")
@@ -1142,7 +1145,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_1)
+        self.verify_vsd_lb_device(int_lb_vm_1)
 
         # Deploying more VMs in the Internal tier
         self.debug("Deploying two more VMs in network - %s" % internal_tier.name)
@@ -1150,8 +1153,8 @@ class TestNuageInternalLb(nuageTestCase):
         internal_vm_2 = self.create_VM(internal_tier)
 
         # VSD verification
-        self.verify_vsp_vm(internal_vm_1)
-        self.verify_vsp_vm(internal_vm_2)
+        self.verify_vsd_vm(internal_vm_1)
+        self.verify_vsd_vm(internal_vm_2)
 
         # Adding newly deployed VMs to the created Internal LB rules
         self.debug("Adding two more virtual machines to the created Internal LB rules...")
@@ -1166,7 +1169,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_1)
+        self.verify_vsd_lb_device(int_lb_vm_1)
 
         # Creating Internal LB Rules in the Internal tier with Least connections Algorithm
         self.debug("Creating two Internal LB Rules (SSH & HTTP) with Least connections Algorithm...")
@@ -1191,7 +1194,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_3.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_2)
+        self.verify_vsd_lb_device(int_lb_vm_2)
 
         # Creating Internal LB Rules in the Internal tier with Source Algorithm
         self.debug("Creating two Internal LB Rules (SSH & HTTP) with Source Algorithm...")
@@ -1216,7 +1219,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_5.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm_3)
+        self.verify_vsd_lb_device(int_lb_vm_3)
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB rules (SSH & HTTP) accessible...")
@@ -1224,24 +1227,24 @@ class TestNuageInternalLb(nuageTestCase):
         http_rule = self.create_NetworkAclRule(self.test_data["http_rule"], network=internal_tier)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
-        # Creating Static NAT Rule for the VM in the Public tier
+        # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
         self.validate_PublicIPAddress(public_ip, public_tier)
         self.create_StaticNatRule_For_VM(public_vm, public_ip, public_tier)
         self.validate_PublicIPAddress(public_ip, public_tier, static_nat=True, vm=public_vm)
 
         # VSD verification
-        self.verify_vsp_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
+        self.verify_vsd_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
 
         # Adding Network ACL rule in the Public tier
         self.debug("Adding Network ACL rule to make the created NAT rule (SSH) accessible...")
         public_ssh_rule = self.create_NetworkAclRule(self.test_data["ingress_rule"], network=public_tier)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(public_ssh_rule)
+        self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Internal LB (wget) traffic tests with Round Robin Algorithm
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1289,9 +1292,12 @@ class TestNuageInternalLb(nuageTestCase):
         #    tier.
         # 6. Start all the VMs configured with InternalLbVm, verify that the InternalLbVm gets deployed again in the
         #    Internal tier.
-        # 7. Restart VPC, verify that the VPC VR gets rebooted and this restart has no effect on the InternalLbVm
-        #    functionality.
+        # 7. Restart VPC (cleanup = false), verify that the VPC VR gets rebooted and this restart has no effect on the
+        #    InternalLbVm functionality.
+        # 7. Restart VPC (cleanup = true), verify that the VPC VR gets rebooted and this restart has no effect on the
+        #    InternalLbVm functionality.
         # Verify the above restarts of VPC networks (tiers) by performing (wget) traffic tests within a VPC.
+        # Delete all the created objects (cleanup).
 
         # Creating a VPC offering
         self.debug("Creating Nuage VSP VPC offering with Internal LB service...")
@@ -1320,14 +1326,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(internal_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % internal_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         internal_vm = self.create_VM(internal_tier)
         self.check_VM_state(internal_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm)
 
         self.debug("Creating a VPC network without Internal LB service...")
         public_tier = self.create_Network(net_off_2, gateway='10.1.2.1', vpc=vpc)
@@ -1335,14 +1341,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(public_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % public_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         public_vm = self.create_VM(public_tier)
         self.check_VM_state(public_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
 
         # Creating Internal LB Rules in the Internal tier
         self.debug("Creating two Internal LB Rules (SSH & HTTP) using the same Load Balancing source IP Address...")
@@ -1360,7 +1366,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Deploying more VMs in the Internal tier
         self.debug("Deploying two more VMs in network - %s" % internal_tier.name)
@@ -1368,8 +1374,8 @@ class TestNuageInternalLb(nuageTestCase):
         internal_vm_2 = self.create_VM(internal_tier)
 
         # VSD verification
-        self.verify_vsp_vm(internal_vm_1)
-        self.verify_vsp_vm(internal_vm_2)
+        self.verify_vsd_vm(internal_vm_1)
+        self.verify_vsd_vm(internal_vm_2)
 
         # Adding newly deployed VMs to the created Internal LB rules
         self.debug("Adding two more virtual machines to the created Internal LB rules...")
@@ -1384,7 +1390,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB rules (SSH & HTTP) accessible...")
@@ -1392,24 +1398,24 @@ class TestNuageInternalLb(nuageTestCase):
         http_rule = self.create_NetworkAclRule(self.test_data["http_rule"], network=internal_tier)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
-        # Creating Static NAT Rule for the VM in the Public tier
+        # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
         self.validate_PublicIPAddress(public_ip, public_tier)
         self.create_StaticNatRule_For_VM(public_vm, public_ip, public_tier)
         self.validate_PublicIPAddress(public_ip, public_tier, static_nat=True, vm=public_vm)
 
         # VSD verification
-        self.verify_vsp_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
+        self.verify_vsd_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
 
         # Adding Network ACL rule in the Public tier
         self.debug("Adding Network ACL rule to make the created NAT rule (SSH) accessible...")
         public_ssh_rule = self.create_NetworkAclRule(self.test_data["ingress_rule"], network=public_tier)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(public_ssh_rule)
+        self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1432,13 +1438,13 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_VM_state(internal_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm)
-        self.verify_vsp_vm(internal_vm_1)
-        self.verify_vsp_vm(internal_vm_2)
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm)
+        self.verify_vsd_vm(internal_vm_1)
+        self.verify_vsd_vm(internal_vm_2)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
         # InternalLbVm gets destroyed and deployed again in the Internal tier
@@ -1446,12 +1452,12 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         tries = 0
-        while True:
+        while tries < 10:
             try:
                 wget_file = self.wget_from_vm_cmd(ssh_client,
                                                   int_lb_rule_1.sourceipaddress,
@@ -1459,8 +1465,6 @@ class TestNuageInternalLb(nuageTestCase):
                                                   )
             except Exception as e:
                 self.debug("Failed to wget file via the InternalLbVm after re-starting the Internal tier: %s" % e)
-                if tries == 10:
-                    break
                 self.debug("Waiting for the InternalLbVm in the Internal tier to be fully resolved for (wget) traffic "
                            "test...")
                 time.sleep(30)
@@ -1483,13 +1487,13 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_VM_state(internal_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm)
-        self.verify_vsp_vm(internal_vm_1)
-        self.verify_vsp_vm(internal_vm_2)
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm)
+        self.verify_vsd_vm(internal_vm_1)
+        self.verify_vsd_vm(internal_vm_2)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
         # InternalLbVm gets destroyed and deployed again in the Internal tier
@@ -1497,12 +1501,12 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         tries = 0
-        while True:
+        while tries < 10:
             try:
                 wget_file = self.wget_from_vm_cmd(ssh_client,
                                                   int_lb_rule_1.sourceipaddress,
@@ -1511,8 +1515,6 @@ class TestNuageInternalLb(nuageTestCase):
             except Exception as e:
                 self.debug("Failed to wget file via the InternalLbVm after re-starting the Internal tier with cleanup: "
                            "%s" % e)
-                if tries == 10:
-                    break
                 self.debug("Waiting for the InternalLbVm in the Internal tier to be fully resolved for (wget) traffic "
                            "test...")
                 time.sleep(30)
@@ -1534,17 +1536,17 @@ class TestNuageInternalLb(nuageTestCase):
         self.validate_PublicIPAddress(public_ip, public_tier, static_nat=True, vm=public_vm)
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
-        self.verify_vsp_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
-        self.verify_vsp_firewall_rule(public_ssh_rule)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
+        self.verify_vsd_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
+        self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Validating InternalLbVm state
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1566,17 +1568,17 @@ class TestNuageInternalLb(nuageTestCase):
         self.validate_PublicIPAddress(public_ip, public_tier, static_nat=True, vm=public_vm)
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
-        self.verify_vsp_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
-        self.verify_vsp_firewall_rule(public_ssh_rule)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
+        self.verify_vsd_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
+        self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Validating InternalLbVm state
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1601,19 +1603,19 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_VM_state(internal_vm_2, state="Stopped")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm, stopped=True)
-        self.verify_vsp_vm(internal_vm_1, stopped=True)
-        self.verify_vsp_vm(internal_vm_2, stopped=True)
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm, stopped=True)
+        self.verify_vsd_vm(internal_vm_1, stopped=True)
+        self.verify_vsd_vm(internal_vm_2, stopped=True)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1637,24 +1639,24 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_VM_state(internal_vm_2, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm)
-        self.verify_vsp_vm(internal_vm_1)
-        self.verify_vsp_vm(internal_vm_2)
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm)
+        self.verify_vsd_vm(internal_vm_1)
+        self.verify_vsd_vm(internal_vm_2)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         tries = 0
-        while True:
+        while tries < 10:
             try:
                 wget_file = self.wget_from_vm_cmd(ssh_client,
                                                   int_lb_rule_1.sourceipaddress,
@@ -1663,8 +1665,6 @@ class TestNuageInternalLb(nuageTestCase):
             except Exception as e:
                 self.debug("Failed to wget file via the InternalLbVm after re-starting all the VMs in the Internal tier"
                            ": %s" % e)
-                if tries == 10:
-                    break
                 self.debug("Waiting for the InternalLbVm and all the VMs in the Internal tier to be fully resolved for "
                            "(wget) traffic test...")
                 time.sleep(30)
@@ -1693,23 +1693,23 @@ class TestNuageInternalLb(nuageTestCase):
         self.validate_PublicIPAddress(public_ip, public_tier, static_nat=True, vm=public_vm)
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
-        self.verify_vsp_vm(internal_vm)
-        self.verify_vsp_vm(internal_vm_1)
-        self.verify_vsp_vm(internal_vm_2)
-        self.verify_vsp_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
-        self.verify_vsp_firewall_rule(public_ssh_rule)
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
+        self.verify_vsd_vm(internal_vm)
+        self.verify_vsd_vm(internal_vm_1)
+        self.verify_vsd_vm(internal_vm_2)
+        self.verify_vsd_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
+        self.verify_vsd_firewall_rule(public_ssh_rule)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1737,23 +1737,23 @@ class TestNuageInternalLb(nuageTestCase):
         self.validate_PublicIPAddress(public_ip, public_tier, static_nat=True, vm=public_vm)
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
-        self.verify_vsp_vm(internal_vm)
-        self.verify_vsp_vm(internal_vm_1)
-        self.verify_vsp_vm(internal_vm_2)
-        self.verify_vsp_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
-        self.verify_vsp_firewall_rule(public_ssh_rule)
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
+        self.verify_vsd_vm(internal_vm)
+        self.verify_vsd_vm(internal_vm_1)
+        self.verify_vsd_vm(internal_vm_2)
+        self.verify_vsd_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
+        self.verify_vsd_firewall_rule(public_ssh_rule)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1781,6 +1781,7 @@ class TestNuageInternalLb(nuageTestCase):
         # 6. Force stop the InternalLbVm when the VPC VR is in Running State
         # 7. Start the InternalLbVm when the VPC VR is in Running state
         # Verify the above restarts of VPC networks by performing (wget) traffic tests within a VPC.
+        # Delete all the created objects (cleanup).
 
         # Creating a VPC offering
         self.debug("Creating Nuage VSP VPC offering with Internal LB service...")
@@ -1809,14 +1810,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(internal_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % internal_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         internal_vm = self.create_VM(internal_tier)
         self.check_VM_state(internal_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(internal_vm)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(internal_vm)
 
         self.debug("Creating a VPC network without Internal LB service...")
         public_tier = self.create_Network(net_off_2, gateway='10.1.2.1', vpc=vpc)
@@ -1824,14 +1825,14 @@ class TestNuageInternalLb(nuageTestCase):
         vr = self.get_Router(public_tier)
         self.check_Router_state(vr, state="Running")
 
-        self.debug("Deploying a VM in network - %s" % public_tier.name)
+        self.debug("Deploying a VM in the created VPC network...")
         public_vm = self.create_VM(public_tier)
         self.check_VM_state(public_vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(public_vm)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(public_vm)
 
         # Stopping the VPC VR
         # VPC VR has no effect on the InternalLbVm functionality
@@ -1841,9 +1842,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.validate_Network(internal_tier, state="Implemented")
 
         # VSD verification
-        self.verify_vsp_router(vr, stopped=True)
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr, stopped=True)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
 
         # Creating Internal LB Rules in the Internal tier
         self.debug("Creating two Internal LB Rules (SSH & HTTP) using the same Load Balancing source IP Address...")
@@ -1861,7 +1862,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Deploying more VMs in the Internal tier
         self.debug("Deploying two more VMs in network - %s" % internal_tier.name)
@@ -1869,8 +1870,8 @@ class TestNuageInternalLb(nuageTestCase):
         internal_vm_2 = self.create_VM(internal_tier)
 
         # VSD verification
-        self.verify_vsp_vm(internal_vm_1)
-        self.verify_vsp_vm(internal_vm_2)
+        self.verify_vsd_vm(internal_vm_1)
+        self.verify_vsd_vm(internal_vm_2)
 
         # Adding newly deployed VMs to the created Internal LB rules
         self.debug("Adding two more virtual machines to the created Internal LB rules...")
@@ -1885,7 +1886,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB rules (SSH & HTTP) accessible...")
@@ -1893,24 +1894,24 @@ class TestNuageInternalLb(nuageTestCase):
         http_rule = self.create_NetworkAclRule(self.test_data["http_rule"], network=internal_tier)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(ssh_rule)
-        self.verify_vsp_firewall_rule(http_rule)
+        self.verify_vsd_firewall_rule(ssh_rule)
+        self.verify_vsd_firewall_rule(http_rule)
 
-        # Creating Static NAT Rule for the VM in the Public tier
+        # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
         self.validate_PublicIPAddress(public_ip, public_tier)
         self.create_StaticNatRule_For_VM(public_vm, public_ip, public_tier)
         self.validate_PublicIPAddress(public_ip, public_tier, static_nat=True, vm=public_vm)
 
         # VSD verification
-        self.verify_vsp_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
+        self.verify_vsd_floating_ip(public_tier, public_vm, public_ip.ipaddress, vpc)
 
         # Adding Network ACL rule in the Public tier
         self.debug("Adding Network ACL rule to make the created NAT rule (SSH) accessible...")
         public_ssh_rule = self.create_NetworkAclRule(self.test_data["ingress_rule"], network=public_tier)
 
         # VSD verification
-        self.verify_vsp_firewall_rule(public_ssh_rule)
+        self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1927,7 +1928,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Stopped")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm, stopped=True)
+        self.verify_vsd_lb_device(int_lb_vm, stopped=True)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1943,12 +1944,12 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         tries = 0
-        while True:
+        while tries < 10:
             try:
                 wget_file = self.wget_from_vm_cmd(ssh_client,
                                                   int_lb_rule_1.sourceipaddress,
@@ -1957,8 +1958,6 @@ class TestNuageInternalLb(nuageTestCase):
             except Exception as e:
                 self.debug("Failed to wget file via the InternalLbVm after re-starting the InternalLbVm appliance: %s"
                            % e)
-                if tries == 10:
-                    break
                 self.debug("Waiting for the InternalLbVm to be fully resolved for (wget) traffic test...")
                 time.sleep(30)
                 tries += 1
@@ -1977,16 +1976,16 @@ class TestNuageInternalLb(nuageTestCase):
         self.validate_Network(internal_tier, state="Implemented")
 
         # VSD verification
-        self.verify_vsp_router(vr)
-        self.verify_vsp_network(self.domain.id, public_tier, vpc)
-        self.verify_vsp_network(self.domain.id, internal_tier, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_network(self.domain.id, public_tier, vpc)
+        self.verify_vsd_network(self.domain.id, internal_tier, vpc)
 
         # # Stopping the InternalLbVm when the VPC VR is in Running state
         self.stop_InternalLbVm(int_lb_vm)
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Stopped")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm, stopped=True)
+        self.verify_vsd_lb_device(int_lb_vm, stopped=True)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -2002,12 +2001,12 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         tries = 0
-        while True:
+        while tries < 10:
             try:
                 wget_file = self.wget_from_vm_cmd(ssh_client,
                                                   int_lb_rule_1.sourceipaddress,
@@ -2016,8 +2015,6 @@ class TestNuageInternalLb(nuageTestCase):
             except Exception as e:
                 self.debug("Failed to wget file via the InternalLbVm after re-starting the InternalLbVm appliance: %s"
                            % e)
-                if tries == 10:
-                    break
                 self.debug("Waiting for the InternalLbVm to be fully resolved for (wget) traffic test...")
                 time.sleep(30)
                 tries += 1
@@ -2033,7 +2030,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Stopped")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm, stopped=True)
+        self.verify_vsd_lb_device(int_lb_vm, stopped=True)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -2049,12 +2046,12 @@ class TestNuageInternalLb(nuageTestCase):
         self.check_InternalLbVm_state(internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
 
         # VSD Verification
-        self.verify_vsp_LB_device(int_lb_vm)
+        self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         tries = 0
-        while True:
+        while tries < 10:
             try:
                 wget_file = self.wget_from_vm_cmd(ssh_client,
                                                   int_lb_rule_1.sourceipaddress,
@@ -2063,8 +2060,6 @@ class TestNuageInternalLb(nuageTestCase):
             except Exception as e:
                 self.debug("Failed to wget file via the InternalLbVm after re-starting the InternalLbVm appliance: %s"
                            % e)
-                if tries == 10:
-                    break
                 self.debug("Waiting for the InternalLbVm to be fully resolved for (wget) traffic test...")
                 time.sleep(30)
                 tries += 1
