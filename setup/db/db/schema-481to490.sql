@@ -545,3 +545,14 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '5.0', 'centos64Guest', 228, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '5.1', 'centos64Guest', 228, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'VMware', '5.5', 'centos64Guest', 228, now(), 0);
+
+
+
+UPDATE `cloud`.`guest_os_hypervisor` set `guest_os_name` = "Other PV (32-bit)" where `hypervisor_type` = "Xenserver" and `guest_os_id` = 139;
+UPDATE `cloud`.`guest_os_hypervisor` set `guest_os_name` = "Other PV (64-bit)" where `hypervisor_type` = "Xenserver" and `guest_os_id` = 140;
+UPDATE `cloud`.`guest_os_hypervisor` set `guest_os_id` = 163 where `hypervisor_type` = "VmWare" and `guest_os_id` = 162 and `guest_os_name` = "Ubuntu 12.04 (32-bit)";
+UPDATE `cloud`.`guest_os_hypervisor` set `guest_os_id` = 164 where `hypervisor_type` = "VmWare" and `guest_os_id` = 163 and `guest_os_name` = "Ubuntu 12.04 (64-bit)";
+UPDATE `cloud`.`guest_os_hypervisor` set `guest_os_name` = "Ubuntu 12.04" where `hypervisor_type` = "KVM" and `guest_os_id` = 163 and `guest_os_name` = "Ubuntu 10.04";
+DELETE FROM `cloud`.`guest_os_hypervisor` where `hypervisor_type` = "KVM" and `guest_os_id` = 162 and `guest_os_name` = "Ubuntu 10.04";
+UPDATE `cloud`.`guest_os_hypervisor` set `guest_os_name` = "Ubuntu 12.04" where `hypervisor_type` = "LXC" and `guest_os_id` = 163 and `guest_os_name` = "Ubuntu 10.04";
+DELETE FROM `cloud`.`guest_os_hypervisor` where `hypervisor_type` = "LXC" and `guest_os_id` = 162 and `guest_os_name` = "Ubuntu 10.04";
