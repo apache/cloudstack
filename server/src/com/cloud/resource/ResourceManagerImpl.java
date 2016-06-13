@@ -847,7 +847,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return true;
         }
 
-        long clusterId = host.getClusterId();
+        Long clusterId = host.getClusterId();
 
         _agentMgr.notifyMonitorsOfHostAboutToBeRemoved(host.getId());
 
@@ -927,7 +927,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         });
 
-        _agentMgr.notifyMonitorsOfRemovedHost(host.getId(), clusterId);
+        if (clusterId != null) {
+            _agentMgr.notifyMonitorsOfRemovedHost(host.getId(), clusterId);
+        }
 
         return true;
     }

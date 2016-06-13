@@ -57,6 +57,7 @@ class TestNuageVpcNetwork(nuageTestCase):
         # 6. Deploy a VM in the created VPC network, check if the VM is successfully deployed and is in the "Running"
         #    state.
         # 7. Verify that the created ACL item is successfully implemented in Nuage VSP.
+        # 8. Delete all the created objects (cleanup).
 
         # Creating a VPC offering
         self.debug("Creating Nuage VSP VPC offering...")
@@ -91,12 +92,12 @@ class TestNuageVpcNetwork(nuageTestCase):
         self.check_VM_state(vm, state="Running")
 
         # VSD verification
-        self.verify_vsp_network(self.domain.id, vpc_network, vpc)
-        self.verify_vsp_router(vr)
-        self.verify_vsp_vm(vm)
+        self.verify_vsd_network(self.domain.id, vpc_network, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm)
 
         # VSD verification for ACL item
-        self.verify_vsp_firewall_rule(acl_item)
+        self.verify_vsd_firewall_rule(acl_item)
 
     @attr(tags=["advanced", "nuagevsp", "multizone"], required_hardware="false")
     def test_nuage_vpc_network_multizone(self):
