@@ -17,19 +17,18 @@
 # under the License.
 
 import sys
-from merge import QueueFile
 import logging
-import subprocess
-from subprocess import PIPE, STDOUT
 import os
 import os.path
-import configure
 import json
+
+import configure
+from merge import QueueFile
 
 logging.basicConfig(filename='/var/log/cloud.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
 # first commandline argument should be the file to process
-if (len(sys.argv) != 2):
+if len(sys.argv) != 2:
     print "[ERROR]: Invalid usage"
     sys.exit(1)
 
@@ -41,8 +40,8 @@ currentGuestNetConfig = "/etc/cloudstack/guestnetwork.json"
 
 def finish_config():
     # Converge
-    returncode = configure.main(sys.argv)
-    sys.exit(returncode)
+    configure.main(sys.argv)
+    sys.exit(0)
 
 
 def process_file():
@@ -57,16 +56,13 @@ def process_file():
 def is_guestnet_configured(guestnet_dict, keys):
 
     existing_keys = []
-    new_eth_key = None
 
     for k1, v1 in guestnet_dict.iteritems():
         if k1 in keys and len(v1) > 0:
             existing_keys.append(k1)
 
     if not existing_keys:
-        '''
-        It seems all the interfaces have been removed. Let's allow a new configuration to come in.
-        '''
+        # It seems all the interfaces have been removed. Let's allow a new configuration to come in.
         print "[WARN] update_config.py :: Reconfiguring guest network..."
         return False
 
@@ -74,21 +70,15 @@ def is_guestnet_configured(guestnet_dict, keys):
     new_guestnet_dict = json.load(file)
 
     if not new_guestnet_dict['add']:
-        '''
-        Guest network has to be removed.
-        '''
+        # Guest network has to be removed.
         print "[INFO] update_config.py :: Removing guest network..."
         return False
 
-    '''
-    Check if we have a new guest network ready to be setup
-    '''
+    # Check if we have a new guest network ready to be setup
     device = new_guestnet_dict['device']
 
     if device in existing_keys:
-        '''
-        Device already configured, ignore.
-        '''
+        # Device already configured, ignore.
         return True
 
     exists = False

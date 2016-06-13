@@ -15,14 +15,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from pprint import pprint
 
 
 def merge(dbag, vpn):
     key = vpn['vpn_server_ip']
     op = vpn['create']
     if key in dbag.keys() and not op:
-        del(dbag[key])
+        del dbag[key]
     else:
         dbag[key] = vpn
     return dbag

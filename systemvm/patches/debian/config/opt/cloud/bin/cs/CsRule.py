@@ -15,8 +15,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
 import logging
+from cs import CsHelper
 
 
 class CsRule:
@@ -34,7 +34,7 @@ class CsRule:
         if not self.findMark():
             cmd = "ip rule add fwmark %s table %s" % (self.tableNo, self.table)
             CsHelper.execute(cmd)
-            logging.info("Added fwmark rule for %s" % (self.table))
+            logging.info("Added fwmark rule for %s", self.table)
 
     def findMark(self):
         srch = "from all fwmark %s lookup %s" % (hex(self.tableNo), self.table)

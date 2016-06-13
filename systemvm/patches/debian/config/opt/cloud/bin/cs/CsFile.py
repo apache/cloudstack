@@ -17,11 +17,13 @@
 # under the License.
 import logging
 import re
-import copy
 
 
 class CsFile:
     """ File editors """
+
+    config = None
+    new_config = None
 
     def __init__(self, filename):
         self.filename = filename
@@ -34,16 +36,13 @@ class CsFile:
             for line in open(self.filename):
                 self.new_config.append(line)
         except IOError:
-            logging.debug("File %s does not exist" % self.filename)
+            logging.debug("File %s does not exist", self.filename)
         else:
-            logging.debug("Reading file %s" % self.filename)
+            logging.debug("Reading file %s", self.filename)
             self.config = list(self.new_config)
 
     def is_changed(self):
-        if set(self.config) != set(self.new_config):
-            return True
-        else:
-            return False
+        return set(self.config) != set(self.new_config)
 
     def __len__(self):
         return len(self.config)
@@ -57,16 +56,16 @@ class CsFile:
 
     def commit(self):
         if not self.is_changed():
-            logging.info("Nothing to commit. The %s file did not change" % self.filename)
+            logging.info("Nothing to commit. The %s file did not change", self.filename)
             return
         handle = open(self.filename, "w+")
         for line in self.new_config:
             handle.write(line)
         handle.close()
-        logging.info("Wrote edited file %s" % self.filename)
+        logging.info("Wrote edited file %s", self.filename)
         self.config = list(self.new_config)
         logging.info("Updated file in-cache configuration")
-        
+
 
     def dump(self):
         for line in self.new_config:
@@ -113,7 +112,7 @@ class CsFile:
         self.new_config[sind:eind] = content
 
     def greplace(self, search, replace):
-        logging.debug("Searching for %s and replacing with %s" % (search, replace))
+        logging.debug("Searching for %s and replacing with %s", search, replace)
         self.new_config = [w.replace(search, replace) for w in self.new_config]
 
     def search(self, search, replace):
@@ -121,7 +120,7 @@ class CsFile:
         replace_filtered = replace
         if re.search("PSK \"", replace):
             replace_filtered = re.sub(r'".*"', '"****"', replace)
-        logging.debug("Searching for %s and replacing with %s" % (search, replace_filtered))
+        logging.debug("Searching for %s and replacing with %s", search, replace_filtered)
         for index, line in enumerate(self.new_config):
             if line.lstrip().startswith("#"):
                 continue
@@ -137,7 +136,7 @@ class CsFile:
 
     def searchString(self, search, ignoreLinesStartWith):
         found = False
-        logging.debug("Searching for %s string " % search)
+        logging.debug("Searching for %s string ", search)
 
         for index, line in enumerate(self.new_config):
             print ' line = ' +line
@@ -151,8 +150,7 @@ class CsFile:
 
 
     def deleteLine(self, search):
-        found = False
-        logging.debug("Searching for %s to remove the line " % search)
+        logging.debug("Searching for %s to remove the line ", search)
         temp_config = []
         for index, line in enumerate(self.new_config):
             if line.lstrip().startswith("#"):
@@ -165,5 +163,5 @@ class CsFile:
 
     def compare(self, o):
         result = (isinstance(o, self.__class__) and set(self.config) == set(o.config))
-        logging.debug("Comparison of CsFiles content is ==> %s" % result)
+        logging.debug("Comparison of CsFiles content is ==> %s", result)
         return result

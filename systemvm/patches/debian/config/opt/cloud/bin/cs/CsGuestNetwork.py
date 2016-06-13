@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 from merge import DataBag
-import CsHelper
 
 
 class CsGuestNetwork:
@@ -40,7 +39,9 @@ class CsGuestNetwork:
             return self.config.get_dns()
         # Can a router provide dhcp but not dns?
         if 'dns' in self.data and 'router_guest_gateway' in self.data:
-            return [self.data['router_guest_gateway']] + self.data['dns'].split(',')
+            return [
+                self.data['router_guest_gateway']
+            ] + self.data['dns'].split(',')
         elif "router_guest_gateway" in self.data:
             return [self.data['router_guest_gateway']]
         else:
@@ -53,13 +54,17 @@ class CsGuestNetwork:
         self.data['router_guest_gateway'] = val
 
     def get_netmask(self):
-        # We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
+        # FIXME: We need to fix it properly.
+	# I just added the if, as Ian did in some other files
+	# to avoid the exception.
         if 'router_guest_netmask' in self.data:
             return self.data['router_guest_netmask']
         return ''
 
     def get_gateway(self):
-        # We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
+        # FIXME: We need to fix it properly.
+	# I just added the if, as Ian did in some other files
+	# to avoid the exception.
         if 'router_guest_gateway' in self.data:
             return self.data['router_guest_gateway']
         return ''

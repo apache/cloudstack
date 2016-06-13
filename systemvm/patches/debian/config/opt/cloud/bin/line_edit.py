@@ -154,9 +154,9 @@ class LineEditingFile(object):
                             edit.sub, line, remaining_count)
                         if changed_line != line:
                             if changed_file is None:
-                                logging.debug("Editing file %s" % self.filename)
-                            logging.debug("  - %s" % line[:-1])
-                            logging.debug("  + %s" % changed_line[:-1])
+                                logging.debug("Editing file %s", self.filename)
+                            logging.debug("  - %s", line[:-1])
+                            logging.debug("  + %s", changed_line[:-1])
                             changes += subs
                             edit.subs += subs
                     if changes == 0:                                   # buffer until we find a change
@@ -176,8 +176,7 @@ class LineEditingFile(object):
                         changed_file.write(changed_line)
 
             if changes == 0:
-                logging.info("No edits need for file %s" %
-                             self.filename)
+                logging.info("No edits need for file %s", self.filename)
             else:
                 changed_file.close()
                 changed_file = None
@@ -185,8 +184,8 @@ class LineEditingFile(object):
                     os.unlink(backup_filename)
                 shutil.copy(self.filename, backup_filename)
                 os.rename(changed_filename, self.filename)             # the swap
-                logging.info("Edited file %s (%d changes)" %
-                             (self.filename, changes))
+                logging.info("Edited file %s (%d changes)",
+                             self.filename, changes)
         finally:
             if changed_file is not None:                               # failed, clean up
                 changed_file.close()
@@ -194,6 +193,6 @@ class LineEditingFile(object):
         return changes
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     import doctest
+    logging.basicConfig(level=logging.DEBUG)
     doctest.testmod()

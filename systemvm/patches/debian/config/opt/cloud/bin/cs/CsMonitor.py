@@ -14,9 +14,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import logging
 from cs.CsDatabag import CsDataBag
-from CsFile import CsFile
+from cs.CsFile import CsFile
 
 MON_CONFIG = "/etc/monitor.conf"
 
@@ -28,14 +27,14 @@ class CsMonitor(CsDataBag):
         if "config" not in self.dbag:
             return
         procs = [x.strip() for x in self.dbag['config'].split(',')]
-        file = CsFile(MON_CONFIG)
+        cs_file = CsFile(MON_CONFIG)
         for proc in procs:
             bits = [x for x in proc.split(':')]
             if len(bits) < 5:
                 continue
             for i in range(0, 4):
-                file.add(bits[i], -1)
-        file.commit()
+                cs_file.add(bits[i], -1)
+        cs_file.commit()
         cron = CsFile("/etc/cron.d/process")
         cron.add("SHELL=/bin/bash", 0)
         cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
