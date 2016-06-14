@@ -36,11 +36,13 @@ public class AlertResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "One of the following alert types: "
-        + "MEMORY = 0, CPU = 1, STORAGE = 2, STORAGE_ALLOCATED = 3, PUBLIC_IP = 4, PRIVATE_IP = 5, HOST = 6, USERVM = 7, "
-        + "DOMAIN_ROUTER = 8, CONSOLE_PROXY = 9, ROUTING = 10: lost connection to default route (to the gateway), "
-        + "STORAGE_MISC = 11: lost connection to default route (to the gateway), " + "USAGE_SERVER = 12: lost connection to default route (to the gateway), "
-        + "MANAGMENT_NODE = 13: lost connection to default route (to the gateway), "
-        + "DOMAIN_ROUTER_MIGRATE = 14, CONSOLE_PROXY_MIGRATE = 15, USERVM_MIGRATE = 16, VLAN = 17, SSVM = 18, " + "USAGE_SERVER_RESULT = 19")
+        + "MEMORY = 0, CPU = 1, STORAGE = 2, STORAGE_ALLOCATED = 3, PUBLIC_IP = 4, PRIVATE_IP = 5, SECONDARY_STORAGE = 6, "
+        + "HOST = 7, USERVM = 8, DOMAIN_ROUTER = 9, CONSOLE_PROXY = 10, "
+        + "ROUTING = 11: lost connection to default route (to the gateway), "
+        + "STORAGE_MISC = 12, USAGE_SERVER = 13, MANAGMENT_NODE = 14, DOMAIN_ROUTER_MIGRATE = 15, CONSOLE_PROXY_MIGRATE = 16, "
+        + "USERVM_MIGRATE = 17, VLAN = 18, SSVM = 19, USAGE_SERVER_RESULT = 20, STORAGE_DELETE = 21, UPDATE_RESOURCE_COUNT = 22, "
+        + "USAGE_SANITY_RESULT = 23, DIRECT_ATTACHED_PUBLIC_IP = 24, LOCAL_STORAGE = 25, RESOURCE_LIMIT_EXCEEDED = 26, "
+        + "SYNC = 27, UPLOAD_FAILED = 28, OOBM_AUTH_ERROR = 29")
     private Short alertType;
 
     @SerializedName(ApiConstants.NAME)
