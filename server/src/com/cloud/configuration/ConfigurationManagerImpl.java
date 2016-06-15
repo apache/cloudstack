@@ -4555,7 +4555,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         if (guestIpType != null) {
