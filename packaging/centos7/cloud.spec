@@ -208,6 +208,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/ipallocator
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
+mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/usage
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_initrddir}
@@ -301,6 +302,7 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
+chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/usage
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 
@@ -474,6 +476,10 @@ fi
 pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df
 pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
+if [ -f "/usr/local/libexec/sanity-check-last-id" ]; then
+    cp /usr/local/libexec/sanity-check-last-id %{_localstatedir}/cache/%{name}/usage
+fi
+
 #No default permission as the permission setup is complex
 %files management
 %defattr(-,root,root,-)
@@ -573,6 +579,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 %{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
+%dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/usage
 
 %files cli
 %attr(0644,root,root) %{python_sitearch}/cloudapis.py

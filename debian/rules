@@ -128,6 +128,7 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage/plugins
+	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/usage
 	install -D usage/target/cloud-usage-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
 	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
 	cp usage/target/transformed/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/

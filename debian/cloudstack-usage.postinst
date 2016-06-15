@@ -43,6 +43,10 @@ case "$1" in
             rm -rf /etc/cloudstack/usage/key
             ln -s /etc/cloudstack/management/key /etc/cloudstack/usage/key
         fi
+
+        # Usage cache folder permissions
+        chmod 0770 /var/cache/cloudstack/usage
+        chgrp cloud /var/cache/cloudstack/usage
         ;;
 esac
 

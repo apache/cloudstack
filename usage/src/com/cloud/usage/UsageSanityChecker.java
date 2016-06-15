@@ -43,9 +43,9 @@ public class UsageSanityChecker {
     protected static final int DEFAULT_AGGREGATION_RANGE = 1440;
     protected StringBuilder errors;
     protected List<CheckCase> checkCases;
-    protected String lastCheckFile = "/usr/local/libexec/sanity-check-last-id";
+    protected String lastCheckFile = "/var/cache/cloudstack/usage/sanity-check-last-id";
     protected String lastCheckId = "";
-    protected int lastId = -1;
+    protected int lastId = 0;
     protected int maxId = -1;
     protected Connection conn;
 
@@ -72,7 +72,9 @@ public class UsageSanityChecker {
         try (PreparedStatement pstmt = conn.prepareStatement(checkCase.sqlTemplate)) {
             if(checkCase.checkId) {
                 pstmt.setInt(1, lastId);
-                pstmt.setInt(2, maxId);
+                if (maxId > 0) {
+                    pstmt.setInt(2, maxId);
+                }
             }
             try(ResultSet rs = pstmt.executeQuery();) {
                 if (rs.next() && (rs.getInt(1) > 0)) {
@@ -172,13 +174,14 @@ public class UsageSanityChecker {
     protected void readLastCheckId(){
         try(BufferedReader reader = new BufferedReader(new FileReader(lastCheckFile));) {
             String lastIdText = null;
-            lastId = -1;
+            lastId = 0;
             if ((reader != null) && (lastIdText = reader.readLine()) != null) {
                 lastId = Integer.parseInt(lastIdText);
             }
         } catch (Exception e) {
             s_logger.error("readLastCheckId:Exception:"+e.getMessage(),e);
         }
+
     }
 
     protected void readMaxId() throws SQLException {
@@ -209,9 +212,8 @@ public class UsageSanityChecker {
     public String runSanityCheck() throws SQLException {
 
         readLastCheckId();
-        if (lastId > 0) {
-            lastCheckId = " and cu.id > ?";
-        }
+
+        lastCheckId = " and cu.id > ?";
 
         conn = getConnection();
         readMaxId();
@@ -225,6 +227,8 @@ public class UsageSanityChecker {
         checkSnapshotUsage();
 
         checkItemCountByPstmt();
+
+        updateNewMaxId();
 
         return errors.toString();
     }

@@ -20,3 +20,5 @@
 /etc/init.d/cloudstack-usage
 /etc/cloudstack/usage/*
 /etc/default/cloudstack-usage
+/var/cache/cloudstack/usage
+
