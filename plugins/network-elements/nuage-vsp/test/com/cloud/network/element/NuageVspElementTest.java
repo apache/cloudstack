@@ -113,6 +113,9 @@ public class NuageVspElementTest extends NuageTest {
     public void setUp() throws Exception {
         super.setUp();
         _nuageVspElement._nuageVspEntityBuilder = _nuageVspEntityBuilder;
+        when(_networkServiceMapDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NuageVsp)).thenReturn(true);
+        when(_networkServiceMapDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.SourceNat, Provider.NuageVsp)).thenReturn(true);
+
         _nuageVspElement.configure("NuageVspTestElement", Collections.<String, Object>emptyMap());
     }
 
@@ -128,7 +131,6 @@ public class NuageVspElementTest extends NuageTest {
         when(ntwkoffer.getIsPersistent()).thenReturn(true);
         when(_networkOfferingDao.findById(NETWORK_ID)).thenReturn(ntwkoffer);
 
-        when(_networkServiceMapDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NuageVsp)).thenReturn(true);
         // Golden path
         assertTrue(_nuageVspElement.canHandle(net, Service.Connectivity));
 
@@ -162,7 +164,6 @@ public class NuageVspElementTest extends NuageTest {
         when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
         when(network.getDomainId()).thenReturn(NETWORK_ID);
         when(_networkModel.isProviderForNetwork(Provider.NuageVsp, NETWORK_ID)).thenReturn(true);
-        when(_networkServiceMapDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NuageVsp)).thenReturn(true);
 
         final NetworkOffering offering = mock(NetworkOffering.class);
         when(offering.getId()).thenReturn(NETWORK_ID);
@@ -186,6 +187,7 @@ public class NuageVspElementTest extends NuageTest {
         when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
+        when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         when(_firewallRulesDao.listByNetworkPurposeTrafficType(NETWORK_ID, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress)).thenReturn(new ArrayList<FirewallRuleVO>());
         when(_firewallRulesDao.listByNetworkPurposeTrafficType(NETWORK_ID, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress)).thenReturn(new ArrayList<FirewallRuleVO>());
@@ -235,6 +237,7 @@ public class NuageVspElementTest extends NuageTest {
         when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
+        when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         when(_domainDao.findById(NETWORK_ID)).thenReturn(mock(DomainVO.class));
         final Answer answer = mock(Answer.class);
@@ -263,6 +266,7 @@ public class NuageVspElementTest extends NuageTest {
         when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
+        when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         when(_domainDao.findById(NETWORK_ID)).thenReturn(mock(DomainVO.class));
 
@@ -292,6 +296,7 @@ public class NuageVspElementTest extends NuageTest {
         when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
+        when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         when(_domainDao.findById(NETWORK_ID)).thenReturn(mock(DomainVO.class));
         final Answer answer = mock(Answer.class);
@@ -329,6 +334,7 @@ public class NuageVspElementTest extends NuageTest {
         when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Lists.newArrayList(nuageVspDevice));
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
+        when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         DomainRouterVO domainRouter = mock(DomainRouterVO.class);
         when(domainRouter.getUuid()).thenReturn("aaaaaa");

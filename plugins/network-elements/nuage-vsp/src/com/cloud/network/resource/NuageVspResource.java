@@ -58,6 +58,7 @@ import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
 import com.cloud.agent.api.guru.ReserveVmInterfaceVspCommand;
 import com.cloud.agent.api.guru.TrashNetworkVspCommand;
 import com.cloud.agent.api.guru.UpdateDhcpOptionVspCommand;
+import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.agent.api.manager.GetApiDefaultsAnswer;
 import com.cloud.agent.api.manager.GetApiDefaultsCommand;
 import com.cloud.agent.api.manager.SupportedApiVersionCommand;
@@ -65,12 +66,14 @@ import com.cloud.agent.api.sync.SyncDomainAnswer;
 import com.cloud.agent.api.sync.SyncDomainCommand;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdAnswer;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
+import com.cloud.dc.Vlan;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.util.NuageVspUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import net.nuage.vsp.acs.client.common.model.NuageVspEntity;
 
 import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
 
@@ -323,6 +326,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             return executeRequest((GetApiDefaultsCommand)cmd);
         } else if (cmd instanceof SupportedApiVersionCommand) {
             return executeRequest((SupportedApiVersionCommand)cmd);
+        } else if (cmd instanceof EntityExistsCommand) {
+            return executeRequest((EntityExistsCommand)cmd);
         }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Received unsupported command " + cmd.toString());
@@ -509,6 +514,21 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             boolean supported = _nuageVspManagerClient.isSupportedApiVersion(cmd.getApiVersion());
             return new Answer(cmd, supported, "Check if API version " + cmd.getApiVersion() + " is supported");
         } catch (ConfigurationException e) {
+            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
+            return new Answer(cmd, e);
+        }
+    }
+
+    private Answer executeRequest(EntityExistsCommand cmd) {
+        try {
+            isNuageVspApiLoaded();
+            NuageVspEntity entityType = null;
+            if (Vlan.class.isAssignableFrom(cmd.getType())) {
+                entityType = NuageVspEntity.SHARED_NETWORK;
+            }
+            boolean exists = _nuageVspApiClient.entityExists(entityType, cmd.getUuid());
+            return new Answer(cmd, exists, "Check if entity with UUID " + cmd.getUuid() + " of type " + entityType + " exists");
+        } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
         }

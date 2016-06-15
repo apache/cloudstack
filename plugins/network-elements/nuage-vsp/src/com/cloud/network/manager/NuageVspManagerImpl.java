@@ -27,6 +27,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingNuageVspCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.agent.api.manager.GetApiDefaultsAnswer;
 import com.cloud.agent.api.manager.GetApiDefaultsCommand;
 import com.cloud.agent.api.manager.SupportedApiVersionCommand;
@@ -37,11 +38,20 @@ import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNuageVspDeviceCmd;
 import com.cloud.api.commands.DeleteNuageVspDeviceCmd;
+import com.cloud.api.commands.DisableNuageUnderlayVlanIpRangeCmd;
+import com.cloud.api.commands.EnableNuageUnderlayVlanIpRangeCmd;
+import com.cloud.api.commands.ListNuageUnderlayVlanIpRangesCmd;
 import com.cloud.api.commands.ListNuageVspDevicesCmd;
 import com.cloud.api.commands.UpdateNuageVspDeviceCmd;
+import com.cloud.api.response.NuageVlanIpRangeResponse;
 import com.cloud.api.response.NuageVspDeviceResponse;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -108,6 +118,7 @@ import com.cloud.util.NuageVspEntityBuilder;
 import net.nuage.vsp.acs.NuageVspPluginClientLoader;
 import net.nuage.vsp.acs.client.api.model.VspApiDefaults;
 import net.nuage.vsp.acs.client.api.model.VspDomain;
+import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -185,6 +196,12 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     NetworkOfferingServiceMapDao _networkOfferingServiceMapDao;
     @Inject
     NuageVspEntityBuilder _nuageVspEntityBuilder;
+    @Inject
+    VlanDao _vlanDao;
+    @Inject
+    VlanDetailsDao _vlanDetailsDao;
+    @Inject
+    ResponseGenerator _responseGenerator;
 
     @Inject
     MessageBus _messageBus;
@@ -209,7 +226,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     @Override
     public List<Class<?>> getCommands() {
         return Lists.<Class<?>>newArrayList(AddNuageVspDeviceCmd.class, DeleteNuageVspDeviceCmd.class, ListNuageVspDevicesCmd.class,
-                UpdateNuageVspDeviceCmd.class);
+                UpdateNuageVspDeviceCmd.class, EnableNuageUnderlayVlanIpRangeCmd.class, DisableNuageUnderlayVlanIpRangeCmd.class, ListNuageUnderlayVlanIpRangesCmd.class);
     }
 
     @Override
@@ -675,6 +692,63 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             return Lists.newArrayList(gatewaySystemIds.split(","));
         }
         return Lists.newArrayList();
+    }
+
+    @Override
+    public HostVO getNuageVspHost(long physicalNetworkId) {
+        HostVO nuageVspHost;
+        List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkId);
+        if (CollectionUtils.isEmpty(nuageVspDevices)) {
+            // Perhaps another physical network is passed from within the same zone, find the VSP physical network in that case
+            PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+            List<PhysicalNetworkVO> physicalNetworksInZone = _physicalNetworkDao.listByZone(physicalNetwork.getDataCenterId());
+            for (PhysicalNetworkVO physicalNetworkInZone : physicalNetworksInZone) {
+                if (physicalNetworkInZone.getIsolationMethods().contains(PhysicalNetwork.IsolationMethod.VSP.name())) {
+                    nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkInZone.getId());
+                    break;
+                }
+            }
+        }
+
+        if (CollectionUtils.isNotEmpty(nuageVspDevices)) {
+            NuageVspDeviceVO config = nuageVspDevices.iterator().next();
+            nuageVspHost = _hostDao.findById(config.getHostId());
+            _hostDao.loadDetails(nuageVspHost);
+        } else {
+            throw new CloudRuntimeException("There is no Nuage VSP device configured on physical network " + physicalNetworkId);
+        }
+        return nuageVspHost;
+    }
+
+    @Override
+    public boolean updateNuageUnderlayVlanIpRange(long vlanIpRangeId, boolean enabled) {
+        VlanVO staticNatVlan = _vlanDao.findById(vlanIpRangeId);
+        HostVO nuageVspHost = getNuageVspHost(staticNatVlan.getPhysicalNetworkId());
+        EntityExistsCommand<Vlan> cmd = new EntityExistsCommand<Vlan>(Vlan.class, staticNatVlan.getUuid());
+        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
+        if (answer != null && !answer.getResult()) {
+            _vlanDetailsDao.addDetail(staticNatVlan.getId(), NuageVspManager.nuageUnderlayVlanIpRangeDetailKey, String.valueOf(enabled), false);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public List<NuageVlanIpRangeResponse> filterNuageVlanIpRanges(List<? extends Vlan> vlanIpRanges, Boolean underlay) {
+        List<NuageVlanIpRangeResponse> nuageVlanIpRanges = Lists.newArrayList();
+        for (Vlan vlanIpRange : vlanIpRanges) {
+            NuageVlanIpRangeResponse nuageVlanIpRange = (NuageVlanIpRangeResponse) _responseGenerator.createVlanIpRangeResponse(NuageVlanIpRangeResponse.class, vlanIpRange);
+
+            VlanDetailsVO nuageUnderlayDetail = _vlanDetailsDao.findDetail(vlanIpRange.getId(), NuageVspManager.nuageUnderlayVlanIpRangeDetailKey);
+            boolean underlayEnabled = nuageUnderlayDetail != null && nuageUnderlayDetail.getValue().equalsIgnoreCase(String.valueOf(true));
+            nuageVlanIpRange.setUnderlay(underlayEnabled);
+            if (underlay == null || underlayEnabled == underlay) {
+                nuageVlanIpRanges.add(nuageVlanIpRange);
+            }
+            nuageVlanIpRange.setObjectName("nuagevlaniprange");
+        }
+        return nuageVlanIpRanges;
     }
 
     @Override

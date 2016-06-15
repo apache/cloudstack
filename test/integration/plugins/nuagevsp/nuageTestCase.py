@@ -40,7 +40,7 @@ from marvin.lib.base import (EgressFireWallRule,
 from marvin.lib.common import (get_domain,
                                get_template,
                                get_zone)
-from marvin.cloudstackAPI import restartVPC
+from marvin.cloudstackAPI import restartVPC, listNuageUnderlayVlanIpRanges
 # Import System Modules
 import importlib
 import functools
@@ -139,7 +139,7 @@ class nuageTestCase(cloudstackTestCase):
                 cls.api_client,
                 physicalnetworkid=cls.vsp_physical_network.id)[0]
 
-            # Take username and password from the datacenter config file,
+            # Get username and password from the Marvin config file,
             # as they are not returned by the API.
             config_nuage_device = next(device for zone in cls.config.zones
                                        if zone.name == cls.zone.name
@@ -156,6 +156,36 @@ class nuageTestCase(cloudstackTestCase):
             cls.tearDownClass()
             raise unittest.SkipTest("Warning: Could not get configured "
                                     "Nuage VSP device details - %s" % e)
+
+        # Get data center Internet connectivity information from the Marvin
+        # config file, which is required to perform Internet connectivity and
+        # traffic tests from the guest VMs.
+        cls.isInternetConnectivityAvailable = False
+        cls.http_proxy = None
+        cls.https_proxy = None
+        dc_internet_conn_info = cls.config.dcInternetConnectivityInfo if \
+            cls.config.dcInternetConnectivityInfo else None
+        if dc_internet_conn_info:
+            dc_internet_conn_available = dc_internet_conn_info.available if \
+                dc_internet_conn_info.available else None
+            if dc_internet_conn_available:
+                cls.isInternetConnectivityAvailable = True if \
+                    dc_internet_conn_available == "true" else False
+            dc_internet_conn_http_proxy = dc_internet_conn_info.httpProxy if \
+                dc_internet_conn_info.httpProxy else None
+            if dc_internet_conn_http_proxy:
+                cls.http_proxy = dc_internet_conn_http_proxy
+            dc_internet_conn_https_proxy = dc_internet_conn_info.httpsProxy \
+                if dc_internet_conn_info.httpsProxy else None
+            if dc_internet_conn_https_proxy:
+                cls.https_proxy = dc_internet_conn_https_proxy
+
+        # Check if the configured Nuage VSP SDN platform infrastructure
+        # supports underlay networking
+        cmd = listNuageUnderlayVlanIpRanges.listNuageUnderlayVlanIpRangesCmd()
+        cmd.underlay = True
+        cls.isNuageInfraUnderlay = isinstance(
+            cls.api_client.listNuageUnderlayVlanIpRanges(cmd), list)
         return
 
     @classmethod
@@ -596,8 +626,11 @@ class nuageTestCase(cloudstackTestCase):
 
     # wget_from_server - Fetches file with the given file name from a web
     # server listening on the given public IP address and port
-    def wget_from_server(self, public_ip, port, file_name="index.html"):
+    def wget_from_server(self, public_ip, port=80, file_name="index.html",
+                         disable_system_proxies=True):
         import urllib
+        if disable_system_proxies:
+            urllib.getproxies = lambda: {}
         self.debug("wget file - %s from a http web server listening on "
                    "public IP address - %s and port - %s" %
                    (file_name, public_ip.ipaddress.ipaddress, port))
@@ -606,6 +639,9 @@ class nuageTestCase(cloudstackTestCase):
             (public_ip.ipaddress.ipaddress, port, file_name),
             filename=file_name
         )
+        self.debug("Successful to wget file - %s from a http web server "
+                   "listening on public IP address - %s and port - %s" %
+                   (file_name, public_ip.ipaddress.ipaddress, port))
         return filename, headers
 
     # validate_NetworkServiceProvider - Validates the given Network Service
@@ -971,6 +1007,20 @@ class nuageTestCase(cloudstackTestCase):
         self.assertEqual(vsd_fip.assigned, True,
                          "Floating IP in VSD should be assigned"
                          )
+        ext_fip_subnet_filter = self.get_externalID_filter(
+            public_ipaddress.vlanid)
+        vsd_fip_subnet = self.vsd.get_shared_network_resource(
+            filter=ext_fip_subnet_filter)
+        if self.isNuageInfraUnderlay:
+            self.assertEqual(vsd_fip_subnet.underlay, True,
+                             "Floating IP subnet in VSD should be underlay "
+                             "enabled"
+                             )
+        else:
+            self.assertEqual(vsd_fip_subnet.underlay, False,
+                             "Floating IP subnet in VSD should be underlay "
+                             "disabled"
+                             )
         ext_network_filter = self.get_externalID_filter(vpc.id) if vpc \
             else self.get_externalID_filter(network.id)
         vsd_domain = self.vsd.get_domain(filter=ext_network_filter)

@@ -21,6 +21,7 @@ package com.cloud.util;
 
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -87,6 +88,8 @@ public class NuageVspEntityBuilder {
     NetworkModel _networkModel;
     @Inject
     VlanDao _vlanDao;
+    @Inject
+    VlanDetailsDao _vlanDetailsDao;
     @Inject
     ConfigurationDao _configurationDao;
     @Inject
@@ -291,7 +294,8 @@ public class NuageVspEntityBuilder {
                 .oneToOneNat(staticNatIp.isOneToOneNat())
                 .vlanUuid(staticNatVlan.getUuid())
                 .vlanGateway(staticNatVlan.getVlanGateway())
-                .vlanNetmask(staticNatVlan.getVlanNetmask());
+                .vlanNetmask(staticNatVlan.getVlanNetmask())
+                .vlanUnderlay(NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, staticNatVlan));
 
         if (nic != null) {
             VspNic vspNic = buildVspNic(nic);

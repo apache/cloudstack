@@ -19,6 +19,9 @@
 
 package com.cloud.util;
 
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -57,5 +60,10 @@ public class NuageVspUtil {
         byte[] encodedPasswordBytes = encodedPassword.getBytes(StringUtils.getPreferredCharset());
         byte[] passwordBytes = Base64.decodeBase64(encodedPasswordBytes);
         return new String(passwordBytes, StringUtils.getPreferredCharset());
+    }
+
+    public static boolean isUnderlayEnabledForVlan(VlanDetailsDao vlanDetailsDao, Vlan vlan) {
+        VlanDetailsVO nuageUnderlayDetail = vlanDetailsDao.findDetail(vlan.getId(), NuageVspManager.nuageUnderlayVlanIpRangeDetailKey);
+        return nuageUnderlayDetail != null && nuageUnderlayDetail.getValue().equalsIgnoreCase(String.valueOf(true));
     }
 }
