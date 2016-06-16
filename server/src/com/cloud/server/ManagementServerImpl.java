@@ -1652,6 +1652,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Boolean showHidden = cmd.getShowHidden();
+
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -1701,8 +1703,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.addAnd("category", SearchCriteria.Op.EQ, category);
         }
 
-        // hidden configurations are not displayed using the search API
-        sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
+        if (!showHidden) {
+            // hidden configurations are not displayed using the search API unless showHidden == true
+            sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
+        } else if (!Boolean.valueOf(_configs.get(Config.AllowShowHiddenConfigViaApi.key()))) {
+            throw new InvalidParameterValueException("showhidden not allowed");
+        }
 
         if (scope != null && !scope.isEmpty()) {
             // getting the list of parameters at requested scope

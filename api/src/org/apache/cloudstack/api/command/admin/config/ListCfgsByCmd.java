@@ -76,6 +76,12 @@ public class ListCfgsByCmd extends BaseListCmd {
                description = "the ID of the Account to update the parameter value for corresponding account")
     private Long accountId;
 
+    @Parameter(name = ApiConstants.SHOWHIDDEN,
+               type = CommandType.BOOLEAN,
+               description = "Whether to show hidden parameters")
+    private Boolean showHidden;
+
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -102,6 +108,13 @@ public class ListCfgsByCmd extends BaseListCmd {
 
     public Long getAccountId() {
         return accountId;
+    }
+
+    public Boolean getShowHidden() {
+        if(showHidden == null) {
+            showHidden = Boolean.FALSE;
+        }
+        return showHidden;
     }
 
     @Override
