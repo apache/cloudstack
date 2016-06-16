@@ -154,6 +154,7 @@
                                 $.ajax({
                                     url: createURL('listClusters'),
                                     data: {zoneid: zone.id, pagesize: -1},
+
                                     success: function(json) {
                                         if (json && json.listclustersresponse && json.listclustersresponse.cluster && json.listclustersresponse.count) {
                                             items[idx].clusters += parseInt(json.listclustersresponse.count);
@@ -181,15 +182,22 @@
                                                                 }
 
                                                                 if (host.hasOwnProperty('memoryused')) {
-                                                                    var hostMemoryUsage = 100.0 * parseFloat(host.memoryused) /  parseFloat(host.memorytotal);
+                                                                    if(!((host.memorytotal===undefined) || (host.memorytotal==0))){
+
+                                                                    var hostMemoryUsage = 100.0 * parseFloat(host.memoryused) /
+                                                                                        parseFloat(host.memorytotal);
                                                                     items[idx].memusedavg += hostMemoryUsage;
                                                                     if (hostMemoryUsage > items[idx].maxMemUsed) {
                                                                         items[idx].maxMemUsed = hostMemoryUsage;
+                                                                      }
                                                                     }
                                                                 }
 
                                                                 if (host.hasOwnProperty('memoryallocated')) {
-                                                                    items[idx].memallocated += parseFloat(100.0 * parseFloat(host.memoryallocated)/parseFloat(host.memorytotal));
+                                                                    if(!((host.memorytotal===undefined) || (host.memorytotal==0))){
+                                                                      items[idx].memallocated +=
+                                                                                parseFloat(100.0 * parseFloat(host.memoryallocated)/parseFloat(host.memorytotal));
+                                                                    }
                                                                 }
                                                             });
                                                         }
@@ -446,15 +454,19 @@
                                                 }
 
                                                 if (host.hasOwnProperty('memoryused')) {
-                                                    var hostMemoryUsage = 100.0 * parseFloat(host.memoryused) /  parseFloat(host.memorytotal);
-                                                    items[idx].memusedavg += hostMemoryUsage;
-                                                    if (hostMemoryUsage > items[idx].maxMemUsed) {
+                                                    if(!((host.memorytotal===undefined) || (host.memorytotal==0))){
+                                                        var hostMemoryUsage = 100.0 * parseFloat(host.memoryused) /  parseFloat(host.memorytotal);
+                                                        items[idx].memusedavg += hostMemoryUsage;
+                                                        if (hostMemoryUsage > items[idx].maxMemUsed) {
                                                         items[idx].maxMemUsed = hostMemoryUsage;
+                                                       }
                                                     }
                                                 }
 
                                                 if (host.hasOwnProperty('memoryallocated')) {
-                                                    items[idx].memallocated += parseFloat(100.0 * parseFloat(host.memoryallocated)/parseFloat(host.memorytotal));
+                                                    if(!((host.memorytotal===undefined) || (host.memorytotal==0))){
+                                                        items[idx].memallocated += parseFloat(100.0 * parseFloat(host.memoryallocated)/parseFloat(host.memorytotal));
+                                                    }
                                                 }
                                             });
                                         }
@@ -687,12 +699,17 @@
                                     items[idx].cpuusedavg = '';
                                 }
                                 items[idx].cpuallocated = (parseFloat(host.cpuallocated) * items[idx].cputotal / 100.0).toFixed(2) + ' Ghz';
-                                items[idx].memtotal = (parseFloat(host.memorytotal)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
-                                items[idx].memallocated = (parseFloat(host.memoryallocated)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
+                                if(host.memorytotal===undefined){
+                                    items[idx].memtotal = (0.00).toFixed(2) + ' GB';
+                                }
+                                else{
+                                    items[idx].memtotal = (parseFloat(host.memorytotal)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
+                                }
+                                items[idx].memallocated = ((((parseFloat(host.memoryallocated))* host.memorytotal) / 100) /(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
                                 if (host.memoryused) {
                                     items[idx].memusedavg = (parseFloat(host.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
                                 } else {
-                                    items[idx].memusedavg = '';
+                                    items[idx].memusedavg = (0.00).toFixed(2)  + ' GB';
                                 }
                                 if (host.networkkbsread && host.networkkbswrite) {
                                     items[idx].networkread = (parseFloat(host.networkkbsread)/(1024.0*1024.0)).toFixed(2) + ' GB';
@@ -766,7 +783,11 @@
                                 items[idx].instancesUp = 0;
                                 $.ajax({
                                     url: createURL('listVirtualMachines'),
-                                    data: {hostid: host.id, listAll: true},
+                                    data: {
+                                        hostid: host.id,
+                                        listAll: true,
+                                        pageSize: -1
+                                    },
                                     success: function(json) {
                                         if (json && json.listvirtualmachinesresponse && json.listvirtualmachinesresponse.virtualmachine) {
                                             var vms = json.listvirtualmachinesresponse.virtualmachine;
@@ -916,7 +937,10 @@
                                 items[idx].diskread = (parseFloat(vm.diskkbsread)/(1024.0)).toFixed(2) + ' MB';
                                 items[idx].diskwrite = (parseFloat(vm.diskkbswrite)/(1024.0)).toFixed(2) + ' MB';
                                 items[idx].diskiopstotal = parseFloat(vm.diskioread) + parseFloat(vm.diskiowrite);
-                                if (vm.nic && vm.nic.length > 0 && vm.nic[0].ipaddress) {
+				 if(items[idx].diskiopstotal == 0){
+                                    items[idx].diskiopstotal = ((parseFloat(vm.diskkbsread) + parseFloat(vm.diskkbswrite))/(1024.0)).toFixed(2) + ' MB';
+                                }                                
+				 if (vm.nic && vm.nic.length > 0 && vm.nic[0].ipaddress) {
                                     items[idx].ipaddress = vm.nic[0].ipaddress;
                                 }
 
@@ -1141,9 +1165,9 @@
                                 } else {
                                     items[idx].disksizeused = '';
                                 }
-                                items[idx].disksizetotal = parseFloat(pool.disksizetotal);
-                                items[idx].disksizeallocated = parseFloat(pool.disksizeallocated);
-                                items[idx].disksizeunallocated = (items[idx].overprovisionfactor * items[idx].disksizetotal) - items[idx].disksizeallocated;
+                                items[idx].disksizetotal = (items[idx].overprovisionfactor * parseFloat(pool.disksizetotal));
+                                items[idx].disksizeallocated = (items[idx].overprovisionfactor * parseFloat(pool.disksizeallocated));
+                                items[idx].disksizeunallocated = (items[idx].disksizetotal) - items[idx].disksizeallocated;
 
                                 // Format presentation
                                 items[idx].disksizetotal = (items[idx].disksizetotal/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB (x' + items[idx].overprovisionfactor + ')';
