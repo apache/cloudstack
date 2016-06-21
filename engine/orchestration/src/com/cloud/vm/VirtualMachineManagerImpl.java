@@ -1428,6 +1428,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceStop(vm, cleanUpEvenIfUnableToStop);
     }
 
+    /**
+     * Send StopCommand to stop vm.<br/>
+     * <strong>Not releasing network resources until expunge command is sent</strong>
+     * @param vm virtual machine
+     * @param cleanUpEvenIfUnableToStop if true -> cleanup even if vm cannot be stopped. if false -> not cleaning up if vm cannot be stopped.
+     * @throws AgentUnavailableException
+     * @throws OperationTimedoutException
+     * @throws ConcurrentOperationException
+     */
     private void advanceStop(final VMInstanceVO vm, final boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException,
     ConcurrentOperationException {
         final State state = vm.getState();
@@ -1574,14 +1583,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(vm + " is stopped on the host.  Proceeding to release resource held.");
-        }
-
-        try {
-            s_logger.debug("Not releasing network resources until expunge command is sent");
-            //_networkMgr.release(profile, cleanUpEvenIfUnableToStop);
-            //s_logger.debug("Successfully released network resources for the vm " + vm);
-        } catch (final Exception e) {
-            s_logger.warn("Unable to release some network resources.", e);
         }
 
         try {

@@ -2097,8 +2097,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     private void releaseNetworkResourcesOnExpunge(long id) throws ConcurrentOperationException, ResourceUnavailableException {
         final VMInstanceVO vmInstance = _vmDao.findById(id);
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vmInstance);
-        _networkMgr.release(profile, false);
+        if (vmInstance != null){
+            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vmInstance);
+            _networkMgr.release(profile, false);
+        }
+        else {
+            s_logger.error("Couldn't find vm with id = " + id + ", unable to release network resources");
+        }
     }
 
     private boolean cleanupVmResources(long vmId) {
