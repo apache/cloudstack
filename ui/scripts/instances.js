@@ -2263,7 +2263,7 @@
                             if (isAdmin()) {
                                 hiddenFields = [];
                             } else {
-                                hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
+                                hiddenFields = ["hypervisor"];
                             }
 
                             if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
@@ -2381,12 +2381,7 @@
                             xenserverToolsVersion61plus: {
                                 label: 'label.Xenserver.Tools.Version61plus',
                                 isBoolean: true,
-                                isEditable: function () {
-                                    if (isAdmin())
-                                        return true;
-                                    else
-                                        return false;
-                                },
+                                isEditable: true,
                                 converter: cloudStack.converters.toBooleanText
                             },
 

@@ -1289,9 +1289,8 @@
                                     desc: '',
                                     preFilter: function(args) {
                                         if (args.context.volumes[0].hypervisor == "XenServer") {
-                                            if (isAdmin()) {
-                                                args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
-                                            }
+                                            args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+
                                         }
                                     },
                                     fields: {
