@@ -114,11 +114,25 @@ import com.cloud.vm.VmDetailConstants;
 
 public class VmwareStorageProcessor implements StorageProcessor {
 
+    public enum VmwareStorageProcessorConfigurableFields {
+        NFS_VERSION("nfsVersion"), FULL_CLONE_FLAG("fullCloneFlag");
+
+        private String name;
+
+        VmwareStorageProcessorConfigurableFields(String name){
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
     private static final int DEFAULT_NFS_PORT = 2049;
 
     private final VmwareHostService hostService;
-    private final boolean _fullCloneFlag;
+    private boolean _fullCloneFlag;
     private final VmwareStorageMount mountService;
     private final VmwareResource resource;
     private final Integer _timeout;
@@ -2393,5 +2407,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
     public void setNfsVersion(Integer nfsVersion){
         this._nfsVersion = nfsVersion;
         s_logger.debug("VmwareProcessor instance now using NFS version: " + nfsVersion);
+    }
+
+    public void setFullCloneFlag(boolean value){
+        this._fullCloneFlag = value;
+        s_logger.debug("VmwareProcessor instance - create full clone = " + (value ? "TRUE" : "FALSE"));
     }
 }

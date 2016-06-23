@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -100,6 +101,7 @@ import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.math.NumberUtils;
@@ -266,6 +268,7 @@ import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.VmwareStorageLayoutHelper;
 import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
+import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ExecutionResult;
@@ -537,15 +540,54 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected void checkStorageProcessorAndHandlerNfsVersionAttribute(StorageSubSystemCommand cmd) {
         if (storageNfsVersion != null) return;
         if (cmd instanceof CopyCommand){
-            examineStorageSubSystemCommandNfsVersion((CopyCommand) cmd);
+            EnumMap<VmwareStorageProcessorConfigurableFields,Object> params = new EnumMap<VmwareStorageProcessorConfigurableFields,Object>(VmwareStorageProcessorConfigurableFields.class);
+            examineStorageSubSystemCommandNfsVersion((CopyCommand) cmd, params);
+            params = examineStorageSubSystemCommandFullCloneFlagForVmware((CopyCommand) cmd, params);
+            reconfigureProcessorByHandler(params);
         }
+    }
+
+    /**
+     * Reconfigure processor by handler
+     * @param params params
+     */
+    protected void reconfigureProcessorByHandler(EnumMap<VmwareStorageProcessorConfigurableFields,Object> params) {
+        VmwareStorageSubsystemCommandHandler handler = (VmwareStorageSubsystemCommandHandler) storageHandler;
+        boolean success = handler.reconfigureStorageProcessor(params);
+        if (success){
+            s_logger.info("VmwareStorageProcessor and VmwareStorageSubsystemCommandHandler successfully reconfigured");
+        } else {
+            s_logger.error("Error while reconfiguring VmwareStorageProcessor and VmwareStorageSubsystemCommandHandler, params=" + _gson.toJson(params));
+        }
+    }
+
+    /**
+     * Examine StorageSubSystem command to get full clone flag, if provided
+     * @param cmd command to execute
+     * @param params params
+     * @return copy of params including new values, if suitable
+     */
+    protected EnumMap<VmwareStorageProcessorConfigurableFields,Object> examineStorageSubSystemCommandFullCloneFlagForVmware(CopyCommand cmd, EnumMap<VmwareStorageProcessorConfigurableFields,Object> params) {
+        EnumMap<VmwareStorageProcessorConfigurableFields, Object> paramsCopy = new EnumMap<VmwareStorageProcessorConfigurableFields, Object>(params);
+        HypervisorType hypervisor = cmd.getDestTO().getHypervisorType();
+        if (hypervisor != null && hypervisor.equals(HypervisorType.VMware)){
+            DataStoreTO destDataStore = cmd.getDestTO().getDataStore();
+            if (destDataStore instanceof PrimaryDataStoreTO){
+                PrimaryDataStoreTO dest = (PrimaryDataStoreTO) destDataStore;
+                if (dest.isFullCloneFlag() != null){
+                    paramsCopy.put(VmwareStorageProcessorConfigurableFields.FULL_CLONE_FLAG, dest.isFullCloneFlag().booleanValue());
+                }
+            }
+        }
+        return paramsCopy;
     }
 
     /**
      * Examine StorageSubSystem command to get storage NFS version, if provided
      * @param cmd command to execute
+     * @param params params
      */
-    protected void examineStorageSubSystemCommandNfsVersion(CopyCommand cmd){
+    protected void examineStorageSubSystemCommandNfsVersion(CopyCommand cmd, EnumMap<VmwareStorageProcessorConfigurableFields,Object> params){
         DataStoreTO srcDataStore = cmd.getSrcTO().getDataStore();
         boolean nfsVersionFound = false;
 
@@ -554,7 +596,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         if (nfsVersionFound){
-            setCurrentNfsVersionInProcessorAndHandler();
+            params.put(VmwareStorageProcessorConfigurableFields.NFS_VERSION, storageNfsVersion);
         }
     }
 
@@ -569,20 +611,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return true;
         }
         return false;
-    }
-
-    /**
-     * Sets _storageNfsVersion into storage processor and storage handler by calling reconfigureNfsVersion on the storage handler,
-     * which will set NFS version into it and the storage processor.
-     */
-    protected void setCurrentNfsVersionInProcessorAndHandler() {
-        VmwareStorageSubsystemCommandHandler handler = (VmwareStorageSubsystemCommandHandler) storageHandler;
-        boolean success = handler.reconfigureNfsVersion(storageNfsVersion);
-        if (success){
-            s_logger.info("NFS version " + storageNfsVersion + " successfully set in VmwareStorageProcessor and VmwareStorageSubsystemCommandHandler");
-        } else {
-            s_logger.error("Error while setting NFS version " + storageNfsVersion);
-        }
     }
 
     /**
