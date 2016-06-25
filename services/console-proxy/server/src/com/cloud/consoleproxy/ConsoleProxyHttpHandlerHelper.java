@@ -22,21 +22,24 @@ import java.util.Map;
 import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyHttpHandlerHelper {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyHttpHandlerHelper.class);
-
+   
+	private static final Logger s_logger = Logger.getLogger(ConsoleProxyHttpHandlerHelper.class);
+	
+	private static final String EQUALS = "=";
+	
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");
         Map<String, String> map = new HashMap<String, String>();
         for (String param : params) {
-            String[] paramTokens = param.split("=");
+            String[] paramTokens = param.split(EQUALS);
             if (paramTokens != null && paramTokens.length == 2) {
-                String name = param.split("=")[0];
-                String value = param.split("=")[1];
+                String name = param.split(EQUALS)[0];
+                String value = param.split(EQUALS)[1];
                 map.put(name, value);
             } else if (paramTokens.length == 3) {
                 // very ugly, added for Xen tunneling url
                 String name = paramTokens[0];
-                String value = paramTokens[1] + "=" + paramTokens[2];
+                String value = paramTokens[1] + EQUALS + paramTokens[2];
                 map.put(name, value);
             } else {
                 if (s_logger.isDebugEnabled())
