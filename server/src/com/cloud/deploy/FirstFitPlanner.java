@@ -198,7 +198,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             final HashMap<Long, Long> UniqueTagsInClusterMap = new HashMap<Long, Long>();
             Long uniqueTags;
             for (Long clusterId : clusterList) {
-                uniqueTags = (long) 0;
+                uniqueTags = 0L;
             List<Long> hostList = capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, clusterId, Host.Type.Routing.toString());
             if (!hostList.isEmpty() && implicitHostTags.length > 0) {
                 uniqueTags = new Long(hostTagsDao.getDistinctImplicitHostTags(hostList, implicitHostTags).size());
