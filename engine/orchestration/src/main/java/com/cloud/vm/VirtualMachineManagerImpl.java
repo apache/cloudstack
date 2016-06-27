@@ -3670,7 +3670,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         //3) Remove the nic
         _networkMgr.removeNic(vmProfile, nic);
-        _nicsDao.expunge(nic.getId());
+        _nicsDao.remove(nic.getId());
         return true;
     }
 
