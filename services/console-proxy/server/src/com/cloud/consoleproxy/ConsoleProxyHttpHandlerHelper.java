@@ -22,10 +22,8 @@ import java.util.Map;
 import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyHttpHandlerHelper {
-   
-	private static final Logger s_logger = Logger.getLogger(ConsoleProxyHttpHandlerHelper.class);
-	
-	private static final String EQUALS = "=";
+-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyHttpHandlerHelper.class);
+-    private static final String EQUALS = "=";
 	
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");
