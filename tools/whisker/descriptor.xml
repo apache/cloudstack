@@ -2443,10 +2443,7 @@ Copyright (c) 2012 The Apache Software Foundation
             </copyright-notice>
             <by-organisation id='apache.org.2'>
                 <resource name='httpd.conf' />
-                <resource name='ports.conf' />
-                <resource name='vhostexample.conf' />
-                <resource name='sites-available/default' />
-                <resource name='sites-available/default-ssl' />
+                <resource name='vhost.template' />
             </by-organisation>
         </with-license>
     </within>

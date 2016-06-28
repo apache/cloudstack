@@ -892,10 +892,7 @@
               <exclude>systemvm/patches/debian/systemvm.vmx</exclude>
               <exclude>systemvm/patches/debian/config/root/.ssh/authorized_keys</exclude>
               <exclude>systemvm/patches/debian/config/etc/apache2/httpd.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/apache2/ports.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/apache2/sites-available/default</exclude>
-              <exclude>systemvm/patches/debian/config/etc/apache2/sites-available/default-ssl</exclude>
-              <exclude>systemvm/patches/debian/config/etc/apache2/vhostexample.conf</exclude>
+              <exclude>systemvm/patches/debian/config/etc/apache2/vhost.template</exclude>
               <exclude>systemvm/patches/debian/config/etc/dnsmasq.conf.tmpl</exclude>
               <exclude>systemvm/patches/debian/config/etc/vpcdnsmasq.conf</exclude>
               <exclude>systemvm/patches/debian/config/etc/ssh/sshd_config</exclude>

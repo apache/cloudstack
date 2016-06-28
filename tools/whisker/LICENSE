@@ -2771,10 +2771,7 @@ Within the patches/systemvm/debian/config/etc/apache2 directory
     Copyright (c) 2012 The Apache Software Foundation
         from The Apache Software Foundation  http://www.apache.org/ 
             httpd.conf 
-            ports.conf 
-            sites-available/default 
-            sites-available/default-ssl 
-            vhostexample.conf 
+            vhost.template
 
 Within the patches/systemvm/debian/config/etc/ssh/ directory
     licensed under the BSD (2-clause) http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
