@@ -45,12 +45,8 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
 
     public String[][] generateFwRules() {
         final List<NetworkACLTO> aclList = Arrays.asList(rules);
-        Collections.sort(aclList, new Comparator<NetworkACLTO>() {
-            @Override
-            public int compare(final NetworkACLTO acl1, final NetworkACLTO acl2) {
-                return acl1.getNumber() < acl2.getNumber() ? 1 : -1;
-            }
-        });
+
+        orderNetworkAclRulesByRuleNumber(aclList);
 
         final String[][] result = new String[2][aclList.size()];
         int i = 0;
@@ -95,6 +91,15 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
         }
 
         return result;
+    }
+
+    protected void orderNetworkAclRulesByRuleNumber(List<NetworkACLTO> aclList) {
+        Collections.sort(aclList, new Comparator<NetworkACLTO>() {
+            @Override
+            public int compare(final NetworkACLTO acl1, final NetworkACLTO acl2) {
+                return acl1.getNumber() > acl2.getNumber() ? 1 : -1;
+            }
+        });
     }
 
     public NicTO getNic() {
