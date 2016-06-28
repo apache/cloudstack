@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
@@ -60,7 +61,7 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
     public Answer execute(final MigrateWithStorageCommand command, final XenServer610Resource xenServer610Resource) {
         final Connection connection = xenServer610Resource.getConnection();
         final VirtualMachineTO vmSpec = command.getVirtualMachine();
-        final Map<VolumeTO, StorageFilerTO> volumeToFiler = command.getVolumeToFiler();
+        final List<Pair<VolumeTO, StorageFilerTO>> volumeToFiler = command.getVolumeToFilerAsList();
         final String vmName = vmSpec.getName();
         Task task = null;
 
@@ -80,13 +81,14 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
             final XsLocalNetwork nativeNetworkForTraffic = xenServer610Resource.getNativeNetworkForTraffic(connection, TrafficType.Storage, null);
             final Network networkForSm = nativeNetworkForTraffic.getNetwork();
 
-            // Create the vif map. The vm stays in the same cluster so we have to pass an empty vif map.
+            // Create the vif map. The  vm stays in the same cluster so we have to pass an empty vif map.
             final Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
             final Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
-            for (final Map.Entry<VolumeTO, StorageFilerTO> entry : volumeToFiler.entrySet()) {
-                final VolumeTO volume = entry.getKey();
-                final StorageFilerTO sotrageFiler = entry.getValue();
-                vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, volume.getPath()), xenServer610Resource.getStorageRepository(connection, sotrageFiler.getUuid()));
+
+            for (final Pair<VolumeTO, StorageFilerTO> entry : volumeToFiler) {
+                final StorageFilerTO storageFiler = entry.second();
+                final VolumeTO volume = entry.first();
+                vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, volume.getPath()), xenServer610Resource.getStorageRepository(connection, storageFiler.getUuid()));
             }
 
             // Get the vm to migrate.
