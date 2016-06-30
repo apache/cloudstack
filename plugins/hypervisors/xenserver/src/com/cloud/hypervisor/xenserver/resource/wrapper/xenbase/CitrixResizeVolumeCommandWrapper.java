@@ -77,7 +77,7 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
             Set<PBD> allPbds = new HashSet<>();
 
             for (SR sr : srs) {
-                if (!CitrixResourceBase.SRType.LVMOISCSI.equals(sr.getType(conn))) {
+                if (!(CitrixResourceBase.SRType.LVMOISCSI.equals(sr.getType(conn))))  {
                     continue;
                 }
 

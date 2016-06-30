@@ -1636,7 +1636,7 @@ class TestSnapshots(cloudstackTestCase):
         vol_snap = Snapshot.create(
             self.apiClient,
             volume_id=volume_id_for_snapshot,
-            locationtype=2
+            locationtype="secondary"
         )
 
         self._wait_for_snapshot_state(vol_snap.id, Snapshot.BACKED_UP)

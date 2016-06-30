@@ -131,6 +131,7 @@ public class ApiConstants {
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERVAL_TYPE = "intervaltype";
+    public static final String LOCATION_TYPE = "locationtype";
     public static final String IOPS_READ_RATE = "iopsreadrate";
     public static final String IOPS_WRITE_RATE = "iopswriterate";
     public static final String IP_ADDRESS = "ipaddress";

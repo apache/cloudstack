@@ -16,17 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-import java.util.List;
-
+import com.cloud.serializer.Param;
+import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.serializer.Param;
-import com.cloud.storage.Snapshot;
+import java.util.Date;
+import java.util.List;
 
 @EntityReference(value = Snapshot.class)
 public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
@@ -81,6 +79,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.INTERVAL_TYPE)
     @Param(description = "valid types are hourly, daily, weekly, monthy, template, and none.")
     private String intervalType;
+
+    @SerializedName(ApiConstants.LOCATION_TYPE)
+    @Param(description = "valid location types are primary and secondary.")
+    private String locationType;
 
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
@@ -164,6 +166,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     public void setIntervalType(String intervalType) {
         this.intervalType = intervalType;
+    }
+
+    public void setLocationType(String locationType) {
+        this.locationType = locationType;
     }
 
     public void setState(Snapshot.State state) {
