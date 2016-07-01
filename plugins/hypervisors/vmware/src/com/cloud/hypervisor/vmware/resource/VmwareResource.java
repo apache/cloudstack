@@ -43,6 +43,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -2226,13 +2227,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new String[] {datastoreDiskPath};
     }
 
-    // Pair<internal CS name, vCenter display name>
-    private Pair<String, String> composeVmNames(VirtualMachineTO vmSpec) {
-        String vmInternalCSName = vmSpec.getName();
-        String vmNameOnVcenter = vmSpec.getName();
-        if (_instanceNameFlag && vmSpec.getHostName() != null) {
-            vmNameOnVcenter = vmSpec.getHostName();
+    /**
+     * This method generates VM name for Vcenter and Cloudstack( when Hypervisor is VMware).
+     * It generates VM name according to  _instanceNameFlag setting.
+     *
+     * @param VirtualMachineTO
+     *        vmSpec
+     * @return Pair<internal CS name, vCenter display name>. A pair which contain 'internal CS name'  and
+     *         'vCenter display name'(vCenter knows VM by this name).
+     **/
+    protected Pair<String, String> composeVmNames(VirtualMachineTO vmSpec) throws CloudRuntimeException {
+
+        String vmInternalCSName = "";
+        String vmNameOnVcenter  = "";
+        if(vmSpec == null) {
+            throw new CloudRuntimeException("vmSpec is null");
         }
+
+        vmInternalCSName = vmNameOnVcenter = vmSpec.getName();
+        if (_instanceNameFlag && vmSpec.getType() == VirtualMachine.Type.User) {
+           String[] tokens = vmInternalCSName.split("-");
+           if(tokens.length<3) throw new InvalidParameterValueException("Invalid vmInternalCSName format: "+vmInternalCSName+" expected format : *-*-* (e.g -> i-x-y)"); // vmInternalCSName has format i-x-y-<instance.name>
+              vmNameOnVcenter = String.format("%s-%s-%s-%s", tokens[0], tokens[1], tokens[2], vmSpec.getHostName());
+        }
+
         return new Pair<String, String>(vmInternalCSName, vmNameOnVcenter);
     }
 

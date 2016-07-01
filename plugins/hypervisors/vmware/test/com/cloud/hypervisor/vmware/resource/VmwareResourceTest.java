@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,8 +37,12 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -404,4 +410,46 @@ public class VmwareResourceTest {
         verify(vmMo, never()).getRunningHost();
     }
 
+    @Test
+    public  void  testComposeVmNames() throws Exception{
+
+        Pair<String, String> op= null;
+
+        //case 1: vmSpec == null
+        try {
+            _resource.composeVmNames(null);
+            Assert.fail("Function should throw CloudRuntimeException "+ "vmSpec is null");
+        }catch(Exception e) {
+            assertThat(e, instanceOf(CloudRuntimeException.class));
+        }
+
+        //case 2: vmSpec != null
+        //case 2.1:  _instanceNameFlag == false
+        when(vmSpec.getName()).thenReturn("vmname");
+        _resource._instanceNameFlag = false;
+        op = _resource.composeVmNames(vmSpec);
+        assert(op.first().compareTo("vmname") == 0 && op.second().compareTo("vmname") == 0);
+
+        //case 2.2.1:  _instanceNameFlag == true  && vmSpec.getType() == VirtualMachine.Type.User
+        when(vmSpec.getName()).thenReturn("vmname-a-1");
+        when(vmSpec.getHostName()).thenReturn("host");
+        when(vmSpec.getType()).thenReturn(VirtualMachine.Type.User);
+        _resource._instanceNameFlag = true;
+        op = _resource.composeVmNames(vmSpec);
+        assert(op.first().compareTo("vmname-a-1") == 0 && op.second().compareTo("vmname-a-1-host") == 0);
+
+        //case 2.2.2:  _instanceNameFlag == true  && vmSpec.getType() == VirtualMachine.Type.User && tokens.length<3
+        when(vmSpec.getName()).thenReturn("vmname+a-1");
+        try {
+            _resource.composeVmNames(vmSpec);
+            Assert.fail("Function should throw Invalid Parameter Value Exception");
+        }catch(Exception e) {
+            assertThat(e, instanceOf(InvalidParameterValueException.class));
+        }
+
+        //case 2.2.3:  _instanceNameFlag == true  && vmSpec.getType() != VirtualMachine.Type.User
+        when(vmSpec.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+        op = _resource.composeVmNames(vmSpec);
+        assert(op.first().compareTo("vmname+a-1") == 0 && op.second().compareTo("vmname+a-1") == 0);
+    }
 }
