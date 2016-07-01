@@ -1731,7 +1731,7 @@ test_data = {
             "name": 'nuage_marvin',
             "displaytext": 'nuage_marvin',
             "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall',
+            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall,Dns',
             "traffictype": 'GUEST',
             "availability": 'Optional',
             "serviceProviderList": {
@@ -1740,7 +1740,8 @@ test_data = {
                 "SourceNat": 'NuageVsp',
                 "Firewall": 'NuageVsp',
                 "Connectivity": 'NuageVsp',
-                "UserData": 'VirtualRouter'
+                "UserData": 'VirtualRouter',
+                "Dns": 'VirtualRouter'
             },
             "serviceCapabilityList": {
                     "SourceNat": {"SupportedSourceNatTypes": "perzone"}
@@ -1751,7 +1752,7 @@ test_data = {
             "name": 'nuage_vpc_marvin',
             "displaytext": 'nuage_vpc_marvin',
             "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
             "traffictype": 'GUEST',
             "availability": 'Optional',
             "useVpc": 'on',
@@ -1762,7 +1763,8 @@ test_data = {
                 "SourceNat": "NuageVsp",
                 "NetworkACL": "NuageVsp",
                 "Connectivity": "NuageVsp",
-                "UserData": "VpcVirtualRouter"
+                "UserData": "VpcVirtualRouter",
+                "Dns": "VpcVirtualRouter"
             },
             "serviceCapabilityList": {
                 "SourceNat": {"SupportedSourceNatTypes": "perzone"}
@@ -1772,7 +1774,7 @@ test_data = {
             "name": "nuage_vpc_marvin_internal_lb",
             "displaytext": "nuage_vpc_marvin_internal_lb",
             "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
             "traffictype": 'GUEST',
             "availability": 'Optional',
             "useVpc": 'on',
@@ -1784,7 +1786,8 @@ test_data = {
                 "SourceNat": "NuageVsp",
                 "NetworkACL": "NuageVsp",
                 "Connectivity": "NuageVsp",
-                "UserData": "VpcVirtualRouter"
+                "UserData": "VpcVirtualRouter",
+                "Dns": "VpcVirtualRouter"
             },
             "serviceCapabilityList": {
                 "SourceNat": {"SupportedSourceNatTypes": "perzone"},
@@ -1795,20 +1798,21 @@ test_data = {
         "vpc_offering": {
             "name": 'Nuage VSP VPC offering',
             "displaytext": 'Nuage VSP VPC offering',
-            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
             "serviceProviderList": {
                 "Dhcp": "NuageVsp",
                 "StaticNat": "NuageVsp",
                 "SourceNat": "NuageVsp",
                 "NetworkACL": "NuageVsp",
                 "Connectivity": "NuageVsp",
-                "UserData": "VpcVirtualRouter"
+                "UserData": "VpcVirtualRouter",
+                "Dns": "VpcVirtualRouter"
             }
         },
         "vpc_offering_lb": {
             "name": 'Nuage VSP VPC offering with Lb',
             "displaytext": 'Nuage VSP VPC offering with Lb',
-            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
             "serviceProviderList": {
                 "Dhcp": "NuageVsp",
                 "Lb": "InternalLbVm",
@@ -1816,7 +1820,8 @@ test_data = {
                 "SourceNat": "NuageVsp",
                 "NetworkACL": "NuageVsp",
                 "Connectivity": "NuageVsp",
-                "UserData": "VpcVirtualRouter"
+                "UserData": "VpcVirtualRouter",
+                "Dns": "VpcVirtualRouter"
             }
         }
     }
