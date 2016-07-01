@@ -125,7 +125,7 @@ public abstract class NioConnection implements Callable<Boolean> {
     public Boolean call() throws NioConnectionException {
         while (_isRunning) {
             try {
-                _selector.select(1000);
+                _selector.select(100);
 
                 // Someone is ready for I/O, get the ready keys
                 final Set<SelectionKey> readyKeys = _selector.selectedKeys();
