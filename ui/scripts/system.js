@@ -21726,9 +21726,10 @@
                         }
                     }
                 });
+            }
 
-                if (netscalerControlCenter != null) {
-                    if (jsonObj.state == undefined) {
+            if (netscalerControlCenter != null) {
+              if (jsonObj.state == undefined) {
                         $.ajax({
                             url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                             dataType: "json",
@@ -21764,19 +21765,13 @@
                         });
                         jsonObj.state = "Disabled";
                     }
+            }
 
-                    if (jsonObj.state == "Enabled")
-                    allowedActions.push("disable"); else if (jsonObj.state == "Disabled")
-                    allowedActions.push("enable");
-                    allowedActions.push("destroy");
-                }
-            } else {
-                if (jsonObj.state) {
-                    if (jsonObj.state == "Enabled")
-                    allowedActions.push("disable"); else if (jsonObj.state == "Disabled")
-                    allowedActions.push("enable");
-                    allowedActions.push("destroy");
-                }
+            if (jsonObj.state) {
+               if (jsonObj.state == "Enabled")
+                 allowedActions.push("disable"); else if (jsonObj.state == "Disabled")
+                 allowedActions.push("enable");
+                 allowedActions.push("destroy");
             }
 
             allowedActions.push('add');
