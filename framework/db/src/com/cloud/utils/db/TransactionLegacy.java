@@ -177,6 +177,16 @@ public class TransactionLegacy implements Closeable {
         return txn;
     }
 
+    public void checkConnection() {
+        try {
+            if (_conn != null && !_conn.isValid(3)) {
+                _conn = null;
+            }
+        } catch (SQLException e) {
+            _conn = null;
+        }
+    }
+
     protected StackElement peekInStack(Object obj) {
         final Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {

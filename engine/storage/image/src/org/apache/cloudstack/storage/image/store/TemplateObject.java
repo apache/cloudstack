@@ -52,6 +52,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -184,6 +185,8 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
+            txn.checkConnection();
             if (getDataStore().getRole() == DataStoreRole.Primary) {
                 if (answer instanceof CopyCmdAnswer) {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
