@@ -1141,22 +1141,26 @@ public class NetUtils {
         // 10.0.0.0 - 10.255.255.255 (10/8 prefix)
         // 172.16.0.0 - 172.31.255.255 (172.16/12 prefix)
         // 192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
-
-        final String cidr1 = "10.0.0.0/8";
-        final String cidr2 = "172.16.0.0/12";
-        final String cidr3 = "192.168.0.0/16";
+        // RFC 6598 - The IETF detailed shared address space for use in ISP CGN
+        // deployments and NAT devices that can handle the same addresses occurring both on inbound and outbound interfaces.
+        // ARIN returned space to the IANA as needed for this allocation.
+        // The allocated address block is 100.64.0.0/10
+        final String[] allowedNetBlocks = {"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10"};
 
         if (!isValidCIDR(cidr)) {
             s_logger.warn("Cidr " + cidr + " is not valid");
             return false;
         }
 
-        if (isNetworkAWithinNetworkB(cidr, cidr1) || isNetworkAWithinNetworkB(cidr, cidr2) || isNetworkAWithinNetworkB(cidr, cidr3)) {
-            return true;
-        } else {
-            s_logger.warn("cidr " + cidr + " is not RFC 1918 compliant");
-            return false;
+        for (String block: allowedNetBlocks) {
+            if (isNetworkAWithinNetworkB(cidr, block)) {
+                return true;
+            }
         }
+
+        // not in allowedNetBlocks - return false
+        s_logger.warn("cidr " + cidr + " is not RFC 1918 or 6598 compliant");
+        return false;
     }
 
     public static boolean verifyInstanceName(final String instanceName) {
@@ -1165,7 +1169,6 @@ public class NetUtils {
             s_logger.warn("Instance name can not contain hyphen, spaces and \"+\" char");
             return false;
         }
-
         return true;
     }
 
