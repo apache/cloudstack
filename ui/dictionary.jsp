@@ -992,6 +992,7 @@ dictionary = {
 'label.outofbandmanagement.disable': '<fmt:message key="label.outofbandmanagement.disable" />',
 'label.outofbandmanagement.enable': '<fmt:message key="label.outofbandmanagement.enable" />',
 'label.outofbandmanagement.password': '<fmt:message key="label.outofbandmanagement.password" />',
+'label.outofbandmanagement.reenterpassword': '<fmt:message key="label.outofbandmanagement.reenterpassword" />',
 'label.outofbandmanagement.port': '<fmt:message key="label.outofbandmanagement.port" />',
 'label.outofbandmanagement.timeout': '<fmt:message key="label.outofbandmanagement.timeout" />',
 'label.outofbandmanagement.username': '<fmt:message key="label.outofbandmanagement.username" />',
