@@ -878,6 +878,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     s_logger.info("Succesfully unprotected and removed any remaining snapshots (" + snaps.size() + ") of "
                         + pool.getSourceDir() + "/" + uuid + " Continuing to remove the RBD image");
                 } catch (RbdException e) {
+                    s_logger.error("Failed to remove snapshot with exception: " + e.toString() +
+                        ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                     throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
                 } finally {
                     s_logger.debug("Closing image and destroying context");
@@ -885,8 +887,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     r.ioCtxDestroy(io);
                 }
             } catch (RadosException e) {
+                s_logger.error("Failed to remove snapshot with exception: " + e.toString() +
+                    ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                 throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
             } catch (RbdException e) {
+                s_logger.error("Failed to remove snapshot with exception: " + e.toString() +
+                    ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                 throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
             }
         }

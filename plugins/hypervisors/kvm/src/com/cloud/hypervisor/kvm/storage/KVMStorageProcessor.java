@@ -1329,7 +1329,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     s_logger.info("Snapshot " + snap_full_name + " successfully removed from " +
                             primaryPool.getType().toString() + "  pool.");
                 } catch (RbdException e) {
-                    s_logger.error(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
+                    s_logger.error("Failed to remove snapshot " + snap_full_name + ", with exception: " + e.toString() +
+                        ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                 } finally {
                     rbd.close(image);
                     r.ioCtxDestroy(io);
@@ -1340,13 +1341,15 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
             return new Answer(cmd, true, "Snapshot " + snap_full_name + " removed successfully.");
         } catch (RadosException e) {
-            s_logger.error(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
+            s_logger.error("Failed to remove snapshot " + snap_full_name + ", with exception: " + e.toString() +
+                ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
             return new Answer(cmd, false, "Failed to remove snapshot " + snap_full_name);
         } catch (RbdException e) {
-            s_logger.error(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
+            s_logger.error("Failed to remove snapshot " + snap_full_name + ", with exception: " + e.toString() +
+                ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
             return new Answer(cmd, false, "Failed to remove snapshot " + snap_full_name);
         } catch (Exception e) {
-            s_logger.error(e.toString());
+            s_logger.error("Failed to remove snapshot " + snap_full_name + ", with exception: " + e.toString());
             return new Answer(cmd, false, "Failed to remove snapshot " + snap_full_name);
         }
     }
