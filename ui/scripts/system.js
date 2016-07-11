@@ -9087,6 +9087,9 @@
                             return listView;
                         },
                         clusters: function () {
+                            var indicator = cloudStack.sections.system.subsections.clusters.listView.fields.allocationstate.indicator; //extend indicator object to add two statuses 'Unmanaged' and 'Disabled'
+                                indicator['Unmanaged']= 'warning';
+                                indicator['Disabled']= 'off';
                             var listView = $.extend(true, {
                             },
                             cloudStack.sections.system.subsections.clusters.listView, {
@@ -9099,8 +9102,25 @@
                                         url: createURL('listClusters'),
                                         data: data,
                                         success: function (json) {
+                                         var clustersDetail = json.listclustersresponse.cluster;
+                                            if(clustersDetail instanceof Array){
+                                              for(var idx=0;idx< clustersDetail.length;idx++){
+                                                if (clustersDetail[idx].managedstate == 'Unmanaged') {
+                                                    clustersDetail[idx].allocationstate = 'Unmanaged';
+                                                    continue;
+                                                }
+                                                if (clustersDetail[idx].managedstate == 'Managed' && clustersDetail[idx].allocationstate == 'Enabled') {
+                                                    clustersDetail[idx].allocationstate = 'Enabled';
+                                                    continue;
+                                                }
+                                                if (clustersDetail[idx].managedstate == 'Managed' && clustersDetail[idx].allocationstate == 'Disabled') {
+                                                    clustersDetail[idx].allocationstate = 'Disabled';
+                                                    continue;
+                                                }
+                                              }
+                                            }
                                             args.response.success({
-                                                data: json.listclustersresponse.cluster
+                                               data: json.listclustersresponse.cluster
                                             });
                                         },
                                         error: function (json) {
@@ -21694,6 +21714,7 @@
             jsonObj.state = jsonObj.allocationstate; //jsonObj.state == Enabled, Disabled
         } else {
             jsonObj.state = jsonObj.managedstate; //jsonObj.state == Unmanaged, PrepareUnmanaged, PrepareUnmanagedError
+            jsonObj.allocationstate = jsonObj.managedstate;
         }
     }
 
