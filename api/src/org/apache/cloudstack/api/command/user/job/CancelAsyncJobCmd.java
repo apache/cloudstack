@@ -45,7 +45,7 @@ public class CancelAsyncJobCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AsyncJobResponse.class,
             required = true, description = "The ID of the job to cancel")
-    private Long id;
+    protected Long id;
 
     @Inject
     private AsyncJobService asyncJobService;
@@ -56,12 +56,12 @@ public class CancelAsyncJobCmd extends BaseCmd {
     }
 
     public String getEventDescription() {
-        return "cancelling job with id: " + getId();
+        return "cancelling job with id: " + id;
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, ClassNotFoundException {
-        String errorString = asyncJobService.cancelAsyncJob(getId());
+        String errorString = asyncJobService.cancelAsyncJob(id);
         if(Strings.isNullOrEmpty(errorString)) {
             AsyncJobResponse response = _responseGenerator.queryJobResult(this);
             response.setResponseName(getCommandName());
