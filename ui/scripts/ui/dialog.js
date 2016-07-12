@@ -637,8 +637,14 @@
                 $input.attr('id', inputId);
                 $name.find('label').attr('for', inputId);
 
-                if (field.isDisabled)
-                    $input.attr("disabled", "disabled");
+                if(field.isDisabled ){
+                    if(typeof(field.isDisabled) == 'boolean' && field.isDisabled == true){
+                        $input.attr("disabled","disabled");
+                    }
+                    else if (typeof(field.isDisabled) == 'function' && field.isDisabled(args) == true){
+                        $input.attr("disabled","disabled");
+                    }
+                }
 
                 // Tooltip
                 if (field.docID) {
