@@ -151,6 +151,8 @@ class CsNetfilters(object):
             if isinstance(fw[1], int):
                 new_rule.set_count(fw[1])
 
+            rule_chain = new_rule.get_chain()
+
             logging.debug("Checking if the rule already exists: rule=%s table=%s chain=%s", new_rule.get_rule(), new_rule.get_table(), new_rule.get_chain())
             if self.has_rule(new_rule):
                 logging.debug("Exists: rule=%s table=%s", fw[2], new_rule.get_table())
@@ -162,9 +164,14 @@ class CsNetfilters(object):
                 if fw[1] == "front":
                     cpy = cpy.replace('-A', '-I')
                 if isinstance(fw[1], int):
-                    cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), fw[1]))
-
+                    # if the rule is for ACLs, we want to insert them in order, right before the DROP all
+                    if rule_chain.startswith("ACL_INBOUND") or rule_chain.startswith("ACL_OUTBOUND"):
+                        rule_count = self.chain.get_count(rule_chain)
+                        cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), rule_count))
+                    else:
+                        cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), fw[1]))
                 CsHelper.execute("iptables -t %s %s" % (new_rule.get_table(), cpy))
+                self.chain.add_rule(rule_chain)
         self.del_standard()
         self.get_unseen()
 
