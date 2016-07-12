@@ -48,6 +48,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -512,6 +513,8 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
+            txn.checkConnection();
             if (dataStore.getRole() == DataStoreRole.Primary) {
                 if (answer instanceof CopyCmdAnswer) {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
