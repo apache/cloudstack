@@ -14,34 +14,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.image.db;
+package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
-
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+
 @Component
-public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO, Long> implements ImageStoreDetailsDao {
+public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreDetailVO> implements ImageStoreDetailsDao, ScopedConfigStorage {
 
     protected final SearchBuilder<ImageStoreDetailVO> storeSearch;
 
-    protected ImageStoreDetailsDaoImpl() {
+    public ImageStoreDetailsDaoImpl() {
         super();
         storeSearch = createSearchBuilder();
-        storeSearch.and("store", storeSearch.entity().getStoreId(), SearchCriteria.Op.EQ);
+        storeSearch.and("store", storeSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         storeSearch.done();
     }
 
@@ -54,7 +56,7 @@ public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO,
         txn.start();
         expunge(sc);
         for (Map.Entry<String, String> entry : details.entrySet()) {
-            ImageStoreDetailVO detail = new ImageStoreDetailVO(storeId, entry.getKey(), entry.getValue());
+            ImageStoreDetailVO detail = new ImageStoreDetailVO(storeId, entry.getKey(), entry.getValue(), true);
             persist(detail);
         }
         txn.commit();
@@ -88,7 +90,30 @@ public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO,
         for (ImageStoreDetailVO result : results) {
             remove(result.getId());
         }
+    }
 
+    @Override
+    public Scope getScope() {
+        return ConfigKey.Scope.ImageStore;
+    }
+
+    @Override
+    public ImageStoreDetailVO findDetail(long storeId, String name) {
+        QueryBuilder<ImageStoreDetailVO> sc = QueryBuilder.create(ImageStoreDetailVO.class);
+        sc.and(sc.entity().getResourceId(), Op.EQ, storeId);
+        sc.and(sc.entity().getName(), Op.EQ, name);
+        return sc.find();
+    }
+
+    @Override
+    public String getConfigValue(long id, ConfigKey<?> key) {
+        ImageStoreDetailVO vo = findDetail(id, key.key());
+        return vo == null ? null : vo.getValue();
+    }
+
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new ImageStoreDetailVO(resourceId, key, value, display));
     }
 
 }

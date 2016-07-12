@@ -73,6 +73,16 @@ public interface CapacityManager {
                     "If set to true, creates VMs as full clones on ESX hypervisor",
                     true,
                     ConfigKey.Scope.StoragePool);
+    static final ConfigKey<Integer> ImageStoreNFSVersion =
+            new ConfigKey<Integer>(
+                    Integer.class,
+                    "secstorage.nfs.version",
+                    "Advanced",
+                    null,
+                    "Enforces specific NFS version when mounting Secondary Storage. If NULL default selection is performed",
+                    true,
+                    ConfigKey.Scope.ImageStore,
+                    null);
 
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.image.db;
+package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.List;
 import java.util.Map;
@@ -26,8 +26,6 @@ import javax.naming.ConfigurationException;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;

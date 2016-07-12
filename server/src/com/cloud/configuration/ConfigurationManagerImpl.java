@@ -81,6 +81,9 @@ import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -216,6 +219,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Preconditions;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -335,6 +339,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     AffinityGroupService _affinityGroupService;
     @Inject
     StorageManager _storageManager;
+    @Inject
+    ImageStoreDao _imageStoreDao;
+    @Inject
+    ImageStoreDetailsDao _imageStoreDetailsDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -520,6 +528,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _accountDetailsDao.update(accountDetailVO.getId(), accountDetailVO);
                 }
                 break;
+
+            case ImageStore:
+                final ImageStoreVO imgStore = _imageStoreDao.findById(resourceId);
+                Preconditions.checkState(imgStore != null);
+                _imageStoreDetailsDao.addDetail(resourceId, name, value, true);
+                break;
+
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
@@ -626,6 +641,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Long imageStoreId = cmd.getImageStoreId();
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
@@ -674,6 +690,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (storagepoolId != null) {
             scope = ConfigKey.Scope.StoragePool.toString();
             id = storagepoolId;
+            paramCountCheck++;
+        }
+        if (imageStoreId != null) {
+            scope = ConfigKey.Scope.ImageStore.toString();
+            id = imageStoreId;
             paramCountCheck++;
         }
 
