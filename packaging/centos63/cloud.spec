@@ -408,6 +408,10 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 cloudstack-management on > /dev/null 2>&1 || true
 fi
 
+grep "db.cloud.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.cloud.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
+grep "db.usage.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.usage.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
+grep "db.simulator.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.simulator.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
+
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
