@@ -34,10 +34,13 @@ from marvin.codes import (FAILED, SUCCESS)
 from marvin.lib.utils import (random_gen)
 from marvin.config.test_data import test_data
 from sys import exit
-import os
-import pickle
 from time import sleep, strftime, localtime
 from optparse import OptionParser
+
+import os
+import pickle
+import threading
+import Queue
 
 
 class DeployDataCenters(object):
@@ -197,7 +200,7 @@ class DeployDataCenters(object):
                 vmwareDc.zoneid = zoneId
                 self.addVmWareDataCenter(vmwareDc)
 
-            for cluster in clusters:
+            def createCluster(cluster):
                 clustercmd = addCluster.addClusterCmd()
                 clustercmd.clustername = cluster.clustername
                 clustercmd.clustertype = cluster.clustertype
@@ -224,11 +227,35 @@ class DeployDataCenters(object):
                                                podId,
                                                clusterId)
 
+            class ClusterMaker(threading.Thread):
+                def __init__(self, queue=None, createCluster=None):
+                    threading.Thread.__init__(self)
+                    self.queue = queue
+                    self.createCluster = createCluster
+
+                def run(self):
+                    while True:
+                        cluster = self.queue.get()
+                        if cluster is not None:
+                            self.createCluster(cluster)
+                        self.queue.task_done()
+
+            tsize = 1
+            if len(clusters) > 16:
+                tsize = 16
+
+            queue = Queue.Queue()
+            for _ in range(tsize):
+                thread = ClusterMaker(queue, createCluster)
+                thread.start()
+
+            for cluster in clusters:
+                queue.put(cluster)
+            queue.join()
+
         except Exception as e:
             print "Exception Occurred %s" % GetDetailExceptionInfo(e)
-            self.__tcRunLogger.exception("====Cluster %s Creation Failed"
-                                         "=====" %
-                                         str(cluster.clustername))
+            self.__tcRunLogger.exception("====Cluster Creation Failed=====")
             self.__cleanAndExit()
 
     def waitForHost(self, zoneId, clusterId):
