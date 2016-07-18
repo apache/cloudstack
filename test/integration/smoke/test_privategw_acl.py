@@ -24,6 +24,7 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
+from marvin.codes import PASS
 
 import time
 import logging
@@ -195,8 +196,7 @@ class TestPrivateGwACL(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo()
-        
+        self.dbclient = self.testClient.getDbConnection()
         self.logger.debug("Creating Admin Account for Domain ID ==> %s" % self.domain.id)
         self.account = Account.create(
             self.apiclient,
@@ -240,8 +240,16 @@ class TestPrivateGwACL(cloudstackTestCase):
         if not physical_networks:
             self.fail("No Physical Networks found!")
 
-        vlans = physical_networks[0].vlan.split('-')
-        vlan_1 = int(vlans[0])
+        qresultset = self.dbclient.execute(
+            "select vnet from op_dc_vnet_alloc where physical_network_id=\
+            (select id from physical_network where uuid='%s' ) and taken is NULL;" % physical_networks[0].id
+        )
+        self.assertEqual(validateList(qresultset)[0],
+                         PASS,
+                         "Invalid sql query response"
+                         )
+        vlans = qresultset
+        vlan_1 = int(vlans[0][0])
 
         acl = self.createACL(vpc)
         self.createACLItem(acl.id)
@@ -308,8 +316,16 @@ class TestPrivateGwACL(cloudstackTestCase):
         if not physical_networks:
             self.fail("No Physical Networks found!")
 
-        vlans = physical_networks[0].vlan.split('-')
-        vlan_1 = int(vlans[0])
+        qresultset = self.dbclient.execute(
+            "select vnet from op_dc_vnet_alloc where physical_network_id=\
+            (select id from physical_network where uuid='%s' ) and taken is NULL;" % physical_networks[0].id
+        )
+        self.assertEqual(validateList(qresultset)[0],
+                         PASS,
+                         "Invalid sql query response"
+        )
+        vlans = qresultset
+        vlan_1 = int(vlans[0][0])
 
         network_1 = self.createNetwork(vpc_1, gateway = '10.0.1.1')
         network_2 = self.createNetwork(vpc_2, gateway = '10.0.2.1')
