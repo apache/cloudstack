@@ -508,7 +508,10 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
         file.addeq(" esp=%s" % obj['esp_policy'])
         file.addeq(" salifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
-        file.addeq(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
+        if "modp" in obj['esp_policy']:
+            file.addeq(" pfs=yes")
+        else:
+            file.addeq(" pfs=no")
         file.addeq(" keyingtries=2")
         file.addeq(" auto=start")
         if 'encap' not in obj:
