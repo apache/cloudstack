@@ -526,4 +526,25 @@ public class NetUtilsTest {
         assertFalse(NetUtils.isNetworkorBroadcastIP("192.168.0.63","255.255.255.128"));
     }
 
+    @Test
+    public void testIPv6EUI64Address() {
+        assertEquals(IPv6Address.fromString("2001:db8:100::47a:88ff:fe00:8b"),
+                NetUtils.EUI64Address("2001:db8:100::/64", "06:7a:88:00:00:8b"));
+
+        assertEquals(IPv6Address.fromString("2a00:f10:121:b00:434:a0ff:fe00:1bc7"),
+                NetUtils.EUI64Address("2a00:f10:121:b00::/64", "06:34:a0:00:1b:c7"));
+
+        assertEquals(IPv6Address.fromString("2001:980:7936:0:ea2a:eaff:fe58:eb98"),
+                NetUtils.EUI64Address("2001:980:7936::/64", "e8:2a:ea:58:eb:98"));
+
+        assertEquals(IPv6Address.fromString("2001:980:7936:0:c23f:d5ff:fe68:2808"),
+                NetUtils.EUI64Address("2001:980:7936::/64", "c0:3f:d5:68:28:08"));
+    }
+
+    @Test
+    public void testIPv6LinkLocal() {
+        assertEquals(IPv6Address.fromString("fe80::fc54:ff:fe00:3e05"), NetUtils.ipv6LinkLocal("fe:54:00:00:3e:05"));
+        assertEquals(IPv6Address.fromString("fe80::42:e0ff:fee8:d6a3"), NetUtils.ipv6LinkLocal("02:42:e0:e8:d6:a3"));
+        assertEquals(IPv6Address.fromString("fe80::47a:88ff:fe00:8b"), NetUtils.ipv6LinkLocal("06:7a:88:00:00:8b"));
+    }
 }
