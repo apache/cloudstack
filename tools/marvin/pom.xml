@@ -73,8 +73,8 @@
             </configuration>
           </execution>
           <execution>
-            <id>install</id>
-            <phase>install</phase>
+            <id>package</id>
+            <phase>package</phase>
             <goals>
               <goal>exec</goal>
             </goals>
