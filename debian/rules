@@ -35,7 +35,7 @@ build: build-indep
 build-indep: build-indep-stamp
 
 build-indep-stamp: configure
-	mvn -T C1.5 clean package -Pawsapi -DskipTests -Dsystemvm \
+	mvn -T C1.5 clean package -Pawsapi,systemvm,developer -DskipTests -Dsystemvm \
         -Dcs.replace.properties=replace.properties.tmp \
 		${ACS_BUILD_OPTS}
 	touch $@
@@ -176,6 +176,14 @@ install:
 	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/NOTICE.txt
 	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/services.xml
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/META-INF
+
+	# cloudstack-marvin
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-marvin
+	cp tools/marvin/dist/Marvin-*.tar.gz $(DESTDIR)/usr/share/$(PACKAGE)-marvin/
+
+	# cloudstack-integration-tests
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests
+	cp -r test/integration/* $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests/
 
 	dh_installdirs
 	dh_install
