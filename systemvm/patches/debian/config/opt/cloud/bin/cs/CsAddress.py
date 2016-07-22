@@ -432,6 +432,9 @@ class CsIP:
         self.fw.append(["mangle", "front", "-A PREROUTING " +
                         "-m state --state RELATED,ESTABLISHED " +
                         "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
+        
+        self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])
+
         if self.get_type() in ["guest"]:
             self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                             (self.address['network'], self.dev, self.dev)])
@@ -439,6 +442,9 @@ class CsIP:
                 ["filter", "front", "-A ACL_INBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
             self.fw.append(
                 ["filter", "front", "-A ACL_INBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
+            self.fw.append(
+                ["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
+
             self.fw.append(
                 ["mangle", "front", "-A ACL_OUTBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
             self.fw.append(
@@ -459,10 +465,12 @@ class CsIP:
                             (self.dev, self.address[
                              'network'], self.address['gateway'], self.dev)
                             ])
+
+            self.fw.append(["", "front", "-A NETWORK_STATS_%s -i %s -d %s" %
+                            ("eth1", "eth1", self.address['network'])])
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" %
                             ("eth1", "eth1", self.address['network'])])
-            self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -d %s" %
-                            ("eth1", "eth1", self.address['network'])])
+
             self.fw.append(["nat", "front",
                             "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
                             (self.address['network'], self.dev,
@@ -496,7 +504,10 @@ class CsIP:
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
 
         self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -i lo -j ACCEPT"])
+
         self.fw.append(["filter", "", "-A INPUT -i eth0 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT"])
 
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
@@ -536,7 +547,7 @@ class CsIP:
             if self.address["source_nat"]:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(
-                    ["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
+                    ["filter", 3, "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                 self.fw.append(
                     ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
 
