@@ -770,12 +770,34 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             protected void reallyRun() {
                 try {
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
+                    boolean isPurged = false;
                     if (l != null && l.size() > 0) {
                         for (SyncQueueItemVO item : l) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Execute sync-queue item: " + item.toString());
+                            if (item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
+                                AsyncJob job = _jobDao.findById(item.getContentId());
+                                if (job != null && StringUtils.isNotBlank(job.getRelated())) {
+                                    AsyncJob parentJob = _jobDao.findById(Long.valueOf(job.getRelated()));
+                                    //If the parent job is done, do not execute the child. complete it and purge it
+                                    // from queue
+                                    if (parentJob != null && parentJob.getStatus().done() && !isPseudoJob(parentJob)) {
+                                        if (s_logger.isDebugEnabled()) {
+                                            s_logger.debug("Purging sync-queue item: " + item.toString());
+                                        }
+                                        completeAsyncJob(item.getContentId(), parentJob.getStatus(), 0, "Job is not "
+                                                + "scheduled for execution as the parent job is done. Parent Job " +
+                                                "state:" + " " + parentJob.getStatus());
+                                        _jobMonitor.unregisterByJobId(item.getContentId());
+                                        _queueMgr.purgeItem(item.getId());
+                                        isPurged = true;
+                                    }
+                                }
                             }
-                            executeQueueItem(item, false);
+                            if (!isPurged) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Execute sync-queue item: " + item.toString());
+                                }
+                                executeQueueItem(item, false);
+                            }
                         }
                     }
 
@@ -791,6 +813,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
             }
         };
+    }
+
+    private boolean isPseudoJob(AsyncJob job) {
+        return AsyncJobVO.JOB_DISPATCHER_PSEUDO.equals(job.getDispatcher()) && AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE
+                .equals(job.getInstanceType());
     }
 
     @DB
