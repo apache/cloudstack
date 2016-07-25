@@ -263,6 +263,12 @@ class CsAcl(CsDataBag):
                 rstr = rstr.replace("  ", " ").lstrip()
                 self.fw.append([self.table, self.count, rstr])
 
+    def flushAllowAllEgressRules(self):
+        logging.debug("Flush allow 'all' egress firewall rule")
+        # Ensure that FW_EGRESS_RULES chain exists
+        CsHelper.execute("iptables-save | grep '^:FW_EGRESS_RULES' || iptables -t filter -N FW_EGRESS_RULES")
+        CsHelper.execute("iptables-save | grep '^-A FW_EGRESS_RULES -j ACCEPT$' | sed 's/^-A/iptables -t filter -D/g' | bash")
+
     def process(self):
         for item in self.dbag:
             if item == "id":
@@ -978,6 +984,7 @@ def main(argv):
             acls.process()
 
             acls = CsAcl('firewallrules', config)
+            acls.flushAllowAllEgressRules()
             acls.process()
 
             fwd = CsForwardingRules("forwardingrules", config)
