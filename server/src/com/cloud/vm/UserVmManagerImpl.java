@@ -2046,6 +2046,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         }
         try {
+
+            releaseNetworkResourcesOnExpunge(vm.getId());
+
             List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             // expunge the vm
             _itMgr.advanceExpunge(vm.getUuid());
@@ -2083,6 +2086,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         } finally {
             _vmDao.releaseFromLockTable(vm.getId());
+        }
+    }
+
+    /**
+     * Release network resources, it was done on vm stop previously.
+     * @param id vm id
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    private void releaseNetworkResourcesOnExpunge(long id) throws ConcurrentOperationException, ResourceUnavailableException {
+        final VMInstanceVO vmInstance = _vmDao.findById(id);
+        if (vmInstance != null){
+            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vmInstance);
+            _networkMgr.release(profile, false);
+        }
+        else {
+            s_logger.error("Couldn't find vm with id = " + id + ", unable to release network resources");
         }
     }
 
