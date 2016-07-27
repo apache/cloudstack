@@ -126,10 +126,10 @@ class CsNetfilters(object):
         del_list = [x for x in self.rules if x.unseen()]
         for r in del_list:
             cmd = "iptables -t %s %s" % (r.get_table(), r.to_str(True))
-            logging.debug("unseen cmd:  %s ", cmd)
+            #logging.debug("unseen cmd:  %s ", cmd)
             CsHelper.execute(cmd)
             # print "Delete rule %s from table %s" % (r.to_str(True), r.get_table())
-            logging.info("Delete rule %s from table %s", r.to_str(True), r.get_table())
+            #logging.info("Delete rule %s from table %s", r.to_str(True), r.get_table())
 
     def compare(self, list):
         """ Compare reality with what is needed """
@@ -151,12 +151,12 @@ class CsNetfilters(object):
             if isinstance(fw[1], int):
                 new_rule.set_count(fw[1])
 
-            logging.debug("Checking if the rule already exists: rule=%s table=%s chain=%s", new_rule.get_rule(), new_rule.get_table(), new_rule.get_chain())
+            #logging.debug("Checking if the rule already exists: rule=%s table=%s chain=%s", new_rule.get_rule(), new_rule.get_table(), new_rule.get_chain())
             if self.has_rule(new_rule):
-                logging.debug("Exists: rule=%s table=%s", fw[2], new_rule.get_table())
+                pass #logging.debug("Exists: rule=%s table=%s", fw[2], new_rule.get_table())
             else:
                 # print "Add rule %s in table %s" % ( fw[2], new_rule.get_table())
-                logging.info("Add: rule=%s table=%s", fw[2], new_rule.get_table())
+                #logging.info("Add: rule=%s table=%s", fw[2], new_rule.get_table())
                 # front means insert instead of append
                 cpy = fw[2]
                 if fw[1] == "front":
