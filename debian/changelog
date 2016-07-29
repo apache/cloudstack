@@ -1,4 +1,4 @@
-cloudstack (4.9.0-SNAPSHOT) unstable; urgency=low
+cloudstack (4.10.0-SNAPSHOT) unstable; urgency=low
 
   [ Remi Bergsma ]
   * Update the version to 4.9.0.snapshot
