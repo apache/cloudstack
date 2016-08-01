@@ -45,9 +45,9 @@ from cs.CsProcess import CsProcess
 
 
 class CsPassword(CsDataBag):
-    
+
     TOKEN_FILE="/tmp/passwdsrvrtoken"
-    
+
     def process(self):
         for item in self.dbag:
             if item == "id":
@@ -75,7 +75,7 @@ class CsPassword(CsDataBag):
 
 
 class CsStaticRoutes(CsDataBag):
-    
+
     def process(self):
         logging.debug("Processing CsStaticRoutes file ==> %s" % self.dbag)
         for item in self.dbag:
@@ -119,7 +119,7 @@ class CsAcl(CsDataBag):
 
             self.rule['allowed'] = True
             self.rule['action'] = "ACCEPT"
-                
+
             if self.rule['type'] == 'all' and not obj['source_cidr_list']:
                 self.rule['cidr'] = ['0.0.0.0/0']
             else:
@@ -887,6 +887,12 @@ class CsForwardingRules(CsDataBag):
         device = self.getDeviceByIp(rule["public_ip"])
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
+        self.fw.append(["mangle", "",
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark 0x%s/0xffffffff" % \
+                        (rule["internal_ip"], device[len("eth"):])])
+        self.fw.append(["mangle", "",
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
+                        rule["internal_ip"]])
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",

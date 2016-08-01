@@ -282,19 +282,20 @@ class CsIP:
         route = CsRoute()
         if not self.get_type() in ["control"]:
             route.add_table(self.dev)
-            
+
             CsRule(self.dev).addMark()
             self.check_is_up()
-            self.set_mark()
+            if self.dnum != '0':
+                self.set_mark()
             self.arpPing()
-            
+
             CsRpsrfs(self.dev).enable()
             self.post_config_change("add")
 
         '''For isolated/redundant and dhcpsrvr routers, call this method after the post_config is complete '''
         if not self.config.is_vpc():
             self.setup_router_control()
-        
+
         if self.config.is_vpc() or self.cl.is_redundant():
             # The code looks redundant here, but we actually have to cater for routers and
             # VPC routers in a different manner. Please do not remove this block otherwise
@@ -324,9 +325,10 @@ class CsIP:
                     CsHelper.execute(cmd2)
 
     def set_mark(self):
-        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \
-            (self.getDevice(), self.dnum)
-        self.fw.append(["mangle", "", cmd])
+        if self.get_type() in ['public']:
+            cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \
+                (self.getDevice(), self.dnum)
+            self.fw.append(["mangle", "", cmd])
 
     def get_type(self):
         """ Return the type of the IP
@@ -349,16 +351,16 @@ class CsIP:
     def setup_router_control(self):
         if self.config.is_vpc():
             return
-        
+
         self.fw.append(
             ["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])
         self.fw.append(
             ["filter", "", "-A INPUT -i eth1 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
-        
+
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
-        
+
     def fw_router(self):
         if self.config.is_vpc():
             return
@@ -392,6 +394,10 @@ class CsIP:
                             "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
             self.fw.append(
                 ["mangle", "", "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
+            self.fw.append(["filter", "",
+                            "-A FORWARD -i %s -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "",
+                            "-A FORWARD -i eth0 -o %s -j FW_OUTBOUND" % self.dev])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
@@ -416,14 +422,7 @@ class CsIP:
             self.fw.append(
                 ["filter", "", "-A FORWARD -i %s -o %s -m state --state NEW -j ACCEPT" % (self.dev, self.dev)])
             self.fw.append(
-                ["filter", "", "-A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
-            self.fw.append(
                 ["filter", "", "-A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
-            self.fw.append(
-                ["filter", "", "-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND"])
-            self.fw.append(["mangle", "",
-                            "-A PREROUTING -i %s -m state --state NEW " % self.dev +
-                            "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
 
         self.fw.append(['', 'front', '-A FORWARD -j NETWORK_STATS'])
         self.fw.append(['', 'front', '-A INPUT -j NETWORK_STATS'])
@@ -432,7 +431,7 @@ class CsIP:
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 -o eth0'])
         self.fw.append(['', '', '-A NETWORK_STATS -o eth2 ! -i eth0 -p tcp'])
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
-        
+
     def fw_vpcrouter(self):
         if not self.config.is_vpc():
             return
@@ -550,7 +549,7 @@ class CsIP:
         for i in CsHelper.execute(cmd):
             vals = i.lstrip().split()
             if (vals[0] == 'inet'):
-                
+
                 cidr = vals[1]
                 for ip, device in self.iplist.iteritems():
                     logging.info(
