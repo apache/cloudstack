@@ -20,6 +20,9 @@ Generage Diff
 
 ```bash
 cd cloudstack
-java -cp ~/.m2/repository/com/thoughtworks/xstream/xstream/1.4.3/xstream-1.4.3.jar:server/target/classes com.cloud.api.doc.ApiXmlDocReader -old ~/Documents/acs-api-commands/4.4.2_commands.xml -new ~/Documents/acs-api-commands/4.5.0_commands.xml -d ~/Documents/acs-api-commands/diff-442-450
+export COMMANDS=~/Documents/acs-api-commands
+cp tools/apidoc/target/commands.xml $COMMANDS/4.9.0_commands.xml
+mkdir $COMMANDS/diff-480-490
+java -cp $HOME/.m2/repository/com/thoughtworks/xstream/xstream/1.4.9/xstream-1.4.9.jar:$HOME/.m2/repository/com/google/code/gson/gson/1.7.2/gson-1.7.2.jar:server/target/classes com.cloud.api.doc.ApiXmlDocReader -old $COMMANDS/4.8.0_commands.xml -new $COMMANDS/4.9.0_commands.xml -d $COMMANDS/diff-480-490
 ```
 
