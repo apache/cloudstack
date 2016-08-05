@@ -511,6 +511,8 @@ class CsIP:
         route = CsRoute()
         if method == "add":
             route.add_table(self.dev)
+            if "gateway" in self.address and self.address["gateway"] != "None":
+                route.add_route(self.dev, "default via %s" % self.address["gateway"])
             route.add_route(self.dev, str(self.address["network"]))
         elif method == "delete":
             logging.warn("delete route not implemented")
