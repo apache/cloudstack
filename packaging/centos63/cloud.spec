@@ -169,6 +169,24 @@ Group: System Environment/Libraries
 %description cli
 Apache CloudStack command line interface
 
+%package marvin
+Summary: Apache CloudStack Marvin library
+Requires: python-pip
+Requires: gcc
+Requires: python-devel
+Requires: libffi-devel
+Requires: openssl-devel
+Group: System Environment/Libraries
+%description marvin
+Apache CloudStack Marvin library
+
+%package integration-tests
+Summary: Apache CloudStack Marvin integration tests
+Requires: %{name}-marvin = %{_ver}
+Group: System Environment/Libraries
+%description integration-tests
+Apache CloudStack Marvin integration tests
+
 %if "%{_ossnoss}" == "noredist"
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
@@ -197,18 +215,18 @@ if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
    echo "Executing mvn packaging with non-redistributable libraries"
    if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
       echo "Executing mvn noredist packaging with simulator ..."
-      mvn -Psystemvm -Dnoredist -Dsimulator clean package
+      mvn -Psystemvm,developer -Dnoredist -Dsimulator clean package
    else
       echo "Executing mvn noredist packaging without simulator..."
-      mvn -Psystemvm -Dnoredist clean package
+      mvn -Psystemvm,developer -Dnoredist clean package
    fi
 else
    if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
       echo "Executing mvn default packaging simulator ..."
-      mvn -Psystemvm -Dsimulator clean package
+      mvn -Psystemvm,developer -Dsimulator clean package
    else
       echo "Executing mvn default packaging without simulator ..."
-      mvn -Psystemvm clean package
+      mvn -Psystemvm,developer clean package
    fi
 fi 
 
@@ -344,6 +362,14 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{python_sitearch}/
 install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloudapis.py
 
+# Marvin
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-marvin
+cp tools/marvin/dist/Marvin-*.tar.gz ${RPM_BUILD_ROOT}%{_datadir}/%{name}-marvin/
+
+# integration-tests
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-integration-tests
+cp -r test/integration/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-integration-tests/
+
 # MYSQL HA
 if [ "x%{_ossnoss}" == "xnoredist" ] ; then
   mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
@@ -361,6 +387,10 @@ install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-marvin-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-marvin-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-integration-tests-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-integration-tests-%{version}/LICENSE
 if [ "x%{_ossnoss}" == "xnoredist" ] ; then
   install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/LICENSE
   install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/NOTICE
@@ -522,6 +552,10 @@ if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
 fi
 
+%post marvin
+pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df
+pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+
 #No default permission as the permission setup is complex
 %files management
 %defattr(-,root,root,-)
@@ -627,6 +661,16 @@ fi
 %attr(0644,root,root) %{python_sitearch}/cloudtool/utils.py
 %{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
+
+%files marvin
+%attr(0644,root,root) %{_datadir}/%{name}-marvin/Marvin*.tar.gz
+%{_defaultdocdir}/%{name}-marvin-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-marvin-%{version}/NOTICE
+
+%files integration-tests
+%attr(0755,root,root) %{_datadir}/%{name}-integration-tests/*
+%{_defaultdocdir}/%{name}-integration-tests-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-integration-tests-%{version}/NOTICE
 
 %if "%{_ossnoss}" == "noredist"
 %files mysql-ha

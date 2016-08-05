@@ -45,3 +45,13 @@ Package: cloudstack-docs
 Architecture: all
 Depends: ${misc:Depends}
 Description: The CloudStack documentation
+
+Package: cloudstack-marvin
+Architecture: all
+Depends: ${misc:Depends}, python-pip, python-dev, libffi-dev
+Description: The CloudStack Marvin library
+
+Package: cloudstack-integration-tests
+Architecture: all
+Depends: ${misc:Depends}, cloudstack-marvin (= ${source:Version})
+Description: The CloudStack Marvin integration tests
