@@ -1013,6 +1013,9 @@
                                         label: 'label.display.name',
                                         isEditable: true
                                     },
+                                    id: {
+                                        label: 'label.id'
+                                    },
                                     domain: {
                                         label: 'label.domain'
                                     },
