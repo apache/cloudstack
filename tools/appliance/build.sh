@@ -64,8 +64,13 @@ echo $@ | grep '\-h' >/dev/null && usage
 #    make
 #    sudo make install
 # * vhd-util
+#    Install on yum-based:
 #    sudo yum -y install python-devel dev86 iasl iasl-devel libuuid libuuid-devel \
 #        glib-devel glib2 glib2-devel yajl yajl-devel
+#    Install on apt-based:
+#    sudo apt-get install -y python python-dev bcc bin86 iasl uuid-dev \
+#        libglib2.0-dev libyajl-dev build-essential libc6-dev zlib1g-dev libncurses5-dev \
+#        patch iasl libbz2-dev e2fslibs-dev xz-utils gettext
 #    wget -q http://bits.xensource.com/oss-xen/release/4.2.0/xen-4.2.0.tar.gz
 #    tar xzvf xen-4.2.0.tar.gz
 #    cd xen-4.2.0/tools/
@@ -77,7 +82,7 @@ echo $@ | grep '\-h' >/dev/null && usage
 #    sudo ldconfig
 #    sudo cp blktap2/vhd/vhd-util /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver
 #    faketime 2010-01-01 vhd-util convert
-
+#
 set -e
 
 ###
@@ -529,8 +534,6 @@ function vmware_export() {
     stage_vmx ${appliance_build_name}-vmware ${appliance_build_name}-vmware.vmdk
     ovftool ${appliance_build_name}-vmware.vmx ${appliance_build_name}-vmware.ova
   fi
-  bzip2 "${appliance_build_name}-vmware.vmdk"
-  mv "${appliance_build_name}-vmware.vmdk.bz2" dist/
   mv ${appliance_build_name}-vmware.ova dist/
   log INFO "${appliance} exported for VMWare: dist/${appliance_build_name}-vmware.ova"
 }
