@@ -1025,6 +1025,28 @@
                                     state: {
                                         label: 'label.state'
                                     }
+                                }, {
+                                    vmtotal: {
+                                        label: 'label.total.vms'
+                                    },
+                                    memorytotal: {
+                                        label: 'label.memory.total'
+                                    },
+                                    cputotal: {
+                                        label: 'label.total.cpu'
+                                    },
+                                    volumetotal: {
+                                        label: 'label.volume'
+                                    },
+                                    primarystoragetotal: {
+                                        label: 'label.primary.storage'
+                                    },
+                                    iptotal: {
+                                        label: 'label.total.of.ip'
+                                    },
+                                    templatetotal: {
+                                        label: 'label.template'
+                                    }
                                 }],
 
                                 tags: cloudStack.api.tags({
