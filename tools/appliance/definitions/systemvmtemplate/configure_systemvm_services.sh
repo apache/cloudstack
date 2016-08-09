@@ -37,7 +37,6 @@ function install_cloud_scripts() {
   chmod +x /opt/cloud/bin/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
     /etc/init.d/{cloud,cloud-early-config,cloud-passwd-srvr,postinit} \
-    /etc/cron.daily/cloud-cleanup \
     /etc/profile.d/cloud.sh
 
   chkconfig --add cloud-early-config
