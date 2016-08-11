@@ -218,6 +218,11 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     @Override
+    public boolean stop(String caller, boolean forced) throws ResourceUnavailableException {
+        return manager.stopvirtualmachine(this.vmEntityVO, caller, forced);
+    }
+
+    @Override
     public void cleanup() {
         // TODO Auto-generated method stub
 
