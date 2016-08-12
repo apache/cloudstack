@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -40,7 +41,6 @@ import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -88,10 +88,6 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         String storageVip = SolidFireUtil.getStorageVip(url);
         int storagePort = SolidFireUtil.getStoragePort(url);
 
-        DataCenterVO zone = _zoneDao.findById(zoneId);
-
-        String uuid = SolidFireUtil.PROVIDER_NAME + "_" + zone.getUuid() + "_" + storageVip;
-
         if (capacityBytes == null || capacityBytes <= 0) {
             throw new IllegalArgumentException("'capacityBytes' must be present and greater than 0.");
         }
@@ -106,7 +102,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         parameters.setPort(storagePort);
         parameters.setPath(SolidFireUtil.getModifiedUrl(url));
         parameters.setType(StoragePoolType.Iscsi);
-        parameters.setUuid(uuid);
+        parameters.setUuid(UUID.randomUUID().toString());
         parameters.setZoneId(zoneId);
         parameters.setName(storagePoolName);
         parameters.setProviderName(providerName);
