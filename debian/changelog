@@ -1,20 +1,20 @@
-cloudstack (4.8.1) unstable; urgency=low
+cloudstack (4.8.2-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.8.1
+  * Update the version to 4.8.2-SNAPSHOT
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 08 Aug 2016 10:06:20 -0400
 
-cloudstack (4.8.1-SNAPSHOT) unstable; urgency=low
+cloudstack (4.8.2-SNAPSHOT-SNAPSHOT) unstable; urgency=low
 
   [ Remi Bergsma ]
-  * Update the version to 4.8.1-SNAPSHOT
+  * Update the version to 4.8.2-SNAPSHOT-SNAPSHOT
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 20 Jan 2016 23:43:35 +0100
 
 cloudstack (4.8.0-SNAPSHOT) unstable; urgency=low
 
   [ Remi Bergsma ]
-  * Update the version to 4.8.1.snapshot
+  * Update the version to 4.8.2-SNAPSHOT.snapshot
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Sun, 21 Dec 2015 22:11:55 +0100
 
