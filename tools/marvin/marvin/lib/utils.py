@@ -179,6 +179,7 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryin
             delay=retryinterv,
             timeout=timeout)
     except Exception, e:
+        print GetDetailExceptionInfo(e)
         raise Exception("SSH connection has Failed. Waited %ss. Error is %s" % (retries * retryinterv, str(e)))
     else:
         return ssh

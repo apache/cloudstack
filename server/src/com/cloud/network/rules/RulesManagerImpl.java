@@ -1249,7 +1249,6 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller, false);
-        long networkId = ipAddress.getAssociatedWithNetworkId();
 
         if (!ipAddress.isOneToOneNat()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("One to one nat is not enabled for the specified ip id");
@@ -1283,7 +1282,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 ipAddress.setSystem(false);
             }
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
-            _vpcMgr.unassignIPFromVpcNetwork(ipAddress.getId(), networkId);
+            _vpcMgr.unassignIPFromVpcNetwork(ipAddress.getId(), ipAddress.getAssociatedWithNetworkId());
 
             if (isIpSystem && releaseIpIfElastic && !_ipAddrMgr.handleSystemIpRelease(ipAddress)) {
                 s_logger.warn("Failed to release system ip address " + ipAddress);
