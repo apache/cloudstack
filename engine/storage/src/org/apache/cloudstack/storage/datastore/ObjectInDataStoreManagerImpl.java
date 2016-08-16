@@ -92,6 +92,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Allocated, Event.OperationFailed, State.Failed);
         stateMachines.addTransition(State.Creating, Event.OperationFailed, State.Allocated);
         stateMachines.addTransition(State.Creating, Event.OperationSuccessed, State.Ready);
+        stateMachines.addTransition(State.Creating, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Ready, Event.CopyingRequested, State.Copying);
         stateMachines.addTransition(State.Copying, Event.OperationSuccessed, State.Ready);
         stateMachines.addTransition(State.Copying, Event.OperationFailed, State.Ready);
