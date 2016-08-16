@@ -706,11 +706,11 @@ public class Upgrade410to420 implements DbUpgrade {
         String vc = "";
         String dcName = "";
 
-        try(PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where removed is NULL");) {
+        try (PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where removed is NULL");) {
             try (ResultSet rs = pstmt.executeQuery();) {
                 while (rs.next()) {
                     zoneId = rs.getLong("id");
-                    try(PreparedStatement clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL AND data_center_id=?");) {
+                    try (PreparedStatement clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL AND data_center_id=?");) {
                         clustersQuery.setLong(1, zoneId);
                         legacyZone = false;
                         ignoreZone = true;
@@ -719,53 +719,54 @@ public class Upgrade410to420 implements DbUpgrade {
                         // Legacy zone term is meant only for VMware
                         // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
                         clusters = clustersQuery.executeQuery();
-                    }catch (SQLException e) {
-                        throw new CloudRuntimeException("persistLegacyZones:Exception:"+e.getMessage(), e);
-                    }
-                    if (!clusters.next()) {
-                        continue; // Ignore the zone without any clusters
-                    } else {
-                        dcOfPreviousCluster = null;
-                        dcOfCurrentCluster = null;
-                        do {
-                            clusterHypervisorType = clusters.getString("hypervisor_type");
-                            clusterId = clusters.getLong("id");
-                            if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
-                                ignoreZone = false;
-                                try (PreparedStatement clusterDetailsQuery = conn.prepareStatement("select value from `cloud`.`cluster_details` where name='url' and cluster_id=?");) {
-                                    clusterDetailsQuery.setLong(1, clusterId);
-                                    try (ResultSet clusterDetails = clusterDetailsQuery.executeQuery();) {
-                                        clusterDetails.next();
-                                        url = clusterDetails.getString("value");
-                                        tokens = url.split("/"); // url format - http://vcenter/dc/cluster
-                                        vc = tokens[2];
-                                        dcName = tokens[3];
-                                        dcOfPreviousCluster = dcOfCurrentCluster;
-                                        dcOfCurrentCluster = dcName + "@" + vc;
-                                        if (!dcList.contains(dcOfCurrentCluster)) {
-                                            dcList.add(dcOfCurrentCluster);
-                                        }
-                                        if (count > 0) {
-                                            if (!dcOfPreviousCluster.equalsIgnoreCase(dcOfCurrentCluster)) {
-                                                legacyZone = true;
-                                                s_logger.debug("Marking the zone " + zoneId + " as legacy zone.");
+                        if (!clusters.next()) {
+                            continue; // Ignore the zone without any clusters
+                        } else {
+                            dcOfPreviousCluster = null;
+                            dcOfCurrentCluster = null;
+                            do {
+                                clusterHypervisorType = clusters.getString("hypervisor_type");
+                                clusterId = clusters.getLong("id");
+                                if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
+                                    ignoreZone = false;
+                                    try (PreparedStatement clusterDetailsQuery = conn
+                                            .prepareStatement("select value from `cloud`.`cluster_details` where name='url' and cluster_id=?");) {
+                                        clusterDetailsQuery.setLong(1, clusterId);
+                                        try (ResultSet clusterDetails = clusterDetailsQuery.executeQuery();) {
+                                            clusterDetails.next();
+                                            url = clusterDetails.getString("value");
+                                            tokens = url.split("/"); // url format - http://vcenter/dc/cluster
+                                            vc = tokens[2];
+                                            dcName = tokens[3];
+                                            dcOfPreviousCluster = dcOfCurrentCluster;
+                                            dcOfCurrentCluster = dcName + "@" + vc;
+                                            if (!dcList.contains(dcOfCurrentCluster)) {
+                                                dcList.add(dcOfCurrentCluster);
                                             }
+                                            if (count > 0) {
+                                                if (!dcOfPreviousCluster.equalsIgnoreCase(dcOfCurrentCluster)) {
+                                                    legacyZone = true;
+                                                    s_logger.debug("Marking the zone " + zoneId + " as legacy zone.");
+                                                }
+                                            }
+                                        } catch (SQLException e) {
+                                            throw new CloudRuntimeException("Unable add zones to cloud.legacyzones table.", e);
                                         }
                                     } catch (SQLException e) {
                                         throw new CloudRuntimeException("Unable add zones to cloud.legacyzones table.", e);
                                     }
-                                } catch (SQLException e) {
-                                    throw new CloudRuntimeException("Unable add zones to cloud.legacyzones table.", e);
+                                } else {
+                                    s_logger.debug("Ignoring zone " + zoneId + " with hypervisor type " + clusterHypervisorType);
+                                    break;
                                 }
-                            } else {
-                                s_logger.debug("Ignoring zone " + zoneId + " with hypervisor type " + clusterHypervisorType);
-                                break;
+                                count++;
+                            } while (clusters.next());
+                            if (ignoreZone) {
+                                continue; // Ignore the zone with hypervisors other than VMware
                             }
-                            count++;
-                        } while (clusters.next());
-                        if (ignoreZone) {
-                            continue; // Ignore the zone with hypervisors other than VMware
                         }
+                    } catch (SQLException e) {
+                        throw new CloudRuntimeException("persistLegacyZones:Exception:" + e.getMessage(), e);
                     }
                     if (legacyZone) {
                         listOfLegacyZones.add(zoneId);
