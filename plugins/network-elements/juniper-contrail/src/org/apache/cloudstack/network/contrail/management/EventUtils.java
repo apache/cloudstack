@@ -28,8 +28,8 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageBusBase;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
@@ -46,7 +46,7 @@ import com.cloud.utils.component.ComponentMethodInterceptor;
 public class EventUtils {
     private static final Logger s_logger = Logger.getLogger(EventUtils.class);
 
-    protected static MessageBus s_messageBus = null;
+    protected static  EventBus s_eventBus = null;
 
     public EventUtils() {
     }
@@ -58,9 +58,9 @@ public class EventUtils {
         }
 
         try {
-            s_messageBus = ComponentContext.getComponent(MessageBusBase.class);
+            s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
-            return; // no provider is configured to provide events bus, so just return
+             return; // no provider is configured to provide events bus, so just return
         }
 
         org.apache.cloudstack.framework.events.Event event =
@@ -72,9 +72,10 @@ public class EventUtils {
         eventDescription.put("details", details);
         event.setDescription(eventDescription);
         try {
-            s_messageBus.publish(EventTypes.getEntityForEvent(eventType), eventType, null, event);
-        } catch (Exception e) {
-            s_logger.warn("Failed to publish action event on the the event bus.");
+            s_eventBus.publish(event);
+        } catch (EventBusException evx) {
+            String errMsg = "Failed to publish contrail event.";
+            s_logger.warn(errMsg, evx);
         }
 
     }
