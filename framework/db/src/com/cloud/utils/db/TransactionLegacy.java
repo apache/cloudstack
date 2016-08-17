@@ -173,12 +173,22 @@ public class TransactionLegacy implements Closeable {
                 isNew = true;
             }
         }
-
+        txn.checkConnection();
         txn.takeOver(name, false);
         if (isNew) {
             s_mbean.addTransaction(txn);
         }
         return txn;
+    }
+
+    public void checkConnection() {
+        try {
+            if (_conn != null && !_conn.isValid(3)) {
+                _conn = null;
+            }
+        } catch (SQLException e) {
+            _conn = null;
+        }
     }
 
     protected StackElement peekInStack(Object obj) {
