@@ -20,6 +20,8 @@ import random
 import SignedAPICall
 import XenAPI
 
+from util import sf_util
+
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
 
@@ -36,8 +38,10 @@ from marvin.lib.utils import cleanup_resources
 
 from solidfire import solidfire_element_api as sf_api
 
-# on April 15, 2016: Ran 2 tests in 800.299s with three hosts
-# on May 2, 2016: Ran 2 tests in 789.729s with two hosts
+# Prerequisites:
+#  Only one zone
+#  Only one pod
+#  Only one cluster
 
 
 class TestData:
@@ -328,7 +332,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
             cls.primary_storage.delete(cls.apiClient)
 
-            cls._purge_solidfire_volumes()
+            sf_util.purge_solidfire_volumes(cls.sf_client)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
@@ -346,7 +350,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volumes = list_volumes(self.apiClient, type="ROOT", listAll="true")
 
-        self._check_list(root_volumes, 1, TestVMSnapshots._should_only_be_one_root_volume_err_msg)
+        sf_util.check_list(root_volumes, 1, self, TestVMSnapshots._should_only_be_one_root_volume_err_msg)
 
         root_volume = root_volumes[0]
 
@@ -355,7 +359,7 @@ class TestVMSnapshots(cloudstackTestCase):
         sf_iscsi_name_result = self.cs_api.getVolumeiScsiName(volume_id)
         sf_iscsi_name = sf_iscsi_name_result['apivolumeiscsiname']['volumeiScsiName']
 
-        self._check_iscsi_name(sf_iscsi_name)
+        sf_util.check_iscsi_name(sf_iscsi_name, self)
 
         root_volume_path_1 = self._get_path(volume_id)
 
@@ -388,7 +392,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         xen_vdis = self.xen_session.xenapi.SR.get_VDIs(xen_sr)
 
-        self._check_list(xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         vdis_after_create = self._get_vdis(xen_vdis)
 
@@ -411,7 +415,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         list_vm_snapshots = VmSnapshot.list(self.apiClient, listAll="true")
 
-        self._check_list(list_vm_snapshots, 1, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
+        sf_util.check_list(list_vm_snapshots, 1, self, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
 
         root_volume_path_3 = self._get_path(volume_id)
 
@@ -423,7 +427,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         xen_vdis = self.xen_session.xenapi.SR.get_VDIs(xen_sr)
 
-        self._check_list(xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         vdis_after_revert = self._get_vdis(xen_vdis)
 
@@ -470,7 +474,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         xen_vdis = self.xen_session.xenapi.SR.get_VDIs(xen_sr)
 
-        self._check_list(xen_vdis, 1, TestVMSnapshots._should_only_be_one_vdi_err_msg)
+        sf_util.check_list(xen_vdis, 1, self, TestVMSnapshots._should_only_be_one_vdi_err_msg)
 
         vdis_after_delete = self._get_vdis(xen_vdis, True)
 
@@ -505,7 +509,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volumes = list_volumes(self.apiClient, type="ROOT", listAll="true")
 
-        self._check_list(root_volumes, 1, TestVMSnapshots._should_only_be_one_root_volume_err_msg)
+        sf_util.check_list(root_volumes, 1, self, TestVMSnapshots._should_only_be_one_root_volume_err_msg)
 
         root_volume = root_volumes[0]
 
@@ -514,13 +518,13 @@ class TestVMSnapshots(cloudstackTestCase):
         sf_iscsi_name_result = self.cs_api.getVolumeiScsiName(root_volume_id)
         sf_iscsi_root_volume_name = sf_iscsi_name_result['apivolumeiscsiname']['volumeiScsiName']
 
-        self._check_iscsi_name(sf_iscsi_root_volume_name)
+        sf_util.check_iscsi_name(sf_iscsi_root_volume_name, self)
 
         root_volume_path_1 = self._get_path(root_volume_id)
 
         data_volumes = list_volumes(self.apiClient, type="DATADISK", listAll="true")
 
-        self._check_list(data_volumes, 1, "There should only be one data volume.")
+        sf_util.check_list(data_volumes, 1, self, "There should only be one data volume.")
 
         data_volume = data_volumes[0]
 
@@ -529,7 +533,7 @@ class TestVMSnapshots(cloudstackTestCase):
         sf_iscsi_name_result = self.cs_api.getVolumeiScsiName(data_volume_id)
         sf_iscsi_data_volume_name = sf_iscsi_name_result['apivolumeiscsiname']['volumeiScsiName']
 
-        self._check_iscsi_name(sf_iscsi_data_volume_name)
+        sf_util.check_iscsi_name(sf_iscsi_data_volume_name, self)
 
         data_volume_path_1 = self._get_path(data_volume_id)
 
@@ -570,7 +574,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(root_volume_xen_sr)
 
-        self._check_list(root_volume_xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(root_volume_xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         root_volume_vdis_after_create = self._get_vdis(root_volume_xen_vdis)
 
@@ -586,7 +590,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         data_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(data_volume_xen_sr)
 
-        self._check_list(data_volume_xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(data_volume_xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         data_volume_vdis_after_create = self._get_vdis(data_volume_xen_vdis)
 
@@ -609,7 +613,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         list_vm_snapshots = VmSnapshot.list(self.apiClient, listAll="true")
 
-        self._check_list(list_vm_snapshots, 1, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
+        sf_util.check_list(list_vm_snapshots, 1, self, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
 
         root_volume_path_3 = self._get_path(root_volume_id)
 
@@ -621,7 +625,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(root_volume_xen_sr)
 
-        self._check_list(root_volume_xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(root_volume_xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         root_volume_vdis_after_revert = self._get_vdis(root_volume_xen_vdis)
 
@@ -653,7 +657,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         data_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(data_volume_xen_sr)
 
-        self._check_list(data_volume_xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(data_volume_xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         data_volume_vdis_after_revert = self._get_vdis(data_volume_xen_vdis)
 
@@ -700,7 +704,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(root_volume_xen_sr)
 
-        self._check_list(root_volume_xen_vdis, 1, TestVMSnapshots._should_only_be_one_vdi_err_msg)
+        sf_util.check_list(root_volume_xen_vdis, 1, self, TestVMSnapshots._should_only_be_one_vdi_err_msg)
 
         root_volume_vdis_after_delete = self._get_vdis(root_volume_xen_vdis, True)
 
@@ -720,7 +724,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         data_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(data_volume_xen_sr)
 
-        self._check_list(data_volume_xen_vdis, 1, TestVMSnapshots._should_only_be_one_vdi_err_msg)
+        sf_util.check_list(data_volume_xen_vdis, 1, self, TestVMSnapshots._should_only_be_one_vdi_err_msg)
 
         data_volume_vdis_after_delete = self._get_vdis(data_volume_xen_vdis, True)
 
@@ -745,7 +749,7 @@ class TestVMSnapshots(cloudstackTestCase):
         return path_result['apipathforvolume']['path']
 
     def _verify_vm_snapshot(self, list_vm_snapshots, vm_snapshot):
-        self._check_list(list_vm_snapshots, 1, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
+        sf_util.check_list(list_vm_snapshots, 1, self, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
 
         vm_snapshot_from_list = list_vm_snapshots[0]
 
@@ -765,26 +769,6 @@ class TestVMSnapshots(cloudstackTestCase):
             vm_snapshot.state,
             "Ready",
             "The snapshot is not in the 'Ready' state."
-        )
-
-    def _check_iscsi_name(self, sf_iscsi_name):
-        self.assertEqual(
-            sf_iscsi_name[0],
-            "/",
-            "The iSCSI name needs to start with a forward slash."
-        )
-
-    def _check_list(self, in_list, expected_size_of_list, err_msg):
-        self.assertEqual(
-            isinstance(in_list, list),
-            True,
-            "'in_list' is not a list."
-        )
-
-        self.assertEqual(
-            len(in_list),
-            expected_size_of_list,
-            err_msg
         )
 
     def _get_vdis(self, xen_vdis, only_active_expected=False):
@@ -852,11 +836,3 @@ class TestVMSnapshots(cloudstackTestCase):
         vdis.base_vdi = base_vdi
 
         return vdis
-
-    @classmethod
-    def _purge_solidfire_volumes(cls):
-        deleted_volumes = cls.sf_client.list_deleted_volumes()
-
-        for deleted_volume in deleted_volumes:
-            cls.sf_client.purge_deleted_volume(deleted_volume['volumeID'])
-
