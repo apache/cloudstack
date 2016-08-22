@@ -31,7 +31,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.org.Cluster;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
@@ -87,7 +86,6 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     private final Map<String, OutOfBandManagementDriver> outOfBandManagementDriversMap = new HashMap<String, OutOfBandManagementDriver>();
 
     private static final String OOBM_ENABLED_DETAIL = "outOfBandManagementEnabled";
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_HOST = 120;
 
     private static Cache<Long, Long> hostAlertCache;
     private static ExecutorService backgroundSyncBlockingExecutor;
@@ -435,59 +433,46 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
         if (Strings.isNullOrEmpty(newPassword)) {
             throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as provided new-password is null or empty for the host %s.", host.getUuid()));
         }
-        GlobalLock outOfBandManagementHostLock = GlobalLock.getInternLock(getOutOfBandManagementHostLock(host.getId()));
-        try {
-            if (outOfBandManagementHostLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_HOST)) {
-                try {
-                    final OutOfBandManagement outOfBandManagementConfig = outOfBandManagementDao.findByHost(host.getId());
 
-                    final ImmutableMap<OutOfBandManagement.Option, String> options = getOptions(outOfBandManagementConfig);
-                    if (!(options.containsKey(OutOfBandManagement.Option.PASSWORD) && !Strings.isNullOrEmpty(options.get(OutOfBandManagement.Option.PASSWORD)))) {
-                        throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as we've no previously configured password for the host %s.", host.getUuid()));
-                    }
-                    final OutOfBandManagementDriver driver = getDriver(outOfBandManagementConfig);
-
-                    final OutOfBandManagementDriverChangePasswordCommand cmd = new OutOfBandManagementDriverChangePasswordCommand(options, ActionTimeout.valueIn(host.getClusterId()), newPassword);
-                    final OutOfBandManagementDriverResponse driverResponse;
-                    try {
-                        driverResponse = driver.execute(cmd);
-                    } catch (Exception e) {
-                        LOG.error("Out-of-band management change password failed due to driver error: " + e.getMessage());
-                        throw new CloudRuntimeException(String.format("Failed to change out-of-band management password for host (%s) due to driver error: %s", host.getUuid(), e.getMessage()));
-                    }
-
-                    if (!driverResponse.isSuccess()) {
-                        throw new CloudRuntimeException(String.format("Failed to change out-of-band management password for host (%s) with error: %s", host.getUuid(), driverResponse.getError()));
-                    }
-
-                    final boolean updatedConfigResult = Transaction.execute(new TransactionCallback<Boolean>() {
-                        @Override
-                        public Boolean doInTransaction(TransactionStatus status) {
-                            OutOfBandManagement updatedOutOfBandManagementConfig = outOfBandManagementDao.findByHost(host.getId());
-                            updatedOutOfBandManagementConfig.setPassword(newPassword);
-                            return outOfBandManagementDao.update(updatedOutOfBandManagementConfig.getId(), (OutOfBandManagementVO) updatedOutOfBandManagementConfig);
-                        }
-                    });
-
-                    if (!updatedConfigResult) {
-                        LOG.error(String.format("Succeeded to change out-of-band management password but failed to updated in database the new password:%s for the host id:%d", newPassword, host.getId()));
-                    }
-
-                    final OutOfBandManagementResponse response = new OutOfBandManagementResponse();
-                    response.setSuccess(updatedConfigResult && driverResponse.isSuccess());
-                    response.setResultDescription(driverResponse.getResult());
-                    response.setId(host.getUuid());
-                    return response;
-                } finally {
-                    outOfBandManagementHostLock.unlock();
-                }
-            } else {
-                LOG.error("Unable to acquire synchronization lock to change out-of-band management password for host id: " + host.getId());
-                throw new CloudRuntimeException(String.format("Unable to acquire lock to change out-of-band management password for host (%s), please try after some time.", host.getUuid()));
-            }
-        } finally {
-            outOfBandManagementHostLock.releaseRef();
+        final OutOfBandManagement outOfBandManagementConfig = outOfBandManagementDao.findByHost(host.getId());
+        final ImmutableMap<OutOfBandManagement.Option, String> options = getOptions(outOfBandManagementConfig);
+        if (!(options.containsKey(OutOfBandManagement.Option.PASSWORD) && !Strings.isNullOrEmpty(options.get(OutOfBandManagement.Option.PASSWORD)))) {
+            throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as we've no previously configured password for the host %s.", host.getUuid()));
         }
+        final OutOfBandManagementDriver driver = getDriver(outOfBandManagementConfig);
+        final OutOfBandManagementDriverChangePasswordCommand changePasswordCmd = new OutOfBandManagementDriverChangePasswordCommand(options, ActionTimeout.valueIn(host.getClusterId()), newPassword);
+
+        final boolean changePasswordResult = Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                final OutOfBandManagement updatedOutOfBandManagementConfig = outOfBandManagementDao.findByHost(host.getId());
+                updatedOutOfBandManagementConfig.setPassword(newPassword);
+                boolean result = outOfBandManagementDao.update(updatedOutOfBandManagementConfig.getId(), (OutOfBandManagementVO) updatedOutOfBandManagementConfig);
+
+                if (!result) {
+                    throw new CloudRuntimeException(String.format("Failed to change out-of-band management password for host (%s) in the database.", host.getUuid()));
+                }
+
+                final OutOfBandManagementDriverResponse driverResponse;
+                try {
+                    driverResponse = driver.execute(changePasswordCmd);
+                } catch (Exception e) {
+                    LOG.error("Out-of-band management change password failed due to driver error: " + e.getMessage());
+                    throw new CloudRuntimeException(String.format("Failed to change out-of-band management password for host (%s) due to driver error: %s", host.getUuid(), e.getMessage()));
+                }
+
+                if (!driverResponse.isSuccess()) {
+                    throw new CloudRuntimeException(String.format("Failed to change out-of-band management password for host (%s) with error: %s", host.getUuid(), driverResponse.getError()));
+                }
+
+                return result && driverResponse.isSuccess();
+            }
+        });
+
+        final OutOfBandManagementResponse response = new OutOfBandManagementResponse();
+        response.setSuccess(changePasswordResult );
+        response.setId(host.getUuid());
+        return response;
     }
 
     @Override
