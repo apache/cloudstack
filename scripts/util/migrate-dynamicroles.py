@@ -107,10 +107,10 @@ def main():
     apiMap = {}
     with open(options.commandsfile) as f:
         for line in f.readlines():
-            if not line or line == '' or line == '\n' or line.startswith('#'):
+            if not line or line == '' or line == '\n' or line == '\r\n' or line.startswith('#'):
                 continue
             name, value = line.split('=')
-            apiMap[name.strip()] = value.strip()
+            apiMap[name.strip()] = value.strip().split(';')[-1]
 
     # Rename and deprecate old commands.properties file
     if not dryrun:
