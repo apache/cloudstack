@@ -16814,10 +16814,21 @@
                                                 required: false
                                             },
                                         },
+                                        reenterpassword: {
+                                            label: 'label.outofbandmanagement.reenterpassword',
+                                            isPassword: true,
+                                            validation: {
+                                                required: false
+                                            }
+                                        },
                                     }
                                 },
                                 action: function (args) {
                                     var data = args.data;
+                                    if (data.password != data.reenterpassword) {
+                                        args.response.error("Passwords do not match");
+                                        return;
+                                    }
                                     data.hostid = args.context.hosts[0].id;
                                     $.ajax({
                                         url: createURL('changeOutOfBandManagementPassword'),
