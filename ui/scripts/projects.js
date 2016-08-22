@@ -1013,6 +1013,9 @@
                                         label: 'label.display.name',
                                         isEditable: true
                                     },
+                                    id: {
+                                        label: 'label.id'
+                                    },
                                     domain: {
                                         label: 'label.domain'
                                     },
@@ -1021,6 +1024,28 @@
                                     },
                                     state: {
                                         label: 'label.state'
+                                    }
+                                }, {
+                                    vmtotal: {
+                                        label: 'label.total.vms'
+                                    },
+                                    memorytotal: {
+                                        label: 'label.memory.total'
+                                    },
+                                    cputotal: {
+                                        label: 'label.total.cpu'
+                                    },
+                                    volumetotal: {
+                                        label: 'label.volume'
+                                    },
+                                    primarystoragetotal: {
+                                        label: 'label.primary.storage'
+                                    },
+                                    iptotal: {
+                                        label: 'label.total.of.ip'
+                                    },
+                                    templatetotal: {
+                                        label: 'label.template'
                                     }
                                 }],
 
