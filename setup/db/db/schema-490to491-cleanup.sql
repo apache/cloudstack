@@ -16,5 +16,6 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.9.0 to 4.10.0;
+-- Schema cleanup from 4.9.0 to 4.9.1;
 --;
+
