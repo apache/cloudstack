@@ -91,6 +91,7 @@ management, and intelligence in CloudStack.
 %package common
 Summary: Apache CloudStack common files and scripts
 Requires: python
+Requires: python-argparse
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
