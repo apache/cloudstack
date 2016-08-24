@@ -210,7 +210,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_initrddir}
-mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/default
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/profile.d
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d
 
@@ -285,10 +285,10 @@ install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/
 install -D client/target/pythonlibs/jasypt-1.9.2.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.2.jar
 
 install -D packaging/centos7/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
-install -D packaging/centos7/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
-install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
-install -D packaging/centos7/cloud-management.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-management.service
 install -D packaging/centos7/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
+install -D packaging/systemd/cloudstack-management.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-management.service
+install -D packaging/systemd/cloudstack-management.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-management
+install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 
@@ -309,7 +309,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
 install -D packaging/systemd/cloudstack-agent.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-agent.service
-install -D packaging/systemd/cloudstack-agent.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-agent
+install -D packaging/systemd/cloudstack-agent.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
@@ -330,7 +330,7 @@ install -D usage/target/transformed/db.properties ${RPM_BUILD_ROOT}%{_sysconfdir
 install -D usage/target/transformed/log4j-cloud_usage.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
 install -D packaging/systemd/cloudstack-usage.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-usage.service
-install -D packaging/systemd/cloudstack-usage.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-usage
+install -D packaging/systemd/cloudstack-usage.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-usage
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 
 # CLI
@@ -403,6 +403,10 @@ grep "db.simulator.driver=jdbc:mysql" /etc/cloudstack/management/db.properties >
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
+fi
+
+if [ -f %{_sysconfdir}/sysconfig/%{name}-management ] ; then
+    mv %{_sysconfdir}/sysconfig/%{name}-management  %{_sysconfdir}/default/%{name}-management
 fi
 
 %preun agent
@@ -484,7 +488,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/work
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/management
-%config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
+%config(noreplace) %{_sysconfdir}/default/%{name}-management
 %config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %{_sysconfdir}/security/limits.d/cloud
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
@@ -535,7 +539,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-agent-upgrade
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0644,root,root) %{_unitdir}/%{name}-agent.service
-%attr(0644,root,root) %{_sysconfdir}/sysconfig/%{name}-agent
+%config(noreplace) %{_sysconfdir}/default/%{name}-agent
 %attr(0644,root,root) %{_sysconfdir}/profile.d/%{name}-agent-profile.sh
 %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-agent
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco
@@ -562,7 +566,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 %files usage
 %attr(0644,root,root) %{_unitdir}/%{name}-usage.service
-%attr(0644,root,root) %{_sysconfdir}/sysconfig/%{name}-usage
+%config(noreplace) %{_sysconfdir}/default/%{name}-usage
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/usage

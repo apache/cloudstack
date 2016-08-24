@@ -5,17 +5,8 @@ PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
 
-ifeq ($(shell lsb_release -sr), 14.04)
-        SUBSTVARS = -Vjre:Depends="openjdk-7-jre-headless" -Vjdk:Depends="openjdk-7-jdk" -Vinit:"Depends:jsvc"
-else
-        SUBSTVARS = -Vjre:Depends="openjdk-8-jre-headless" -Vjdk:Depends="openjdk-8-jdk" -Vinit:"Depends:systemd"
-endif
-
 %:
 	dh $@ --with python2,systemd
-
-override_dh_gencontrol:
-	dh_gencontrol -- $(SUBSTVARS)
 
 override_dh_auto_configure:
 	cp packaging/debian/replace.properties replace.properties.tmp
@@ -54,8 +45,11 @@ override_dh_auto_install:
 
 	install -m0755 packaging/debian/$(PACKAGE)-agent.init $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
 	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
-	install -m0644 packaging/debian/$(PACKAGE)-agent.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent.service
-	install -m0644 packaging/debian/$(PACKAGE)-agent.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-agent
+	# Fix libvirt service name for Debian/Ubuntu
+	sed -i 's/Requires=libvirtd.service/Requires=libvirt-bin.service/g' packaging/systemd/$(PACKAGE)-agent.service
+	sed -i 's/After=libvirtd.service/After=libvirt-bin.service/g' packaging/systemd/$(PACKAGE)-agent.service
+	install -m0644 packaging/systemd/$(PACKAGE)-agent.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent.service
+	install -m0644 packaging/systemd/$(PACKAGE)-agent.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-agent
 
 	install -D agent/target/transformed/cloud-setup-agent $(DESTDIR)/usr/bin/cloudstack-setup-agent
 	install -D agent/target/transformed/cloud-ssh $(DESTDIR)/usr/bin/cloudstack-ssh
@@ -140,8 +134,8 @@ override_dh_auto_install:
 
 	install -D -m0755 packaging/debian/$(PACKAGE)-usage.init $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
 	install -d -m0755 debian/$(PACKAGE)-usage/lib/systemd/system
-	install -m0644 packaging/debian/$(PACKAGE)-usage.service debian/$(PACKAGE)-usage/lib/systemd/system/$(PACKAGE)-usage.service
-	install -m0644 packaging/debian/$(PACKAGE)-usage.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-usage
+	install -m0644 packaging/systemd/$(PACKAGE)-usage.service debian/$(PACKAGE)-usage/lib/systemd/system/$(PACKAGE)-usage.service
+	install -m0644 packaging/systemd/$(PACKAGE)-usage.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-usage
 
 	# cloudstack-marvin
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-marvin

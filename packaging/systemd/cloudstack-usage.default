@@ -15,7 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+JAVA=/usr/bin/java
 JAVA_HEAP_INITIAL=256m
 JAVA_HEAP_MAX=2048m
 JAVA_CLASS=com.cloud.usage.UsageServer
+JAVA_PID=$$
