@@ -564,6 +564,10 @@ if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
 fi
 
+if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
+    ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
+fi
+
 %post marvin
 pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df
 pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
