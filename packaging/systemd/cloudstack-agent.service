@@ -23,10 +23,7 @@ After=libvirtd.service
 
 [Service]
 Type=simple
-Environment=JAVA_HOME=/usr/lib/jvm/jre
-Environment=JAVA_HEAP_INITIAL=256m
-Environment=JAVA_HEAP_MAX=2048m
-Environment=JAVA_CLASS=com.cloud.agent.AgentShell
+EnvironmentFile=-/etc/sysconfig/cloudstack-agent
 ExecStart=/bin/sh -ec '\
     export ACP=`ls /usr/share/cloudstack-agent/lib/*.jar /usr/share/cloudstack-agent/plugins/*.jar 2>/dev/null|tr "\\n" ":"`; \
     export CLASSPATH="$ACP:/etc/cloudstack/agent:/usr/share/cloudstack-common/scripts"; \
