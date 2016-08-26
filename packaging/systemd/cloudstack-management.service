@@ -15,15 +15,26 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/agent/agent.properties
-/etc/cloudstack/agent/environment.properties
-/etc/cloudstack/agent/log4j-cloud.xml
-/etc/default/cloudstack-agent
-/etc/profile.d/cloudstack-agent-profile.sh
-/etc/logrotate.d/cloudstack-agent
-/etc/init.d/cloudstack-agent
-/usr/bin/cloudstack-setup-agent
-/usr/bin/cloudstack-ssh
-/usr/bin/cloudstack-agent-upgrade
-/usr/share/cloudstack-agent/lib/*
-/usr/share/cloudstack-agent/plugins
+# Systemd unit file for CloudStack Management server
+# 
+# clone tomcat service, see /usr/lib/systemd/system/tomcat.service
+
+[Unit]
+Description=CloudStack Management Server
+After=syslog.target network.target
+
+[Service]
+UMask=0022
+Type=simple
+EnvironmentFile=/etc/tomcat/tomcat.conf
+Environment="NAME=cloudstack-management"
+EnvironmentFile=-/etc/default/cloudstack-management
+ExecStart=/usr/libexec/tomcat/server start
+ExecStop=/usr/libexec/tomcat/server stop
+SuccessExitStatus=143
+User=cloud
+Group=cloud
+
+[Install]
+WantedBy=multi-user.target
+

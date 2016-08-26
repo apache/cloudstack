@@ -15,26 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Systemd unit file for CloudStack Management server
-# 
-# clone tomcat service, see /usr/lib/systemd/system/tomcat.service
-
-[Unit]
-Description=CloudStack Management Server
-After=syslog.target network.target
-
-[Service]
-UMask=0022
-Type=simple
-EnvironmentFile=/etc/tomcat/tomcat.conf
-Environment="NAME=cloudstack-management"
-EnvironmentFile=-/etc/sysconfig/cloudstack-management
-ExecStart=/usr/libexec/tomcat/server start
-ExecStop=/usr/libexec/tomcat/server stop
-SuccessExitStatus=143
-User=cloud
-Group=cloud
-
-[Install]
-WantedBy=multi-user.target
-
+JAVA=/usr/bin/java
+JAVA_HEAP_INITIAL=256m
+JAVA_HEAP_MAX=2048m
+JAVA_CLASS=com.cloud.agent.AgentShell
