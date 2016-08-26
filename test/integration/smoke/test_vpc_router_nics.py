@@ -464,14 +464,14 @@ class TestVPCNics(cloudstackTestCase):
                     self.logger.debug("Ping to google.com from VM")
                     result = str(ssh.execute(ssh_command))
 
-                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("0% packet loss")))
+                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count(" 0% packet loss")))
                 except Exception as e:
                     self.fail("SSH Access failed for %s: %s" % \
                               (vmObj.get_ip(), e)
                               )
         
                 self.assertEqual(
-                                 result.count("0% packet loss"),
+                                 result.count(" 0% packet loss"),
                                  1,
                                  "Ping to outside world from VM should be successful"
                                  )

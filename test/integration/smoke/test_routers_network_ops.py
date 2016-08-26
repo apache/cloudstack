@@ -270,7 +270,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         # Test SSH after closing port 22
         expected = 1
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "0% packet loss"
+        check_string = " 0% packet loss"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -434,7 +434,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
 
         expected = 0
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "0% packet loss"
+        check_string = " 0% packet loss"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -822,7 +822,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
         # Test SSH after closing port 22
         expected = 1
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "0% packet loss"
+        check_string = " 0% packet loss"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -977,7 +977,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
 
         expected = 0
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "0% packet loss"
+        check_string = " 0% packet loss"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
