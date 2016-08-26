@@ -832,6 +832,8 @@
               <exclude>**/*.json</exclude>
               <exclude>build/build.number</exclude>
               <exclude>services/console-proxy/server/js/jquery.js</exclude>
+              <exclude>debian/cloudstack-usage.dirs</exclude>
+              <exclude>debian/cloudstack-agent.dirs</exclude>
               <exclude>debian/compat</exclude>
               <exclude>debian/control</exclude>
               <exclude>debian/dirs</exclude>
