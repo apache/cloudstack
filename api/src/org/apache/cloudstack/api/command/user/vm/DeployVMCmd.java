@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -44,9 +46,9 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -81,8 +83,11 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     private Long serviceOfferingId;
 
     @ACL
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template for the virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = false, description = "the ID of the template for the virtual machine")
     private Long templateId;
+
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, entityType = VMSnapshotResponse.class, required = false, description = "the ID of the snapshot of existing user instance.")
+    private Long vmSnapshotId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "host name for the virtual machine")
     private String name;
@@ -106,7 +111,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @ACL
     @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk offering for the virtual machine. If the template is of ISO format,"
             + " the diskOfferingId is for the root disk volume. Otherwise this parameter is used to indicate the "
-            + "offering for the data disk volume. If the templateId parameter passed is from a Template object,"
+            + "offering for the data disk volume. If the templateId parameter passed is from a Template object or VM snapshot,"
             + " the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is "
             + "from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
     private Long diskOfferingId;
@@ -252,10 +257,12 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             return displayVm;
     }
 
+    @Override
     public List<String> getSecurityGroupNameList() {
         return securityGroupNameList;
     }
 
+    @Override
     public List<Long> getSecurityGroupIdList() {
         return securityGroupIdList;
     }
@@ -270,6 +277,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Long getVmSnapshotId() {
+        return vmSnapshotId;
     }
 
     public String getUserData() {

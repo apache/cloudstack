@@ -37,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotTemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
@@ -198,6 +199,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return ep;
         } else if (moveBetweenImages(srcStore, destStore)) {
             EndPoint ep = findEndpointForImageStorage(destStore);
+            return ep;
+        } else if (srcData instanceof VmSnapshotTemplateInfo) {
+            EndPoint ep = findEndPointForImageMove(srcStore, destStore);
             return ep;
         }
         // TODO Auto-generated method stub

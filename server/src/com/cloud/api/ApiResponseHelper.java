@@ -31,6 +31,8 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -132,6 +134,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.cloudstack.api.response.VlanIpRangeResponse;
+import org.apache.cloudstack.api.response.VmSnapshotTemplateResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
@@ -157,7 +160,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
@@ -285,9 +287,11 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
+import com.cloud.storage.VMSnapshotTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMSnapshotTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
@@ -315,6 +319,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -345,6 +351,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    private VMSnapshotTemplatePoolDao _vmSnapshotTemplatePoolDao;
+    @Inject
+    private VMSnapshotDao _vmSnapshotDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -3715,6 +3725,23 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(sshkeyPair.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        return response;
+    }
+
+    @Override
+    public VmSnapshotTemplateResponse createVmSnapshotTemplateResponse(Long vmSnapshotId, Long storageId) {
+        VmSnapshotTemplateResponse response = new VmSnapshotTemplateResponse();
+
+        VMSnapshotTemplateStoragePoolVO vmSnapshotTemplateVo = _vmSnapshotTemplatePoolDao.findByPoolVmSnapshot(storageId, vmSnapshotId);
+
+        StoragePoolVO poolVo = _storagePoolDao.findById(storageId);
+        String storageUuid = poolVo.getUuid();
+        VMSnapshotVO vmSnapVo = _vmSnapshotDao.findById(vmSnapshotId);
+        String vmSnapshotUuid = vmSnapVo.getUuid();
+        response.setStoragePoolId(storageUuid);
+        response.setVmSnapshotId(vmSnapshotUuid);
+        response.setInstallPath(vmSnapshotTemplateVo.getInstallPath());
+
         return response;
     }
 }

@@ -46,8 +46,10 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VMSnapshotTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMSnapshotTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -73,6 +75,8 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     VolumeDataStoreDao volumeDataStoreDao;
     @Inject
     VMTemplatePoolDao templatePoolDao;
+    @Inject
+    VMSnapshotTemplatePoolDao vmSnapTmplPoolDao;
     @Inject
     SnapshotDataFactory snapshotFactory;
     @Inject
@@ -258,6 +262,14 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     snapshotDataStoreDao.remove(destSnapshotStore.getId());
                 }
                 return true;
+            } else if (dataObj.getType() == DataObjectType.VMSNAPSHOT_TEMPLATE) {
+                VMSnapshotTemplateStoragePoolVO vmSnapTmplPool = vmSnapTmplPoolDao.findById(objId);
+                if (vmSnapTmplPool != null && vmSnapTmplPool.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                    return vmSnapTmplPoolDao.remove(vmSnapTmplPool.getId());
+                } else {
+                    s_logger.warn("VM Snapshot Template " + objId + " is not found on storage pool " + dataStore.getId() + ", so no need to delete");
+                    return true;
+                }
             }
         } else {
             // Image store
@@ -313,6 +325,10 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
 
         } else if (data.getType() == DataObjectType.SNAPSHOT && data.getDataStore().getRole() == DataStoreRole.Primary) {
             result = this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
+        } else if (data.getType() == DataObjectType.VMSNAPSHOT_TEMPLATE && data.getDataStore().getRole() == DataStoreRole.Primary) {
+            s_logger.trace("Updating object state for vm snapshot template : " + data.getUuid() + " based on event " + event.name());
+            result = stateMachines.transitTo(obj, event, null, vmSnapTmplPoolDao);
+            s_logger.trace("Successfully updated object state for vm snapshot template : " + data.getUuid() + " based on event " + event.name());
         } else {
             throw new CloudRuntimeException("Invalid data or store type: " + data.getType() + " " + data.getDataStore().getRole());
         }
@@ -331,6 +347,8 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             return volumeFactory.getVolume(dataObj, store);
         } else if (dataObj.getType() == DataObjectType.SNAPSHOT) {
             return snapshotFactory.getSnapshot(dataObj, store);
+        } else if (dataObj.getType() == DataObjectType.VMSNAPSHOT_TEMPLATE) {
+            return dataObj;
         }
 
         throw new CloudRuntimeException("unknown type");
@@ -358,6 +376,8 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             }
         } else if (type == DataObjectType.TEMPLATE && role == DataStoreRole.Primary) {
             vo = templatePoolDao.findByPoolTemplate(dataStoreId, objId);
+        } else if (type == DataObjectType.VMSNAPSHOT_TEMPLATE && role == DataStoreRole.Primary) {
+            vo = vmSnapTmplPoolDao.findById(objId);
         } else if (type == DataObjectType.SNAPSHOT && role == DataStoreRole.Primary) {
             vo = snapshotDataStoreDao.findByStoreSnapshot(role, dataStoreId, objId);
         } else {

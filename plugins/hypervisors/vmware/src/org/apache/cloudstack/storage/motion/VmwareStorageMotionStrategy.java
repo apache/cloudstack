@@ -25,23 +25,29 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.storage.vmsnapshot.VmSnapshotTemplateObject;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CreateVolumeFromVMSnapshotCommand;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
 import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.SeedTemplateFromVmSnapshotCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
@@ -50,8 +56,10 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -113,6 +121,227 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         CopyCommandResult result = new CopyCommandResult(null, answer);
         result.setResult(errMsg);
         callback.complete(result);
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host tgtHost) {
+        if (tgtHost.getHypervisorType() == HypervisorType.VMware) {
+            s_logger.debug(this.getClass() + " can handle the request because the target is a VMware hypervisor host");
+            return StrategyPriority.HYPERVISOR;
+        }
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public Void copyAsync(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host tgtHost,
+            AsyncCompletionCallback<CopyCommandResult> callback) {
+        Answer answer = null;
+        String errMsg = null;
+        try {
+            VMInstanceVO instance = instanceDao.findById(vmSnapshotObj.getVmSnapshot().getVmId());
+            if (instance != null && tgtHost != null) {
+                answer = createTemplateFromVmSnapshot(templateOnPrimaryStoreObj, userVm, vmSnapshotObj, tgtHost);
+            } else {
+                throw new CloudRuntimeException("Unsupported operation requested for moving data.");
+            }
+        } catch (Exception e) {
+            s_logger.error("copy failed", e);
+            errMsg = e.toString();
+        }
+
+        CopyCommandResult result = new CopyCommandResult(null, answer);
+        result.setResult(errMsg);
+        callback.complete(result);
+        return null;
+    }
+
+    private Answer createTemplateFromVmSnapshot(DataObject templateOnPrimaryStoreObj, UserVm userVm, VmSnapshotObject vmSnapshotObj, Host tgtHost)
+            throws AgentUnavailableException {
+        DataStore templateDataStore = templateOnPrimaryStoreObj.getDataStore();
+
+        String tempalteDsUuid = null;
+        if (templateDataStore != null) {
+            tempalteDsUuid = templateDataStore.getUuid();
+        } else {
+            throw new CloudRuntimeException("Invalid primary storage pool detected for template while trying seed template from vm snapshot : "
+                    + vmSnapshotObj.getVmSnapshot().getUuid());
+        }
+
+        // Get datastore for root volume of VM owning the VM snapshot
+        List<VolumeInfo> vols = vmSnapshotObj.getVolumes();
+        String rootVolPoolUuid = null;
+        DataStore rootVolDs = null;
+        String rootVolumePath = null;
+        for (VolumeInfo vol : vols) {
+            if (vol.getVolumeType() == Volume.Type.ROOT) {
+                rootVolDs = vol.getDataStore();
+                rootVolumePath = vol.getPath();
+                break;
+            }
+        }
+        if (rootVolDs != null) {
+            rootVolPoolUuid = rootVolDs.getUuid();
+        } else {
+            throw new CloudRuntimeException("Invalid primary storage pool detected for root volume of instance : " + userVm.getInstanceName());
+        }
+
+        // Validate if template needs to be seeded to the same storage pool as that of the root volume of VM owning the VM snapshot
+        // Currently seeding from VM snapshot is supported on the same storage pool as that of the root volume of VM owning the VM snapshot
+        // This check should go if we extend the functionality to seed to any storage pool in zone
+        if (rootVolPoolUuid != null && tempalteDsUuid != null) {
+            if (!rootVolPoolUuid.equals(tempalteDsUuid)) {
+                String msg = "Unable to seed template from vm snapshot on storage pool : " + tempalteDsUuid +
+                        ", because the vm snapshot is on a different storage pool : " + rootVolPoolUuid +
+                        ". Seeding of template is supported only if the vm snapshot is also present on same storage pool.";
+                s_logger.warn(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+
+        // Seed the template on primary storage pool
+        String taskMsg = "seed template [" + templateOnPrimaryStoreObj.getUuid() +
+                "] on storage pool [" + templateDataStore.getUuid() +
+                "] from VM snapshot [" + vmSnapshotObj.getVmSnapshot().getUuid() +
+                "] using host [" + tgtHost.getUuid() + "]";
+
+        s_logger.info("Trying to " + taskMsg);
+
+        // Clone Root volume of vm snapshot to seed template in primary storage
+        try {
+            String srcVmSnapshotName = vmSnapshotObj.getVmSnapshot().getName();
+            String srcVmSnapshotUuid = vmSnapshotObj.getVmSnapshot().getUuid();
+            String vmName = userVm.getInstanceName();
+            String templateName = ((VmSnapshotTemplateObject)templateOnPrimaryStoreObj).getUniqueName();
+            String dataStoreUuid = templateOnPrimaryStoreObj.getDataStore().getUuid();
+            String dsName = templateOnPrimaryStoreObj.getDataStore().getName();
+
+            SeedTemplateFromVmSnapshotCommand seedTemplateFromVmSnapshotCmd = new SeedTemplateFromVmSnapshotCommand(templateName,
+                    dsName, dataStoreUuid, rootVolumePath, srcVmSnapshotName, srcVmSnapshotUuid, vmName);
+
+            CopyCmdAnswer seedTemplateFromVmSnapshotAnswer = (CopyCmdAnswer)agentMgr.send(tgtHost.getId(), seedTemplateFromVmSnapshotCmd);
+            if (seedTemplateFromVmSnapshotAnswer == null) {
+                s_logger.error("Failed to " + taskMsg);
+                throw new CloudRuntimeException("Failed to " + taskMsg);
+            } else if (!seedTemplateFromVmSnapshotAnswer.getResult()) {
+                s_logger.error("Failed to " + taskMsg + ". Details: " + seedTemplateFromVmSnapshotAnswer.getDetails());
+                throw new CloudRuntimeException("Failed to " + taskMsg + ". Details: " + seedTemplateFromVmSnapshotAnswer.getDetails());
+            } else {
+                // Post template creation tasks
+            }
+            s_logger.info("Successfully completed the operation to " + taskMsg);
+
+            return seedTemplateFromVmSnapshotAnswer;
+        } catch (OperationTimedoutException e) {
+            s_logger.error("Error trying to : " + taskMsg, e);
+            throw new AgentUnavailableException("Operation timed out to " + taskMsg, tgtHost.getId());
+        }
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost) {
+        if (tgtHost.getHypervisorType() == HypervisorType.VMware) {
+            s_logger.debug(this.getClass() + " can handle the request because the target is a VMware hypervisor host");
+            return StrategyPriority.HYPERVISOR;
+        }
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public Void copyAsync(DataObject volumeOnStore, VmSnapshotObject vmSnapshotObj, Volume srcVolume, UserVm userVm, Host tgtHost,
+            AsyncCompletionCallback<CopyCommandResult> callback) {
+        Answer answer = null;
+        String errMsg = null;
+        try {
+            VMInstanceVO instance = instanceDao.findById(vmSnapshotObj.getVmSnapshot().getVmId());
+            if (instance != null && tgtHost != null) {
+                answer = createVolumeFromVmSnapshot(volumeOnStore, userVm, vmSnapshotObj, tgtHost, srcVolume);
+            } else {
+                throw new CloudRuntimeException("Unsupported operation requested for moving data.");
+            }
+        } catch (Exception e) {
+            s_logger.error("copy failed", e);
+            errMsg = e.toString();
+        }
+
+        CopyCommandResult result = new CopyCommandResult(null, answer);
+        result.setResult(errMsg);
+        callback.complete(result);
+        return null;
+    }
+
+    private Answer createVolumeFromVmSnapshot(DataObject volumeOnStore, UserVm userVm, VmSnapshotObject vmSnapshotObj, Host tgtHost, Volume srcVolume)
+            throws AgentUnavailableException {
+        DataStore newVolDataStore = volumeOnStore.getDataStore();
+
+        String newDataVolDsUuid = null;
+        if (newVolDataStore != null) {
+            newDataVolDsUuid = newVolDataStore.getUuid();
+        } else {
+            throw new CloudRuntimeException("Invalid primary storage pool detected for volume while creating volume from vm snapshot : "
+                    + vmSnapshotObj.getVmSnapshot().getUuid());
+        }
+
+        // Get datastore for root volume of VM owning the VM snapshot
+        List<VolumeInfo> vols = vmSnapshotObj.getVolumes();
+        String dataVolPoolUuid = null;
+        DataStore rootVolDs = null;
+        String srcDataVolumePath = srcVolume.getPath();
+        String dataVolumePathInVm = null;
+
+        for (VolumeInfo vol : vols) {
+            if (vol.getVolumeType() == Volume.Type.DATADISK) {
+                dataVolumePathInVm = vol.getPath();
+                if (dataVolumePathInVm.equals(srcDataVolumePath)) {
+                    dataVolPoolUuid = vol.getDataStore().getUuid();
+                    break;
+                }
+            }
+        }
+
+        // Validate if volume needs to be created is allocated the same storage pool as that of the data volume of VM owning the VM snapshot
+        // This check should go if we extend the functionality to seed to any storage pool in zone
+        if (dataVolPoolUuid != null && newDataVolDsUuid != null) {
+            if (!dataVolPoolUuid.equals(newDataVolDsUuid)) {
+                String msg = "Unable to create volume from vm snapshot on storage pool : " + newDataVolDsUuid +
+                        ", because the vm snapshot is on a different storage pool : " + dataVolPoolUuid +
+                        ". Volume creation from vmsnapshot is supported only if the vm snapshot is also present on same storage pool.";
+                s_logger.warn(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+
+        // Seed the template on primary storage pool
+        String taskMsg = "create volume [" + volumeOnStore.getUuid() +
+                "] on storage pool [" + newDataVolDsUuid +
+                "] from VM snapshot [" + vmSnapshotObj.getVmSnapshot().getUuid() +
+                "] using host [" + tgtHost.getUuid() + "]";
+
+        s_logger.info("Trying to " + taskMsg);
+
+        // Clone data volume from specified volume in vm snapshot on to specified primary storage
+        try {
+            String srcVmSnapshotName = vmSnapshotObj.getVmSnapshot().getName();
+            String srcVmSnapshotUuid = vmSnapshotObj.getVmSnapshot().getUuid();
+            String vmName = userVm.getInstanceName();
+            String dataStoreUuid = volumeOnStore.getDataStore().getUuid();
+            String dsName = volumeOnStore.getDataStore().getName();
+            CreateVolumeFromVMSnapshotCommand createVolumeFromVMSnapshotCommand = new CreateVolumeFromVMSnapshotCommand(dsName, dataStoreUuid, srcDataVolumePath,
+                    srcVmSnapshotName, srcVmSnapshotUuid, vmName);
+            CopyCmdAnswer createVolumeFromVMSnapshotAnswer = (CopyCmdAnswer)agentMgr.send(tgtHost.getId(), createVolumeFromVMSnapshotCommand);
+            if (createVolumeFromVMSnapshotAnswer == null) {
+                s_logger.error("Failed to " + taskMsg);
+                throw new CloudRuntimeException("Failed to " + taskMsg);
+            } else if (!createVolumeFromVMSnapshotAnswer.getResult()) {
+                s_logger.error("Failed to " + taskMsg + ". Details: " + createVolumeFromVMSnapshotAnswer.getDetails());
+                throw new CloudRuntimeException("Failed to " + taskMsg + ". Details: " + createVolumeFromVMSnapshotAnswer.getDetails());
+            }
+            s_logger.info("Successfully completed the operation to " + taskMsg);
+
+            return createVolumeFromVMSnapshotAnswer;
+        } catch (OperationTimedoutException e) {
+            s_logger.error("Error trying to : " + taskMsg, e);
+            throw new AgentUnavailableException("Operation timed out to " + taskMsg, tgtHost.getId());
+        }
     }
 
     private Answer migrateVmWithVolumesAcrossCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)

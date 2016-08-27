@@ -545,6 +545,9 @@ public class EventTypes {
     //Usage related events
     public static final String EVENT_USAGE_REMOVE_USAGE_RECORDS = "USAGE.REMOVE.USAGE.RECORDS";
 
+    public static final String EVENT_TEMPLATE_FROM_VM_SNAPSHOT_CREATE = "VMSNAPSHOT.TEMPLATE.CREATE";
+    public static final String EVENT_TEMPLATE_FROM_VM_SNAPSHOT_REMOVE = "VMSNAPSHOT.TEMPLATE.REMOVE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -918,6 +921,9 @@ public class EventTypes {
 
         //Usage
         entityEventDetails.put(EVENT_USAGE_REMOVE_USAGE_RECORDS, Usage.class);
+        entityEventDetails.put(EVENT_TEMPLATE_FROM_VM_SNAPSHOT_CREATE, "VmSnapshotTemplate");
+        entityEventDetails.put(EVENT_TEMPLATE_FROM_VM_SNAPSHOT_REMOVE, "VmSnapshotTemplate");
+
     }
 
     public static String getEntityForEvent(String eventName) {

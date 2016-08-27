@@ -410,7 +410,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
 
             if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
-                srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
+                (srcData.getObjectType() == DataObjectType.TEMPLATE || srcData.getObjectType() == DataObjectType.VMSNAPSHOT_TEMPLATE) &&
+                srcStoreTO.getRole() == DataStoreRole.Primary) {
                 needDelegation = false;
             } else {
                 needDelegation = true;

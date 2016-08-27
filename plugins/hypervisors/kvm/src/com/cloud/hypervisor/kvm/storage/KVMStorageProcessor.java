@@ -1364,4 +1364,9 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new Answer(cmd, false, "not implememented yet");
     }
 
+    @Override
+    public Answer cloneVolumeFromVmSnapshotTemplate(CopyCommand cmd) {
+        return new Answer(cmd, false, "not implememented yet");
+    }
+
 }

@@ -20,7 +20,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.Map;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -30,6 +29,9 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.Volume;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 
 public interface VolumeService {
     class VolumeApiResult extends CommandResult {
@@ -108,4 +110,11 @@ public interface VolumeService {
     SnapshotInfo takeSnapshot(VolumeInfo volume);
 
     VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, long volumeId, HypervisorType hyperType);
+
+    AsyncCallFuture<VolumeApiResult> createVolumeFromVmSnapshotAsync(VolumeInfo volume, Volume refVolumeInVmSnapshot, DataStore destPool, VmSnapshotObject vmSnapObj,
+            UserVm vmSnapshotOwnerVm);
+
+    AsyncCallFuture<VolumeApiResult> createVolumeFromVmSnapshot(VolumeInfo volume, DataStore store, Volume srcVolume, VmSnapshotObject vmSnapshot, UserVm userVm, Host tgtHost);
+
+    Host getHostToCreateVolumeFromVmSnapshot(Volume srcVolume, UserVm vmSnapshotOwnerVm);
 }

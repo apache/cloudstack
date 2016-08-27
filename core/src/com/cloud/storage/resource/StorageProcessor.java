@@ -70,5 +70,7 @@ public interface StorageProcessor {
 
     public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd);
 
+    public Answer cloneVolumeFromVmSnapshotTemplate(CopyCommand cmd);
+
     public Answer resignature(ResignatureCommand cmd);
 }

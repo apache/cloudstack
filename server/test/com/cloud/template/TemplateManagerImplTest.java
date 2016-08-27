@@ -45,9 +45,11 @@ import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VMSnapshotTemplatePoolDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -60,6 +62,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -461,6 +465,21 @@ public class TemplateManagerImplTest {
         @Bean
         public TemplateDataStoreDao templateDataStoreDao() {
             return Mockito.mock(TemplateDataStoreDao.class);
+        }
+
+        @Bean
+        public VMTemplateDetailsDao templateDetailsDao() {
+            return Mockito.mock(VMTemplateDetailsDao.class);
+        }
+
+        @Bean
+        public VMSnapshotDao vmSnapshotDao() {
+            return Mockito.mock(VMSnapshotDao.class);
+        }
+
+        @Bean
+        public VMSnapshotTemplatePoolDao vmSnapshotTemplatePoolDao() {
+            return Mockito.mock(VMSnapshotTemplatePoolDao.class);
         }
 
         @Bean

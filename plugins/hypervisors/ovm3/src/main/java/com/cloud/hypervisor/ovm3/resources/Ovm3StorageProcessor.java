@@ -843,4 +843,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, false);
     }
+
+    @Override
+    public Answer cloneVolumeFromVmSnapshotTemplate(CopyCommand cmd) {
+        return new Answer(cmd, false, "not implememented yet");
+    }
 }

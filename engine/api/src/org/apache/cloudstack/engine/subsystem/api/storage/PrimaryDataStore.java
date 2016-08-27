@@ -36,4 +36,7 @@ public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
     SnapshotInfo getSnapshot(long snapshotId);
 
     DiskFormat getDefaultDiskType();
+
+    VmSnapshotTemplateInfo getVmSnapshotTemplate(long vmSnapshotId);
+
 }

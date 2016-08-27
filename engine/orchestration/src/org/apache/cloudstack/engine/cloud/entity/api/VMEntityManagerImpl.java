@@ -22,6 +22,9 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
@@ -29,8 +32,6 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DataCenterDeployment;
@@ -218,7 +219,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public void deployVirtualMachine(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params)
+    public void deployVirtualMachine(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean deployOnGivenHost)
         throws InsufficientCapacityException, ResourceUnavailableException {
         //grab the VM Id and destination using the reservationId.
 
@@ -232,14 +233,15 @@ public class VMEntityManagerImpl implements VMEntityManager {
             try {
                 _itMgr.start(vm.getUuid(), params, reservedPlan, _planningMgr.getDeploymentPlannerByName(vmReservation.getDeploymentPlanner()));
             } catch (Exception ex) {
-                // Retry the deployment without using the reservation plan
-                DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
-
-                if (reservedPlan.getAvoids() != null) {
-                    plan.setAvoids(reservedPlan.getAvoids());
+             // Retry is only done if host id is not passed in deploy virtual machine api. Otherwise
+             // the instance may be started on another host instead of the intended one.
+                if (!deployOnGivenHost) {
+                    DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
+                    if (reservedPlan.getAvoids() != null) {
+                        plan.setAvoids(reservedPlan.getAvoids());
+                    }
+                    _itMgr.start(vm.getUuid(), params, plan, null);
                 }
-
-                _itMgr.start(vm.getUuid(), params, plan, null);
             }
         } else {
             // no reservation found. Let VirtualMachineManager retry
@@ -268,7 +270,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
 
     @Inject
     public void setPlanners(List<DeploymentPlanner> planners) {
-        this._planners = planners;
+        _planners = planners;
     }
 
 }

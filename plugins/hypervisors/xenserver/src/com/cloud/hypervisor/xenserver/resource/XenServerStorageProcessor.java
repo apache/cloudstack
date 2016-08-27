@@ -1797,4 +1797,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new Answer(cmd, false, e.toString());
         }
     }
+
+    @Override
+    public Answer cloneVolumeFromVmSnapshotTemplate(CopyCommand cmd) {
+        return new Answer(cmd, false, "not implememented yet");
+    }
 }

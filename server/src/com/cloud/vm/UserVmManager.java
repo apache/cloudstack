@@ -30,6 +30,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
@@ -115,5 +116,9 @@ public interface UserVmManager extends UserVmService {
 
     void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
 
+    /**
+     * @return list of hypervisors that are supported for deploying user instance from a VM snapshot
+     */
+    List<HypervisorType> getHTypesForDeployFromSnapshot();
     void persistDeviceBusInfo(UserVmVO paramUserVmVO, String paramString);
 }

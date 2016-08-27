@@ -28,6 +28,8 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.exception.InvalidParameterValueException;
+
 public class SnapshotDescriptor {
     private static final Logger s_logger = Logger.getLogger(SnapshotDescriptor.class);
 
@@ -212,6 +214,56 @@ public class SnapshotDescriptor {
         }
 
         return l.toArray(new SnapshotInfo[0]);
+    }
+
+    public SnapshotInfo[] getSnapshotDiskChain(String uniqueSnapshotName) {
+        Integer id = getSnapshotUidByDisplayName(uniqueSnapshotName);
+        if (id == null) {
+            throw new InvalidParameterValueException("Unable to find vm snapshot : " + uniqueSnapshotName + " in vm snapshot tree.");
+        }
+
+        ArrayList<SnapshotInfo> l = new ArrayList<SnapshotInfo>();
+        String displayNameEntry = String.format("snapshot%d.displayName", id.intValue());
+        String current = _properties.getProperty(displayNameEntry);
+        while (current != null || id >= 0) {
+            String numDisksStr = _properties.getProperty(String.format("snapshot%d.numDisks", id));
+            int numDisks = 0;
+            if (numDisksStr != null && !numDisksStr.isEmpty()) {
+                numDisks = Integer.parseInt(numDisksStr);
+                DiskInfo[] disks = new DiskInfo[numDisks];
+                for (int i = 0; i < numDisks; i++) {
+                    disks[i] = new DiskInfo(_properties.getProperty(String.format("snapshot%d.disk%d.fileName", id, i)),
+                            _properties.getProperty(String.format("snapshot%d.disk%d.node", id, i)));
+                }
+
+                SnapshotInfo info = new SnapshotInfo();
+                info.setId(id);
+                info.setNumOfDisks(numDisks);
+                info.setDisks(disks);
+                info.setDisplayName(_properties.getProperty(String.format("snapshot%d.displayName", id)));
+                l.add(info);
+            }
+
+            current = _properties.getProperty(String.format("snapshot%d.parent", id));
+            id--;
+        }
+
+        return l.toArray(new SnapshotInfo[0]);
+    }
+
+    public Integer getSnapshotUidByDisplayName(String snapshotDisplayName) {
+        ArrayList<SnapshotInfo> l = new ArrayList<SnapshotInfo>();
+        String currentSnapshot = _properties.getProperty("snapshot.current");
+        Integer id = null;
+        while (currentSnapshot != null) {
+            id = getSnapshotId(currentSnapshot);
+            String currentSnapshotDisplayName = _properties.getProperty(String.format("snapshot%d.displayName", id.intValue()));
+            if (currentSnapshotDisplayName.equalsIgnoreCase(snapshotDisplayName)) {
+                return id;
+            }
+            currentSnapshot = _properties.getProperty(String.format("snapshot%d.parent", id.intValue()));
+        }
+        return id;
     }
 
     public static class SnapshotInfo {

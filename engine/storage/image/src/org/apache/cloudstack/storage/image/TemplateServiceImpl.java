@@ -46,11 +46,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotTemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -67,6 +70,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.vmsnapshot.VmSnapshotTemplateObject;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
@@ -77,16 +81,20 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMSnapshotTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.dao.VMSnapshotTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -97,6 +105,8 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -126,6 +136,10 @@ public class TemplateServiceImpl implements TemplateService {
     TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     DataCenterDao _dcDao = null;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    VMSnapshotTemplatePoolDao _vmSnapTmplPoolDao;
     @Inject
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
@@ -162,6 +176,26 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         public AsyncCallFuture<TemplateApiResult> getFuture() {
+            return future;
+        }
+
+    }
+
+    class VmSnapshotTemplateOpContext<T> extends AsyncRpcContext<T> {
+        final VmSnapshotTemplateObject vmSnapTemplate;
+        final AsyncCallFuture<VmSnapshotTemplateApiResult> future;
+
+        public VmSnapshotTemplateOpContext(AsyncCompletionCallback<T> callback, VmSnapshotTemplateObject vmSnapTemplate, AsyncCallFuture<VmSnapshotTemplateApiResult> future) {
+            super(callback);
+            this.vmSnapTemplate = vmSnapTemplate;
+            this.future = future;
+        }
+
+        public VmSnapshotTemplateObject getVmSnapshotTemplate() {
+            return vmSnapTemplate;
+        }
+
+        public AsyncCallFuture<VmSnapshotTemplateApiResult> getFuture() {
             return future;
         }
 
@@ -731,6 +765,86 @@ public class TemplateServiceImpl implements TemplateService {
         caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null)).setContext(context);
         _motionSrv.copyAsync(source, templateOnStore, caller);
         return future;
+    }
+
+    @Override
+    public AsyncCallFuture<VmSnapshotTemplateApiResult> seedVmSnapshotTemplateOnPrimary(PrimaryDataStore dataStore, VmSnapshotObject vmSnapshotObj,
+            VmSnapshotTemplateInfo vmSnapshotTemplateInfo,
+            UserVm vmSnapshotOwnerVm) {
+        AsyncCallFuture<VmSnapshotTemplateApiResult> future = new AsyncCallFuture<VmSnapshotTemplateApiResult>();
+        Host tgtHost = _hostDao.findById(vmSnapshotOwnerVm.getHostId());
+        long vmSnapshotId = vmSnapshotObj.getVmSnapshot().getId();
+        DataObject templateOnPrimaryStoreObj = dataStore.create(vmSnapshotTemplateInfo);
+        if (((VmSnapshotTemplateObject)templateOnPrimaryStoreObj).getVmSnapshotTemplateVo() == null) {
+            templateOnPrimaryStoreObj = dataStore.getVmSnapshotTemplate(vmSnapshotId);
+        }
+        templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
+
+        VmSnapshotTemplateOpContext<VmSnapshotTemplateApiResult> context = new VmSnapshotTemplateOpContext<VmSnapshotTemplateApiResult>(null,
+                (VmSnapshotTemplateObject)templateOnPrimaryStoreObj, future);
+        AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().seedVmSnapshotTemplateCallBack(null, null)).setContext(context);
+
+        VMSnapshotTemplateStoragePoolVO templatePoolRef = _vmSnapTmplPoolDao.findByPoolVmSnapshot(dataStore.getId(), vmSnapshotId);
+        if (templatePoolRef == null) {
+            throw new CloudRuntimeException("Failed to find DB entry for template created from vm snapshot " + vmSnapshotObj.getVmSnapshot().getUuid() + " in storage pool "
+                    + dataStore.getId());
+        }
+        long templatePoolRefId = templatePoolRef.getId();
+        int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Acquire lock on VM snapshot template in primary storagePool " + templatePoolRefId + " with timeout " + storagePoolMaxWaitSeconds + " seconds");
+        }
+        templatePoolRef = _vmSnapTmplPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
+
+        if (templatePoolRef == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.info("Unable to acquire lock on VM snapshot template in primary storagePool " + templatePoolRefId);
+            }
+            throw new CloudRuntimeException("Unable to acquire lock on VM snapshot template in primary storagePool " + templatePoolRefId);
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.info("lock is acquired for VM snapshot template in primary storagePool " + templatePoolRefId);
+        }
+
+        try {
+            _motionSrv.copyAsync(templateOnPrimaryStoreObj, vmSnapshotObj, vmSnapshotOwnerVm, tgtHost, caller);
+        } catch (Throwable e) {
+            s_logger.debug("failed to create vm snapshot template on storage", e);
+            templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
+            dataStore.create(vmSnapshotTemplateInfo);  // make sure that vm_snapshot_spool_ref entry is still present so that the second thread can acquire the lock
+        } finally {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.info("releasing lock for VM snapshot template in primary storagePool " + templatePoolRefId);
+            }
+            _vmSnapTmplPoolDao.releaseFromLockTable(templatePoolRefId);
+        }
+        return future;
+    }
+
+    protected Void seedVmSnapshotTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback,
+            VmSnapshotTemplateOpContext<VmSnapshotTemplateApiResult> context) {
+        VmSnapshotTemplateInfo vmSnapshotTemplate = context.getVmSnapshotTemplate();
+        CopyCommandResult result = callback.getResult();
+        AsyncCallFuture<VmSnapshotTemplateApiResult> future = context.getFuture();
+        VmSnapshotTemplateApiResult res = new VmSnapshotTemplateApiResult(vmSnapshotTemplate);
+        try {
+            if (result.isFailed()) {
+                res.setResult(result.getResult());
+                vmSnapshotTemplate.processEvent(Event.OperationFailed);
+            } else {
+                vmSnapshotTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+            }
+            future.complete(res);
+        } catch (Exception e) {
+            s_logger.debug("Failed to process seed vmsnapshot template callback", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+
+        return null;
     }
 
     @Override

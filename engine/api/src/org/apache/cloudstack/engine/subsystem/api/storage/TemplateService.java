@@ -24,6 +24,7 @@ import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
+import com.cloud.uservm.UserVm;
 
 public interface TemplateService {
 
@@ -41,6 +42,19 @@ public interface TemplateService {
         }
     }
 
+    class VmSnapshotTemplateApiResult extends CommandResult {
+        private final VmSnapshotTemplateInfo vmSnapTemplate;
+
+        public VmSnapshotTemplateApiResult(VmSnapshotTemplateInfo vmSnapTemplate) {
+            super();
+            this.vmSnapTemplate = vmSnapTemplate;
+        }
+
+        public VmSnapshotTemplateInfo getTemplate() {
+            return vmSnapTemplate;
+        }
+    }
+
     void createTemplateAsync(TemplateInfo template, DataStore store, AsyncCompletionCallback<TemplateApiResult> callback);
 
     AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot, TemplateInfo template, DataStore store);
@@ -53,6 +67,9 @@ public interface TemplateService {
 
     AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool);
 
+    AsyncCallFuture<VmSnapshotTemplateApiResult> seedVmSnapshotTemplateOnPrimary(PrimaryDataStore dataStore, VmSnapshotObject vmSnapshotObj,
+            VmSnapshotTemplateInfo vmSnapshotTemplateInfo,
+            UserVm userVm);
     AsyncCallFuture<TemplateApiResult> deleteTemplateOnPrimary(TemplateInfo template, StoragePool pool);
 
     void syncTemplateToRegionStore(long templateId, DataStore store);

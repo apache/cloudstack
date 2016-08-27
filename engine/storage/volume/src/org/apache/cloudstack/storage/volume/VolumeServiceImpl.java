@@ -28,14 +28,9 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.offering.DiskOffering;
-import com.cloud.org.Cluster;
-import com.cloud.org.Grouping.AllocationState;
-import com.cloud.resource.ResourceState;
-import com.cloud.server.ManagementService;
-import com.cloud.storage.RegisterVolumePayload;
-import com.cloud.utils.Pair;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -54,6 +49,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotTemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -68,23 +65,26 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.storage.vmsnapshot.VmSnapshotTemplateObject;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
@@ -94,26 +94,39 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
+import com.cloud.org.Cluster;
+import com.cloud.org.Grouping.AllocationState;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
+import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMSnapshotTemplateStoragePoolVO;
+import com.cloud.storage.VMSnapshotTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.State;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMSnapshotTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.UserVmDao;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -122,6 +135,8 @@ public class VolumeServiceImpl implements VolumeService {
     VolumeDao volDao;
     @Inject
     PrimaryDataStoreProviderManager dataStoreMgr;
+    @Inject
+    ResourceManager resourceMgr;
     @Inject
     DataMotionService motionSrv;
     @Inject
@@ -141,7 +156,13 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     VMTemplatePoolDao _tmpltPoolDao;
     @Inject
+    VMSnapshotTemplatePoolDao _vmSnapTmplPoolDao;
+    @Inject
+    protected SnapshotDataStoreDao _snapshotStoreDao = null;
+    @Inject
     VolumeDao _volumeDao;
+    @Inject
+    UserVmDao _userVmDao;
     @Inject
     EndPointSelector _epSelector;
     @Inject
@@ -433,6 +454,17 @@ public class VolumeServiceImpl implements VolumeService {
             this.templatePoolId = templatePoolId;
         }
 
+        public CreateBaseImageContext(AsyncCompletionCallback<T> callback, VolumeInfo volume, PrimaryDataStore dataStore, VMSnapshotTemplateStoragePoolVO templatePoolRef,
+                AsyncCallFuture<VolumeApiResult> future, DataObject templateOnPrimaryStoreObj, long templatePoolRefId) {
+            super(callback);
+            this.volume = volume;
+            this.dataStore = dataStore;
+            this.future = future;
+            this.srcTemplate = null;
+            this.destObj = templateOnPrimaryStoreObj;
+            this.templatePoolId = templatePoolRefId;
+        }
+
         public VolumeInfo getVolume() {
             return this.volume;
         }
@@ -455,6 +487,52 @@ public class VolumeServiceImpl implements VolumeService {
 
     }
 
+    class CreateBaseImageFromVmSnapshotContext<T> extends AsyncRpcContext<T> {
+        private final VolumeInfo volume;
+        private final VmSnapshotObject srcVmSnapshot;
+        private final PrimaryDataStore dataStore;
+        private final VmSnapshotTemplateInfo srcTemplate;
+        private final AsyncCallFuture<VolumeApiResult> future;
+        final DataObject destObj;
+        long templatePoolId;
+
+        public CreateBaseImageFromVmSnapshotContext(AsyncCompletionCallback<T> callback, VolumeInfo volume, PrimaryDataStore datastore, VmSnapshotObject vmSnapshotObj,
+                VmSnapshotTemplateInfo vmSnapshotTemplateInfo, AsyncCallFuture<VolumeApiResult> future, DataObject destObj, long templatePoolId) {
+            super(callback);
+            this.volume = volume;
+            this.srcVmSnapshot = vmSnapshotObj;
+            this.dataStore = datastore;
+            this.future = future;
+            this.srcTemplate = vmSnapshotTemplateInfo;
+            this.destObj = destObj;
+            this.templatePoolId = templatePoolId;
+        }
+
+        public VolumeInfo getVolume() {
+            return this.volume;
+        }
+
+        public VmSnapshotObject getVmSnapshotInfo() {
+            return this.srcVmSnapshot;
+        }
+
+        public PrimaryDataStore getDataStore() {
+            return this.dataStore;
+        }
+
+        public VmSnapshotTemplateInfo getSrcTemplate() {
+            return this.srcTemplate;
+        }
+
+        public AsyncCallFuture<VolumeApiResult> getFuture() {
+            return this.future;
+        }
+
+        public long getTemplatePoolId() {
+            return templatePoolId;
+        }
+
+    }
     private TemplateInfo waitForTemplateDownloaded(PrimaryDataStore store, TemplateInfo template) {
         int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         int sleepTime = 120;
@@ -690,23 +768,42 @@ public class VolumeServiceImpl implements VolumeService {
             Answer ans = result.getAnswer();
             if (ans != null && ans instanceof CopyCmdAnswer && ans.getDetails().contains("request template reload")) {
                 if (tmplOnPrimary != null) {
-                    s_logger.info("Reset template_spool_ref entry so that vmware template can be reloaded in next try");
-                    VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(tmplOnPrimary.getDataStore().getId(), tmplOnPrimary.getId());
-                    if (templatePoolRef != null) {
-                        long templatePoolRefId = templatePoolRef.getId();
-                        templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, 1200);
-                        try {
-                            if (templatePoolRef == null) {
-                                s_logger.warn("Reset Template State On Pool failed - unable to lock TemplatePoolRef " + templatePoolRefId);
-                            } else {
-                                templatePoolRef.setTemplateSize(0);
-                                templatePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
-                                templatePoolRef.setState(ObjectInDataStoreStateMachine.State.Allocated);
-
-                                _tmpltPoolDao.update(templatePoolRefId, templatePoolRef);
+                    if (tmplOnPrimary.getType() == DataObjectType.TEMPLATE) {
+                        s_logger.info("Reset template_spool_ref entry so that vmware template can be reloaded in next try");
+                        VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(tmplOnPrimary.getDataStore().getId(), tmplOnPrimary.getId());
+                        if (templatePoolRef != null) {
+                            long templatePoolRefId = templatePoolRef.getId();
+                            templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, 1200);
+                            try {
+                                if (templatePoolRef == null) {
+                                    s_logger.warn("Reset Template State On Pool failed - unable to lock TemplatePoolRef " + templatePoolRefId);
+                                } else {
+                                    templatePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+                                    templatePoolRef.setState(ObjectInDataStoreStateMachine.State.Allocated);
+                                    _tmpltPoolDao.update(templatePoolRefId, templatePoolRef);
+                                }
+                            } finally {
+                                _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
                             }
-                        }finally {
-                            _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
+                        }
+                    } else if (tmplOnPrimary.getType() == DataObjectType.VMSNAPSHOT_TEMPLATE) {
+                        s_logger.info("Reset vm_snapshot_spool_ref entry so that vmware snapshot template can be re-created in next try.");
+                        VMSnapshotTemplateStoragePoolVO vmSnapTemplatePoolRef = _vmSnapTmplPoolDao.findById(tmplOnPrimary.getId());
+                        if (vmSnapTemplatePoolRef != null) {
+                            long vmSnapTemplatePoolRefId = vmSnapTemplatePoolRef.getId();
+                            vmSnapTemplatePoolRef = _vmSnapTmplPoolDao.acquireInLockTable(vmSnapTemplatePoolRefId, 1200);
+                            try {
+                                if (vmSnapTemplatePoolRef == null) {
+                                    s_logger.warn("Failed to reset Status of VmSnapshot template on primary storage pool, due to - unable to lock on VmSnapshot template [id="
+                                            + vmSnapTemplatePoolRefId + "]");
+                                } else {
+                                    vmSnapTemplatePoolRef.setStatus(VMSnapshotTemplateStorageResourceAssoc.Status.NOT_CREATED);
+                                    vmSnapTemplatePoolRef.setState(ObjectInDataStoreStateMachine.State.Allocated);
+                                    _vmSnapTmplPoolDao.update(vmSnapTemplatePoolRefId, vmSnapTemplatePoolRef);
+                                }
+                            } finally {
+                                _tmpltPoolDao.releaseFromLockTable(vmSnapTemplatePoolRefId);
+                            }
                         }
                     }
                 }
@@ -1163,6 +1260,178 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return future;
+    }
+
+    @Override
+    public AsyncCallFuture<VolumeApiResult> createVolumeFromVmSnapshotAsync(VolumeInfo volume, Volume vol, DataStore dataStore, VmSnapshotObject vmSnapshotObj,
+            UserVm vmSnapshotOwnerVm) {
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+        VmSnapshotTemplateInfo vmSnapshottemplateOnPrimaryStore = null;
+        PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStore.getId());
+
+        long vmSnapshotId = vmSnapshotObj.getVmSnapshot().getId();
+        String vmSnapshotName = vmSnapshotObj.getVmSnapshot().getName();
+        String vmSnapshotUuid = vmSnapshotObj.getVmSnapshot().getUuid();
+        // Check if already a template is seeded on this primary storage from specified vm snapshot
+        VMSnapshotTemplateStoragePoolVO vmSnapshotTemplatePoolRef = _vmSnapTmplPoolDao.findByPoolVmSnapshot(dataStore.getId(), vmSnapshotId);
+        if (vmSnapshotTemplatePoolRef != null && vmSnapshotTemplatePoolRef.getObjectInStoreState() == ObjectInDataStoreStateMachine.State.Ready) {
+            s_logger.debug("Template that is created from vmSnapshot : [name=" + vmSnapshotName + ",uuid=" + vmSnapshotUuid +
+                    "] is available (in ready state) on primary storage pool : " + pd.getName());
+            // Use the template on primary to create volume from
+            vmSnapshottemplateOnPrimaryStore = pd.getVmSnapshotTemplate(vmSnapshotId);
+            createVolumeFromBaseImageAsync(volume, vmSnapshottemplateOnPrimaryStore, pd, future);
+            return future;
+        }
+        VmSnapshotTemplateInfo vmSnapshotTemplateInfo = pd.getVmSnapshotTemplate(vmSnapshotId);
+        createBaseImageFromVmSnapshotAsync(volume, vol, pd, vmSnapshotObj, vmSnapshotTemplateInfo, vmSnapshotOwnerVm, future);
+        return future;
+    }
+
+    private void createBaseImageFromVmSnapshotAsync(VolumeInfo volume, Volume srcVolume, PrimaryDataStore dataStore, VmSnapshotObject vmSnapshotObj, VmSnapshotTemplateInfo vmSnapshotTemplateInfo,
+            UserVm vmSnapshotOwnerVm, AsyncCallFuture<VolumeApiResult> future) {
+        long vmSnapshotId = vmSnapshotObj.getVmSnapshot().getId();
+        DataObject templateOnPrimaryStoreObj = dataStore.create(vmSnapshotTemplateInfo);
+        if (((VmSnapshotTemplateObject)templateOnPrimaryStoreObj).getVmSnapshotTemplateVo() == null) {
+            templateOnPrimaryStoreObj = dataStore.getVmSnapshotTemplate(vmSnapshotId);
+        }
+
+        VMSnapshotTemplateStoragePoolVO templatePoolRef = _vmSnapTmplPoolDao.findByPoolVmSnapshot(dataStore.getId(), vmSnapshotId);
+        if (templatePoolRef == null) {
+            throw new CloudRuntimeException("Failed to find template created from vm snapshot " + vmSnapshotObj.getVmSnapshot().getUuid() + " in storage pool " + dataStore.getId());
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found template created from vm snapshot " + vmSnapshotObj.getVmSnapshot().getUuid() + " in storage pool " + dataStore.getId());
+            }
+        }
+        long templatePoolRefId = templatePoolRef.getId();
+        Host tgtHost = getHostToCreateVolumeFromVmSnapshot(srcVolume, vmSnapshotOwnerVm);
+        CreateBaseImageContext<CreateCmdResult> context =
+                new CreateBaseImageContext<CreateCmdResult>(null, volume, dataStore, templatePoolRef, future, templateOnPrimaryStoreObj, templatePoolRefId);
+        AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().copyBaseImageCallback(null, null)).setContext(context);
+
+        int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Acquire lock on VM snapshot template in primary storagePool " + templatePoolRefId + " with timeout " + storagePoolMaxWaitSeconds + " seconds");
+        }
+        templatePoolRef = _vmSnapTmplPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
+
+        if (templatePoolRef == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.info("Unable to acquire lock on VM snapshot template in primary storagePool " + templatePoolRefId);
+            }
+            templatePoolRef = _vmSnapTmplPoolDao.findByPoolVmSnapshot(dataStore.getId(), vmSnapshotTemplateInfo.getId());
+            if (templatePoolRef != null && templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+                s_logger.info("Unable to acquire lock on VM snapshot template in primary storagePool " + templatePoolRefId + ", But vm snapshot template "
+                        + vmSnapshotTemplateInfo.getUniqueName() +
+                        " is already copied to primary storage, skip copying");
+                createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
+                return;
+            }
+            throw new CloudRuntimeException("Unable to acquire lock on VM snapshot template in primary storagePool " + templatePoolRefId);
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.info("lock is acquired for VM snapshot template in primary storagePool " + templatePoolRefId);
+        }
+        try {
+            if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+                s_logger.info("Template " + vmSnapshotTemplateInfo.getUniqueName() + " is already copied to primary storage, skip copying");
+                createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
+                return;
+            }
+            templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
+            motionSrv.copyAsync(templateOnPrimaryStoreObj, vmSnapshotObj, vmSnapshotOwnerVm, tgtHost, caller);
+        } catch (Throwable e) {
+            s_logger.debug("failed to create vm snapshot template on storage", e);
+            templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
+            dataStore.create(vmSnapshotTemplateInfo);  // make sure that vm_snapshot_spool_ref entry is still present so that the second thread can acquire the lock
+            VolumeApiResult result = new VolumeApiResult(volume);
+            result.setResult(e.toString());
+            future.complete(result);
+        } finally {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.info("releasing lock for VM snapshot template in primary storagePool " + templatePoolRefId);
+            }
+            _vmSnapTmplPoolDao.releaseFromLockTable(templatePoolRefId);
+        }
+        return;
+    }
+
+    @Override
+    public AsyncCallFuture<VolumeApiResult> createVolumeFromVmSnapshot(VolumeInfo volume, DataStore store, Volume srcVolume, VmSnapshotObject vmSnapshot,
+            UserVm userVm, Host tgtHost) {
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+
+        try {
+            DataObject volumeOnStore = store.create(volume);
+            volumeOnStore.processEvent(Event.CreateOnlyRequested);
+            CreateVolumeFromVmSnapshotContext<VolumeApiResult> context = new CreateVolumeFromVmSnapshotContext<VolumeApiResult>(null, volume, volumeOnStore, future);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().createVolumeFromVmSnapshotCallback(null, null)).setContext(context);
+            motionSrv.copyAsync(volumeOnStore, vmSnapshot, srcVolume, userVm, tgtHost, caller);
+        } catch (Exception e) {
+            s_logger.debug("create volume from snapshot failed", e);
+            VolumeApiResult result = new VolumeApiResult(volume);
+            result.setResult(e.toString());
+            future.complete(result);
+        }
+
+        return future;
+    }
+
+    private class CreateVolumeFromVmSnapshotContext<T> extends AsyncRpcContext<T> {
+        private final VolumeInfo vol;
+        private final DataObject volObj;
+        private final AsyncCallFuture<VolumeApiResult> future;
+
+        public CreateVolumeFromVmSnapshotContext(AsyncCompletionCallback<T> callback, VolumeInfo vol, DataObject volumeOnStore, AsyncCallFuture<VolumeApiResult> future) {
+            super(callback);
+            this.vol = vol;
+            this.future = future;
+            this.volObj = volumeOnStore;
+        }
+
+        public AsyncCallFuture<VolumeApiResult> getFuture() {
+            return this.future;
+        }
+
+        public VolumeInfo getVol() {
+            return vol;
+        }
+
+        public DataObject getVolObj() {
+            return volObj;
+        }
+    }
+
+    protected Void createVolumeFromVmSnapshotCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
+            CreateVolumeFromVmSnapshotContext<VolumeApiResult> context) {
+        CopyCommandResult result = callback.getResult();
+        VolumeInfo volume = (VolumeInfo)context.getVolObj();
+        VolumeApiResult apiResult = new VolumeApiResult(volume);
+        Event event = null;
+        if (result.isFailed()) {
+            apiResult.setResult(result.getResult());
+            event = Event.OperationFailed;
+        } else {
+            event = Event.OperationSuccessed;
+        }
+
+        try {
+            if (result.isSuccess()) {
+                volume.processEvent(event, result.getAnswer());
+            } else {
+                volume.processEvent(event);
+            }
+        } catch (Exception e) {
+            s_logger.debug("Create volume from VM snapshot failed", e);
+            apiResult.setResult(e.toString());
+        }
+
+        AsyncCallFuture<VolumeApiResult> future = context.getFuture();
+        future.complete(apiResult);
+        return null;
     }
 
     protected Void createVolumeFromSnapshotCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
@@ -1705,7 +1974,7 @@ public class VolumeServiceImpl implements VolumeService {
 
             if (ep != null) {
                 VolumeVO volume = volDao.findById(volumeId);
-                PrimaryDataStore primaryDataStore = this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
+                PrimaryDataStore primaryDataStore = dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
                 ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(primaryDataStore),
                         volume.getSize(), newSize, true, instanceName, primaryDataStore.isManaged(), volume.get_iScsiName());
 
@@ -1995,5 +2264,44 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return volFactory.getVolume(volumeId);
+    }
+
+    @Override
+    public Host getHostToCreateVolumeFromVmSnapshot(Volume srcVolume, UserVm vmSnapshotOwnerVm) {
+        Long hostId = null;
+        Long ownerhostid = vmSnapshotOwnerVm.getHostId();
+        Long lasthostid = vmSnapshotOwnerVm.getLastHostId();
+        long poolid = srcVolume.getPoolId();
+        List<HostVO> hosts;
+        if (isHostUpandEnabled(ownerhostid)) {
+            hostId = ownerhostid;
+        } else {
+            if (isHostUpandEnabled(lasthostid)) {
+                hostId = lasthostid;
+            } else {
+                StoragePoolVO storagepool = storagePoolDao.findById(poolid);
+                Long clusterid = storagepool.getClusterId();
+                hosts = resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterid, storagepool.getPodId(), storagepool.getDataCenterId());
+                if (storagepool.getScope() == ScopeType.ZONE && hosts.isEmpty()) {
+                    hosts = resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(vmSnapshotOwnerVm.getHypervisorType(), storagepool.getDataCenterId());
+                }
+                if (hosts.isEmpty()) {
+                    s_logger.debug("Failed to create volume from vm snapshot as no host is available");
+                    throw new CloudRuntimeException("Failed to create volume from vm snapshot as no host is available");
+                }
+                hostId = hosts.get(0).getId();
+            }
+        }
+        return _hostDao.findById(hostId);
+    }
+
+    private boolean isHostUpandEnabled(Long id) {
+        if (id != null) {
+            HostVO host = _hostDao.findById(id);
+            if (host != null && host.getState() == com.cloud.host.Status.Up && host.getResourceState() == ResourceState.Enabled) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -32,10 +32,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.Snaps
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.host.Host;
 import com.cloud.storage.Snapshot;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
@@ -80,6 +82,17 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
             @Override
             public StrategyPriority canHandle(VMSnapshotStrategy strategy) {
                 return strategy.canHandle(vmSnapshot);
+            }
+        });
+    }
+
+    @Override
+    public DataMotionStrategy getDataMotionStrategy(final DataObject templateOnPrimaryStoreObj, final VmSnapshotObject vmSnapshotObj,
+            final UserVm userVm, final Host tgtHost) {
+        return bestMatch(dataMotionStrategies, new CanHandle<DataMotionStrategy>() {
+            @Override
+            public StrategyPriority canHandle(DataMotionStrategy strategy) {
+                return strategy.canHandle(templateOnPrimaryStoreObj, vmSnapshotObj, userVm, tgtHost);
             }
         });
     }

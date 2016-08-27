@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -55,8 +56,10 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceVO;
@@ -236,4 +239,33 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
             }
         }
     }
+
+    @Override
+    public Void copyAsync(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult(null, null);
+        result.setResult("Unsupported operation requested for copying data.");
+        callback.complete(result);
+
+        return null;
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host tgtHost) {
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost) {
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public Void copyAsync(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult(null, null);
+        result.setResult("Unsupported operation requested for copying data.");
+        callback.complete(result);
+
+        return null;
+    }
+
 }

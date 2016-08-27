@@ -26,8 +26,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -39,12 +41,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotTemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.vmsnapshot.VmSnapshotTemplateObject;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
@@ -56,15 +60,20 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.VMSnapshotTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMSnapshotTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.EncodingType;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @SuppressWarnings("serial")
 public class PrimaryDataStoreImpl implements PrimaryDataStore {
@@ -78,12 +87,18 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     @Inject
     private ObjectInDataStoreManager objectInStoreMgr;
     @Inject
+    private DataStoreManager dataStoreMgr;
+    @Inject
     TemplateDataFactory imageDataFactory;
     @Inject
     SnapshotDataFactory snapshotFactory;
     protected DataStoreProvider provider;
     @Inject
     VMTemplatePoolDao templatePoolDao;
+    @Inject
+    VMSnapshotTemplatePoolDao vmSnapshotTemplatePoolDao;
+    @Inject
+    VMSnapshotDao vmSnapshotDao;
     @Inject
     StoragePoolHostDao poolHostDao;
 
@@ -227,6 +242,15 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
+    public VmSnapshotTemplateInfo getVmSnapshotTemplate(long vmSnapshotId) {
+        VMSnapshotTemplateStoragePoolVO vmSnaptemplate = vmSnapshotTemplatePoolDao.findByPoolVmSnapshot(getId(), vmSnapshotId);
+        VMSnapshotVO vo = vmSnapshotDao.findById(vmSnapshotId);
+        DataStore store = dataStoreMgr.getDataStore(getId(), getRole());
+        VmSnapshotTemplateObject vmSnaptmplObj = VmSnapshotTemplateObject.getTemplate(vo, store, vmSnaptemplate);
+        return vmSnaptmplObj;
+    }
+
+    @Override
     public SnapshotInfo getSnapshot(long snapshotId) {
         return null;
     }
@@ -297,6 +321,46 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                     } else {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Another thread already inserts " + templateStoragePoolRef.getId() + " to template_spool_ref", t);
+                        }
+                    }
+                } finally {
+                    lock.unlock();
+                    lock.releaseRef();
+                }
+            } catch (Exception e) {
+                s_logger.debug("Caught exception ", e);
+            }
+        } else if (obj.getType() == DataObjectType.VMSNAPSHOT_TEMPLATE && !isManaged()) {
+            // create vm snapshot template on primary storage
+            VMSnapshot vmSnapshot = ((VmSnapshotTemplateObject)obj).getVmSnapshot();
+            try {
+                String vmSnapshotTemplatePoolIdString = "vmSnapshotId:" + vmSnapshot.getId() + ",poolId:" + getId();
+                GlobalLock lock = GlobalLock.getInternLock(vmSnapshotTemplatePoolIdString);
+                if (!lock.lock(5)) {
+                    s_logger.debug("Couldn't lock the db on the string " + vmSnapshotTemplatePoolIdString);
+                    return null;
+                }
+                VMSnapshotTemplateStoragePoolVO vmSnapshotTemplateStoragePoolRef;
+                try {
+                    vmSnapshotTemplateStoragePoolRef = vmSnapshotTemplatePoolDao.findByPoolVmSnapshot(getId(), vmSnapshot.getId());
+                    if (vmSnapshotTemplateStoragePoolRef == null) {
+
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Not found VM snapshot template associated with (" + vmSnapshotTemplatePoolIdString + ") in vm_snapshot_spool_ref, persisting it");
+                        }
+                        vmSnapshotTemplateStoragePoolRef = new VMSnapshotTemplateStoragePoolVO(getId(), vmSnapshot.getId());
+                        vmSnapshotTemplateStoragePoolRef = vmSnapshotTemplatePoolDao.persist(vmSnapshotTemplateStoragePoolRef);
+                    }
+                } catch (Throwable t) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Failed to insert (" + vmSnapshotTemplatePoolIdString + ") to vm_snapshot_spool_ref", t);
+                    }
+                    vmSnapshotTemplateStoragePoolRef = vmSnapshotTemplatePoolDao.findByPoolVmSnapshot(getId(), vmSnapshot.getId());
+                    if (vmSnapshotTemplateStoragePoolRef == null) {
+                        throw new CloudRuntimeException("Failed to create vm snapshot template storage pool entry");
+                    } else {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Another thread already inserts " + vmSnapshotTemplateStoragePoolRef.getId() + " to vm_snapshot_spool_ref", t);
                         }
                     }
                 } finally {

@@ -203,6 +203,7 @@ import org.apache.cloudstack.api.command.admin.template.ListTemplatePermissionsC
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
 import org.apache.cloudstack.api.command.admin.template.RegisterTemplateCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.template.SeedTemplateFromVmSnapshotCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
@@ -464,6 +465,7 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeFromVmSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -2670,6 +2672,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(StopSystemVmCmd.class);
         cmdList.add(UpgradeSystemVMCmd.class);
         cmdList.add(PrepareTemplateCmd.class);
+        cmdList.add(SeedTemplateFromVmSnapshotCmd.class);
+        cmdList.add(CreateVolumeFromVmSnapshotCmd.class);
         cmdList.add(AddTrafficMonitorCmd.class);
         cmdList.add(AddTrafficTypeCmd.class);
         cmdList.add(DeleteTrafficMonitorCmd.class);

@@ -28,9 +28,11 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.google.common.base.Preconditions;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -43,6 +45,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -57,14 +60,14 @@ import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -75,6 +78,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -83,11 +87,10 @@ import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
-
-import com.google.common.base.Preconditions;
 
 @Component
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
@@ -744,6 +747,36 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
 
         throw new CloudRuntimeException("'dataObj' must be of type 'VolumeInfo' or 'SnapshotInfo'.");
+    }
+
+    @Override
+    public Void copyAsync(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm usrVm, Host tgtHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult(null, null);
+
+        result.setResult("Unsupported operation requested for copying data.");
+
+        callback.complete(result);
+
+        return null;
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm usrVm, Host tgtHost) {
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost) {
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public Void copyAsync(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult(null, null);
+        result.setResult("Unsupported operation requested for copying data.");
+        callback.complete(result);
+
+        return null;
     }
 
     private CopyCmdAnswer performResignature(DataObject dataObj, HostVO hostVO) {

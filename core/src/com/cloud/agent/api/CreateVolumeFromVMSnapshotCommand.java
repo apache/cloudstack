@@ -24,46 +24,36 @@ import com.cloud.vm.DiskProfile;
 
 public class CreateVolumeFromVMSnapshotCommand extends Command {
 
-    protected String path;
-    protected String name;
     protected Boolean fullClone;
-    protected String storagePoolUuid;
     private StorageFilerTO pool;
     private DiskProfile diskProfile;
     private Long volumeId;
-
-    public DiskProfile getDskch() {
-        return diskProfile;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public Long getVolumeId() {
-        return volumeId;
-    }
+    private String dsName;
+    private String dsUuid;
+    private String srcVolumePath;
+    private String srcVmSnapshotName;
+    private String srcVmSnapshotUuid;
+    private String vmName;
 
     protected CreateVolumeFromVMSnapshotCommand() {
 
     }
 
-    public CreateVolumeFromVMSnapshotCommand(String path, String name, Boolean fullClone, String storagePoolUuid) {
-        this.path = path;
-        this.name = name;
+    public CreateVolumeFromVMSnapshotCommand(Boolean fullClone, StorageFilerTO pool, DiskProfile diskProfile, Long volumeId) {
         this.fullClone = fullClone;
-        this.storagePoolUuid = storagePoolUuid;
-    }
-
-    public CreateVolumeFromVMSnapshotCommand(String path, String name, Boolean fullClone, String storagePoolUuid, StorageFilerTO pool, DiskProfile diskProfile,
-            Long volumeId) {
-        this.path = path;
-        this.name = name;
-        this.fullClone = fullClone;
-        this.storagePoolUuid = storagePoolUuid;
         this.pool = pool;
         this.diskProfile = diskProfile;
         this.volumeId = volumeId;
+    }
+
+    public CreateVolumeFromVMSnapshotCommand(String dsName, String dsUuid, String srcVolumePath, String srcVmSnapshotName, String srcVmSnapshotUuid, String vmName) {
+        super();
+        this.dsName = dsName;
+        this.dsUuid = dsUuid;
+        this.srcVolumePath = srcVolumePath;
+        this.srcVmSnapshotName = srcVmSnapshotName;
+        this.srcVmSnapshotUuid = srcVmSnapshotUuid;
+        this.vmName = vmName;
     }
 
     @Override
@@ -71,19 +61,67 @@ public class CreateVolumeFromVMSnapshotCommand extends Command {
         return false;
     }
 
-    public String getName() {
-        return name;
+    public DiskProfile getDskch() {
+        return diskProfile;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
     }
 
     public Boolean getFullClone() {
         return fullClone;
     }
 
-    public String getStoragePoolUuid() {
-        return storagePoolUuid;
-    }
-
     public StorageFilerTO getPool() {
         return pool;
+    }
+
+    public String getDsName() {
+        return dsName;
+    }
+
+    public String getDsUuid() {
+        return dsUuid;
+    }
+
+    public void setDsUuid(String dsUuid) {
+        this.dsUuid = dsUuid;
+    }
+
+    public String getSrcVolumePath() {
+        return srcVolumePath;
+    }
+
+    public void setSrcVolumePath(String srcVolumePath) {
+        this.srcVolumePath = srcVolumePath;
+    }
+
+    public String getSrcVmSnapshotName() {
+        return srcVmSnapshotName;
+    }
+
+    public void setSrcVmSnapshotName(String srcVmSnapshotName) {
+        this.srcVmSnapshotName = srcVmSnapshotName;
+    }
+
+    public String getSrcVmSnapshotUuid() {
+        return srcVmSnapshotUuid;
+    }
+
+    public void setSrcVmSnapshotUuid(String srcVmSnapshotUuid) {
+        this.srcVmSnapshotUuid = srcVmSnapshotUuid;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
+    }
+
+    public void setDsName(String dsName) {
+        this.dsName = dsName;
     }
 }

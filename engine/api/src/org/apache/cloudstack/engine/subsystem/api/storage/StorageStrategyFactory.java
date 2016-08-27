@@ -24,6 +24,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.Snaps
 
 import com.cloud.host.Host;
 import com.cloud.storage.Snapshot;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 public interface StorageStrategyFactory {
@@ -35,5 +36,7 @@ public interface StorageStrategyFactory {
     SnapshotStrategy getSnapshotStrategy(Snapshot snapshot, SnapshotOperation op);
 
     VMSnapshotStrategy getVmSnapshotStrategy(VMSnapshot vmSnapshot);
+
+    DataMotionStrategy getDataMotionStrategy(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host tgtHost);
 
 }

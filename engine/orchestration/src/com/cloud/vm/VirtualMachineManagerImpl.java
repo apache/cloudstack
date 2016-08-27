@@ -37,7 +37,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -66,13 +67,13 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
@@ -201,6 +202,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
@@ -848,7 +850,31 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterId() + " and podId: " + vm.getPodIdToDeployIn());
         }
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
-        if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
+        boolean poolTagMatched = false;
+        List<String> offeringTags = StringUtils.csvTagsToList(offering.getTags());
+        // dfs: If user specified vmSnapshotId while deploying instance, then ensure deployment plan is set to storage pool id of root volume of vm associated with vm snapshot.
+        // This ensures picking same storage pool for seeding of template from specified VM snapshot as well as ROOT volume creation.
+        if (params != null && params.containsKey(VirtualMachineProfile.Param.VmSnapshot)) {
+            Long vmSnapshotId = (Long)params.get(VirtualMachineProfile.Param.VmSnapshot);
+            plan = getDeployPlanBasedOnVmSnapshot(vmSnapshotId);
+            StoragePoolVO poolFromPlan = _storagePoolDao.findById(plan.getPoolId());
+            List<StoragePoolVO> pools = null;
+            long dcId = plan.getDataCenterId();
+            Long podId = plan.getPodId();
+            Long clusterId = plan.getClusterId();
+            if (podId == null) {
+                // Case of zone wide primary storage pool
+                pools = _storagePoolDao.findZoneWideStoragePoolsByTags(dcId, offeringTags.toArray(new String[0]));
+            } else {
+                pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, offeringTags.toArray(new String[0]));
+            }
+            for (StoragePoolVO poolVo : pools) {
+                if (poolFromPlan.getId() == poolVo.getId()) {
+                    poolTagMatched = true;
+                    break;
+                }
+            }
+        } else if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:" + planToDeploy.getDataCenterId() + ", podId: " + planToDeploy.getPodId() +
                         ", clusterId: " + planToDeploy.getClusterId() + ", hostId: " + planToDeploy.getHostId() + ", poolId: " + planToDeploy.getPoolId());
@@ -874,7 +900,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
             }
-
+            if (params != null && params.containsKey(VirtualMachineProfile.Param.VmSnapshot) && !poolTagMatched) {
+                String msg = "Storage pool containing VM snapshot does not have required storage pool tags : " + offeringTags + ". Hence unable to proceed.";
+                throw new CloudRuntimeException(msg);
+            }
             boolean planChangedByVolume = false;
             boolean reuseVolume = true;
             final DataCenterDeployment originalPlan = plan;
@@ -1154,6 +1183,50 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
         }
+    }
+
+    private DataCenterDeployment getDeployPlanBasedOnVmSnapshot(Long vmSnapshotId) {
+        Long destHostId = null;
+        Long destClusterId = null;
+        Long destPodId = null;
+        Long destZoneId = null;
+        Long destPoolId = getRootVolumePoolIdFromVmSnapshot(vmSnapshotId);
+        ScopeType rootVolumePoolScope = _storagePoolDao.findById(destPoolId).getScope();
+        UserVmVO snapshottedVm = getSnapshottedVm(vmSnapshotId);
+        destZoneId = snapshottedVm.getDataCenterId();
+
+        if (rootVolumePoolScope == ScopeType.CLUSTER) {
+            destClusterId = _storagePoolDao.findById(destPoolId).getClusterId();
+            destPodId = _clusterDao.findById(destClusterId).getPodId();
+        } else if (rootVolumePoolScope == ScopeType.HOST) {
+            destHostId = snapshottedVm.getHostId();
+            if (destHostId == null) {
+                destHostId = snapshottedVm.getLastHostId();
+            }
+            destClusterId = _hostDao.findById(destHostId).getClusterId();
+            destPodId = _clusterDao.findById(destClusterId).getPodId();
+        }
+        DataCenterDeployment plan = new DataCenterDeployment(destZoneId, destPodId, destClusterId, destHostId, destPoolId, null);
+        return plan;
+    }
+
+    private Long getRootVolumePoolIdFromVmSnapshot(Long vmSnapshotId) {
+        VMSnapshotVO vmSnapshotVo = _vmSnapshotDao.findById(vmSnapshotId);
+        long snapshottedVmId = vmSnapshotVo.getVmId();
+        List<VolumeVO> volumes = _volsDao.findByInstance(snapshottedVmId);
+        for (VolumeVO volume : volumes) {
+            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                return volume.getPoolId();
+            }
+        }
+        return null;
+    }
+
+    private UserVmVO getSnapshottedVm(Long vmSnapshotId) {
+        VMSnapshotVO vmSnapshotVo = _vmSnapshotDao.findById(vmSnapshotId);
+        long snapshottedVmId = vmSnapshotVo.getVmId();
+        UserVmVO snapshottedVmVo = _userVmDao.findById(snapshottedVmId);
+        return snapshottedVmVo;
     }
 
     // for managed storage on KVM, need to make sure the path field of the volume in question is populated with the IQN

@@ -56,6 +56,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 public interface UserVmService {
 
@@ -151,6 +152,8 @@ public interface UserVmService {
      *            - the service offering for the virtual machine
      * @param template
      *            - the template for the virtual machine
+     * @param vmSnapshot
+     *            - the snapshot of a virtual machine
      * @param securityGroupIdList
      *            - comma separated list of security groups id that going to be
      *            applied to the virtual machine
@@ -205,7 +208,7 @@ public interface UserVmService {
      *             if the resources required to deploy the VM is not currently
      *             available.
      */
-    UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList,
+    UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, VMSnapshot vmSnapshot, List<Long> securityGroupIdList,
         Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
         String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
         List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId) throws InsufficientCapacityException,
@@ -223,6 +226,8 @@ public interface UserVmService {
      *            - the service offering for the virtual machine
      * @param template
      *            - the template for the virtual machine
+     * @param vmSnapshot
+     *            - the snapshot of a virtual machine
      * @param networkIdList
      *            - list of network ids used by virtual machine
      * @param securityGroupIdList
@@ -278,7 +283,7 @@ public interface UserVmService {
      *             if the resources required to deploy the VM is not currently
      *             available.
      */
-    UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
+    UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, VMSnapshot vmSnapshot, List<Long> networkIdList,
         List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
         HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
         List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId) throws InsufficientCapacityException,
@@ -296,6 +301,8 @@ public interface UserVmService {
      *            - the service offering for the virtual machine
      * @param template
      *            - the template for the virtual machine
+     * @param vmSnapshot
+     *            - the snapshot of a virtual machine
      * @param networkIdList
      *            - list of network ids used by virtual machine
      * @param hostName
@@ -349,7 +356,7 @@ public interface UserVmService {
      *             if the resources required to deploy the VM is not currently
      *             available.
      */
-    UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner,
+    UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, VMSnapshot vmSnapshot, List<Long> networkIdList, Account owner,
         String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
         String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
         Map<String, String> customParameters, String customId)

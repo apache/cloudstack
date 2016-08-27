@@ -28,33 +28,32 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.EncryptionUtil;
-import com.cloud.utils.db.TransactionCallbackWithException;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
-import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
-import org.apache.cloudstack.api.response.GetUploadParamsResponse;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeFromVmSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
@@ -78,6 +77,7 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -85,6 +85,8 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -134,6 +136,7 @@ import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -146,6 +149,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -170,11 +174,9 @@ import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
@@ -549,12 +551,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Volume VO used for extracting the source template id
         VolumeVO parentVolume = null;
 
+        Long vmSnapshotId = null;
+        if (cmd instanceof CreateVolumeFromVmSnapshotCmd) {
+            vmSnapshotId = ((CreateVolumeFromVmSnapshotCmd)cmd).getVmSnapshotId();
+        }
         // validate input parameters before creating the volume
-        if ((cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) || (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null)) {
+        if (vmSnapshotId == null && (cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null) || (cmd.getSnapshotId() != null && cmd.getDiskOfferingId() != null)) {
             throw new InvalidParameterValueException("Either disk Offering Id or snapshot Id must be passed whilst creating volume");
         }
 
-        if (cmd.getSnapshotId() == null) {// create a new volume
+        if (cmd.getSnapshotId() == null && vmSnapshotId == null) {// create a new volume
 
             diskOfferingId = cmd.getDiskOfferingId();
             size = cmd.getSize();
@@ -634,6 +640,61 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
                 // for validation
                 throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size + " ,max volume size is:" + _maxVolumeSizeInGb);
+            }
+        } else if (vmSnapshotId != null) {
+            VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+            if (vmSnapshot == null) {
+                throw new InvalidParameterValueException("unable to find a vm snapshot with id " + vmSnapshotId);
+            }
+
+            if (vmSnapshot.getState() != VMSnapshot.State.Ready) {
+                throw new InvalidParameterValueException("VM snapshot with id=" + vmSnapshotId + " is not in " + VMSnapshot.State.Ready + " state yet and can't be used for volume creation");
+            }
+
+            long srcVolId = ((CreateVolumeFromVmSnapshotCmd)cmd).getVolumeId();
+            VolumeVO srcVol = _volsDao.findById(srcVolId);
+            if (srcVol == null) {
+                throw new InvalidParameterValueException("Invalid parameter value for parameter volumeid. Specified volume id is : " + srcVolId);
+            }
+
+            diskOfferingId = srcVol.getDiskOfferingId();
+            diskOffering = _diskOfferingDao.findById(diskOfferingId);
+            Long snapshotVmId = vmSnapshot.getVmId();
+            if (zoneId == null) {
+                // if zoneId is not provided, we default to create volume in the same zone as the snapshot zone.
+                UserVmVO userVm = _userVmDao.findById(snapshotVmId);
+                if (userVm == null) {
+                    throw new InvalidParameterValueException("Unable to find VM associated with vm snapshot with id " + vmSnapshotId);
+                }
+                zoneId = userVm.getDataCenterId();
+            }
+            size = srcVol.getSize();
+            // purposes
+
+            minIops = srcVol.getMinIops();
+            maxIops = srcVol.getMaxIops();
+
+            provisioningType = srcVol.getProvisioningType();
+            // check snapshot permissions
+            _accountMgr.checkAccess(caller, null, true, vmSnapshot);
+
+            // one step operation - create volume in VM's cluster and attach it
+            // to the VM
+            Long vmId = cmd.getVirtualMachineId();
+            if (vmId != null) {
+                // Check that the virtual machine ID is valid and it's a user vm
+                UserVmVO vm = _userVmDao.findById(vmId);
+                if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+                    throw new InvalidParameterValueException("Please specify a valid User VM to attach volume.");
+                }
+
+                // Check that the VM is in the correct state
+                if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+                    throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+                }
+
+                // permission check
+                _accountMgr.checkAccess(caller, null, false, vm);
             }
         } else { // create volume from snapshot
             Long snapshotId = cmd.getSnapshotId();
@@ -2951,5 +3012,69 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _workJobDao.persist(workJob);
 
         return workJob;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume from vm snapshot", async = true)
+    public VolumeVO createVolumeFromVmSnapshot(CreateVolumeFromVmSnapshotCmd cmd) {
+        VolumeVO volume = _volsDao.findById(cmd.getEntityId());
+        VolumeVO srcVolume = _volsDao.findById(cmd.getVolumeId());
+        boolean created = true;
+
+        try {
+            if (cmd.getVmSnapshotId() != null) {
+                volume = createVolumeFromVmSnapshot(volume, srcVolume, cmd.getVmSnapshotId(), cmd.getVirtualMachineId());
+                if (volume.getState() != Volume.State.Ready) {
+                    created = false;
+                }
+
+                // if VM Id is provided, attach the volume to the VM
+                if (cmd.getVirtualMachineId() != null) {
+                    try {
+                        attachVolumeToVM(cmd.getVirtualMachineId(), volume.getId(), volume.getDeviceId());
+                    } catch (Exception ex) {
+                        StringBuilder message = new StringBuilder("Volume: ");
+                        message.append(volume.getUuid());
+                        message.append(" created successfully, but failed to attach the newly created volume to VM: ");
+                        message.append(cmd.getVirtualMachineId());
+                        message.append(" due to error: ");
+                        message.append(ex.getMessage());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(message, ex);
+                        }
+                        throw new CloudRuntimeException(message.toString());
+                    }
+                }
+            }
+            volume.setFormat(srcVolume.getFormat());
+            _volsDao.persist(volume);
+            return volume;
+        } catch (Exception e) {
+            created = false;
+            VolumeInfo vol = volFactory.getVolume(cmd.getEntityId());
+            vol.stateTransit(Volume.Event.DestroyRequested);
+            throw new CloudRuntimeException("Failed to create volume: " + volume.getId(), e);
+        } finally {
+            if (!created) {
+                s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, cmd.getDisplayVolume());
+                _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
+            }
+        }
+    }
+
+    protected VolumeVO createVolumeFromVmSnapshot(VolumeVO volume, VolumeVO srcVolume, long vmSnapshotId, Long vmId) throws StorageUnavailableException {
+        VolumeInfo createdVolume = null;
+        VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+
+        UserVmVO vm = null;
+        if (vmId != null) {
+            vm = _userVmDao.findById(vmId);
+        }
+
+        createdVolume = _volumeMgr.createVolumeFromVmSnapshot(volume, srcVolume, vmSnapshot, vm);
+        VolumeVO volumeVo = _volsDao.findById(createdVolume.getId());
+        return volumeVo;
     }
 }

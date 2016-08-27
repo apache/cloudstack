@@ -101,6 +101,7 @@ import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineSnapshotInfo;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
+import com.vmware.vim25.VirtualMachineUsageOnDatastore;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
 
@@ -3052,6 +3053,38 @@ public class VirtualMachineMO extends BaseMO {
         }
         return guestOsSupportsMemoryHotAdd && virtualHardwareSupportsMemoryHotAdd;
     }
+    public Pair<VirtualMachineMO, String[]> cloneFromSnapshot(String clonedVmName, int cpuSpeedMHz, int memoryMb, String diskDevice, ManagedObjectReference morDiskDeviceDatastore,
+            String uniqueSnapshotName)
+            throws Exception {
+        assert (morDiskDeviceDatastore != null);
+        String[] disks = getSnapshotDiskChainDatastorePaths(diskDevice, uniqueSnapshotName);
+        VirtualMachineMO clonedVm = cloneFromDiskChain(clonedVmName, cpuSpeedMHz, memoryMb, disks, morDiskDeviceDatastore);
+        return new Pair<VirtualMachineMO, String[]>(clonedVm, disks);
+    }
+
+    private String[] getSnapshotDiskChainDatastorePaths(String diskDevice, String uniqueSnapshotName) throws Exception {
+        HostMO hostMo = getRunningHost();
+        List<Pair<ManagedObjectReference, String>> mounts = hostMo.getDatastoreMountsOnHost();
+        VirtualMachineFileInfo vmFileInfo = getFileInfo();
+
+        SnapshotDescriptor descriptor = getSnapshotDescriptor();
+        SnapshotInfo[] snapshotInfo = descriptor.getSnapshotDiskChain(uniqueSnapshotName);
+
+        List<String> diskDsFullPaths = new ArrayList<String>();
+        for (int i = 0; i < snapshotInfo.length; i++) {
+            SnapshotDescriptor.DiskInfo[] disks = snapshotInfo[i].getDisks();
+            if (disks != null) {
+                for (SnapshotDescriptor.DiskInfo disk : disks) {
+                    String deviceNameInDisk = disk.getDeviceName();
+                    if (diskDevice == null || diskDevice.equalsIgnoreCase(deviceNameInDisk)) {
+                        String vmdkFullDsPath = getSnapshotDiskFileDatastorePath(vmFileInfo, mounts, disk.getDiskFileName());
+                        diskDsFullPaths.add(vmdkFullDsPath);
+                    }
+                }
+            }
+        }
+        return diskDsFullPaths.toArray(new String[0]);
+    }
     public void ensureLsiLogicSasDeviceControllers(int count, int availableBusNum) throws Exception {
         int scsiControllerKey = getLsiLogicSasDeviceControllerKeyNoException();
         if (scsiControllerKey < 0) {
@@ -3180,6 +3213,16 @@ public class VirtualMachineMO extends BaseMO {
             }
         }
         return count;
+    }
+
+    public Long getStorageUsagePerDatastoreInKb(ManagedObjectReference dsMor) throws Exception {
+        List<VirtualMachineUsageOnDatastore> listUsagePerDatastore = (List<VirtualMachineUsageOnDatastore>)_context.getVimClient().getDynamicProperty(_mor, "storage.perDatastoreUsage");
+        for (VirtualMachineUsageOnDatastore usagePerDatastore : listUsagePerDatastore) {
+            if (usagePerDatastore.getDatastore().getValue().equals(dsMor.getValue())) {
+                return usagePerDatastore.getCommitted();
+            }
+        }
+        return 0L;
     }
 
     public boolean consolidateVmDisks() throws Exception {

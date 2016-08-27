@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.VMSnapshotTemplateStorageResourceAssoc;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
@@ -103,4 +104,6 @@ public interface TemplateApiService {
     VirtualMachineTemplate updateTemplate(UpdateIsoCmd cmd);
 
     VirtualMachineTemplate updateTemplate(UpdateTemplateCmd cmd);
+
+    VMSnapshotTemplateStorageResourceAssoc seedTemplateFromVmSnapshot(long vmSnapshotId, long zoneId, Long storageId);
 }

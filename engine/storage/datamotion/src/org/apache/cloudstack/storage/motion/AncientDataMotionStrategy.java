@@ -23,6 +23,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -38,6 +41,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -45,8 +50,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -61,8 +64,10 @@ import com.cloud.host.Host;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -93,6 +98,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected boolean needCacheStorage(DataObject srcData, DataObject destData) {
+        if (srcData.getType() == DataObjectType.VMSNAPSHOT_TEMPLATE) {
+            return false;
+        }
         DataTO srcTO = srcData.getTO();
         DataStoreTO srcStoreTO = srcTO.getDataStore();
 
@@ -105,6 +113,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (destStoreTO instanceof NfsTO || destStoreTO.getRole() == DataStoreRole.ImageCache) {
             return false;
         }
+
+        if (srcData.getType() == DataObjectType.TEMPLATE) {
+            TemplateInfo template = (TemplateInfo)srcData;
+        }
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("needCacheStorage true, dest at " + destTO.getPath() + " dest role " + destStoreTO.getRole().toString() + srcTO.getPath() + " src role " +
                 srcStoreTO.getRole().toString());
@@ -441,6 +454,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 }
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
                 answer = copySnapshot(srcData, destData);
+            } else if (srcData.getType() == DataObjectType.VMSNAPSHOT_TEMPLATE && destData.getType() == DataObjectType.VOLUME) {
+                answer = cloneVolumeFromVmSnapshotTemplate(srcData, destData);
             } else {
                 answer = copyObject(srcData, destData, destHost);
             }
@@ -457,6 +472,24 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         callback.complete(result);
     }
 
+    private Answer cloneVolumeFromVmSnapshotTemplate(DataObject vmSnapshotTemplate, DataObject volume) {
+        CopyCommand cmd = new CopyCommand(vmSnapshotTemplate.getTO(), volume.getTO(), 0, VirtualMachineManager.ExecuteInSequence.value());
+        try {
+            EndPoint ep = selector.select(volume.getDataStore());
+            Answer answer = null;
+            if (ep == null) {
+                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                answer = new Answer(cmd, false, errMsg);
+            } else {
+                answer = ep.sendMessage(cmd);
+            }
+            return answer;
+        } catch (Exception e) {
+            s_logger.debug("Failed to send to storage pool", e);
+            throw new CloudRuntimeException("Failed to send to storage pool", e);
+        }
+    }
     @DB
     protected Answer createTemplateFromSnapshot(DataObject srcData, DataObject destData) {
 
@@ -490,6 +523,17 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         // clean up snapshot copied to staging
         if (needCache && srcData != null) {
             cacheMgr.releaseCacheObject(srcData);  // reduce ref count, but keep it there on cache which is converted from previous secondary storage
+        }
+        return answer;
+    }
+
+    @DB
+    protected Answer createTemplateFromVmSnapshot(DataObject srcData, DataObject destData) {
+        Answer answer = null;
+        if (srcData != null && destData != null) {
+            String msg = "AncientDatamotionStrategy doesn't support creating template from vm snapshot.";
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
         return answer;
     }
@@ -557,5 +601,33 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         CopyCommandResult result = new CopyCommandResult(null, null);
         result.setResult("Unsupported operation requested for copying data.");
         callback.complete(result);
+    }
+
+    @Override
+    public Void copyAsync(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host tgtHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult(null, null);
+        result.setResult("Unsupported operation requested for copying data.");
+        callback.complete(result);
+
+        return null;
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotInfo, UserVm userVm, Host tgtHost) {
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost) {
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public Void copyAsync(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult(null, null);
+        result.setResult("Unsupported operation requested for copying data.");
+        callback.complete(result);
+
+        return null;
     }
 }

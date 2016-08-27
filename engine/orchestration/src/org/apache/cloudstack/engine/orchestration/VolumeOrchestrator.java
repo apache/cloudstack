@@ -47,6 +47,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -86,6 +87,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
@@ -130,6 +132,10 @@ import com.cloud.vm.VmWorkMigrateVolume;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VolumeOrchestrator.class);
@@ -157,6 +163,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
+    protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
     VolumeService volService;
     @Inject
     VolumeDataFactory volFactory;
@@ -178,6 +186,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     ClusterManager clusterManager;
     @Inject
     StorageManager storageMgr;
+    @Inject
+    VMSnapshotDao _vmSnapshotDao;
+    @Inject
+    VMSnapshotManager vmSnapshotMgr;
+    @Inject
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -1208,6 +1221,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return tasks;
     }
 
+    private Long getVmSnapshotIdFromVmProfile(VirtualMachineProfile vmProfile) {
+        if (vmProfile != null) {
+            Map<VirtualMachineProfile.Param, Object> vmProfileParams = vmProfile.getParameters();
+            if (vmProfileParams != null && vmProfileParams.containsKey(VirtualMachineProfile.Param.VmSnapshot)) {
+                return (Long)vmProfileParams.get(VirtualMachineProfile.Param.VmSnapshot);
+            }
+        }
+        return null;
+    }
+
     private Pair<VolumeVO, DataStore> recreateVolume(VolumeVO vol, VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException {
         VolumeVO newVol;
         boolean recreate = RecreatableSystemVmEnabled.value();
@@ -1237,10 +1260,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
         VolumeInfo volume = volFactory.getVolume(newVol.getId(), destPool);
         Long templateId = newVol.getTemplateId();
+        Long vmSnapshotId = getVmSnapshotIdFromVmProfile(vm);
         for (int i = 0; i < 2; i++) {
             // retry one more time in case of template reload is required for Vmware case
             AsyncCallFuture<VolumeApiResult> future = null;
-            if (templateId == null) {
+            if (templateId == null && vmSnapshotId == null) {
                 DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
                 HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
 
@@ -1250,6 +1274,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 volume = volFactory.getVolume(newVol.getId(), destPool);
 
                 future = volService.createVolumeAsync(volume, destPool);
+            } else if (vmSnapshotId != null) {
+                VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+                if (vmSnapshot.getState() != VMSnapshot.State.Ready) {
+                    String msg = "Specified VM snapshot " + vmSnapshot.getUuid() + " is not ready at the moment. Unable proceed with volume creation from this VM snapshot.";
+                    s_logger.debug(msg);
+                    throw new CloudRuntimeException(msg);
+                }
+                Volume refVolumeInVmSnapshot = getRespectiveVolumeFromVmSnapshot(vmSnapshot, volume);
+                UserVm vmSnapshotOwnerVm = _userVmDao.findById(vmSnapshot.getVmId());
+                List<VolumeInfo> volumeInfos = getVolumes(vmSnapshot.getVmId());
+                VmSnapshotObject vmSnapObj = new VmSnapshotObject(vmSnapshot, volumeInfos);
+
+                future = volService.createVolumeFromVmSnapshotAsync(volume, refVolumeInVmSnapshot, destPool, vmSnapObj, vmSnapshotOwnerVm);
             } else {
                 TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
 
@@ -1307,6 +1344,29 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         return new Pair<VolumeVO, DataStore>(newVol, destPool);
+    }
+
+    public List<VolumeInfo> getVolumes(Long vmId) {
+        List<VolumeInfo> volumeInfos = new ArrayList<VolumeInfo>();
+        List<VolumeVO> volumeVos = _volumeDao.findByInstance(vmId);
+        VolumeInfo volumeInfo = null;
+        for (VolumeVO volume : volumeVos) {
+            volumeInfo = volFactory.getVolume(volume.getId());
+            volumeInfos.add(volumeInfo);
+        }
+        return volumeInfos;
+    }
+
+    private Volume getRespectiveVolumeFromVmSnapshot(VMSnapshot vmSnapshot, Volume volToCreate) {
+        List<VolumeVO> respectiveVolumesInVmSnapshot = _volumeDao.findByInstanceAndType(vmSnapshot.getVmId(), volToCreate.getVolumeType());
+
+        for (VolumeVO volInVmSnap : respectiveVolumesInVmSnapshot) {
+            if (volInVmSnap.getDeviceId() == volToCreate.getDeviceId()) {
+                return volInVmSnap;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -1529,6 +1589,50 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setPath(path);
             vol.setChainInfo(chainInfo);
             _volsDao.update(volumeId, vol);
+        }
+    }
+
+    @Override
+    public VolumeInfo createVolumeFromVmSnapshot(Volume volume, Volume srcVolume, VMSnapshot vmSnapshot, UserVm vm) throws StorageUnavailableException {
+        VMSnapshotVO vmSnapshotVo = (VMSnapshotVO)vmSnapshot;
+        if (vmSnapshot.getState() != VMSnapshot.State.Ready) {
+            String msg = "Specified VM snapshot " + vmSnapshot.getUuid() + " is not ready at the moment. Unable proceed with volume creation from this VM snapshot.";
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        Volume refVolumeInVmSnapshot = getRespectiveVolumeFromVmSnapshot(vmSnapshot, srcVolume);
+        UserVm vmSnapshotOwnerVm = _userVmDao.findById(vmSnapshot.getVmId());
+        List<VolumeInfo> volumeInfos = getVolumes(vmSnapshot.getVmId());
+        VmSnapshotObject vmSnapObj = new VmSnapshotObject(vmSnapshot, volumeInfos);
+        Host vmHost = volService.getHostToCreateVolumeFromVmSnapshot(srcVolume, vmSnapshotOwnerVm);
+
+        Account account = _entityMgr.findById(Account.class, volume.getAccountId());
+
+        Long poolId = srcVolume.getPoolId();
+        if (poolId == null) {
+            String msg = "Failed to detect storage pool where source volume is present.";
+            s_logger.info(msg);
+            throw new StorageUnavailableException(msg, -1);
+        }
+
+        VolumeInfo vol = volFactory.getVolume(volume.getId());
+        DataStore store = dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+
+        // create volume on primary from vm snapshot
+        AsyncCallFuture<VolumeApiResult> future = volService.createVolumeFromVmSnapshot(vol, store, refVolumeInVmSnapshot, vmSnapObj, vmSnapshotOwnerVm, vmHost);
+        try {
+            VolumeApiResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.debug("Failed to create volume from vm snapshot:" + result.getResult());
+                throw new CloudRuntimeException("Failed to create volume from vm snapshot:" + result.getResult());
+            }
+            return result.getVolume();
+        } catch (InterruptedException e) {
+            s_logger.debug("Failed to create volume from vm snapshot", e);
+            throw new CloudRuntimeException("Failed to create volume from vm snapshot", e);
+        } catch (ExecutionException e) {
+            s_logger.debug("Failed to create volume from vm snapshot", e);
+            throw new CloudRuntimeException("Failed to create volume from vm snapshot", e);
         }
     }
 }

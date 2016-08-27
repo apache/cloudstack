@@ -23,6 +23,7 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +42,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -97,12 +99,14 @@ import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VmSnapshotTemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -125,6 +129,7 @@ import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.CreateVolumeFromVMSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
@@ -172,6 +177,7 @@ import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.SeedTemplateFromVmSnapshotCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -242,7 +248,6 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
-import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
@@ -486,6 +491,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((PvlanSetupCommand)cmd);
             } else if (clz == UnregisterNicCommand.class) {
                 answer = execute((UnregisterNicCommand)cmd);
+            } else if (clz == SeedTemplateFromVmSnapshotCommand.class) {
+                answer = execute((SeedTemplateFromVmSnapshotCommand)cmd);
+            } else if (clz == CreateVolumeFromVMSnapshotCommand.class) {
+                answer = execute((CreateVolumeFromVMSnapshotCommand)cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1002,7 +1011,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
             Map<String, String> details = cmd.getDetails();
             if (details != null) {
-                nicDeviceType = VirtualEthernetCardType.valueOf((String) details.get("nicAdapter"));
+                nicDeviceType = VirtualEthernetCardType.valueOf(details.get("nicAdapter"));
             }
 
             // find a usable device number in VMware environment
@@ -3587,6 +3596,268 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             ". Please unmount manually to cleanup.");
                 }
                 s_logger.debug("Successfully unmounted datastore " + mountedDatastore + " at " + _hostName);
+            }
+        }
+    }
+
+    private Answer execute(SeedTemplateFromVmSnapshotCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource command SeedTemplateFromVmSnapshotCommand: " + _gson.toJson(cmd));
+        }
+
+        String vmSnapshotName = cmd.getSrcVmSnapshotName();
+        String vmSnapshotUuid = cmd.getSrcVmSnapshotUuid();
+        String vmName = cmd.getVmName();
+        String dataStoreUuid = cmd.getDsUuid();
+        String dsName = cmd.getDsName();
+        String dataStoreStr = "name=" + dsName + ",uuid=" + dataStoreUuid;
+        String templateName = vmSnapshotUuid;
+        String templateUuid;
+
+        String volumePath = cmd.getSrcVolumePath();
+
+        VirtualMachineMO vmMo = null;
+        VirtualMachineMO snapshotCloneVm = null;
+        VmwareHypervisorHost hyperHost = null;
+        ManagedObjectReference morDs = null;
+        ManagedObjectReference morDc = null;
+
+        // Root volume of VM, associated with specified VM snapshot, would used to seed the Template
+        try {
+            hyperHost = getHyperHost(getServiceContext());
+            morDc = hyperHost.getHyperHostDatacenter();
+
+            vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " does not exist in VMware datacenter " + morDc.getValue();
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+            vmName = vmMo.getName();
+
+            morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, dataStoreUuid);
+            if (morDs == null) {
+                String msg = "Unable to find the datastore: " + dataStoreUuid + " on host: " + hyperHost.getHyperHostName()
+                        + " to execute SeedTemplateFromVmSnapshotCommand";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath);
+            if (volumeDeviceInfo == null) {
+                String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            // Find snapshot of vm by its name
+            // Clone from snapshot -- lock to avoid any operation over that vm / vm snap. we want vm snapshot to be intact until atleast clone is finished.
+            //      no need to break this in to pieces as we just do clone and set in DB that template is ready on primary
+            Long storageUsageOnDatastoreByTemplate = 0L;
+            String workerName = getWorkerName(getServiceContext(), cmd, 0);
+            templateUuid = deriveTemplateUuidOnHost(hyperHost, dataStoreUuid, templateName);
+            String templateStr = "name=" + templateUuid;
+            Pair<VirtualMachineMO, String[]> cloneResult =
+                    vmMo.cloneFromSnapshot(workerName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), vmSnapshotName);
+            // cloneResult gives a temporary VM that is configured with child disk in snapshot tree.
+            // create clone of this temporary VM named after template on primary, i.e. templateUniqueName
+            // mark new clone as template - base image
+
+            snapshotCloneVm = cloneResult.first();
+            ManagedObjectReference morVmFolder = snapshotCloneVm.getParentMor();
+            ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+            boolean cloneSuccess = snapshotCloneVm.createFullClone(templateUuid, morVmFolder, morPool, morDs);
+            VirtualMachineMO templateVmMo = null;
+            if (cloneSuccess) {
+                templateVmMo = hyperHost.findVmOnHyperHost(templateUuid);
+                if (templateVmMo == null) {
+                    s_logger.debug("Unable to find template VM [" + templateUuid + "]" + " on this host, searching in cluster scope.");
+                    templateVmMo = hyperHost.findVmOnPeerHyperHost(templateUuid);
+                }
+                if (templateVmMo == null) {
+                    s_logger.debug("Unable to find template VM [" + templateUuid + "]" + " in this cluster, searching in data center scope.");
+                    DatacenterMO dcMo = new DatacenterMO(getServiceContext(), morDc);
+                    templateVmMo = dcMo.findVm(templateUuid);
+                }
+                if (templateVmMo == null) {
+                    String msg = "Failed to clone VM snapshot " + vmSnapshotUuid +
+                            " to seed template at install path : [" + templateUuid + "]" +
+                            "] on primary storage pool : [" + dataStoreStr + "]";
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+                //TODO createSnapshot could configurable to help deployments leveraging VAAI
+                boolean createSnapshot = true;
+                if (createSnapshot) {
+                    if (templateVmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
+                        // the same template may be deployed with multiple copies at per-datastore per-host basis,
+                        // save the original template name from CloudStack DB as the UUID to associate them.
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Successfully created base snapshot on top of template VM : " + templateVmMo.getName());
+                        }
+                    } else {
+                        templateVmMo.destroy();
+                        String msg = "Unable to create base snapshot for template, template [" + templateStr + "]";
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+                templateVmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateName);
+                storageUsageOnDatastoreByTemplate = templateVmMo.getStorageUsagePerDatastoreInKb(morDs);
+                templateVmMo.markAsTemplate();
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Successfully marked template VM " + templateVmMo.getName() + " as template.");
+                }
+            }
+            VmSnapshotTemplateObjectTO newTmplDataObj = new VmSnapshotTemplateObjectTO();
+            newTmplDataObj.setPath(templateUuid);
+            newTmplDataObj.setPhysicalSize(storageUsageOnDatastoreByTemplate * 1024); // Covert usage on datastore from KB to bytes
+            return new CopyCmdAnswer(newTmplDataObj);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encountered remote exception at vCenter, invalidating VMware session context");
+                invalidateServiceContext();
+            }
+
+            String msg = "SeedTemplateFromVmSnapshotCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.warn(msg, e);
+            return new CopyCmdAnswer(msg + e);
+        } finally {
+            try {
+                if (snapshotCloneVm != null) {
+                    s_logger.debug("Cleaning up the snapshot clone VM : " + snapshotCloneVm.getVmName());
+                    snapshotCloneVm.detachAllDisks();
+                    snapshotCloneVm.destroy();
+                }
+            } catch (Throwable t) {
+                s_logger.debug("Failure to clean-up the snapshot clone VM created while seeding template from VM snapshot.");
+            }
+        }
+    }
+
+    private static String deriveTemplateUuidOnHost(VmwareHypervisorHost hyperHost, String storeIdentifier, String templateName) {
+        String templateUuid;
+        try {
+            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
+        } catch (UnsupportedEncodingException e) {
+            s_logger.warn("unexpected encoding error, using default Charset: " + e.getLocalizedMessage());
+            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset()))
+                    .toString();
+        }
+        templateUuid = templateUuid.replaceAll("-", "");
+        return templateUuid;
+    }
+
+    private Answer execute(CreateVolumeFromVMSnapshotCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource command CreateVolumeFromVMSnapshotCommand: " + _gson.toJson(cmd));
+        }
+
+        String vmSnapshotName = cmd.getSrcVmSnapshotName();
+        String vmSnapshotUuid = cmd.getSrcVmSnapshotUuid();
+        String vmName = cmd.getVmName();
+        String dataStoreUuid = cmd.getDsUuid();
+        String dsName = cmd.getDsName();
+        String dataStoreStr = "name=" + dsName + ",uuid=" + dataStoreUuid;
+        String srcVolumePath = cmd.getSrcVolumePath();
+
+        VirtualMachineMO vmMo = null;
+        VmwareHypervisorHost hyperHost = null;
+        ManagedObjectReference morDs = null;
+        ManagedObjectReference morDc = null;
+        VirtualMachineMO snapshotCloneVm = null;
+        VirtualMachineMO volumeWorkerVmMo = null;
+        String newVolumeName = VmwareHelper.getVCenterSafeUuid();
+        // Volume referred to by srcVolumePath, in specified VM snapshot, would be used to create new volume
+        try {
+            hyperHost = getHyperHost(getServiceContext());
+            morDc = hyperHost.getHyperHostDatacenter();
+
+            vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " does not exist in VMware datacenter " + morDc.getValue();
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+            vmName = vmMo.getName();
+
+            morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, dataStoreUuid);
+            if (morDs == null) {
+                String msg = "Unable to find the datastore: " + dataStoreUuid + " on host: " + hyperHost.getHyperHostName()
+                        + " to execute CloneVolumeFromVmSnapshotCommand";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+            DatastoreMO primaryDsMo = new DatastoreMO(getServiceContext(), morDs);
+
+            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(srcVolumePath);
+            if (volumeDeviceInfo == null) {
+                String msg = "Unable to find related disk device for volume. volume path: " + srcVolumePath;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            // Find snapshot of vm by its name
+            // Clone from snapshot -- lock to avoid any operation over that vm / vm snap. we want vm snapshot to be intact until atleast clone is finished.
+            // Just do clone and set in DB that new volume is ready
+            String workerName = getWorkerName(getServiceContext(), cmd, 0);
+            Pair<VirtualMachineMO, String[]> cloneResult =
+                    vmMo.cloneFromSnapshot(workerName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), vmSnapshotName);
+
+            // create clone of this temporary VM to create new vm with volume path
+            snapshotCloneVm = cloneResult.first();
+            ManagedObjectReference morVmFolder = snapshotCloneVm.getParentMor();
+            ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
+            boolean cloneSuccess = snapshotCloneVm.createFullClone(newVolumeName, morVmFolder, morPool, morDs);
+            if (cloneSuccess) {
+                s_logger.debug("Successfully created full clone of the volume from VM snapshot " + vmSnapshotUuid);
+                volumeWorkerVmMo = hyperHost.findVmOnHyperHost(newVolumeName);
+                if (volumeWorkerVmMo == null) {
+                    String msg = "Failed to clone VM snapshot " + vmSnapshotUuid +
+                            " to create volume (path : " + newVolumeName +
+                            ") on primary storage pool : [" + dataStoreStr + "]";
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+                volumeWorkerVmMo.moveAllVmDiskFiles(primaryDsMo, "", false);
+                String vmdkNameOfNewVolume = newVolumeName;
+                VirtualDisk[] disks = volumeWorkerVmMo.getAllDiskDevice();
+                if (disks.length > 0 && disks[0].getBacking() instanceof VirtualDiskFlatVer2BackingInfo) {
+                    VirtualDiskFlatVer2BackingInfo backingInfo = (VirtualDiskFlatVer2BackingInfo)disks[0].getBacking();
+                    DatastoreFile fileInDatastore = new DatastoreFile(backingInfo.getFileName());
+                    vmdkNameOfNewVolume = fileInDatastore.getFileBaseName();
+                }
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setPath(vmdkNameOfNewVolume);
+                return new CopyCmdAnswer(newVol);
+            } else {
+                String msg = "Failed to create full clone of the volume from VM snapshot " + vmSnapshotUuid;
+                s_logger.debug(msg);
+                throw new Exception(msg);
+            }
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encountered remote exception at vCenter, invalidating VMware session context");
+                invalidateServiceContext();
+            }
+
+            String msg = "CreateVolumeFromVMSnapshotCommand failed due to : " + VmwareHelper.getExceptionMessage(e);
+            s_logger.warn(msg, e);
+            return new CopyCmdAnswer(msg + e);
+        } finally {
+            try {
+                if (snapshotCloneVm != null) {
+                    s_logger.debug("Cleaning up the snapshot volume clone VM : " + snapshotCloneVm.getVmName());
+                    snapshotCloneVm.detachAllDisks();
+                    snapshotCloneVm.destroy();
+                }
+                if (volumeWorkerVmMo != null) {
+                    s_logger.debug("Cleaning up the volume worker VM : " + volumeWorkerVmMo.getVmName());
+                    volumeWorkerVmMo.detachAllDisks();
+                    volumeWorkerVmMo.destroy();
+                }
+            } catch (Throwable t) {
+                s_logger.debug("Failure to clean-up the worker VMs created while creating volume from VM snapshot.");
             }
         }
     }

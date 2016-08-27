@@ -27,11 +27,13 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMSnapshotTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.snapshot.VMSnapshotVO;
 
 /**
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
@@ -58,6 +60,8 @@ public interface TemplateManager {
      * @return VMTemplateStoragePoolVO if preparation is complete; null if not.
      */
     VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool);
+
+    VMSnapshotTemplateStoragePoolVO seedTemplateFromVmSnapshotForCreate(VMSnapshotVO vmSnapshot, StoragePool pool);
 
     boolean resetTemplateDownloadStateOnPool(long templateStoragePoolRefId);
 

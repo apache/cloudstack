@@ -1374,6 +1374,7 @@ public class HypervisorHostHelper {
         vmConfig.setName(vmName);
         vmConfig.setMemoryMB((long)4);
         vmConfig.setNumCPUs(1);
+        vmConfig.setVersion("vmx-07");
         vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
         VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
         fileInfo.setVmPathName(dsMo.getDatastoreRootPath());

@@ -25,11 +25,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
+import com.cloud.storage.Volume;
+import com.cloud.uservm.UserVm;
 
 public class SimulatorDataMotionStrategy implements DataMotionStrategy {
     @Override
@@ -51,5 +54,29 @@ public class SimulatorDataMotionStrategy implements DataMotionStrategy {
     public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult("something", null);
         callback.complete(result);
+    }
+
+    @Override
+    public Void copyAsync(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult("something", null);
+            callback.complete(result);
+        return null;
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host tgtHost) {
+        return StrategyPriority.HYPERVISOR;
+    }
+
+    @Override
+    public StrategyPriority canHandle(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost) {
+        return StrategyPriority.HYPERVISOR;
+    }
+
+    @Override
+    public Void copyAsync(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult("something", null);
+        callback.complete(result);
+        return null;
     }
 }

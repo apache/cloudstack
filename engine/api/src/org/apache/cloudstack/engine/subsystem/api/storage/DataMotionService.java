@@ -24,6 +24,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
+import com.cloud.storage.Volume;
+import com.cloud.uservm.UserVm;
 
 public interface DataMotionService {
     void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback);
@@ -31,5 +33,11 @@ public interface DataMotionService {
     void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
 
     void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback);
+
+    void copyAsync(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm vmSnapshotOwnerVm, Host destHost,
+            AsyncCompletionCallback<CopyCommandResult> callback);
+
+    void copyAsync(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost,
+            AsyncCompletionCallback<CopyCommandResult> callback);
 
 }

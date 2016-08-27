@@ -24,6 +24,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
+import com.cloud.storage.Volume;
+import com.cloud.uservm.UserVm;
 
 public interface DataMotionStrategy {
     StrategyPriority canHandle(DataObject srcData, DataObject destData);
@@ -33,4 +35,12 @@ public interface DataMotionStrategy {
     void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback);
 
     void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback);
+
+    Void copyAsync(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback);
+
+    StrategyPriority canHandle(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host tgtHost);
+
+    StrategyPriority canHandle(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost);
+
+    Void copyAsync(DataObject volumeOnStore, VmSnapshotObject vmSnapshot, Volume srcVolume, UserVm userVm, Host tgtHost, AsyncCompletionCallback<CopyCommandResult> callback);
 }

@@ -32,11 +32,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
+import com.cloud.storage.Volume;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -88,5 +91,30 @@ public class DataMotionServiceImpl implements DataMotionService {
         }
 
         strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
+    }
+
+    @Override
+    public void copyAsync(DataObject templateOnPrimaryStoreObj, VmSnapshotObject vmSnapshotObj, UserVm userVm, Host tgtHost,
+            AsyncCompletionCallback<CopyCommandResult> callback) {
+
+        DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(templateOnPrimaryStoreObj, vmSnapshotObj, userVm, tgtHost);
+        if (strategy == null) {
+            throw new CloudRuntimeException("Can't find strategy to clone VM snapshot : " + vmSnapshotObj.getVmSnapshot().getUuid() +
+                    " to seed template of primary storage pool " + templateOnPrimaryStoreObj.getDataStore().getName());
+        }
+
+        strategy.copyAsync(templateOnPrimaryStoreObj, vmSnapshotObj, userVm, tgtHost, callback);
+    }
+
+    @Override
+    public void copyAsync(DataObject volumeOnStore, VmSnapshotObject vmSnapshotObj, Volume srcVolume, UserVm userVm, Host tgtHost,
+            AsyncCompletionCallback<CopyCommandResult> callback) {
+        DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(volumeOnStore, vmSnapshotObj, userVm, tgtHost);
+        if (strategy == null) {
+            throw new CloudRuntimeException("Can't find strategy to create volume from VM snapshot : " + vmSnapshotObj.getVmSnapshot().getUuid() +
+                    " on primary storage pool " + volumeOnStore.getDataStore().getName());
+        }
+
+        strategy.copyAsync(volumeOnStore, vmSnapshotObj, srcVolume, userVm, tgtHost, callback);
     }
 }

@@ -250,4 +250,9 @@ public class SimulatorStorageProcessor implements StorageProcessor {
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public Answer cloneVolumeFromVmSnapshotTemplate(CopyCommand cmd) {
+        return new Answer(cmd, false, "not implememented yet");
+    }
 }

@@ -47,6 +47,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 /**
  * VolumeOrchestrationService is a PURE orchestration service on CloudStack
@@ -124,4 +125,6 @@ public interface VolumeOrchestrationService {
     StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
 
     void updateVolumeDiskChain(long volumeId, String path, String chainInfo);
+
+    VolumeInfo createVolumeFromVmSnapshot(Volume volume, Volume srcVolume, VMSnapshot vmSnapshot, UserVm vm) throws StorageUnavailableException;
 }

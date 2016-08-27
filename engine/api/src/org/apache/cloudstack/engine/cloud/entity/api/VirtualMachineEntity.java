@@ -106,7 +106,8 @@ public interface VirtualMachineEntity extends CloudStackEntity {
      * @param reservationId reservation id from reserve call.
      *
      */
-    void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
+    void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean deployOnGivenHost)
+            throws InsufficientCapacityException, ResourceUnavailableException;
 
     /**
      * Stop the virtual machine
