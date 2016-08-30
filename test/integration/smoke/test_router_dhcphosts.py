@@ -195,7 +195,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             self.fail("Failed to SSH into VM - %s" % (nat_rule.ipaddress))
 
         self.assertEqual(
-                         result.count("3 packets received"),
+                         result.count("3 received"),
                          1,
                          "Ping to outside world from VM should be successful"
                          )
