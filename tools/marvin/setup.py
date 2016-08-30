@@ -53,6 +53,7 @@ setup(name="Marvin",
           "ddt >= 0.4.0",
           "pyvmomi >= 5.5.0",
           "netaddr >= 0.7.14",
+          "dnspython",
           "ipmisim >= 0.7"
       ],
       py_modules=['marvin.marvinPlugin'],
