@@ -14,11 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
 import logging
-from netaddr import *
 from random import randint
-from CsGuestNetwork import CsGuestNetwork
+
+from netaddr import IPAddress
+
+from cs import CsHelper
+from cs.CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
 
@@ -29,6 +31,11 @@ CLOUD_CONF = "/etc/dnsmasq.d/cloud.conf"
 
 class CsDhcp(CsDataBag):
     """ Manage dhcp entries """
+    conf = None
+    changed = None
+    hosts = None
+    cloud = None
+    devinfo = None
 
     def process(self):
         self.hosts = {}
@@ -54,7 +61,8 @@ class CsDhcp(CsDataBag):
         self.conf.commit()
         self.cloud.commit()
 
-        # We restart DNSMASQ every time the configure.py is called in order to avoid lease problems.
+        # We restart DNSMASQ every time the configure.py is called
+	# in order to avoid lease problems.
         if not self.cl.is_redundant() or self.cl.is_master():
             CsHelper.service("dnsmasq", "restart")
 
@@ -99,7 +107,8 @@ class CsDhcp(CsDataBag):
             self.conf.search(sline, line)
             idx += 1
 
-    def delete_leases(self):
+    @staticmethod
+    def delete_leases():
         try:
             open(LEASES, 'w').close()
         except IOError:
@@ -116,12 +125,12 @@ class CsDhcp(CsDataBag):
             self.add_host(self.config.address().get_guest_ip(), "%s data-server" % CsHelper.get_hostname())
 
     def write_hosts(self):
-        file = CsFile("/etc/hosts")
-        file.repopulate()
+        cs_file = CsFile("/etc/hosts")
+        cs_file.repopulate()
         for ip in self.hosts:
-            file.add("%s\t%s" % (ip, self.hosts[ip]))
-        if file.is_changed():
-            file.commit()
+            cs_file.add("%s\t%s" % (ip, self.hosts[ip]))
+        if cs_file.is_changed():
+            cs_file.commit()
             logging.info("Updated hosts file")
         else:
             logging.debug("Hosts file unchanged")
@@ -136,7 +145,7 @@ class CsDhcp(CsDataBag):
                                          entry['ipv4_adress'],
                                          entry['host_name'],
                                          lease
-                                         ))
+                                        ))
         i = IPAddress(entry['ipv4_adress'])
         # Calculate the device
         for v in self.devinfo:

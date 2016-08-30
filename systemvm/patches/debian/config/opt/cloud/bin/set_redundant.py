@@ -17,11 +17,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# This file is used by the tests to switch the redundancy status
+# This file is used to switch the redundancy status by
+# test/systemvm/test_update_config.py
 
-from cs.CsConfig import CsConfig
 from optparse import OptionParser
 import logging
+
+from cs.CsConfig import CsConfig
 
 parser = OptionParser()
 parser.add_option("-e", "--enable",
@@ -37,11 +39,9 @@ config = CsConfig()
 logging.basicConfig(filename=config.get_logger(),
                     level=config.get_level(),
                     format=config.get_format())
-config.set_cl()
-
 if options.enable:
-    config.get_cmdline().set_redundant("true")
+    config.cmdline().set_redundant("true")
 if options.disable:
-    config.get_cmdline().set_redundant("false")
+    config.cmdline().set_redundant("false")
 
-config.get_cmdline().save()
+config.cmdline().save()

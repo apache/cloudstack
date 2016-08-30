@@ -15,10 +15,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
-from pprint import pprint
-from CsDatabag import CsDataBag, CsCmdLine
 import logging
+
+from cs import CsHelper
+from cs.CsDatabag import CsCmdLine
 
 
 class CsChain(object):
@@ -128,7 +128,6 @@ class CsNetfilters(object):
             cmd = "iptables -t %s %s" % (r.get_table(), r.to_str(True))
             logging.debug("unseen cmd:  %s ", cmd)
             CsHelper.execute(cmd)
-            # print "Delete rule %s from table %s" % (r.to_str(True), r.get_table())
             logging.info("Delete rule %s from table %s", r.to_str(True), r.get_table())
 
     def compare(self, list):
@@ -156,11 +155,13 @@ class CsNetfilters(object):
 
             rule_chain = new_rule.get_chain()
 
-            logging.debug("Checking if the rule already exists: rule=%s table=%s chain=%s", new_rule.get_rule(), new_rule.get_table(), new_rule.get_chain())
+            logging.debug(
+                "Checking if the rule already exists: rule=%s table=%s chain=%s",
+                new_rule.get_rule(), new_rule.get_table(), new_rule.get_chain()
+            )
             if self.has_rule(new_rule):
                 logging.debug("Exists: rule=%s table=%s", fw[2], new_rule.get_table())
             else:
-                # print "Add rule %s in table %s" % ( fw[2], new_rule.get_table())
                 logging.info("Add: rule=%s table=%s", fw[2], new_rule.get_table())
                 # front means insert instead of append
                 cpy = fw[2]
@@ -170,10 +171,18 @@ class CsNetfilters(object):
                     # if the rule is for ACLs, we want to insert them in order, right before the DROP all
                     if rule_chain.startswith("ACL_INBOUND"):
                         rule_count = self.chain.get_count(rule_chain)
-                        cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), rule_count))
+                        cpy = cpy.replace(
+                            "-A %s" % new_rule.get_chain(),
+                            '-I %s %s' % (new_rule.get_chain(), rule_count)
+                        )
                     else:
-                        cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), fw[1]))
-                CsHelper.execute("iptables -t %s %s" % (new_rule.get_table(), cpy))
+                        cpy = cpy.replace(
+                            "-A %s" % new_rule.get_chain(),
+                            '-I %s %s' % (new_rule.get_chain(), fw[1])
+                        )
+                CsHelper.execute(
+                    "iptables -t %s %s" % (new_rule.get_table(), cpy)
+                )
                 ruleSet.add(tupledFw)
                 self.chain.add_rule(rule_chain)
         self.del_standard()
@@ -182,18 +191,19 @@ class CsNetfilters(object):
     def add_chain(self, rule):
         """ Add the given chain if it is not already present """
         if not self.has_chain(rule.get_table(), rule.get_chain()):
-            CsHelper.execute("iptables -t %s -N %s" % (rule.get_table(), rule.get_chain()))
+            CsHelper.execute("iptables -t %s -N %s" %
+                             (rule.get_table(), rule.get_chain()))
             self.chain.add(rule.get_table(), rule.get_chain())
 
     def del_standard(self):
         """ Del rules that are there but should not be deleted
         These standard firewall rules vary according to the device type
         """
-        type = CsCmdLine("cmdline").get_type()
+        ipt_type = CsCmdLine("cmdline").get_type()
 
         try:
             table = ''
-            for i in open("/etc/iptables/iptables-%s" % type):
+            for i in open("/etc/iptables/iptables-%s" % ipt_type):
                 if i.startswith('*'):  # Table
                     table = i[1:].strip()
                 if i.startswith('-A'):  # Rule
@@ -239,16 +249,17 @@ class CsNetfilter(object):
         rule = rule.replace('-p all', '')
         rule = rule.replace('  ', ' ')
         rule = rule.replace('bootpc', '68')
-        # Ugly hack no.23 split this or else I will have an odd number of parameters
+        # XXX: Ugly hack no.23 split this or else I will have an odd
+        # number of parameters
         rule = rule.replace('--checksum-fill', '--checksum fill')
         # -m can appear twice in a string
         rule = rule.replace('-m state', '-m2 state')
         rule = rule.replace('ESTABLISHED,RELATED', 'RELATED,ESTABLISHED')
         bits = rule.split(' ')
-        rule = dict(zip(bits[0::2], bits[1::2]))
-        if "-A" in rule.keys():
-            self.chain = rule["-A"]
-        return rule
+        rules = dict(zip(bits[0::2], bits[1::2]))
+        if "-A" in rules:
+            self.chain = rules["-A"]
+        return rules
 
     def set_table(self, table):
         if table == '':
@@ -274,24 +285,28 @@ class CsNetfilter(object):
         return self.rule
 
     def to_str(self, delete=False):
-        """ Convert the rule back into aynactically correct iptables command """
+        """
+        Convert the rule back into aynactically correct iptables command
+        """
         # Order is important
-        order = ['-A', '-s', '-d', '!_-d', '-i', '!_-i', '-p', '-m', '-m2', '--icmp-type', '--state',
-                 '--dport', '--destination-port', '-o', '!_-o', '-j', '--set-xmark', '--checksum',
-                 '--to-source', '--to-destination', '--mark']
-        str = ''
+        order = [
+            '-A', '-s', '-d', '!_-d', '-i', '!_-i', '-p', '-m', '-m2',
+            '--icmp-type', '--state', '--dport', '--destination-port',
+            '-o', '!_-o', '-j', '--set-xmark', '--checksum', '--to-source',
+            '--to-destination', '--mark',
+        ]
+        result = ''
         for k in order:
             if k in self.rule.keys():
                 printable = k.replace('-m2', '-m')
                 printable = printable.replace('!_-', '! -')
                 if delete:
                     printable = printable.replace('-A', '-D')
-                if str == '':
-                    str = "%s %s" % (printable, self.rule[k])
+                if result == '':
+                    result = "%s %s" % (printable, self.rule[k])
                 else:
-                    str = "%s %s %s" % (str, printable, self.rule[k])
-        str = str.replace("--checksum fill", "--checksum-fill")
-        return str
+                    result = "%s %s %s" % (result, printable, self.rule[k])
+        return result.replace("--checksum fill", "--checksum-fill")
 
     def __eq__(self, rule):
         if rule.get_table() != self.get_table():

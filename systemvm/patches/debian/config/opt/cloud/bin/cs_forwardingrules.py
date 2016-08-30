@@ -15,8 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pprint import pprint
-
 
 def merge(dbag, rules):
     for rule in rules["rules"]:
@@ -45,7 +43,7 @@ def merge(dbag, rules):
                     for forward in dbag[source_ip]:
                         if ruleCompare(forward, newrule):
                             index = dbag[source_ip].index(forward)
-                    if not index == -1:
+                    if index != -1:
                         dbag[source_ip][index] = newrule
                     else:
                         dbag[source_ip].append(newrule)
@@ -62,18 +60,20 @@ def merge(dbag, rules):
                         if ruleCompare(forward, newrule):
                             index = dbag[source_ip].index(forward)
                             print "removing index %s" % str(index)
-                    if not index == -1:
+                    if index != -1:
                         del dbag[source_ip][index]
 
     return dbag
 
 
-# Compare function checks only the public side, those must be equal the internal details could change
+# Compare function checks only the public side,
+# those must be equal the internal details could change
 def ruleCompare(ruleA, ruleB):
     if not ruleA["type"] == ruleB["type"]:
         return False
     if ruleA["type"] == "staticnat":
         return ruleA["public_ip"] == ruleB["public_ip"]
     elif ruleA["type"] == "forward":
-        return ruleA["public_ip"] == ruleB["public_ip"] and ruleA["public_ports"] == ruleB["public_ports"] \
+        return ruleA["public_ip"] == ruleB["public_ip"] \
+            and ruleA["public_ports"] == ruleB["public_ports"] \
             and ruleA["protocol"] == ruleB["protocol"]

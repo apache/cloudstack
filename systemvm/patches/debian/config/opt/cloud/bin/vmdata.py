@@ -52,22 +52,22 @@ def main(argv):
     for ip in json_data:
         for item in json_data[ip]:
             folder = item[0]
-            file = item[1]
+            filename = item[1]
             data = item[2]
 
             # process only valid data
             if folder != "userdata" and folder != "metadata":
                 continue
 
-            if file == "":
+            if filename == "":
                 continue
 
-            htaccess(ip, folder, file)
+            htaccess(ip, folder, filename)
 
             if data == "":
-                deletefile(ip, folder, file)
+                deletefile(ip, folder, filename)
             else:
-                createfile(ip, folder, file, data)
+                createfile(ip, folder, filename, data)
 
     if fpath != '':
         fh.close()
@@ -107,10 +107,12 @@ def createfile(ip, folder, file, data):
         except OSError as e:
             # error 17 is already exists, we do it this way for concurrency
             if e.errno != 17:
-                print "failed to make directories " + metamanifestdir + " due to :" + e.strerror
+                print "failed to make directories %s due to : %s" % \
+                    (metamanifestdir, e.strerror)
                 sys.exit(1)
         if os.path.exists(metamanifest):
-            fh = open(metamanifest, "r+a")
+            fh = open(metamanifest, "a+")
+            fh = open(metamanifest, "a+")
             exflock(fh)
             if file not in fh.read():
                 fh.write(file + '\n')
@@ -137,7 +139,8 @@ def htaccess(ip, folder, file):
     except OSError as e:
         # error 17 is already exists, we do it this way for sake of concurrency
         if e.errno != 17:
-            print "failed to make directories " + htaccessFolder + " due to :" + e.strerror
+            print "failed to make directories %s due to : %s" % \
+                (htaccessFolder, e.strerror)
             sys.exit(1)
 
     fh = open(htaccessFile, "w")
@@ -159,7 +162,7 @@ def exflock(file):
 def unflock(file):
     try:
         flock(file, LOCK_UN)
-    except IOError:
+    except IOError as e:
         print "failed to unlock file" + file.name + " due to : " + e.strerror
         sys.exit(1)
     return True

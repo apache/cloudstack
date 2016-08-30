@@ -15,8 +15,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
 import logging
+
+from cs import CsHelper
 
 
 class CsRoute:
@@ -32,18 +33,21 @@ class CsRoute:
     def add_table(self, devicename):
         tablenumber = devicename[3:]
         tablename = self.get_tablename(devicename)
-        str = "%s %s" % (tablenumber, tablename)
+        table = "%s %s" % (tablenumber, tablename)
         filename = "/etc/iproute2/rt_tables"
         logging.info(
-            "Adding route table: " + str + " to " + filename + " if not present ")
-        CsHelper.addifmissing(filename, str)
+            "Adding route table: %s to %s if not present ", table, filename)
+        CsHelper.addifmissing(filename, table)
 
-    def flush_table(self, tablename):
+    @staticmethod
+    def flush_table(tablename):
         CsHelper.execute("ip route flush table %s" % (tablename))
         CsHelper.execute("ip route flush cache")
 
     def add_route(self, dev, address):
-        """ Wrapper method that adds table name and device to route statement """
+        """
+	Wrapper method that adds table name and device to route statement
+	"""
         # ip route add dev eth1 table Table_eth1 10.0.2.0/24
         table = self.get_tablename(dev)
         logging.info("Adding route: dev " + dev + " table: " +
@@ -51,10 +55,11 @@ class CsRoute:
         cmd = "dev %s table %s %s" % (dev, table, address)
         self.set_route(cmd)
 
-    def set_route(self, cmd, method="add"):
+    @staticmethod
+    def set_route(cmd, method="add"):
         """ Add a route if it is not already defined """
         found = False
-        for i in CsHelper.execute("ip route show " + cmd):
+        for _ in CsHelper.execute("ip route show " + cmd):
             found = True
         if not found and method == "add":
             logging.info("Add " + cmd)
@@ -73,7 +78,7 @@ class CsRoute:
         """
         if not gateway:
             raise Exception("Gateway cannot be None.")
-        
+
         if self.defaultroute_exists():
             return False
         else:
@@ -82,7 +87,8 @@ class CsRoute:
             self.set_route(cmd)
             return True
 
-    def defaultroute_exists(self):
+    @staticmethod
+    def defaultroute_exists():
         """ Return True if a default route is present
         :return: bool
         """
@@ -90,7 +96,7 @@ class CsRoute:
         route_found = CsHelper.execute("ip -4 route list 0/0")
 
         if len(route_found) > 0:
-            logging.info("Default route found: " + route_found[0])
+            logging.info("Default route found: %s", route_found[0])
             return True
         else:
             logging.warn("No default route found!")

@@ -16,9 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from CsDatabag import CsCmdLine
-from CsAddress import CsAddress
-import logging
+from cs.CsDatabag import CsCmdLine
+from cs.CsAddress import CsAddress
 
 
 class CsConfig(object):
@@ -29,6 +28,7 @@ class CsConfig(object):
     __LOG_LEVEL = "DEBUG"
     __LOG_FORMAT = "%(asctime)s %(levelname)-8s %(message)s"
     cl = None
+    ips = None
 
     def __init__(self):
         self.fw = []
@@ -82,7 +82,8 @@ class CsConfig(object):
         conf = self.cmdline().idata()
         dns = []
         if not self.use_extdns():
-            if not self.is_vpc() and self.cl.is_redundant() and self.cl.get_guest_gw():
+            if not self.is_vpc() and self.cl.is_redundant() \
+            and self.cl.get_guest_gw():
                 dns.append(self.cl.get_guest_gw())
             else:
                 dns.append(self.address().get_guest_ip())

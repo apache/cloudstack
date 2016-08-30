@@ -15,12 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pprint import pprint
-import copy
 
 
 def merge(dbag, data):
-    """ Simply overwrite the existsing bag as, the whole configuration is sent every time """
+    """
+    Simply overwrite the existsing bag as,
+    the whole configuration is sent every time
+    """
     if "rules" not in data:
         return dbag
     dbag['config'] = data['rules']

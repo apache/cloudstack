@@ -16,10 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 import os
-import CsHelper
-from CsFile import CsFile
-from CsProcess import CsProcess
-import CsHelper
+from cs import CsHelper
+from cs.CsFile import CsFile
+from cs.CsProcess import CsProcess
 
 
 class CsApp:
@@ -35,24 +34,24 @@ class CsApache(CsApp):
     """ Set up Apache """
 
     def remove(self):
-        file = "/etc/apache2/sites-enabled/vhost-%s.conf" % self.dev
-        if os.path.isfile(file):
-            os.remove(file)
+        filename = "/etc/apache2/sites-enabled/vhost-%s.conf" % self.dev
+        if os.path.isfile(filename):
+            os.remove(filename)
             CsHelper.service("apache2", "restart")
 
     def setup(self):
         CsHelper.copy_if_needed("/etc/apache2/vhost.template",
                                 "/etc/apache2/sites-enabled/vhost-%s.conf" % self.ip)
 
-        file = CsFile("/etc/apache2/sites-enabled/vhost-%s.conf" % (self.ip))
-        file.search("<VirtualHost.*:80>", "\t<VirtualHost %s:80>" % (self.ip))
-        file.search("<VirtualHost.*:443>", "\t<VirtualHost %s:443>" % (self.ip))
-        file.search("Listen .*:80", "Listen %s:80" % (self.ip))
-        file.search("Listen .*:443", "Listen %s:443" % (self.ip))
-        file.search("NameVirtualHost .*:80", "NameVirtualHost %s:80" % (self.ip))
-        file.search("ServerName.*", "\tServerName %s.%s" % (self.config.cl.get_type(), self.config.get_domain()))
-        if file.is_changed():
-            file.commit()
+        cs_file = CsFile("/etc/apache2/sites-enabled/vhost-%s.conf" % (self.ip))
+        cs_file.search("<VirtualHost.*:80>", "\t<VirtualHost %s:80>" % (self.ip))
+        cs_file.search("<VirtualHost.*:443>", "\t<VirtualHost %s:443>" % (self.ip))
+        cs_file.search("Listen .*:80", "Listen %s:80" % (self.ip))
+        cs_file.search("Listen .*:443", "Listen %s:443" % (self.ip))
+        cs_file.search("NameVirtualHost .*:80", "NameVirtualHost %s:80" % (self.ip))
+        cs_file.search("ServerName.*", "\tServerName %s.%s" % (self.config.cl.get_type(), self.config.get_domain()))
+        if cs_file.is_changed():
+            cs_file.commit()
             CsHelper.service("apache2", "restart")
 
         self.fw.append([
@@ -99,7 +98,7 @@ class CsDnsmasq(CsApp):
         """
         self.fw.append(["", "front",
                         "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev
-                        ])
+                       ])
 
         if self.config.has_dns():
             self.fw.append([

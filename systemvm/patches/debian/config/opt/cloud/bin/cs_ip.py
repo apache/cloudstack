@@ -15,12 +15,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from pprint import pprint
-from netaddr import *
+from netaddr import IPNetwork
 
 
 def merge(dbag, ip):
-    added = False
     for dev in dbag:
         if dev == "id":
             continue
