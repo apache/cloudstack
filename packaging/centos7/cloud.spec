@@ -396,9 +396,9 @@ if [ "$1" == "1" ] ; then
     /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
 fi
 
-grep "db.cloud.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.cloud.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
-grep "db.usage.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.usage.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
-grep "db.simulator.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.simulator.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
+grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql" db.properties
+grep -s -q "db.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in
