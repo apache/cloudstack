@@ -23,3 +23,11 @@
 UPDATE `cloud`.`roles` SET `description`='Default user role' WHERE `id`=4 AND `role_type`='User' AND `description`='Default Root Admin role';
 
 
+ALTER TABLE cloud.load_balancer_cert_map ENGINE=INNODB;
+ALTER TABLE cloud.monitoring_services ENGINE=INNODB;
+ALTER TABLE cloud.nic_ip_alias ENGINE=INNODB;
+ALTER TABLE cloud.sslcerts ENGINE=INNODB;
+ALTER TABLE cloud.op_lock ENGINE=INNODB;
+ALTER TABLE cloud.op_nwgrp_work ENGINE=INNODB;
+
+ALTER TABLE cloud_usage.quota_account ENGINE=INNODB;
