@@ -29,12 +29,12 @@ public class Upgrade491to4100 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.9.1", "4.10.0"};
+        return new String[] {"4.9.1", "4.10.0.0"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "4.10.0";
+        return "4.10.0.0";
     }
 
     @Override
