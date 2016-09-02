@@ -36,7 +36,8 @@ class CsRoute:
         filename = "/etc/iproute2/rt_tables"
         logging.info(
             "Adding route table: " + str + " to " + filename + " if not present ")
-        CsHelper.addifmissing(filename, str)
+        if not CsHelper.definedinfile(filename, str):
+             CsHelper.execute("sudo echo " + str + " >> /etc/iproute2/rt_tables")
 
     def flush_table(self, tablename):
         CsHelper.execute("ip route flush table %s" % (tablename))
@@ -49,6 +50,7 @@ class CsRoute:
         logging.info("Adding route: dev " + dev + " table: " +
                      table + " network: " + address + " if not present")
         cmd = "dev %s table %s %s" % (dev, table, address)
+        cmd = "default via %s table %s proto static" % (address, table)
         self.set_route(cmd)
 
     def set_route(self, cmd, method="add"):
@@ -73,7 +75,7 @@ class CsRoute:
         """
         if not gateway:
             raise Exception("Gateway cannot be None.")
-        
+
         if self.defaultroute_exists():
             return False
         else:
