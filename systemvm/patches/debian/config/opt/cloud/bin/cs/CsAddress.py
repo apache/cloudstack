@@ -509,13 +509,30 @@ class CsIP:
 
     def post_config_change(self, method):
         route = CsRoute()
+        tableName = "Table_" + self.dev
+
         if method == "add":
-            route.add_table(self.dev)
+            # treat the first IP on a interface as special case to set up the routing rules
+            if self.get_type() in ["public"] and (not self.config.is_vpc()) and (len(self.iplist) == 0):
+                CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth0'][0]['network'] + " table " + tableName + " proto static")
+                CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth1'][0]['network'] + " table " + tableName + " proto static")
+
+            # add 'defaul via gateway' rule in the device specific routing table
             if "gateway" in self.address and self.address["gateway"] != "None":
-                route.add_route(self.dev, "default via %s" % self.address["gateway"])
-            route.add_route(self.dev, str(self.address["network"]))
+                route.add_route(self.dev, self.address["gateway"])
+
+            CsHelper.execute("sudo ip route flush cache")
+
+            if self.get_type() in ["public"]:
+                CsRule(self.dev).addRule("from " + str(self.address["network"]))
+
         elif method == "delete":
-            logging.warn("delete route not implemented")
+            # treat the last IP to be associated with interface as special case to clean up the routing rules
+            if self.get_type() in ["public"] and (not self.config.is_vpc()) and (len(self.iplist) == 0):
+                CsHelper.execute("sudo ip rule delete table " + tableName)
+                CsHelper.execute("sudo ip route flush table " + tableName)
+                CsHelper.execute("sudo ip route flush cache")
+                CsRule(self.dev).delMark()
 
         self.fw_router()
         self.fw_vpcrouter()
