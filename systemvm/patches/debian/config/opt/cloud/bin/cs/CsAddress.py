@@ -513,7 +513,7 @@ class CsIP:
 
         if method == "add":
             # treat the first IP on a interface as special case to set up the routing rules
-            if self.get_type() in ["public"] and (not self.config.is_vpc()) and (len(self.iplist) == 0):
+            if self.get_type() in ["public"] and (not self.config.is_vpc()) and (len(self.iplist) == 1):
                 CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth0'][0]['network'] + " table " + tableName + " proto static")
                 CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth1'][0]['network'] + " table " + tableName + " proto static")
 
