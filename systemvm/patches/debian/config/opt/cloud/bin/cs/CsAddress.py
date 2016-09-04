@@ -272,10 +272,10 @@ class CsIP:
                 subprocess.call(cmd, shell=True)
             except Exception as e:
                 logging.info("Exception occurred ==> %s" % e)
-
+            self.post_configure(address)
         else:
+            # delete method performs post_configure, so no need to call post_configure here
             self.delete(self.ip())
-        self.post_configure(address)
 
     def post_configure(self, address):
         """ The steps that must be done after a device is configured """
@@ -527,7 +527,7 @@ class CsIP:
                 CsRule(self.dev).addRule("from " + str(self.address["network"]))
 
         elif method == "delete":
-            # treat the last IP to be associated with interface as special case to clean up the routing rules
+            # treat the last IP to be dis-associated with interface as special case to clean up the routing rules
             if self.get_type() in ["public"] and (not self.config.is_vpc()) and (len(self.iplist) == 0):
                 CsHelper.execute("sudo ip rule delete table " + tableName)
                 CsHelper.execute("sudo ip route flush table " + tableName)
@@ -568,15 +568,8 @@ class CsIP:
         for i in CsHelper.execute(cmd):
             vals = i.lstrip().split()
             if (vals[0] == 'inet'):
-
                 cidr = vals[1]
-                for ip, device in self.iplist.iteritems():
-                    logging.info(
-                                 "Iterating over the existing IPs. CIDR to be configured ==> %s, existing IP ==> %s on device ==> %s",
-                                 cidr, ip, device)
-
-                    if cidr[0] != ip[0] and device != self.dev:
-                        self.iplist[cidr] = self.dev
+                self.iplist[cidr] = self.dev
 
     def configured(self):
         if self.address['cidr'] in self.iplist.keys():
