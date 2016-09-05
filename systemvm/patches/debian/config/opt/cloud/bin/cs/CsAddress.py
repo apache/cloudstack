@@ -285,7 +285,9 @@ class CsIP:
 
             CsRule(self.dev).addMark()
             self.check_is_up()
-            if self.dnum != '0':
+            if not self.config.is_vpc() and self.dnum != '0':
+                self.set_mark()
+            if self.config.is_vpc():
                 self.set_mark()
             self.arpPing()
 
@@ -435,10 +437,10 @@ class CsIP:
     def fw_vpcrouter(self):
         if not self.config.is_vpc():
             return
-        self.fw.append(["mangle", "front", "-A PREROUTING " +
-                        "-m state --state RELATED,ESTABLISHED " +
-                        "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
         if self.get_type() in ["guest"]:
+            self.fw.append(["mangle", "front", "-A PREROUTING " +
+                            " -i %s -m state --state RELATED,ESTABLISHED "  % self.dev +
+                            "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
             self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                             (self.address['network'], self.dev, self.dev)])
             self.fw.append(
@@ -512,19 +514,25 @@ class CsIP:
         tableName = "Table_" + self.dev
 
         if method == "add":
-            # treat the first IP on a interface as special case to set up the routing rules
-            if self.get_type() in ["public"] and (not self.config.is_vpc()) and (len(self.iplist) == 1):
-                CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth0'][0]['network'] + " table " + tableName + " proto static")
-                CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth1'][0]['network'] + " table " + tableName + " proto static")
+            if not self.config.is_vpc():
+                # treat the first IP on a interface as special case to set up the routing rules
+                if self.get_type() in ["public"] and (len(self.iplist) == 1):
+                    CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth0'][0]['network'] + " table " + tableName + " proto static")
+                    CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth1'][0]['network'] + " table " + tableName + " proto static")
 
-            # add 'defaul via gateway' rule in the device specific routing table
-            if "gateway" in self.address and self.address["gateway"] != "None":
-                route.add_route(self.dev, self.address["gateway"])
+                # add 'defaul via gateway' rule in the device specific routing table
+                if "gateway" in self.address and self.address["gateway"] != "None":
+                    route.add_route(self.dev, self.address["gateway"])
+
+                if self.get_type() in ["public"]:
+                    CsRule(self.dev).addRule("from " + str(self.address["network"]))
+
+            if self.config.is_vpc():
+                if self.get_type() in ["public"] and "gateway" in self.address and self.address["gateway"] != "None":
+                    route.add_route(self.dev, self.address["gateway"])
+                route.add_network_route(self.dev, str(self.address["network"]))
 
             CsHelper.execute("sudo ip route flush cache")
-
-            if self.get_type() in ["public"]:
-                CsRule(self.dev).addRule("from " + str(self.address["network"]))
 
         elif method == "delete":
             # treat the last IP to be dis-associated with interface as special case to clean up the routing rules
