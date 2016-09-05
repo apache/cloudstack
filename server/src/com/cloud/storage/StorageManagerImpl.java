@@ -881,7 +881,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         long totalOverProvCapacity;
-        if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.VMFS) {
+        if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.VMFS || storagePool.getPoolType() == StoragePoolType.SharedMountPoint ) {
             // All this is for the inaccuracy of floats for big number multiplication.
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getId());
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();
@@ -1566,7 +1566,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         long totalOverProvCapacity;
-        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.VMFS) {
+        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.VMFS || pool.getPoolType() == StoragePoolType.SharedMountPoint ) {
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(pool.getId());
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
             s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor "
