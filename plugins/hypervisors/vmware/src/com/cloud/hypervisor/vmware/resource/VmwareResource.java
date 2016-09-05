@@ -762,13 +762,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         s_logger.info("findRouterEthDeviceIndex. mac: " + mac);
 
-        // TODO : this is a temporary very inefficient solution, will refactor it later
-        Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "ls /proc/sys/net/ipv4/conf");
-
         // when we dynamically plug in a new NIC into virtual router, it may take time to show up in guest OS
         // we use a waiting loop here as a workaround to synchronize activities in systems
         long startTick = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTick < 15000) {
+        while (System.currentTimeMillis() - startTick < 30000) {
+            // TODO : this is a temporary very inefficient solution, will refactor it later
+            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "ls /proc/sys/net/ipv4/conf");
             if (result.first()) {
                 String[] tokens = result.second().split("\\s+");
                 for (String token : tokens) {
