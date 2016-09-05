@@ -584,6 +584,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
