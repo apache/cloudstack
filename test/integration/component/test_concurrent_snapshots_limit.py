@@ -297,3 +297,16 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
                 more than concurrent.snapshots.threshold.perhost\
                 value successfully created")
         return
+
+    @attr(tags=["advanced", "basic"], required_hardware="false")
+    def test_03_concurrent_snapshot_global_value_assignment(self):
+        """ Test verifies that exception is raised if string value is assigned to
+             concurrent.snapshots.threshold.perhost parameter.
+        """
+        with self.assertRaises(Exception):
+           Configurations.update(
+             self.apiclient,
+             "concurrent.snapshots.threshold.perhost",
+             "String"
+           )
+        return
