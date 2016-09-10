@@ -22,6 +22,10 @@ package com.cloud.utils.ssh;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 
 import org.apache.log4j.Logger;
 
@@ -195,6 +199,16 @@ public class SshHelper {
             }
 
             String result = sbResult.toString();
+
+            if (StringUtils.isBlank(result)) {
+                try {
+                    result = IOUtils.toString(stdout, StandardCharsets.UTF_8);
+                }
+                catch (IOException e) {
+                    s_logger.error("Couldn't get content of input stream due to: " + e.getMessage());
+                    return new Pair<Boolean, String>(false, result);
+                }
+            }
 
             if (sess.getExitStatus() == null) {
                 //Exit status is NOT available. Returning failure result.
