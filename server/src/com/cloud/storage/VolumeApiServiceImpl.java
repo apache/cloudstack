@@ -114,6 +114,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.VolumeNamingPolicy;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -253,6 +255,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected Gson _gson;
     @Inject
     StorageManager storageMgr;
+    @Inject
+    ResourceNamingPolicyManager _resourceNamingPolicyMgr;
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -440,10 +444,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return false;
     }
 
-    public String getRandomVolumeName() {
-        return UUID.randomUUID().toString();
-    }
-
     @DB
     protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url,
             final String format, final Long diskOfferingId, final Volume.State state) {
@@ -474,6 +474,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setUpdated(new Date());
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
                 volume.setFormat(ImageFormat.valueOf(format));
+
+                _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).finalizeIdentifiers(volume);
+
                 volume = _volsDao.persist(volume);
                 CallContext.current().setEventDetails("Volume Id: " + volume.getId());
 
@@ -503,7 +506,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String userSpecifiedName = cmd.getVolumeName();
 
         if (org.apache.commons.lang.StringUtils.isBlank(userSpecifiedName)) {
-            userSpecifiedName = getRandomVolumeName();
+            userSpecifiedName = _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).getDatadiskName();
         }
 
         return userSpecifiedName;
@@ -706,8 +709,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         String userSpecifiedName = getVolumeNameFromCommand(cmd);
 
+
+        String uuid = _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).generateUuid(null, owner.getId(), cmd.getCustomId());
         VolumeVO volume = commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size,
-                minIops, maxIops, parentVolume, userSpecifiedName, _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
+                minIops, maxIops, parentVolume, userSpecifiedName, uuid);
+
 
         return volume;
     }
@@ -738,6 +744,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } else {
                     volume.setTemplateId(null);
                 }
+
+                _resourceNamingPolicyMgr.getPolicy(VolumeNamingPolicy.class).finalizeIdentifiers(volume);
 
                 volume = _volsDao.persist(volume);
                 if (cmd.getSnapshotId() == null && displayVolume) {

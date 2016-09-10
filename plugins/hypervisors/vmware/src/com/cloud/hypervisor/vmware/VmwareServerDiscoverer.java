@@ -59,6 +59,7 @@ import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.naming.TemplateNamingPolicy;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -75,6 +76,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
@@ -386,8 +388,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 params.put("publicTrafficInfo", publicTrafficLabelObj);
 
                 params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-
+                params.put("resourceNamingPolicy", _resourceNamingPolicyMgr);
                 VmwareResource resource = new VmwareResource();
+
                 try {
                     resource.configure("VMware", params);
                 } catch (ConfigurationException e) {
@@ -568,6 +571,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             VMTemplateVO template =
                     VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
                             null, "VMware Tools Installer ISO", false, 1, false, HypervisorType.VMware);
+
+            _resourceNamingPolicyMgr.getPolicy(TemplateNamingPolicy.class).finalizeIdentifiers(template);
+
             _tmpltDao.persist(template);
         } else {
             id = tmplt.getId();

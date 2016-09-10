@@ -27,7 +27,6 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
@@ -48,8 +47,10 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.naming.ResourceNamingPolicyManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
@@ -62,6 +63,11 @@ public class LbChildTestConfiguration {
     public static class Library implements TypeFilter {
 
         @Bean
+        public EntityManager entityManager() {
+            return Mockito.mock(EntityManager.class);
+        }
+
+        @Bean
         public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
         }
@@ -69,6 +75,11 @@ public class LbChildTestConfiguration {
         @Bean
         public VirtualMachineManager virtualMachineManager() {
             return Mockito.mock(VirtualMachineManager.class);
+        }
+
+        @Bean
+        public ResourceNamingPolicyManager virtualMachineNameService() {
+            return Mockito.mock(ResourceNamingPolicyManager.class);
         }
 
         @Bean

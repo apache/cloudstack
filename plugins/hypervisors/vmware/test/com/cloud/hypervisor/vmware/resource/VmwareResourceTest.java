@@ -36,6 +36,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
@@ -56,6 +57,8 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
+import com.cloud.naming.ResourceNamingPolicyManager;
+import com.cloud.naming.RouterNamingPolicy;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(CopyCommand.class)
@@ -108,6 +111,11 @@ public class VmwareResourceTest {
     private static final Integer NFS_VERSION = Integer.valueOf(3);
     private static final Integer NFS_VERSION_NOT_PRESENT = null;
 
+    @Mock
+    ResourceNamingPolicyManager resourceNamingPolicyMgr;
+    @Mock
+    RouterNamingPolicy routerNamingPolicy;
+
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
@@ -117,6 +125,8 @@ public class VmwareResourceTest {
         when(storageCmd.getSrcTO()).thenReturn(srcDataTO);
         when(srcDataTO.getDataStore()).thenReturn(srcDataNfsTO);
         when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION);
+        when(resourceNamingPolicyMgr.getPolicy(RouterNamingPolicy.class)).thenReturn(routerNamingPolicy);
+        when(routerNamingPolicy.isValidRouterName(Mockito.anyString())).thenReturn(true);
     }
 
     //Test successful scaling up the vm
