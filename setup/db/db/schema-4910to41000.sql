@@ -18,3 +18,5 @@
 --;
 -- Schema upgrade from 4.9.1.0 to 4.10.0.0;
 --;
+
+ALTER TABLE `cloud`.`domain_router` ADD COLUMN  update_state varchar(64) DEFAULT NULL;
