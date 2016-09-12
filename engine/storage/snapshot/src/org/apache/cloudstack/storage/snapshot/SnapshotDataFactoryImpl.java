@@ -65,6 +65,24 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     }
 
     @Override
+    public List<SnapshotInfo> getSnapshots(long volumeId, DataStoreRole role) {
+
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByVolume(volumeId, role);
+        if (snapshotStore == null) {
+            return new ArrayList<>();
+        }
+        DataStore store = storeMgr.getDataStore(snapshotStore.getDataStoreId(), role);
+        List<SnapshotVO> volSnapShots = snapshotDao.listByVolumeId(volumeId);
+        List<SnapshotInfo> infos = new ArrayList<>();
+        for(SnapshotVO snapshot: volSnapShots) {
+            SnapshotObject info = SnapshotObject.getSnapshotObject(snapshot, store);
+            infos.add(info);
+        }
+        return infos;
+    }
+
+
+    @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role) {
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
         SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshotId, role);
