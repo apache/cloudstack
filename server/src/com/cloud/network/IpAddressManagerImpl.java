@@ -67,7 +67,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -279,6 +279,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     PortableIpDao _portableIpDao;
     @Inject
     VpcDao _vpcDao;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
+
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
 
@@ -829,7 +832,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             VlanVO vlan = _vlanDao.findById(addr.getVlanId());
                             String guestType = vlan.getVlanType().toString();
                             if (!isIpDedicated(addr)) {
-                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(),
+                                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(),
                                         addr.isSourceNat(), guestType, addr.getSystem(), addr.getClass().getName(), addr.getUuid());
                             }
                             if (updateIpResourceCount(addr)) {
@@ -1115,7 +1118,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             ipaddr.setAllocatedToAccountId(ipOwner.getId());
             ipaddr = _ipAddressDao.persist(ipaddr);
 
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_PORTABLE_IP_ASSIGN, ipaddr.getId(), ipaddr.getDataCenterId(), ipaddr.getId(),
+            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_PORTABLE_IP_ASSIGN, ipaddr.getId(), ipaddr.getDataCenterId(), ipaddr.getId(),
                             ipaddr.getAddress().toString(), ipaddr.isSourceNat(), null, ipaddr.getSystem(), ipaddr.getClass().getName(), ipaddr.getUuid());
 
                     return ipaddr;
@@ -1644,7 +1647,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 String guestType = vlan.getVlanType().toString();
                 if (!isIpDedicated(ip)) {
                     String eventType = ip.isPortable() ? EventTypes.EVENT_PORTABLE_IP_RELEASE : EventTypes.EVENT_NET_IP_RELEASE;
-                            UsageEventUtils.publishUsageEvent(eventType, ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), ip.isSourceNat(),
+                    _usageEventEmitter.publishUsageEvent(eventType, ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), ip.isSourceNat(),
                                     guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
                 }
             }

@@ -125,6 +125,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
@@ -289,6 +290,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ResourceLimitService _resourceLimitMgr;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -514,7 +517,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         LocalStorageSearch.and("type", LocalStorageSearch.entity().getPoolType(), SearchCriteria.Op.IN);
         LocalStorageSearch.done();
 
-        Volume.State.getStateMachine().registerListener(new VolumeStateListener(_configDao, _vmInstanceDao));
+        Volume.State.getStateMachine().registerListener(new VolumeStateListener(_configDao, _vmInstanceDao, _usageEventEmitter));
 
         return true;
     }

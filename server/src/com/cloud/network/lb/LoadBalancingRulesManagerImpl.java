@@ -55,7 +55,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -256,6 +256,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     EntityManager _entityMgr;
     @Inject
     LoadBalancerCertMapDao _lbCertMapDao;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
@@ -1518,7 +1520,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 if (generateUsageEvent) {
                     // Generate usage event right after all rules were marked for revoke
                     Network network = _networkModel.getNetwork(lb.getNetworkId());
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_DELETE, lb.getAccountId(), network.getDataCenterId(), lb.getId(),
+                    _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_DELETE, lb.getAccountId(), network.getDataCenterId(), lb.getId(),
                             null, LoadBalancingRule.class.getName(), lb.getUuid());
                 }
 
@@ -1766,7 +1768,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + sourceIpId + ", public port " + srcPort + ", private port " + destPort +
                         " is added successfully.");
                     CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(),
+                    _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(),
                         null, LoadBalancingRule.class.getName(), newRule.getUuid());
 
                     return newRule;

@@ -26,7 +26,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBalancerRuleCmd;
@@ -45,7 +44,7 @@ import com.cloud.agent.api.routing.SiteLoadBalancerConfig;
 import com.cloud.configuration.Config;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -94,6 +93,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     IPAddressDao _ipAddressDao;
     @Inject
     AgentManager _agentMgr;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     protected List<GslbServiceProvider> _gslbProviders;
 
@@ -155,7 +156,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                         gslbOwner.getDomainId(), GlobalLoadBalancerRule.State.Staged);
                 _gslbRuleDao.persist(newGslbRule);
 
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_CREATE, newGslbRule.getAccountId(), 0, newGslbRule.getId(), name,
+                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_CREATE, newGslbRule.getAccountId(), 0, newGslbRule.getId(), name,
                     GlobalLoadBalancerRule.class.getName(), newGslbRule.getUuid());
 
                 return newGslbRule;
@@ -452,7 +453,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                 s_logger.debug("Rule Id: " + gslbRuleId + " is still in Staged state so just removing it.");
             }
             _gslbRuleDao.remove(gslbRuleId);
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, gslbRule.getAccountId(), 0, gslbRule.getId(), gslbRule.getName(),
+            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, gslbRule.getAccountId(), 0, gslbRule.getId(), gslbRule.getName(),
                 GlobalLoadBalancerRule.class.getName(), gslbRule.getUuid());
             return;
         } else if (gslbRule.getState() == GlobalLoadBalancerRule.State.Add || gslbRule.getState() == GlobalLoadBalancerRule.State.Active) {
@@ -500,7 +501,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                 //remove the GSLB rule itself
                 _gslbRuleDao.remove(gslbRuleId);
 
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, gslbRule.getAccountId(), 0, gslbRule.getId(), gslbRule.getName(),
+                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, gslbRule.getAccountId(), 0, gslbRule.getId(), gslbRule.getName(),
                     GlobalLoadBalancerRule.class.getName(), gslbRule.getUuid());
             }
         });

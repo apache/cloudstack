@@ -19,8 +19,7 @@
 package com.cloud.template;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,7 +57,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
+import com.cloud.event.UsageEventEmitterImpl;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -119,6 +119,9 @@ public class HypervisorTemplateAdapterTest {
     ConfigurationDao _configDao;
 
     @InjectMocks
+    UsageEventEmitter _usageEventEmitter = new UsageEventEmitterImpl();
+
+    @InjectMocks
     HypervisorTemplateAdapter _adapter;
 
     //UsageEventUtils reflection abuse helpers
@@ -126,11 +129,16 @@ public class HypervisorTemplateAdapterTest {
     private List<UsageEventVO> usageEvents = new ArrayList<>();
 
     @Before
-    public void before() {
+    public void before() throws NoSuchFieldException, IllegalAccessException {
         MockitoAnnotations.initMocks(this);
+
+        //inject usage event emitter manually because both it and the
+        //adapter need to make use of the mocks.
+        Field emitter = HypervisorTemplateAdapter.class.getDeclaredField("_usageEventEmitter");
+        emitter.set(_adapter, _usageEventEmitter);
     }
 
-    public UsageEventUtils setupUsageUtils() throws EventBusException {
+    public void setupUsageUtils() throws EventBusException {
         Mockito.when(_configDao.getValue(eq("publish.usage.events"))).thenReturn("true");
         Mockito.when(_usageEventDao.persist(Mockito.any(UsageEventVO.class))).then(new Answer<Void>() {
             @Override public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -152,70 +160,6 @@ public class HypervisorTemplateAdapterTest {
 
         PowerMockito.mockStatic(ComponentContext.class);
         when(ComponentContext.getComponent(eq(EventBus.class))).thenReturn(_bus);
-
-        UsageEventUtils utils = new UsageEventUtils();
-
-        Map<String, String> usageUtilsFields = new HashMap<String, String>();
-        usageUtilsFields.put("usageEventDao", "_usageEventDao");
-        usageUtilsFields.put("accountDao", "_accountDao");
-        usageUtilsFields.put("dcDao", "_dcDao");
-        usageUtilsFields.put("configDao", "_configDao");
-
-        for (String fieldName : usageUtilsFields.keySet()) {
-            try {
-                Field f = UsageEventUtils.class.getDeclaredField(fieldName);
-                f.setAccessible(true);
-                //Remember the old fields for cleanup later (see cleanupUsageUtils)
-                Field staticField = UsageEventUtils.class.getDeclaredField("s_" + fieldName);
-                staticField.setAccessible(true);
-                oldFields.put(f.getName(), staticField.get(null));
-                f.set(utils,
-                        this.getClass()
-                                .getDeclaredField(
-                                        usageUtilsFields.get(fieldName))
-                                .get(this));
-            } catch (IllegalArgumentException | IllegalAccessException
-                    | NoSuchFieldException | SecurityException e) {
-                e.printStackTrace();
-            }
-
-        }
-        try {
-            Method method = UsageEventUtils.class.getDeclaredMethod("init");
-            method.setAccessible(true);
-            method.invoke(utils);
-        } catch (SecurityException | IllegalAccessException
-                    | IllegalArgumentException | InvocationTargetException
-                    | NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-
-        return utils;
-    }
-
-    public void cleanupUsageUtils() {
-        UsageEventUtils utils = new UsageEventUtils();
-
-        for (String fieldName : oldFields.keySet()) {
-            try {
-                Field f = UsageEventUtils.class.getDeclaredField(fieldName);
-                f.setAccessible(true);
-                f.set(utils, oldFields.get(fieldName));
-            } catch (IllegalArgumentException | IllegalAccessException
-                    | NoSuchFieldException | SecurityException e) {
-                e.printStackTrace();
-            }
-
-        }
-        try {
-            Method method = UsageEventUtils.class.getDeclaredMethod("init");
-            method.setAccessible(true);
-            method.invoke(utils);
-        } catch (SecurityException | NoSuchMethodException
-                | IllegalAccessException | IllegalArgumentException
-                | InvocationTargetException e) {
-            e.printStackTrace();
-        }
     }
 
     @Test
@@ -237,7 +181,7 @@ public class HypervisorTemplateAdapterTest {
         when(template.getName()).thenReturn("Test Template");
         when(template.getFormat()).thenReturn(ImageFormat.QCOW2);
         when(template.getAccountId()).thenReturn(1l);
-        when(template.getUuid()).thenReturn("Test UUID"); //TODO possibly return this from method for comparison, if things work how i want
+        when(template.getUuid()).thenReturn("Test UUID");
 
         TemplateProfile profile = mock(TemplateProfile.class);
         when(profile.getTemplate()).thenReturn(template);
@@ -278,8 +222,5 @@ public class HypervisorTemplateAdapterTest {
         Assert.assertNotNull(event.getResourceUUID());
         Assert.assertEquals("Test UUID",  event.getResourceUUID());
         Assert.assertEquals(EventTypes.EVENT_TEMPLATE_DELETE, event.getEventType());
-
-
-        cleanupUsageUtils();
     }
 }

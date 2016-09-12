@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
@@ -42,7 +41,7 @@ import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
@@ -93,6 +92,8 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     DiskOfferingDao diskOfferingDao;
     @Inject
     HostDao hostDao;
+    @Inject
+    UsageEventEmitter usageEventEmitter;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -324,7 +325,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 offeringId = offering.getId();
             }
         }
-        UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), offeringId, volume.getId(), // save volume's id into templateId field
+        usageEventEmitter.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), offeringId, volume.getId(), // save volume's id into templateId field
             volumeTo.getSize(), VMSnapshot.class.getName(), vmSnapshot.getUuid());
     }
 

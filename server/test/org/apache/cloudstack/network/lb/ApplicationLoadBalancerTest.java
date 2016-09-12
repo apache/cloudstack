@@ -42,13 +42,13 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
@@ -73,7 +73,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
@@ -238,8 +237,6 @@ public class ApplicationLoadBalancerTest extends TestCase {
      * @throws InsufficientVirtualNetworkCapacityException
      * @throws InsufficientAddressCapacityException
      */
-
-    @Test(expected = CloudRuntimeException.class)
     //Positive test
         public
         void createValidLoadBalancer() throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapacityException, NetworkRuleConflictException {
@@ -370,6 +367,11 @@ public class ApplicationLoadBalancerTest extends TestCase {
         @Bean
         public UsageEventDao UsageEventDao() {
             return Mockito.mock(UsageEventDao.class);
+        }
+
+        @Bean
+        public UsageEventEmitter usageEventEmitter() {
+            return Mockito.mock(UsageEventEmitter.class);
         }
 
         public static class Library implements TypeFilter {
