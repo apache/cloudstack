@@ -136,6 +136,9 @@ public class SnapshotCommandTest {
         };
 
         @Override
+        public boolean isManaged() { return false; }
+
+        @Override
         public Long getPodId() {
             return 0L;
         }

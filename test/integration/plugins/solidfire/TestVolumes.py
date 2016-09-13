@@ -20,6 +20,8 @@ import random
 import SignedAPICall
 import XenAPI
 
+from util import sf_util
+
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
 
@@ -39,11 +41,13 @@ from marvin.lib.utils import cleanup_resources
 
 from solidfire import solidfire_element_api as sf_api
 
-# on April 14, 2016: Ran 11 tests in 2494.043s with three hosts (resign = True)
-# on April 14, 2016: Ran 11 tests in 2033.516s with three hosts (resign = False)
-
-# on May 2, 2016: Ran 11 tests in 2352.461s with two hosts (resign = True)
-# on May 2, 2016: Ran 11 tests in 1982.066s with two hosts (resign = False)
+# Prerequisites:
+#  Only one zone
+#  Only one pod
+#  Only one cluster
+#
+# Running the tests:
+#  Change the "supports_resign" variable to True or False as desired.
 
 
 class TestData():
@@ -145,7 +149,7 @@ class TestData():
                 "miniops": "10000",
                 "maxiops": "15000",
                 "hypervisorsnapshotreserve": 200,
-                "tags": "SolidFire_SAN_1"
+                TestData.tags: TestData.storageTag
             },
             TestData.diskOffering: {
                 "name": "SF_DO_1",
@@ -157,71 +161,6 @@ class TestData():
                 "hypervisorsnapshotreserve": 200,
                 TestData.tags: TestData.storageTag,
                 "storagetype": "shared"
-            },
-            "testdiskofferings": {
-                "customiopsdo": {
-                    "name": "SF_Custom_Iops_DO",
-                    "displaytext": "Customized Iops DO",
-                    "disksize": 128,
-                    "customizediops": True,
-                    "miniops": 500,
-                    "maxiops": 1000,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "customsizedo": {
-                    "name": "SF_Custom_Size_DO",
-                    "displaytext": "Customized Size DO",
-                    "disksize": 175,
-                    "customizediops": False,
-                    "miniops": 500,
-                    "maxiops": 1000,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "customsizeandiopsdo": {
-                    "name": "SF_Custom_Iops_Size_DO",
-                    "displaytext": "Customized Size and Iops DO",
-                    "disksize": 200,
-                    "customizediops": True,
-                    "miniops": 400,
-                    "maxiops": 800,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newiopsdo": {
-                    "name": "SF_New_Iops_DO",
-                    "displaytext": "New Iops (min=350, max = 700)",
-                    "disksize": 128,
-                    "miniops": 350,
-                    "maxiops": 700,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newsizedo": {
-                    "name": "SF_New_Size_DO",
-                    "displaytext": "New Size: 175",
-                    "disksize": 175,
-                    "miniops": 400,
-                    "maxiops": 800,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newsizeandiopsdo": {
-                    "name": "SF_New_Size_Iops_DO",
-                    "displaytext": "New Size and Iops",
-                    "disksize": 200,
-                    "miniops": 200,
-                    "maxiops": 400,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                }
             },
             TestData.volume_1: {
                 TestData.diskName: "test-volume",
@@ -241,14 +180,11 @@ class TestVolumes(cloudstackTestCase):
     _should_only_be_one_vm_in_list_err_msg = "There should only be one VM in this list."
     _should_only_be_one_volume_in_list_err_msg = "There should only be one volume in this list."
     _sf_account_id_should_be_non_zero_int_err_msg = "The SolidFire account ID should be a non-zero integer."
-    _vag_id_should_be_non_zero_int_err_msg = "The SolidFire VAG ID should be a non-zero integer."
     _volume_size_should_be_non_zero_int_err_msg = "The SolidFire volume size should be a non-zero integer."
     _volume_vm_id_and_vm_id_do_not_match_err_msg = "The volume's VM ID and the VM's ID do not match."
     _vm_not_in_running_state_err_msg = "The VM is not in the 'Running' state."
     _vm_not_in_stopped_state_err_msg = "The VM is not in the 'Stopped' state."
-    _sr_not_shared_err_msg = "The SR is not shared."
     _volume_response_should_not_be_zero_err_msg = "The length of the response for the SolidFire-volume query should not be zero."
-    _list_should_be_empty = "The list should be empty."
     _volume_should_not_be_in_a_vag = "The volume should not be in a volume access group."
 
     @classmethod
@@ -262,7 +198,7 @@ class TestVolumes(cloudstackTestCase):
 
         cls.supports_resign = True
 
-        cls._set_supports_resign()
+        sf_util.set_supports_resign(cls.supports_resign, cls.dbConnection)
 
         # Set up xenAPI connection
         host_ip = "https://" + \
@@ -368,7 +304,7 @@ class TestVolumes(cloudstackTestCase):
 
             cls.primary_storage.delete(cls.apiClient)
 
-            cls._purge_solidfire_volumes()
+            sf_util.purge_solidfire_volumes(cls.sf_client)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
@@ -387,9 +323,9 @@ class TestVolumes(cloudstackTestCase):
         if self.supports_resign == False:
             return
 
-        sf_volumes = self._get_sf_volumes()
+        sf_volumes = self._get_active_sf_volumes()
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, TestData.templateCacheName)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, TestData.templateCacheName, self)
 
         self.assertEqual(
             len(sf_volume['volumeAccessGroups']),
@@ -451,21 +387,23 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_volume_size = self._get_volume_size_with_hsr(new_volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, new_volume, self)
 
-        sf_vag_id = self._get_vag_id()
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_iscsi_name = self._get_iqn(new_volume)
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, new_volume, self)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, newvolume.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, newvolume, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, newvolume.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, newvolume, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -481,9 +419,9 @@ class TestVolumes(cloudstackTestCase):
 
         self.virtual_machine.start(self.apiClient)
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_vag_id = self._get_vag_id()
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
         self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
 
@@ -516,17 +454,19 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -559,9 +499,9 @@ class TestVolumes(cloudstackTestCase):
             str(vm.state)
         )
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
             len(sf_volume['volumeAccessGroups']),
@@ -600,11 +540,11 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -614,9 +554,9 @@ class TestVolumes(cloudstackTestCase):
 
         self.virtual_machine.start(self.apiClient)
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_vag_id = self._get_vag_id()
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
         self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
 
@@ -649,17 +589,19 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -674,17 +616,19 @@ class TestVolumes(cloudstackTestCase):
 
         vm = self._get_vm(self.virtual_machine.id)
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -694,9 +638,9 @@ class TestVolumes(cloudstackTestCase):
 
         self.virtual_machine.start(self.apiClient)
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_vag_id = self._get_vag_id()
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
         self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
 
@@ -729,17 +673,19 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -772,9 +718,9 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
             len(sf_volume['volumeAccessGroups']),
@@ -796,9 +742,9 @@ class TestVolumes(cloudstackTestCase):
 
         vm = self._get_vm(self.virtual_machine.id)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
             len(sf_volume['volumeAccessGroups']),
@@ -814,9 +760,9 @@ class TestVolumes(cloudstackTestCase):
 
         self.virtual_machine.start(self.apiClient)
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_vag_id = self._get_vag_id()
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
         self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
 
@@ -849,17 +795,19 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -894,9 +842,9 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_stopped_state_err_msg
         )
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
             len(sf_volume['volumeAccessGroups']),
@@ -918,9 +866,9 @@ class TestVolumes(cloudstackTestCase):
 
         vm = self._get_vm(self.virtual_machine.id)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
             len(sf_volume['volumeAccessGroups']),
@@ -936,9 +884,9 @@ class TestVolumes(cloudstackTestCase):
 
         self.virtual_machine.stop(self.apiClient)
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_vag_id = self._get_vag_id()
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
         self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
 
@@ -971,17 +919,19 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_stopped_state_err_msg
         )
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -1003,17 +953,19 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -1061,21 +1013,23 @@ class TestVolumes(cloudstackTestCase):
             TestVolumes._vm_not_in_running_state_err_msg
         )
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_vag_id = self._get_vag_id()
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -1114,11 +1068,11 @@ class TestVolumes(cloudstackTestCase):
             "Check if VM was actually expunged"
         )
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
 
         self.assertEqual(
             len(sf_volume['volumeAccessGroups']),
@@ -1174,21 +1128,23 @@ class TestVolumes(cloudstackTestCase):
             str(vm.state)
         )
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_volume_size = self._get_volume_size_with_hsr(new_volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, new_volume, self)
 
-        sf_vag_id = self._get_vag_id()
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_iscsi_name = self._get_iqn(new_volume)
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, new_volume, self)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
@@ -1219,11 +1175,11 @@ class TestVolumes(cloudstackTestCase):
             str(vm.state)
         )
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
 
         self.assertEqual(
             len(sf_volume['volumeAccessGroups']),
@@ -1246,9 +1202,9 @@ class TestVolumes(cloudstackTestCase):
             "Check volume was deleted"
         )
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        self._check_and_get_sf_volume(sf_volumes, vol.name, False)
+        sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self, False)
 
     @attr(hypervisor='XenServer')
     def test_09_attach_volumes_multiple_accounts(self):
@@ -1342,39 +1298,43 @@ class TestVolumes(cloudstackTestCase):
             str(test_vm.state)
         )
 
-        sf_vag_id = self._get_vag_id()
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
-        sf_volume_size = self._get_volume_size_with_hsr(vol)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, vol, self)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
-        sf_test_account_id = self._get_sf_account_id(self.primary_storage.id, test_account.id)
+        sf_test_account_id = sf_util.get_sf_account_id(self.cs_api, test_account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_test_volumes = self._get_sf_volumes(sf_test_account_id)
+        sf_test_volumes = self._get_active_sf_volumes(sf_test_account_id)
 
-        sf_test_volume = self._check_and_get_sf_volume(sf_test_volumes, test_vol.name)
+        sf_test_volume = sf_util.check_and_get_sf_volume(sf_test_volumes, test_vol.name, self)
 
-        sf_test_volume_size = self._get_volume_size_with_hsr(test_vol)
+        sf_test_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, test_vol, self)
 
-        self._check_size_and_iops(sf_test_volume, test_vol, sf_test_volume_size)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_test_volume_size)
 
-        sf_test_iscsi_name = self._get_iqn(test_volume)
+        sf_util.check_size_and_iops(sf_test_volume, test_vol, sf_test_volume_size, self)
+
+        sf_test_iscsi_name = sf_util.get_iqn(self.cs_api, test_volume, self)
 
         self._check_xen_sr(sf_test_iscsi_name)
 
-        self._check_vag(sf_test_volume, sf_vag_id)
+        sf_util.check_vag(sf_test_volume, sf_vag_id, self)
 
     @attr(hypervisor='XenServer')
     def test_10_attach_more_than_one_disk_to_VM(self):
@@ -1417,65 +1377,49 @@ class TestVolumes(cloudstackTestCase):
 
         vol_2 = self._check_and_get_cs_volume(volume_2.id, self.testdata[TestData.volume_2][TestData.diskName])
 
-        sf_account_id = self._get_sf_account_id(self.primary_storage.id, self.account.id)
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_volume_size = self._get_volume_size_with_hsr(self.volume)
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, self.volume, self)
 
-        sf_volume_2_size = self._get_volume_size_with_hsr(volume_2)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_size)
 
-        sf_vag_id = self._get_vag_id()
+        sf_volume_2_size = sf_util.get_volume_size_with_hsr(self.cs_api, volume_2, self)
 
-        sf_volumes = self._get_sf_volumes(sf_account_id)
+        self._verify_hsr(self.disk_offering.disksize, self.disk_offering.hypervisorsnapshotreserve, sf_volume_2_size)
 
-        sf_volume = self._check_and_get_sf_volume(sf_volumes, vol.name)
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        self._check_size_and_iops(sf_volume, vol, sf_volume_size)
+        sf_volumes = self._get_active_sf_volumes(sf_account_id)
 
-        sf_iscsi_name = self._get_iqn(self.volume)
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
+
+        sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
+
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, self.volume, self)
 
         self._check_xen_sr(sf_iscsi_name)
 
-        self._check_vag(sf_volume, sf_vag_id)
+        sf_util.check_vag(sf_volume, sf_vag_id, self)
 
-        sf_volume_2 = self._check_and_get_sf_volume(sf_volumes, vol_2.name)
+        sf_volume_2 = sf_util.check_and_get_sf_volume(sf_volumes, vol_2.name, self)
 
-        self._check_size_and_iops(sf_volume_2, vol_2, sf_volume_2_size)
+        sf_util.check_size_and_iops(sf_volume_2, vol_2, sf_volume_2_size, self)
 
-        sf_iscsi_name_2 = self._get_iqn(volume_2)
+        sf_iscsi_name_2 = sf_util.get_iqn(self.cs_api, volume_2, self)
 
         self._check_xen_sr(sf_iscsi_name_2)
 
-        self._check_vag(sf_volume_2, sf_vag_id)
+        sf_util.check_vag(sf_volume_2, sf_vag_id, self)
 
         self.virtual_machine.detach_volume(self.apiClient, volume_2)
 
     '''
     @attr(hypervisor = 'XenServer')
-    def _test_11_attach_disk_to_running_vm_change_iops(self):
+    def test_11_attach_disk_to_running_vm_change_iops(self):
         Attach a disk to a running VM, then change iops
         self.custom_iops_disk_offering = DiskOffering.create(
             
         )'''
-
-    def _check_list(self, in_list, expected_size_of_list, err_msg):
-        self.assertEqual(
-            isinstance(in_list, list),
-            True,
-            "'in_list' is not a list."
-        )
-
-        self.assertEqual(
-            len(in_list),
-            expected_size_of_list,
-            err_msg
-        )
-
-    def _check_iscsi_name(self, sf_iscsi_name):
-        self.assertEqual(
-            sf_iscsi_name[0],
-            "/",
-            "The iSCSI name needs to start with a forward slash."
-        )
 
     def _check_volume(self, volume, volume_name):
         self.assertTrue(
@@ -1501,45 +1445,13 @@ class TestVolumes(cloudstackTestCase):
             "The storage type is incorrect."
         )
 
-    def _check_size_and_iops(self, sf_volume, volume, size):
-        self.assertEqual(
-            sf_volume['qos']['minIOPS'],
-            volume.miniops,
-            "Check QOS - Min IOPS: " + str(sf_volume['qos']['minIOPS'])
-        )
-
-        self.assertEqual(
-            sf_volume['qos']['maxIOPS'],
-            volume.maxiops,
-            "Check QOS - Max IOPS: " + str(sf_volume['qos']['maxIOPS'])
-        )
-
-        self.assertEqual(
-            sf_volume['totalSize'],
-            size,
-            "Check SF volume size: " + str(sf_volume['totalSize'])
-        )
-
-    def _check_vag(self, sf_volume, sf_vag_id):
-        self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
-            1,
-            "The volume should only be in one VAG."
-        )
-
-        self.assertEqual(
-            sf_volume['volumeAccessGroups'][0],
-            sf_vag_id,
-            "The volume is not in the VAG with the following ID: " + str(sf_vag_id) + "."
-        )
-
     def _check_and_get_cs_volume(self, volume_id, volume_name):
         list_volumes_response = list_volumes(
             self.apiClient,
             id=volume_id
         )
 
-        self._check_list(list_volumes_response, 1, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
 
         cs_volume = list_volumes_response[0]
 
@@ -1547,108 +1459,37 @@ class TestVolumes(cloudstackTestCase):
 
         return cs_volume
 
-    def _get_sf_account_id(self, primary_storage_id, account_id):
-        sf_account_id_request = {'storageid': primary_storage_id, 'accountid': account_id}
-        sf_account_id_result = self.cs_api.getSolidFireAccountId(sf_account_id_request)
-        sf_account_id = sf_account_id_result['apisolidfireaccountid']['solidFireAccountId']
+    def _verify_hsr(self, cs_volume_size_in_gb, hsr, sf_volume_size_in_bytes):
+        cs_volume_size_including_hsr_in_bytes = self._get_cs_volume_size_including_hsr_in_bytes(cs_volume_size_in_gb, hsr)
 
-        self.assertEqual(
-            isinstance(sf_account_id, int),
-            True,
-            TestVolumes._sf_account_id_should_be_non_zero_int_err_msg
-        )
+        self.assertTrue(
+            cs_volume_size_including_hsr_in_bytes == sf_volume_size_in_bytes,
+            "HSR does not add up correctly."
+        );
 
-        return sf_account_id
+    def _get_cs_volume_size_including_hsr_in_bytes(self, cs_volume_size_in_gb, hsr):
+        lowest_hsr = 10
 
-    def _get_volume_size_with_hsr(self, cs_volume):
-        # Get underlying SF volume size with hypervisor snapshot reserve
-        sf_volume_size_request = {'volumeid': cs_volume.id}
-        sf_volume_size_result = self.cs_api.getSolidFireVolumeSize(sf_volume_size_request)
-        sf_volume_size = sf_volume_size_result['apisolidfirevolumesize']['solidFireVolumeSize']
+        if hsr < lowest_hsr:
+            hsr = lowest_hsr;
 
-        self.assertEqual(
-            isinstance(sf_volume_size, int),
-            True,
-            "The SolidFire volume size should be a non-zero integer."
-        )
+        return self._get_bytes_from_gb(cs_volume_size_in_gb + (cs_volume_size_in_gb * (hsr / 100)))
 
-        return sf_volume_size
-
-    def _get_vag_id(self):
-        # Get SF Volume Access Group ID
-        sf_vag_id_request = {'clusterid': self.cluster.id, 'storageid': self.primary_storage.id}
-        sf_vag_id_result = self.cs_api.getSolidFireVolumeAccessGroupId(sf_vag_id_request)
-        sf_vag_id = sf_vag_id_result['apisolidfirevolumeaccessgroupid']['solidFireVolumeAccessGroupId']
-
-        self.assertEqual(
-            isinstance(sf_vag_id, int),
-            True,
-            TestVolumes._vag_id_should_be_non_zero_int_err_msg
-        )
-
-        return sf_vag_id
-
-    def _get_iqn(self, volume):
-        # Get volume IQN
-        sf_iscsi_name_request = {'volumeid': volume.id}
-        sf_iscsi_name_result = self.cs_api.getVolumeiScsiName(sf_iscsi_name_request)
-        sf_iscsi_name = sf_iscsi_name_result['apivolumeiscsiname']['volumeiScsiName']
-
-        self._check_iscsi_name(sf_iscsi_name)
-
-        return sf_iscsi_name
+    def _get_bytes_from_gb(self, number_in_gb):
+        return number_in_gb * 1024 * 1024 * 1024
 
     def _get_vm(self, vm_id):
         list_vms_response = list_virtual_machines(self.apiClient, id=vm_id)
 
-        self._check_list(list_vms_response, 1, TestVolumes._should_only_be_one_vm_in_list_err_msg)
+        sf_util.check_list(list_vms_response, 1, self, TestVolumes._should_only_be_one_vm_in_list_err_msg)
 
         return list_vms_response[0]
 
-    def _check_and_get_sf_volume(self, sf_volumes, sf_volume_name, should_exist=True):
-        sf_volume = None
-
-        for volume in sf_volumes:
-            if volume['name'] == sf_volume_name:
-                sf_volume = volume
-                break
-
-        if should_exist:
-            self.assertNotEqual(
-                sf_volume,
-                None,
-                "Check if SF volume was created in correct account: " + str(sf_volumes)
-            )
-        else:
-            self.assertEqual(
-                sf_volume,
-                None,
-                "Check if SF volume was deleted: " + str(sf_volumes)
-            )
-
-        return sf_volume
-
     def _check_xen_sr(self, xen_sr_name, should_exist=True):
-        if should_exist:
-            xen_sr = self.xen_session.xenapi.SR.get_by_name_label(xen_sr_name)[0]
+        sf_util.check_xen_sr(xen_sr_name, self.xen_session, self, should_exist)
 
-            self.sr_shared = self.xen_session.xenapi.SR.get_shared(xen_sr)
-
-            self.assertEqual(
-                self.sr_shared,
-                True,
-                TestVolumes._sr_not_shared_err_msg
-            )
-        else:
-            xen_sr = self.xen_session.xenapi.SR.get_by_name_label(xen_sr_name)
-
-            self._check_list(xen_sr, 0, TestVolumes._list_should_be_empty)
-
-    def _get_sf_volumes(self, sf_account_id=None):
-        if sf_account_id is not None:
-            sf_volumes = self.sf_client.list_volumes_for_account(sf_account_id)
-        else:
-            sf_volumes = self.sf_client.list_active_volumes()
+    def _get_active_sf_volumes(self, sf_account_id=None):
+        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
 
         self.assertNotEqual(
             len(sf_volumes),
@@ -1657,20 +1498,3 @@ class TestVolumes(cloudstackTestCase):
         )
 
         return sf_volumes
-
-    @classmethod
-    def _set_supports_resign(cls):
-        supports_resign = str(cls.supports_resign)
-
-        sql_query = "Update host_details Set value = '" + supports_resign + "' Where name = 'supportsResign'"
-
-        # make sure you can connect to MySQL: https://teamtreehouse.com/community/cant-connect-remotely-to-mysql-server-with-mysql-workbench
-        cls.dbConnection.execute(sql_query)
-
-    @classmethod
-    def _purge_solidfire_volumes(cls):
-        deleted_volumes = cls.sf_client.list_deleted_volumes()
-
-        for deleted_volume in deleted_volumes:
-            cls.sf_client.purge_deleted_volume(deleted_volume['volumeID'])
-

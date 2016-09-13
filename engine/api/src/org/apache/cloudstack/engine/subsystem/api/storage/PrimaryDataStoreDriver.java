@@ -25,6 +25,13 @@ import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
+    String BASIC_CREATE = "basicCreate";
+    String BASIC_DELETE = "basicDelete";
+    String BASIC_DELETE_FAILURE = "basicDeleteFailure";
+    String BASIC_GRANT_ACCESS = "basicGrantAccess";
+    String BASIC_REVOKE_ACCESS = "basicRevokeAccess";
+    String BASIC_IQN = "basicIqn";
+
     ChapInfo getChapInfo(DataObject dataObject);
 
     boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore);
