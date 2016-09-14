@@ -1770,6 +1770,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public DataCenterVO doInTransaction(final TransactionStatus status) {
                 final DataCenterVO zone = _zoneDao.persist(zoneFinal);
+                CallContext.current().putContextParameter(DataCenter.class, zone.getUuid());
                 if (domainId != null) {
                     // zone is explicitly dedicated to this domain
                     // create affinity group associated and dedicate the zone.
