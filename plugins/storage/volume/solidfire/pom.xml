@@ -21,6 +21,11 @@
   </parent>
   <dependencies>
     <dependency>
+      <groupId>com.solidfire</groupId>
+      <artifactId>solidfire-sdk-java</artifactId>
+      <version>1.2.0.29</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-default</artifactId>
       <version>${project.version}</version>
