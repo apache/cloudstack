@@ -254,7 +254,7 @@ class Services:
                     "format": "ova",
                     "hypervisor": "vmware",
                     "ostype": "Other PV (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.vmdk.bz2",
                     "requireshvm": "True",
                 }
             }
