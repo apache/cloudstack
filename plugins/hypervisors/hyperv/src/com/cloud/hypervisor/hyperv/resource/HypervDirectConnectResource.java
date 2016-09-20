@@ -32,6 +32,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -622,11 +623,11 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     @Override
     public ExecutionResult executeInVR(final String routerIP, final String script, final String args) {
-        return executeInVR(routerIP, script, args, 120);
+        return executeInVR(routerIP, script, args, Duration.standardSeconds(120L));
     }
 
     @Override
-    public ExecutionResult executeInVR(final String routerIP, final String script, final String args, final int timeout) {
+    public ExecutionResult executeInVR(final String routerIP, final String script, final String args, final Duration timeout) {
         Pair<Boolean, String> result;
 
         //TODO: Password should be masked, cannot output to log directly
@@ -635,8 +636,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         try {
-            result = SshHelper.sshExecute(routerIP, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/" + script + " " + args,
-                    60000, 60000, timeout * 1000);
+            result = SshHelper.sshExecute(routerIP, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/" + script + " " + args, VRScripts.CONNECTION_TIMEOUT,
+                    VRScripts.CONNECTION_TIMEOUT, timeout);
         } catch (final Exception e) {
             final String msg = "Command failed due to " + e ;
             s_logger.error(msg);
