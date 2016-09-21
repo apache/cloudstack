@@ -46,9 +46,9 @@ from cs.CsStaticRoutes import CsStaticRoutes
 
 
 class CsPassword(CsDataBag):
-    
+
     TOKEN_FILE="/tmp/passwdsrvrtoken"
-    
+
     def process(self):
         for item in self.dbag:
             if item == "id":
@@ -99,7 +99,7 @@ class CsAcl(CsDataBag):
 
             self.rule['allowed'] = True
             self.rule['action'] = "ACCEPT"
-                
+
             if self.rule['type'] == 'all' and not obj['source_cidr_list']:
                 self.rule['cidr'] = ['0.0.0.0/0']
             else:
@@ -145,41 +145,40 @@ class CsAcl(CsDataBag):
             logging.debug("Current ACL IP direction is ==> %s", self.direction)
             if self.direction == 'egress':
                 self.fw.append(["filter", "", " -A FW_OUTBOUND -j FW_EGRESS_RULES"])
-                if rule['protocol'] == "icmp":
-                    self.fw.append(["filter", "front",
-                                    " -A FW_EGRESS_RULES" +
-                                    " -s %s " % cidr +
-                                    " -p %s " % rule['protocol'] +
-                                    " -m %s " % rule['protocol'] +
-                                    " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
-                else:
-                    fwr = " -I FW_EGRESS_RULES"
-                    #In case we have a default rule (accept all or drop all), we have to evaluate the action again.
-                    if rule['type'] == 'all' and not rule['source_cidr_list']:
-                        fwr = " -A FW_EGRESS_RULES"
-                        # For default egress ALLOW or DENY, the logic is inverted.
-                        # Having default_egress_policy == True, means that the default rule should have ACCEPT,
-                        # otherwise DROP. The rule should be appended, not inserted.
-                        if self.rule['default_egress_policy']:
-                            self.rule['action'] = "ACCEPT"
-                        else:
-                            self.rule['action'] = "DROP"
+
+                fwr = " -I FW_EGRESS_RULES"
+                # In case we have a default rule (accept all or drop all), we have to evaluate the action again.
+                if rule['type'] == 'all' and not rule['source_cidr_list']:
+                    fwr = " -A FW_EGRESS_RULES"
+                    # For default egress ALLOW or DENY, the logic is inverted.
+                    # Having default_egress_policy == True, means that the default rule should have ACCEPT,
+                    # otherwise DROP. The rule should be appended, not inserted.
+                    if self.rule['default_egress_policy']:
+                        self.rule['action'] = "ACCEPT"
                     else:
-                        # For other rules added, if default_egress_policy == True, following rules should be DROP,
-                        # otherwise ACCEPT
-                        if self.rule['default_egress_policy']:
-                            self.rule['action'] = "DROP"
-                        else:
-                            self.rule['action'] = "ACCEPT"
+                        self.rule['action'] = "DROP"
+                else:
+                    # For other rules added, if default_egress_policy == True, following rules should be DROP,
+                    # otherwise ACCEPT
+                    if self.rule['default_egress_policy']:
+                        self.rule['action'] = "DROP"
+                    else:
+                        self.rule['action'] = "ACCEPT"
 
-                    if rule['protocol'] != "all":
-                        fwr += " -s %s " % cidr + \
-                               " -p %s " % rule['protocol'] + \
-                               " -m %s " % rule['protocol'] + \
-                               " --dport %s" % rnge
+                if rule['protocol'] == "icmp":
+                    fwr += " -s %s " % cidr + \
+                                    " -p %s " % rule['protocol'] + \
+                                    " -m %s " % rule['protocol'] + \
+                                    " --icmp-type %s" % icmp_type
+                elif rule['protocol'] != "all":
+                    fwr += " -s %s " % cidr + \
+                           " -p %s " % rule['protocol'] + \
+                           " -m %s " % rule['protocol'] + \
+                           " --dport %s" % rnge
+                elif rule['protocol'] == "all":
+                    fwr += " -s %s " % cidr
 
-                    self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
-
+                self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
                 logging.debug("EGRESS rule configured for protocol ==> %s, action ==> %s", rule['protocol'], rule['action'])
 
     class AclDevice():
