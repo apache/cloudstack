@@ -51,6 +51,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     private final String url;
     private Map<String, String> details;
     private static final String pathSeparator = "/";
+    private Boolean fullCloneFlag;
 
     public PrimaryDataStoreTO(PrimaryDataStore dataStore) {
         this.uuid = dataStore.getUuid();
@@ -143,5 +144,13 @@ public class PrimaryDataStoreTO implements DataStoreTO {
             .append(poolType)
             .append("]")
             .toString();
+    }
+
+    public Boolean isFullCloneFlag() {
+        return fullCloneFlag;
+    }
+
+    public void setFullCloneFlag(Boolean fullCloneFlag) {
+        this.fullCloneFlag = fullCloneFlag;
     }
 }

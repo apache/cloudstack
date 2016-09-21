@@ -25,20 +25,24 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.times;
 
 import java.util.ArrayList;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -60,11 +64,13 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
+import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -125,13 +131,19 @@ public class VmwareResourceTest {
     ManagedObjectReference mor;
     @Mock
     DatacenterMO datacenter;
+    @Mock
+    DataTO destDataTO;
+    @Mock
+    PrimaryDataStoreTO destDataStoreTO;
 
     CopyCommand storageCmd;
+    EnumMap<VmwareStorageProcessorConfigurableFields, Object> params = new EnumMap<VmwareStorageProcessorConfigurableFields,Object>(VmwareStorageProcessorConfigurableFields.class);
 
     private static final Integer NFS_VERSION = Integer.valueOf(3);
     private static final Integer NFS_VERSION_NOT_PRESENT = null;
     private static final long VRAM_MEMORY_SIZE = 131072l;
     private static final long VIDEO_CARD_MEMORY_SIZE = 65536l;
+    private static final Boolean FULL_CLONE_FLAG = true;
 
     @Before
     public void setup() throws Exception {
@@ -139,11 +151,17 @@ public class VmwareResourceTest {
         storageCmd = PowerMockito.mock(CopyCommand.class);
         doReturn(context).when(_resource).getServiceContext(null);
         when(cmd.getVirtualMachine()).thenReturn(vmSpec);
+
         when(storageCmd.getSrcTO()).thenReturn(srcDataTO);
         when(srcDataTO.getDataStore()).thenReturn(srcDataNfsTO);
         when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION);
         when(videoCard.getVideoRamSizeInKB()).thenReturn(VIDEO_CARD_MEMORY_SIZE);
         when(volume.getPath()).thenReturn(VOLUME_PATH);
+
+        when(storageCmd.getDestTO()).thenReturn(destDataTO);
+        when(destDataTO.getHypervisorType()).thenReturn(HypervisorType.VMware);
+        when(destDataTO.getDataStore()).thenReturn(destDataStoreTO);
+        when(destDataStoreTO.isFullCloneFlag()).thenReturn(FULL_CLONE_FLAG);
     }
 
     //Test successful scaling up the vm
@@ -239,8 +257,9 @@ public class VmwareResourceTest {
 
     @Test
     public void testSetCurrentNfsVersionInProcessorAndHandler(){
-        _resource.setCurrentNfsVersionInProcessorAndHandler();
-        verify(storageHandler).reconfigureNfsVersion(any(Integer.class));
+        params.put(VmwareStorageProcessorConfigurableFields.NFS_VERSION, NFS_VERSION);
+        _resource.reconfigureProcessorByHandler(params);
+        verify(storageHandler).reconfigureStorageProcessor(params);
     }
 
     // ---------------------------------------------------------------------------------------------------
@@ -248,30 +267,69 @@ public class VmwareResourceTest {
     @Test
     public void testExamineStorageSubSystemCommandNfsVersionNotPresent(){
         when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION_NOT_PRESENT);
-        _resource.examineStorageSubSystemCommandNfsVersion(storageCmd);
-        verify(_resource, never()).setCurrentNfsVersionInProcessorAndHandler();
+        _resource.examineStorageSubSystemCommandNfsVersion(storageCmd,params);
+        assertTrue(params.isEmpty());
     }
 
     @Test
     public void testExamineStorageSubSystemCommandNfsVersion(){
-        _resource.examineStorageSubSystemCommandNfsVersion(storageCmd);
-        verify(_resource).setCurrentNfsVersionInProcessorAndHandler();
+        _resource.examineStorageSubSystemCommandNfsVersion(storageCmd, params);
+        assertEquals(1, params.size());
+        assertEquals(NFS_VERSION, params.get(VmwareStorageProcessorConfigurableFields.NFS_VERSION));
     }
 
     // ---------------------------------------------------------------------------------------------------
 
     @Test
+    public void testExamineStorageSubSystemCommandFullCloneFlagForVmwareNullHypervisor(){
+        when(destDataTO.getHypervisorType()).thenReturn(null);
+        _resource.examineStorageSubSystemCommandFullCloneFlagForVmware(storageCmd, params);
+        verify(destDataTO, never()).getDataStore();
+    }
+
+    @Test
+    public void testExamineStorageSubSystemCommandFullCloneFlagForHypervisorNotVmware(){
+        when(destDataTO.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+        _resource.examineStorageSubSystemCommandFullCloneFlagForVmware(storageCmd, params);
+        verify(destDataTO, never()).getDataStore();
+    }
+
+    @Test
+    public void testExamineStorageSubSystemCommandFullCloneFlagForVmware(){
+        EnumMap<VmwareStorageProcessorConfigurableFields, Object> params2 = _resource.examineStorageSubSystemCommandFullCloneFlagForVmware(storageCmd, params);
+        verify(destDataTO).getDataStore();
+        verify(destDataStoreTO, times(2)).isFullCloneFlag();
+        assertEquals(1, params2.size());
+        assertEquals(FULL_CLONE_FLAG, params2.get(VmwareStorageProcessorConfigurableFields.FULL_CLONE_FLAG));
+    }
+
+    @Test
+    public void testExamineStorageSubSystemCommandFullCloneFlagForVmwareNull(){
+        when(destDataStoreTO.isFullCloneFlag()).thenReturn(null);
+        _resource.examineStorageSubSystemCommandFullCloneFlagForVmware(storageCmd, params);
+        verify(destDataTO).getDataStore();
+        verify(destDataStoreTO).isFullCloneFlag();
+        assertTrue(params.isEmpty());
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionNotSet(){
         _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
-        verify(_resource).examineStorageSubSystemCommandNfsVersion(storageCmd);
+        verify(_resource).examineStorageSubSystemCommandNfsVersion(Matchers.eq(storageCmd), any(EnumMap.class));
+        verify(_resource).examineStorageSubSystemCommandFullCloneFlagForVmware(Matchers.eq(storageCmd), any(EnumMap.class));
+        verify(_resource).reconfigureProcessorByHandler(any(EnumMap.class));
         assertEquals(NFS_VERSION, _resource.storageNfsVersion);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionSet(){
         _resource.storageNfsVersion = NFS_VERSION;
         _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
-        verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(storageCmd);
+        verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(Matchers.eq(storageCmd), any(EnumMap.class));
     }
 
     @Test(expected=CloudRuntimeException.class)
