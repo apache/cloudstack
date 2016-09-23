@@ -166,8 +166,10 @@ class CsAcl(CsDataBag):
             if self.direction == 'egress':
                 self.fw.append(["filter", "", " -A FW_OUTBOUND -j FW_EGRESS_RULES"])
 
+                fwr = " -I FW_EGRESS_RULES"
                 # In case we have a default rule (accept all or drop all), we have to evaluate the action again.
                 if rule['type'] == 'all' and not rule['source_cidr_list']:
+                    fwr = " -A FW_EGRESS_RULES"
                     # For default egress ALLOW or DENY, the logic is inverted.
                     # Having default_egress_policy == True, means that the default rule should have ACCEPT,
                     # otherwise DROP. The rule should be appended, not inserted.
@@ -184,22 +186,19 @@ class CsAcl(CsDataBag):
                         self.rule['action'] = "ACCEPT"
 
                 if rule['protocol'] == "icmp":
-                    self.fw.append(["filter", "front",
-                                    " -A FW_EGRESS_RULES" +
-                                    " -s %s " % cidr +
-                                    " -p %s " % rule['protocol'] +
-                                    " -m %s " % rule['protocol'] +
-                                    " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
+                    fwr += " -s %s " % cidr + \
+                                    " -p %s " % rule['protocol'] + \
+                                    " -m %s " % rule['protocol'] + \
+                                    " --icmp-type %s" % icmp_type
                 elif rule['protocol'] != "all":
                     fwr += " -s %s " % cidr + \
                            " -p %s " % rule['protocol'] + \
                            " -m %s " % rule['protocol'] + \
                            " --dport %s" % rnge
-                    self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
                 elif rule['protocol'] == "all":
                     fwr += " -s %s " % cidr
-                    self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
 
+                self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
                 logging.debug("EGRESS rule configured for protocol ==> %s, action ==> %s", rule['protocol'], rule['action'])
 
     class AclDevice():
