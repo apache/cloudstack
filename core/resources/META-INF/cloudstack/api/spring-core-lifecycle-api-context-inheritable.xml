@@ -61,6 +61,5 @@
         <property name="registry" ref="userPasswordEncodersRegistry" />
         <property name="typeClass" value="com.cloud.server.auth.UserAuthenticator" />
     </bean>
-    
 
 </beans>

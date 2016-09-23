@@ -19,9 +19,7 @@
 
 package com.cloud.agent.api.storage;
 
-import com.cloud.agent.api.Command;
-
-public abstract class SsCommand extends Command {
+public abstract class SsCommand extends StorageNfsVersionCommand {
     private String secUrl;
 
     public SsCommand() {

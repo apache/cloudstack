@@ -1251,10 +1251,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 future = volService.createVolumeAsync(volume, destPool);
             } else {
-
                 TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
+
                 if (templ == null) {
                     s_logger.debug("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+
                     throw new CloudRuntimeException("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
                 }
 
@@ -1269,13 +1270,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                     long hostId = vm.getVirtualMachine().getHostId();
 
-                    future = volService.createManagedStorageAndVolumeFromTemplateAsync(volume, destPool.getId(), templ, hostId);
+                    future = volService.createManagedStorageVolumeFromTemplateAsync(volume, destPool.getId(), templ, hostId);
                 }
                 else {
                     future = volService.createVolumeFromTemplateAsync(volume, destPool.getId(), templ);
                 }
             }
-            VolumeApiResult result = null;
+            VolumeApiResult result;
             try {
                 result = future.get();
                 if (result.isFailed()) {
@@ -1299,10 +1300,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 newVol = _volsDao.findById(newVol.getId());
                 break; //break out of template-redeploy retry loop
-            } catch (InterruptedException e) {
-                s_logger.error("Unable to create " + newVol, e);
-                throw new StorageUnavailableException("Unable to create " + newVol + ":" + e.toString(), destPool.getId());
-            } catch (ExecutionException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 s_logger.error("Unable to create " + newVol, e);
                 throw new StorageUnavailableException("Unable to create " + newVol + ":" + e.toString(), destPool.getId());
             }

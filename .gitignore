@@ -96,3 +96,5 @@ tools/appliance/box/
 .pydevproject
 systemvm/.pydevproject
 test/.pydevprojec
+plugins/hypervisors/kvm/.pydevproject
+scripts/.pydevproject

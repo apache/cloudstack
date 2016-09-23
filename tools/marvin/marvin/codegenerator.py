@@ -368,6 +368,7 @@ class CodeGenerator(object):
                             self.constructResponseFromJSON(innerResponse)
                         paramProperty.subProperties.append(subProperty)
             paramProperty.type = response['type']
+            paramProperty.dataType = response['type']
         return paramProperty
 
     def loadCmdFromJSON(self, apiStream):
@@ -404,13 +405,14 @@ class CodeGenerator(object):
                 assert paramProperty.name
 
                 if 'required' in param:
-                    paramProperty.required = param['required']
+                    paramProperty.required = str(param['required']).lower()
 
                 if 'description' in param:
                     paramProperty.desc = param['description']
 
                 if 'type' in param:
                     paramProperty.type = param['type']
+                    paramProperty.dataType = param['type']
 
                 csCmd.request.append(paramProperty)
 

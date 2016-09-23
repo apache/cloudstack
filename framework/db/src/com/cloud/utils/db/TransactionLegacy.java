@@ -1024,6 +1024,7 @@ public class TransactionLegacy implements Closeable {
             final String cloudUsername = dbProps.getProperty("db.cloud.username");
             final String cloudPassword = dbProps.getProperty("db.cloud.password");
             final String cloudHost = dbProps.getProperty("db.cloud.host");
+            final String cloudDriver = dbProps.getProperty("db.cloud.driver");
             final int cloudPort = Integer.parseInt(dbProps.getProperty("db.cloud.port"));
             final String cloudDbName = dbProps.getProperty("db.cloud.name");
             final boolean cloudAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.cloud.autoReconnect"));
@@ -1072,10 +1073,12 @@ public class TransactionLegacy implements Closeable {
                     new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false,
                             cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
 
-            final ConnectionFactory cloudConnectionFactory =
-                    new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
-                            "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
-                            (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
+            final String cloudConnectionUri = cloudDriver + "://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
+                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
+                    (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
+            DriverLoader.loadDriver(cloudDriver);
+
+            final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory(cloudConnectionUri, cloudUsername, cloudPassword);
 
             final KeyedObjectPoolFactory poolableObjFactory = (cloudPoolPreparedStatements ? new StackKeyedObjectPoolFactory() : null);
 
@@ -1092,6 +1095,7 @@ public class TransactionLegacy implements Closeable {
             final String usageUsername = dbProps.getProperty("db.usage.username");
             final String usagePassword = dbProps.getProperty("db.usage.password");
             final String usageHost = dbProps.getProperty("db.usage.host");
+            final String usageDriver = dbProps.getProperty("db.usage.driver");
             final int usagePort = Integer.parseInt(dbProps.getProperty("db.usage.port"));
             final String usageDbName = dbProps.getProperty("db.usage.name");
             final boolean usageAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.usage.autoReconnect"));
@@ -1100,11 +1104,12 @@ public class TransactionLegacy implements Closeable {
             final GenericObjectPool usageConnectionPool =
                     new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
 
-            final ConnectionFactory usageConnectionFactory =
-                    new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
-                            "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
-                            (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), usageUsername,
-                            usagePassword);
+            final String usageConnectionUri = usageDriver + "://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
+                    "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
+                    (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
+            DriverLoader.loadDriver(usageDriver);
+
+            final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory(usageConnectionUri, usageUsername, usagePassword);
 
             final PoolableConnectionFactory usagePoolableConnectionFactory =
                     new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
@@ -1120,6 +1125,7 @@ public class TransactionLegacy implements Closeable {
                 final String simulatorUsername = dbProps.getProperty("db.simulator.username");
                 final String simulatorPassword = dbProps.getProperty("db.simulator.password");
                 final String simulatorHost = dbProps.getProperty("db.simulator.host");
+                final String simulatorDriver = dbProps.getProperty("db.simulator.driver");
                 final int simulatorPort = Integer.parseInt(dbProps.getProperty("db.simulator.port"));
                 final String simulatorDbName = dbProps.getProperty("db.simulator.name");
                 final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
@@ -1127,9 +1133,11 @@ public class TransactionLegacy implements Closeable {
                 final GenericObjectPool simulatorConnectionPool =
                         new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, simulatorMaxWait, simulatorMaxIdle);
 
-                final ConnectionFactory simulatorConnectionFactory =
-                        new DriverManagerConnectionFactory("jdbc:mysql://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
-                                simulatorAutoReconnect, simulatorUsername, simulatorPassword);
+                final String simulatorConnectionUri = simulatorDriver + "://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
+                        simulatorAutoReconnect;
+                DriverLoader.loadDriver(simulatorDriver);
+
+                final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory(simulatorConnectionUri, simulatorUsername, simulatorPassword);
 
                 final PoolableConnectionFactory simulatorPoolableConnectionFactory =
                         new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);

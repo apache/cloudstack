@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
@@ -98,6 +99,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private AccountManager _accountMgr;
     @Inject
     private QuotaStatement _statement;
+    @Inject
+    private QuotaManager _quotaManager;
 
     @Override
     public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff) {
@@ -138,6 +141,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         } else {
             for (final QuotaAccountVO quotaAccount : _quotaAccountDao.listAllQuotaAccount()) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
+                if (account == null) continue;
                 QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
                 result.add(qr);
             }
@@ -167,17 +171,19 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             qr.setObjectName("summary");
             return qr;
         } else {
-            throw new InvalidParameterValueException("Quota summary response for an account requires a valid account.");
+            return new QuotaSummaryResponse();
         }
     }
 
     @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate, Date endDate) {
         if (quotaBalance == null || quotaBalance.isEmpty()) {
-            new InvalidParameterValueException("The request period does not contain balance entries.");
+            throw new InvalidParameterValueException("The request period does not contain balance entries.");
         }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
             public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
+                o1 = o1 == null ? new QuotaBalanceVO() : o1;
+                o2 = o2 == null ? new QuotaBalanceVO() : o2;
                 return o2.getUpdatedOn().compareTo(o1.getUpdatedOn()); // desc
             }
         });
@@ -186,7 +192,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         //check that there is at least one balance entry
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            if (entry.getCreditsId() > 0) {
+            if (entry.isBalanceEntry()) {
                 have_balance_entries = true;
                 break;
             }
@@ -382,10 +388,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
+    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Boolean enforce) {
         Date despositedOn = _quotaService.computeAdjustedTime(new Date());
         QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
-
 
         if (qb != null) {
             throw new InvalidParameterValueException("Incorrect deposit date: " + despositedOn + " there are balance entries after this date");
@@ -396,6 +401,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaCreditsVO result = _quotaCreditsDao.saveCredits(credits);
 
         final AccountVO account = _accountDao.findById(accountId);
+        if (account == null) {
+            throw new InvalidParameterValueException("Account does not exist with account id " + accountId);
+        }
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
         final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(despositedOn.getTime())));
         if (s_logger.isDebugEnabled()) {
@@ -405,16 +413,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         _quotaService.saveQuotaAccount(account, currentAccountBalance, despositedOn);
         if (lockAccountEnforcement) {
             if (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0) {
-                if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                    if (account.getState() == Account.State.locked) {
-                        s_logger.info("UnLocking account " + account.getAccountName() + " , due to positive balance " + currentAccountBalance);
-                        _accountMgr.enableAccount(account.getAccountName(), domainId, accountId);
-                    }
-                } else {
-                    s_logger.warn("Only normal accounts will get locked " + account.getAccountName() + " even if they have run out of quota " + currentAccountBalance);
+                if (account.getState() == Account.State.locked) {
+                    s_logger.info("UnLocking account " + account.getAccountName() + " , due to positive balance " + currentAccountBalance);
+                    _accountMgr.enableAccount(account.getAccountName(), domainId, accountId);
                 }
             } else { // currentAccountBalance < 0 then lock the account
-                if (account.getState() == Account.State.enabled) {
+                if (_quotaManager.isLockable(account) && account.getState() == Account.State.enabled && enforce) {
                     s_logger.info("Locking account " + account.getAccountName() + " , due to negative balance " + currentAccountBalance);
                     _accountMgr.lockAccount(account.getAccountName(), domainId, accountId);
                 }

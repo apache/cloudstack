@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.log4j.Logger;
 
+import java.util.List;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -52,6 +53,9 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the disk volume")
     private Long id;
+
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=VolumeResponse.class, description="the IDs of the volumes, mutually exclusive with id", since = "4.9")
+    private List<Long> ids;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the disk volume")
     private String volumeName;
@@ -152,5 +156,9 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
         ListResponse<VolumeResponse> response = _queryService.searchForVolumes(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    public List<Long> getIds() {
+        return ids;
     }
 }

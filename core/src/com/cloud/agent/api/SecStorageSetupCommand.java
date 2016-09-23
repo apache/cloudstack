@@ -21,9 +21,10 @@ package com.cloud.agent.api;
 
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 
+import com.cloud.agent.api.storage.StorageNfsVersionCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 
-public class SecStorageSetupCommand extends Command {
+public class SecStorageSetupCommand extends StorageNfsVersionCommand {
     private DataStoreTO store;
     private String secUrl;
     private KeystoreManager.Certificates certs;
@@ -74,4 +75,5 @@ public class SecStorageSetupCommand extends Command {
     public void setPostUploadKey(String postUploadKey) {
         this.postUploadKey = postUploadKey;
     }
+
 }

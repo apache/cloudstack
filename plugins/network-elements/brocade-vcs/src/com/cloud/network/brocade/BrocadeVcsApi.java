@@ -30,9 +30,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpDelete;
@@ -64,9 +63,9 @@ import com.cloud.network.schema.showvcs.Output;
 public class BrocadeVcsApi {
     private static final Logger s_logger = Logger.getLogger(BrocadeVcsApi.class);
 
-    private String _host;
-    private String _adminuser;
-    private String _adminpass;
+    private final String _host;
+    private final String _adminuser;
+    private final String _adminpass;
 
     protected DefaultHttpClient _client;
 
@@ -74,7 +73,7 @@ public class BrocadeVcsApi {
         String url;
         try {
             url = new URL(Constants.PROTOCOL, _host, Constants.PORT, uri).toString();
-        } catch (MalformedURLException e) {
+        } catch (final MalformedURLException e) {
             s_logger.error("Unable to build Brocade Switch API URL", e);
             throw new BrocadeVcsApiException("Unable to build Brocade Switch API URL", e);
         }
@@ -116,7 +115,7 @@ public class BrocadeVcsApi {
 
         if (createInterfaceVlan(vlanId)) {
 
-            PortProfile portProfile = createPortProfile(vlanId, networkId);
+            final PortProfile portProfile = createPortProfile(vlanId, networkId);
 
             if (portProfile != null) {
                 return activatePortProfile(portProfile);
@@ -129,9 +128,9 @@ public class BrocadeVcsApi {
      * Activates a port-profile.
      */
     private boolean activatePortProfile(PortProfile portProfile) throws BrocadeVcsApiException {
-        PortProfileGlobal portProfileGlobal = new PortProfileGlobal();
+        final PortProfileGlobal portProfileGlobal = new PortProfileGlobal();
         portProfile.setVlanProfile(null);
-        Activate activate = new Activate();
+        final Activate activate = new Activate();
         portProfile.setActivate(activate);
         portProfileGlobal.setPortProfile(portProfile);
 
@@ -144,7 +143,7 @@ public class BrocadeVcsApi {
      */
     private PortProfile createPortProfile(int vlanId, long networkId) throws BrocadeVcsApiException {
 
-        PortProfile portProfile = new PortProfile();
+        final PortProfile portProfile = new PortProfile();
         portProfile.setName(Constants.PORT_PROFILE_NAME_PREFIX + networkId);
         if (executeCreateObject(portProfile, Constants.URI)) {
             if (createVlanSubProfile(vlanId, portProfile)) {
@@ -158,7 +157,7 @@ public class BrocadeVcsApi {
      * Create vlan sub-profile for port-profile
      */
     private boolean createVlanSubProfile(int vlanId, PortProfile portProfile) throws BrocadeVcsApiException {
-        VlanProfile vlanProfile = new VlanProfile();
+        final VlanProfile vlanProfile = new VlanProfile();
         portProfile.setVlanProfile(vlanProfile);
         if (executeUpdateObject(portProfile, Constants.URI)) {
             return configureVlanSubProfile(vlanId, portProfile);
@@ -173,15 +172,15 @@ public class BrocadeVcsApi {
      * - configure allowed VLANs for vlan sub-profile
      */
     private boolean configureVlanSubProfile(int vlanId, PortProfile portProfile) throws BrocadeVcsApiException {
-        SwitchportBasic switchPortBasic = new SwitchportBasic();
-        Basic basic = new Basic();
+        final SwitchportBasic switchPortBasic = new SwitchportBasic();
+        final Basic basic = new Basic();
         switchPortBasic.setBasic(basic);
         portProfile.getVlanProfile().setSwitchportBasic(switchPortBasic);
         // configure L2 mode for vlan sub-profile
         if (executeUpdateObject(portProfile, Constants.URI)) {
             VlanProfile vlanProfile = new VlanProfile();
             Switchport switchPort = new Switchport();
-            Mode mode = new Mode();
+            final Mode mode = new Mode();
             mode.setVlanMode("trunk");
             switchPort.setMode(mode);
             vlanProfile.setSwitchport(switchPort);
@@ -191,9 +190,9 @@ public class BrocadeVcsApi {
             if (executeUpdateObject(portProfile, Constants.URI)) {
                 vlanProfile = new VlanProfile();
                 switchPort = new Switchport();
-                Trunk trunk = new Trunk();
-                Allowed allowed = new Allowed();
-                Allowed.Vlan allowedVlan = new Allowed.Vlan();
+                final Trunk trunk = new Trunk();
+                final Allowed allowed = new Allowed();
+                final Allowed.Vlan allowedVlan = new Allowed.Vlan();
                 allowedVlan.setAdd(vlanId);
                 allowed.setVlan(allowedVlan);
                 trunk.setAllowed(allowed);
@@ -214,9 +213,9 @@ public class BrocadeVcsApi {
      * Creates a vlan interface.
      */
     private boolean createInterfaceVlan(int vlanId) throws BrocadeVcsApiException {
-        InterfaceVlan interfaceVlan = new InterfaceVlan();
-        Interface interfaceObj = new Interface();
-        Vlan vlan = new Vlan();
+        final InterfaceVlan interfaceVlan = new InterfaceVlan();
+        final Interface interfaceObj = new Interface();
+        final Vlan vlan = new Vlan();
         vlan.setName(vlanId);
         interfaceObj.setVlan(vlan);
         interfaceVlan.setInterface(interfaceObj);
@@ -230,10 +229,10 @@ public class BrocadeVcsApi {
      */
     public boolean associateMacToNetwork(long networkId, String macAddress) throws BrocadeVcsApiException {
 
-        PortProfileGlobal portProfileGlobal = new PortProfileGlobal();
-        PortProfile portProfile = new PortProfile();
+        final PortProfileGlobal portProfileGlobal = new PortProfileGlobal();
+        final PortProfile portProfile = new PortProfile();
         portProfile.setName(Constants.PORT_PROFILE_NAME_PREFIX + networkId);
-        Static staticObj = new Static();
+        final Static staticObj = new Static();
         staticObj.setMacAddress(macAddress);
         portProfile.setStatic(staticObj);
         portProfileGlobal.setPortProfile(portProfile);
@@ -247,10 +246,10 @@ public class BrocadeVcsApi {
      */
     public boolean disassociateMacFromNetwork(long networkId, String macAddress) throws BrocadeVcsApiException {
 
-        PortProfileGlobal portProfileGlobal = new PortProfileGlobal();
-        PortProfile portProfile = new PortProfile();
+        final PortProfileGlobal portProfileGlobal = new PortProfileGlobal();
+        final PortProfile portProfile = new PortProfile();
         portProfile.setName(Constants.PORT_PROFILE_NAME_PREFIX + networkId);
-        Static staticObj = new Static();
+        final Static staticObj = new Static();
         staticObj.setOperation("delete");
         staticObj.setMacAddress(macAddress);
         portProfile.setStatic(staticObj);
@@ -278,9 +277,9 @@ public class BrocadeVcsApi {
      * Deletes a vlan interface.
      */
     private boolean deleteInterfaceVlan(int vlanId) throws BrocadeVcsApiException {
-        InterfaceVlan interfaceVlan = new InterfaceVlan();
-        Interface interfaceObj = new Interface();
-        Vlan vlan = new Vlan();
+        final InterfaceVlan interfaceVlan = new InterfaceVlan();
+        final Interface interfaceObj = new Interface();
+        final Vlan vlan = new Vlan();
         vlan.setOperation("delete");
         vlan.setName(vlanId);
         interfaceObj.setVlan(vlan);
@@ -294,10 +293,10 @@ public class BrocadeVcsApi {
      * Deactivates a port-profile.
      */
     private boolean deactivatePortProfile(long networkId) throws BrocadeVcsApiException {
-        PortProfileGlobal portProfileGlobal = new PortProfileGlobal();
-        PortProfile portProfile = new PortProfile();
+        final PortProfileGlobal portProfileGlobal = new PortProfileGlobal();
+        final PortProfile portProfile = new PortProfile();
         portProfile.setName(Constants.PORT_PROFILE_NAME_PREFIX + networkId);
-        Activate activate = new Activate();
+        final Activate activate = new Activate();
         activate.setOperation("delete");
         portProfile.setActivate(activate);
         portProfileGlobal.setPortProfile(portProfile);
@@ -311,7 +310,7 @@ public class BrocadeVcsApi {
      */
     private boolean deletePortProfile(long networkId) throws BrocadeVcsApiException {
 
-        PortProfile portProfile = new PortProfile();
+        final PortProfile portProfile = new PortProfile();
         portProfile.setName(Constants.PORT_PROFILE_NAME_PREFIX + networkId);
         portProfile.setOperation("delete");
         //deletes port-profile
@@ -320,25 +319,25 @@ public class BrocadeVcsApi {
 
     protected <T> boolean executeUpdateObject(T newObject, String uri) throws BrocadeVcsApiException {
 
-        boolean result = true;
+        final boolean result = true;
 
         if (_host == null || _host.isEmpty() || _adminuser == null || _adminuser.isEmpty() || _adminpass == null || _adminpass.isEmpty()) {
             throw new BrocadeVcsApiException("Hostname/credentials are null or empty");
         }
 
-        HttpPatch pm = (HttpPatch)createMethod("patch", uri);
+        final HttpPatch pm = (HttpPatch)createMethod("patch", uri);
         pm.setHeader("Accept", "application/vnd.configuration.resource+xml");
 
         pm.setEntity(new StringEntity(convertToString(newObject), ContentType.APPLICATION_XML));
 
-        HttpResponse response = executeMethod(pm);
+        final HttpResponse response = executeMethod(pm);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
 
             String errorMessage;
             try {
                 errorMessage = responseToErrorMessage(response);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 s_logger.error("Failed to update object : " + e.getMessage());
                 throw new BrocadeVcsApiException("Failed to update object : " + e.getMessage());
             }
@@ -363,12 +362,12 @@ public class BrocadeVcsApi {
 
             marshaller.marshal(object, stringWriter);
 
-        } catch (JAXBException e) {
+        } catch (final JAXBException e) {
             s_logger.error("Failed to convert object to string : " + e.getMessage());
             throw new BrocadeVcsApiException("Failed to convert object to string : " + e.getMessage());
         }
 
-        String str = stringWriter.toString();
+        final String str = stringWriter.toString();
         s_logger.info(str);
 
         return str;
@@ -379,19 +378,19 @@ public class BrocadeVcsApi {
 
         Output output = null;
         try {
-            JAXBContext context = JAXBContext.newInstance(Output.class);
+            final JAXBContext context = JAXBContext.newInstance(Output.class);
 
-            StringReader reader = new StringReader(object);
+            final StringReader reader = new StringReader(object);
 
             final Unmarshaller unmarshaller = context.createUnmarshaller();
-            Object result = unmarshaller.unmarshal(reader);
+            final Object result = unmarshaller.unmarshal(reader);
 
             if (result instanceof Output) {
                 output = (Output)result;
                 s_logger.info(output);
             }
 
-        } catch (JAXBException e) {
+        } catch (final JAXBException e) {
             s_logger.error("Failed to convert string to object : " + e.getMessage());
             throw new BrocadeVcsApiException("Failed to convert string to object : " + e.getMessage());
         }
@@ -405,19 +404,19 @@ public class BrocadeVcsApi {
             throw new BrocadeVcsApiException("Hostname/credentials are null or empty");
         }
 
-        boolean result = true;
-        HttpPost pm = (HttpPost)createMethod("post", uri);
+        final boolean result = true;
+        final HttpPost pm = (HttpPost)createMethod("post", uri);
         pm.setHeader("Accept", "application/vnd.configuration.resource+xml");
         pm.setEntity(new StringEntity(convertToString(newObject), ContentType.APPLICATION_XML));
 
-        HttpResponse response = executeMethod(pm);
+        final HttpResponse response = executeMethod(pm);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
 
             String errorMessage;
             try {
                 errorMessage = responseToErrorMessage(response);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 s_logger.error("Failed to create object : " + e.getMessage());
                 throw new BrocadeVcsApiException("Failed to create object : " + e.getMessage());
             }
@@ -440,18 +439,18 @@ public class BrocadeVcsApi {
         String readLine = null;
         StringBuffer sb = null;
 
-        HttpPost pm = (HttpPost)createMethod("post", uri);
+        final HttpPost pm = (HttpPost)createMethod("post", uri);
         pm.setHeader("Accept", "application/vnd.operational-state.resource+xml");
         pm.setEntity(new StringEntity("<show-vcs></show-vcs>", ContentType.APPLICATION_XML));
 
-        HttpResponse response = executeMethod(pm);
+        final HttpResponse response = executeMethod(pm);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
 
             String errorMessage;
             try {
                 errorMessage = responseToErrorMessage(response);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 s_logger.error("Failed to retreive status : " + e.getMessage());
                 throw new BrocadeVcsApiException("Failed to retreive status : " + e.getMessage());
             }
@@ -464,12 +463,12 @@ public class BrocadeVcsApi {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")))) {
             sb = new StringBuffer();
 
-            while (((readLine = br.readLine()) != null)) {
+            while ((readLine = br.readLine()) != null) {
                 s_logger.debug(readLine);
                 sb.append(readLine);
 
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             s_logger.error("Failed to retreive status : " + e.getMessage());
             throw new BrocadeVcsApiException("Failed to retreive status : " + e.getMessage());
         }
@@ -484,17 +483,17 @@ public class BrocadeVcsApi {
             throw new BrocadeVcsApiException("Hostname/credentials are null or empty");
         }
 
-        HttpDelete dm = (HttpDelete)createMethod("delete", uri);
+        final HttpDelete dm = (HttpDelete)createMethod("delete", uri);
         dm.setHeader("Accept", "application/vnd.configuration.resource+xml");
 
-        HttpResponse response = executeMethod(dm);
+        final HttpResponse response = executeMethod(dm);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
 
             String errorMessage;
             try {
                 errorMessage = responseToErrorMessage(response);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 s_logger.error("Failed to delete object : " + e.getMessage());
                 throw new BrocadeVcsApiException("Failed to delete object : " + e.getMessage());
             }
@@ -514,11 +513,7 @@ public class BrocadeVcsApi {
                 method.releaseConnection();
                 response = _client.execute(method);
             }
-        } catch (HttpException e) {
-            s_logger.error("HttpException caught while trying to connect to the Brocade Switch", e);
-            method.releaseConnection();
-            throw new BrocadeVcsApiException("API call to Brocade Switch Failed", e);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             s_logger.error("IOException caught while trying to connect to the Brocade Switch", e);
             method.releaseConnection();
             throw new BrocadeVcsApiException("API call to Brocade Switch Failed", e);
@@ -533,7 +528,7 @@ public class BrocadeVcsApi {
 
             try (BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")))) {
 
-                StringBuffer result = new StringBuffer();
+                final StringBuffer result = new StringBuffer();
                 String line = "";
                 while ((line = rd.readLine()) != null) {
                     result.append(line);

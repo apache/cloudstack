@@ -37,5 +37,5 @@
         <property name="name" value="NuageVspElement" />
     </bean>
 	<bean id="NuageVspManager" class="com.cloud.network.manager.NuageVspManagerImpl" />
-  	<bean id="NuageVspSync" class="com.cloud.network.sync.NuageVspSyncImpl" />
+    <bean id="NuageVspEntityBuilder" class="com.cloud.util.NuageVspEntityBuilder" />
 </beans>

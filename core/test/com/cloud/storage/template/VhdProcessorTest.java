@@ -32,6 +32,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -106,5 +108,37 @@ public class VhdProcessorTest {
         Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize((File) Mockito.any());
         Assert.assertEquals(virtualSize, processor.getVirtualSize(mockFile));
         Mockito.verify(mockFile,Mockito.times(0)).length();
+    }
+
+    @Test
+    public void testVhdGetVirtualSize() throws Exception {
+        String vhdPath = URLDecoder.decode(getClass().getResource("/vhds/test.vhd").getFile(), Charset.defaultCharset().name());
+        long expectedVirtualSizeBytes = 104857600;
+        long actualVirtualSizeBytes = processor.getVirtualSize(new File(vhdPath));
+        Assert.assertEquals(expectedVirtualSizeBytes, actualVirtualSizeBytes);
+    }
+
+    @Test
+    public void testGzipVhdGetVirtualSize() throws Exception {
+        String gzipVhdPath = URLDecoder.decode(getClass().getResource("/vhds/test.vhd.gz").getFile(), Charset.defaultCharset().name());
+        long expectedVirtualSizeBytes = 104857600;
+        long actualVirtualSizeBytes = processor.getVirtualSize(new File(gzipVhdPath));
+        Assert.assertEquals(expectedVirtualSizeBytes, actualVirtualSizeBytes);
+    }
+
+    @Test
+    public void testBzip2VhdGetVirtualSize() throws Exception {
+        String bzipVhdPath = URLDecoder.decode(getClass().getResource("/vhds/test.vhd.bz2").getFile(), Charset.defaultCharset().name());
+        long expectedVirtualSizeBytes = 104857600;
+        long actualVirtualSizeBytes = processor.getVirtualSize(new File(bzipVhdPath));
+        Assert.assertEquals(expectedVirtualSizeBytes, actualVirtualSizeBytes);
+    }
+
+    @Test
+    public void testZipVhdGetVirtualSize() throws Exception {
+        String zipVhdPath = URLDecoder.decode(getClass().getResource("/vhds/test.vhd.zip").getFile(), Charset.defaultCharset().name());
+        long expectedVirtualSizeBytes = 341; //Zip is not a supported format, virtual size should return the filesize as a fallback
+        long actualVirtualSizeBytes = processor.getVirtualSize(new File(zipVhdPath));
+        Assert.assertEquals(expectedVirtualSizeBytes, actualVirtualSizeBytes);
     }
 }

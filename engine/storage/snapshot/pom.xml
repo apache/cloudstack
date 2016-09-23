@@ -16,7 +16,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-engine</artifactId>
-    <version>4.8.2.0-SNAPSHOT</version>
+    <version>4.10.0.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <dependencies>
@@ -36,6 +36,11 @@
           <version>${project.version}</version>
           <type>test-jar</type>
           <scope>test</scope>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.cloudstack</groupId>
+          <artifactId>cloud-engine-storage-volume</artifactId>
+          <version>${project.version}</version>
       </dependency>
   </dependencies>
     <build>

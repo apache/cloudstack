@@ -1,5 +1,4 @@
 /var/log/dnsmasq.log {
-    daily
     size 10M
     missingok
     rotate 5

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.config;
 
+import com.google.common.base.Strings;
+import org.apache.cloudstack.acl.RoleService;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -81,6 +83,10 @@ public class UpdateCfgCmd extends BaseCmd {
         return cfgName;
     }
 
+    public void setCfgName(final String cfgName) {
+        this.cfgName = cfgName;
+    }
+
     public String getValue() {
         return value;
     }
@@ -117,6 +123,12 @@ public class UpdateCfgCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        if (Strings.isNullOrEmpty(getCfgName())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty configuration name provided");
+        }
+        if (getCfgName().equalsIgnoreCase(RoleService.EnableDynamicApiChecker.key())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Restricted configuration update not allowed");
+        }
         Configuration cfg = _configService.updateConfiguration(this);
         if (cfg != null) {
             ConfigurationResponse response = _responseGenerator.createConfigurationResponse(cfg);

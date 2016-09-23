@@ -63,7 +63,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "type")
     private Storage.TemplateType templateType;
 
-    @Column(name = "url")
+    @Column(name = "url", length = 2048)
     private String url = null;
 
     @Column(name = "hvm")

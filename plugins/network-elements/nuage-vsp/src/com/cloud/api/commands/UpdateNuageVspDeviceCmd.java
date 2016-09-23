@@ -29,6 +29,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -38,14 +39,15 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "updateNuageVspDevice", responseObject = NuageVspDeviceResponse.class, description = "Update a Nuage VSP device", since = "4.6")
+@APICommand(name = UpdateNuageVspDeviceCmd.APINAME, description = "Update a Nuage VSP device", responseObject = NuageVspDeviceResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.6",
+        authorized = {RoleType.Admin})
 public class UpdateNuageVspDeviceCmd extends BaseAsyncCmd {
-    private static final Logger s_logger = Logger.getLogger(UpdateNuageVspDeviceCmd.class);
-    private static final String s_name = "updatenuagevspdeviceresponse";
+    public static final String APINAME = "updateNuageVspDevice";
 
     @Inject
     NuageVspManager _nuageVspManager;
@@ -160,7 +162,7 @@ public class UpdateNuageVspDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

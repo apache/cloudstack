@@ -25,12 +25,18 @@
           id: 'quota',
           title: 'Quota',
           preFilter: function(args) {
-    	        var retval = $.ajax({
-                	url: createURL("quotaIsEnabled"),
-                	async: false
+                var pluginEnabled = false;
+                $.ajax({
+                    url: createURL("quotaIsEnabled"),
+                    async: false,
+                    success: function(json) {
+                        pluginEnabled = json.quotaisenabledresponse.isenabled.isenabled;
+                    },
+                    error: function(data) {
+                        pluginEnabled = false;
+                    }
                 });
-    	        var json = JSON.parse(retval.responseText);
-    	        return json.quotaisenabledresponse.isenabled.isenabled;
+                return pluginEnabled;
           },
           showOnNavigation: true,
           sectionSelect: {
@@ -79,9 +85,9 @@
                               indicator: {
                                   'enabled': 'on',
                                   'disabled': 'off',
-                                  'locked': 'off',
+                                  'locked': 'off'
                               }
-                          },
+                          }
                       },
                       dataProvider: function(args) {
                           var data = {
@@ -171,7 +177,7 @@
                                             label: 'label.quota.enforcequota',
                                             isBoolean: true,
                                             isChecked: false
-                                        },
+                                        }
                                     }
 
                                 },
@@ -196,7 +202,7 @@
                                     });
                                     $(window).trigger('cloudStack.fullRefresh');
                                  }
-                            },
+                            }
                           },
                           tabs: {
                              details: {
@@ -207,10 +213,10 @@
                                         }
                                     }, {
                                         startdate: {
-                                            label: 'label.quota.date',
+                                            label: 'label.quota.date'
                                         },
                                         startquota: {
-                                            label: 'label.quota.value',
+                                            label: 'label.quota.value'
                                         }
                                     }],
                                     dataProvider: function(args) {
@@ -235,8 +241,7 @@
                                             }
                                         });
                                     }
-                                },
-
+                                }
                           }
                       }
                   }
@@ -277,9 +282,9 @@
                               indicator: {
                                   'enabled': 'on',
                                   'disabled': 'off',
-                                  'locked': 'off',
+                                  'locked': 'off'
                               }
-                          },
+                          }
                       },
                       dataProvider: function(args) {
                           var data = {
@@ -329,13 +334,6 @@
                           });
                       },
                       detailView: {
-                          viewAll: [{
-                              path: 'quota.quotastatement',
-                              label: 'label.quota.statement.quota'
-                          },{
-                              path: 'quota.balancestatement',
-                              label: 'label.quota.statement.balance'
-                          }],
                           actions: {
                              add: {
                                 label: 'label.quota.add.credits',
@@ -369,7 +367,7 @@
                                             label: 'label.quota.enforcequota',
                                             isBoolean: true,
                                             isChecked: false
-                                        },
+                                        }
                                     }
 
                                 },
@@ -394,7 +392,7 @@
                                     });
                                     $(window).trigger('cloudStack.fullRefresh');
                                  }
-                            },
+                            }
                           },
                           tabs: {
                              details: {
@@ -405,10 +403,10 @@
                                         }
                                     }, {
                                         startdate: {
-                                            label: 'label.quota.date',
+                                            label: 'label.quota.date'
                                         },
                                         startquota: {
-                                            label: 'label.quota.value',
+                                            label: 'label.quota.value'
                                         }
                                     }],
                                     dataProvider: function(args) {
@@ -433,7 +431,7 @@
                                             }
                                         });
                                     }
-                                },
+                                }
                            }
                       }
                   }
@@ -668,7 +666,7 @@
                               action: function(args) {
                                   if (isAdmin()) {
                                        var data = {
-                                            usagetype: args.data.jsonObj.usageType,
+                                            usagetype: args.data.jsonObj.usageType
                                        };
                                       var tariffVal = args.data.tariffValue.split(' ');
                                       if (tariffVal.length==2){
@@ -697,7 +695,7 @@
                                                           validation: {
                                                               required: true
                                                           }
-                                                      },
+                                                      }
                                                   }
                                               },
                                               after: function(argsLocal) {
@@ -769,7 +767,7 @@
                                   input.datepicker({
                                       defaultDate: new Date(),
                                       changeMonth: true,
-                                      dateFormat: "yy-mm-dd",
+                                      dateFormat: "yy-mm-dd"
                                   });
                                   input.parent().attr('title', _l('label.quota.effectivedate'));
                               },
@@ -800,7 +798,7 @@
                               label: 'label.usage.unit'
                           },
                           tariffValue: {
-                              label: 'label.quota.tariff.value',
+                              label: 'label.quota.tariff.value'
                           },
                           description: {
                               label: 'label.quota.description',
@@ -832,7 +830,7 @@
                                   input.datepicker({
                                       defaultDate: new Date(),
                                       changeMonth: true,
-                                      dateFormat: "yy-mm-dd",
+                                      dateFormat: "yy-mm-dd"
                                   });
                                   input.parent().attr('title', _l('label.quota.effectivedate'));
                               },
@@ -854,7 +852,7 @@
                       disableInfiniteScrolling: true,
                       fields: {
                           templatetype: {
-                              label: 'label.quota.email.template',
+                              label: 'label.quota.email.template'
                           },
                           templatesubject: {
                               label: 'label.quota.email.subject',
@@ -867,7 +865,7 @@
                           last_updated: {
                               label: 'label.quota.email.lastupdated',
                               truncate: true
-                          },
+                          }
                       },
                       dataProvider: function(args) {
                           var data = {};
@@ -941,8 +939,8 @@
                                           textArea: true
                                       },
                                       last_updated: {
-                                          label: 'label.quota.email.lastupdated',
-                                      },
+                                          label: 'label.quota.email.lastupdated'
+                                      }
                                   }],
 
                                   dataProvider: function(args) {

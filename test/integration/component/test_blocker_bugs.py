@@ -409,7 +409,7 @@ class TestNATRules(cloudstackTestCase):
                         )
         self.assertEqual(
                             firewall_response[0].startport,
-                            str(self.services["firewall_rule"]["startport"]),
+                            self.services["firewall_rule"]["startport"],
                             "Firewall rule is not with specific port"
                         )
 

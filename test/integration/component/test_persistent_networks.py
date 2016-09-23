@@ -17,7 +17,7 @@
 """ Tests for Persistent Networks without running VMs feature"""
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
-                              get_hypervisor_type)
+                              get_hypervisor_type, get_process_status)
 from marvin.lib.base import (Account,
                              VPC,
                              VirtualMachine,
@@ -40,7 +40,7 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                verifyNetworkState,
                                add_netscaler,
-                               wait_for_cleanup)
+                               wait_for_cleanup,list_routers,list_hosts)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
@@ -1459,6 +1459,116 @@ class TestPersistentNetworks(cloudstackTestCase):
 
         return
 
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_volume_delete_event_errorState(self):
+        """
+        @summary: Test volume delete event generation in error state condition
+        @Steps:
+        Step1: Create  a network using network created in Step1
+        Step2: Verifying that  network creation is successful
+        Step3: Login to Virtual router and add iptable  rule to block insertion of vm rules
+        Step6: deploy a vm using network created in step2
+        Step7: check the Vm status for failure
+        Step8: destroy and expunge the vm
+        Step9: list the generated events for volume delete event.
+        """
+
+        # Listing all the networks available
+
+        account = Account.create(
+            self.api_client,
+            self.services["account"],
+            domainid=self.domain.id)
+        network = Network.create(
+            self.apiclient,
+            self.services["isolated_network"],
+            networkofferingid=self.isolated_persistent_network_offering.id,
+            accountid=self.account.name,
+            domainid=self.domain.id,
+            zoneid=self.zone.id)
+        response = verifyNetworkState(
+            self.apiclient,
+            network.id,
+            "implemented")
+        exceptionOccured = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccured or (not isNetworkInDesiredState)):
+            self.fail(exceptionMessage)
+        self.assertIsNotNone(
+            network.vlan,
+            "vlan must not be null for persistent network")
+        try:
+            list_router_response = list_routers(
+                self.apiclient,
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
+
+            self.assertEqual(validateList(list_router_response)[0], PASS, "Check list response returns a valid list")
+            router = list_router_response[0]
+
+            self.debug("Router ID: %s, state: %s" % (router.id, router.state))
+
+            self.assertEqual(
+                router.state,
+                'Running',
+                "Check list router response for router state"
+            )
+            self.hypervisor = self.testClient.getHypervisorInfo()
+            if self.hypervisor.lower() in ('vmware', 'hyperv'):
+                result = get_process_status(
+                    self.apiclient.connection.mgtSvr,
+                    22,
+                    self.apiclient.connection.user,
+                    self.apiclient.connection.passwd,
+                    router.linklocalip,
+                    "iptables -I INPUT 1 -j DROP",
+                    hypervisor=self.hypervisor
+                )
+            else:
+                try:
+                    hosts = list_hosts(
+                        self.apiclient,
+                        zoneid=router.zoneid,
+                        type='Routing',
+                        state='Up',
+                        id=router.hostid
+                    )
+                    self.assertEqual(validateList(hosts)[0],PASS,"Check list host returns a valid list")
+                    host = hosts[0]
+                    result = get_process_status(
+                    host.ipaddress,22, self.services["acl"]["host"]["username"],self.services["acl"]["host"]["password"], router.linklocalip,
+                    "iptables -I INPUT 1 -j DROP"
+                )
+                except Exception as e:
+                    raise Exception("Exception raised in accessing/running the command on hosts  : %s " % e)
+        except Exception as e:
+            raise Exception("Exception raised in getting hostcredentials: %s " % e)
+
+        with self.assertRaises(Exception) as context:
+            virtual_machine = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                networkids=[
+                    network.id],
+                serviceofferingid=self.service_offering.id,
+                accountid=self.account.name,
+                domainid=self.domain.id)
+        #self.assertTrue('This is broken' in context.exception)
+        try:
+            account.delete(self.api_client)
+        except Exception as e:
+            self.cleanup.append(account)
+        qresultset = self.dbclient.execute(
+             "select id from usage_event where type = '%s' ORDER BY id DESC LIMIT 1;" %
+             str("VOLUME.DELETE"))
+        self.assertNotEqual(
+             len(qresultset),
+             0,
+             "Check DB Query result set")
+        return
 
 @ddt
 class TestAssignVirtualMachine(cloudstackTestCase):

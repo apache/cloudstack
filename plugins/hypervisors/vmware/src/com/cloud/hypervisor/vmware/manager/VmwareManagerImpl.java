@@ -105,6 +105,7 @@ import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.FileUtil;
@@ -167,6 +168,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private ManagementServerHostPeerDao _mshostPeerDao;
     @Inject
     private ClusterManager _clusterMgr;
+    @Inject
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     private String _mountParent;
     private StorageLayer _storage;
@@ -439,12 +442,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public String getSecondaryStorageStoreUrl(long dcId) {
+    public Pair<String, Long> getSecondaryStorageStoreUrlAndId(long dcId) {
 
         String secUrl = null;
+        Long secId = null;
         DataStore secStore = _dataStoreMgr.getImageStore(dcId);
         if (secStore != null) {
             secUrl = secStore.getUri();
+            secId = secStore.getId();
         }
 
         if (secUrl == null) {
@@ -453,12 +458,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             DataStore cacheStore = _dataStoreMgr.getImageCacheStore(dcId);
             if (cacheStore != null) {
                 secUrl = cacheStore.getUri();
+                secId = cacheStore.getId();
             } else {
                 s_logger.warn("No staging storage is found when non-NFS secondary storage is used");
             }
         }
 
-        return secUrl;
+        return new Pair<String, Long>(secUrl, secId);
     }
 
     @Override
@@ -546,8 +552,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public void prepareSecondaryStorageStore(String storageUrl) {
-        String mountPoint = getMountPoint(storageUrl);
+    public void prepareSecondaryStorageStore(String storageUrl, Long storeId) {
+        Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(storeId);
+        String mountPoint = getMountPoint(storageUrl, nfsVersion);
 
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
         try {
@@ -655,7 +662,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public String getMountPoint(String storageUrl) {
+    public String getMountPoint(String storageUrl, Integer nfsVersion) {
         String mountPoint = null;
         synchronized (_storageMounts) {
             mountPoint = _storageMounts.get(storageUrl);
@@ -670,7 +677,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 s_logger.error("Invalid storage URL format ", e);
                 throw new CloudRuntimeException("Unable to create mount point due to invalid storage URL format " + storageUrl);
             }
-            mountPoint = mount(uri.getHost() + ":" + uri.getPath(), _mountParent);
+
+            mountPoint = mount(uri.getHost() + ":" + uri.getPath(), _mountParent, nfsVersion);
             if (mountPoint == null) {
                 s_logger.error("Unable to create mount point for " + storageUrl);
                 return "/mnt/sec"; // throw new CloudRuntimeException("Unable to create mount point for " + storageUrl);
@@ -745,7 +753,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
-    protected String mount(String path, String parent) {
+    protected String mount(String path, String parent, Integer nfsVersion) {
         String mountPoint = setupMountPoint(parent);
         if (mountPoint == null) {
             s_logger.warn("Unable to create a mount point");
@@ -756,6 +764,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String result = null;
         Script command = new Script(true, "mount", _timeout, s_logger);
         command.add("-t", "nfs");
+        if (nfsVersion != null){
+            command.add("-o", "vers=" + nfsVersion);
+        }
         // command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
         if ("Mac OS X".equalsIgnoreCase(System.getProperty("os.name"))) {
             command.add("-o", "resvport");
@@ -832,6 +843,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         if (cmd instanceof StartupCommand) {
             if (host.getHypervisorType() == HypervisorType.VMware) {
@@ -870,6 +885,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         return false;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override
@@ -1234,4 +1257,5 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return true;
         }
     }
+
 }

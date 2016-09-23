@@ -18,14 +18,11 @@ package com.cloud.hypervisor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -33,7 +30,7 @@ import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
@@ -57,33 +54,26 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
-import org.apache.log4j.Logger;
 
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private final Logger LOGGER = Logger.getLogger(XenServerGuru.class);
     @Inject
-    GuestOSDao _guestOsDao;
+    private GuestOSDao _guestOsDao;
     @Inject
-    GuestOSHypervisorDao _guestOsHypervisorDao;
+    private GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
-    EndPointSelector endPointSelector;
+    private HostDao hostDao;
     @Inject
-    HostDao hostDao;
+    private VolumeDao _volumeDao;
     @Inject
-    VolumeDao _volumeDao;
+    private PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    PrimaryDataStoreDao _storagePoolDao;
+    private VolumeDataFactory _volFactory;
     @Inject
-    VolumeDataFactory _volFactory;
-    @Inject
-    UserVmDao _userVmDao;
+    private UserVmDao _userVmDao;
 
-    static final ConfigKey<Integer> MaxNumberOfVCPUSPerVM = new ConfigKey<Integer>("Advanced", Integer.class, "xen.vm.vcpu.max", "16",
+    private static final ConfigKey<Integer> MaxNumberOfVCPUSPerVM = new ConfigKey<Integer>("Advanced", Integer.class, "xen.vm.vcpu.max", "16",
             "Maximum number of VCPUs that VM can get in XenServer.", true, ConfigKey.Scope.Cluster);
-
-    protected XenServerGuru() {
-        super();
-    }
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -127,11 +117,6 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
     @Override
     public boolean trackVmHostChange() {
         return true;
-    }
-
-    @Override
-    public Map<String, String> getClusterSettings(long vmId) {
-        return null;
     }
 
     @Override
@@ -189,15 +174,13 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
                 DataStoreTO destStore = destData.getDataStore();
                 if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
                     HostVO host = hostDao.findById(hostId);
-                    EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
-                    host = hostDao.findById(ep.getId());
                     hostDao.loadDetails(host);
                     String hypervisorVersion = host.getHypervisorVersion();
                     String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
                     if (hypervisorVersion != null && !hypervisorVersion.equalsIgnoreCase("6.1.0")) {
                         if (!(hypervisorVersion.equalsIgnoreCase("6.2.0") &&
                                 !(snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)))) {
-                            return new Pair<Boolean, Long>(Boolean.TRUE, new Long(ep.getId()));
+                            return new Pair<Boolean, Long>(Boolean.TRUE, new Long(host.getId()));
                         }
                     }
                 }

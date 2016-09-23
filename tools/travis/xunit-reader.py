@@ -61,6 +61,8 @@ def _generate_args():
 def _generate_file_list(args):
     path = args.pop('path')
     file_path_list = []
+    if path.endswith('.xml') and os.path.isfile(path):
+        file_path_list.append(path)
     for (root, dirnames, filenames) in os.walk(path):
         for filename in filenames:
             if filename.endswith('.xml'):
@@ -71,7 +73,7 @@ def _generate_file_list(args):
 
 def parse_reports(file_path_list):
     table = texttable.Texttable()
-    table.header(['Test', 'Result'])
+    table.header(['Test', 'Result', 'Time'])
 
     exit_code = 0
 
@@ -80,16 +82,24 @@ def parse_reports(file_path_list):
         for event, elem in data:
             name = ''
             status = 'Success'
+            time = ''
             if 'name' in elem.attrib:
                 name = elem.attrib['name']
+            if 'time' in elem.attrib:
+                time = elem.attrib['time']
             for children in elem.getchildren():
                 if 'skipped' == children.tag:
                     status = 'Skipped'
                 elif 'failure' == children.tag:
                     exit_code = 1
                     status = 'Failure'
+                elif 'error' == children.tag:
+                    exit_code = 1
+                    status = 'Error'
+                    if 'type' in children.attrib:
+                        status = children.attrib['type']
 
-            table.add_row([name, status])
+            table.add_row([name, status, time])
 
     print table.draw()
 

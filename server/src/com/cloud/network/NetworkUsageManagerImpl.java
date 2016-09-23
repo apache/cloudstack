@@ -484,6 +484,10 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         }
 
         @Override
+        public void processHostAdded(long hostId) {
+        }
+
+        @Override
         public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
             if (cmd instanceof StartupTrafficMonitorCommand) {
                 long agentId = agent.getId();
@@ -496,6 +500,14 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                 }
             }
             return;
+        }
+
+        @Override
+        public void processHostAboutToBeRemoved(long hostId) {
+        }
+
+        @Override
+        public void processHostRemoved(long hostId, long clusterId) {
         }
 
         @Override

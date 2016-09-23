@@ -23,35 +23,25 @@ from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
 
-REGULAR_USER = 'u'
-DOMAIN_ADMIN = 'd'
 ROOT_ADMIN = 'r'
 
 user_to_func = {
-    REGULAR_USER: 'populateForUser',
-    DOMAIN_ADMIN: 'populateForDomainAdmin',
-    ROOT_ADMIN: 'populateForRootAdmin',
+    ROOT_ADMIN: 'populateForApi',
     }
 
 
 user_to_cns = {
-    REGULAR_USER: 'userCommandNames',
-    DOMAIN_ADMIN: 'domainAdminCommandNames',
-    ROOT_ADMIN: 'rootAdminCommandNames',
+    ROOT_ADMIN: 'allCommandNames',
     }
 
 
 dirname_to_user = {
-    'regular_user': REGULAR_USER,
-    'domain_admin': DOMAIN_ADMIN,
-    'root_admin': ROOT_ADMIN,
+    'apis': ROOT_ADMIN,
     }
 
 
 dirname_to_dirname = {
-    'regular_user': 'user',
-    'domain_admin': 'domain_admin',
-    'root_admin': 'root_admin',
+    'apis': 'apis',
     }
 
 
@@ -71,8 +61,10 @@ known_categories = {
     'StaticNat': 'NAT',
     'IpForwarding': 'NAT',
     'Host': 'Host',
+    'OutOfBand': 'Out-of-band Management',
     'Cluster': 'Cluster',
     'Account': 'Account',
+    'Role': 'Role',
     'Snapshot': 'Snapshot',
     'User': 'User',
     'Os': 'Guest OS',
@@ -130,6 +122,7 @@ known_categories = {
     'Product': 'Product',
     'LB': 'Load Balancer',
     'ldap': 'LDAP',
+    'Ldap': 'LDAP',
     'Swift': 'Swift',
     'S3' : 'S3',
     'SecondaryStorage': 'Host',
@@ -301,15 +294,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class XmlToHtmlConverterData {
-
-	Set<String> rootAdminCommandNames = new HashSet<String>();
-	Set<String> domainAdminCommandNames = new HashSet<String>();
-	Set<String> userCommandNames = new HashSet<String>();
-
+    Set<String> allCommandNames = new HashSet<String>();
 ''')
-        f.write(java_for_user(REGULAR_USER) + "\n");
         f.write(java_for_user(ROOT_ADMIN) + "\n")
-        f.write(java_for_user(DOMAIN_ADMIN) + "\n")
 
         f.write('''
 }
@@ -317,7 +304,5 @@ public class XmlToHtmlConverterData {
 ''')
 
 
-write_xml('generatetocforuser_include.xsl', REGULAR_USER)
-write_xml('generatetocforadmin_include.xsl', ROOT_ADMIN)
-write_xml('generatetocfordomainadmin_include.xsl', DOMAIN_ADMIN)
+write_xml('generatetoc_include.xsl', ROOT_ADMIN)
 write_java('XmlToHtmlConverterData.java')

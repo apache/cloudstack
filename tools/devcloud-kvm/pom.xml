@@ -17,7 +17,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-tools</artifactId>
-    <version>4.8.2.0-SNAPSHOT</version>
+    <version>4.10.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <dependencies>
@@ -83,7 +83,7 @@
             </dependencies>
             <configuration>
               <driver>org.gjt.mm.mysql.Driver</driver>
-              <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}/cloud</url>
+              <url>${db.cloud.driver}://${db.cloud.host}:${db.cloud.port}/cloud</url>
               <username>${db.cloud.username}</username>
               <password>${db.cloud.password}</password>
               <!--all executions are ignored if -Dmaven.test.skip=true -->

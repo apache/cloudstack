@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.acl.RoleService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,21 +50,45 @@ public class UpdateCfgCmdTest extends TestCase {
     }
 
     @Test
+    public void testExecuteForEmptyCfgName() {
+        updateCfgCmd._configService = configService;
+
+        try {
+            updateCfgCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Empty configuration name provided", exception.getDescription());
+        }
+    }
+
+    @Test
+    public void testExecuteForRestrictedCfg() {
+        updateCfgCmd._configService = configService;
+        updateCfgCmd.setCfgName(RoleService.EnableDynamicApiChecker.key());
+
+        try {
+            updateCfgCmd.execute();
+        } catch (ServerApiException exception) {
+            Assert.assertEquals("Restricted configuration update not allowed", exception.getDescription());
+        }
+    }
+
+    @Test
     public void testExecuteForEmptyResult() {
         updateCfgCmd._configService = configService;
+        updateCfgCmd.setCfgName("some.cfg");
 
         try {
             updateCfgCmd.execute();
         } catch (ServerApiException exception) {
             Assert.assertEquals("Failed to update config", exception.getDescription());
         }
-
     }
 
     @Test
     public void testExecuteForNullResult() {
 
         updateCfgCmd._configService = configService;
+        updateCfgCmd.setCfgName("some.cfg");
 
         try {
             Mockito.when(configService.updateConfiguration(updateCfgCmd)).thenReturn(null);
@@ -88,6 +113,7 @@ public class UpdateCfgCmdTest extends TestCase {
         Configuration cfg = Mockito.mock(Configuration.class);
         updateCfgCmd._configService = configService;
         updateCfgCmd._responseGenerator = responseGenerator;
+        updateCfgCmd.setCfgName("some.cfg");
 
         try {
             Mockito.when(configService.updateConfiguration(updateCfgCmd)).thenReturn(cfg);

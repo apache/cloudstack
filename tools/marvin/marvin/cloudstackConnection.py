@@ -143,7 +143,7 @@ class CSConnection(object):
             ["=".join(
                 [str.lower(r[0]),
                  str.lower(
-                     urllib.quote_plus(str(r[1]))
+                     urllib.quote_plus(str(r[1]), safe="*")
                 ).replace("+", "%20")]
             ) for r in params]
         )

@@ -328,13 +328,13 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
-        short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
+        short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType,
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long roleId,
                                          Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID, User.Source source) {
         // TODO Auto-generated method stub
         return null;
@@ -366,7 +366,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
+    public Account createAccount(String accountName, short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
         // TODO Auto-generated method stub
         return null;
     }

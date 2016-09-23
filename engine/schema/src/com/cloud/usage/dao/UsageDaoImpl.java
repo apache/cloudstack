@@ -49,7 +49,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     private static final String DELETE_ALL = "DELETE FROM cloud_usage";
     private static final String DELETE_ALL_BY_ACCOUNTID = "DELETE FROM cloud_usage WHERE account_id = ?";
     private static final String DELETE_ALL_BY_INTERVAL = "DELETE FROM cloud_usage WHERE end_date < DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)";
-    private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, type, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?)";
+    private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, type, role_id, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?,?)";
     private static final String INSERT_USER_STATS = "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received,"
             + " net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
 
@@ -113,16 +113,17 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 pstmt.setLong(1, acct.getId());
                 pstmt.setString(2, acct.getAccountName());
                 pstmt.setShort(3, acct.getType());
-                pstmt.setLong(4, acct.getDomainId());
+                pstmt.setLong(4, acct.getRoleId());
+                pstmt.setLong(5, acct.getDomainId());
 
                 Date removed = acct.getRemoved();
                 if (removed == null) {
-                    pstmt.setString(5, null);
+                    pstmt.setString(6, null);
                 } else {
-                    pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), acct.getRemoved()));
+                    pstmt.setString(6, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), acct.getRemoved()));
                 }
 
-                pstmt.setBoolean(6, acct.getNeedsCleanup());
+                pstmt.setBoolean(7, acct.getNeedsCleanup());
 
                 pstmt.addBatch();
             }

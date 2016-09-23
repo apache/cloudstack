@@ -36,6 +36,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 /**
  * Host DB view.
@@ -90,6 +91,13 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
+
+    @Column(name = "oobm_enabled")
+    private boolean outOfBandManagementEnabled = false;
+
+    @Column(name = "oobm_power_state")
+    @Enumerated(value = EnumType.STRING)
+    private OutOfBandManagement.PowerState outOfBandManagementPowerState;
 
     @Column(name = "resource_state")
     @Enumerated(value = EnumType.STRING)
@@ -242,6 +250,14 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public Date getRemoved() {
         return removed;
+    }
+
+    public boolean isOutOfBandManagementEnabled() {
+        return outOfBandManagementEnabled;
+    }
+
+    public OutOfBandManagement.PowerState getOutOfBandManagementPowerState() {
+        return outOfBandManagementPowerState;
     }
 
     public ResourceState getResourceState() {

@@ -338,6 +338,10 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
         return null;
     }
 
+    @Override
+    public void processHostAdded(long hostId) {
+    }
+
     /* for reconnecting */
     @Override
     public void processConnect(Host host, StartupCommand cmd,
@@ -349,6 +353,14 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     public boolean processDisconnect(long agentId, Status state) {
         LOGGER.debug("processDisconnect");
         return false;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

@@ -24,31 +24,6 @@ public abstract class BaseResponse implements ResponseObject {
     private transient String responseName;
     private transient String objectName;
 
-    @Override
-    public String getResponseName() {
-        return responseName;
-    }
-
-    @Override
-    public void setResponseName(String responseName) {
-        this.responseName = responseName;
-    }
-
-    @Override
-    public String getObjectName() {
-        return objectName;
-    }
-
-    @Override
-    public void setObjectName(String objectName) {
-        this.objectName = objectName;
-    }
-
-    @Override
-    public String getObjectId() {
-        return null;
-    }
-
     @SerializedName(ApiConstants.JOB_ID)
     @Param(description = "the UUID of the latest async job acting on this object")
     protected String jobId;
@@ -56,6 +31,38 @@ public abstract class BaseResponse implements ResponseObject {
     @SerializedName(ApiConstants.JOB_STATUS)
     @Param(description = "the current status of the latest async job acting on this object")
     private Integer jobStatus;
+
+    public BaseResponse() {
+    }
+
+    public BaseResponse(final String objectName) {
+        this.objectName = objectName;
+    }
+
+    @Override
+    public final String getResponseName() {
+        return responseName;
+    }
+
+    @Override
+    public final void setResponseName(String responseName) {
+        this.responseName = responseName;
+    }
+
+    @Override
+    public final String getObjectName() {
+        return objectName;
+    }
+
+    @Override
+    public final void setObjectName(String objectName) {
+        this.objectName = objectName;
+    }
+
+    @Override
+    public String getObjectId() {
+        return null;
+    }
 
     @Override
     public String getJobId() {

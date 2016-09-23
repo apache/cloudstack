@@ -21,16 +21,21 @@ public class ResizeVolumePayload {
     public final Long newSize;
     public final Long newMinIops;
     public final Long newMaxIops;
+    public final Integer newHypervisorSnapshotReserve;
     public final boolean shrinkOk;
     public final String instanceName;
     public final long[] hosts;
+    public final boolean isManaged;
 
-    public ResizeVolumePayload(Long newSize, Long newMinIops, Long newMaxIops, boolean shrinkOk, String instanceName, long[] hosts) {
+    public ResizeVolumePayload(Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk,
+                               String instanceName, long[] hosts, boolean isManaged) {
         this.newSize = newSize;
         this.newMinIops = newMinIops;
         this.newMaxIops = newMaxIops;
+        this.newHypervisorSnapshotReserve = newHypervisorSnapshotReserve;
         this.shrinkOk = shrinkOk;
         this.instanceName = instanceName;
         this.hosts = hosts;
+        this.isManaged = isManaged;
     }
 }

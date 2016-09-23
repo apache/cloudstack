@@ -19,156 +19,34 @@
 
 package com.cloud.agent.api.guru;
 
-import com.cloud.agent.api.CmdBuilder;
 import com.cloud.agent.api.Command;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspVm;
 
 public class DeallocateVmVspCommand extends Command {
 
-    private final String _networkUuid;
-    private final String _nicFromDdUuid;
-    private final String _nicMacAddress;
-    private final String _nicIp4Address;
-    private final boolean _isL3Network;
-    private final boolean _isSharedNetwork;
-    private final String _vpcUuid;
-    private final String _networksDomainUuid;
-    private final String _vmInstanceName;
-    private final String _vmUuid;
-    private final boolean _isExpungingState;
+    private final VspNetwork _network;
+    private final VspVm _vm;
+    private final VspNic _nic;
 
-    private DeallocateVmVspCommand(String networkUuid, String nicFromDdUuid, String nicMacAddress, String nicIp4Address, boolean isL3Network, boolean isSharedNetwork, String vpcUuid,
-            String networksDomainUuid, String vmInstanceName, String vmUuid, boolean isExpungingState) {
+    public DeallocateVmVspCommand(VspNetwork network, VspVm vm, VspNic nic) {
         super();
-        this._networkUuid = networkUuid;
-        this._nicFromDdUuid = nicFromDdUuid;
-        this._nicMacAddress = nicMacAddress;
-        this._nicIp4Address = nicIp4Address;
-        this._isL3Network = isL3Network;
-        this._isSharedNetwork = isSharedNetwork;
-        this._vpcUuid = vpcUuid;
-        this._networksDomainUuid = networksDomainUuid;
-        this._vmInstanceName = vmInstanceName;
-        this._vmUuid = vmUuid;
-        this._isExpungingState = isExpungingState;
+        this._network = network;
+        this._vm = vm;
+        this._nic = nic;
     }
 
-    public String getNetworkUuid() {
-        return _networkUuid;
+    public VspNetwork getNetwork() {
+        return this._network;
     }
 
-    public String getNicFromDdUuid() {
-        return _nicFromDdUuid;
+    public VspVm getVm() {
+        return this._vm;
     }
 
-    public String getNicMacAddress() {
-        return _nicMacAddress;
-    }
-
-    public String getNicIp4Address() {
-        return _nicIp4Address;
-    }
-
-    public boolean isL3Network() {
-        return _isL3Network;
-    }
-
-    public boolean isSharedNetwork() {
-        return _isSharedNetwork;
-    }
-
-    public String getVpcUuid() {
-        return _vpcUuid;
-    }
-
-    public String getNetworksDomainUuid() {
-        return _networksDomainUuid;
-    }
-
-    public String getVmInstanceName() {
-        return _vmInstanceName;
-    }
-
-    public String getVmUuid() {
-        return _vmUuid;
-    }
-
-    public boolean isExpungingState() {
-        return _isExpungingState;
-    }
-
-    public static class Builder implements CmdBuilder<DeallocateVmVspCommand> {
-        private String _networkUuid;
-        private String _nicFromDdUuid;
-        private String _nicMacAddress;
-        private String _nicIp4Address;
-        private boolean _isL3Network;
-        private boolean _isSharedNetwork;
-        private String _vpcUuid;
-        private String _networksDomainUuid;
-        private String _vmInstanceName;
-        private String _vmUuid;
-        private boolean _isExpungingState;
-
-        public Builder networkUuid(String networkUuid) {
-            this._networkUuid = networkUuid;
-            return this;
-        }
-
-        public Builder nicFromDbUuid(String nicFromDbUuid) {
-            this._nicFromDdUuid = nicFromDbUuid;
-            return this;
-        }
-
-        public Builder nicMacAddress(String nicMacAddress) {
-            this._nicMacAddress = nicMacAddress;
-            return this;
-        }
-
-        public Builder nicIp4Address(String nicIp4Address) {
-            this._nicIp4Address = nicIp4Address;
-            return this;
-        }
-
-        public Builder isL3Network(boolean isL3Network) {
-            this._isL3Network = isL3Network;
-            return this;
-        }
-
-        public Builder isSharedNetwork(boolean isSharedNetwork) {
-            this._isSharedNetwork = isSharedNetwork;
-            return this;
-        }
-
-        public Builder vpcUuid(String vpcUuid) {
-            this._vpcUuid = vpcUuid;
-            return this;
-        }
-
-        public Builder networksDomainUuid(String networksDomainUuid) {
-            this._networksDomainUuid = networksDomainUuid;
-            return this;
-        }
-
-        public Builder vmInstanceName(String vmInstanceName) {
-            this._vmInstanceName = vmInstanceName;
-            return this;
-        }
-
-        public Builder vmUuid(String vmUuid) {
-            this._vmUuid = vmUuid;
-            return this;
-        }
-
-        public Builder isExpungingState(boolean isExpungingState) {
-            this._isExpungingState = isExpungingState;
-            return this;
-        }
-
-        @Override
-        public DeallocateVmVspCommand build() {
-            return new DeallocateVmVspCommand(_networkUuid,_nicFromDdUuid, _nicMacAddress, _nicIp4Address, _isL3Network, _isSharedNetwork, _vpcUuid,
-                    _networksDomainUuid, _vmInstanceName, _vmUuid, _isExpungingState);
-        }
+    public VspNic getNic() {
+        return this._nic;
     }
 
     @Override
@@ -184,22 +62,9 @@ public class DeallocateVmVspCommand extends Command {
 
         DeallocateVmVspCommand that = (DeallocateVmVspCommand) o;
 
-        if (_isExpungingState != that._isExpungingState) return false;
-        if (_isL3Network != that._isL3Network) return false;
-        if (_isSharedNetwork != that._isSharedNetwork) return false;
-        if (_networkUuid != null ? !_networkUuid.equals(that._networkUuid) : that._networkUuid != null) return false;
-        if (_networksDomainUuid != null ? !_networksDomainUuid.equals(that._networksDomainUuid) : that._networksDomainUuid != null)
-            return false;
-        if (_nicFromDdUuid != null ? !_nicFromDdUuid.equals(that._nicFromDdUuid) : that._nicFromDdUuid != null)
-            return false;
-        if (_nicIp4Address != null ? !_nicIp4Address.equals(that._nicIp4Address) : that._nicIp4Address != null)
-            return false;
-        if (_nicMacAddress != null ? !_nicMacAddress.equals(that._nicMacAddress) : that._nicMacAddress != null)
-            return false;
-        if (_vmInstanceName != null ? !_vmInstanceName.equals(that._vmInstanceName) : that._vmInstanceName != null)
-            return false;
-        if (_vmUuid != null ? !_vmUuid.equals(that._vmUuid) : that._vmUuid != null) return false;
-        if (_vpcUuid != null ? !_vpcUuid.equals(that._vpcUuid) : that._vpcUuid != null) return false;
+        if (_network != null ? !_network.equals(that._network) : that._network != null) return false;
+        if (_nic != null ? !_nic.equals(that._nic) : that._nic != null) return false;
+        if (_vm != null ? !_vm.equals(that._vm) : that._vm != null) return false;
 
         return true;
     }
@@ -207,17 +72,9 @@ public class DeallocateVmVspCommand extends Command {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (_networkUuid != null ? _networkUuid.hashCode() : 0);
-        result = 31 * result + (_nicFromDdUuid != null ? _nicFromDdUuid.hashCode() : 0);
-        result = 31 * result + (_nicMacAddress != null ? _nicMacAddress.hashCode() : 0);
-        result = 31 * result + (_nicIp4Address != null ? _nicIp4Address.hashCode() : 0);
-        result = 31 * result + (_isL3Network ? 1 : 0);
-        result = 31 * result + (_isSharedNetwork ? 1 : 0);
-        result = 31 * result + (_vpcUuid != null ? _vpcUuid.hashCode() : 0);
-        result = 31 * result + (_networksDomainUuid != null ? _networksDomainUuid.hashCode() : 0);
-        result = 31 * result + (_vmInstanceName != null ? _vmInstanceName.hashCode() : 0);
-        result = 31 * result + (_vmUuid != null ? _vmUuid.hashCode() : 0);
-        result = 31 * result + (_isExpungingState ? 1 : 0);
+        result = 31 * result + (_network != null ? _network.hashCode() : 0);
+        result = 31 * result + (_vm != null ? _vm.hashCode() : 0);
+        result = 31 * result + (_nic != null ? _nic.hashCode() : 0);
         return result;
     }
 }

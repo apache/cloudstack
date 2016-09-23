@@ -28,6 +28,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -44,8 +45,8 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     boolean snapshotResult = true;
 
     @Override
-    public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
-        return null; // To change body of implemented methods, use File | Settings | File Templates.
+    public ChapInfo getChapInfo(DataObject dataObject) {
+        return null;
     }
 
     @Override
@@ -65,8 +66,13 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
-        return volume.getSize();
+    public long getDataObjectSizeIncludingHypervisorSnapshotReserve(DataObject dataObject, StoragePool pool) {
+        return dataObject.getSize();
+    }
+
+    @Override
+    public long getBytesRequiredForTemplate(TemplateInfo templateInfo, StoragePool storagePool) {
+        return 0L;
     }
 
     @Override
@@ -90,23 +96,21 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
-        //To change body of implemented methods use File | Settings | File Templates.
+    public void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
     }
 
     @Override
     public DataTO getTO(DataObject data) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
     public void createAsync(DataStore store, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -119,22 +123,19 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public Map<String, String> getCapabilities() {
-        // TODO Auto-generated method stub
         return null;
     }
 }

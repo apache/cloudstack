@@ -81,7 +81,7 @@ public class SecurityGroupListener implements Listener {
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         List<Long> affectedVms = new ArrayList<Long>();
-        int commandNum = 0;
+
         for (Answer ans : answers) {
             if (ans instanceof SecurityGroupRuleAnswer) {
                 SecurityGroupRuleAnswer ruleAnswer = (SecurityGroupRuleAnswer)ans;
@@ -106,7 +106,7 @@ public class SecurityGroupListener implements Listener {
                         }
                     }
                 }
-                commandNum++;
+
                 if (_workTracker != null)
                     _workTracker.processAnswers(agentId, seq, answers);
             }
@@ -152,6 +152,10 @@ public class SecurityGroupListener implements Listener {
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         if (s_logger.isInfoEnabled())
             s_logger.info("Received a host startup notification");
@@ -186,6 +190,14 @@ public class SecurityGroupListener implements Listener {
             _workTracker.processDisconnect(agentId);
         }
         return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

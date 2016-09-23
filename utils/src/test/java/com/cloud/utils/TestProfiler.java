@@ -19,84 +19,79 @@
 
 package com.cloud.utils;
 
-import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.utils.testcase.Log4jEnabledTestCase;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Profiler.class})
 public class TestProfiler extends Log4jEnabledTestCase {
-    protected final static Logger s_logger = Logger.getLogger(TestProfiler.class);
 
-    private static final long MILLIS_FACTOR = 1000l;
-    private static final int MARGIN = 100;
-    // Profiler uses System.nanoTime which is not reliable on the millisecond
-    // A sleep of 1000 milliseconds CAN be measured as 999 milliseconds
-    // Therefore make the second larger, by 10% of the margin
-    private static final long ONE_SECOND = 1000l + (MARGIN / 10);
-    private static final double EXPONENT = 3d;
+    private static final long SLEEP_TIME_NANO = 1000000000L;
+    private static Profiler pf;
+
+    @Before
+    public void setUp() {
+        pf = new Profiler();
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.when(System.nanoTime()).thenReturn(0L, SLEEP_TIME_NANO);
+    }
 
     @Test
     public void testProfilerInMillis() {
-        s_logger.info("testProfiler() started");
+        //Given
+        final long sleepTimeMillis = SLEEP_TIME_NANO / 1000000L;
 
-        final Profiler pf = new Profiler();
+        //When
         pf.start();
-        try {
-            Thread.sleep(ONE_SECOND);
-        } catch (final InterruptedException e) {
-        }
         pf.stop();
 
-        final long durationInMillis = pf.getDurationInMillis();
-        s_logger.info("Duration in Millis: " + durationInMillis);
-
-        // An error margin in order to cover the time taken by the star/stop calls.
-        // 100 milliseconds margin seems too much, but it will avoid assertion error
-        // and also fail in case a duration in nanoseconds is used instead.
-        Assert.assertTrue(durationInMillis >= MILLIS_FACTOR  &&  durationInMillis <= MILLIS_FACTOR + MARGIN);
-
-        s_logger.info("testProfiler() stopped");
+        //Then
+        Assert.assertTrue(pf.getDurationInMillis() == sleepTimeMillis);
     }
 
     @Test
     public void testProfilerInNano() {
-        final Profiler pf = new Profiler();
+        //Given
+        final long sleepTimeNano = SLEEP_TIME_NANO;
+
+        //When
         pf.start();
-        try {
-            Thread.sleep(ONE_SECOND);
-        } catch (final InterruptedException e) {
-        }
         pf.stop();
 
-        final long duration = pf.getDuration();
-        s_logger.info("Duration in Nano: " + duration);
-        Assert.assertTrue(duration >= Math.pow(MILLIS_FACTOR, EXPONENT));
+        //Then
+        Assert.assertTrue(pf.getDuration() == sleepTimeNano);
     }
 
     @Test
     public void testProfilerNoStart() {
-        final Profiler pf = new Profiler();
-        try {
-            Thread.sleep(20);
-        } catch (final InterruptedException e) {
-        }
+        //Given
+        final long expectedAnswer = -1;
+
+        //When
         pf.stop();
 
-        Assert.assertTrue(pf.getDurationInMillis() == -1);
+        //Then
+        Assert.assertTrue(pf.getDurationInMillis() == expectedAnswer);
         Assert.assertFalse(pf.isStarted());
     }
 
     @Test
     public void testProfilerNoStop() {
-        final Profiler pf = new Profiler();
-        pf.start();
-        try {
-            Thread.sleep(20);
-        } catch (final InterruptedException e) {
-        }
+        //Given
+        final long expectedAnswer = -1;
 
-        Assert.assertTrue(pf.getDurationInMillis() == -1);
+        //When
+        pf.start();
+
+        //Then
+        Assert.assertTrue(pf.getDurationInMillis() == expectedAnswer);
         Assert.assertFalse(pf.isStopped());
     }
 }

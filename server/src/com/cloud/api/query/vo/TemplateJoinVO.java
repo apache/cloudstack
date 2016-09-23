@@ -22,7 +22,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -30,7 +29,6 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -40,11 +38,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "template_view")
-public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
-
-    @Id
-    @Column(name = "id")
-    private long id;
+public class TemplateJoinVO extends BaseViewWithTagInformationVO implements ControlledViewEntity {
 
     @Column(name = "uuid")
     private String uuid;
@@ -218,37 +212,6 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "detail_value")
     private String detailValue;
 
-    @Column(name = "tag_id")
-    private long tagId;
-
-    @Column(name = "tag_uuid")
-    private String tagUuid;
-
-    @Column(name = "tag_key")
-    private String tagKey;
-
-    @Column(name = "tag_value")
-    private String tagValue;
-
-    @Column(name = "tag_domain_id")
-    private long tagDomainId;
-
-    @Column(name = "tag_account_id")
-    private long tagAccountId;
-
-    @Column(name = "tag_resource_id")
-    private long tagResourceId;
-
-    @Column(name = "tag_resource_uuid")
-    private String tagResourceUuid;
-
-    @Column(name = "tag_resource_type")
-    @Enumerated(value = EnumType.STRING)
-    private ResourceObjectType tagResourceType;
-
-    @Column(name = "tag_customer")
-    private String tagCustomer;
-
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
@@ -257,11 +220,6 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String tempZonePair; // represent a distinct (templateId, data_center_id) pair
 
     public TemplateJoinVO() {
-    }
-
-    @Override
-    public long getId() {
-        return id;
     }
 
     @Override
@@ -341,46 +299,6 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public Storage.TemplateType getTemplateType() {
         return templateType;
-    }
-
-    public long getTagId() {
-        return tagId;
-    }
-
-    public String getTagUuid() {
-        return tagUuid;
-    }
-
-    public String getTagKey() {
-        return tagKey;
-    }
-
-    public String getTagValue() {
-        return tagValue;
-    }
-
-    public long getTagDomainId() {
-        return tagDomainId;
-    }
-
-    public long getTagAccountId() {
-        return tagAccountId;
-    }
-
-    public long getTagResourceId() {
-        return tagResourceId;
-    }
-
-    public String getTagResourceUuid() {
-        return tagResourceUuid;
-    }
-
-    public ResourceObjectType getTagResourceType() {
-        return tagResourceType;
-    }
-
-    public String getTagCustomer() {
-        return tagCustomer;
     }
 
     public long getDataCenterId() {
@@ -547,4 +465,9 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     public Class<?> getEntityType() {
         return VirtualMachineTemplate.class;
     }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
 }

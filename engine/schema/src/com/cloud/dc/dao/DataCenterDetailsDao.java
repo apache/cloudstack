@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
-
 import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 public interface DataCenterDetailsDao extends GenericDao<DataCenterDetailVO, Long>, ResourceDetailsDao<DataCenterDetailVO> {
+    void persist(long zoneId, String name, String value);
 }

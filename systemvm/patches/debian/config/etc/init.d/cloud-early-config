@@ -342,6 +342,7 @@ cat << "EOF" > /usr/local/cloud/systemvm/conf/temp.xml
 EOF
 mv /usr/local/cloud/systemvm/conf/temp.xml /usr/local/cloud/systemvm/conf/log4j-cloud.xml
 }
+
 setup_interface() {
   local intfnum=$1
   local ip=$2
@@ -801,38 +802,33 @@ setup_sshd(){
 setup_vpc_apache2() {
   log_it "Setting up apache web server for VPC"
   chkconfig apache2 off
-  rm -f /etc/apache2/conf.d/vhost*.conf
-  [ -f /etc/apache2/sites-available/default ] && echo "" >/etc/apache2/sites-available/default
-  [ -f /etc/apache2/sites-available/default-ssl ] && echo "">/etc/apache2/sites-available/default-ssl
-  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
-  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
-  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
-
-  # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
-  [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
-
-  echo "Options -Indexes" > /var/www/html/.htaccess
+  clean_ipalias_config
+  setup_apache2_common
 }
 
 
 clean_ipalias_config() {
-rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
-rm -f /etc/apache2/sites-available/ipAlias*
-rm -f /etc/apache2/sites-enabled/ipAlias*
-rm -rf /etc/failure_config
+  # Old
+  rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
+  rm -f /etc/apache2/sites-available/ipAlias*
+  rm -f /etc/apache2/sites-enabled/ipAlias*
+  rm -f /etc/apache2/conf.d/vhost*.conf
+  rm -f /etc/apache2/ports.conf
+  rm -f /etc/apache2/vhostexample.conf
+  rm -f /etc/apache2/sites-available/default
+  rm -f /etc/apache2/sites-available/default-ssl
+  rm -f /etc/apache2/sites-enabled/default
+  rm -f /etc/apache2/sites-enabled/default-ssl
+
+  # New
+  rm -f /etc/apache2/sites-enabled/vhost-*.conf
+  rm -f /etc/apache2/sites-enabled/000-default
+
+  rm -rf /etc/failure_config
 }
 
-setup_apache2() {
-  clean_ipalias_config
-  log_it "Setting up apache web server"
-  local ip=$1
-  [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
-  [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
-  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
+setup_apache2_common() {
+  sed -i 's/^Include ports.conf.*/# CS: Done by Python CsApp config\n#Include ports.conf/g' /etc/apache2/apache2.conf
   [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
   [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
 
@@ -842,72 +838,18 @@ setup_apache2() {
   echo "Options -Indexes" > /var/www/html/.htaccess
 }
 
-setup_redundant_router() {
-    rrouter_bin_path="/ramdisk/rrouter"
-    rrouter_log="/ramdisk/rrouter/keepalived.log"
-    rrouter_bin_path_str="\/ramdisk\/rrouter"
-    rrouter_log_str="\/ramdisk\/rrouter\/keepalived.log"
-    mkdir -p /ramdisk
-    mount tmpfs /ramdisk -t tmpfs
-    mkdir -p /ramdisk/rrouter
-    ip route delete default
-    cp /root/redundant_router/keepalived.conf.templ /etc/keepalived/keepalived.conf
-    cp /root/redundant_router/conntrackd.conf.templ /etc/conntrackd/conntrackd.conf
-    cp /root/redundant_router/enable_pubip.sh.templ $rrouter_bin_path/enable_pubip.sh
-    cp /root/redundant_router/master.sh.templ $rrouter_bin_path/master.sh
-    cp /root/redundant_router/backup.sh.templ $rrouter_bin_path/backup.sh
-    cp /root/redundant_router/fault.sh.templ $rrouter_bin_path/fault.sh
-    cp /root/redundant_router/primary-backup.sh.templ $rrouter_bin_path/primary-backup.sh
-    cp /root/redundant_router/heartbeat.sh.templ $rrouter_bin_path/heartbeat.sh
-    cp /root/redundant_router/check_heartbeat.sh.templ $rrouter_bin_path/check_heartbeat.sh
-    cp /root/redundant_router/arping_gateways.sh.templ $rrouter_bin_path/arping_gateways.sh
-    cp /root/redundant_router/check_bumpup.sh $rrouter_bin_path/
-    cp /root/redundant_router/disable_pubip.sh $rrouter_bin_path/
-    cp /root/redundant_router/checkrouter.sh.templ /opt/cloud/bin/checkrouter.sh
-    cp /root/redundant_router/services.sh $rrouter_bin_path/
-    sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[PRIORITY\]/$ROUTER_PR/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[DELTA\]/2/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[LINK_IF\]/eth0/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[LINK_IP\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[IGNORE_IP1\]/$GUEST_GW/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[IGNORE_IP2\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[IGNORE_IP3\]/$ETH1_IP/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[ETH2IP\]/$ETH2_IP/g" $rrouter_bin_path/enable_pubip.sh
-    sed -i "s/\[ETH2MASK\]/$ETH2_MASK/g" $rrouter_bin_path/enable_pubip.sh
-    sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/enable_pubip.sh
-    sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/master.sh
+setup_apache2() {
+  log_it "Setting up apache web server"
+  clean_ipalias_config
+  setup_apache2_common
+  local ip=$1
 
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/master.sh
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/backup.sh
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/fault.sh
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/heartbeat.sh
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/check_heartbeat.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/master.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/backup.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/fault.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/primary-backup.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/check_heartbeat.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/arping_gateways.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /opt/cloud/bin/checkrouter.sh
-
-    if [ $ADVERT_INT ]
-    then
-        sed -i "s/advert_int 1/advert_int $ADVERT_INT/g" /etc/keepalived/keepalived.conf
-    fi
-
-    chmod a+x $rrouter_bin_path/*.sh
-
-    sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
-    crontab -l|grep "check_heartbeat.sh"
-    if [ $? -ne 0 ]
-    then
-        (crontab -l; echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
-    fi
-    load_modules
+  # Deprecated, functionality moved to Cs Python code
+  # [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
+  # [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
+  # [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
+  # [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
+  # [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
 }
 
 setup_aesni() {
@@ -1207,33 +1149,27 @@ setup_secstorage() {
   fi
   setup_apache2 $ETH2_IP
 
+  # Deprecated, should move to Cs Python all of it
+  sed -e "s/<VirtualHost .*:80>/<VirtualHost $ETH2_IP:80>/" \
+    -e "s/<VirtualHost .*:443>/<VirtualHost $ETH2_IP:443>/" \
+    -e "s/Listen .*:80/Listen $ETH2_IP:80/g" \
+    -e "s/Listen .*:443/Listen $ETH2_IP:443/g" \
+    -e "s/NameVirtualHost .*:80/NameVirtualHost $ETH2_IP:80/g" /etc/apache2/vhost.template > /etc/apache2/sites-enabled/vhost-${ETH2_IP}.conf
+
   log_it "setting up apache2 for post upload of volume/template"
   a2enmod proxy
   a2enmod proxy_http
   a2enmod headers
 
-  SSL_FILE="/etc/apache2/sites-available/default-ssl"
-  PATTERN="RewriteRule ^\/upload\/(.*)"
-  CORS_PATTERN="Header set Access-Control-Allow-Origin"
-  if [ -f $SSL_FILE ]; then
-    if grep -q "$PATTERN" $SSL_FILE ; then
-      log_it "rewrite rules already exist in file $SSL_FILE"
-    else
-        log_it "adding rewrite rules to file: $SSL_FILE"
-        sed -i -e "s/<\/VirtualHost>/RewriteEngine On \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/RewriteCond %{HTTPS} =on \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/RewriteCond %{REQUEST_METHOD} =POST \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/RewriteRule ^\/upload\/(.*) http:\/\/127.0.0.1:8210\/upload?uuid=\$1 [P,L] \n&/" $SSL_FILE
-    fi
-    if grep -q "$CORS_PATTERN" $SSL_FILE ; then
-      log_it "cors rules already exist in file $SSL_FILE"
-    else
-        log_it "adding cors rules to file: $SSL_FILE"
-        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Origin \"*\" \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Methods \"POST, OPTIONS\" \n&/" $SSL_FILE
-        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Headers \"x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires\" \n&/" $SSL_FILE
-    fi
-  fi
+  cat >/etc/apache2/cors.conf <<CORS
+RewriteEngine On
+RewriteCond %{HTTPS} =on
+RewriteCond %{REQUEST_METHOD} =POST
+RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=\$1 [P,L]
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "POST, OPTIONS"
+Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
+CORS
 
   service apache2 restart
 
