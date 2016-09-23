@@ -66,7 +66,7 @@ class CsFile:
         logging.info("Wrote edited file %s" % self.filename)
         self.config = list(self.new_config)
         logging.info("Updated file in-cache configuration")
-        
+
 
     def dump(self):
         for line in self.new_config:
@@ -142,7 +142,7 @@ class CsFile:
             print ' line = ' +line
             if line.lstrip().startswith(ignoreLinesStartWith):
                 continue
-            if re.search(search, line):
+            if search in line:
                 found = True
                 break
 
@@ -156,7 +156,7 @@ class CsFile:
         for index, line in enumerate(self.new_config):
             if line.lstrip().startswith("#"):
                 continue
-            if not re.search(search, line):
+            if search not in line:
                 temp_config.append(line)
 
         self.new_config = list(temp_config)
