@@ -12,7 +12,7 @@ hybrid cloud solution.
 CloudStack is a turnkey solution that includes the entire "stack" of features
 most organizations want with an IaaS cloud: compute orchestration,
 Network-as-a-Service, user and account management, a full and open native API,
-resource accounting, and a first-class User Interface (UI).
+resource accounting, and a User Interface (UI).
 
 CloudStack currently supports the most popular hypervisors:
 VMware vSphere, KVM, XenServer, XenProject and Hyper-V as well as
