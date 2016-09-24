@@ -20,6 +20,8 @@ import random
 import SignedAPICall
 import XenAPI
 
+from solidfire.factory import ElementFactory
+
 from util import sf_util
 
 # All tests inherit from cloudstackTestCase
@@ -33,8 +35,6 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_clusters,
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
-
-from solidfire import solidfire_element_api as sf_api
 
 # Prerequisites:
 #  Only one zone
@@ -71,7 +71,6 @@ class TestData():
     storageTag2 = "SolidFire_Volume_1"
     tags = "tags"
     templateCacheName = "centos56-x86-64-xen"
-    templateName = "templatename"
     testAccount = "testaccount"
     url = "url"
     user = "user"
@@ -86,7 +85,7 @@ class TestData():
         self.testdata = {
             TestData.solidFire: {
                 TestData.mvip: "192.168.139.112",
-                TestData.login: "admin",
+                TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
@@ -208,7 +207,6 @@ class TestData():
             TestData.volume_1: {
                 TestData.diskName: "test-volume",
             },
-            TestData.templateName: "CentOS 5.6(64-bit) no GUI (XenServer)",
             TestData.zoneId: 1,
             TestData.clusterId1: 1,
             TestData.clusterId2: 2,
@@ -224,7 +222,9 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
     def setUpClass(cls):
         # Set up API client
         testclient = super(TestVMMigrationWithStorage, cls).getClsTestClient()
+
         cls.apiClient = testclient.getApiClient()
+        cls.configData = testclient.getParsedTestDataConfig()
         cls.dbConnection = testclient.getDbConnection()
 
         cls.testdata = TestData().testdata
@@ -250,13 +250,15 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         cls.xen_session_2.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
 
         # Set up SolidFire connection
-        cls.sf_client = sf_api.SolidFireAPI(endpoint_dict=cls.testdata[TestData.solidFire])
+        solidfire = cls.testdata[TestData.solidFire]
+
+        cls.sfe = ElementFactory.create(solidfire[TestData.mvip], solidfire[TestData.username], solidfire[TestData.password])
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster_1 = list_clusters(cls.apiClient, id=cls.testdata[TestData.clusterId1])[0]
         cls.cluster_2 = list_clusters(cls.apiClient, id=cls.testdata[TestData.clusterId2])[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, template_name=cls.testdata[TestData.templateName])
+        cls.template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -330,6 +332,8 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
             cleanup_resources(cls.apiClient, cls._cleanup)
 
             cls.primary_storage.delete(cls.apiClient)
+
+            sf_util.purge_solidfire_volumes(cls.sfe)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
@@ -340,7 +344,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         try:
             cleanup_resources(self.apiClient, self.cleanup)
 
-            sf_util.purge_solidfire_volumes(self.sf_client)
+            sf_util.purge_solidfire_volumes(self.sfe)
         except Exception as e:
             logging.debug("Exception in tearDownClass(self): %s" % e)
 
@@ -366,7 +370,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self,
                                                   TestVMMigrationWithStorage._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_root_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_root_volume.name, self)
 
@@ -386,7 +390,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
             cs_data_volume
         )
 
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_data_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_data_volume.name, self)
 
@@ -451,7 +455,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self,
                                                   TestVMMigrationWithStorage._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_data_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_data_volume.name, self)
 
@@ -497,7 +501,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self,
                                                   TestVMMigrationWithStorage._sf_account_id_should_be_non_zero_int_err_msg)
 
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_root_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_root_volume.name, self)
 
@@ -517,7 +521,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
             cs_data_volume
         )
 
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_data_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_data_volume.name, self)
 
@@ -549,7 +553,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         cs_root_volume = self._get_updated_cs_volume(cs_root_volume.id)
         cs_data_volume = self._get_updated_cs_volume(cs_data_volume.id)
 
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         dest_sf_root_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_root_volume.name, self)
         dest_sf_data_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_data_volume.name, self)
@@ -580,7 +584,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
 
         cs_volume = self._get_updated_cs_volume(cs_volume.id)
 
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         dest_sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_volume.name, self)
 
@@ -624,7 +628,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         self._verifyFields(cs_root_volume_refreshed, src_sf_root_volume)
         self._verifyFields(cs_data_volume_refreshed, src_sf_data_volume)
 
-        sf_volumes = sf_util.get_not_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_not_active_sf_volumes(self.sfe, sf_account_id)
 
         dest_sf_root_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_root_volume.name, self)
         dest_sf_data_volume = sf_util.check_and_get_sf_volume(sf_volumes, cs_data_volume.name, self)
@@ -633,11 +637,11 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         self._verify_xenserver_state(dest_xen_session, dest_sf_data_volume, src_xen_session, src_sf_data_volume)
 
     def _verify_different_volume_access_groups(self, src_sf_volume, dest_sf_volume):
-        src_vags = src_sf_volume['volumeAccessGroups']
+        src_vags = src_sf_volume.volume_access_groups
 
         sf_util.check_list(src_vags, 1, self, "'src_vags' should be a list with only one element in it.")
 
-        dest_vags = dest_sf_volume['volumeAccessGroups']
+        dest_vags = dest_sf_volume.volume_access_groups
 
         sf_util.check_list(dest_vags, 1, self, "'dest_vags' should be a list with only one element in it.")
 
@@ -647,23 +651,23 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         return list_volumes(self.apiClient, listall=True, id=cs_volume_id)[0]
 
     def _verify_same_account(self, src_sf_volume, dest_sf_volume):
-        self.assertEqual(src_sf_volume['accountID'], dest_sf_volume['accountID'], "The source and destination volumes should be in the same SolidFire account.")
+        self.assertEqual(src_sf_volume.account_id, dest_sf_volume.account_id, "The source and destination volumes should be in the same SolidFire account.")
 
     def _verifySfVolumeIds(self, src_sf_volume, dest_sf_volume):
-        self.assert_(src_sf_volume['volumeID'] < dest_sf_volume['volumeID'],
+        self.assert_(src_sf_volume.volume_id < dest_sf_volume.volume_id,
                      "The destination SolidFire root volume's ID should be greater than the id of the source one.")
 
     # verify the name, folder, and iscsi_name
     def _verifyFields(self, cs_volume, sf_volume):
-        self.assert_(cs_volume.name == sf_volume['name'], "The CloudStack volume name does not match the SolidFire volume name.")
+        self.assert_(cs_volume.name == sf_volume.name, "The CloudStack volume name does not match the SolidFire volume name.")
 
         cs_volume_folder = self._get_cs_volume_folder(cs_volume.id)
 
-        self.assert_(int(cs_volume_folder) == sf_volume['volumeID'], "The CloudStack folder name does not match the SolidFire volume ID.")
+        self.assert_(int(cs_volume_folder) == sf_volume.volume_id, "The CloudStack folder name does not match the SolidFire volume ID.")
 
         cs_volume_iscsi_name = self._get_cs_volume_iscsi_name(cs_volume.id)
 
-        self.assert_(cs_volume_iscsi_name == sf_util.format_iqn(sf_volume['iqn']), "The CloudStack volume iscsi_name does not match the SolidFire volume IQN.")
+        self.assert_(cs_volume_iscsi_name == sf_util.format_iqn(sf_volume.iqn), "The CloudStack volume iscsi_name does not match the SolidFire volume IQN.")
 
     def _get_cs_volume_property(self, cs_volume_id, volume_property):
         sql_query = "Select " + volume_property + " From volumes Where uuid = '" + cs_volume_id + "'"
@@ -688,10 +692,10 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         sf_util.check_list(sql_result, 0, self, "The cloud.volume_details table should not have any name fields that start with 'basic_'.")
 
     def _verify_xenserver_state(self, xen_session_1, sf_volume_1, xen_session_2, sf_volume_2):
-        sr_name = sf_util.format_iqn(sf_volume_1["iqn"])
+        sr_name = sf_util.format_iqn(sf_volume_1.iqn)
 
         sf_util.check_xen_sr(sr_name, xen_session_1, self, False)
 
-        sr_name = sf_util.format_iqn(sf_volume_2["iqn"])
+        sr_name = sf_util.format_iqn(sf_volume_2.iqn)
 
         sf_util.check_xen_sr(sr_name, xen_session_2, self)

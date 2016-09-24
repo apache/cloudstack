@@ -68,20 +68,20 @@ def _set_supports_resign_for_table(supports_resign, db_connection, table):
     # make sure you can connect to MySQL: https://teamtreehouse.com/community/cant-connect-remotely-to-mysql-server-with-mysql-workbench
     db_connection.execute(sql_query)
 
-def purge_solidfire_volumes(sf_client):
-    deleted_volumes = sf_client.list_deleted_volumes()
+def purge_solidfire_volumes(sfe):
+    deleted_volumes = sfe.list_deleted_volumes()
 
-    for deleted_volume in deleted_volumes:
-        sf_client.purge_deleted_volume(deleted_volume['volumeID'])
+    for deleted_volume in deleted_volumes.volumes:
+        sfe.purge_deleted_volume(deleted_volume.volume_id)
 
-def get_not_active_sf_volumes(sf_client, sf_account_id=None):
+def get_not_active_sf_volumes(sfe, sf_account_id=None):
     if sf_account_id is not None:
-        sf_volumes = sf_client.list_volumes_for_account(sf_account_id)
+        sf_volumes = sfe.list_volumes_for_account(sf_account_id).volumes
 
         if sf_volumes is not None and len(sf_volumes) > 0:
             sf_volumes = _get_not_active_sf_volumes_only(sf_volumes)
     else:
-        sf_volumes = sf_client.list_deleted_volumes()
+        sf_volumes = sfe.list_deleted_volumes().volumes
 
     return sf_volumes
 
@@ -89,19 +89,19 @@ def _get_not_active_sf_volumes_only(sf_volumes):
     not_active_sf_volumes_only = []
 
     for sf_volume in sf_volumes:
-        if sf_volume["status"] != "active":
+        if sf_volume.status != "active":
             not_active_sf_volumes_only.append(sf_volume)
 
     return not_active_sf_volumes_only
 
-def get_active_sf_volumes(sf_client, sf_account_id=None):
+def get_active_sf_volumes(sfe, sf_account_id=None):
     if sf_account_id is not None:
-        sf_volumes = sf_client.list_volumes_for_account(sf_account_id)
+        sf_volumes = sfe.list_volumes_for_account(sf_account_id).volumes
 
         if sf_volumes is not None and len(sf_volumes) > 0:
             sf_volumes = _get_active_sf_volumes_only(sf_volumes)
     else:
-        sf_volumes = sf_client.list_active_volumes()
+        sf_volumes = sfe.list_active_volumes().volumes
 
     return sf_volumes
 
@@ -109,7 +109,7 @@ def _get_active_sf_volumes_only(sf_volumes):
     active_sf_volumes_only = []
 
     for sf_volume in sf_volumes:
-        if sf_volume["status"] == "active":
+        if sf_volume.status == "active":
             active_sf_volumes_only.append(sf_volume)
 
     return active_sf_volumes_only
@@ -118,7 +118,7 @@ def check_and_get_sf_volume(sf_volumes, sf_volume_name, obj_assert, should_exist
     sf_volume = None
 
     for volume in sf_volumes:
-        if volume['name'] == sf_volume_name:
+        if volume.name == sf_volume_name:
             sf_volume = volume
             break
 
@@ -155,13 +155,13 @@ def check_xen_sr(xen_sr_name, xen_session, obj_assert, should_exist=True):
 
 def check_vag(sf_volume, sf_vag_id, obj_assert):
     obj_assert.assertEqual(
-        len(sf_volume['volumeAccessGroups']),
+        len(sf_volume.volume_access_groups),
         1,
         "The volume should only be in one VAG."
     )
 
     obj_assert.assertEqual(
-        sf_volume['volumeAccessGroups'][0],
+        sf_volume.volume_access_groups[0],
         sf_vag_id,
         "The volume is not in the VAG with the following ID: " + str(sf_vag_id) + "."
     )
@@ -185,21 +185,21 @@ def format_iqn(iqn):
 
 def check_size_and_iops(sf_volume, cs_volume, size, obj_assert):
     obj_assert.assertEqual(
-        sf_volume['qos']['minIOPS'],
+        sf_volume.qos.min_iops,
         cs_volume.miniops,
-        "Check QoS - Min IOPS: " + str(sf_volume['qos']['minIOPS'])
+        "Check QoS - Min IOPS: " + str(sf_volume.qos.min_iops)
     )
 
     obj_assert.assertEqual(
-        sf_volume['qos']['maxIOPS'],
+        sf_volume.qos.max_iops,
         cs_volume.maxiops,
-        "Check QoS - Max IOPS: " + str(sf_volume['qos']['maxIOPS'])
+        "Check QoS - Max IOPS: " + str(sf_volume.qos.max_iops)
     )
 
     obj_assert.assertEqual(
-        sf_volume['totalSize'],
+        sf_volume.total_size,
         size,
-        "Check SolidFire volume size: " + str(sf_volume['totalSize'])
+        "Check SolidFire volume size: " + str(sf_volume.total_size)
     )
 
 def get_volume_size_with_hsr(cs_api, cs_volume, obj_assert):

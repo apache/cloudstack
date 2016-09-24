@@ -21,6 +21,8 @@ import SignedAPICall
 import time
 import XenAPI
 
+from solidfire.factory import ElementFactory
+
 from util import sf_util
 
 # All tests inherit from cloudstackTestCase
@@ -36,8 +38,6 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_hosts, li
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
-
-from solidfire import solidfire_element_api as sf_api
 
 # Prerequisites:
 #  Only one zone
@@ -59,12 +59,10 @@ class TestData:
     diskSize = "disksize"
     domainId = "domainId"
     hypervisor = "hypervisor"
-    login = "login"
     mvip = "mvip"
     name = "name"
     newHost = "newHost"
     newHostDisplayName = "newHostDisplayName"
-    osType = "ostype"
     password = "password"
     podId = "podid"
     port = "port"
@@ -89,7 +87,7 @@ class TestData:
         self.testdata = {
             TestData.solidFire: {
                 TestData.mvip: "192.168.139.112",
-                TestData.login: "admin",
+                TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
@@ -170,7 +168,6 @@ class TestData:
                 "diskname": "testvolume2",
             },
             TestData.newHostDisplayName: "XenServer-6.5-3",
-            TestData.osType: "CentOS 5.6(64-bit) no GUI (XenServer)",
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
@@ -186,7 +183,9 @@ class TestAddRemoveHosts(cloudstackTestCase):
     def setUpClass(cls):
         # Set up API client
         testclient = super(TestAddRemoveHosts, cls).getClsTestClient()
+
         cls.apiClient = testclient.getApiClient()
+        cls.configData = testclient.getParsedTestDataConfig()
         cls.dbConnection = testclient.getDbConnection()
 
         cls.testdata = TestData().testdata
@@ -203,12 +202,14 @@ class TestAddRemoveHosts(cloudstackTestCase):
         cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
 
         # Set up SolidFire connection
-        cls.sf_client = sf_api.SolidFireAPI(endpoint_dict=cls.testdata[TestData.solidFire])
+        solidfire = cls.testdata[TestData.solidFire]
+
+        cls.sfe = ElementFactory.create(solidfire[TestData.mvip], solidfire[TestData.username], solidfire[TestData.password])
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, cls.testdata[TestData.osType])
+        cls.template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -249,7 +250,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
         try:
             cleanup_resources(cls.apiClient, cls._cleanup)
 
-            sf_util.purge_solidfire_volumes(cls.sf_client)
+            sf_util.purge_solidfire_volumes(cls.sfe)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
@@ -423,8 +424,8 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         self._perform_add_remove_host(primary_storage_2.id, sf_iscsi_name)
 
-    def _perform_add_remove_host(self, primary_storage_id, sf_iscsi_name):
-        xen_sr = self.xen_session.xenapi.SR.get_by_name_label(sf_iscsi_name)[0]
+    def _perform_add_remove_host(self, primary_storage_id, sr_name):
+        xen_sr = self.xen_session.xenapi.SR.get_by_name_label(sr_name)[0]
 
         pbds = self.xen_session.xenapi.SR.get_PBDs(xen_sr)
 
@@ -651,10 +652,10 @@ class TestAddRemoveHosts(cloudstackTestCase):
         return sf_vag_id
 
     def _get_sf_vag(self, sf_vag_id):
-        return self.sf_client.list_volume_access_groups(sf_vag_id, 1)["volumeAccessGroups"][0]
+        return self.sfe.list_volume_access_groups(sf_vag_id, 1).volume_access_groups[0]
 
     def _get_sf_vag_initiators(self, sf_vag):
-        return sf_vag["initiators"]
+        return sf_vag.initiators
 
     def _verifyVag(self, host_iscsi_iqns, sf_vag_initiators):
         self.assertEqual(

@@ -20,6 +20,8 @@ import random
 import SignedAPICall
 import XenAPI
 
+from solidfire.factory import ElementFactory
+
 from util import sf_util
 
 # All tests inherit from cloudstackTestCase
@@ -35,8 +37,6 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_hosts, li
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
-
-from solidfire import solidfire_element_api as sf_api
 
 # Prerequisites:
 #  Only one zone
@@ -63,7 +63,6 @@ class TestData:
     solidFire = "solidfire"
     storageTag = "SolidFire_SAN_1"
     tags = "tags"
-    templateName = "templatename"
     url = "url"
     user = "user"
     username = "username"
@@ -76,7 +75,7 @@ class TestData:
         self.testdata = {
             TestData.solidFire: {
                 TestData.mvip: "192.168.139.112",
-                TestData.login: "admin",
+                TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
@@ -211,7 +210,6 @@ class TestData:
             "volume2": {
                 "diskname": "testvolume2",
             },
-            TestData.templateName: "CentOS 5.6(64-bit) no GUI (XenServer)",
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
@@ -237,7 +235,9 @@ class TestVMSnapshots(cloudstackTestCase):
     def setUpClass(cls):
         # Set up API client
         testclient = super(TestVMSnapshots, cls).getClsTestClient()
+
         cls.apiClient = testclient.getApiClient()
+        cls.configData = testclient.getParsedTestDataConfig()
 
         cls.testdata = TestData().testdata
 
@@ -252,11 +252,13 @@ class TestVMSnapshots(cloudstackTestCase):
         cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
 
         # Set up SolidFire connection
-        cls.sf_client = sf_api.SolidFireAPI(endpoint_dict=cls.testdata[TestData.solidFire])
+        solidfire = cls.testdata[TestData.solidFire]
+
+        cls.sfe = ElementFactory.create(solidfire[TestData.mvip], solidfire[TestData.username], solidfire[TestData.password])
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
-        template = get_template(cls.apiClient, cls.zone.id, template_name=cls.testdata[TestData.templateName])
+        template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -332,7 +334,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
             cls.primary_storage.delete(cls.apiClient)
 
-            sf_util.purge_solidfire_volumes(cls.sf_client)
+            sf_util.purge_solidfire_volumes(cls.sfe)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
