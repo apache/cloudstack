@@ -231,6 +231,7 @@ public class StoragePoolVO implements StoragePool {
         this.managed = managed;
     }
 
+    @Override
     public boolean isManaged() {
         return managed;
     }

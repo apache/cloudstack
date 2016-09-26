@@ -43,6 +43,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -101,6 +102,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.Storage;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
@@ -239,6 +241,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     TemplateDataStoreDao _tmplStoreDao;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
+    @Inject
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -309,6 +313,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     KeystoreManager.Certificates certs = _keystoreMgr.getCertificates(ConsoleProxyManager.CERTIFICATE_NAME);
                     setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, certs);
                 }
+
+                Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
+                setupCmd.setNfsVersion(nfsVersion);
 
                 //template/volume file upload key
                 String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
@@ -516,6 +523,76 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return null;
     }
 
+    /**
+     * Get the default network for the secondary storage VM, based on the zone it is in. Delegates to
+     * either {@link #getDefaultNetworkForZone(DataCenter)} or {@link #getDefaultNetworkForAdvancedSGZone(DataCenter)},
+     * depending on the zone network type and whether or not security groups are enabled in the zone.
+     * @param dc - The zone (DataCenter) of the secondary storage VM.
+     * @return The default network for use with the secondary storage VM.
+     */
+    protected NetworkVO getDefaultNetworkForCreation(DataCenter dc) {
+        if (dc.getNetworkType() == NetworkType.Advanced) {
+            return getDefaultNetworkForAdvancedZone(dc);
+        } else {
+            return getDefaultNetworkForBasicZone(dc);
+        }
+    }
+
+    /**
+     * Get default network for a secondary storage VM starting up in an advanced zone. If the zone
+     * is security group-enabled, the first network found that supports SG services is returned.
+     * If the zone is not SG-enabled, the Public network is returned.
+     * @param dc - The zone.
+     * @return The selected default network.
+     * @throws CloudRuntimeException - If the zone is not a valid choice or a network couldn't be found.
+     */
+    protected NetworkVO getDefaultNetworkForAdvancedZone(DataCenter dc) {
+        if (dc.getNetworkType() != NetworkType.Advanced) {
+            throw new CloudRuntimeException("Zone " + dc + " is not advanced.");
+        }
+
+        if (dc.isSecurityGroupEnabled()) {
+            List<NetworkVO> networks = _networkDao.listByZoneSecurityGroup(dc.getId());
+            if (CollectionUtils.isEmpty(networks)) {
+                throw new CloudRuntimeException("Can not found security enabled network in SG Zone " + dc);
+            }
+
+            return networks.get(0);
+        }
+        else {
+            TrafficType defaultTrafficType = TrafficType.Public;
+            List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dc.getId(), defaultTrafficType);
+            // api should never allow this situation to happen
+            if (defaultNetworks.size() != 1) {
+                throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type " + defaultTrafficType + " when expect to find 1");
+            }
+
+            return defaultNetworks.get(0);
+        }
+    }
+
+    /**
+     * Get default network for secondary storage VM for starting up in a basic zone. Basic zones select
+     * the Guest network whether or not the zone is SG-enabled.
+     * @param dc - The zone.
+     * @return The default network according to the zone's network selection rules.
+     * @throws CloudRuntimeException - If the zone is not a valid choice or a network couldn't be found.
+     */
+    protected NetworkVO getDefaultNetworkForBasicZone(DataCenter dc) {
+        if (dc.getNetworkType() != NetworkType.Basic) {
+            throw new CloudRuntimeException("Zone " + dc + "is not basic.");
+        }
+
+        TrafficType defaultTrafficType = TrafficType.Guest;
+        List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dc.getId(), defaultTrafficType);
+        // api should never allow this situation to happen
+        if (defaultNetworks.size() != 1) {
+            throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type " + defaultTrafficType + " when expect to find 1");
+        }
+
+        return defaultNetworks.get(0);
+    }
+
     protected Map<String, Object> createSecStorageVmInstance(long dataCenterId, SecondaryStorageVm.Role role) {
         DataStore secStore = _dataStoreMgr.getImageStore(dataCenterId);
         if (secStore == null) {
@@ -531,26 +608,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
-        NetworkVO defaultNetwork = null;
-        if (dc.getNetworkType() == NetworkType.Advanced && dc.isSecurityGroupEnabled()) {
-            List<NetworkVO> networks = _networkDao.listByZoneSecurityGroup(dataCenterId);
-            if (networks == null || networks.size() == 0) {
-                throw new CloudRuntimeException("Can not found security enabled network in SG Zone " + dc);
-            }
-            defaultNetwork = networks.get(0);
-        } else {
-            TrafficType defaultTrafficType = TrafficType.Public;
-
-            if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
-                defaultTrafficType = TrafficType.Guest;
-            }
-            List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
-            // api should never allow this situation to happen
-            if (defaultNetworks.size() != 1) {
-                throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type " + defaultTrafficType + " when expect to find 1");
-            }
-            defaultNetwork = defaultNetworks.get(0);
-        }
+        NetworkVO defaultNetwork = getDefaultNetworkForCreation(dc);
 
         List<? extends NetworkOffering> offerings = null;
         if (_sNwMgr.isStorageIpRangeAvailable(dataCenterId)) {
@@ -983,7 +1041,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         if (secStorageVm.getState() == State.Running && secStorageVm.getHostId() != null) {
-            final RebootCommand cmd = new RebootCommand(secStorageVm.getInstanceName());
+            final RebootCommand cmd = new RebootCommand(secStorageVm.getInstanceName(), _itMgr.getExecuteInSequence(secStorageVm.getHypervisorType()));
             final Answer answer = _agentMgr.easySend(secStorageVm.getHostId(), cmd);
 
             if (answer != null && answer.getResult()) {
@@ -1046,7 +1104,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
-
         SecondaryStorageVmVO vm = _secStorageVmDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
@@ -1131,6 +1188,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
+        Integer nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStore.getId()) : null;
+        buf.append(" nfsVersion=").append(nfsVersion);
 
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
@@ -1430,4 +1489,5 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public void setSecondaryStorageVmAllocators(List<SecondaryStorageVmAllocator> ssVmAllocators) {
         _ssVmAllocators = ssVmAllocators;
     }
+
 }

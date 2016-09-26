@@ -26,9 +26,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
 
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.http.StatusLine;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 
@@ -93,7 +93,7 @@ public class BrocadeVcsApiTest {
         when(response.getEntity()).thenReturn(new StringEntity(OUTPUT_XML_RESPONSE));
 
         // Execute
-        Output result = api.getSwitchStatus();
+        final Output result = api.getSwitchStatus();
 
         // Assert
         verify(method, times(1)).releaseConnection();

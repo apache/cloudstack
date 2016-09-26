@@ -44,7 +44,7 @@ import com.cloud.utils.db.TransactionLegacy;
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
     private static final Logger s_logger = Logger.getLogger(AccountDaoImpl.class);
     private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.username, u.account_id, u.secret_key, u.state, "
-        + "a.id, a.account_name, a.type, a.domain_id, a.state " + "FROM `cloud`.`user` u, `cloud`.`account` a "
+        + "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state " + "FROM `cloud`.`user` u, `cloud`.`account` a "
         + "WHERE u.account_id = a.id AND u.api_key = ? and u.removed IS NULL";
 
     protected final SearchBuilder<AccountVO> AllFieldsSearch;
@@ -53,6 +53,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     protected final SearchBuilder<AccountVO> CleanupForRemovedAccountsSearch;
     protected final SearchBuilder<AccountVO> CleanupForDisabledAccountsSearch;
     protected final SearchBuilder<AccountVO> NonProjectAccountSearch;
+    protected final SearchBuilder<AccountVO> AccountByRoleSearch;
     protected final GenericSearchBuilder<AccountVO, Long> AccountIdsSearch;
 
     public AccountDaoImpl() {
@@ -96,6 +97,10 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         AccountIdsSearch.selectFields(AccountIdsSearch.entity().getId());
         AccountIdsSearch.and("ids", AccountIdsSearch.entity().getDomainId(), Op.IN);
         AccountIdsSearch.done();
+
+        AccountByRoleSearch = createSearchBuilder();
+        AccountByRoleSearch.and("roleId", AccountByRoleSearch.entity().getRoleId(), SearchCriteria.Op.EQ);
+        AccountByRoleSearch.done();
     }
 
     @Override
@@ -140,8 +145,9 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
                 AccountVO a = new AccountVO(rs.getLong(6));
                 a.setAccountName(rs.getString(7));
                 a.setType(rs.getShort(8));
-                a.setDomainId(rs.getLong(9));
-                a.setState(State.valueOf(rs.getString(10)));
+                a.setRoleId(rs.getLong(9));
+                a.setDomainId(rs.getLong(10));
+                a.setState(State.valueOf(rs.getString(11)));
 
                 userAcctPair = new Pair<User, Account>(u, a);
             }
@@ -255,6 +261,13 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     public List<AccountVO> findActiveAccountsForDomain(Long domain) {
         SearchCriteria<AccountVO> sc = DomainAccountsSearch.create();
         sc.setParameters("domainId", domain);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AccountVO> findAccountsByRole(Long roleId) {
+        SearchCriteria<AccountVO> sc = AccountByRoleSearch.create();
+        sc.setParameters("roleId", roleId);
         return listBy(sc);
     }
 

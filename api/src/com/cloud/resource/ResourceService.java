@@ -18,6 +18,7 @@ package com.cloud.resource;
 
 import java.util.List;
 
+import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
@@ -91,6 +92,8 @@ public interface ResourceService {
     Host getHost(long hostId);
 
     Cluster getCluster(Long clusterId);
+
+    DataCenter getZone(Long zoneId);
 
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 

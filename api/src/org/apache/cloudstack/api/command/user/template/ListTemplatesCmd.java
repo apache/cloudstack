@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.template;
 
 import org.apache.log4j.Logger;
 
+import java.util.List;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -49,6 +50,9 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the template ID")
     private Long id;
+
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=TemplateResponse.class, description="the IDs of the templates, mutually exclusive with id", since = "4.9")
+    private List<Long> ids;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the template name")
     private String templateName;
@@ -131,5 +135,9 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
         ListResponse<TemplateResponse> response = _queryService.listTemplates(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    public List<Long> getIds() {
+        return ids;
     }
 }

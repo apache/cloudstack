@@ -805,13 +805,13 @@ class TestVolumeSnapshot(cloudstackTestCase):
             event_list_validation_result[2])
         self.debug("Events list contains event SNAPSHOT.CREATE")
 
+	self.testdata["volume"]["zoneid"] = self.zone.id
         volumeFromSnap = Volume.create_from_snapshot(
             self.apiclient,
             data_vol_snap.id,
             self.testdata["volume"],
             account=self.account.name,
             domainid=self.account.domainid,
-            zoneid=self.zone.id
         )
 
         self.assertTrue(
@@ -926,13 +926,13 @@ class TestVolumeSnapshot(cloudstackTestCase):
             "Check resource id in list resources call"
         )
 
+	self.testdata["volume"]["zoneid"] = self.zone.id
         volumeFromSnap_2 = Volume.create_from_snapshot(
             self.apiclient,
             data_vol_snap_2.id,
             self.testdata["volume"],
             account=self.account.name,
             domainid=self.account.domainid,
-            zoneid=self.zone.id
         )
 
         self.vm_2.attach_volume(

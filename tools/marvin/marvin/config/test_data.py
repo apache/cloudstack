@@ -735,6 +735,34 @@ test_data = {
         "publicport": 22,
         "protocol": 'TCP'
     },
+    "internal_lbrule": {
+        "name": "SSH",
+        "algorithm": "roundrobin",
+        # Algorithm used for load balancing
+        "sourceport": 22,
+        "instanceport": 22,
+        "scheme": "internal",
+        "protocol": "TCP",
+        "cidrlist": '0.0.0.0/0',
+    },
+    "internal_lbrule_http": {
+        "name": "HTTP",
+        "algorithm": "roundrobin",
+        # Algorithm used for load balancing
+        "sourceport": 80,
+        "instanceport": 80,
+        "scheme": "internal",
+        "protocol": "TCP",
+        "cidrlist": '0.0.0.0/0',
+    },
+    "http_rule": {
+        "privateport": 80,
+        "publicport": 80,
+        "startport": 80,
+        "endport": 80,
+        "protocol": "TCP",
+        "cidrlist": '0.0.0.0/0',
+    },
     "icmprule": {
         "icmptype": -1,
         "icmpcode": -1,
@@ -1695,5 +1723,101 @@ test_data = {
                     "ostype": 'CentOS 5.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
                 }
+        },
+    # Nuage VSP SDN plugin specific test data
+    "nuagevsp": {
+        # Services supported by the Nuage VSP plugin for Isolated networks
+        "isolated_network_offering": {
+            "name": 'nuage_marvin',
+            "displaytext": 'nuage_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "serviceProviderList": {
+                "Dhcp": 'NuageVsp',
+                "StaticNat": 'NuageVsp',
+                "SourceNat": 'NuageVsp',
+                "Firewall": 'NuageVsp',
+                "Connectivity": 'NuageVsp',
+                "UserData": 'VirtualRouter'
+            },
+            "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
+        # Services supported by the Nuage VSP plugin for VPC networks
+        "vpc_network_offering": {
+            "name": 'nuage_vpc_marvin',
+            "displaytext": 'nuage_vpc_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "useVpc": 'on',
+            "ispersistent": 'True',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "VpcVirtualRouter"
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
+        "vpc_network_offering_internal_lb": {
+            "name": "nuage_vpc_marvin_internal_lb",
+            "displaytext": "nuage_vpc_marvin_internal_lb",
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "useVpc": 'on',
+            "ispersistent": 'True',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "Lb": "InternalLbVm",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "VpcVirtualRouter"
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"},
+                "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
+            }
+        },
+        # Services supported by the Nuage VSP plugin for VPCs
+        "vpc_offering": {
+            "name": 'Nuage VSP VPC offering',
+            "displaytext": 'Nuage VSP VPC offering',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "VpcVirtualRouter"
+            }
+        },
+        "vpc_offering_lb": {
+            "name": 'Nuage VSP VPC offering with Lb',
+            "displaytext": 'Nuage VSP VPC offering with Lb',
+            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "Lb": "InternalLbVm",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "VpcVirtualRouter"
+            }
         }
+    }
 }

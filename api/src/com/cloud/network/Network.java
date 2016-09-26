@@ -41,6 +41,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         Shared, Isolated
     }
 
+    public String updatingInSequence ="updatingInSequence";
+
     public static class Service {
         private static List<Service> supportedServices = new ArrayList<Service>();
 

@@ -99,4 +99,5 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     public void setTemplateId(long templateId) {
         _templateId = templateId;
     }
+
 }

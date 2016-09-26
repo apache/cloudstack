@@ -66,6 +66,10 @@ public class SecondaryStorageListener implements Listener {
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
         if ((cmd instanceof StartupStorageCommand)) {
             StartupStorageCommand scmd = (StartupStorageCommand)cmd;
@@ -89,6 +93,14 @@ public class SecondaryStorageListener implements Listener {
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

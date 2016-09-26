@@ -281,7 +281,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, eventDescription = "removing remote access vpn", async = true)
-    public boolean destroyRemoteAccessVpnForIp(long ipId, Account caller) throws ResourceUnavailableException {
+    public boolean destroyRemoteAccessVpnForIp(long ipId, Account caller, final boolean forceCleanup) throws ResourceUnavailableException {
         final RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipId);
         if (vpn == null) {
             s_logger.debug("there are no Remote access vpns for public ip address id=" + ipId);
@@ -309,7 +309,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                     RemoteAccessVpn.State.Running);
             success = false;
         } finally {
-            if (success) {
+            if (success|| forceCleanup) {
                 //Cleanup corresponding ports
                 final List<? extends FirewallRule> vpnFwRules = _rulesDao.listByIpAndPurpose(ipId, Purpose.Vpn);
 
@@ -339,7 +339,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                     success = _firewallMgr.applyIngressFirewallRules(ipId, caller);
                 }
 
-                if (success) {
+                if (success|| forceCleanup) {
                     try {
                         Transaction.execute(new TransactionCallbackNoReturn() {
                             @Override

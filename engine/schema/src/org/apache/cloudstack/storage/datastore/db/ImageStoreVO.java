@@ -51,7 +51,7 @@ public class ImageStoreVO implements ImageStore {
     @Column(name = "protocol", nullable = false)
     private String protocol;
 
-    @Column(name = "url", nullable = false)
+    @Column(name = "url", nullable = false, length = 2048)
     private String url;
 
     @Column(name = "image_provider_name", nullable = false)

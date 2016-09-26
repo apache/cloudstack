@@ -278,9 +278,16 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public boolean handleDirectConnectAgent(Host host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
+    public boolean handleDirectConnectAgent(Host host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance, boolean newHost) throws ConnectionException {
         // TODO Auto-generated method stub
         return false;
     }
 
+    @Override
+    public void notifyMonitorsOfHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void notifyMonitorsOfRemovedHost(long hostId, long clusterId) {
+    }
 }

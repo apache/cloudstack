@@ -313,7 +313,14 @@ class TestRouterServices(cloudstackTestCase):
         self.debug("Haproxy process status: %s" % res)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "advancedns",
+            "smoke",
+            "dvs"],
+        required_hardware="false")
     def test_03_restart_network_cleanup(self):
         """Test restart network
         """
@@ -323,20 +330,30 @@ class TestRouterServices(cloudstackTestCase):
         # 2. New router should have the same public IP
 
         # Find router associated with user account
-        list_router_response = list_routers(
-            self.apiclient,
-            account=self.account.name,
-            domainid=self.account.domainid
-        )
+        if self.zone.networktype.lower() == "basic":
+            list_router_response = list_routers(
+                self.apiclient,
+                listall="true"
+            )
+        else:
+            list_router_response = list_routers(
+                self.apiclient,
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
         self.assertEqual(
             isinstance(list_router_response, list),
             True,
             "Check list response returns a valid list"
         )
+
         router = list_router_response[0]
 
         # Store old values before restart
-        old_publicip = router.publicip
+        if self.zone.networktype.lower == "basic":
+            old_publicip = router.guestipaddress
+        else:
+            old_publicip = router.publicip
 
         timeout = 10
         # Network should be in Implemented or Setup stage before restart
@@ -371,11 +388,17 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient.restartNetwork(cmd)
 
         # Get router details after restart
-        list_router_response = list_routers(
-            self.apiclient,
-            account=self.account.name,
-            domainid=self.account.domainid
-        )
+        if self.zone.networktype.lower() == "basic":
+            list_router_response = list_routers(
+                self.apiclient,
+                listall="true"
+            )
+        else:
+            list_router_response = list_routers(
+                self.apiclient,
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
         self.assertEqual(
             isinstance(list_router_response, list),
             True,
@@ -383,8 +406,12 @@ class TestRouterServices(cloudstackTestCase):
         )
         router = list_router_response[0]
 
+        if self.zone.networktype.lower() == "basic":
+            new_publicip = router.guestipaddress
+        else:
+            new_publicip = router.publicip
         self.assertEqual(
-            router.publicip,
+            new_publicip,
             old_publicip,
             "Public IP of the router should remain same after network restart"
         )

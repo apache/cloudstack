@@ -44,6 +44,7 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
@@ -88,6 +89,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private String _name;
     StorageLayer _storage;
     public Map<String, Processor> _processors;
+
+    private Integer _nfsVersion;
 
     public class Completion implements DownloadCompleteCallback {
         private final String jobId;
@@ -708,7 +711,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String installPathPrefix = cmd.getInstallPath();
         // for NFS, we need to get mounted path
         if (dstore instanceof NfsTO) {
-            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl()) + File.separator + installPathPrefix;
+            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl(), _nfsVersion) + File.separator + installPathPrefix;
         }
         String user = null;
         String password = null;
@@ -982,6 +985,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
             s_logger.info("DownloadManager: starting additional services since we are inside system vm");
+            _nfsVersion = NfsSecondaryStorageResource.retrieveNfsVersionFromParams(params);
             startAdditionalServices();
             blockOutgoingOnPrivate();
         }

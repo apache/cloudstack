@@ -19,6 +19,7 @@
 db.usage.username=@DBUSER@
 db.usage.password=@DBPW@
 db.usage.host=@DBHOST@
+db.usage.driver=@DBDRIVER@
 db.usage.port=3306
 db.usage.name=cloud_usage
 

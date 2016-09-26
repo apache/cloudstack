@@ -45,7 +45,7 @@ public interface VolumeService {
         }
     }
 
-    ChapInfo getChapInfo(VolumeInfo volumeInfo, DataStore dataStore);
+    ChapInfo getChapInfo(DataObject dataObject, DataStore dataStore);
 
     boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore);
 
@@ -81,7 +81,7 @@ public interface VolumeService {
 
     VolumeEntity getVolumeEntity(long volumeId);
 
-    AsyncCallFuture<VolumeApiResult> createManagedStorageAndVolumeFromTemplateAsync(VolumeInfo volumeInfo, long destDataStoreId,
+    AsyncCallFuture<VolumeApiResult> createManagedStorageVolumeFromTemplateAsync(VolumeInfo volumeInfo, long destDataStoreId,
             TemplateInfo srcTemplateInfo, long destHostId);
 
     AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId,

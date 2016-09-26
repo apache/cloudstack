@@ -84,7 +84,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
     @Column(name = "install_path")
     private String installPath;
 
-    @Column(name = "url")
+    @Column(name = "url", length = 2048)
     private String downloadUrl;
 
     @Column(name = "is_copy")

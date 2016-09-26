@@ -22,7 +22,7 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import updateZone
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              VPC,
                              VpcOffering,
@@ -36,11 +36,13 @@ from marvin.lib.base import (Account,
                              NetworkACL,
                              NATRule,
                              Zone,
-                             StaticNATRule)
+                             StaticNATRule,
+                             VpnCustomerGateway)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                list_configurations)
+from marvin.codes import PASS
 import time
 
 
@@ -181,6 +183,13 @@ class Services:
             },
             "domain": {
                 "name": "TestDomain"
+            },
+            "vpn_customer_gw": {
+                "ipsecpsk": "s2svpn",
+                "ikepolicy": "3des-md5",
+                "ikelifetime": "86400",
+                "esppolicy": "3des-md5",
+                "esplifetime": "3600",
             },
             "ostype": 'CentOS 5.3 (64-bit)',
             # Cent OS 5.3 (64 bit)
@@ -2488,5 +2497,39 @@ class TestVPC(cloudstackTestCase):
         self.assertIsNotNone(
             vm,
             "Failed to create VM with first ip address in the CIDR as the vm ip"
+        )
+        return
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
+    def test_22_vpn_customer_gw_with_hostname(self):
+        """
+            Test to create vpn customer gateway with hostname
+            instead of gateway ip address
+        """
+        try:
+            vpnGw = VpnCustomerGateway.create(
+                self.apiclient,
+                self.services["vpn_customer_gw"],
+                name="test_vpn_customer_gw",
+                gateway="GwWithHostName",
+                cidrlist="10.1.0.0/16"
+            )
+            self.cleanup.append(vpnGw)
+        except Exception as e:
+            self.fail("Creating vpn customer gateway with hostname\
+                      Failed with error :%s" % e)
+        vpn_cgw_res = VpnCustomerGateway.list(
+            self.apiclient,
+            id=vpnGw.id
+        )
+        self.assertEqual(
+            validateList(vpn_cgw_res)[0],
+            PASS,
+            "Invalid response for list vpncustomer gateways"
+        )
+        self.assertEqual(
+            vpnGw.gateway,
+            vpn_cgw_res[0].gateway,
+            "Mismatch in vpn customer gateway names"
         )
         return

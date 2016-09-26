@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.discovery;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -38,7 +39,7 @@ import com.cloud.user.User;
             description = "lists all available apis on the server, provided by the Api Discovery plugin",
             since = "4.1.0",
             requestHasSensitiveInfo = false,
-            responseHasSensitiveInfo = false)
+            responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListApisCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListApisCmd.class.getName());

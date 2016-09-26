@@ -513,15 +513,45 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         } finally {
             // Assert
             verify(deploymentUT, times(1)).lock();
-            verify(deploymentUT, times(1)).checkPreconditions();
-            verify(deploymentUT, times(1)).findDestinations();
-            verify(deploymentUT, times(2)).generateDeploymentPlan();
+            verify(deploymentUT, times(2)).checkPreconditions();
+            verify(deploymentUT, times(2)).findDestinations();
+            verify(deploymentUT, times(3)).generateDeploymentPlan();
             verify(deploymentUT, times(2)).executeDeployment();
             //verify(deploymentUT, times(2)).planDeploymentRouters();
             verify(deploymentUT, times(1)).unlock();
         }
 
         fail();
+    }
+
+    @Test
+    public void testDeployVirtualRouterSkip() throws ConcurrentOperationException,
+    InsufficientCapacityException, ResourceUnavailableException {
+
+        // Prepare
+        final List<DeployDestination> mockDestinations = new ArrayList<>();
+        mockDestinations.add(mock(DeployDestination.class));
+        mockDestinations.add(mock(DeployDestination.class));
+
+        final RouterDeploymentDefinition deploymentUT = spy(deployment);
+        doNothing().when(deploymentUT).checkPreconditions();
+        doReturn(mockDestinations).when(deploymentUT).findDestinations();
+        doNothing().when(deploymentUT).planDeploymentRouters();
+        doNothing().when(deploymentUT).generateDeploymentPlan();
+        doReturn(0).when(deploymentUT).getNumberOfRoutersToDeploy();
+
+        // Execute
+        try {
+            deploymentUT.findOrDeployVirtualRouter();
+        } finally {
+            // Assert
+            verify(deploymentUT, times(0)).lock(); // lock shouldn't be acquired when VR already present
+            verify(deploymentUT, times(1)).checkPreconditions();
+            verify(deploymentUT, times(1)).findDestinations();
+            verify(deploymentUT, times(2)).generateDeploymentPlan();
+            verify(deploymentUT, times(0)).executeDeployment(); // no need to deploy VR as already present
+            verify(deploymentUT, times(0)).unlock(); // same as lock
+        }
     }
 
     @Test
@@ -684,7 +714,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
         when(mockNetworkHelper.deployRouter(deploymentUT, false))
         .thenReturn(routerVO1).thenReturn(routerVO2);
-
+        when(networkDetailsDao.findById(anyLong())).thenReturn(null);
         // Execute
         deploymentUT.deployAllVirtualRouters();
 

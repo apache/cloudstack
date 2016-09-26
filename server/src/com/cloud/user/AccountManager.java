@@ -50,7 +50,7 @@ public interface AccountManager extends AccountService {
 
     Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
 
-    Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid);
+    Account createAccount(String accountName, short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid);
 
     /**
      * Logs out a user

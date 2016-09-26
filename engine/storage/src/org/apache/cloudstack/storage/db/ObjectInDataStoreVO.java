@@ -78,7 +78,7 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "local_path")
     String localDownloadPath;
 
-    @Column(name = "url")
+    @Column(name = "url", length = 2048)
     private String downloadUrl;
 
     @Column(name = "format")

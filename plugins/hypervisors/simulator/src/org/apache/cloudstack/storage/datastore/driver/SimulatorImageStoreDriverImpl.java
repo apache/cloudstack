@@ -35,7 +35,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
-import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
+import org.apache.cloudstack.storage.image.NfsImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -47,7 +47,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 
-public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
+public class SimulatorImageStoreDriverImpl extends NfsImageStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(SimulatorImageStoreDriverImpl.class);
 
     @Inject
@@ -67,6 +67,7 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         NfsTO nfsTO = new NfsTO();
         nfsTO.setRole(store.getRole());
         nfsTO.setUrl(nfsStore.getUri());
+        nfsTO.setNfsVersion(getNfsVersion(nfsStore.getId()));
         return nfsTO;
     }
 

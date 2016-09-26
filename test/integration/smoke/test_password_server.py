@@ -181,12 +181,12 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
             ssh = vm.get_ssh_client(ipaddress=nat_rule.ipaddress, port=self.services[rule_label]["publicport"], retries=5)
             result = str(ssh.execute(ssh_command))
 
-            self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
+            self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count(" 0% packet loss")))
         except:
             self.fail("Failed to SSH into VM - %s" % (nat_rule.ipaddress))
 
         self.assertEqual(
-                         result.count("3 packets received"),
+                         result.count(" 0% packet loss"),
                          1,
                          "Ping to outside world from VM should be successful"
                          )

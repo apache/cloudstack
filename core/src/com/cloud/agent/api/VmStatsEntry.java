@@ -30,13 +30,19 @@ public class VmStatsEntry implements VmStats {
     double diskWriteIOs;
     double diskReadKBs;
     double diskWriteKBs;
+    double memoryKBs;
+    double intfreememoryKBs;
+    double targetmemoryKBs;
     int numCPUs;
     String entityType;
 
     public VmStatsEntry() {
     }
 
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
+    public VmStatsEntry(double memoryKBs,double intfreememoryKBs,double targetmemoryKBs, double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
+        this.memoryKBs = memoryKBs;
+        this.intfreememoryKBs = intfreememoryKBs;
+        this.targetmemoryKBs = targetmemoryKBs;
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
@@ -115,6 +121,33 @@ public class VmStatsEntry implements VmStats {
 
     public void setDiskWriteKBs(double diskWriteKBs) {
         this.diskWriteKBs = diskWriteKBs;
+    }
+
+    @Override
+    public double getMemoryKBs() {
+        return memoryKBs;
+    }
+
+    public void setMemoryKBs(double memoryKBs) {
+        this.memoryKBs = memoryKBs;
+    }
+
+    @Override
+    public double getIntFreeMemoryKBs() {
+        return intfreememoryKBs;
+    }
+
+    public void setIntFreeMemoryKBs(double intfreememoryKBs) {
+        this.intfreememoryKBs = intfreememoryKBs;
+    }
+
+    @Override
+    public double getTargetMemoryKBs() {
+        return targetmemoryKBs;
+    }
+
+    public void setTargetMemoryKBs(double targetmemoryKBs) {
+        this.targetmemoryKBs = targetmemoryKBs;
     }
 
     public int getNumCPUs() {

@@ -23,19 +23,19 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-plugins</artifactId>
-    <version>4.8.2.0-SNAPSHOT</version>
+    <version>4.10.0.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <dependencies>
     <dependency>
         <groupId>com.citrix.netscaler.nitro</groupId>
         <artifactId>nitro</artifactId>
-        <version>10.1</version>
+        <version>${cs.nitro.version}</version>
     </dependency>
     <dependency>
       <groupId>com.citrix.netscaler.nitro</groupId>
       <artifactId>sdx_nitro</artifactId>
-      <version>10.1</version>
+      <version>${cs.nitro.version}</version>
     </dependency>
   </dependencies>
 </project>

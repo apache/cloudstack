@@ -107,4 +107,5 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     public Long getSecHostId() {
         return secHostId;
     }
+
 }

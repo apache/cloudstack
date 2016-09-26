@@ -95,10 +95,10 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "install_path")
     private String installPath;
 
-    @Column(name = "url")
+    @Column(name = "url", length = 2048)
     private String downloadUrl;
 
-    @Column(name = "download_url")
+    @Column(name = "download_url", length = 2048)
     private String extractUrl;
 
     @Column(name = "download_url_created")

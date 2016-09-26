@@ -107,6 +107,10 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public final void processConnect(final Host agent, final StartupCommand cmd, final boolean forRebalance) throws ConnectionException {
         // Limit the commands we can process
         if (!(cmd instanceof StartupRoutingCommand)) {
@@ -174,6 +178,14 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
     @Override
     public final boolean processDisconnect(final long agentId, final Status state) {
         return false;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

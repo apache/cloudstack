@@ -900,6 +900,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
@@ -918,6 +922,14 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     public boolean processDisconnect(long agentId, Status state) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override
@@ -1222,7 +1234,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 requestVolumes = new ArrayList<Volume>();
                             requestVolumes.add(vol);
 
-                            if (!_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool))
+                            if (!_storageMgr.storagePoolHasEnoughIops(requestVolumes, potentialSPool) ||
+                                !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))
                                 continue;
                             volumeAllocationMap.put(potentialSPool, requestVolumes);
                         }

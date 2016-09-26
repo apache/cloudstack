@@ -48,6 +48,9 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotResponse.class, description = "lists snapshot by snapshot ID")
     private Long id;
 
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=SnapshotResponse.class, description="the IDs of the snapshots, mutually exclusive with id", since = "4.9")
+    private List<Long> ids;
+
     @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
     private String intervalType;
 
@@ -119,5 +122,9 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         response.setResponseName(getCommandName());
 
         setResponseObject(response);
+    }
+
+    public List<Long> getIds() {
+        return ids;
     }
 }

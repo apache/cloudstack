@@ -17,5 +17,5 @@
 package com.cloud.hypervisor.vmware.manager;
 
 public interface VmwareStorageMount {
-    String getMountPoint(String storageUrl);
+    String getMountPoint(String storageUrl, Integer nfsVersion);
 }

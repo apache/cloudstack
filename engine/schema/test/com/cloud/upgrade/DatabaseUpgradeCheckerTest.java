@@ -23,6 +23,7 @@ import com.cloud.upgrade.dao.Upgrade461to470;
 import com.cloud.upgrade.dao.Upgrade470to471;
 import com.cloud.upgrade.dao.Upgrade471to480;
 import com.cloud.upgrade.dao.Upgrade480to481;
+import com.cloud.upgrade.dao.Upgrade490to4910;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.junit.Test;
 
@@ -47,49 +48,28 @@ public class DatabaseUpgradeCheckerTest {
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
 
         assertNotNull(upgrades);
-        assertEquals(1, upgrades.length);
+        assertTrue(upgrades.length >= 1);
         assertTrue(upgrades[0] instanceof Upgrade480to481);
 
     }
 
     @Test
-    public void testCalculateUpgradePath480to4820() {
+    public void testCalculateUpgradePath490to4910() {
 
-        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.8.0");
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.9.0");
         assertNotNull(dbVersion);
 
-        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.8.2.0");
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.9.1.0");
         assertNotNull(currentVersion);
 
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
 
         assertNotNull(upgrades);
-        assertEquals(2, upgrades.length);
+        assertTrue(upgrades.length >= 1);
+        assertTrue(upgrades[0] instanceof Upgrade490to4910);
 
-        assertTrue(upgrades[0] instanceof Upgrade480to481);
-
-        assertTrue(Arrays.equals(new String[] { "4.8.1", currentVersion.toString()}, upgrades[1].getUpgradableVersionRange()));
-        assertEquals(currentVersion.toString(), upgrades[1].getUpgradedVersion());
-
-    }
-
-    @Test
-    public void testCalculateUpgradePath481to4820() {
-
-        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.8.1");
-        assertNotNull(dbVersion);
-
-        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.8.2.0");
-        assertNotNull(currentVersion);
-
-        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
-        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
-
-        assertNotNull(upgrades);
-        assertEquals(1, upgrades.length);
-
-        assertTrue(Arrays.equals(new String[] { "4.8.1", currentVersion.toString()}, upgrades[0].getUpgradableVersionRange()));
+        assertTrue(Arrays.equals(new String[] { "4.9.0", currentVersion.toString()}, upgrades[0].getUpgradableVersionRange()));
         assertEquals(currentVersion.toString(), upgrades[0].getUpgradedVersion());
 
     }
@@ -107,7 +87,6 @@ public class DatabaseUpgradeCheckerTest {
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
 
         assertNotNull(upgrades);
-        assertEquals(3, upgrades.length);
 
         assertTrue(upgrades[0] instanceof Upgrade470to471);
         assertTrue(upgrades[1] instanceof Upgrade471to480);
@@ -116,19 +95,18 @@ public class DatabaseUpgradeCheckerTest {
     }
 
     @Test
-    public void testFindUpgradePath452to4820() {
+    public void testFindUpgradePath452to490() {
 
         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.5.2");
         assertNotNull(dbVersion);
 
-        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.8.2.0");
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.9.0");
         assertNotNull(currentVersion);
 
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
 
         assertNotNull(upgrades);
-        assertEquals(7, upgrades.length);
 
         assertTrue(upgrades[0] instanceof Upgrade452to460);
         assertTrue(upgrades[1] instanceof Upgrade460to461);

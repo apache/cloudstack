@@ -21,13 +21,19 @@ package com.cloud.template;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.configuration.Resource;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.projects.ProjectManager;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
@@ -54,6 +60,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -66,6 +73,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -77,6 +86,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -102,11 +113,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.eq;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -132,6 +145,21 @@ public class TemplateManagerImplTest {
 
     @Inject
     PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Inject
+    ResourceLimitService resourceLimitMgr;
+
+    @Inject
+    ImageStoreDao imgStoreDao;
+
+    @Inject
+    GuestOSDao guestOSDao;
+
+    @Inject
+    VMTemplateDao tmpltDao;
+
+    @Inject
+    SnapshotDao snapshotDao;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -357,6 +385,58 @@ public class TemplateManagerImplTest {
         assertTrue("Test template is scheduled for seeding to on pool", ((CustomThreadPoolExecutor) preloadExecutor).getCount() == 2);
     }
 
+    @Test
+    public void testCreatePrivateTemplateRecordForRegionStore() throws ResourceAllocationException {
+
+        CreateTemplateCmd mockCreateCmd = mock(CreateTemplateCmd.class);
+        when(mockCreateCmd.getTemplateName()).thenReturn("test");
+        when(mockCreateCmd.getTemplateTag()).thenReturn(null);
+        when(mockCreateCmd.getBits()).thenReturn(64);
+        when(mockCreateCmd.getRequiresHvm()).thenReturn(true);
+        when(mockCreateCmd.isPasswordEnabled()).thenReturn(false);
+        when(mockCreateCmd.isPublic()).thenReturn(false);
+        when(mockCreateCmd.isFeatured()).thenReturn(false);
+        when(mockCreateCmd.isDynamicallyScalable()).thenReturn(false);
+        when(mockCreateCmd.getVolumeId()).thenReturn(null);
+        when(mockCreateCmd.getSnapshotId()).thenReturn(1L);
+        when(mockCreateCmd.getOsTypeId()).thenReturn(1L);
+        when(mockCreateCmd.getEventDescription()).thenReturn("test");
+        when(mockCreateCmd.getDetails()).thenReturn(null);
+
+        Account mockTemplateOwner = mock(Account.class);
+
+        SnapshotVO mockSnapshot = mock(SnapshotVO.class);
+        when(snapshotDao.findById(anyLong())).thenReturn(mockSnapshot);
+
+        when(mockSnapshot.getVolumeId()).thenReturn(1L);
+        when(mockSnapshot.getState()).thenReturn(Snapshot.State.BackedUp);
+        when(mockSnapshot.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+
+        doNothing().when(resourceLimitMgr).checkResourceLimit(any(Account.class), eq(Resource.ResourceType.template));
+        doNothing().when(resourceLimitMgr).checkResourceLimit(any(Account.class), eq(Resource.ResourceType.secondary_storage), anyLong());
+
+        GuestOSVO mockGuestOS = mock(GuestOSVO.class);
+        when(guestOSDao.findById(anyLong())).thenReturn(mockGuestOS);
+
+        when(tmpltDao.getNextInSequence(eq(Long.class), eq("id"))).thenReturn(1L);
+
+        List<ImageStoreVO> mockRegionStores = new ArrayList<>();
+        ImageStoreVO mockRegionStore = mock(ImageStoreVO.class);
+        mockRegionStores.add(mockRegionStore);
+        when(imgStoreDao.findRegionImageStores()).thenReturn(mockRegionStores);
+
+        when(tmpltDao.persist(any(VMTemplateVO.class))).thenAnswer(new Answer<VMTemplateVO>() {
+            @Override
+            public VMTemplateVO answer(InvocationOnMock invocationOnMock) throws Throwable {
+                Object[] args = invocationOnMock.getArguments();
+                return (VMTemplateVO)args[0];
+            }
+        });
+
+        VMTemplateVO template = templateManager.createPrivateTemplateRecord(mockCreateCmd, mockTemplateOwner);
+        assertTrue("Template in a region store should have cross zones set", template.isCrossZones());
+    }
+
     @Configuration
     @ComponentScan(basePackageClasses = {TemplateManagerImpl.class},
             includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
@@ -521,6 +601,11 @@ public class TemplateManagerImplTest {
         @Bean
         public SnapshotDataStoreDao snapshotStoreDao() {
             return Mockito.mock(SnapshotDataStoreDao.class);
+        }
+
+        @Bean
+        public ImageStoreDao imageStoreDao() {
+            return Mockito.mock(ImageStoreDao.class);
         }
 
         @Bean

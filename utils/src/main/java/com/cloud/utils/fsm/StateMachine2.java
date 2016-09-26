@@ -45,10 +45,20 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
 
     }
 
+    public void addInitialTransition(E event, S toState) {
+        addTransition(null, event, toState);
+    }
+
     public void addTransition(S currentState, E event, S toState) {
       addTransition(new Transition<S, E>(currentState, event, toState, null));
     }
 
+    @SafeVarargs
+    public final void addTransitionFromStates(E event, S toState, S... fromStates) {
+        for (S fromState : fromStates) {
+            addTransition(fromState, event, toState);
+        }
+    }
 
     public void addTransition(Transition<S, E> transition) {
       S currentState = transition.getCurrentState();

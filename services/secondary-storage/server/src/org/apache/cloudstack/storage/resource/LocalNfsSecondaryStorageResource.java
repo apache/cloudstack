@@ -53,10 +53,10 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     }
 
     @Override
-    synchronized public String getRootDir(String secUrl) {
+    synchronized public String getRootDir(String secUrl, Integer nfsVersion) {
         try {
             URI uri = new URI(secUrl);
-            String dir = mountUri(uri);
+            String dir = mountUri(uri, nfsVersion);
             return _parent + "/" + dir;
         } catch (Exception e) {
             String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
@@ -66,14 +66,14 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     }
 
     @Override
-    protected void mount(String localRootPath, String remoteDevice, URI uri) {
+    protected void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
         ensureLocalRootPathExists(localRootPath, uri);
 
         if (mountExists(localRootPath, uri)) {
             return;
         }
 
-        attemptMount(localRootPath, remoteDevice, uri);
+        attemptMount(localRootPath, remoteDevice, uri, nfsVersion);
 
         // Change permissions for the mountpoint - seems to bypass authentication
         Script script = new Script(true, "chmod", _timeout, s_logger);

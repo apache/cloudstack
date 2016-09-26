@@ -191,6 +191,7 @@ import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.HostPodVO;
@@ -342,6 +343,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private ClusterDetailsDao _clusterDetailsDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1053,6 +1056,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         String memoryOvercommitRatio = ApiDBUtils.findClusterDetails(cluster.getId(), "memoryOvercommitRatio");
         clusterResponse.setCpuOvercommitRatio(cpuOvercommitRatio);
         clusterResponse.setMemoryOvercommitRatio(memoryOvercommitRatio);
+        clusterResponse.setResourceDetails(_clusterDetailsDao.findDetails(cluster.getId()));
 
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());
@@ -1388,7 +1392,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
         List<TemplateJoinVO> tvo = null;
-        if (zoneId == null || zoneId == -1) {
+        if (zoneId == null || zoneId == -1 || result.isCrossZones()) {
             tvo = ApiDBUtils.newTemplateView(result);
         } else {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);

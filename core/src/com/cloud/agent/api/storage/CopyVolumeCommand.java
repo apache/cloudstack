@@ -19,11 +19,10 @@
 
 package com.cloud.agent.api.storage;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
 
-public class CopyVolumeCommand extends Command {
+public class CopyVolumeCommand extends StorageNfsVersionCommand {
 
     long volumeId;
     String volumePath;
@@ -75,4 +74,5 @@ public class CopyVolumeCommand extends Command {
     public String getVmName() {
         return vmName;
     }
+
 }

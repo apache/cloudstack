@@ -499,7 +499,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 SocketChannel ch1 = null;
                 try {
                     ch1 = SocketChannel.open(new InetSocketAddress(addr, Port.value()));
-                    ch1.configureBlocking(true); // make sure we are working at blocking mode
+                    ch1.configureBlocking(false);
                     ch1.socket().setKeepAlive(true);
                     ch1.socket().setSoTimeout(60 * 1000);
                     try {
@@ -507,8 +507,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         sslEngine = sslContext.createSSLEngine(ip, Port.value());
                         sslEngine.setUseClientMode(true);
                         sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
-
-                        Link.doHandshake(ch1, sslEngine, true);
+                        sslEngine.beginHandshake();
+                        if (!Link.doHandshake(ch1, sslEngine, true)) {
+                            ch1.close();
+                            throw new IOException("SSL handshake failed!");
+                        }
                         s_logger.info("SSL: Handshake done");
                     } catch (final Exception e) {
                         ch1.close();
@@ -733,6 +736,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             s_logger.info("Marking hosts as disconnected on Management server" + vo.getMsid());
             final long lastPing = (System.currentTimeMillis() >> 10) - getTimeout();
             _hostDao.markHostsAsDisconnected(vo.getMsid(), lastPing);
+            outOfBandManagementDao.expireOutOfBandManagementOwnershipByServer(vo.getMsid());
             s_logger.info("Deleting entries from op_host_transfer table for Management server " + vo.getMsid());
             cleanupTransferMap(vo.getMsid());
         }

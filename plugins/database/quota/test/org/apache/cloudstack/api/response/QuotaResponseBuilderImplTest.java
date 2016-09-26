@@ -118,7 +118,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         tariffVO.setUsageType(QuotaTypes.IP_ADDRESS);
         tariffVO.setUsageName("ip address");
         tariffVO.setUsageUnit("IP-Month");
-        tariffVO.setCurrencyValue(new BigDecimal(100.19));
+        tariffVO.setCurrencyValue(BigDecimal.valueOf(100.19));
         tariffVO.setEffectiveOn(new Date());
         tariffVO.setUsageDiscriminator("");
         return tariffVO;
@@ -150,7 +150,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         account.setState(Account.State.locked);
         Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(account);
 
-        QuotaCreditsResponse resp = quotaResponseBuilder.addQuotaCredits(accountId, domainId, amount, updatedBy);
+        QuotaCreditsResponse resp = quotaResponseBuilder.addQuotaCredits(accountId, domainId, amount, updatedBy, true);
         assertTrue(resp.getCredits().compareTo(credit.getCredit()) == 0);
     }
 

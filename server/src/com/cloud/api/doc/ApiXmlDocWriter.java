@@ -41,7 +41,6 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -67,16 +66,10 @@ import java.util.zip.ZipOutputStream;
 public class ApiXmlDocWriter {
     public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
 
-    private static final short DOMAIN_ADMIN_COMMAND = 4;
-    private static final short USER_COMMAND = 8;
+    private static String s_dirName = "";
     private static Map<String, Class<?>> s_apiNameCmdClassMap = new HashMap<String, Class<?>>();
     private static LinkedHashMap<Object, String> s_allApiCommands = new LinkedHashMap<Object, String>();
-    private static LinkedHashMap<Object, String> s_domainAdminApiCommands = new LinkedHashMap<Object, String>();
-    private static LinkedHashMap<Object, String> s_regularUserApiCommands = new LinkedHashMap<Object, String>();
     private static TreeMap<Object, String> s_allApiCommandsSorted = new TreeMap<Object, String>();
-    private static TreeMap<Object, String> s_domainAdminApiCommandsSorted = new TreeMap<Object, String>();
-    private static TreeMap<Object, String> s_regularUserApiCommandsSorted = new TreeMap<Object, String>();
-    private static String s_dirName = "";
     private static final List<String> AsyncResponses = setAsyncResponses();
 
     private static List<String> setAsyncResponses() {
@@ -123,71 +116,22 @@ public class ApiXmlDocWriter {
                 s_apiNameCmdClassMap.put(apiName, cmdClass);
             }
         }
-
-        LinkedProperties preProcessedCommands = new LinkedProperties();
-        String[] fileNames = null;
-
+        System.out.printf("Scanned and found %d APIs\n", s_apiNameCmdClassMap.size());
         List<String> argsList = Arrays.asList(args);
         Iterator<String> iter = argsList.iterator();
         while (iter.hasNext()) {
             String arg = iter.next();
-            // populate the file names
-            if (arg.equals("-f")) {
-                fileNames = iter.next().split(",");
-            }
             if (arg.equals("-d")) {
                 s_dirName = iter.next();
             }
         }
 
-        if ((fileNames == null) || (fileNames.length == 0)) {
-            System.out.println("Please specify input file(s) separated by coma using -f option");
-            System.exit(2);
-        }
-
-        for (String fileName : fileNames) {
-            try(FileInputStream in = new FileInputStream(fileName);) {
-                preProcessedCommands.load(in);
-            } catch (FileNotFoundException ex) {
-                System.out.println("Can't find file " + fileName);
-                System.exit(2);
-            } catch (IOException ex1) {
-                System.out.println("Error reading from file " + ex1);
-                System.exit(2);
-            }
-        }
-
-        Iterator<?> propertiesIterator = preProcessedCommands.keys.iterator();
-        // Get command classes and response object classes
-        while (propertiesIterator.hasNext()) {
-            String key = (String)propertiesIterator.next();
-            String preProcessedCommand = preProcessedCommands.getProperty(key);
-            int splitIndex = preProcessedCommand.lastIndexOf(";");
-            String commandRoleMask = preProcessedCommand.substring(splitIndex + 1);
-            Class<?> cmdClass = s_apiNameCmdClassMap.get(key);
-            if (cmdClass == null) {
-                System.out.println("Check, is this api part of another build profile? Null value for key: " + key + " preProcessedCommand=" + preProcessedCommand);
-                continue;
-            }
-            String commandName = cmdClass.getName();
-            s_allApiCommands.put(key, commandName);
-
-            short cmdPermissions = 1;
-            if (commandRoleMask != null) {
-                cmdPermissions = Short.parseShort(commandRoleMask);
-            }
-
-            if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
-                s_domainAdminApiCommands.put(key, commandName);
-            }
-            if ((cmdPermissions & USER_COMMAND) != 0) {
-                s_regularUserApiCommands.put(key, commandName);
-            }
+        for (Map.Entry<String, Class<?>> entry: s_apiNameCmdClassMap.entrySet()) {
+            Class<?> cls = entry.getValue();
+            s_allApiCommands.put(entry.getKey(), cls.getName());
         }
 
         s_allApiCommandsSorted.putAll(s_allApiCommands);
-        s_domainAdminApiCommandsSorted.putAll(s_domainAdminApiCommands);
-        s_regularUserApiCommandsSorted.putAll(s_regularUserApiCommands);
 
         try {
             // Create object writer
@@ -195,83 +139,38 @@ public class ApiXmlDocWriter {
             xs.alias("command", Command.class);
             xs.alias("arg", Argument.class);
             String xmlDocDir = s_dirName + "/xmldoc";
-            String rootAdminDirName = xmlDocDir + "/root_admin";
-            String domainAdminDirName = xmlDocDir + "/domain_admin";
-            String regularUserDirName = xmlDocDir + "/regular_user";
+            String rootAdminDirName = xmlDocDir + "/apis";
             (new File(rootAdminDirName)).mkdirs();
-            (new File(domainAdminDirName)).mkdirs();
-            (new File(regularUserDirName)).mkdirs();
 
             ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(s_dirName + "/commands.xml"), "commands");
-            ObjectOutputStream rootAdmin = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "rootAdminSummary.xml"), "commands");
-            ObjectOutputStream rootAdminSorted = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "rootAdminSummarySorted.xml"), "commands");
-            ObjectOutputStream domainAdmin = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + "domainAdminSummary.xml"), "commands");
-            ObjectOutputStream outDomainAdminSorted = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + "domainAdminSummarySorted.xml"), "commands");
-            ObjectOutputStream regularUser = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/regularUserSummary.xml"), "commands");
-            ObjectOutputStream regularUserSorted = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/regularUserSummarySorted.xml"), "commands");
+            ObjectOutputStream rootAdmin = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "apiSummary.xml"), "commands");
+            ObjectOutputStream rootAdminSorted = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "apiSummarySorted.xml"), "commands");
 
-            // Write commands in the order they are represented in commands.properties.in file
             Iterator<?> it = s_allApiCommands.keySet().iterator();
             while (it.hasNext()) {
                 String key = (String)it.next();
-
                 // Write admin commands
                 writeCommand(out, key);
                 writeCommand(rootAdmin, key);
-
                 // Write single commands to separate xml files
                 ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
                 writeCommand(singleRootAdminCommandOs, key);
                 singleRootAdminCommandOs.close();
-
-                if (s_domainAdminApiCommands.containsKey(key)) {
-                    writeCommand(domainAdmin, key);
-                    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + key + ".xml"), "command");
-                    writeCommand(singleDomainAdminCommandOs, key);
-                    singleDomainAdminCommandOs.close();
-                }
-
-                if (s_regularUserApiCommands.containsKey(key)) {
-                    writeCommand(regularUser, key);
-                    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + key + ".xml"), "command");
-                    writeCommand(singleRegularUserCommandOs, key);
-                    singleRegularUserCommandOs.close();
-                }
             }
 
             // Write sorted commands
             it = s_allApiCommandsSorted.keySet().iterator();
             while (it.hasNext()) {
                 String key = (String)it.next();
-
                 writeCommand(rootAdminSorted, key);
-
-                if (s_domainAdminApiCommands.containsKey(key)) {
-                    writeCommand(outDomainAdminSorted, key);
-                }
-
-                if (s_regularUserApiCommands.containsKey(key)) {
-                    writeCommand(regularUserSorted, key);
-                }
             }
 
             out.close();
             rootAdmin.close();
             rootAdminSorted.close();
-            domainAdmin.close();
-            outDomainAdminSorted.close();
-            regularUser.close();
-            regularUserSorted.close();
 
             // write alerttypes to xml
             writeAlertTypes(xmlDocDir);
-
-            // gzip directory with xml doc
-            // zipDir(dirName + "xmldoc.zip", xmlDocDir);
-
-            // Delete directory
-            // deleteDir(new File(xmlDocDir));
-
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(2);
@@ -537,5 +436,4 @@ public class ApiXmlDocWriter {
             return super.put(key, value);
         }
     }
-
 }

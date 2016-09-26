@@ -108,11 +108,13 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 }
                 index++;
             }
+
             for (DiskTO disk : disks) {
-                final VDI newVdi = citrixResourceBase.prepareManagedDisk(conn, disk, vmName);
+                final VDI newVdi = citrixResourceBase.prepareManagedDisk(conn, disk, vmSpec.getId(), vmSpec.getName());
 
                 if (newVdi != null) {
                     final String path = newVdi.getUuid(conn);
+
                     iqnToPath.put(disk.getDetails().get(DiskTO.IQN), path);
                 }
 

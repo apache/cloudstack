@@ -16,9 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-
- 
 help() {
    printf " -c use customized key/cert\n"
    printf " -k path of private key\n"
@@ -123,6 +120,8 @@ customCACert=
 publicIp=
 hostName=
 keyStore=$(dirname $0)/certs/realhostip.keystore
+defaultJavaKeyStoreFile=/etc/ssl/certs/java/cacerts
+defaultJavaKeyStorePass="changeit"
 aliasName="CPVMCertificate"
 storepass="vmops.com"
 while getopts 'i:h:k:p:t:u:c' OPTION
@@ -167,13 +166,13 @@ then
   fi
   if [ ! -f "$customPrivKey" ]
   then
-     printf "priviate key file is not exist\n"
+     printf "private key file does not exist\n"
      exit 2
   fi
 
   if [ ! -f "$customPrivCert" ]
   then
-     printf "public certificate is not exist\n"
+     printf "public certificate does not exist\n"
      exit 3
   fi
 
@@ -181,7 +180,7 @@ then
   then
      if [ ! -f "$customCertChain" ]
      then
-        printf "certificate chain is not exist\n"
+        printf "certificate chain does not exist\n"
         exit 4
      fi
   fi
@@ -204,6 +203,7 @@ if [ -f "$customCACert" ]
 then
   keytool -delete -alias $aliasName -keystore $keyStore -storepass $storepass -noprompt
   keytool -import -alias $aliasName -keystore $keyStore -storepass $storepass -noprompt -file $customCACert
+  keytool -importkeystore -srckeystore $defaultJavaKeyStoreFile -destkeystore $keyStore -srcstorepass $defaultJavaKeyStorePass -deststorepass $storepass -noprompt
 fi
 
 if [ -d /etc/apache2 ]

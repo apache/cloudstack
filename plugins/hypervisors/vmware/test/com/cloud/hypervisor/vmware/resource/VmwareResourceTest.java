@@ -19,26 +19,68 @@ package com.cloud.hypervisor.vmware.resource;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Matchers.eq;
 
+import java.util.ArrayList;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InOrder;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
-
+import com.vmware.vim25.VirtualMachineVideoCard;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.storage.resource.VmwareStorageProcessor;
+import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({CopyCommand.class, DatacenterMO.class, VmwareResource.class})
 public class VmwareResourceTest {
 
+    private static final String VOLUME_PATH = "XXXXXXXXXXXX";
+
+    @Mock
+    VmwareStorageProcessor storageProcessor;
+    @Mock
+    VmwareStorageSubsystemCommandHandler storageHandler;
+
     @Spy
+    @InjectMocks
     VmwareResource _resource = new VmwareResource() {
 
         @Override
@@ -50,6 +92,7 @@ public class VmwareResourceTest {
         public VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd) {
             return hyperHost;
         }
+
     };
 
     @Mock
@@ -64,12 +107,43 @@ public class VmwareResourceTest {
     VirtualMachineMO vmMo;
     @Mock
     VirtualMachineConfigSpec vmConfigSpec;
+    @Mock
+    VirtualMachineMO vmMo3dgpu;
+    @Mock
+    VirtualMachineTO vmSpec3dgpu;
+    @Mock
+    VirtualMachineVideoCard videoCard;
+    @Mock
+    VirtualDevice virtualDevice;
+    @Mock
+    DataTO srcDataTO;
+    @Mock
+    NfsTO srcDataNfsTO;
+    @Mock
+    VolumeTO volume;
+    @Mock
+    ManagedObjectReference mor;
+    @Mock
+    DatacenterMO datacenter;
+
+    CopyCommand storageCmd;
+
+    private static final Integer NFS_VERSION = Integer.valueOf(3);
+    private static final Integer NFS_VERSION_NOT_PRESENT = null;
+    private static final long VRAM_MEMORY_SIZE = 131072l;
+    private static final long VIDEO_CARD_MEMORY_SIZE = 65536l;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
+        storageCmd = PowerMockito.mock(CopyCommand.class);
         doReturn(context).when(_resource).getServiceContext(null);
         when(cmd.getVirtualMachine()).thenReturn(vmSpec);
+        when(storageCmd.getSrcTO()).thenReturn(srcDataTO);
+        when(srcDataTO.getDataStore()).thenReturn(srcDataNfsTO);
+        when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION);
+        when(videoCard.getVideoRamSizeInKB()).thenReturn(VIDEO_CARD_MEMORY_SIZE);
+        when(volume.getPath()).thenReturn(VOLUME_PATH);
     }
 
     //Test successful scaling up the vm
@@ -90,4 +164,129 @@ public class VmwareResourceTest {
         verify(_resource).execute(cmd);
     }
 
+    @Test
+    public void testConfigureVideoCardSvgaVramProvided() throws Exception {
+        Map<String, String> specDetails = new HashMap<String, String>();
+        specDetails.put("svga.vramSize", String.valueOf(VRAM_MEMORY_SIZE));
+        when(vmSpec3dgpu.getDetails()).thenReturn(specDetails);
+
+        _resource.configureVideoCard(vmMo3dgpu, vmSpec3dgpu, vmConfigSpec);
+        verify(_resource).setNewVRamSizeVmVideoCard(vmMo3dgpu, VRAM_MEMORY_SIZE, vmConfigSpec);
+    }
+
+    @Test
+    public void testConfigureVideoCardNotSvgaVramProvided() throws Exception {
+        _resource.configureVideoCard(vmMo3dgpu, vmSpec3dgpu, vmConfigSpec);
+        verify(_resource, never()).setNewVRamSizeVmVideoCard(vmMo3dgpu, VRAM_MEMORY_SIZE, vmConfigSpec);
+    }
+
+    @Test
+    public void testModifyVmVideoCardVRamSizeDifferentVramSizes() {
+        _resource.modifyVmVideoCardVRamSize(videoCard, vmMo3dgpu, VRAM_MEMORY_SIZE, vmConfigSpec);
+        verify(_resource).configureSpecVideoCardNewVRamSize(videoCard, VRAM_MEMORY_SIZE, vmConfigSpec);
+    }
+
+    @Test
+    public void testModifyVmVideoCardVRamSizeEqualSizes() {
+        _resource.modifyVmVideoCardVRamSize(videoCard, vmMo3dgpu, VIDEO_CARD_MEMORY_SIZE, vmConfigSpec);
+        verify(_resource, never()).configureSpecVideoCardNewVRamSize(videoCard, VIDEO_CARD_MEMORY_SIZE, vmConfigSpec);
+    }
+
+    @Test
+    public void testSetNewVRamSizeVmVideoCardPresent() throws Exception {
+        when(vmMo3dgpu.getAllDeviceList()).thenReturn(Arrays.asList(videoCard, virtualDevice));
+        _resource.setNewVRamSizeVmVideoCard(vmMo3dgpu, VRAM_MEMORY_SIZE, vmConfigSpec);
+        verify(_resource).modifyVmVideoCardVRamSize(videoCard, vmMo3dgpu, VRAM_MEMORY_SIZE, vmConfigSpec);
+    }
+
+    @Test
+    public void testSetNewVRamSizeVmVideoCardNotPresent() throws Exception {
+        when(vmMo3dgpu.getAllDeviceList()).thenReturn(Arrays.asList(virtualDevice));
+        _resource.setNewVRamSizeVmVideoCard(vmMo3dgpu, VRAM_MEMORY_SIZE, vmConfigSpec);
+        verify(_resource, never()).modifyVmVideoCardVRamSize(any(VirtualMachineVideoCard.class), eq(vmMo3dgpu), eq(VRAM_MEMORY_SIZE), eq(vmConfigSpec));
+    }
+
+    @Test
+    public void testConfigureSpecVideoCardNewVRamSize() {
+        when(vmConfigSpec.getDeviceChange()).thenReturn(new ArrayList<VirtualDeviceConfigSpec>());
+        _resource.configureSpecVideoCardNewVRamSize(videoCard, VRAM_MEMORY_SIZE, vmConfigSpec);
+
+        InOrder inOrder = Mockito.inOrder(videoCard, vmConfigSpec);
+        inOrder.verify(videoCard).setVideoRamSizeInKB(VRAM_MEMORY_SIZE);
+        inOrder.verify(videoCard).setUseAutoDetect(false);
+        inOrder.verify(vmConfigSpec).getDeviceChange();
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @Test
+    public void testgetNfsVersionFromNfsTONull(){
+        assertFalse(_resource.getStorageNfsVersionFromNfsTO(null));
+    }
+
+    @Test
+    public void testgetNfsVersionFromNfsTONfsVersionNull(){
+        when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION_NOT_PRESENT);
+        assertFalse(_resource.getStorageNfsVersionFromNfsTO(srcDataNfsTO));
+    }
+
+    @Test
+    public void testgetNfsVersionFromNfsTONfsVersion(){
+        assertTrue(_resource.getStorageNfsVersionFromNfsTO(srcDataNfsTO));
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @Test
+    public void testSetCurrentNfsVersionInProcessorAndHandler(){
+        _resource.setCurrentNfsVersionInProcessorAndHandler();
+        verify(storageHandler).reconfigureNfsVersion(any(Integer.class));
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @Test
+    public void testExamineStorageSubSystemCommandNfsVersionNotPresent(){
+        when(srcDataNfsTO.getNfsVersion()).thenReturn(NFS_VERSION_NOT_PRESENT);
+        _resource.examineStorageSubSystemCommandNfsVersion(storageCmd);
+        verify(_resource, never()).setCurrentNfsVersionInProcessorAndHandler();
+    }
+
+    @Test
+    public void testExamineStorageSubSystemCommandNfsVersion(){
+        _resource.examineStorageSubSystemCommandNfsVersion(storageCmd);
+        verify(_resource).setCurrentNfsVersionInProcessorAndHandler();
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    @Test
+    public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionNotSet(){
+        _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
+        verify(_resource).examineStorageSubSystemCommandNfsVersion(storageCmd);
+        assertEquals(NFS_VERSION, _resource.storageNfsVersion);
+    }
+
+    @Test
+    public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionSet(){
+        _resource.storageNfsVersion = NFS_VERSION;
+        _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
+        verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(storageCmd);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testFindVmOnDatacenterNullHyperHostReference() throws Exception {
+        when(hyperHost.getMor()).thenReturn(null);
+        _resource.findVmOnDatacenter(context, hyperHost, volume);
+    }
+
+    @Test
+    public void testFindVmOnDatacenter() throws Exception {
+        when(hyperHost.getHyperHostDatacenter()).thenReturn(mor);
+        when(datacenter.getMor()).thenReturn(mor);
+        when(datacenter.findVm(VOLUME_PATH)).thenReturn(vmMo);
+        whenNew(DatacenterMO.class).withArguments(context, mor).thenReturn(datacenter);
+        VirtualMachineMO result = _resource.findVmOnDatacenter(context, hyperHost, volume);
+        assertEquals(vmMo, result);
+    }
 }

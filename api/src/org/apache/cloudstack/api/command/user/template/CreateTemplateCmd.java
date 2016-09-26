@@ -113,6 +113,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.URL,
                type = CommandType.STRING,
+               length = 2048,
                description = "Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
     private String url;
 

@@ -345,8 +345,8 @@ class TestVolumeList(cloudstackTestCase):
                             cls.service_offering,
                             ]
         except Exception as e:
-                cls.domain_1.delete(cls.apiclient,cleanup="true")
                 cls.domain_2.delete(cls.apiclient,cleanup="true")
+                cls.domain_1.delete(cls.apiclient,cleanup="true")
                 cleanup_resources(cls.apiclient, cls.cleanup)
                 raise Exception("Failed to create the setup required to execute the test cases: %s" % e)
 
@@ -357,10 +357,11 @@ class TestVolumeList(cloudstackTestCase):
         cls.apiclient = super(TestVolumeList, cls).getClsTestClient().getApiClient()
         cls.apiclient.connection.apiKey = cls.default_apikey
         cls.apiclient.connection.securityKey = cls.default_secretkey
-        cls.domain_1.delete(cls.apiclient,cleanup="true")
-        cls.domain_2.delete(cls.apiclient,cleanup="true")
         cleanup_resources(cls.apiclient, cls.cleanup)
-        return
+        try:
+            cls.domain_2.delete(cls.apiclient,cleanup="true")
+            cls.domain_1.delete(cls.apiclient,cleanup="true")
+        except: pass
 
     def setUp(cls):
         cls.apiclient = cls.testClient.getApiClient()

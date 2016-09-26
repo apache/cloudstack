@@ -942,12 +942,18 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     @SuppressWarnings("unchecked")
     public T findById(final ID id) {
+        T result = null;
         if (_cache != null) {
             final Element element = _cache.get(id);
-            return element == null ? lockRow(id, null) : (T)element.getObjectValue();
+            if (element == null) {
+                result = lockRow(id, null);
+            } else {
+                result = (T)element.getObjectValue();
+            }
         } else {
-            return lockRow(id, null);
+            result = lockRow(id, null);
         }
+        return result;
     }
 
     @Override
@@ -968,8 +974,19 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override
     @DB()
-    public T findByIdIncludingRemoved(ID id) {
-        return findById(id, true, null);
+    public T findByIdIncludingRemoved(final ID id) {
+        T result = null;
+        if (_cache != null) {
+            final Element element = _cache.get(id);
+            if (element == null) {
+                result = findById(id, true, null);
+            } else {
+                result = (T)element.getObjectValue();
+            }
+        } else {
+            result = findById(id, true, null);
+        }
+        return result;
     }
 
     @Override

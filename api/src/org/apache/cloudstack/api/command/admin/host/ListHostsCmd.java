@@ -81,9 +81,19 @@ public class ListHostsCmd extends BaseListCmd {
                description = "lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
     private Long virtualMachineId;
 
+    @Parameter(name = ApiConstants.OUTOFBANDMANAGEMENT_ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "list hosts for which out-of-band management is enabled")
+    private Boolean outOfBandManagementEnabled;
+
+    @Parameter(name = ApiConstants.OUTOFBANDMANAGEMENT_POWERSTATE,
+            type = CommandType.STRING,
+            description = "list hosts by its out-of-band management interface's power state. Its value can be one of [On, Off, Unknown]")
+    private String outOfBandManagementPowerState;
+
     @Parameter(name = ApiConstants.RESOURCE_STATE,
                type = CommandType.STRING,
-               description = "list hosts by resource state. Resource state represents current state determined by admin of host, valule can be one of [Enabled, Disabled, Unmanaged, PrepareForMaintenance, ErrorInMaintenance, Maintenance, Error]")
+               description = "list hosts by resource state. Resource state represents current state determined by admin of host, value can be one of [Enabled, Disabled, Unmanaged, PrepareForMaintenance, ErrorInMaintenance, Maintenance, Error]")
     private String resourceState;
 
     @Parameter(name = ApiConstants.DETAILS,
@@ -163,6 +173,15 @@ public class ListHostsCmd extends BaseListCmd {
 
     public String getResourceState() {
         return resourceState;
+    }
+
+
+    public Boolean isOutOfBandManagementEnabled() {
+        return outOfBandManagementEnabled;
+    }
+
+    public String getHostOutOfBandManagementPowerState() {
+        return outOfBandManagementPowerState;
     }
 
     /////////////////////////////////////////////////////

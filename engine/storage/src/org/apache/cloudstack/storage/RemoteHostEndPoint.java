@@ -161,6 +161,10 @@ public class RemoteHostEndPoint implements EndPoint {
         }
 
         @Override
+        public void processHostAdded(long hostId) {
+        }
+
+        @Override
         public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
             // TODO Auto-generated method stub
 
@@ -170,6 +174,14 @@ public class RemoteHostEndPoint implements EndPoint {
         public boolean processDisconnect(long agentId, Status state) {
             // TODO Auto-generated method stub
             return false;
+        }
+
+        @Override
+        public void processHostAboutToBeRemoved(long hostId) {
+        }
+
+        @Override
+        public void processHostRemoved(long hostId, long clusterId) {
         }
 
         @Override

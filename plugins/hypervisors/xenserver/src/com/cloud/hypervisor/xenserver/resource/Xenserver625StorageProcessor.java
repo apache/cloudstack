@@ -171,6 +171,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         final DataStoreTO srcStore = srcData.getDataStore();
         final Connection conn = hypervisorResource.getConnection();
         SR srcSr = null;
+        SR destSr = null;
+        boolean removeSrAfterCopy = false;
         Task task = null;
 
         try {
@@ -198,7 +200,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 final Set<VDI> setVdis = srcSr.getVDIs(conn);
 
                 if (setVdis.size() != 1) {
-                    return new CopyCmdAnswer("Expected 1 VDI template but found " + setVdis.size() + " VDI template(s) on: " + uri.getHost() + ":" + uri.getPath() + "/" + volumeDirectory);
+                    return new CopyCmdAnswer("Expected 1 VDI template, but found " + setVdis.size() + " VDI templates on: " +
+                            uri.getHost() + ":" + uri.getPath() + "/" + volumeDirectory);
                 }
 
                 final VDI srcVdi = setVdis.iterator().next();
@@ -225,10 +228,9 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                         managedStoragePoolRootVolumeSize = details.get(PrimaryDataStoreTO.VOLUME_SIZE);
                         chapInitiatorUsername = details.get(PrimaryDataStoreTO.CHAP_INITIATOR_USERNAME);
                         chapInitiatorSecret = details.get(PrimaryDataStoreTO.CHAP_INITIATOR_SECRET);
+                        removeSrAfterCopy = Boolean.parseBoolean(details.get(PrimaryDataStoreTO.REMOVE_AFTER_COPY));
                     }
                 }
-
-                final SR destSr;
 
                 if (managed) {
                     details = new HashMap<String, String>();
@@ -291,9 +293,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
                 newVol.setUuid(uuidToReturn);
                 newVol.setPath(uuidToReturn);
+
                 if (physicalSize != null) {
                     newVol.setSize(physicalSize);
                 }
+
                 newVol.setFormat(Storage.ImageFormat.VHD);
 
                 return new CopyCmdAnswer(newVol);
@@ -315,6 +319,10 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
             if (srcSr != null) {
                 hypervisorResource.removeSR(conn, srcSr);
+            }
+
+            if (removeSrAfterCopy && destSr != null) {
+                hypervisorResource.removeSR(conn, destSr);
             }
         }
 

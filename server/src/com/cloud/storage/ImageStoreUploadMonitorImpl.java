@@ -115,7 +115,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Upload-Monitor"));
         _monitoringInterval = UploadMonitoringInterval.value();
-        _uploadOperationTimeout = UploadOperationTimeout.value() * 60 * 1000;
+        _uploadOperationTimeout = UploadOperationTimeout.value() * 60 * 1000L;
         _nodeId = ManagementServerNode.getManagementServerId();
         return true;
     }
@@ -153,6 +153,14 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     }
 
     @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
+    }
+
+    @Override
     public boolean isRecurring() {
         return false;
     }
@@ -165,6 +173,10 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
+    }
+
+    @Override
+    public void processHostAdded(long hostId) {
     }
 
     @Override

@@ -26,51 +26,49 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
 
 public class ModifyStoragePoolCommand extends Command {
-
-    boolean add;
-    StorageFilerTO pool;
-    String localPath;
-    String[] options;
     public static final String LOCAL_PATH_PREFIX = "/mnt/";
 
-    public ModifyStoragePoolCommand() {
-
-    }
+    private boolean add;
+    private StorageFilerTO pool;
+    private String localPath;
+    private String storagePath;
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath) {
         this.add = add;
         this.pool = new StorageFilerTO(pool);
         this.localPath = localPath;
-
     }
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
         this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
     }
 
-    public StorageFilerTO getPool() {
-        return pool;
+    public boolean getAdd() {
+        return add;
     }
 
     public void setPool(StoragePool pool) {
         this.pool = new StorageFilerTO(pool);
     }
 
-    public boolean getAdd() {
-        return add;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return false;
+    public StorageFilerTO getPool() {
+        return pool;
     }
 
     public String getLocalPath() {
         return localPath;
     }
 
-    public void setOptions(String[] options) {
-        this.options = options;
+    public void setStoragePath(String storagePath) {
+        this.storagePath = storagePath;
     }
 
+    public String getStoragePath() {
+        return storagePath;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

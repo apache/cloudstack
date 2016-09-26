@@ -26,8 +26,11 @@ import xml.dom.minidom
 from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 import re
 import libvirt
+import fcntl
+import time
 
 logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
+lock_file = "/var/lock/cloudstack_security_group.lock"
 iptables = Command("iptables")
 bash = Command("/bin/bash")
 ebtables = Command("ebtables")
@@ -36,6 +39,21 @@ cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
 hyper = cfo.getEntry("hypervisor.type")
 if hyper == "lxc":
     driver = "lxc:///"
+
+lock_handle = None
+
+def obtain_file_lock(path):
+    global lock_handle
+
+    try:
+        lock_handle = open(path, 'w')
+        fcntl.flock(lock_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except IOError:
+        pass
+
+    return False
+
 def execute(cmd):
     logging.debug(cmd)
     return bash("-c", cmd).stdout
@@ -303,7 +321,7 @@ def default_network_rules_systemvm(vm_name, localbrname):
     for bridge in bridges:
         if bridge != localbrname:
             if not addFWFramework(bridge):
-                return False 
+                return False
             brfw = getBrfw(bridge)
             vifs = getVifsForBridge(vm_name, bridge)
             for vif in vifs:
@@ -1029,6 +1047,14 @@ if __name__ == '__main__':
         sys.exit(1)
     cmd = args[0]
     logging.debug("Executing command: " + str(cmd))
+
+    for i in range(0, 30):
+        if obtain_file_lock(lock_file) is False:
+            logging.warn("Lock on %s is being held by other process. Waiting for release." % lock_file)
+            time.sleep(0.5)
+        else:
+            break
+
     if cmd == "can_bridge_firewall":
         can_bridge_firewall(args[1])
     elif cmd == "default_network_rules":

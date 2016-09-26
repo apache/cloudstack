@@ -1241,11 +1241,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-
-    protected boolean getExecuteInSequence(final HypervisorType hypervisorType) {
-        if (HypervisorType.KVM == hypervisorType || HypervisorType.LXC == hypervisorType || HypervisorType.XenServer == hypervisorType) {
+    @Override
+    public boolean getExecuteInSequence(final HypervisorType hypervisorType) {
+        if (HypervisorType.KVM == hypervisorType || HypervisorType.XenServer == hypervisorType || HypervisorType.Hyperv == hypervisorType || HypervisorType.LXC == hypervisorType) {
             return false;
-        } else if(HypervisorType.VMware == hypervisorType) {
+        } else if (HypervisorType.VMware == hypervisorType) {
             final Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
             return fullClone;
         } else {
@@ -2045,62 +2045,74 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private Map<Volume, StoragePool> getPoolListForVolumesForMigration(final VirtualMachineProfile profile, final Host host, final Map<Long, Long> volumeToPool) {
         final List<VolumeVO> allVolumes = _volsDao.findUsableVolumesForInstance(profile.getId());
-        final Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<Volume, StoragePool> ();
+        final Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<>();
+
         for (final VolumeVO volume : allVolumes) {
             final Long poolId = volumeToPool.get(Long.valueOf(volume.getId()));
-            final StoragePoolVO pool = _storagePoolDao.findById(poolId);
+            final StoragePoolVO destPool = _storagePoolDao.findById(poolId);
             final StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
             final DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-            if (pool != null) {
+
+            if (destPool != null) {
                 // Check if pool is accessible from the destination host and disk offering with which the volume was
                 // created is compliant with the pool type.
-                if (_poolHostDao.findByPoolHost(pool.getId(), host.getId()) == null || pool.isLocal() != diskOffering.getUseLocalStorage()) {
+                if (_poolHostDao.findByPoolHost(destPool.getId(), host.getId()) == null || destPool.isLocal() != diskOffering.getUseLocalStorage()) {
                     // Cannot find a pool for the volume. Throw an exception.
-                    throw new CloudRuntimeException("Cannot migrate volume " + volume + " to storage pool " + pool + " while migrating vm to host " + host +
+                    throw new CloudRuntimeException("Cannot migrate volume " + volume + " to storage pool " + destPool + " while migrating vm to host " + host +
                             ". Either the pool is not accessible from the host or because of the offering with which the volume is created it cannot be placed on " +
                             "the given pool.");
-                } else if (pool.getId() == currentPool.getId()) {
-                    // If the pool to migrate too is the same as current pool, the volume doesn't need to be migrated.
+                } else if (destPool.getId() == currentPool.getId()) {
+                    // If the pool to migrate to is the same as current pool, the volume doesn't need to be migrated.
                 } else {
-                    volumeToPoolObjectMap.put(volume, pool);
+                    volumeToPoolObjectMap.put(volume, destPool);
                 }
             } else {
-                // Find a suitable pool for the volume. Call the storage pool allocator to find the list of pools.
-                final DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
-                final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), null, null);
-                final ExcludeList avoid = new ExcludeList();
-                boolean currentPoolAvailable = false;
+                if (currentPool.isManaged()) {
+                    volumeToPoolObjectMap.put(volume, currentPool);
+                } else {
+                    // Find a suitable pool for the volume. Call the storage pool allocator to find the list of pools.
 
-                final List<StoragePool> poolList = new ArrayList<StoragePool>();
-                for (final StoragePoolAllocator allocator : _storagePoolAllocators) {
-                    final List<StoragePool> poolListFromAllocator = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
-                    if (poolListFromAllocator != null && !poolListFromAllocator.isEmpty()) {
-                        poolList.addAll(poolListFromAllocator);
-                    }
-                }
+                    final DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
+                    final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), null, null);
 
-                if (poolList != null && !poolList.isEmpty()) {
-                    // Volume needs to be migrated. Pick the first pool from the list. Add a mapping to migrate the
-                    // volume to a pool only if it is required; that is the current pool on which the volume resides
-                    // is not available on the destination host.
-                    final Iterator<StoragePool> iter = poolList.iterator();
-                    while (iter.hasNext()) {
-                        if (currentPool.getId() == iter.next().getId()) {
-                            currentPoolAvailable = true;
-                            break;
+                    final List<StoragePool> poolList = new ArrayList<>();
+                    final ExcludeList avoid = new ExcludeList();
+
+                    for (final StoragePoolAllocator allocator : _storagePoolAllocators) {
+                        final List<StoragePool> poolListFromAllocator = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
+
+                        if (poolListFromAllocator != null && !poolListFromAllocator.isEmpty()) {
+                            poolList.addAll(poolListFromAllocator);
                         }
                     }
 
-                    if (!currentPoolAvailable) {
-                        volumeToPoolObjectMap.put(volume, _storagePoolDao.findByUuid(poolList.get(0).getUuid()));
+                    boolean currentPoolAvailable = false;
+
+                    if (poolList != null && !poolList.isEmpty()) {
+                        // Volume needs to be migrated. Pick the first pool from the list. Add a mapping to migrate the
+                        // volume to a pool only if it is required; that is the current pool on which the volume resides
+                        // is not available on the destination host.
+
+                        final Iterator<StoragePool> iter = poolList.iterator();
+
+                        while (iter.hasNext()) {
+                            if (currentPool.getId() == iter.next().getId()) {
+                                currentPoolAvailable = true;
+
+                                break;
+                            }
+                        }
+
+                        if (!currentPoolAvailable) {
+                            volumeToPoolObjectMap.put(volume, _storagePoolDao.findByUuid(poolList.get(0).getUuid()));
+                        }
                     }
-                }
 
-
-                if (!currentPoolAvailable && !volumeToPoolObjectMap.containsKey(volume)) {
-                    // Cannot find a pool for the volume. Throw an exception.
-                    throw new CloudRuntimeException("Cannot find a storage pool which is available for volume " + volume + " while migrating virtual machine " +
-                            profile.getVirtualMachine() + " to host " + host);
+                    if (!currentPoolAvailable && !volumeToPoolObjectMap.containsKey(volume)) {
+                        // Cannot find a pool for the volume. Throw an exception.
+                        throw new CloudRuntimeException("Cannot find a storage pool which is available for volume " + volume + " while migrating virtual machine " +
+                                profile.getVirtualMachine() + " to host " + host);
+                    }
                 }
             }
         }
@@ -2585,7 +2597,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
 
             final Commands cmds = new Commands(Command.OnError.Stop);
-            cmds.addCommand(new RebootCommand(vm.getInstanceName()));
+            cmds.addCommand(new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType())));
             _agentMgr.send(host.getId(), cmds);
 
             final Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
@@ -2642,7 +2654,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if(!found) {
                 VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
-                if(vm.getType() == VirtualMachine.Type.User) {
+                if(vm != null && vm.getType() == VirtualMachine.Type.User) {
                     updateVmMetaData(vm.getId(), platform);
                 }
             }
@@ -2784,6 +2796,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public boolean processDisconnect(final long agentId, final Status state) {
         return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
+    }
+
+    @Override
+    public void processHostAdded(long hostId) {
     }
 
     @Override
@@ -3686,7 +3710,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     //
 
     @MessageHandler(topic = Topics.VM_POWER_STATE)
-    private void HandlePowerStateReport(final String subject, final String senderAddress, final Object args) {
+    protected void HandlePowerStateReport(final String subject, final String senderAddress, final Object args) {
         assert args != null;
         final Long vmId = (Long)args;
 

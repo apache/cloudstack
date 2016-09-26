@@ -44,9 +44,11 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.ConnectionException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -68,6 +70,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
     DataCenterDao _zoneDao = null;
     @Inject
     HostDao _hostDao = null;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
     @Inject
     HostPodDao _podDao = null;
     @Inject
@@ -319,6 +323,25 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
         host.setHypervisorType(hyType);
         host.setHypervisorVersion(scc.getHypervisorVersion());
 
+        updateHostDetails(host, scc);
+    }
+
+    private void updateHostDetails(HostVO host, StartupRoutingCommand startupRoutingCmd) {
+        final String name = "supportsResign";
+        final String value = String.valueOf(startupRoutingCmd.getSupportsClonedVolumes());
+
+        DetailVO hostDetail = hostDetailsDao.findDetail(host.getId(), name);
+
+        if (hostDetail != null) {
+            hostDetail.setValue(value);
+
+            hostDetailsDao.update(hostDetail.getId(), hostDetail);
+        }
+        else {
+            hostDetail = new DetailVO(host.getId(), name, value);
+
+            hostDetailsDao.persist(hostDetail);
+        }
     }
 
     private boolean checkCIDR(Host.Type type, HostPodVO pod, String serverPrivateIP, String serverPrivateNetmask) {

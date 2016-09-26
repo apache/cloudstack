@@ -49,11 +49,20 @@ javac -version
 echo -e "\nMaven Version: "
 mvn -v
 
+echo -e "\nPython Version: "
+python --version
+
+echo -e "\nPip Version: "
+pip --version
+
 echo -e "\nDisk Status: "
 df
 
 echo -e "\nMemory Status: "
 free
+
+echo -e "\nTotal CPUs: "
+nproc
 
 echo -e "\nCheck Git status"
 git status
@@ -66,21 +75,30 @@ sudo apt-get -q -y update > /dev/null
 
 echo -e "\nInstalling MySQL: "
 
-sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password password your_password'
-sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password your_password'
+export DEBIAN_FRONTEND=noninteractive
+sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password password password'
+sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password password'
 sudo apt-get -q -y install mysql-server > /dev/null
 
-#Restart mysql if running to release deleted file locks on filesystem, if aready running
-sudo status mysql | grep start && sudo stop mysql
-sudo start mysql
+mysql -uroot -ppassword -e "SET PASSWORD = PASSWORD(''); FLUSH PRIVILEGES;"
+sudo service mysql restart
 
 echo -e "\nInstalling Development tools: "
 RETRY_COUNT=3
 
-sudo apt-get -q -y install uuid-runtime genisoimage python-setuptools python-pip netcat > /dev/null
+sudo apt-get -q -y install uuid-runtime genisoimage netcat > /dev/null
 if [[ $? -ne 0 ]]; then
   echo -e "\napt-get packages failed to install"
 fi
+
+# Use latest ipmitool 1.8.16
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1397BC53640DB551
+sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" >> /etc/apt/sources.list'
+sudo apt-get update -q -y > /dev/null
+sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool --no-install-recommends > /dev/null
+
+ipmitool -V
+
 echo "<settings>
   <mirrors>
     <mirror>
@@ -94,9 +112,11 @@ echo "<settings>
 
 echo -e "\nInstalling some python packages: "
 
+pip install --user --upgrade pip
+
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  sudo pip install --upgrade lxml texttable paramiko > /tmp/piplog
+  pip install --user --upgrade lxml paramiko nose texttable ipmisim > /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;

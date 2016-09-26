@@ -3,10 +3,26 @@ Contributing to Apache CloudStack (ACS)
 
 Summary
 -------
-This document covers how to contribute to the ACS project. These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one. Your proposed code changes will be published to your own fork of the ACS project and you will submit a Pull Request for your changes to be added.
+This document covers how to contribute to the ACS project. ACS uses github PRs to manage code contributions. 
+These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one. Your proposed code changes will be published to your own fork of the ACS project and you will submit a Pull Request for your changes to be added.
 
 _Lets get started!!!_
 
+Bug fixes
+---------
+
+It's very important that we can easily track bug fix commits, so their hashes should remain the same in all branches. 
+Therefore, a pull request (PR) that fixes a bug, should be sent against a release branch. 
+This can be either the "current release" or the "previous release", depending on which ones are maintained. 
+Since the goal is a stable master, bug fixes should be "merged forward" to the next branch in order: "previous release" -> "current release" -> master (in other words: old to new)
+
+Developing new features
+-----------------------
+
+Development should be done in a feature branch, branched off of master. 
+Send a PR(steps below) to get it into master (2x LGTM applies). 
+PR will only be merged when master is open, will be held otherwise until master is open again. 
+No back porting / cherry-picking features to existing branches!
 
 Fork the code 
 -------------
@@ -29,6 +45,7 @@ $ git rebase upstream/master
 
 Making changes
 --------------
+
 
 It is important that you create a new branch to make changes on and that you do not change the `master` branch (other than to rebase in changes from `upstream/master`).  In this example I will assume you will be making your changes to a branch called `feature_x`.  This `feature_x` branch will be created on your local repository and will be pushed to your forked repository on GitHub.  Once this branch is on your fork you will create a Pull Request for the changes to be added to the ACS project.
 
@@ -72,6 +89,8 @@ Make a GitHub Pull Request to contribute your changes
 
 When you are happy with your changes and you are ready to contribute them, you will create a Pull Request on GitHub to do so.  This is done by pushing your local changes to your forked repository (default remote name is `origin`) and then initiating a pull request on GitHub.
 
+Please include JIRA id, detailed information about the bug/feature, what all tests are executed, how the reviewer can test this feature etc. Incase of UI PRs, a screenshot is preferred.
+
 > **IMPORTANT:** Make sure you have rebased your `feature_x` branch to include the latest code from `upstream/master` _before_ you do this.
 
 ``` bash
@@ -105,3 +124,7 @@ $ git checkout master
 $ git branch -D feature_x
 $ git push origin :feature_x
 ```
+
+Release Principles
+------------------
+Detailed information about ACS release principles is available at https://cwiki.apache.org/confluence/display/CLOUDSTACK/Release+principles+for+Apache+CloudStack+4.6+and+up 

@@ -58,9 +58,7 @@ set -e
 (cd "$DISTDIR/xmldoc"
  cp "$thisdir"/*.java .
  cp "$thisdir"/*.xsl .
- sed -e 's,%API_HEADER%,User API,g' "$thisdir/generatetoc_header.xsl" >generatetocforuser.xsl
- sed -e 's,%API_HEADER%,Root Admin API,g' "$thisdir/generatetoc_header.xsl" >generatetocforadmin.xsl
- sed -e 's,%API_HEADER%,Domain Admin API,g' "$thisdir/generatetoc_header.xsl" >generatetocfordomainadmin.xsl
+ sed -e 's,%API_HEADER%,All APIs,g' "$thisdir/generatetoc_header.xsl" >generatetoc.xsl
 
  PLATFORM=`uname -s`
  if [[ "$PLATFORM" =~ .*WIN.* ]]
@@ -74,15 +72,10 @@ set -e
      python "$thisdir/gen_toc.py" $(find . -type f)
  fi
 
- cat generatetocforuser_include.xsl >>generatetocforuser.xsl
- cat generatetocforadmin_include.xsl >>generatetocforadmin.xsl
- cat generatetocfordomainadmin_include.xsl >>generatetocfordomainadmin.xsl
+ cat generatetoc_include.xsl >> generatetoc.xsl
+ cat "$thisdir/generatetoc_footer.xsl" >>generatetoc.xsl
 
- cat "$thisdir/generatetoc_footer.xsl" >>generatetocforuser.xsl
- cat "$thisdir/generatetoc_footer.xsl" >>generatetocforadmin.xsl
- cat "$thisdir/generatetoc_footer.xsl" >>generatetocfordomainadmin.xsl
-
- mkdir -p html/user html/domain_admin html/root_admin
+ mkdir -p html/apis
  cp -r "$thisdir/includes" html
  cp -r "$thisdir/images" html
 

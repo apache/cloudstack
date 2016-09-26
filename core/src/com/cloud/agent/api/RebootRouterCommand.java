@@ -27,7 +27,7 @@ public class RebootRouterCommand extends RebootCommand {
     }
 
     public RebootRouterCommand(String vmName, String privateIp) {
-        super(vmName);
+        super(vmName, true);
         this.privateIp = privateIp;
     }
 

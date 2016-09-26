@@ -38,8 +38,15 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 public interface TemplateManager {
     static final String AllowPublicUserTemplatesCK = "allow.public.user.templates";
+    static final String TemplatePreloaderPoolSizeCK = "template.preloader.pool.size";
+
     static final ConfigKey<Boolean> AllowPublicUserTemplates = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowPublicUserTemplatesCK, "true",
         "If false, users will not be able to create public templates.", true, ConfigKey.Scope.Account);
+
+    static final ConfigKey<Integer> TemplatePreloaderPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, TemplatePreloaderPoolSizeCK, "8",
+            "Size of the TemplateManager threadpool", false, ConfigKey.Scope.Global);
+
+
 
     /**
      * Prepares a template for vm creation for a certain storage pool.

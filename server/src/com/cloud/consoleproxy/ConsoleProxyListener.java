@@ -64,6 +64,10 @@ public class ConsoleProxyListener implements Listener {
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         _proxyMgr.onAgentConnect(host, cmd);
 
@@ -76,6 +80,14 @@ public class ConsoleProxyListener implements Listener {
     public boolean processDisconnect(long agentId, Status state) {
         _proxyMgr.onAgentDisconnect(agentId, state);
         return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

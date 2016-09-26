@@ -29,6 +29,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -41,9 +42,12 @@ import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
 
-@APICommand(name = "addNuageVspDevice", responseObject = NuageVspDeviceResponse.class, description = "Adds a Nuage VSP device", since = "4.5")
+@APICommand(name = AddNuageVspDeviceCmd.APINAME, description = "Adds a Nuage VSP device", responseObject = NuageVspDeviceResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.5",
+        authorized = {RoleType.Admin})
 public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "addnuagevspdeviceresponse";
+    public static final String APINAME = "addNuageVspDevice";
 
     @Inject
     NuageVspManager _nuageVspManager;
@@ -68,14 +72,14 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "the password of CMS user in Nuage VSD")
     private String password;
 
-    @Parameter(name = VspConstants.NUAGE_VSP_API_VERSION, type = CommandType.STRING, required = true, description = "the version of the API to use to communicate to Nuage VSD")
+    @Parameter(name = VspConstants.NUAGE_VSP_API_VERSION, type = CommandType.STRING, description = "the version of the API to use to communicate to Nuage VSD")
     private String apiVersion;
 
-    @Parameter(name = VspConstants.NUAGE_VSP_API_RETRY_COUNT, type = CommandType.INTEGER, required = true, description = "the number of retries on failure to communicate to Nuage VSD")
-    private int apiRetryCount;
+    @Parameter(name = VspConstants.NUAGE_VSP_API_RETRY_COUNT, type = CommandType.INTEGER, description = "the number of retries on failure to communicate to Nuage VSD")
+    private Integer apiRetryCount;
 
-    @Parameter(name = VspConstants.NUAGE_VSP_API_RETRY_INTERVAL, type = CommandType.LONG, required = true, description = "the time to wait after failure before retrying to communicate to Nuage VSD")
-    private long apiRetryInterval;
+    @Parameter(name = VspConstants.NUAGE_VSP_API_RETRY_INTERVAL, type = CommandType.LONG, description = "the time to wait after failure before retrying to communicate to Nuage VSD")
+    private Long apiRetryInterval;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -117,7 +121,7 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
         this.apiVersion = apiVersion;
     }
 
-    public int getApiRetryCount() {
+    public Integer getApiRetryCount() {
         return apiRetryCount;
     }
 
@@ -125,7 +129,7 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
         this.apiRetryCount = apiRetryCount;
     }
 
-    public long getApiRetryInterval() {
+    public Long getApiRetryInterval() {
         return apiRetryInterval;
     }
 
@@ -158,7 +162,7 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.router.VirtualRouter;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
@@ -106,6 +109,7 @@ public class RouterDeploymentDefinition {
     protected Long tableLockId;
     protected boolean isPublicNetwork;
     protected PublicIp sourceNatIp;
+    protected NetworkDetailsDao networkDetailsDao;
 
     protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest,
             final Account owner, final Map<Param, Object> params) {
@@ -193,28 +197,45 @@ public class RouterDeploymentDefinition {
     }
 
     public List<DomainRouterVO> deployVirtualRouter() throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-
         findOrDeployVirtualRouter();
-
         return nwHelper.startRouters(this);
+    }
+
+    private boolean isRouterDeployed() throws ResourceUnavailableException {
+        boolean isDeployed = true;
+        checkPreconditions();
+        final List<DeployDestination> destinations = findDestinations();
+        for (final DeployDestination destination : destinations) {
+            dest = destination;
+            generateDeploymentPlan();
+            planDeploymentRouters();
+            if (getNumberOfRoutersToDeploy() > 0 && prepareDeployment()) {
+                isDeployed = false;
+                break;
+            }
+        }
+        return isDeployed;
     }
 
     @DB
     protected void findOrDeployVirtualRouter() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        try {
-            lock();
-            checkPreconditions();
+        if (!isRouterDeployed()) {
+            try {
+                lock();
+                // reset router list that got populated during isRouterDeployed()
+                routers.clear();
+                checkPreconditions();
 
-            // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
-            final List<DeployDestination> destinations = findDestinations();
-
-            for (final DeployDestination destination : destinations) {
-                dest = destination;
-                generateDeploymentPlan();
-                executeDeployment();
+                // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
+                final List<DeployDestination> destinations = findDestinations();
+                for (final DeployDestination destination : destinations) {
+                    dest = destination;
+                    generateDeploymentPlan();
+                    executeDeployment();
+                }
+            } finally {
+                unlock();
             }
-        } finally {
-            unlock();
         }
     }
 
@@ -378,7 +399,7 @@ public class RouterDeploymentDefinition {
         final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
 
         if (provider == null) {
-            throw new CloudRuntimeException(String.format("Cannot find service provider %s  in physical network %s", type.toString(), physicalNetworkId));
+            throw new CloudRuntimeException(String.format("Cannot find service provider %s in physical network %s", type.toString(), physicalNetworkId));
         }
 
         vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);
@@ -393,7 +414,13 @@ public class RouterDeploymentDefinition {
             // Don't start the router as we are holding the network lock that
             // needs to be released at the end of router allocation
             final DomainRouterVO router = nwHelper.deployRouter(this, false);
-
+            //check if the network update is in progress.
+            //if update is in progress add the update_pending flag to DomainRouterVO.
+            NetworkDetailVO detail =networkDetailsDao.findDetail(guestNetwork.getId(),Network.updatingInSequence);
+            if("true".equalsIgnoreCase(detail!=null ? detail.getValue() : null)) {
+                router.setUpdateState(VirtualRouter.UpdateState.UPDATE_IN_PROGRESS);
+                routerDao.persist(router);
+            }
             if (router != null) {
                 routerDao.addRouterToGuestNetwork(router, guestNetwork);
                 //Fix according to changes by Sheng Yang in commit ID cb4513379996b262ae378daf00c6388c6b7313cf

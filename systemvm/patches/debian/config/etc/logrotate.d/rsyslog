@@ -1,7 +1,6 @@
 /var/log/syslog
 {
 	rotate 7
-	daily
 	size 50M
 	missingok
 	notifempty
@@ -26,7 +25,6 @@
 /var/log/messages
 {
 	rotate 10
-	daily
 	size 50M
 	missingok
 	notifempty
