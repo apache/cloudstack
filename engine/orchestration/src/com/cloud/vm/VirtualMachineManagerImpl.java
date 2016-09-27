@@ -2111,21 +2111,36 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
 
             if (destPool != null) {
-                // Check if pool is accessible from the destination host and disk offering with which the volume was
-                // created is compliant with the pool type.
-                if (_poolHostDao.findByPoolHost(destPool.getId(), host.getId()) == null || destPool.isLocal() != diskOffering.getUseLocalStorage()) {
-                    // Cannot find a pool for the volume. Throw an exception.
-                    throw new CloudRuntimeException("Cannot migrate volume " + volume + " to storage pool " + destPool + " while migrating vm to host " + host +
-                            ". Either the pool is not accessible from the host or because of the offering with which the volume is created it cannot be placed on " +
-                            "the given pool.");
-                } else if (destPool.getId() == currentPool.getId()) {
-                    // If the pool to migrate to is the same as current pool, the volume doesn't need to be migrated.
-                } else {
-                    volumeToPoolObjectMap.put(volume, destPool);
+                if (currentPool.isManaged()) {
+                    if (destPool.getId() == currentPool.getId()) {
+                        volumeToPoolObjectMap.put(volume, currentPool);
+                    }
+                    else {
+                        throw new CloudRuntimeException("Currently, a volume on managed storage can only be 'migrated' to itself.");
+                    }
+                }
+                else {
+                    // Check if pool is accessible from the destination host and disk offering with which the volume was
+                    // created is compliant with the pool type.
+                    if (_poolHostDao.findByPoolHost(destPool.getId(), host.getId()) == null || destPool.isLocal() != diskOffering.getUseLocalStorage()) {
+                        // Cannot find a pool for the volume. Throw an exception.
+                        throw new CloudRuntimeException("Cannot migrate volume " + volume + " to storage pool " + destPool + " while migrating vm to host " + host +
+                                ". Either the pool is not accessible from the host or because of the offering with which the volume is created it cannot be placed on " +
+                                "the given pool.");
+                    } else if (destPool.getId() == currentPool.getId()) {
+                        // If the pool to migrate to is the same as current pool, the volume doesn't need to be migrated.
+                    } else {
+                        volumeToPoolObjectMap.put(volume, destPool);
+                    }
                 }
             } else {
                 if (currentPool.isManaged()) {
-                    volumeToPoolObjectMap.put(volume, currentPool);
+                    if (currentPool.getScope() == ScopeType.ZONE) {
+                        volumeToPoolObjectMap.put(volume, currentPool);
+                    }
+                    else {
+                        throw new CloudRuntimeException("Currently, you can only 'migrate' a volume on managed storage if its storage pool is zone wide.");
+                    }
                 } else {
                     // Find a suitable pool for the volume. Call the storage pool allocator to find the list of pools.
 

@@ -270,7 +270,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
 
-        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+
+        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
         if (snapshotInfo == null) {
             throw new CloudRuntimeException("snapshot:" + snapshotId + " not exist in data store");
         }
@@ -528,6 +530,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
 
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshotCheck, _snapshotStoreDao, dataStoreMgr);
+
+        SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
+
         try {
             boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
 
@@ -542,8 +548,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 }
 
                 if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
-                    SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
-
                     if (snapshotStoreRef != null) {
                         _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getPhysicalSize()));
                     }
@@ -1289,8 +1293,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             hypervisorType = storagePool.getHypervisor();
 
             // at the time being, managed storage only supports XenServer, ESX(i), and KVM (i.e. not Hyper-V), so the VHD file type can be mapped to XenServer
-            if (storagePool.isManaged() && HypervisorType.Any.equals(hypervisorType) && ImageFormat.VHD.equals(volume.getFormat())) {
-                hypervisorType = HypervisorType.XenServer;
+            if (storagePool.isManaged() && HypervisorType.Any.equals(hypervisorType)) {
+                if (ImageFormat.VHD.equals(volume.getFormat())) {
+                    hypervisorType = HypervisorType.XenServer;
+                }
+                else if (ImageFormat.QCOW2.equals(volume.getFormat())) {
+                    hypervisorType = HypervisorType.KVM;
+                }
             }
         } else {
             hypervisorType = volume.getHypervisorType();

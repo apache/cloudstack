@@ -17378,6 +17378,10 @@
                                                     id: "gluster",
                                                     description: "Gluster"
                                                 });
+                                                items.push({
+                                                    id: "custom",
+                                                    description: "custom"
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });

@@ -65,6 +65,7 @@ import com.solidfire.element.api.ListVolumesRequest;
 import com.solidfire.element.api.ModifyVolumeAccessGroupRequest;
 import com.solidfire.element.api.ModifyVolumeRequest;
 import com.solidfire.element.api.QoS;
+import com.solidfire.element.api.RollbackToSnapshotRequest;
 import com.solidfire.element.api.Snapshot;
 import com.solidfire.element.api.SolidFireElement;
 import com.solidfire.element.api.Volume;
@@ -124,6 +125,10 @@ public class SolidFireUtil {
     public static final String DATASTORE_NAME = "datastoreName";
     public static final String IQN = "iqn";
 
+    public static final long MIN_VOLUME_SIZE = 1000000000;
+
+    public static final long MIN_IOPS_PER_VOLUME = 100;
+    public static final long MAX_MIN_IOPS_PER_VOLUME = 15000;
     public static final long MAX_IOPS_PER_VOLUME = 100000;
 
     private static final int DEFAULT_MANAGEMENT_PORT = 443;
@@ -644,11 +649,13 @@ public class SolidFireUtil {
         Snapshot[] snapshots = getSolidFireElement(sfConnection).listSnapshots(request).getSnapshots();
 
         String snapshotName = null;
+        long totalSize = 0;
 
         if (snapshots != null) {
             for (Snapshot snapshot : snapshots) {
                 if (snapshot.getSnapshotID() == snapshotId) {
                     snapshotName = snapshot.getName();
+                    totalSize = snapshot.getTotalSize();
 
                     break;
                 }
@@ -659,7 +666,7 @@ public class SolidFireUtil {
             throw new CloudRuntimeException("Could not find SolidFire snapshot ID: " + snapshotId + " for the following SolidFire volume ID: " + volumeId);
         }
 
-        return new SolidFireSnapshot(snapshotId, snapshotName);
+        return new SolidFireSnapshot(snapshotId, snapshotName, totalSize);
     }
 
     public static void deleteSnapshot(SolidFireConnection sfConnection, long snapshotId) {
@@ -670,13 +677,24 @@ public class SolidFireUtil {
         getSolidFireElement(sfConnection).deleteSnapshot(request);
     }
 
+    public static void rollBackVolumeToSnapshot(SolidFireConnection sfConnection, long volumeId, long snapshotId) {
+        RollbackToSnapshotRequest request = RollbackToSnapshotRequest.builder()
+                .volumeID(volumeId)
+                .snapshotID(snapshotId)
+                .build();
+
+        getSolidFireElement(sfConnection).rollbackToSnapshot(request);
+    }
+
     public static class SolidFireSnapshot {
         private final long _id;
         private final String _name;
+        private final long _totalSize;
 
-        SolidFireSnapshot(long id, String name) {
+        SolidFireSnapshot(long id, String name, long totalSize) {
             _id = id;
             _name = name;
+            _totalSize = totalSize;
         }
 
         public long getId() {
@@ -685,6 +703,10 @@ public class SolidFireUtil {
 
         public String getName() {
             return _name;
+        }
+
+        public long getTotalSize() {
+            return _totalSize;
         }
     }
 

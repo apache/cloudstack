@@ -206,6 +206,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 if (canHandleSrc && canHandleDest) {
                     if (snapshotInfo.getDataStore().getId() == volumeInfo.getDataStore().getId()) {
                         handleCreateVolumeFromSnapshotBothOnStorageSystem(snapshotInfo, volumeInfo, callback);
+
                         return;
                     }
                     else {
@@ -277,8 +278,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         VolumeVO volumeVO = _volumeDao.findByIdIncludingRemoved(volumeId);
 
-        if (volumeVO.getFormat() != ImageFormat.VHD) {
-            throw new CloudRuntimeException("Only the " + ImageFormat.VHD.toString() + " image type is currently supported.");
+        if (volumeVO.getFormat() != ImageFormat.VHD && volumeVO.getFormat() != ImageFormat.QCOW2) {
+            throw new CloudRuntimeException("Only the " + ImageFormat.VHD.toString() + " and " +
+                    ImageFormat.QCOW2.toString() + " image types are currently supported.");
         }
     }
 
@@ -364,7 +366,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         HostVO hostVO = getHost(snapshotInfo);
 
         boolean usingBackendSnapshot = usingBackendSnapshotFor(snapshotInfo);
-        boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
         boolean needCache = needCacheStorage(snapshotInfo, destData);
 
         DataObject destOnStore = destData;
@@ -372,21 +373,54 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (needCache) {
             // creates an object in the DB for data to be cached
             Scope selectedScope = pickCacheScopeForCopy(snapshotInfo, destData);
+
             destOnStore = cacheMgr.getCacheObject(snapshotInfo, selectedScope);
+
             destOnStore.processEvent(Event.CreateOnlyRequested);
         }
 
-        if (usingBackendSnapshot && !computeClusterSupportsResign) {
-            String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " + hostVO.getClusterId();
+        if (usingBackendSnapshot) {
+            final boolean computeClusterSupportsVolumeClone;
 
-            LOGGER.warn(noSupportForResignErrMsg);
+            // only XenServer and KVM are currently supported
+            if (HypervisorType.XenServer.equals(snapshotInfo.getHypervisorType())) {
+                computeClusterSupportsVolumeClone = clusterDao.getSupportsResigning(hostVO.getClusterId());
+            }
+            else if (HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
+                computeClusterSupportsVolumeClone = true;
+            }
+            else {
+                throw new CloudRuntimeException("Unsupported hypervisor type");
+            }
 
-            throw new CloudRuntimeException(noSupportForResignErrMsg);
+            if (!computeClusterSupportsVolumeClone) {
+                String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " + hostVO.getClusterId();
+
+                LOGGER.warn(noSupportForResignErrMsg);
+
+                throw new CloudRuntimeException(noSupportForResignErrMsg);
+            }
         }
 
         try {
+            boolean keepGrantedAccess = false;
+
             if (usingBackendSnapshot) {
-                createVolumeFromSnapshot(hostVO, snapshotInfo, true);
+                createVolumeFromSnapshot(snapshotInfo);
+
+                if (HypervisorType.XenServer.equals(snapshotInfo.getHypervisorType())) {
+                    keepGrantedAccess = true;
+
+                    CopyCmdAnswer copyCmdAnswer = performResignature(snapshotInfo, hostVO, keepGrantedAccess);
+
+                    if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
+                        if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
+                            throw new CloudRuntimeException(copyCmdAnswer.getDetails());
+                        } else {
+                            throw new CloudRuntimeException("Unable to create volume from snapshot");
+                        }
+                    }
+                }
             }
 
             DataStore srcDataStore = snapshotInfo.getDataStore();
@@ -399,9 +433,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             CopyCmdAnswer copyCmdAnswer = null;
 
             try {
-                // If we are using a back-end snapshot, then we should still have access to it from the hosts in the cluster that hostVO is in
-                // (because we passed in true as the third parameter to createVolumeFromSnapshot above).
-                if (!usingBackendSnapshot) {
+                if (keepGrantedAccess == false) {
                     _volumeService.grantAccess(snapshotInfo, hostVO, srcDataStore);
                 }
 
@@ -443,7 +475,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     // clean up snapshot copied to staging
                     cacheMgr.deleteCacheObject(destOnStore);
                 }
-
             } catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
                 String msg = "Failed to create template from snapshot (Snapshot ID = " + snapshotInfo.getId() + ") : ";
 
@@ -563,18 +594,30 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         Preconditions.checkArgument(templateInfo != null, "Passing 'null' to templateInfo of handleCreateVolumeFromTemplateBothOnStorageSystem is not supported.");
         Preconditions.checkArgument(volumeInfo != null, "Passing 'null' to volumeInfo of handleCreateVolumeFromTemplateBothOnStorageSystem is not supported.");
 
-        CopyCmdAnswer copyCmdAnswer = null;
-        String errMsg = null;
+        final CopyCmdAnswer copyCmdAnswer;
 
-        HostVO hostVO = getHost(volumeInfo.getDataCenterId(), true);
+        HostVO hostVO = null;
 
-        if (hostVO == null) {
-            throw new CloudRuntimeException("Unable to locate a host capable of resigning in the zone with the following ID: " + volumeInfo.getDataCenterId());
+        final boolean computeClusterSupportsVolumeClone;
+
+        // only XenServer and KVM are currently supported
+        if (volumeInfo.getFormat() == ImageFormat.VHD) {
+            hostVO = getHost(volumeInfo.getDataCenterId(), true);
+
+            if (hostVO == null) {
+                throw new CloudRuntimeException("Unable to locate a host capable of resigning in the zone with the following ID: " + volumeInfo.getDataCenterId());
+            }
+
+            computeClusterSupportsVolumeClone = clusterDao.getSupportsResigning(hostVO.getClusterId());
+        }
+        else if (volumeInfo.getFormat() == ImageFormat.QCOW2) {
+            computeClusterSupportsVolumeClone = true;
+        }
+        else {
+            throw new CloudRuntimeException("Unsupported format");
         }
 
-        boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
-
-        if (!computeClusterSupportsResign) {
+        if (!computeClusterSupportsVolumeClone) {
             String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " + hostVO.getClusterId();
 
             LOGGER.warn(noSupportForResignErrMsg);
@@ -591,6 +634,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             volumeDetail = volumeDetailsDao.persist(volumeDetail);
 
             AsyncCallFuture<VolumeApiResult> future = _volumeService.createVolumeAsync(volumeInfo, volumeInfo.getDataStore());
+
             int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
 
             VolumeApiResult result = future.get(storagePoolMaxWaitSeconds, TimeUnit.SECONDS);
@@ -608,16 +652,27 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             volumeInfo.processEvent(Event.MigrationRequested);
             volumeInfo = _volumeDataFactory.getVolume(volumeInfo.getId(), volumeInfo.getDataStore());
 
-            copyCmdAnswer = performResignature(volumeInfo, hostVO);
+            if (hostVO != null) {
+                copyCmdAnswer = performResignature(volumeInfo, hostVO);
 
-            if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
-                if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
-                    throw new CloudRuntimeException(copyCmdAnswer.getDetails());
-                } else {
-                    throw new CloudRuntimeException("Unable to create a volume from a template");
+                if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
+                    if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
+                        throw new CloudRuntimeException(copyCmdAnswer.getDetails());
+                    } else {
+                        throw new CloudRuntimeException("Unable to create a volume from a template");
+                    }
                 }
             }
-        } catch (InterruptedException | ExecutionException | TimeoutException ex ) {
+            else {
+                VolumeObjectTO newVolume = new VolumeObjectTO();
+
+                newVolume.setSize(volumeInfo.getSize());
+                newVolume.setPath(volumeInfo.getPath());
+                newVolume.setFormat(volumeInfo.getFormat());
+
+                copyCmdAnswer = new CopyCmdAnswer(newVolume);
+            }
+        } catch (InterruptedException | ExecutionException | TimeoutException ex) {
             volumeInfo.getDataStore().getDriver().deleteAsync(volumeInfo.getDataStore(), volumeInfo, null);
 
             throw new CloudRuntimeException("Create volume from template (ID = " + templateInfo.getId() + ") failed " + ex.getMessage());
@@ -625,7 +680,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
 
-        result.setResult(errMsg);
+        result.setResult(null);
 
         callback.complete(result);
     }
@@ -638,9 +693,21 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             HostVO hostVO = getHost(snapshotInfo);
 
             boolean usingBackendSnapshot = usingBackendSnapshotFor(snapshotInfo);
-            boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
 
-            if (usingBackendSnapshot && !computeClusterSupportsResign) {
+            final boolean computeClusterSupportsVolumeClone;
+
+            // only XenServer and KVM are currently supported
+            if (HypervisorType.XenServer.equals(snapshotInfo.getHypervisorType())) {
+                computeClusterSupportsVolumeClone = clusterDao.getSupportsResigning(hostVO.getClusterId());
+            }
+            else if (HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
+                computeClusterSupportsVolumeClone = true;
+            }
+            else {
+                throw new CloudRuntimeException("Unsupported hypervisor type");
+            }
+
+            if (usingBackendSnapshot && !computeClusterSupportsVolumeClone) {
                 String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " + hostVO.getClusterId();
 
                 LOGGER.warn(noSupportForResignErrMsg);
@@ -649,7 +716,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             boolean canStorageSystemCreateVolumeFromVolume = canStorageSystemCreateVolumeFromVolume(snapshotInfo);
-            boolean useCloning = usingBackendSnapshot || (canStorageSystemCreateVolumeFromVolume && computeClusterSupportsResign);
+            boolean useCloning = usingBackendSnapshot || (canStorageSystemCreateVolumeFromVolume && computeClusterSupportsVolumeClone);
 
             VolumeDetailVO volumeDetail = null;
 
@@ -689,24 +756,36 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             volumeInfo = _volumeDataFactory.getVolume(volumeInfo.getId(), volumeInfo.getDataStore());
 
-            if (useCloning) {
-                copyCmdAnswer = performResignature(volumeInfo, hostVO);
+            if (HypervisorType.XenServer.equals(snapshotInfo.getHypervisorType())) {
+                if (useCloning) {
+                    copyCmdAnswer = performResignature(volumeInfo, hostVO);
+                } else {
+                    // asking for a XenServer host here so we don't always prefer to use XenServer hosts that support resigning
+                    // even when we don't need those hosts to do this kind of copy work
+                    hostVO = getHost(snapshotInfo.getDataCenterId(), false);
+
+                    copyCmdAnswer = performCopyOfVdi(volumeInfo, snapshotInfo, hostVO);
+                }
+
+                if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
+                    if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
+                        errMsg = copyCmdAnswer.getDetails();
+                    } else {
+                        errMsg = "Unable to create volume from snapshot";
+                    }
+                }
+            }
+            else if (HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
+                VolumeObjectTO newVolume = new VolumeObjectTO();
+
+                newVolume.setSize(volumeInfo.getSize());
+                newVolume.setPath(volumeInfo.get_iScsiName());
+                newVolume.setFormat(volumeInfo.getFormat());
+
+                copyCmdAnswer = new CopyCmdAnswer(newVolume);
             }
             else {
-                // asking for a XenServer host here so we don't always prefer to use XenServer hosts that support resigning
-                // even when we don't need those hosts to do this kind of copy work
-                hostVO = getHost(snapshotInfo.getDataCenterId(), false);
-
-                copyCmdAnswer = performCopyOfVdi(volumeInfo, snapshotInfo, hostVO);
-            }
-
-            if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
-                if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
-                    errMsg = copyCmdAnswer.getDetails();
-                }
-                else {
-                    errMsg = "Unable to create volume from snapshot";
-                }
+                throw new CloudRuntimeException("Unsupported hypervisor type");
             }
         }
         catch (Exception ex) {
@@ -730,7 +809,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * If the storage system is using writable snapshots, then nothing need be done by that storage system here because we can just
      * resign the SR and the VDI that should be inside of the snapshot before copying the VHD file to secondary storage.
      */
-    private void createVolumeFromSnapshot(HostVO hostVO, SnapshotInfo snapshotInfo, boolean keepGrantedAccess) {
+    private void createVolumeFromSnapshot(SnapshotInfo snapshotInfo) {
         SnapshotDetailsVO snapshotDetails = handleSnapshotDetails(snapshotInfo.getId(), "tempVolume", "create");
 
         try {
@@ -739,22 +818,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         finally {
             _snapshotDetailsDao.remove(snapshotDetails.getId());
         }
-
-        CopyCmdAnswer copyCmdAnswer = performResignature(snapshotInfo, hostVO, keepGrantedAccess);
-
-        if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
-            if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
-                throw new CloudRuntimeException(copyCmdAnswer.getDetails());
-            } else {
-                throw new CloudRuntimeException("Unable to create volume from snapshot");
-            }
-        }
     }
 
     /**
-     * If the underlying storage system needed to create a volume from a snapshot for createVolumeFromSnapshot(HostVO, SnapshotInfo), then
+     * If the underlying storage system needed to create a volume from a snapshot for createVolumeFromSnapshot(SnapshotInfo), then
      * this is its opportunity to delete that temporary volume and restore properties in snapshot_details to the way they were before the
-     * invocation of createVolumeFromSnapshot(HostVO, SnapshotInfo).
+     * invocation of createVolumeFromSnapshot(SnapshotInfo).
      */
     private void deleteVolumeFromSnapshot(SnapshotInfo snapshotInfo) {
         SnapshotDetailsVO snapshotDetails = handleSnapshotDetails(snapshotInfo.getId(), "tempVolume", "delete");
@@ -847,17 +916,46 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private HostVO getHost(SnapshotInfo snapshotInfo) {
-        HostVO hostVO = getHost(snapshotInfo.getDataCenterId(), true);
+        HypervisorType hypervisorType = snapshotInfo.getHypervisorType();
 
-        if (hostVO == null) {
-            hostVO = getHost(snapshotInfo.getDataCenterId(), false);
+        if (HypervisorType.XenServer.equals(hypervisorType)) {
+            HostVO hostVO = getHost(snapshotInfo.getDataCenterId(), true);
 
             if (hostVO == null) {
-                throw new CloudRuntimeException("Unable to locate an applicable host in data center with ID = " + snapshotInfo.getDataCenterId());
+                hostVO = getHost(snapshotInfo.getDataCenterId(), false);
+
+                if (hostVO == null) {
+                    throw new CloudRuntimeException("Unable to locate an applicable host in data center with ID = " + snapshotInfo.getDataCenterId());
+                }
             }
+
+            return hostVO;
         }
 
-        return hostVO;
+        if (HypervisorType.KVM.equals(hypervisorType)) {
+            return getHost(snapshotInfo.getDataCenterId(), hypervisorType);
+        }
+
+        throw new CloudRuntimeException("Unsupported hypervisor type");
+    }
+
+    private HostVO getHost(Long zoneId, HypervisorType hypervisorType) {
+        Preconditions.checkArgument(zoneId != null, "Zone ID cannot be null.");
+        Preconditions.checkArgument(hypervisorType != null, "Hypervisor type cannot be null.");
+
+        List<HostVO> hosts = _hostDao.listByDataCenterIdAndHypervisorType(zoneId, hypervisorType);
+
+        if (hosts == null) {
+            return null;
+        }
+
+        Collections.shuffle(hosts, RANDOM);
+
+        for (HostVO hostVO : hosts) {
+            return hostVO;
+        }
+
+        return null;
     }
 
     private HostVO getHost(Long zoneId, boolean computeClusterMustSupportResign) {

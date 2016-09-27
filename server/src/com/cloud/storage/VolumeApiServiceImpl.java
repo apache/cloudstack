@@ -984,6 +984,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("Requested size out of range");
             }
 
+            Long storagePoolId = volume.getPoolId();
+
+            if (storagePoolId != null) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+
+                if (storagePoolVO.isManaged()) {
+                    Long instanceId = volume.getInstanceId();
+
+                    if (instanceId != null) {
+                        VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
+
+                        if (vmInstanceVO.getHypervisorType() == HypervisorType.KVM && vmInstanceVO.getState() != State.Stopped) {
+                            throw new CloudRuntimeException("This kind of KVM disk cannot be resized while it is connected to a VM that's not in the Stopped state.");
+                        }
+                    }
+                }
+            }
+
             /*
              * Let's make certain they (think they) know what they're doing if they
              * want to shrink by forcing them to provide the shrinkok parameter.
@@ -1147,20 +1165,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncCallFuture<VolumeApiResult> future = volService.resize(vol);
             VolumeApiResult result = future.get();
 
-            // managed storage is designed in such a way that the storage plug-in does not
-            // talk to the hypervisor layer; as such, if the storage is managed and the
-            // current and new sizes are different, then CloudStack (i.e. not a storage plug-in)
-            // needs to tell the hypervisor to resize the disk
-            if (storagePool.isManaged() && currentSize != newSize) {
-                if (hosts != null && hosts.length > 0) {
-                    volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
-                }
-
-                volume.setSize(newSize);
-
-                _volsDao.update(volume.getId(), volume);
-            }
-
             if (result.isFailed()) {
                 s_logger.warn("Failed to resize the volume " + volume);
                 String details = "";
@@ -1168,6 +1172,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     details = result.getResult();
                 }
                 throw new CloudRuntimeException(details);
+            }
+
+            // managed storage is designed in such a way that the storage plug-in does not
+            // talk to the hypervisor layer; as such, if the storage is managed and the
+            // current and new sizes are different, then CloudStack (i.e. not a storage plug-in)
+            // needs to tell the hypervisor to resize the disk
+            if (storagePool.isManaged() && currentSize != newSize) {
+                if (hosts != null && hosts.length > 0) {
+                    HostVO hostVO = _hostDao.findById(hosts[0]);
+
+                    if (hostVO.getHypervisorType() != HypervisorType.KVM) {
+                        volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
+                    }
+                }
+
+                volume.setSize(newSize);
+
+                _volsDao.update(volume.getId(), volume);
             }
 
             volume = _volsDao.findById(volume.getId());

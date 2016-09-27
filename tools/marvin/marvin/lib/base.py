@@ -987,6 +987,12 @@ class Volume:
             cmd.domainid = services["domainid"]
         return Volume(apiclient.createVolume(cmd).__dict__)
 
+    @classmethod
+    def revertToSnapshot(cls, apiclient, volumeSnapshotId):
+        cmd = revertSnapshot.revertSnapshotCmd()
+        cmd.id = volumeSnapshotId
+        return apiclient.revertSnapshot(cmd)
+
     def delete(self, apiclient):
         """Delete Volume"""
         cmd = deleteVolume.deleteVolumeCmd()
