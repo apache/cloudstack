@@ -833,12 +833,21 @@ public class HypervisorHostHelper {
             }
         }
 
-        VmwareDistributedVirtualSwitchVlanIdSpec oldVlanSpec = (VmwareDistributedVirtualSwitchVlanIdSpec)((
-                VMwareDVSPortSetting)currentDvPortgroupInfo.getDefaultPortConfig()).getVlan();
-        VmwareDistributedVirtualSwitchVlanIdSpec newVlanSpec = (VmwareDistributedVirtualSwitchVlanIdSpec)((
-                VMwareDVSPortSetting)newDvPortGroupSpec.getDefaultPortConfig()).getVlan();
-        int oldVlanId = oldVlanSpec.getVlanId();
-        int newVlanId = newVlanSpec.getVlanId();
+        int oldVlanId, newVlanId;
+        VmwareDistributedVirtualSwitchVlanSpec oldVlanSpec = (VmwareDistributedVirtualSwitchVlanSpec)((VMwareDVSPortSetting)currentDvPortgroupInfo.getDefaultPortConfig()).getVlan();
+        VmwareDistributedVirtualSwitchVlanSpec newVlanSpec = (VmwareDistributedVirtualSwitchVlanSpec)((VMwareDVSPortSetting)newDvPortGroupSpec.getDefaultPortConfig()).getVlan();
+        if (oldVlanSpec instanceof VmwareDistributedVirtualSwitchPvlanSpec && newVlanSpec instanceof VmwareDistributedVirtualSwitchPvlanSpec) {
+            VmwareDistributedVirtualSwitchPvlanSpec oldpVlanSpec = (VmwareDistributedVirtualSwitchPvlanSpec) oldVlanSpec;
+            VmwareDistributedVirtualSwitchPvlanSpec newpVlanSpec = (VmwareDistributedVirtualSwitchPvlanSpec) newVlanSpec;
+            oldVlanId = oldpVlanSpec.getPvlanId();
+            newVlanId = newpVlanSpec.getPvlanId();
+        } else {
+            VmwareDistributedVirtualSwitchVlanIdSpec oldVlanIdSpec = (VmwareDistributedVirtualSwitchVlanIdSpec) oldVlanSpec;
+            VmwareDistributedVirtualSwitchVlanIdSpec newVlanIdSpec = (VmwareDistributedVirtualSwitchVlanIdSpec) newVlanSpec;
+            oldVlanId = oldVlanIdSpec.getVlanId();
+            newVlanId = newVlanIdSpec.getVlanId();
+        }
+
         if (oldVlanId != newVlanId) {
             s_logger.info("Detected that new VLAN [" + newVlanId + "] of dvPortGroup [" + dvPortGroupName +
                         "] is different from current VLAN [" + oldVlanId + "]");
