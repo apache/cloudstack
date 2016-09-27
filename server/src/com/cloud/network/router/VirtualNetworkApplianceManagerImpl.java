@@ -2077,6 +2077,11 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
         }
 
+        final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
+        router.setTemplateVersion(versionAnswer.getTemplateVersion());
+        router.setScriptsVersion(versionAnswer.getScriptsVersion());
+        _routerDao.persist(router);
+
         // at this point, all the router command are successful.
         boolean result = true;
         // Get guest networks info
@@ -2101,12 +2106,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     }
                 }
             }
-        }
-        if (result) {
-            final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
-            router.setTemplateVersion(versionAnswer.getTemplateVersion());
-            router.setScriptsVersion(versionAnswer.getScriptsVersion());
-            _routerDao.persist(router, guestNetworks);
         }
 
         return result;
