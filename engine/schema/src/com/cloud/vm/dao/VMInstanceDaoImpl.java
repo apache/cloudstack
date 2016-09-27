@@ -72,6 +72,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> IdStatesSearch;
     protected SearchBuilder<VMInstanceVO> AllFieldsSearch;
     protected SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
+    protected SearchBuilder<VMInstanceVO> TemplateNonExpungedSearch;
     protected SearchBuilder<VMInstanceVO> NameLikeSearch;
     protected SearchBuilder<VMInstanceVO> StateChangeSearch;
     protected SearchBuilder<VMInstanceVO> TransitionSearch;
@@ -164,6 +165,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ZoneTemplateNonExpungedSearch.and("template", ZoneTemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
         ZoneTemplateNonExpungedSearch.and("state", ZoneTemplateNonExpungedSearch.entity().getState(), Op.NEQ);
         ZoneTemplateNonExpungedSearch.done();
+
+
+        TemplateNonExpungedSearch = createSearchBuilder();
+        TemplateNonExpungedSearch.and("template", TemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
+        TemplateNonExpungedSearch.and("state", TemplateNonExpungedSearch.entity().getState(), Op.NEQ);
+        TemplateNonExpungedSearch.done();
 
         NameLikeSearch = createSearchBuilder();
         NameLikeSearch.and("name", NameLikeSearch.entity().getHostName(), Op.LIKE);
@@ -331,6 +338,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("zone", zoneId);
         sc.setParameters("type", type.toString());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listNonExpungedByTemplate(long templateId) {
+        SearchCriteria<VMInstanceVO> sc = TemplateNonExpungedSearch.create();
+
+        sc.setParameters("template", templateId);
+        sc.setParameters("state", State.Expunging);
         return listBy(sc);
     }
 
