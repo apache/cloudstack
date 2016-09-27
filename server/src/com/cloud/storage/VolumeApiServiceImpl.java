@@ -18,6 +18,7 @@ package com.cloud.storage;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
@@ -475,7 +476,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 } else {
                     volume.setDiskOfferingId(diskOfferingId);
+
+                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(diskOfferingId);
+
+                    Boolean isCustomizedIops = diskOfferingVO != null && diskOfferingVO.isCustomizedIops() != null ? diskOfferingVO.isCustomizedIops() : false;
+
+                    if (isCustomizedIops == null || !isCustomizedIops) {
+                        volume.setMinIops(diskOfferingVO.getMinIops());
+                        volume.setMaxIops(diskOfferingVO.getMaxIops());
+                    }
                 }
+
                 // volume.setSize(size);
                 volume.setInstanceId(null);
                 volume.setUpdated(new Date());
@@ -916,7 +927,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             newMinIops = cmd.getMinIops();
 
             if (newMinIops != null) {
-                if (diskOffering.isCustomizedIops() == null || !diskOffering.isCustomizedIops()) {
+                if (!volume.getVolumeType().equals(Volume.Type.ROOT) && (diskOffering.isCustomizedIops() == null || !diskOffering.isCustomizedIops())) {
                     throw new InvalidParameterValueException("The current disk offering does not support customization of the 'Min IOPS' parameter.");
                 }
             }
@@ -928,7 +939,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             newMaxIops = cmd.getMaxIops();
 
             if (newMaxIops != null) {
-                if (diskOffering.isCustomizedIops() == null || !diskOffering.isCustomizedIops()) {
+                if (!volume.getVolumeType().equals(Volume.Type.ROOT) && (diskOffering.isCustomizedIops() == null || !diskOffering.isCustomizedIops())) {
                     throw new InvalidParameterValueException("The current disk offering does not support customization of the 'Max IOPS' parameter.");
                 }
             }
@@ -967,7 +978,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw new InvalidParameterValueException("The new disk offering requires that a size be specified.");
                 }
 
-                // convert from bytes to GiB
+                // convert from GiB to bytes
                 newSize = newSize << 30;
             } else {
                 newSize = newDiskOffering.getDiskSize();
@@ -998,6 +1009,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (currentSize != newSize) {
             if (!validateVolumeSizeRange(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");
+            }
+
+            Long storagePoolId = volume.getPoolId();
+
+            if (storagePoolId != null) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+
+                if (storagePoolVO.isManaged()) {
+                    Long instanceId = volume.getInstanceId();
+
+                    if (instanceId != null) {
+                        VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
+
+                        if (vmInstanceVO.getHypervisorType() == HypervisorType.KVM && vmInstanceVO.getState() != State.Stopped) {
+                            throw new CloudRuntimeException("This kind of KVM disk cannot be resized while it is connected to a VM that's not in the Stopped state.");
+                        }
+                    }
+                }
             }
 
             /*
@@ -1161,25 +1190,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             // this call to resize has a different impact depending on whether the
             // underlying primary storage is managed or not
-            // if managed, this is the chance for the plug-in to change IOPS value, if applicable
+            // if managed, this is the chance for the plug-in to change the size and/or IOPS values
             // if not managed, this is the chance for the plug-in to talk to the hypervisor layer
             // to change the size of the disk
             AsyncCallFuture<VolumeApiResult> future = volService.resize(vol);
             VolumeApiResult result = future.get();
-
-            // managed storage is designed in such a way that the storage plug-in does not
-            // talk to the hypervisor layer; as such, if the storage is managed and the
-            // current and new sizes are different, then CloudStack (i.e. not a storage plug-in)
-            // needs to tell the hypervisor to resize the disk
-            if (storagePool.isManaged() && currentSize != newSize) {
-                if (hosts != null && hosts.length > 0) {
-                    volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
-                }
-
-                volume.setSize(newSize);
-
-                _volsDao.update(volume.getId(), volume);
-            }
 
             if (result.isFailed()) {
                 s_logger.warn("Failed to resize the volume " + volume);
@@ -1190,11 +1205,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new CloudRuntimeException(details);
             }
 
+            // managed storage is designed in such a way that the storage plug-in does not
+            // talk to the hypervisor layer; as such, if the storage is managed and the
+            // current and new sizes are different, then CloudStack (i.e. not a storage plug-in)
+            // needs to tell the hypervisor to resize the disk
+            if (storagePool.isManaged() && currentSize != newSize) {
+                if (hosts != null && hosts.length > 0) {
+                    HostVO hostVO = _hostDao.findById(hosts[0]);
+
+                    if (hostVO.getHypervisorType() != HypervisorType.KVM) {
+                        volService.resizeVolumeOnHypervisor(volumeId, newSize, hosts[0], instanceName);
+                    }
+                }
+
+                volume.setSize(newSize);
+
+                _volsDao.update(volume.getId(), volume);
+            }
+
             volume = _volsDao.findById(volume.getId());
 
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
             }
+
             if (currentSize != newSize) {
                 volume.setSize(newSize);
             }
@@ -1851,6 +1885,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
 
+            handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
+
             return _volsDao.findById(volumeId);
         } else {
 
@@ -1882,6 +1918,46 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         } catch (JsonParseException e) {
             s_logger.debug("Error parsing chain info json: " + e.getMessage());
+        }
+    }
+
+    private void handleTargetsForVMware(long hostId, String storageAddress, int storagePort, String iScsiName) {
+        HostVO host = _hostDao.findById(hostId);
+
+        if (host.getHypervisorType() == HypervisorType.VMware) {
+            ModifyTargetsCommand cmd = new ModifyTargetsCommand();
+
+            List<Map<String, String>> targets = new ArrayList<>();
+
+            Map<String, String> target = new HashMap<>();
+
+            target.put(ModifyTargetsCommand.STORAGE_HOST, storageAddress);
+            target.put(ModifyTargetsCommand.STORAGE_PORT, String.valueOf(storagePort));
+            target.put(ModifyTargetsCommand.IQN, iScsiName);
+
+            targets.add(target);
+
+            cmd.setTargets(targets);
+            cmd.setApplyToAllHostsInCluster(true);
+            cmd.setAdd(false);
+            cmd.setTargetTypeToRemove(ModifyTargetsCommand.TargetTypeToRemove.DYNAMIC);
+
+            sendModifyTargetsCommand(cmd, hostId);
+        }
+    }
+
+    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        if (answer == null) {
+            String msg = "Unable to get an answer to the modify targets command";
+
+            s_logger.warn(msg);
+        }
+        else if (!answer.getResult()) {
+            String msg = "Unable to modify target on the following host: " + hostId;
+
+            s_logger.warn(msg);
         }
     }
 
@@ -2088,6 +2164,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
+
         if (storagePoolVO.isManaged() && locationType == null) {
             locationType = Snapshot.LocationType.PRIMARY;
         }
@@ -2206,6 +2283,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
+
         if (!storagePoolVO.isManaged() && locationType != null) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " LocationType is supported only for managed storage");
         }
@@ -2295,7 +2373,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         if (volume.getPoolId() == null) {
-            throw new InvalidParameterValueException("The volume doesnt belong to a storage pool so cant extract it");
+            throw new InvalidParameterValueException("The volume doesn't belong to a storage pool so can't extract it");
         }
         // Extract activity only for detached volumes or for volumes whose
         // instance is stopped
@@ -2419,9 +2497,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat(), vol);
         VolumeDataStoreVO volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
+
         volumeStoreRef.setExtractUrl(extractUrl);
         volumeStoreRef.setExtractUrlCreated(DateUtil.now());
+        volumeStoreRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        volumeStoreRef.setDownloadPercent(100);
+        volumeStoreRef.setZoneId(zoneId);
+
         _volumeStoreDao.update(volumeStoreRef.getId(), volumeStoreRef);
+
         return extractUrl;
     }
 
@@ -2630,6 +2714,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // Mark the volume as attached
                 if (sendCommand) {
                     DiskTO disk = answer.getDisk();
+
                     _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), disk.getDiskSeq());
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
@@ -2643,6 +2728,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     deviceId = getDeviceId(vm, deviceId);
 
                     _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);
+
+                    volumeToAttach = _volsDao.findById(volumeToAttach.getId());
+
+                    if (vm.getHypervisorType() == HypervisorType.KVM && volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
+                        volumeToAttach.setPath(volumeToAttach.get_iScsiName());
+
+                        _volsDao.update(volumeToAttach.getId(), volumeToAttach);
+                    }
                 }
 
                 // insert record for disk I/O statistics

@@ -44,14 +44,54 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public interface StorageManager extends StorageService {
-    static final ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<Integer>(Integer.class, "storage.cleanup.interval", "Advanced", "86400",
-            "The interval (in seconds) to wait before running the storage cleanup thread.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> StorageCleanupDelay = new ConfigKey<Integer>(Integer.class, "storage.cleanup.delay", "Advanced", "86400",
-            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Boolean> StorageCleanupEnabled = new ConfigKey<Boolean>(Boolean.class, "storage.cleanup.enabled", "Advanced", "true",
-            "Enables/disables the storage cleanup thread.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Boolean> TemplateCleanupEnabled = new ConfigKey<Boolean>(Boolean.class, "storage.template.cleanup.enabled", "Storage", "true",
-            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled", false, ConfigKey.Scope.Global, null);
+    ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<>(Integer.class,
+            "storage.cleanup.interval",
+            "Advanced",
+            "86400",
+            "The interval (in seconds) to wait before running the storage cleanup thread.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> StorageCleanupDelay = new ConfigKey<>(Integer.class,
+            "storage.cleanup.delay",
+            "Advanced",
+            "86400",
+            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Boolean> StorageCleanupEnabled = new ConfigKey<>(Boolean.class,
+            "storage.cleanup.enabled",
+            "Advanced",
+            "true",
+            "Enables/disables the storage cleanup thread.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Boolean> TemplateCleanupEnabled = new ConfigKey<>(Boolean.class,
+            "storage.template.cleanup.enabled",
+            "Storage",
+            "true",
+            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> KvmStorageOfflineMigrationWait = new ConfigKey<>(Integer.class,
+            "kvm.storage.offline.migration.wait",
+            "Storage",
+            "10800",
+            "Timeout in seconds for offline (non-live) storage migration to complete on KVM",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> KvmStorageOnlineMigrationWait = new ConfigKey<>(Integer.class,
+            "kvm.storage.online.migration.wait",
+            "Storage",
+            "10800",
+            "Timeout in seconds for online (live) storage migration to complete on KVM (migrateVirtualMachineWithVolume)",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool
@@ -101,6 +141,8 @@ public interface StorageManager extends StorageService {
     StoragePoolVO findLocalStorageOnHost(long hostId);
 
     Host updateSecondaryStorage(long secStorageId, String newUrl);
+
+    void removeStoragePoolFromCluster(long hostId, String iScsiName, StoragePool storagePool);
 
     List<Long> getUpHostsInPool(long poolId);
 

@@ -22,7 +22,8 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class PrepareForMigrationCommand extends Command {
-    VirtualMachineTO vm;
+    private VirtualMachineTO vm;
+    private boolean rollback;
 
     protected PrepareForMigrationCommand() {
     }
@@ -33,6 +34,14 @@ public class PrepareForMigrationCommand extends Command {
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
+    }
+
+    public void setRollback(boolean rollback) {
+        this.rollback = rollback;
+    }
+
+    public boolean isRollback() {
+        return rollback;
     }
 
     @Override

@@ -298,7 +298,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 return new AttachAnswer(disk);
             }
 
-            VDI vdi = null;
+            VDI vdi;
 
             if (isManaged) {
                 vdi = hypervisorResource.prepareManagedStorage(conn, details, data.getPath(), vdiNameLabel);
@@ -320,10 +320,13 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vbdr.VDI = vdi;
             vbdr.bootable = false;
             vbdr.userdevice = "autodetect";
+
             final Long deviceId = disk.getDiskSeq();
+
             if (deviceId != null && !hypervisorResource.isDeviceUsed(conn, vm, deviceId)) {
                 vbdr.userdevice = deviceId.toString();
             }
+
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
             vbdr.unpluggable = true;
@@ -337,6 +340,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 vbd.destroy(conn);
                 throw e;
             }
+
             // Update the VDI's label to include the VM name
             vdi.setNameLabel(conn, vdiNameLabel);
 
@@ -345,7 +349,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new AttachAnswer(newDisk);
         } catch (final Exception e) {
             final String msg = "Failed to attach volume for uuid: " + data.getPath() + " due to "  + e.toString();
+
             s_logger.warn(msg, e);
+
             return new AttachAnswer(msg);
         }
     }

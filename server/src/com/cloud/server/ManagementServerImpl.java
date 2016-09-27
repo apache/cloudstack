@@ -1232,16 +1232,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
                     if (volClusterId != null) {
                         if (!host.getClusterId().equals(volClusterId) || usesLocal) {
-                            if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
-                                requiresStorageMotion.put(host, true);
-                            } else {
+                            if (storagePool.isManaged()) {
+                                // At the time being, we do not support storage migration of a volume from managed storage unless the managed storage
+                                // is at the zone level and the source and target storage pool is the same.
+                                // If the source and target storage pool is the same and it is managed, then we still have to perform a storage migration
+                                // because we need to create a new target volume and copy the contents of the source volume into it before deleting the
+                                // source volume.
                                 iterator.remove();
+                            }
+                            else {
+                                if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
+                                    requiresStorageMotion.put(host, true);
+                                } else {
+                                    iterator.remove();
+                                }
                             }
                         }
                     }
                     else {
                         if (storagePool.isManaged()) {
                             if (srcHost.getClusterId() != host.getClusterId()) {
+                                // If the volume's storage pool is managed and at the zone level, then we still have to perform a storage migration
+                                // because we need to create a new target volume and copy the contents of the source volume into it before deleting
+                                // the source volume.
                                 requiresStorageMotion.put(host, true);
                             }
                         }
@@ -1388,12 +1401,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final StoragePoolVO srcVolumePool = _poolDao.findById(volume.getPoolId());
         // Get all the pools available. Only shared pools are considered because only a volume on a shared pools
         // can be live migrated while the virtual machine stays on the same host.
-        List<StoragePoolVO> storagePools = null;
-        if (srcVolumePool.getClusterId() == null) {
-            storagePools = _poolDao.findZoneWideStoragePoolsByTags(volume.getDataCenterId(), null);
-        } else {
+
+        List<StoragePoolVO> storagePools;
+
+        if (srcVolumePool.getClusterId() != null) {
             storagePools = _poolDao.findPoolsByTags(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
         }
+        else {
+            storagePools = new ArrayList<>();
+        }
+
+        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(volume.getDataCenterId(), null);
+
+        storagePools.addAll(zoneWideStoragePools);
 
         storagePools.remove(srcVolumePool);
         for (final StoragePoolVO pool : storagePools) {

@@ -51,6 +51,9 @@ from marvin.lib.utils import cleanup_resources
 #  Check that ip_address_of_new_xenserver_host / ip_address_of_new_kvm_host is correct.
 #  If using XenServer, verify the "xen_server_master_hostname" variable is correct.
 #  If using KVM, verify the "kvm_1_ip_address" variable is correct.
+#
+# Note:
+#  If you do have more than one cluster, you might need to change this line: cls.cluster = list_clusters(cls.apiClient)[0]
 
 
 class TestData:
@@ -92,18 +95,18 @@ class TestData:
     # modify to control which hypervisor type to test
     hypervisor_type = xenServer
     xen_server_master_hostname = "XenServer-6.5-1"
-    kvm_1_ip_address = "192.168.129.84"
-    ip_address_of_new_xenserver_host = "192.168.129.243"
-    ip_address_of_new_kvm_host = "192.168.129.3"
+    kvm_1_ip_address = "10.117.40.112"
+    ip_address_of_new_xenserver_host = "10.117.40.107"
+    ip_address_of_new_kvm_host = "10.117.40.116"
 
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
-                TestData.mvip: "192.168.139.112",
+                TestData.mvip: "10.117.40.120",
                 TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
-                TestData.url: "https://192.168.139.112:443"
+                TestData.url: "https://10.117.40.120:443"
             },
             TestData.kvm: {
                 TestData.username: "root",
@@ -144,7 +147,7 @@ class TestData:
             TestData.primaryStorage: {
                 TestData.name: "SolidFire-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                TestData.url: "MVIP=192.168.139.112;SVIP=10.10.8.112;" +
+                TestData.url: "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "clusterDefaultMinIops=10000;clusterDefaultMaxIops=15000;" +
                        "clusterDefaultBurstIopsPercentOfMaxIops=1.5;",
@@ -157,7 +160,7 @@ class TestData:
             TestData.primaryStorage2: {
                 TestData.name: "SolidFireShared-%d" % random.randint(0, 100),
                 TestData.scope: "CLUSTER",
-                TestData.url: "MVIP=192.168.139.112;SVIP=10.10.8.112;" +
+                TestData.url: "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "minIops=5000;maxIops=50000;burstIops=75000",
                 TestData.provider: "SolidFireShared",
@@ -191,7 +194,7 @@ class TestData:
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
-            TestData.url: "192.168.129.50"
+            TestData.url: "10.117.40.114"
         }
 
 
@@ -223,7 +226,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
+        cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -753,7 +756,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         searchFor = "InitiatorName="
 
-        stdin, stdout, stderr = ssh_connection.exec_command("sudo grep " + searchFor + " /etc/iscsi/initiatorname.iscsi")
+        stdout = ssh_connection.exec_command("sudo grep " + searchFor + " /etc/iscsi/initiatorname.iscsi")[1]
 
         result = stdout.read()
 

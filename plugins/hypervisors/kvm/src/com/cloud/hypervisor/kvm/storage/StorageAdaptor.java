@@ -48,6 +48,8 @@ public interface StorageAdaptor {
     // given disk path (per database) and pool, clean up disk on host
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool);
 
+    public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect);
+
     // given local path to file/device (per Libvirt XML), 1) check that device is
     // handled by your adaptor, return false if not. 2) clean up device, return true
     public boolean disconnectPhysicalDiskByPath(String localPath);

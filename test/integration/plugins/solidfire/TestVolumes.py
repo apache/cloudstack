@@ -31,11 +31,11 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 # Import Integration Libraries
 
 # base - contains all resources as entities and defines create, delete, list operations on them
-from marvin.lib.base import Account, DiskOffering, ServiceOffering, StoragePool, User, VirtualMachine, Volume
+from marvin.lib.base import Account, DiskOffering, ServiceOffering, Snapshot, StoragePool, Template, User, VirtualMachine, Volume
 
 # common - commonly used methods for all tests are listed here
 from marvin.lib.common import get_domain, get_template, get_zone, list_clusters, list_hosts, list_virtual_machines, \
-    list_volumes, list_hosts
+    list_volumes
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
@@ -49,6 +49,9 @@ from marvin.lib.utils import cleanup_resources
 #  Change the "hypervisor_type" variable to control which hypervisor type to test.
 #  If using XenServer, verify the "xen_server_hostname" variable is correct.
 #  If using XenServer, change the "supports_cloning" variable to True or False as desired.
+#
+# Note:
+#  If you do have more than one cluster, you might need to change this line: cls.cluster = list_clusters(cls.apiClient)[0]
 
 
 class TestData():
@@ -65,6 +68,7 @@ class TestData():
     kvm = "kvm"
     login = "login"
     mvip = "mvip"
+    one_GB_in_bytes = 1073741824
     password = "password"
     port = "port"
     primaryStorage = "primarystorage"
@@ -87,17 +91,17 @@ class TestData():
     zoneId = "zoneId"
 
     # modify to control which hypervisor type to test
-    hypervisor_type = xenServer
+    hypervisor_type = kvm
     xen_server_hostname = "XenServer-6.5-1"
 
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
-                TestData.mvip: "192.168.139.112",
+                TestData.mvip: "10.117.40.120",
                 TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
-                TestData.url: "https://192.168.139.112:443"
+                TestData.url: "https://10.117.40.120:443"
             },
             TestData.kvm: {
                 TestData.username: "root",
@@ -131,7 +135,7 @@ class TestData():
             TestData.primaryStorage: {
                 "name": "SolidFire-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                "url": "MVIP=192.168.139.112;SVIP=10.10.8.112;" +
+                "url": "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "clusterDefaultMinIops=10000;clusterDefaultMaxIops=15000;" +
                        "clusterDefaultBurstIopsPercentOfMaxIops=1.5;",
@@ -182,7 +186,7 @@ class TestData():
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
-            TestData.url: "192.168.129.50"
+            TestData.url: "10.117.40.114"
         }
 
 
@@ -190,6 +194,7 @@ class TestVolumes(cloudstackTestCase):
     _should_only_be_one_vm_in_list_err_msg = "There should only be one VM in this list."
     _should_only_be_one_volume_in_list_err_msg = "There should only be one volume in this list."
     _should_only_be_one_host_in_list_err_msg = "There should only be one host in this list."
+    _should_only_be_two_volumes_in_list_err_msg = "There should only be two volumes in this list."
     _sf_account_id_should_be_non_zero_int_err_msg = "The SolidFire account ID should be a non-zero integer."
     _volume_size_should_be_non_zero_int_err_msg = "The SolidFire volume size should be a non-zero integer."
     _volume_vm_id_and_vm_id_do_not_match_err_msg = "The volume's VM ID and the VM's ID do not match."
@@ -197,6 +202,16 @@ class TestVolumes(cloudstackTestCase):
     _vm_not_in_stopped_state_err_msg = "The VM is not in the 'Stopped' state."
     _volume_response_should_not_be_zero_err_msg = "The length of the response for the SolidFire-volume query should not be zero."
     _volume_should_not_be_in_a_vag = "The volume should not be in a volume access group."
+    _volume_size_not_an_int = "'volume_size_in_GB' is not of type 'int'"
+    _only_data_volumes_err_msg = "Only data volumes can be resized via a new disk offering."
+    _to_change_volume_size_err_msg = "To change a volume's size without providing a new disk offering, its current " \
+        "disk offering must be customizable or it must be a root volume (if providing a disk offering, make sure it is " \
+        "different from the current disk offering)."
+    _min_iops_err_msg = "The current disk offering does not support customization of the 'Min IOPS' parameter."
+    _this_kind_of_disk_err_msg = "This kind of KVM disk cannot be resized while it is connected to a VM that's not in the Stopped state."
+    _template_creation_did_not_fail_err_msg = "The template creation did not fail (as expected)."
+    _volume_resize_did_not_fail_err_msg = "The volume resize did not fail (as expected)."
+    _volume_attached_to_non_stopped_vm_err_msg = "volume is attached to a non-stopped VM"
 
     @classmethod
     def setUpClass(cls):
@@ -221,7 +236,7 @@ class TestVolumes(cloudstackTestCase):
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
+        cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -366,14 +381,14 @@ class TestVolumes(cloudstackTestCase):
 
         self.cleanup.append(new_volume)
 
-        self._check_and_get_cs_volume(new_volume.id, self.testdata[TestData.volume_2][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, new_volume.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         new_volume = self.virtual_machine.attach_volume(
             self.apiClient,
             new_volume
         )
 
-        newvolume = self._check_and_get_cs_volume(new_volume.id, self.testdata[TestData.volume_2][TestData.diskName])
+        newvolume = sf_util.check_and_get_cs_volume(self, new_volume.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         TestVolumes._start_vm(self.virtual_machine)
 
@@ -426,7 +441,7 @@ class TestVolumes(cloudstackTestCase):
 
         sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         #######################################
         #######################################
@@ -441,7 +456,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -486,7 +501,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = False
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -527,7 +542,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -560,7 +575,7 @@ class TestVolumes(cloudstackTestCase):
 
         sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         #######################################
         #######################################
@@ -575,7 +590,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -614,7 +629,7 @@ class TestVolumes(cloudstackTestCase):
         #######################################
         TestVolumes._reboot_vm(self.virtual_machine)
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -643,7 +658,7 @@ class TestVolumes(cloudstackTestCase):
 
         sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         #######################################
         #######################################
@@ -658,7 +673,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -703,7 +718,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = False
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -739,7 +754,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.virtual_machine.reboot(self.apiClient)
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -764,7 +779,7 @@ class TestVolumes(cloudstackTestCase):
 
         sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         #######################################
         #######################################
@@ -779,7 +794,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -828,7 +843,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = False
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -864,7 +879,7 @@ class TestVolumes(cloudstackTestCase):
 
         TestVolumes._start_vm(self.virtual_machine)
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -889,7 +904,7 @@ class TestVolumes(cloudstackTestCase):
 
         sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, self.primary_storage.id, self)
 
-        self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         #######################################
         #######################################
@@ -904,7 +919,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -941,7 +956,7 @@ class TestVolumes(cloudstackTestCase):
 
         TestVolumes._start_vm(self.virtual_machine)
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -1002,7 +1017,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(test_virtual_machine.id)
 
@@ -1050,7 +1065,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = False
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         self.assertEqual(
             vol.virtualmachineid,
@@ -1111,14 +1126,14 @@ class TestVolumes(cloudstackTestCase):
 
         volume_to_delete_later = new_volume
 
-        self._check_and_get_cs_volume(new_volume.id, self.testdata[TestData.volume_2][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, new_volume.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         new_volume = self.virtual_machine.attach_volume(
             self.apiClient,
             new_volume
         )
 
-        vol = self._check_and_get_cs_volume(new_volume.id, self.testdata[TestData.volume_2][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, new_volume.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -1165,7 +1180,7 @@ class TestVolumes(cloudstackTestCase):
             new_volume
         )
 
-        vol = self._check_and_get_cs_volume(new_volume.id, self.testdata[TestData.volume_2][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, new_volume.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -1253,7 +1268,7 @@ class TestVolumes(cloudstackTestCase):
             diskofferingid=self.disk_offering.id
         )
 
-        self._check_and_get_cs_volume(test_volume.id, self.testdata[TestData.volume_2][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, test_volume.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         #######################################
         #######################################
@@ -1268,7 +1283,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         vm = self._get_vm(self.virtual_machine.id)
 
@@ -1289,7 +1304,7 @@ class TestVolumes(cloudstackTestCase):
             test_volume
         )
 
-        test_vol = self._check_and_get_cs_volume(test_volume.id, self.testdata[TestData.volume_2][TestData.diskName])
+        test_vol = sf_util.check_and_get_cs_volume(self, test_volume.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         test_vm = self._get_vm(test_virtual_machine.id)
 
@@ -1359,7 +1374,7 @@ class TestVolumes(cloudstackTestCase):
 
         self.cleanup.append(volume_2)
 
-        self._check_and_get_cs_volume(volume_2.id, self.testdata[TestData.volume_2][TestData.diskName])
+        sf_util.check_and_get_cs_volume(self, volume_2.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         #######################################
         #######################################
@@ -1374,14 +1389,14 @@ class TestVolumes(cloudstackTestCase):
 
         self.attached = True
 
-        vol = self._check_and_get_cs_volume(self.volume.id, self.testdata[TestData.volume_1][TestData.diskName])
+        vol = sf_util.check_and_get_cs_volume(self, self.volume.id, self.testdata[TestData.volume_1][TestData.diskName], self)
 
         self.virtual_machine.attach_volume(
             self.apiClient,
             volume_2
         )
 
-        vol_2 = self._check_and_get_cs_volume(volume_2.id, self.testdata[TestData.volume_2][TestData.diskName])
+        vol_2 = sf_util.check_and_get_cs_volume(self, volume_2.id, self.testdata[TestData.volume_2][TestData.diskName], self)
 
         sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
 
@@ -1421,43 +1436,1135 @@ class TestVolumes(cloudstackTestCase):
 
         self.virtual_machine.detach_volume(self.apiClient, volume_2)
 
-    def _check_volume(self, volume, volume_name):
-        self.assertTrue(
-            volume.name.startswith(volume_name),
-            "The volume name is incorrect."
-        )
+    def test_11_template_from_volume(self):
+        if TestData.hypervisor_type != TestData.kvm:
+            return
 
-        self.assertEqual(
-            volume.diskofferingid,
-            self.disk_offering.id,
-            "The disk offering is incorrect."
-        )
-
-        self.assertEqual(
-            volume.zoneid,
-            self.zone.id,
-            "The zone is incorrect."
-        )
-
-        self.assertEqual(
-            volume.storagetype,
-            self.disk_offering.storagetype,
-            "The storage type is incorrect."
-        )
-
-    def _check_and_get_cs_volume(self, volume_id, volume_name):
         list_volumes_response = list_volumes(
             self.apiClient,
-            id=volume_id
+            virtualmachineid=self.virtual_machine.id,
+            listall=True
         )
 
         sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
 
-        cs_volume = list_volumes_response[0]
+        vm_1_root_volume = list_volumes_response[0]
 
-        self._check_volume(cs_volume, volume_name)
+        services = {"displaytext": "Template-1", "name": "Template-1-name", "ostypeid": self.template.ostypeid, "ispublic": "true"}
 
-        return cs_volume
+        try:
+            Template.create_from_volume(self.apiClient, vm_1_root_volume, services)
+
+            raise Exception(TestVolumes._template_creation_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._volume_attached_to_non_stopped_vm_err_msg not in e.errorMsg:
+                raise
+
+        self.virtual_machine.stop(self.apiClient)
+
+        template = Template.create_from_volume(self.apiClient, vm_1_root_volume, services)
+
+        self.cleanup.append(template)
+
+        vol_snap = Snapshot.create(self.apiClient, volume_id=vm_1_root_volume.id)
+
+        self.cleanup.append(vol_snap)
+
+        TestVolumes._start_vm(self.virtual_machine)
+
+        self._create_vm_using_template_and_destroy_vm(template)
+
+        services = {"diskname": "Vol-1", "zoneid": self.testdata[TestData.zoneId], "ispublic": True}
+
+        volume_created_from_snapshot = Volume.create_from_snapshot(self.apiClient, vol_snap.id, services, account=self.account.name, domainid=self.domain.id)
+
+        self.cleanup.append(volume_created_from_snapshot)
+
+        services = {"displaytext": "Template-2", "name": "Template-2-name", "ostypeid": self.template.ostypeid, "ispublic": "true"}
+
+        template = Template.create_from_volume(self.apiClient, volume_created_from_snapshot, services)
+
+        self.cleanup.append(template)
+
+        self._create_vm_using_template_and_destroy_vm(template)
+
+        volume_created_from_snapshot = self.virtual_machine.attach_volume(
+            self.apiClient,
+            volume_created_from_snapshot
+        )
+
+        services = {"displaytext": "Template-3", "name": "Template-3-name", "ostypeid": self.template.ostypeid, "ispublic": "true"}
+
+        try:
+            Template.create_from_volume(self.apiClient, volume_created_from_snapshot, services)
+
+            raise Exception(TestVolumes._template_creation_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._volume_attached_to_non_stopped_vm_err_msg not in e.errorMsg:
+                raise
+
+        self.virtual_machine.stop(self.apiClient)
+
+        template = Template.create_from_volume(self.apiClient, volume_created_from_snapshot, services)
+
+        self.cleanup.append(template)
+
+        volume_created_from_snapshot = self.virtual_machine.detach_volume(
+            self.apiClient,
+            volume_created_from_snapshot
+        )
+
+        TestVolumes._start_vm(self.virtual_machine)
+
+        self._create_vm_using_template_and_destroy_vm(template)
+
+        services = {"displaytext": "Template-4", "name": "Template-4-name", "ostypeid": self.template.ostypeid, "ispublic": "true"}
+
+        template = Template.create_from_volume(self.apiClient, volume_created_from_snapshot, services)
+
+        self.cleanup.append(template)
+
+        self._create_vm_using_template_and_destroy_vm(template)
+
+    def test_12_resize_volume_on_running_vm(self):
+        if TestData.hypervisor_type != TestData.kvm:
+            return
+
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine2],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=True
+        )
+
+        self.cleanup.append(test_virtual_machine)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            virtualmachineid=test_virtual_machine.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        test_vm_root_volume = Volume(list_volumes_response[0].__dict__)
+
+        self._handle_root_volume_with_started_vm(test_vm_root_volume)
+
+        volume_name = {
+            TestData.diskName: "test-volume-a",
+        }
+
+        test_vm_data_volume = Volume.create(
+            self.apiClient,
+            volume_name,
+            account=self.account.name,
+            domainid=self.domain.id,
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering.id
+        )
+
+        self.cleanup.append(test_vm_data_volume)
+
+        test_vm_data_volume = test_virtual_machine.attach_volume(
+            self.apiClient,
+            test_vm_data_volume
+        )
+
+        test_vm_data_volume = Volume(test_vm_data_volume.__dict__)
+
+        self._handle_data_volume_with_started_vm(test_vm_data_volume)
+
+        custom_disk_offering = {
+            "name": "SF_DO_A",
+            "displaytext": "SF_DO_A (Custom)",
+            "customized": True,
+            "customizediops": True,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        custom_disk_offering = DiskOffering.create(
+            self.apiClient,
+            custom_disk_offering,
+            custom=True
+        )
+
+        self.cleanup.append(custom_disk_offering)
+
+        services = {
+            TestData.diskName: "test-volume-custom-a",
+            "customdisksize": 100,
+            "customminiops": 1000,
+            "custommaxiops": 2000,
+            "zoneid": self.testdata[TestData.zoneId]
+        }
+
+        test_vm_data_volume = Volume.create_custom_disk(
+            self.apiClient,
+            services,
+            account=self.account.name,
+            domainid=self.domain.id,
+            diskofferingid=custom_disk_offering.id
+        )
+
+        self.cleanup.append(test_vm_data_volume)
+
+        test_vm_data_volume = test_virtual_machine.attach_volume(
+            self.apiClient,
+            test_vm_data_volume
+        )
+
+        test_vm_data_volume = Volume(test_vm_data_volume.__dict__)
+
+        self._handle_custom_data_volume_with_started_vm(test_vm_data_volume)
+
+    def test_13_resize_volume_on_stopped_vm(self):
+        if TestData.hypervisor_type != TestData.kvm:
+            return
+
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine2],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=False
+        )
+
+        self.cleanup.append(test_virtual_machine)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            virtualmachineid=test_virtual_machine.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        test_vm_root_volume = Volume(list_volumes_response[0].__dict__)
+
+        err_msg = "Check if SF volume was created in correct account"
+
+        try:
+            # This should fail because there should not be an equivalent SolidFire volume in the cluster yet.
+            self._verify_volume(test_vm_root_volume)
+
+            raise Exception("The volume verification did not fail (as expected).")
+        except Exception as e:
+            if err_msg not in str(e):
+                raise
+
+        # Starting the up the should create its root disk on the SolidFire cluster.
+        test_virtual_machine.start(self.apiClient)
+
+        test_virtual_machine.stop(self.apiClient)
+
+        self._handle_root_volume_with_stopped_vm(test_vm_root_volume)
+
+        volume_name = {
+            TestData.diskName: "test-volume-a",
+        }
+
+        test_vm_data_volume = Volume.create(
+            self.apiClient,
+            volume_name,
+            account=self.account.name,
+            domainid=self.domain.id,
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering.id
+        )
+
+        self.cleanup.append(test_vm_data_volume)
+
+        test_vm_data_volume = test_virtual_machine.attach_volume(
+            self.apiClient,
+            test_vm_data_volume
+        )
+
+        test_vm_data_volume = Volume(test_vm_data_volume.__dict__)
+
+        self._handle_data_volume_with_stopped_vm(test_vm_data_volume)
+
+        custom_disk_offering = {
+            "name": "SF_DO_A",
+            "displaytext": "SF_DO_A (Custom)",
+            "customized": True,
+            "customizediops": True,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        custom_disk_offering = DiskOffering.create(
+            self.apiClient,
+            custom_disk_offering,
+            custom=True
+        )
+
+        self.cleanup.append(custom_disk_offering)
+
+        services = {
+            TestData.diskName: "test-volume-custom-a",
+            "customdisksize": 100,
+            "customminiops": 1000,
+            "custommaxiops": 2000,
+            "zoneid": self.testdata[TestData.zoneId]
+        }
+
+        test_vm_data_volume = Volume.create_custom_disk(
+            self.apiClient,
+            services,
+            account=self.account.name,
+            domainid=self.domain.id,
+            diskofferingid=custom_disk_offering.id
+        )
+
+        self.cleanup.append(test_vm_data_volume)
+
+        test_vm_data_volume = test_virtual_machine.attach_volume(
+            self.apiClient,
+            test_vm_data_volume
+        )
+
+        test_vm_data_volume = Volume(test_vm_data_volume.__dict__)
+
+        self._handle_custom_data_volume_with_stopped_vm(test_vm_data_volume)
+
+        test_vm_data_volume = test_virtual_machine.detach_volume(
+            self.apiClient,
+            test_vm_data_volume
+        )
+
+        test_vm_data_volume = Volume(test_vm_data_volume.__dict__)
+
+        self._handle_custom_data_volume_with_stopped_vm(test_vm_data_volume)
+
+    def _handle_root_volume_with_started_vm(self, volume):
+        self._verify_volume(volume)
+
+        volume_size_in_GB = volume.size / TestData.one_GB_in_bytes
+
+        self.assertTrue(
+            type(volume_size_in_GB) == int,
+            TestVolumes._volume_size_not_an_int
+        )
+
+        new_size = volume_size_in_GB + 10
+        new_min_iops = volume.miniops + 100
+        new_max_iops = volume.maxiops + 200
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        try:
+            # Try to change the size and IOPS of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, size=new_size, miniops=new_min_iops, maxiops=new_max_iops)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._this_kind_of_disk_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        try:
+            # Try to change the size of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, size=new_size)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._this_kind_of_disk_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        disk_offering = {
+            "name": "SF_DO_A",
+            "displaytext": "SF_DO_A (Min IOPS = " + str(new_min_iops) + "; Max IOPS = " + str(new_max_iops) + ")",
+            "disksize": new_size,
+            "customizediops": False,
+            "miniops": new_min_iops,
+            "maxiops": new_max_iops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        try:
+            # Try to change the size and IOPS of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._only_data_volumes_err_msg not in str(e):
+                raise
+
+        disk_offering.delete(self.apiClient)
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        disk_offering = {
+            "name": "SF_DO_B",
+            "displaytext": "SF_DO_B (Min IOPS = " + str(volume.miniops) + "; Max IOPS = " + str(volume.maxiops) + ")",
+            "disksize": new_size,
+            "customizediops": False,
+            "miniops": volume.miniops,
+            "maxiops": volume.maxiops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        try:
+            # Try to change the size of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._only_data_volumes_err_msg not in str(e):
+                raise
+
+        disk_offering.delete(self.apiClient)
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        disk_offering = {
+            "name": "SF_DO_C",
+            "displaytext": "SF_DO_C (Min IOPS = " + str(new_min_iops) + "; Max IOPS = " + str(new_max_iops) + ")",
+            "disksize": volume_size_in_GB,
+            "customizediops": False,
+            "miniops": new_min_iops,
+            "maxiops": new_max_iops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+        disk_offering.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+        new_min_iops = new_min_iops + 10
+        new_max_iops = new_max_iops + 20
+
+        volume.resize(self.apiClient, miniops=new_min_iops, maxiops=new_max_iops)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+    def _handle_root_volume_with_stopped_vm(self, volume):
+        self._verify_volume(volume)
+
+        volume_size_in_GB = volume.size / TestData.one_GB_in_bytes
+
+        self.assertTrue(
+            type(volume_size_in_GB) == int,
+            TestVolumes._volume_size_not_an_int
+        )
+
+        new_size = volume_size_in_GB + 10
+        new_min_iops = volume.miniops + 100
+        new_max_iops = volume.maxiops + 200
+
+        volume.resize(self.apiClient, size=new_size, miniops=new_min_iops, maxiops=new_max_iops)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+        new_size = new_size + 10
+
+        volume.resize(self.apiClient, size=new_size)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+        new_min_iops = new_min_iops + 100
+        new_max_iops = new_max_iops + 200
+
+        volume.resize(self.apiClient, miniops=new_min_iops, maxiops=new_max_iops)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+        new_size = new_size + 10
+        new_min_iops = new_min_iops + 100
+        new_max_iops = new_max_iops + 200
+
+        disk_offering = {
+            "name": "SF_DO_A",
+            "displaytext": "SF_DO_A (Min IOPS = " + str(new_min_iops) + "; Max IOPS = " + str(new_max_iops) + ")",
+            "disksize": new_size,
+            "customizediops": False,
+            "miniops": new_min_iops,
+            "maxiops": new_max_iops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        try:
+            # Try to change the size and IOPS of a volume attached to a stopped VM (should fail).
+            volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._only_data_volumes_err_msg not in str(e):
+                raise
+
+        disk_offering.delete(self.apiClient)
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        disk_offering = {
+            "name": "SF_DO_B",
+            "displaytext": "SF_DO_B (Min IOPS = " + str(volume.miniops) + "; Max IOPS = " + str(volume.maxiops) + ")",
+            "disksize": new_size,
+            "customizediops": False,
+            "miniops": volume.miniops,
+            "maxiops": volume.maxiops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        try:
+            # Try to change the size of a volume attached to a stopped VM (should fail).
+            volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._only_data_volumes_err_msg not in str(e):
+                raise
+
+        disk_offering.delete(self.apiClient)
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        volume_size_in_GB = volume.size / TestData.one_GB_in_bytes
+
+        self.assertTrue(
+            type(volume_size_in_GB) == int,
+            TestVolumes._volume_size_not_an_int
+        )
+
+        disk_offering = {
+            "name": "SF_DO_C",
+            "displaytext": "SF_DO_C (Min IOPS = " + str(new_min_iops) + "; Max IOPS = " + str(new_max_iops) + ")",
+            "disksize": volume_size_in_GB,
+            "customizediops": False,
+            "miniops": new_min_iops,
+            "maxiops": new_max_iops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+        disk_offering.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+    def _handle_data_volume_with_started_vm(self, volume):
+        self._verify_volume(volume)
+
+        volume_size_in_GB = volume.size / TestData.one_GB_in_bytes
+
+        self.assertTrue(
+            type(volume_size_in_GB) == int,
+            TestVolumes._volume_size_not_an_int
+        )
+
+        new_size = volume_size_in_GB + 10
+        new_min_iops = volume.miniops + 100
+        new_max_iops = volume.maxiops + 200
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        try:
+            # Try to change the size and IOPS of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, size=new_size, miniops=new_min_iops, maxiops=new_max_iops)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._to_change_volume_size_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        try:
+            # Try to change the size of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, size=new_size)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._to_change_volume_size_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        disk_offering = {
+            "name": "SF_DO_A",
+            "displaytext": "SF_DO_A (Min IOPS = " + str(new_min_iops) + "; Max IOPS = " + str(new_max_iops) + ")",
+            "disksize": new_size,
+            "customizediops": False,
+            "miniops": new_min_iops,
+            "maxiops": new_max_iops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        try:
+            # Try to change the size and IOPS of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._this_kind_of_disk_err_msg not in str(e):
+                raise
+
+        disk_offering.delete(self.apiClient)
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        disk_offering = {
+            "name": "SF_DO_B",
+            "displaytext": "SF_DO_B (Min IOPS = " + str(volume.miniops) + "; Max IOPS = " + str(volume.maxiops) + ")",
+            "disksize": new_size,
+            "customizediops": False,
+            "miniops": volume.miniops,
+            "maxiops": volume.maxiops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        try:
+            # Try to change the size of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._this_kind_of_disk_err_msg not in str(e):
+                raise
+
+        disk_offering.delete(self.apiClient)
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        try:
+            # Try to change the IOPS of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, miniops=new_min_iops, maxiops=new_max_iops)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._min_iops_err_msg not in str(e):
+                raise
+
+        disk_offering.delete(self.apiClient)
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        disk_offering = {
+            "name": "SF_DO_C",
+            "displaytext": "SF_DO_C (Min IOPS = " + str(new_min_iops) + "; Max IOPS = " + str(new_max_iops) + ")",
+            "disksize": volume_size_in_GB,
+            "customizediops": False,
+            "miniops": new_min_iops,
+            "maxiops": new_max_iops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+        disk_offering.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+    def _handle_data_volume_with_stopped_vm(self, volume):
+        self._verify_volume(volume)
+
+        volume_size_in_GB = volume.size / TestData.one_GB_in_bytes
+
+        self.assertTrue(
+            type(volume_size_in_GB) == int,
+            TestVolumes._volume_size_not_an_int
+        )
+
+        new_size = volume_size_in_GB + 10
+        new_min_iops = volume.miniops + 100
+        new_max_iops = volume.maxiops + 200
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        try:
+            # Try to change the size and IOPS of a volume attached to a stopped VM (should fail).
+            volume.resize(self.apiClient, size=new_size, miniops=new_min_iops, maxiops=new_max_iops)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._to_change_volume_size_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        try:
+            # Try to change the size of a volume attached to a stopped VM (should fail).
+            volume.resize(self.apiClient, size=new_size)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._to_change_volume_size_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        try:
+            # Try to change the IOPS of a volume attached to a stopped VM (should fail).
+            volume.resize(self.apiClient, miniops=new_min_iops, maxiops=new_max_iops)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._min_iops_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        disk_offering = {
+            "name": "SF_DO_A",
+            "displaytext": "SF_DO_A (Min IOPS = " + str(new_min_iops) + "; Max IOPS = " + str(new_max_iops) + ")",
+            "disksize": new_size,
+            "customizediops": False,
+            "miniops": new_min_iops,
+            "maxiops": new_max_iops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+        disk_offering.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+        new_size = new_size + 10
+
+        disk_offering = {
+            "name": "SF_DO_B",
+            "displaytext": "SF_DO_B (Min IOPS = " + str(volume.miniops) + "; Max IOPS = " + str(volume.maxiops) + ")",
+            "disksize": new_size,
+            "customizediops": False,
+            "miniops": volume.miniops,
+            "maxiops": volume.maxiops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+        disk_offering.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        volume_size_in_GB = volume.size / TestData.one_GB_in_bytes
+
+        self.assertTrue(
+            type(volume_size_in_GB) == int,
+            TestVolumes._volume_size_not_an_int
+        )
+
+        new_min_iops = new_min_iops + 100
+        new_max_iops = new_max_iops + 200
+
+        disk_offering = {
+            "name": "SF_DO_C",
+            "displaytext": "SF_DO_C (Min IOPS = " + str(new_min_iops) + "; Max IOPS = " + str(new_max_iops) + ")",
+            "disksize": volume_size_in_GB,
+            "customizediops": False,
+            "miniops": new_min_iops,
+            "maxiops": new_max_iops,
+            "hypervisorsnapshotreserve": 200,
+            TestData.tags: TestData.storageTag,
+            "storagetype": "shared"
+        }
+
+        disk_offering = DiskOffering.create(
+            self.apiClient,
+            disk_offering
+        )
+
+        volume.resize(self.apiClient, diskofferingid=disk_offering.id)
+
+        disk_offering.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+    def _handle_custom_data_volume_with_started_vm(self, volume):
+        self._verify_volume(volume)
+
+        volume_size_in_GB = volume.size / TestData.one_GB_in_bytes
+
+        self.assertTrue(
+            type(volume_size_in_GB) == int,
+            TestVolumes._volume_size_not_an_int
+        )
+
+        new_size = volume_size_in_GB + 10
+        new_min_iops = volume.miniops + 100
+        new_max_iops = volume.maxiops + 200
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        try:
+            # Try to change the size and IOPS of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, size=new_size, miniops=new_min_iops, maxiops=new_max_iops)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._this_kind_of_disk_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        try:
+            # Try to change the size of a volume attached to a running VM (should fail).
+            volume.resize(self.apiClient, size=new_size)
+
+            raise Exception(TestVolumes._volume_resize_did_not_fail_err_msg)
+        except Exception as e:
+            if TestVolumes._this_kind_of_disk_err_msg not in str(e):
+                raise
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        volume.resize(self.apiClient, miniops=new_min_iops, maxiops=new_max_iops)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+    def _handle_custom_data_volume_with_stopped_vm(self, volume):
+        self._verify_volume(volume)
+
+        volume_size_in_GB = volume.size / TestData.one_GB_in_bytes
+
+        self.assertTrue(
+            type(volume_size_in_GB) == int,
+            TestVolumes._volume_size_not_an_int
+        )
+
+        new_size = volume_size_in_GB + 10
+        new_min_iops = volume.miniops + 100
+        new_max_iops = volume.maxiops + 200
+
+        volume.resize(self.apiClient, size=new_size, miniops=new_min_iops, maxiops=new_max_iops)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+        new_size = new_size + 10
+
+        volume.resize(self.apiClient, size=new_size)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        sf_volume_size = self._get_sf_volume(volume.name).total_size
+
+        self._verify_volume(volume, volume.miniops, volume.maxiops, sf_volume_size)
+
+        new_min_iops = volume.miniops + 10
+        new_max_iops = volume.maxiops + 20
+
+        volume.resize(self.apiClient, miniops=new_min_iops, maxiops=new_max_iops)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=volume.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        volume = Volume(list_volumes_response[0].__dict__)
+
+        self._verify_volume(volume, new_min_iops, new_max_iops, sf_volume_size)
+
+    def _get_sf_volume(self, volume_name):
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, "The SolidFire account ID should be a non-zero integer.")
+
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
+
+        self.assertNotEqual(
+            len(sf_volumes),
+            0,
+            "The length of the response for the SolidFire-volume query should not be zero."
+        )
+
+        return sf_util.check_and_get_sf_volume(sf_volumes, volume_name, self)
+
+    def _verify_volume(self, cs_volume, expected_min_iops=None, expected_max_iops=None, expected_size=None):
+        sf_volume = self._get_sf_volume(cs_volume.name)
+
+        sf_volume_size = sf_util.get_volume_size_with_hsr(self.cs_api, cs_volume, self)
+
+        sf_util.check_size_and_iops(sf_volume, cs_volume, sf_volume_size, self)
+
+        if expected_min_iops is not None:
+            self.assertEqual(
+                cs_volume.miniops,
+                expected_min_iops,
+                "Unexpected Min IOPS value (CloudStack volume has " + str(cs_volume.miniops) + "; expected " + str(expected_min_iops) + ")"
+            )
+
+        if expected_max_iops is not None:
+            self.assertEqual(
+                cs_volume.maxiops,
+                expected_max_iops,
+                "Unexpected Max IOPS value (CloudStack volume has " + str(cs_volume.maxiops) + "; expected " + str(expected_max_iops) + ")"
+            )
+
+        if expected_size is not None:
+            self.assertEqual(
+                sf_volume_size,
+                expected_size,
+                "Unexpected size value (CloudStack volume (with HSR) has " + str(sf_volume_size) + "; expected " + str(expected_size) + ")"
+            )
+
+    def _create_vm_using_template_and_destroy_vm(self, template):
+        vm_name = "VM-%d" % random.randint(0, 100)
+
+        virtual_machine_dict = {"name": vm_name, "displayname": vm_name}
+
+        virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            virtual_machine_dict,
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=template.id,
+            domainid=self.domain.id,
+            startvm=True
+        )
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            virtualmachineid=virtual_machine.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestVolumes._should_only_be_one_volume_in_list_err_msg)
+
+        vm_root_volume = list_volumes_response[0]
+        vm_root_volume_name = vm_root_volume.name
+
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestVolumes._sf_account_id_should_be_non_zero_int_err_msg)
+
+        # Get volume information from SolidFire cluster
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
+
+        sf_util.get_sf_volume_by_name(self, sf_volumes, vm_root_volume_name)
+
+        virtual_machine.delete(self.apiClient, True)
 
     def _verify_hsr(self, cs_volume_size_in_gb, hsr, sf_volume_size_in_bytes):
         cs_volume_size_including_hsr_in_bytes = self._get_cs_volume_size_including_hsr_in_bytes(cs_volume_size_in_gb, hsr)
@@ -1465,7 +2572,7 @@ class TestVolumes(cloudstackTestCase):
         self.assertTrue(
             cs_volume_size_including_hsr_in_bytes == sf_volume_size_in_bytes,
             "HSR does not add up correctly."
-        );
+        )
 
     def _get_cs_volume_size_including_hsr_in_bytes(self, cs_volume_size_in_gb, hsr):
         if TestData.hypervisor_type == TestData.kvm:
@@ -1474,7 +2581,7 @@ class TestVolumes(cloudstackTestCase):
         lowest_hsr = 10
 
         if hsr < lowest_hsr:
-            hsr = lowest_hsr;
+            hsr = lowest_hsr
 
         return self._get_bytes_from_gb(cs_volume_size_in_gb + (cs_volume_size_in_gb * (hsr / 100)))
 
@@ -1540,7 +2647,7 @@ class TestVolumes(cloudstackTestCase):
         for cs_host in list_hosts_response:
             ssh_connection = sf_util.get_ssh_connection(cs_host.ipaddress, kvm_login[TestData.username], kvm_login[TestData.password])
 
-            stdin, stdout, stderr = ssh_connection.exec_command("ls /dev/disk/by-path | grep " + sf_iscsi_name)
+            stdout = ssh_connection.exec_command("ls /dev/disk/by-path | grep " + sf_iscsi_name)[1]
 
             result = stdout.read()
 
@@ -1554,13 +2661,19 @@ class TestVolumes(cloudstackTestCase):
 
     @classmethod
     def _start_vm(cls, vm):
-        vm.start(cls.apiClient)
+        vm_for_check = list_virtual_machines(
+            cls.apiClient,
+            id=vm.id
+        )[0]
 
-        # Libvirt appears to have an issue detaching a volume from a VM while the VM is booting up.
-        # The XML sent to update the VM seems correct, but it doesn't appear to update the XML that describes the VM.
-        # For KVM, just give it 90 seconds to boot up.
-        if TestData.hypervisor_type == TestData.kvm:
-            time.sleep(90)
+        if vm_for_check.state == VirtualMachine.STOPPED:
+            vm.start(cls.apiClient)
+
+            # Libvirt appears to have an issue detaching a volume from a VM while the VM is booting up.
+            # The XML sent to update the VM seems correct, but it doesn't appear to update the XML that describes the VM.
+            # For KVM, just give it 90 seconds to boot up.
+            if TestData.hypervisor_type == TestData.kvm:
+                time.sleep(90)
 
     @classmethod
     def _reboot_vm(cls, vm):

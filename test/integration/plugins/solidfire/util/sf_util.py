@@ -17,6 +17,8 @@
 
 import paramiko
 
+from marvin.lib.common import list_volumes
+
 def check_list(in_list, expected_size_of_list, obj_assert, err_msg):
     obj_assert.assertEqual(
         isinstance(in_list, list),
@@ -247,3 +249,83 @@ def get_ssh_connection(ip_address, username, password):
 
     return ssh_client
 
+def get_sf_volume_by_name(obj_assert, sf_volumes, sf_volume_name):
+    check_list_not_empty(obj_assert, sf_volumes)
+
+    sf_volume = None
+
+    for volume in sf_volumes:
+        if volume.name == sf_volume_name:
+            sf_volume = volume
+
+            break
+
+    obj_assert.assertNotEqual(
+        sf_volume,
+        None,
+        "The SolidFire volume could not be found in the expected list."
+    )
+
+    return sf_volume
+
+def check_list_not_empty(obj_assert, in_list):
+    obj_assert.assertEqual(
+        isinstance(in_list, list),
+        True,
+        "'in_list' is not a list."
+    )
+
+    obj_assert.assertGreater(
+        len(in_list),
+        0,
+        "The size of 'in_list' must be greater than zero."
+    )
+
+def check_and_get_cs_volume(obj_test, volume_id, volume_name, obj_assert):
+    list_volumes_response = list_volumes(
+        obj_test.apiClient,
+        id=volume_id
+    )
+
+    check_list(list_volumes_response, 1, obj_assert, "There should only be one volume in this list.")
+
+    cs_volume = list_volumes_response[0]
+
+    check_volume(obj_test, cs_volume, volume_name, obj_assert)
+
+    return cs_volume
+
+def check_volume(obj_test, cs_volume, volume_name, obj_assert):
+    obj_assert.assertTrue(
+        cs_volume.name.startswith(volume_name),
+        "The volume name is incorrect."
+    )
+
+    obj_assert.assertEqual(
+        cs_volume.zoneid,
+        obj_test.zone.id,
+        "The zone is incorrect."
+    )
+
+    obj_assert.assertEqual(
+        cs_volume.diskofferingid,
+        obj_test.disk_offering.id,
+        "The disk offering is incorrect."
+    )
+
+    obj_assert.assertEqual(
+        cs_volume.storagetype,
+        obj_test.disk_offering.storagetype,
+        "The storage type is incorrect."
+    )
+
+def get_cs_volume_db_id(dbConnection, vol):
+    return get_db_id(dbConnection, "volumes", vol)
+
+def get_db_id(dbConnection, table, db_obj):
+    sql_query = "Select id From " + table + " Where uuid = '" + str(db_obj.id) + "'"
+
+    # make sure you can connect to MySQL: https://teamtreehouse.com/community/cant-connect-remotely-to-mysql-server-with-mysql-workbench
+    sql_result = dbConnection.execute(sql_query)
+
+    return sql_result[0][0]

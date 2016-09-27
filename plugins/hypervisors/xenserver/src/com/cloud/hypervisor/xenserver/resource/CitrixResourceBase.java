@@ -2459,12 +2459,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return sr;
     }
 
-    private String resignatureIscsiSr(Connection conn, Host host, Map<String, String> deviceConfig, String srNameLabel, Map<String, String> smConfig) throws XmlRpcException, XenAPIException {
-
+    private String resignatureIscsiSr(Connection conn, Host host, Map<String, String> deviceConfig, String srNameLabel, Map<String, String> smConfig)
+            throws XmlRpcException, XenAPIException {
         String pooluuid;
+
         try {
-            SR.create(conn, host, deviceConfig, new Long(0), srNameLabel, srNameLabel, SRType.RELVMOISCSI.toString(),
-                        "user", true, smConfig);
+            SR.create(conn, host, deviceConfig, new Long(0), srNameLabel, srNameLabel, SRType.RELVMOISCSI.toString(), "user", true, smConfig);
 
             // The successful outcome of SR.create (right above) is to throw an exception of type XenAPIException (with expected
             // toString() text) after resigning the metadata (we indicated to perform a resign by passing in SRType.RELVMOISCSI.toString()).
@@ -2492,6 +2492,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new CloudRuntimeException("Non-existent or invalid SR UUID");
             }
         }
+
         return pooluuid;
     }
 

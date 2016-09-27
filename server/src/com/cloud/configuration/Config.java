@@ -899,7 +899,14 @@ public enum Config {
             "0",
             "Default disk I/O writerate in bytes per second allowed in User vm's disk.",
             null),
-
+    KvmAutoConvergence(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "kvm.auto.convergence",
+            "false",
+            "Setting this to 'true' allows KVM to use auto convergence to complete VM migration (libvirt version 1.2.3+ and QEMU version 1.6+)",
+            null),
     ControlCidr(
             "Advanced",
             ManagementServer.class,

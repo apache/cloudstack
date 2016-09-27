@@ -468,19 +468,26 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public boolean createSnapshot(String snapshotName, String snapshotDescription, boolean dumpMemory, boolean quiesce) throws Exception {
+        return createSnapshotGetReference(snapshotName, snapshotDescription, dumpMemory, quiesce) != null;
+    }
 
+    public ManagedObjectReference createSnapshotGetReference(String snapshotName, String snapshotDescription, boolean dumpMemory, boolean quiesce) throws Exception {
         long apiTimeout = _context.getVimClient().getVcenterSessionTimeout();
         ManagedObjectReference morTask = _context.getService().createSnapshotTask(_mor, snapshotName, snapshotDescription, dumpMemory, quiesce);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
+
         if (result) {
             _context.waitForTaskProgressDone(morTask);
 
             ManagedObjectReference morSnapshot = null;
+
             // We still need to wait until the object appear in vCenter
             long startTick = System.currentTimeMillis();
+
             while (System.currentTimeMillis() - startTick < apiTimeout) {
                 morSnapshot = getSnapshotMor(snapshotName);
+
                 if (morSnapshot != null) {
                     break;
                 }
@@ -493,16 +500,20 @@ public class VirtualMachineMO extends BaseMO {
             }
 
             if (morSnapshot == null) {
-                s_logger.error("We've been waiting for over " + apiTimeout + " milli seconds for snapshot MOR to be appearing in vCenter after CreateSnapshot task is done, but it is still not there?!");
-                return false;
+                s_logger.error("We've been waiting for over " + apiTimeout + " milli seconds for snapshot MOR to be appearing in vCenter after CreateSnapshot task is done, " +
+                        "but it is still not there?!");
+
+                return null;
             }
+
             s_logger.debug("Waited for " + (System.currentTimeMillis() - startTick) + " seconds for snapshot object [" + snapshotName + "] to appear in vCenter.");
-            return true;
+
+            return morSnapshot;
         } else {
             s_logger.error("VMware createSnapshot_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
-        return false;
+        return null;
     }
 
     public boolean removeSnapshot(String snapshotName, boolean removeChildren) throws Exception {
@@ -540,6 +551,21 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         return false;
+    }
+
+    /**
+     * Deletes all of the snapshots of a VM.
+     */
+    public void consolidateAllSnapshots() throws Exception {
+        ManagedObjectReference task = _context.getService().removeAllSnapshotsTask(_mor, true);
+
+        boolean result = _context.getVimClient().waitForTask(task);
+
+        if (result) {
+            _context.waitForTaskProgressDone(task);
+        } else {
+            throw new Exception("Unable to register VM due to the following issue: " + TaskMO.getTaskFailureInfo(_context, task));
+        }
     }
 
     public boolean removeAllSnapshots() throws Exception {
@@ -2339,12 +2365,16 @@ public class VirtualMachineMO extends BaseMO {
 
     // return pair of VirtualDisk and disk device bus name(ide0:0, etc)
     public Pair<VirtualDisk, String> getDiskDevice(String vmdkDatastorePath) throws Exception {
+        final String zeroLengthString = "";
+
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
-        ArrayList<Pair<VirtualDisk, String>> partialMatchingDiskDevices = new ArrayList<Pair<VirtualDisk, String>>();
+        ArrayList<Pair<VirtualDisk, String>> partialMatchingDiskDevices = new ArrayList<>();
 
         DatastoreFile dsSrcFile = new DatastoreFile(vmdkDatastorePath);
+
         String srcBaseName = dsSrcFile.getFileBaseName();
         String trimmedSrcBaseName = VmwareHelper.trimSnapshotDeltaPostfix(srcBaseName);
+        String srcDatastoreName = dsSrcFile.getDatastoreName() != null ? dsSrcFile.getDatastoreName() : zeroLengthString;
 
         s_logger.info("Look for disk device info for volume : " + vmdkDatastorePath + " with base name: " + srcBaseName);
 
@@ -2353,22 +2383,38 @@ public class VirtualMachineMO extends BaseMO {
                 if (device instanceof VirtualDisk) {
                     s_logger.info("Test against disk device, controller key: " + device.getControllerKey() + ", unit number: " + device.getUnitNumber());
 
-                    VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
+                    VirtualDeviceBackingInfo backingInfo = device.getBacking();
+
                     if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
                         VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+
                         do {
                             s_logger.info("Test against disk backing : " + diskBackingInfo.getFileName());
 
                             DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
-                            String backingBaseName = dsBackingFile.getFileBaseName();
-                            if (backingBaseName.equalsIgnoreCase(srcBaseName)) {
-                                String deviceNumbering = getDeviceBusName(devices, device);
-                                s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
-                                return new Pair<VirtualDisk, String>((VirtualDisk)device, deviceNumbering);
+
+                            String backingDatastoreName = dsBackingFile.getDatastoreName() != null ? dsBackingFile.getDatastoreName() : zeroLengthString;
+
+                            if (srcDatastoreName.equals(zeroLengthString)) {
+                                backingDatastoreName = zeroLengthString;
                             }
-                            if (backingBaseName.contains(trimmedSrcBaseName)) {
-                                String deviceNumbering = getDeviceBusName(devices, device);
-                                partialMatchingDiskDevices.add(new Pair<VirtualDisk, String>((VirtualDisk)device, deviceNumbering));
+
+                            if (srcDatastoreName.equalsIgnoreCase(backingDatastoreName)) {
+                                String backingBaseName = dsBackingFile.getFileBaseName();
+
+                                if (backingBaseName.equalsIgnoreCase(srcBaseName)) {
+                                    String deviceNumbering = getDeviceBusName(devices, device);
+
+                                    s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
+
+                                    return new Pair<>((VirtualDisk)device, deviceNumbering);
+                                }
+
+                                if (backingBaseName.contains(trimmedSrcBaseName)) {
+                                    String deviceNumbering = getDeviceBusName(devices, device);
+
+                                    partialMatchingDiskDevices.add(new Pair<>((VirtualDisk)device, deviceNumbering));
+                                }
                             }
 
                             diskBackingInfo = diskBackingInfo.getParent();
@@ -2380,19 +2426,24 @@ public class VirtualMachineMO extends BaseMO {
 
         // No disk device was found with an exact match for the volume path, hence look for disk device that matches the trimmed name.
         s_logger.info("No disk device with an exact match found for volume : " + vmdkDatastorePath + ". Look for disk device info against trimmed base name: " + srcBaseName);
+
         if (partialMatchingDiskDevices != null) {
             if (partialMatchingDiskDevices.size() == 1) {
                 VirtualDiskFlatVer2BackingInfo matchingDiskBackingInfo = (VirtualDiskFlatVer2BackingInfo)partialMatchingDiskDevices.get(0).first().getBacking();
+
                 s_logger.info("Disk backing : " + matchingDiskBackingInfo.getFileName() + " matches ==> " + partialMatchingDiskDevices.get(0).second());
+
                 return partialMatchingDiskDevices.get(0);
             } else if (partialMatchingDiskDevices.size() > 1) {
                 s_logger.warn("Disk device info lookup for volume: " + vmdkDatastorePath + " failed as multiple disk devices were found to match" +
                         " volume's trimmed base name: " + trimmedSrcBaseName);
+
                 return null;
             }
         }
 
         s_logger.warn("Disk device info lookup for volume: " + vmdkDatastorePath + " failed as no matching disk device found");
+
         return null;
     }
 

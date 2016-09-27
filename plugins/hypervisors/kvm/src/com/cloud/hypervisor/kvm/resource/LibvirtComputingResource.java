@@ -2367,6 +2367,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
     }
 
+    public boolean cleanupDisk(Map<String, String> volumeToDisconnect) {
+        return _storagePoolMgr.disconnectPhysicalDisk(volumeToDisconnect);
+    }
+
     public boolean cleanupDisk(final DiskDef disk) {
         final String path = disk.getDiskPath();
 

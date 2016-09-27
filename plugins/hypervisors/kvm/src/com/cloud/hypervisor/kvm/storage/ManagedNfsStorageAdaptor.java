@@ -261,6 +261,11 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        return false;
+    }
+
+    @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
         return false;
     }

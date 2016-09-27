@@ -1152,6 +1152,21 @@
       </dependencies>
     </profile>
     <profile>
+        <id>vmwaresioc</id>
+        <activation>
+            <property>
+                <name>noredist</name>
+            </property>
+        </activation>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-plugin-api-vmware-sioc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </profile>
+    <profile>
       <id>quickcloud</id>
       <activation>
         <property>

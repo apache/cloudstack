@@ -981,7 +981,15 @@ class Volume:
         elif "customdiskofferingid" in services:
             cmd.diskofferingid = services["customdiskofferingid"]
 
-        cmd.size = services["customdisksize"]
+        if "customdisksize" in services:
+            cmd.size = services["customdisksize"]
+
+        if "customminiops" in services:
+            cmd.miniops = services["customminiops"]
+
+        if "custommaxiops" in services:
+            cmd.maxiops = services["custommaxiops"]
+
         cmd.zoneid = services["zoneid"]
 
         if account:
@@ -1019,6 +1027,12 @@ class Volume:
         else:
             cmd.domainid = services["domainid"]
         return Volume(apiclient.createVolume(cmd).__dict__)
+
+    @classmethod
+    def revertToSnapshot(cls, apiclient, volumeSnapshotId):
+        cmd = revertSnapshot.revertSnapshotCmd()
+        cmd.id = volumeSnapshotId
+        return apiclient.revertSnapshot(cmd)
 
     def delete(self, apiclient):
         """Delete Volume"""
@@ -1331,11 +1345,33 @@ class Template:
         return apiclient.extractTemplate(cmd)
 
     @classmethod
+    def create_from_volume(cls, apiclient, volume, services,
+                           random_name=True):
+        """Create Template from volume"""
+        # Create template from Volume ID
+        cmd = createTemplate.createTemplateCmd()
+
+        Template._set_command(apiclient, cmd, services, random_name)
+
+        cmd.volumeid = volume.id
+
+        return Template(apiclient.createTemplate(cmd).__dict__)
+
+    @classmethod
     def create_from_snapshot(cls, apiclient, snapshot, services,
                              random_name=True):
         """Create Template from snapshot"""
-        # Create template from Virtual machine and Snapshot ID
+        # Create template from Snapshot ID
         cmd = createTemplate.createTemplateCmd()
+
+        Template._set_command(apiclient, cmd, services, random_name)
+
+        cmd.snapshotid = snapshot.id
+
+        return Template(apiclient.createTemplate(cmd).__dict__)
+
+    @classmethod
+    def _set_command(cls, apiclient, cmd, services, random_name=True):
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([
             services["name"],
@@ -1361,9 +1397,6 @@ class Template:
         else:
             raise Exception(
                 "Unable to find Ostype is required for creating template")
-
-        cmd.snapshotid = snapshot.id
-        return Template(apiclient.createTemplate(cmd).__dict__)
 
     def delete(self, apiclient, zoneid=None):
         """Delete Template"""
@@ -2188,12 +2221,15 @@ class DiskOffering:
 
         if "customizediops" in services:
             cmd.customizediops = services["customizediops"]
+        else:
+            cmd.customizediops = False
 
-        if "maxiops" in services:
-            cmd.maxiops = services["maxiops"]
+        if not cmd.customizediops:
+            if "miniops" in services:
+                cmd.miniops = services["miniops"]
 
-        if "miniops" in services:
-            cmd.miniops = services["miniops"]
+            if "maxiops" in services:
+                cmd.maxiops = services["maxiops"]
 
         if "hypervisorsnapshotreserve" in services:
             cmd.hypervisorsnapshotreserve = services["hypervisorsnapshotreserve"]
