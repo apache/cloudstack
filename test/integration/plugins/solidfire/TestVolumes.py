@@ -20,6 +20,8 @@ import random
 import SignedAPICall
 import XenAPI
 
+from solidfire.factory import ElementFactory
+
 from util import sf_util
 
 # All tests inherit from cloudstackTestCase
@@ -38,8 +40,6 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_clusters,
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
-
-from solidfire import solidfire_element_api as sf_api
 
 # Prerequisites:
 #  Only one zone
@@ -71,7 +71,6 @@ class TestData():
     storageTag = "SolidFire_SAN_1"
     tags = "tags"
     templateCacheName = "centos56-x86-64-xen"
-    templateName = "templatename"
     testAccount = "testaccount"
     url = "url"
     user = "user"
@@ -87,7 +86,7 @@ class TestData():
         self.testdata = {
             TestData.solidFire: {
                 TestData.mvip: "192.168.139.112",
-                TestData.login: "admin",
+                TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
@@ -168,7 +167,6 @@ class TestData():
             TestData.volume_2: {
                 TestData.diskName: "test-volume-2",
             },
-            TestData.templateName: "CentOS 5.6(64-bit) no GUI (XenServer)",
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
@@ -192,6 +190,7 @@ class TestVolumes(cloudstackTestCase):
         # Set up API client
         testclient = super(TestVolumes, cls).getClsTestClient()
         cls.apiClient = testclient.getApiClient()
+        cls.configData = testclient.getParsedTestDataConfig()
         cls.dbConnection = testclient.getDbConnection()
 
         cls.testdata = TestData().testdata
@@ -212,12 +211,14 @@ class TestVolumes(cloudstackTestCase):
         cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
 
         # Set up SolidFire connection
-        cls.sf_client = sf_api.SolidFireAPI(endpoint_dict=cls.testdata[TestData.solidFire])
+        solidfire = cls.testdata[TestData.solidFire]
+
+        cls.sfe = ElementFactory.create(solidfire[TestData.mvip], solidfire[TestData.username], solidfire[TestData.password])
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, template_name=cls.testdata[TestData.templateName])
+        cls.template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -304,7 +305,7 @@ class TestVolumes(cloudstackTestCase):
 
             cls.primary_storage.delete(cls.apiClient)
 
-            sf_util.purge_solidfire_volumes(cls.sf_client)
+            sf_util.purge_solidfire_volumes(cls.sfe)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
@@ -328,16 +329,16 @@ class TestVolumes(cloudstackTestCase):
         sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, TestData.templateCacheName, self)
 
         self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
+            len(sf_volume.volume_access_groups),
             0,
             "The volume should not be in a VAG."
         )
 
-        sf_account_id = sf_volume["accountID"]
+        sf_account_id = sf_volume.account_id
 
-        sf_account = self.sf_client.get_account_by_id(sf_account_id)["account"]
+        sf_account = self.sfe.get_account_by_id(sf_account_id).account
 
-        sf_account_name = sf_account["username"]
+        sf_account_name = sf_account.username
 
         self.assertEqual(
             sf_account_name.endswith("_1"),
@@ -504,7 +505,7 @@ class TestVolumes(cloudstackTestCase):
         sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
+            len(sf_volume.volume_access_groups),
             0,
             "The volume should not be in a VAG."
         )
@@ -723,7 +724,7 @@ class TestVolumes(cloudstackTestCase):
         sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
+            len(sf_volume.volume_access_groups),
             0,
             TestVolumes._volume_should_not_be_in_a_vag
         )
@@ -747,7 +748,7 @@ class TestVolumes(cloudstackTestCase):
         sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
+            len(sf_volume.volume_access_groups),
             0,
             TestVolumes._volume_should_not_be_in_a_vag
         )
@@ -847,7 +848,7 @@ class TestVolumes(cloudstackTestCase):
         sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
+            len(sf_volume.volume_access_groups),
             0,
             TestVolumes._volume_should_not_be_in_a_vag
         )
@@ -871,7 +872,7 @@ class TestVolumes(cloudstackTestCase):
         sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, vol.name, self)
 
         self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
+            len(sf_volume.volume_access_groups),
             0,
             TestVolumes._volume_should_not_be_in_a_vag
         )
@@ -1075,7 +1076,7 @@ class TestVolumes(cloudstackTestCase):
         sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
 
         self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
+            len(sf_volume.volume_access_groups),
             0,
             TestVolumes._volume_should_not_be_in_a_vag
         )
@@ -1182,7 +1183,7 @@ class TestVolumes(cloudstackTestCase):
         sf_util.check_size_and_iops(sf_volume, vol, sf_volume_size, self)
 
         self.assertEqual(
-            len(sf_volume['volumeAccessGroups']),
+            len(sf_volume.volume_access_groups),
             0,
             TestVolumes._volume_should_not_be_in_a_vag
         )
@@ -1489,7 +1490,7 @@ class TestVolumes(cloudstackTestCase):
         sf_util.check_xen_sr(xen_sr_name, self.xen_session, self, should_exist)
 
     def _get_active_sf_volumes(self, sf_account_id=None):
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         self.assertNotEqual(
             len(sf_volumes),

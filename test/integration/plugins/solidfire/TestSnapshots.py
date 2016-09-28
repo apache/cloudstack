@@ -21,6 +21,8 @@ import SignedAPICall
 import time
 import XenAPI
 
+from solidfire.factory import ElementFactory
+
 from util import sf_util
 
 # All tests inherit from cloudstackTestCase
@@ -39,8 +41,6 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_clusters,
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources, wait_until
 
-from solidfire import solidfire_element_api as sf_api
-
 # Prerequisites:
 #  Only one zone
 #  Only one pod
@@ -57,7 +57,6 @@ class TestData():
     diskOffering = "diskoffering"
     domainId = "domainId"
     hypervisor = "hypervisor"
-    login = "login"
     mvip = "mvip"
     password = "password"
     port = "port"
@@ -67,7 +66,6 @@ class TestData():
     solidFire = "solidfire"
     storageTag = "SolidFire_SAN_1"
     tags = "tags"
-    templateName = "templatename"
     url = "url"
     user = "user"
     username = "username"
@@ -81,7 +79,7 @@ class TestData():
         self.testdata = {
             TestData.solidFire: {
                 TestData.mvip: "192.168.139.112",
-                TestData.login: "admin",
+                TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
@@ -223,7 +221,6 @@ class TestData():
             TestData.volume_2: {
                 TestData.diskName: "test-volume-2",
             },
-            TestData.templateName: "CentOS 5.6(64-bit) no GUI (XenServer)",
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
@@ -252,7 +249,9 @@ class TestSnapshots(cloudstackTestCase):
     def setUpClass(cls):
         # Set up API client
         testclient = super(TestSnapshots, cls).getClsTestClient()
+
         cls.apiClient = testclient.getApiClient()
+        cls.configData = testclient.getParsedTestDataConfig()
         cls.dbConnection = testclient.getDbConnection()
 
         cls.testdata = TestData().testdata
@@ -269,12 +268,14 @@ class TestSnapshots(cloudstackTestCase):
         cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
 
         # Set up SolidFire connection
-        cls.sf_client = sf_api.SolidFireAPI(endpoint_dict=cls.testdata[TestData.solidFire])
+        solidfire = cls.testdata[TestData.solidFire]
+
+        cls.sfe = ElementFactory.create(solidfire[TestData.mvip], solidfire[TestData.username], solidfire[TestData.password])
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, template_name=cls.testdata[TestData.templateName])
+        cls.template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -338,7 +339,7 @@ class TestSnapshots(cloudstackTestCase):
 
             cls.primary_storage.delete(cls.apiClient)
 
-            sf_util.purge_solidfire_volumes(cls.sf_client)
+            sf_util.purge_solidfire_volumes(cls.sfe)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
@@ -377,14 +378,14 @@ class TestSnapshots(cloudstackTestCase):
         sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestSnapshots._sf_account_id_should_be_non_zero_int_err_msg)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
         sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -409,7 +410,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -418,7 +419,7 @@ class TestSnapshots(cloudstackTestCase):
         self._delete_and_test_snapshot(vol_snap_1)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -427,7 +428,7 @@ class TestSnapshots(cloudstackTestCase):
         self._delete_and_test_snapshot(vol_snap_2)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 0, self, TestSnapshots._should_be_zero_volumes_in_list_err_msg)
 
@@ -454,14 +455,14 @@ class TestSnapshots(cloudstackTestCase):
         vm_1_root_volume_name = vm_1_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
         sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -502,14 +503,14 @@ class TestSnapshots(cloudstackTestCase):
         vm_2_root_volume_name = vm_2_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 2, self, TestSnapshots._should_be_two_volumes_in_list_err_msg)
 
         sf_volume_2 = self._get_sf_volume_by_name(sf_volumes, vm_2_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots_2 = self.sf_client.list_snapshots(volume_id=sf_volume_2['volumeID'])
+        sf_snapshots_2 = self.sfe.list_snapshots(volume_id=sf_volume_2.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots_2, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -522,7 +523,7 @@ class TestSnapshots(cloudstackTestCase):
         volume_created_from_snapshot_name = volume_created_from_snapshot.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 3, self, TestSnapshots._should_be_three_volumes_in_list_err_msg)
 
@@ -530,7 +531,7 @@ class TestSnapshots(cloudstackTestCase):
         sf_volume_2 = self._get_sf_volume_by_name(sf_volumes, vm_2_root_volume_name)
         sf_volume_3 = self._get_sf_volume_by_name(sf_volumes, volume_created_from_snapshot_name)
 
-        sf_util.check_list(sf_volume_3['volumeAccessGroups'], 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
+        sf_util.check_list(sf_volume_3.volume_access_groups, 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
 
         volume_created_from_snapshot = virtual_machine.attach_volume(
             self.apiClient,
@@ -542,7 +543,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 3, self, TestSnapshots._should_be_three_volumes_in_list_err_msg)
 
@@ -562,7 +563,7 @@ class TestSnapshots(cloudstackTestCase):
         self._delete_and_test_snapshot(vol_snap_1)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 2, self, TestSnapshots._should_be_two_volumes_in_list_err_msg)
 
@@ -572,7 +573,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine_2.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -592,7 +593,7 @@ class TestSnapshots(cloudstackTestCase):
         data_volume.delete(self.apiClient)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 0, self, TestSnapshots._should_be_zero_volumes_in_list_err_msg)
 
@@ -625,21 +626,21 @@ class TestSnapshots(cloudstackTestCase):
         sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestSnapshots._sf_account_id_should_be_non_zero_int_err_msg)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
         sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
         primary_storage_db_id = self._get_cs_storage_pool_db_id(self.primary_storage)
 
-        sf_volume_id = sf_volume['volumeID']
-        sf_volume_size = sf_volume['totalSize']
+        sf_volume_id = sf_volume.volume_id
+        sf_volume_size = sf_volume.total_size
 
         vol_snap_1 = self._create_and_test_snapshot_2(vm_1_root_volume.id, sf_volume_id, sf_volume_id + 1, primary_storage_db_id, sf_volume_size,
                                                       sf_account_id, 2, TestSnapshots._should_be_two_volumes_in_list_err_msg)
@@ -665,7 +666,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 2, self, TestSnapshots._should_be_two_volumes_in_list_err_msg)
 
@@ -696,19 +697,19 @@ class TestSnapshots(cloudstackTestCase):
         vm_1_root_volume_name = vm_1_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
         sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
-        sf_volume_id = sf_volume['volumeID']
-        sf_volume_size = sf_volume['totalSize']
+        sf_volume_id = sf_volume.volume_id
+        sf_volume_size = sf_volume.total_size
 
         vol_snap_1 = self._create_and_test_snapshot_2(vm_1_root_volume.id, sf_volume_id, sf_volume_id + 1, primary_storage_db_id, sf_volume_size,
                                                       sf_account_id, 2, TestSnapshots._should_be_two_volumes_in_list_err_msg)
@@ -750,19 +751,19 @@ class TestSnapshots(cloudstackTestCase):
         vm_2_root_volume_name = vm_2_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 5, self, TestSnapshots._should_be_five_volumes_in_list_err_msg)
 
         sf_volume_2 = self._get_sf_volume_by_name(sf_volumes, vm_2_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots_2 = self.sf_client.list_snapshots(volume_id=sf_volume_2['volumeID'])
+        sf_snapshots_2 = self.sfe.list_snapshots(volume_id=sf_volume_2.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots_2, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
-        sf_volume_id_2 = sf_volume_2['volumeID']
-        sf_volume_size_2 = sf_volume_2['totalSize']
+        sf_volume_id_2 = sf_volume_2.volume_id
+        sf_volume_size_2 = sf_volume_2.total_size
 
         vol_snap_a = self._create_and_test_snapshot_2(vm_2_root_volume.id, sf_volume_id_2, sf_volume_id + 5, primary_storage_db_id, sf_volume_size_2,
                                                       sf_account_id, 6, TestSnapshots._should_be_six_volumes_in_list_err_msg)
@@ -774,7 +775,7 @@ class TestSnapshots(cloudstackTestCase):
         volume_created_from_snapshot_name = volume_created_from_snapshot.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 7, self, TestSnapshots._should_be_seven_volumes_in_list_err_msg)
 
@@ -782,7 +783,7 @@ class TestSnapshots(cloudstackTestCase):
         sf_volume_2 = self._get_sf_volume_by_name(sf_volumes, vm_2_root_volume_name)
         sf_volume_3 = self._get_sf_volume_by_name(sf_volumes, volume_created_from_snapshot_name)
 
-        sf_util.check_list(sf_volume_3['volumeAccessGroups'], 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
+        sf_util.check_list(sf_volume_3.volume_access_groups, 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
 
         volume_created_from_snapshot = virtual_machine.attach_volume(
             self.apiClient,
@@ -794,7 +795,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 5, self, TestSnapshots._should_be_five_volumes_in_list_err_msg)
 
@@ -815,7 +816,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine_2.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -833,7 +834,7 @@ class TestSnapshots(cloudstackTestCase):
         data_volume.delete(self.apiClient)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 0, self, TestSnapshots._should_be_zero_volumes_in_list_err_msg)
 
@@ -860,7 +861,7 @@ class TestSnapshots(cloudstackTestCase):
         vm_1_root_volume_name = vm_1_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -870,14 +871,14 @@ class TestSnapshots(cloudstackTestCase):
 
         sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
 
-        sf_volume_id = sf_volume['volumeID']
-        sf_volume_size = sf_volume['totalSize']
+        sf_volume_id = sf_volume.volume_id
+        sf_volume_size = sf_volume.total_size
 
         vol_snap_1 = self._create_and_test_snapshot_2(vm_1_root_volume.id, sf_volume_id, sf_volume_id + 1, primary_storage_db_id, sf_volume_size,
                                                       sf_account_id, 2, TestSnapshots._should_be_two_volumes_in_list_err_msg)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 2, self, TestSnapshots._should_be_two_volumes_in_list_err_msg)
 
@@ -888,21 +889,21 @@ class TestSnapshots(cloudstackTestCase):
         volume_created_from_snapshot_name = volume_created_from_snapshot.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 3, self, TestSnapshots._should_be_three_volumes_in_list_err_msg)
 
         sf_volume_2 = self._get_sf_volume_by_name(sf_volumes, volume_created_from_snapshot_name)
 
-        sf_util.check_list(sf_volume_2['volumeAccessGroups'], 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
+        sf_util.check_list(sf_volume_2.volume_access_groups, 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
 
         volume_created_from_snapshot = virtual_machine.attach_volume(
             self.apiClient,
             volume_created_from_snapshot
         )
 
-        sf_volume_id_2 = sf_volume_2['volumeID']
-        sf_volume_size_2 = sf_volume_2['totalSize']
+        sf_volume_id_2 = sf_volume_2.volume_id
+        sf_volume_size_2 = sf_volume_2.total_size
 
         vol_snap_a = self._create_and_test_snapshot_2(volume_created_from_snapshot.id, sf_volume_id_2, sf_volume_id + 3, primary_storage_db_id, sf_volume_size_2,
                                                       sf_account_id, 4, TestSnapshots._should_be_four_volumes_in_list_err_msg)
@@ -914,7 +915,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -935,7 +936,7 @@ class TestSnapshots(cloudstackTestCase):
         data_volume.delete(self.apiClient)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -981,21 +982,21 @@ class TestSnapshots(cloudstackTestCase):
         sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestSnapshots._sf_account_id_should_be_non_zero_int_err_msg)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
         sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
         primary_storage_db_id = self._get_cs_storage_pool_db_id(self.primary_storage)
 
-        sf_volume_id = sf_volume['volumeID']
-        sf_volume_size = sf_volume['totalSize']
+        sf_volume_id = sf_volume.volume_id
+        sf_volume_size = sf_volume.total_size
 
         vol_snap_1 = self._create_and_test_snapshot_2(vm_1_root_volume.id, sf_volume_id, sf_volume_id + 1, primary_storage_db_id, sf_volume_size,
                                                       sf_account_id, 2, TestSnapshots._should_be_two_volumes_in_list_err_msg)
@@ -1040,14 +1041,14 @@ class TestSnapshots(cloudstackTestCase):
         vm_2_root_volume_name = vm_2_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 4, self, TestSnapshots._should_be_four_volumes_in_list_err_msg)
 
         sf_volume_2 = self._get_sf_volume_by_name(sf_volumes, vm_2_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume_2['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume_2.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -1056,7 +1057,7 @@ class TestSnapshots(cloudstackTestCase):
         volume_created_from_snapshot_1 = Volume.create_from_snapshot(self.apiClient, vol_snap_2.id, services, account=self.account.name, domainid=self.domain.id)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 5, self, TestSnapshots._should_be_five_volumes_in_list_err_msg)
 
@@ -1096,14 +1097,14 @@ class TestSnapshots(cloudstackTestCase):
         vm_3_root_volume_name = vm_3_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 6, self, TestSnapshots._should_be_six_volumes_in_list_err_msg)
 
         sf_volume_3 = self._get_sf_volume_by_name(sf_volumes, vm_3_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume_3['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume_3.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -1112,7 +1113,7 @@ class TestSnapshots(cloudstackTestCase):
         volume_created_from_snapshot_a = Volume.create_from_snapshot(self.apiClient, vol_snap_b.id, services, account=self.account.name, domainid=self.domain.id)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 7, self, TestSnapshots._should_be_seven_volumes_in_list_err_msg)
 
@@ -1124,7 +1125,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         # should still be 7 volumes because the SolidFire volume for the root disk of the VM just destroyed
         # is still needed for the SolidFire snapshots
@@ -1133,14 +1134,14 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine_2.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 6, self, TestSnapshots._should_be_six_volumes_in_list_err_msg)
 
         virtual_machine_3.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 5, self, TestSnapshots._should_be_five_volumes_in_list_err_msg)
 
@@ -1149,7 +1150,7 @@ class TestSnapshots(cloudstackTestCase):
         data_volume.delete(self.apiClient)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 4, self, TestSnapshots._should_be_four_volumes_in_list_err_msg)
 
@@ -1158,7 +1159,7 @@ class TestSnapshots(cloudstackTestCase):
         data_volume.delete(self.apiClient)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 3, self, TestSnapshots._should_be_three_volumes_in_list_err_msg)
 
@@ -1167,7 +1168,7 @@ class TestSnapshots(cloudstackTestCase):
         self._delete_and_test_snapshot(vol_snap_b)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         # should still be 2 volumes because the SolidFire volume for the root disk of the VM just destroyed
         # is still needed for the SolidFire snapshots
@@ -1176,7 +1177,7 @@ class TestSnapshots(cloudstackTestCase):
         self._delete_and_test_snapshot(vol_snap_a)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -1211,14 +1212,14 @@ class TestSnapshots(cloudstackTestCase):
         sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestSnapshots._sf_account_id_should_be_non_zero_int_err_msg)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
         sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -1247,7 +1248,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -1256,7 +1257,7 @@ class TestSnapshots(cloudstackTestCase):
         self._delete_and_test_archive_snapshot(vol_snap_1_archive)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -1265,7 +1266,7 @@ class TestSnapshots(cloudstackTestCase):
         self._delete_and_test_snapshot(vol_snap_2)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 0, self, TestSnapshots._should_be_zero_volumes_in_list_err_msg)
 
@@ -1292,14 +1293,14 @@ class TestSnapshots(cloudstackTestCase):
         vm_1_root_volume_name = vm_1_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
         sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume['volumeID'])
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -1342,14 +1343,14 @@ class TestSnapshots(cloudstackTestCase):
         vm_2_root_volume_name = vm_2_root_volume.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 2, self, TestSnapshots._should_be_two_volumes_in_list_err_msg)
 
         sf_volume_2 = self._get_sf_volume_by_name(sf_volumes, vm_2_root_volume_name)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots_2 = self.sf_client.list_snapshots(volume_id=sf_volume_2['volumeID'])
+        sf_snapshots_2 = self.sfe.list_snapshots(volume_id=sf_volume_2.volume_id).snapshots
 
         sf_util.check_list(sf_snapshots_2, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -1362,7 +1363,7 @@ class TestSnapshots(cloudstackTestCase):
         volume_created_from_snapshot_name = volume_created_from_snapshot.name
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 3, self, TestSnapshots._should_be_three_volumes_in_list_err_msg)
 
@@ -1370,7 +1371,7 @@ class TestSnapshots(cloudstackTestCase):
         sf_volume_2 = self._get_sf_volume_by_name(sf_volumes, vm_2_root_volume_name)
         sf_volume_3 = self._get_sf_volume_by_name(sf_volumes, volume_created_from_snapshot_name)
 
-        sf_util.check_list(sf_volume_3['volumeAccessGroups'], 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
+        sf_util.check_list(sf_volume_3.volume_access_groups, 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
 
         volume_created_from_snapshot = virtual_machine.attach_volume(
             self.apiClient,
@@ -1382,7 +1383,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 3, self, TestSnapshots._should_be_three_volumes_in_list_err_msg)
 
@@ -1404,7 +1405,7 @@ class TestSnapshots(cloudstackTestCase):
         self._delete_and_test_snapshot(vol_snap_3)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 2, self, TestSnapshots._should_be_two_volumes_in_list_err_msg)
 
@@ -1414,7 +1415,7 @@ class TestSnapshots(cloudstackTestCase):
         virtual_machine_2.delete(self.apiClient, True)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
 
@@ -1434,7 +1435,7 @@ class TestSnapshots(cloudstackTestCase):
         data_volume.delete(self.apiClient)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, 0, self, TestSnapshots._should_be_zero_volumes_in_list_err_msg)
 
@@ -1511,10 +1512,10 @@ class TestSnapshots(cloudstackTestCase):
         sf_snapshot_to_return = None
 
         for sf_snapshot in sf_snapshots:
-            if (sf_snapshot['snapshotID'] > most_recent_id):
+            if (sf_snapshot.snapshot_id > most_recent_id):
                 sf_snapshot_to_return = sf_snapshot
 
-                most_recent_id = sf_snapshot['snapshotID']
+                most_recent_id = sf_snapshot.snapshot_id
 
         if (sf_snapshot_to_return == None):
             raise Exception("Unable to find the most recent SolidFire snapshot in the provided list")
@@ -1541,7 +1542,7 @@ class TestSnapshots(cloudstackTestCase):
         sf_volume = None
 
         for volume in sf_volumes:
-            if volume['name'] == sf_volume_name:
+            if volume.name == sf_volume_name:
                 sf_volume = volume
 
                 break
@@ -1560,7 +1561,7 @@ class TestSnapshots(cloudstackTestCase):
         sf_volume = None
 
         for volume in sf_volumes:
-            if volume['volumeID'] == sf_volume_id:
+            if volume.volume_id == sf_volume_id:
                 sf_volume = volume
 
                 break
@@ -1582,7 +1583,7 @@ class TestSnapshots(cloudstackTestCase):
 
     def _check_sf_snapshot_does_not_exist(self, sf_snapshots, sf_snapshot_id):
         for sf_snapshot in sf_snapshots:
-            if sf_snapshot["snapshotID"] == sf_snapshot:
+            if sf_snapshot.snapshot_id == sf_snapshot:
                 raise Exception("The following SolidFire snapshot ID should not exist: " + sf_snapshot_id)
 
     def _check_snapshot_details_do_not_exist(self, vol_snap_db_id):
@@ -1606,10 +1607,10 @@ class TestSnapshots(cloudstackTestCase):
 
         self._wait_for_snapshot_state(vol_snap.id, Snapshot.BACKED_UP)
 
-        sf_volume_id = sf_volume['volumeID']
+        sf_volume_id = sf_volume.volume_id
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume_id)
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, expected_num_snapshots, self, snapshot_err_msg)
 
@@ -1621,16 +1622,16 @@ class TestSnapshots(cloudstackTestCase):
 
         vol_snap_db_id = self._get_cs_volume_snapshot_db_id(vol_snap)
 
-        self._check_snapshot_details(sf_snapshot_details, vol_snap_db_id, sf_volume_id, sf_snapshot['snapshotID'], primary_storage_db_id, sf_volume['totalSize'])
+        self._check_snapshot_details(sf_snapshot_details, vol_snap_db_id, sf_volume_id, sf_snapshot.snapshot_id, primary_storage_db_id, sf_volume.total_size)
 
         return vol_snap
 
     # used when SolidFire snapshots are being used for CloudStack volume snapshots to create a backup on secondary storage
     def _create_and_test_archive_snapshot(self, volume_id_for_snapshot, sf_volume):
-        sf_volume_id = sf_volume['volumeID']
+        sf_volume_id = sf_volume.volume_id
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots_orig = self.sf_client.list_snapshots(sf_volume_id)
+        sf_snapshots_orig = self.sfe.list_snapshots(sf_volume_id).snapshots
 
         vol_snap = Snapshot.create(
             self.apiClient,
@@ -1641,7 +1642,7 @@ class TestSnapshots(cloudstackTestCase):
         self._wait_for_snapshot_state(vol_snap.id, Snapshot.BACKED_UP)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(sf_volume_id)
+        sf_snapshots = self.sfe.list_snapshots(sf_volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, len(sf_snapshots_orig), self, "A new SolidFire snapshot was detected.")
 
@@ -1662,7 +1663,7 @@ class TestSnapshots(cloudstackTestCase):
         self._wait_for_snapshot_state(vol_snap.id, Snapshot.BACKED_UP)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume_id)
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume_id).snapshots
 
         sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
 
@@ -1675,13 +1676,13 @@ class TestSnapshots(cloudstackTestCase):
         self._check_snapshot_details_2(sf_snapshot_details, vol_snap_db_id, sf_volume_id_for_volume_snapshot, primary_storage_db_id, sf_volume_size)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, expected_num_volumes, self, volume_err_msg)
 
         sf_volume_for_snapshot = self._get_sf_volume_by_id(sf_volumes, sf_volume_id_for_volume_snapshot)
 
-        sf_util.check_list(sf_volume_for_snapshot['volumeAccessGroups'], 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
+        sf_util.check_list(sf_volume_for_snapshot.volume_access_groups, 0, self, TestSnapshots._should_be_zero_volume_access_groups_in_list_err_msg)
 
         return vol_snap
 
@@ -1722,7 +1723,7 @@ class TestSnapshots(cloudstackTestCase):
         vol_snap.delete(self.apiClient)
 
         # Get snapshot information for volume from SolidFire cluster
-        sf_snapshots = self.sf_client.list_snapshots(volume_id=sf_volume_id)
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume_id).snapshots
 
         self._check_sf_snapshot_does_not_exist(sf_snapshots, sf_snapshot_id)
 
@@ -1741,6 +1742,6 @@ class TestSnapshots(cloudstackTestCase):
         self._check_snapshot_details_do_not_exist(vol_snap_db_id)
 
         # Get volume information from SolidFire cluster
-        sf_volumes = sf_util.get_active_sf_volumes(self.sf_client, sf_account_id)
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, expected_num_volumes, self, volume_err_msg)
