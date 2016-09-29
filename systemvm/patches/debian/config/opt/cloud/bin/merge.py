@@ -207,6 +207,10 @@ class updateDataBag:
         elif (self.qFile.data['cmd_line']['type'] == "dhcpsrvr"):
             self.processCLItem('0', "guest")
             self.processCLItem('1', "control")
+        elif (self.qFile.data['cmd_line']['type'] == "ilbvm"):
+            self.processCLItem('0', "guest")
+            self.processCLItem('1', "control")
+
         return cs_cmdline.merge(dbag, self.qFile.data)
 
     def processCLItem(self, num, nw_type):
