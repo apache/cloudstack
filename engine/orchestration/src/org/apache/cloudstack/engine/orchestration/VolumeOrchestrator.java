@@ -387,6 +387,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         // as when snapshot.backup.rightafter is set to false
         if(snapInfo == null && dataStoreRole != DataStoreRole.Primary) {
             snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Primary);
+            dataStoreRole = DataStoreRole.Primary;
         }
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
         if (!DataStoreRole.Primary.equals(dataStoreRole)) {
