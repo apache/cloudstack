@@ -391,6 +391,32 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <id>generate-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <workingDirectory>${basedir}/marvin</workingDirectory>
+              <executable>python</executable>
+              <arguments>
+                <argument>${basedir}/../tools/transifex/gen-l10n.py</argument>
+                <argument>-i</argument>
+                <argument>${basedir}/WEB-INF/classes/resources/</argument>
+                <argument>-o</argument>
+                <argument>${basedir}/../ui/l10n/</argument>
+                <echo>Generating JS localization</echo>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>ru.concerteza.buildnumber</groupId>
         <artifactId>maven-jgit-buildnumber-plugin</artifactId>
         <version>1.2.6</version>
