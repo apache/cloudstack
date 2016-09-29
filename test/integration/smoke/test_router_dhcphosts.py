@@ -74,7 +74,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
-
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.logger.debug("Creating Admin Account for domain %s on zone %s" % (cls.domain.id, cls.zone.id))
@@ -143,8 +143,6 @@ class TestRouterDHCPHosts(cloudstackTestCase):
 
         cls.services["configurableData"] = {
             "host": {
-                "password": "password",
-                "username": "root",
                 "port": 22
             },
             "input": "INPUT",
@@ -211,8 +209,8 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             "Check for list hosts response return valid data")
 
         host = hosts[0]
-        host.user = self.services["configurableData"]["host"]["username"]
-        host.passwd = self.services["configurableData"]["host"]["password"]
+        host.user = self.hostConfig['username']
+        host.passwd = self.hostConfig['password']
         host.port = self.services["configurableData"]["host"]["port"]
         #mac1,10.7.32.101,infinite
         try:

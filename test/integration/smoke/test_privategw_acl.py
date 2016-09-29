@@ -36,8 +36,6 @@ class Services:
         self.services = {
             "configurableData": {
                 "host": {
-                    "password": "password",
-                    "username": "root",
                     "port": 22
                 }
             },
@@ -172,6 +170,7 @@ class TestPrivateGwACL(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"])
 
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
@@ -747,8 +746,8 @@ class TestPrivateGwACL(cloudstackTestCase):
                 "Check for list hosts response return valid data")
 
             host = hosts[0]
-            host.user = self.services["configurableData"]["host"]["username"]
-            host.passwd = self.services["configurableData"]["host"]["password"]
+            host.user = self.hostConfig['username']
+            host.passwd = self.hostConfig['password']
             host.port = self.services["configurableData"]["host"]["port"]
 
             try:
