@@ -253,7 +253,7 @@ class Services:
                     "format": "ova",
                     "hypervisor": "vmware",
                     "ostype": "Other PV (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.vmdk.bz2",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
                     "requireshvm": "True",
                 }
             }
@@ -320,6 +320,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         self.assert_(vpcOffering is not None and len(
             vpcOffering) > 0, "No VPC offerings found")
 
+        vpc = None
         try:
             vpc = VPC.create(
                 apiclient=self.apiclient,
