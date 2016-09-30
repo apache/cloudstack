@@ -512,7 +512,7 @@ public enum Config {
             null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
     BackupSnapshotAfterTakingSnapshot(
-            "Hidden",
+            "Snapshots",
             SnapshotManager.class,
             Boolean.class,
             "snapshot.backup.rightafter",
