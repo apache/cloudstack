@@ -20,3 +20,11 @@
 --;
 
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN  update_state varchar(64) DEFAULT NULL;
+
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (257, UUID(), 6, 'Windows 10 (32-bit)', now());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (258, UUID(), 6, 'Windows 10 (64-bit)', now());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (259, UUID(), 6, 'Windows Server 2012 (64-bit)', now());
+
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, uuid, created) VALUES ('Xenserver', '6.5.0', 'Windows 10 (32-bit)', 257, UUID(), now());
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, uuid, created) VALUES ('Xenserver', '6.5.0', 'Windows 10 (64-bit)', 258, UUID(), now());
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, uuid, created) VALUES ('Xenserver', '6.5.0', 'Windows Server 2012 (64-bit)', 259, UUID(), now());
