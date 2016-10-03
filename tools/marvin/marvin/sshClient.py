@@ -48,7 +48,7 @@ class SshClient(object):
             timeout : Applies while executing command
     '''
 
-    def __init__(self, host, port, user, passwd, retries=60, delay=10,
+    def __init__(self, host, port, user, passwd, retries=30, delay=10,
                  log_lvl=logging.DEBUG, keyPairFiles=None, timeout=10.0):
         self.host = None
         self.port = 22
@@ -96,7 +96,46 @@ class SshClient(object):
         self.logger.debug("{Cmd: %s via Host: %s} {returns: %s}" %
                           (command, str(self.host), results))
         return results
-
+    
+    
+    def ssh_connect(self):
+        except_msg=''
+        try:
+            self.logger.debug("====Trying SSH Connection: Host:%s User:%s\
+                               Port:%s RetryCnt:%s===" %
+                              (self.host, self.user, str(self.port),
+                               str(self.retryCnt)))
+            if self.keyPairFiles is None:
+                self.ssh.connect(hostname=self.host,
+                                 port=self.port,
+                                 username=self.user,
+                                 password=self.passwd,
+                                 timeout=self.timeout)
+            else:
+                self.ssh.connect(hostname=self.host,
+                                 port=self.port,
+                                 username=self.user,
+                                 password=self.passwd,
+                                 key_filename=self.keyPairFiles,
+                                 timeout=self.timeout,
+                                 look_for_keys=False
+                                 )
+            self.logger.debug("===SSH to Host %s port : %s SUCCESSFUL==="
+                              % (str(self.host), str(self.port)))
+            return True, ''
+        except BadHostKeyException as e:
+            except_msg = GetDetailExceptionInfo(e)
+        except AuthenticationException as e:
+            except_msg = GetDetailExceptionInfo(e)
+        except SSHException as e:
+            except_msg = GetDetailExceptionInfo(e)
+        except socket.error as e:
+            except_msg = GetDetailExceptionInfo(e)
+        except Exception as e:
+            except_msg = GetDetailExceptionInfo(e)
+            
+        return False, except_msg
+            
     def createConnection(self):
         '''
         @Name: createConnection
@@ -105,54 +144,14 @@ class SshClient(object):
         @Output: SUCCESS on successful connection
                  FAILED If connection through ssh failed
         '''
-        ret = FAILED
-        except_msg = ''
-        while self.retryCnt >= 0:
-            try:
-                self.logger.debug("====Trying SSH Connection: Host:%s User:%s\
-                                   Port:%s RetryCnt:%s===" %
-                                  (self.host, self.user, str(self.port),
-                                   str(self.retryCnt)))
-                if self.keyPairFiles is None:
-                    self.ssh.connect(hostname=self.host,
-                                     port=self.port,
-                                     username=self.user,
-                                     password=self.passwd,
-                                     timeout=self.timeout)
-                else:
-                    self.ssh.connect(hostname=self.host,
-                                     port=self.port,
-                                     username=self.user,
-                                     password=self.passwd,
-                                     key_filename=self.keyPairFiles,
-                                     timeout=self.timeout,
-                                     look_for_keys=False
-                                     )
-                self.logger.debug("===SSH to Host %s port : %s SUCCESSFUL==="
-                                  % (str(self.host), str(self.port)))
-                ret = SUCCESS
-                break
-            except BadHostKeyException as e:
-                except_msg = GetDetailExceptionInfo(e)
-            except AuthenticationException as e:
-                except_msg = GetDetailExceptionInfo(e)
-            except SSHException as e:
-                except_msg = GetDetailExceptionInfo(e)
-            except socket.error as e:
-                except_msg = GetDetailExceptionInfo(e)
-            except Exception as e:
-                except_msg = GetDetailExceptionInfo(e)
-            finally:
-                if self.retryCnt == 0 or ret == SUCCESS:
-                    break
-                if except_msg != '':
-                    self.logger.\
-                        exception("SshClient: Exception under "
-                                  "createConnection: %s" % except_msg)
-                self.retryCnt -= 1
-                time.sleep(self.delay)
-        return ret
-
+        (result, except_msg) = self.wait_until(self.delay, self.retryCnt, self.ssh_connect)
+        
+        if result == True:
+            return True
+        else:
+            self.logger.debug("SshClient: Exception under createConnection: %s" % except_msg)
+        return False
+    
     def runCommand(self, command):
         '''
         @Name: runCommand
@@ -204,6 +203,31 @@ class SshClient(object):
         if self.ssh is not None:
             self.ssh.close()
             self.ssh = None
+
+
+
+    def wait_until(self, retry_interval=2, no_of_times=2, callback=None, *callback_args):
+        """ Utility method to try out the callback method at most no_of_times with a interval of retry_interval,
+            Will return immediately if callback returns True. The callback method should be written to return a list of values first being a boolean """
+    
+        print "-----------------------------"
+        print "retry_interval=", retry_interval
+        print "no_of_times=", no_of_times
+        print "-----------------------------"
+        
+        if callback is None:
+            raise ("Bad value for callback method !")
+    
+        wait_result = False 
+        for i in range(0, no_of_times):
+            time.sleep(retry_interval)
+            wait_result, return_val = callback(*callback_args)
+            if not(isinstance(wait_result, bool)):
+                raise ("Bad parameter returned from callback !")
+            if wait_result :
+                break
+    
+        return wait_result, return_val
 
 
 if __name__ == "__main__":
