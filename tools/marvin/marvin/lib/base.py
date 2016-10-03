@@ -1237,12 +1237,18 @@ class Template:
             cmd.zoneid = zoneid
         apiclient.deleteTemplate(cmd)
 
-    def download(self, apiclient, timeout=5, interval=60):
+    def download(self, apiclient, timeout=10, interval=60):
         """Download Template"""
-        # Sleep to ensure template is in proper state before download
-        time.sleep(interval)
-
-        while True:
+        (result, except_msg) = wait_until(interval, timeout, self.template_download, apiclient)
+        if result == True:
+            return True
+        else:
+            self.logger.debug("Template Download failed: %s" % except_msg)
+        return False
+    
+    
+    
+    def template_download(self, apiclient):
             template_response = Template.list(
                 apiclient,
                 id=self.id,
@@ -1250,30 +1256,20 @@ class Template:
                 templatefilter='self'
             )
             if isinstance(template_response, list):
-
                 template = template_response[0]
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
                 # Error - Any other string
                 if template.status == 'Download Complete':
-                    break
-
+                    return True, ''
                 elif 'Downloaded' in template.status:
-                    time.sleep(interval)
-
-                elif 'Installing' not in template.status:
-                    raise Exception(
-                        "Error in downloading template: status - %s" %
-                        template.status)
-
-            elif timeout == 0:
-                break
-
+                    return False, ("Template still downloading = %s" % template.status)
+                else:
+                    return False, ("Unexpected template status = %s" % template.status)
             else:
-                time.sleep(interval)
-                timeout = timeout - 1
-        return
+                raise Exception("Invalid template response, template not found ")
+            
 
     def updatePermissions(self, apiclient, **kwargs):
         """Updates the template permissions"""

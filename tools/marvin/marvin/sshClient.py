@@ -144,8 +144,6 @@ class SshClient(object):
         @Output: SUCCESS on successful connection
                  FAILED If connection through ssh failed
         '''
-        print "Selfdelay", self.delay, self.retryCnt
-        
         (result, except_msg) = self.wait_until(self.delay, self.retryCnt, self.ssh_connect)
         
         if result == True:
