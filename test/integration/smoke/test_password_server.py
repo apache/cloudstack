@@ -169,6 +169,7 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         return
 
     def test_ssh_command(self, vm, nat_rule, rule_label):
@@ -204,20 +205,31 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
         host.user = self.hostConfig['username']
         host.passwd = self.hostConfig['password']
         host.port = self.services["configurableData"]["host"]["port"]
-        
-        try:
+
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
-                host.ipaddress,
-                host.port,
-                host.user,
-                host.passwd,
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
                 router.linklocalip,
-                "cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}'" % (vm.nic[0].gateway, vm.nic[0].ipaddress))
-        except KeyError:
-            self.skipTest(
-                "Provide a marvin config file with host\
-                        credentials to run %s" %
-                self._testMethodName)
+                "cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}'" % (vm.nic[0].gateway, vm.nic[0].ipaddress),
+                hypervisor=self.hypervisor
+            )
+        else:
+            try:
+                result = get_process_status(
+                    host.ipaddress,
+                    host.port,
+                    host.user,
+                    host.passwd,
+                    router.linklocalip,
+                    "cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}'" % (vm.nic[0].gateway, vm.nic[0].ipaddress))
+            except KeyError:
+                self.skipTest(
+                    "Provide a marvin config file with host\
+                            credentials to run %s" %
+                    self._testMethodName)
 
         self.logger.debug("cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}' RESULT IS ==> %s" % (vm.nic[0].gateway, vm.nic[0].ipaddress, result))
         res = str(result)

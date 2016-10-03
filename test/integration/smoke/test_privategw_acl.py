@@ -750,24 +750,43 @@ class TestPrivateGwACL(cloudstackTestCase):
             host.passwd = self.hostConfig['password']
             host.port = self.services["configurableData"]["host"]["port"]
 
-            try:
+            if self.hypervisor.lower() in ('vmware', 'hyperv'):
                 state = get_process_status(
-                    host.ipaddress,
-                    host.port,
-                    host.user,
-                    host.passwd,
-                    router.linklocalip,
-                    "ip addr | grep eth6 | grep state | awk '{print $9;}'")
+                        self.apiclient.connection.mgtSvr,
+                        22,
+                        self.apiclient.connection.user,
+                        self.apiclient.connection.passwd,
+                        router.linklocalip,
+                        "ip addr | grep eth6 | grep state | awk '{print $9;}'",
+                        hypervisor=self.hypervisor)
 
                 mac = get_process_status(
-                    host.ipaddress,
-                    host.port,
-                    host.user,
-                    host.passwd,
-                    router.linklocalip,
-                    "ip addr | grep link/ether | awk '{print $2;}' | sed -n 7p")
-            except KeyError:
-                self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
+                        self.apiclient.connection.mgtSvr,
+                        22,
+                        self.apiclient.connection.user,
+                        self.apiclient.connection.passwd,
+                        router.linklocalip,
+                        "ip addr | grep link/ether | awk '{print $2;}' | sed -n 7p",
+                        hypervisor=self.hypervisor)
+            else:
+                try:
+                    state = get_process_status(
+                        host.ipaddress,
+                        host.port,
+                        host.user,
+                        host.passwd,
+                        router.linklocalip,
+                        "ip addr | grep eth6 | grep state | awk '{print $9;}'")
+
+                    mac = get_process_status(
+                        host.ipaddress,
+                        host.port,
+                        host.user,
+                        host.passwd,
+                        router.linklocalip,
+                        "ip addr | grep link/ether | awk '{print $2;}' | sed -n 7p")
+                except KeyError:
+                    self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
 
             state = str(state[0])
             mac = str(mac[0])

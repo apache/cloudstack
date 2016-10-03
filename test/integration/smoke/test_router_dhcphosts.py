@@ -169,6 +169,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
         return
 
@@ -212,20 +213,30 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         host.user = self.hostConfig['username']
         host.passwd = self.hostConfig['password']
         host.port = self.services["configurableData"]["host"]["port"]
-        #mac1,10.7.32.101,infinite
-        try:
+
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
-                host.ipaddress,
-                host.port,
-                host.user,
-                host.passwd,
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
                 router.linklocalip,
-                "cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $2}'" % (vm.nic[0].ipaddress))
-        except KeyError:
-            self.skipTest(
-                "Provide a marvin config file with host\
-                        credentials to run %s" %
-                self._testMethodName)
+                "cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $2}'" % (vm.nic[0].ipaddress),
+                hypervisor=self.hypervisor)
+        else:
+            try:
+                result = get_process_status(
+                    host.ipaddress,
+                    host.port,
+                    host.user,
+                    host.passwd,
+                    router.linklocalip,
+                    "cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $2}'" % (vm.nic[0].ipaddress))
+            except KeyError:
+                self.skipTest(
+                    "Provide a marvin config file with host\
+                            credentials to run %s" %
+                    self._testMethodName)
 
         self.logger.debug("cat /etc/dhcphosts.txt | grep %s | sed 's/\,/ /g' | awk '{print $2}' RESULT IS ==> %s" % (vm.nic[0].ipaddress, result))
         res = str(result)
