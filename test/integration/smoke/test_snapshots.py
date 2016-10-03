@@ -47,7 +47,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
 
         cls.hypervisorNotSupported = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() in ['hyperv', 'lxc']:
+        if cls.hypervisor.lower() in ['hyperv', 'lxc'] or 'kvm-centos6' in cls.testClient.getZoneForTests():
             cls.hypervisorNotSupported = True
 
         cls._cleanup = []

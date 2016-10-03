@@ -16,7 +16,7 @@
 # under the License.
 
 # Import Local Modules
-from marvin.codes import FAILED, KVM, PASS
+from marvin.codes import FAILED, KVM, PASS, XEN_SERVER
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import random_gen, cleanup_resources, validateList, is_snapshot_on_nfs
@@ -291,7 +291,7 @@ class TestSnapshots(cloudstackTestCase):
             cls.services = cls.testClient.getParsedTestDataConfig()
             cls.unsupportedHypervisor = False
             cls.hypervisor = cls.testClient.getHypervisorInfo()
-            if cls.hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
+            if cls.hypervisor.lower() in (KVM.lower(), "hyperv", "lxc", XEN_SERVER.lower()):
                 cls.unsupportedHypervisor = True
                 return
             # Get Domain, Zone, Template
