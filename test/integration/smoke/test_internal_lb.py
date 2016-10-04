@@ -302,7 +302,7 @@ class TestInternalLb(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls._cleanup = [cls.template, cls.account, cls.compute_offering]
+        cls._cleanup = [cls.account, cls.compute_offering]
         return
 
     def setUp(self):
@@ -842,6 +842,9 @@ class TestInternalLb(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             cls.logger.debug("Cleaning up class resources")
+            try:
+                cls.template.delete(cls.apiclient)
+            except Exception: pass
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Cleanup failed with %s" % e)

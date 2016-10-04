@@ -299,7 +299,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     @attr(tags=["advanced"], required_hardware="true")
@@ -435,6 +435,9 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         try:
             cls.logger.debug("Cleaning up resources")
+            try:
+                cls.template.delete(cls.apiclient)
+            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
@@ -479,7 +482,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _get_ssh_client(self, virtual_machine, services, retries):
@@ -798,6 +801,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            try:
+                cls.template.delete(cls.apiclient)
+            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
@@ -842,7 +848,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _validate_vpc_offering(self, vpc_offering):
@@ -1165,6 +1171,9 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            try:
+                cls.template.delete(cls.apiclient)
+            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
