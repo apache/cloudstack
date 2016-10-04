@@ -1250,7 +1250,7 @@ class Template:
 
             if isinstance(template_response, list):
                 template = template_response[0]
-                if retries >=0 and not hasattr(template, 'status'):
+                if not hasattr(template, 'status') or not template or not template.status:
                     retries = retries - 1
                     continue
 
@@ -1390,9 +1390,10 @@ class Iso:
 
             if isinstance(iso_response, list):
                 response = iso_response[0]
-                if retries >= 0 and not hasattr(response, 'status'):
+                if not hasattr(response, 'status') or not response or not response.status:
                     retries = retries - 1
                     continue
+
                 # Check whether download is in progress(for Ex:10% Downloaded)
                 # or ISO is 'Successfully Installed'
                 if response.status == 'Successfully Installed' and response.isready:
