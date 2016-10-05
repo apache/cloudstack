@@ -1209,25 +1209,95 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class VirtioSerialDef {
-        private final String _name;
-        private String _path;
+    public static class ChannelDef {
+        enum ChannelType {
+            UNIX("unix"), SERIAL("serial");
+            String _type;
 
-        public VirtioSerialDef(String name, String path) {
+            ChannelType(String type) {
+                _type = type;
+            }
+
+            @Override
+            public String toString() {
+                return _type;
+            }
+        }
+
+        enum ChannelState {
+            DISCONNECTED("disconnected"), CONNECTED("connected");
+            String _type;
+
+            ChannelState(String type) {
+                _type = type;
+            }
+
+            @Override
+            public String toString() {
+                return _type;
+            }
+        }
+
+        private String _name;
+        private String _path;
+        private ChannelType _type;
+        private ChannelState _state;
+
+        public ChannelDef(String name, ChannelType type) {
+            _name = name;
+            _type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, String path) {
             _name = name;
             _path = path;
+            _type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state) {
+            _name = name;
+            _state = state;
+            _type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state, String path) {
+            _name = name;
+            _path = path;
+            _state = state;
+            _type = type;
+        }
+
+        public ChannelType getChannelType() {
+            return _type;
+        }
+
+        public ChannelState getChannelState() {
+            return _state;
+        }
+
+        public String getName() {
+            return _name;
+        }
+
+        public String getPath() {
+            return _path;
         }
 
         @Override
         public String toString() {
             StringBuilder virtioSerialBuilder = new StringBuilder();
+            virtioSerialBuilder.append("<channel type='" + _type.toString() + "'>\n");
             if (_path == null) {
-                _path = "/var/lib/libvirt/qemu";
+                virtioSerialBuilder.append("<source mode='bind'/>\n");
+            } else {
+                virtioSerialBuilder.append("<source mode='bind' path='" + _path + "'/>\n");
             }
-            virtioSerialBuilder.append("<channel type='unix'>\n");
-            virtioSerialBuilder.append("<source mode='bind' path='" + _path + "/" + _name + ".agent'/>\n");
-            virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
             virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
+            if (_state == null) {
+                virtioSerialBuilder.append("<target type='virtio' name='" + _name + "'/>\n");
+            } else {
+                virtioSerialBuilder.append("<target type='virtio' name='" + _name + "' state='" + _state.toString() + "'/>\n");
+            }
             virtioSerialBuilder.append("</channel>\n");
             return virtioSerialBuilder.toString();
         }
