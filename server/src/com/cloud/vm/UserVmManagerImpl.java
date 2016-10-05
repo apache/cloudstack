@@ -3918,7 +3918,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean status = false;
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.stop(Long.toString(userId));
+            status = vmEntity.stop(Long.toString(userId), forced);
             if (status) {
                return _vmDao.findById(vmId);
             } else {
