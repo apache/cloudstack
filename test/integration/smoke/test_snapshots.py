@@ -196,6 +196,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(snapshot)
         self.debug("Snapshot created: ID - %s" % snapshot.id)
 
         snapshots = list_snapshots(
