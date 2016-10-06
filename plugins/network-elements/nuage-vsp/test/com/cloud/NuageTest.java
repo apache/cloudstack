@@ -31,7 +31,11 @@ import net.nuage.vsp.acs.client.api.model.VspNic;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 import net.nuage.vsp.acs.client.api.model.VspVm;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.junit.Before;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -65,8 +69,11 @@ public class NuageTest {
     protected static final long NETWORK_ID = 42L;
 
     @Mock protected NetworkModel _networkModel;
-    @Mock protected ConfigurationDao _configurationDao;
+    @Mock protected ConfigurationDao _configDao;
     @Mock protected NuageVspEntityBuilder _nuageVspEntityBuilder;
+
+    @InjectMocks
+    ConfigDepotImpl configDepot = new ConfigDepotImpl();
 
     @Before
     public void setUp() throws Exception {
@@ -74,9 +81,12 @@ public class NuageTest {
 
         // Standard responses
         when(_networkModel.isProviderForNetwork(Network.Provider.NuageVsp, NETWORK_ID)).thenReturn(true);
-        when(_configurationDao.getValue(NuageVspIsolatedNetworkDomainTemplateName.key())).thenReturn("IsolatedDomainTemplate");
-        when(_configurationDao.getValue(NuageVspVpcDomainTemplateName.key())).thenReturn("VpcDomainTemplate");
-        when(_configurationDao.getValue(NuageVspSharedNetworkDomainTemplateName.key())).thenReturn("SharedDomainTemplate");
+
+        mockConfigValue(NuageVspIsolatedNetworkDomainTemplateName, "IsolatedDomainTemplate");
+        mockConfigValue(NuageVspVpcDomainTemplateName, "VpcDomainTemplate");
+        mockConfigValue(NuageVspSharedNetworkDomainTemplateName, "SharedDomainTemplate");
+
+        ConfigKey.init(configDepot);
 
         when(_nuageVspEntityBuilder.buildVspDomain(any(Domain.class))).thenReturn(buildVspDomain());
         when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class))).thenReturn(buildVspNetwork());
@@ -87,6 +97,13 @@ public class NuageTest {
         when(_nuageVspEntityBuilder.buildVspStaticNat(anyBoolean(), any(IPAddressVO.class), any(VlanVO.class), any(NicVO.class))).thenReturn(buildVspStaticNat());
         when(_nuageVspEntityBuilder.buildVspAclRule(any(FirewallRule.class), any(Network.class))).thenReturn(buildVspAclRule());
         when(_nuageVspEntityBuilder.buildVspAclRule(any(NetworkACLItem.class))).thenReturn(buildVspAclRule());
+    }
+
+    protected  <T> void mockConfigValue(ConfigKey<T> configKey, T value) {
+        ConfigurationVO vo = new ConfigurationVO("test", configKey);
+        vo.setValue(value.toString());
+        when(_configDao.getValue(configKey.key())).thenReturn(value.toString());
+        when(_configDao.findById(configKey.key())).thenReturn(vo);
     }
 
     protected VspDomain buildVspDomain() {

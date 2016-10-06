@@ -146,8 +146,7 @@ public class NuageVspEntityBuilder {
         List<NetworkVO> allSharedNetworks = _networkDao.listByGuestType(Network.GuestType.Shared);
         for (NetworkVO sharedNetwork : allSharedNetworks) {
             if (_networkModel.isNetworkAvailableInDomain(sharedNetwork.getId(), domain.getId())) {
-                NetworkOffering networkOffering = _networkOfferingDao.findById(sharedNetwork.getNetworkOfferingId());
-                String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configurationDao, _networkDetailsDao, sharedNetwork, networkOffering);
+                String preConfiguredDomainTemplateName = _nuageVspManager.getPreConfiguredDomainTemplateName(sharedNetwork);
                 if (!sharedNetworkUuids.containsKey(preConfiguredDomainTemplateName)) {
                     sharedNetworkUuids.put(preConfiguredDomainTemplateName, Lists.<String>newArrayList());
                 }
@@ -241,7 +240,7 @@ public class NuageVspEntityBuilder {
         boolean firewallServiceSupported = _networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.Firewall);
         vspNetworkBuilder.firewallServiceSupported(firewallServiceSupported);
 
-        String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configurationDao, _networkDetailsDao, network, networkOffering);
+        String preConfiguredDomainTemplateName = _nuageVspManager.getPreConfiguredDomainTemplateName(network);
         vspNetworkBuilder.domainTemplateName(preConfiguredDomainTemplateName);
 
         if (usesVirtualRouter(networkOffering.getId())) {

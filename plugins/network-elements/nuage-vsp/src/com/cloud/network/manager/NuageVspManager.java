@@ -19,18 +19,25 @@
 
 package com.cloud.network.manager;
 
+import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.api.commands.AddNuageVspDeviceCmd;
+import com.cloud.api.commands.AssociateNuageVspDomainTemplateCmd;
 import com.cloud.api.commands.DeleteNuageVspDeviceCmd;
 import com.cloud.api.commands.ListNuageVspDevicesCmd;
+import com.cloud.api.commands.ListNuageVspDomainTemplatesCmd;
 import com.cloud.api.commands.UpdateNuageVspDeviceCmd;
 import com.cloud.api.response.NuageVlanIpRangeResponse;
 import com.cloud.api.response.NuageVspDeviceResponse;
 import com.cloud.dc.Vlan;
+import com.cloud.api.response.NuageVspDomainTemplateResponse;
 import com.cloud.host.HostVO;
+import com.cloud.network.Network;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.utils.component.PluggableService;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+
 
 import java.util.List;
 
@@ -79,6 +86,10 @@ public interface NuageVspManager extends PluggableService {
 
     String NETWORK_METADATA_VSD_SUBNET_ID = "vsdSubnetId";
 
+    String CMSID_CONFIG_KEY = "nuagevsp.cms.id";
+
+    String NUAGE_VSP_ISOLATION = "VSP";
+
     NuageVspDeviceVO addNuageVspDevice(AddNuageVspDeviceCmd cmd);
 
     NuageVspDeviceVO updateNuageVspDevice(UpdateNuageVspDeviceCmd cmd);
@@ -98,5 +109,48 @@ public interface NuageVspManager extends PluggableService {
     boolean updateNuageUnderlayVlanIpRange(long vlanIpRangeId, boolean enabled);
 
     List<NuageVlanIpRangeResponse> filterNuageVlanIpRanges(List<? extends Vlan> vlanIpRanges, Boolean underlay);
+
+    List<NuageVspDomainTemplateResponse> listNuageVspDomainTemplates(ListNuageVspDomainTemplatesCmd cmd);
+
+    List<NuageVspDomainTemplateResponse> listNuageVspDomainTemplates(long domainId, String keyword, Long zoneId, Long physicalNetworkId);
+
+    /**
+     * Associates a Nuage Vsp domain template with a
+     * @param cmd
+     * @return
+     */
+    boolean associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd);
+
+    /**
+     * Queries the VSD to check if the entity provided in the entityCmd exists on the VSD
+     * @param cmd entityCommand which contains the ACS class of the entity and the UUID
+     * @param hostId the hostId of the VSD
+     * @return true if an entity exists with the UUI on the VSD, otherwise false.
+     */
+    boolean entityExist(EntityExistsCommand cmd, Long hostId);
+
+    /**
+     * Sets the preconfigured domain template for a given network
+     * @param network
+     * @param domainTemplateName
+     */
+    void setPreConfiguredDomainTemplateName(Network network, String domainTemplateName);
+
+    /**
+     * Returns the current pre configured domain template for a given network
+     * @param network
+     * @return
+     */
+    String getPreConfiguredDomainTemplateName(Network network);
+
+    /**
+     * Checks if a given domain template exists or not on the VSD.
+     * @param domainId
+     * @param domainTemplate The name of the domain template for which we need to query the VSD.
+     * @param zoneId zoneId OR PhysicalNetworkId needs to be provided.
+     * @param physicalNetworkId zoneId OR PhysicalNetworkId needs to be provided.
+     * @return true if the domain template exists on the VSD else false if it does not exist on the VSD
+     */
+    public boolean checkIfDomainTemplateExist(Long domainId, String domainTemplate, Long zoneId, Long physicalNetworkId);
 
 }

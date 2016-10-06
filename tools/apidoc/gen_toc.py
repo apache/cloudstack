@@ -87,6 +87,8 @@ known_categories = {
     'OpenDaylight': 'Network',
     'createServiceInstance': 'Network',
     'addGloboDnsHost': 'Network',
+    'listnuagevspdomaintemplates': 'Network',
+    'listnuagevspglobaldomaintemplate': 'Network',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',

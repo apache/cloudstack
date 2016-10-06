@@ -29,6 +29,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.cloud.agent.api.Command;
 
+
 public class DeallocateVmVspCommand extends Command {
 
     private final VspNetwork _network;

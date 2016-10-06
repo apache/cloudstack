@@ -905,7 +905,8 @@ class nuageTestCase(cloudstackTestCase):
     # verify_vsd_network - Verifies the given CloudStack domain and network/VPC
     # against the corresponding installed enterprise, domain, zone, and subnet
     # in VSD
-    def verify_vsd_network(self, domain_id, network, vpc=None):
+    def verify_vsd_network(self, domain_id, network, vpc=None,
+                           domain_template_name=None):
         self.debug("Verifying the creation and state of Network - %s in VSD" %
                    network.name)
         vsd_enterprise = self.vsd.get_enterprise(
@@ -919,6 +920,18 @@ class nuageTestCase(cloudstackTestCase):
         self.assertEqual(vsd_enterprise.name, domain_id,
                          "VSD enterprise name should match CloudStack domain "
                          "uuid"
+                         )
+        if domain_template_name:
+            vsd_domain_template = self.vsd.get_domain_template(
+                enterprise=vsd_enterprise,
+                filter=self.vsd.set_name_filter(domain_template_name))
+        else:
+            vsd_domain_template = self.vsd.get_domain_template(
+                enterprise=vsd_enterprise,
+                filter=ext_network_filter)
+        self.assertEqual(vsd_domain.template_id, vsd_domain_template.id,
+                         "VSD domain should be instantiated from appropriate "
+                         "domain template"
                          )
         if vpc:
             self.assertEqual(vsd_domain.description, "VPC_" + vpc.name,

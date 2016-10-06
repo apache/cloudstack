@@ -19,32 +19,6 @@
 
 package com.cloud.network.manager;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.annotation.Nonnull;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import net.nuage.vsp.acs.client.api.NuageVspPluginClientLoader;
-import net.nuage.vsp.acs.client.api.model.VspApiDefaults;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspDomainCleanUp;
-import net.nuage.vsp.acs.client.api.model.VspHost;
-import net.nuage.vsp.acs.client.common.NuageVspApiVersion;
-import net.nuage.vsp.acs.client.common.NuageVspConstants;
-
-import net.nuage.vsp.acs.client.exception.NuageVspException;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
@@ -53,14 +27,42 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-
+import net.nuage.vsp.acs.client.api.NuageVspPluginClientLoader;
+import net.nuage.vsp.acs.client.api.model.VspApiDefaults;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspDomainCleanUp;
+import net.nuage.vsp.acs.client.api.model.VspDomainTemplate;
+import net.nuage.vsp.acs.client.api.model.VspHost;
+import net.nuage.vsp.acs.client.common.NuageVspApiVersion;
+import net.nuage.vsp.acs.client.common.NuageVspConstants;
+import net.nuage.vsp.acs.client.exception.NuageVspException;
 import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -71,6 +73,8 @@ import com.cloud.agent.api.manager.CleanUpDomainCommand;
 import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.agent.api.manager.GetApiDefaultsAnswer;
 import com.cloud.agent.api.manager.GetApiDefaultsCommand;
+import com.cloud.agent.api.manager.ListVspDomainTemplatesAnswer;
+import com.cloud.agent.api.manager.ListVspDomainTemplatesCommand;
 import com.cloud.agent.api.manager.SupportedApiVersionCommand;
 import com.cloud.agent.api.manager.UpdateNuageVspDeviceCommand;
 import com.cloud.agent.api.sync.SyncDomainCommand;
@@ -78,14 +82,18 @@ import com.cloud.agent.api.sync.SyncNuageVspCmsIdAnswer;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNuageVspDeviceCmd;
+import com.cloud.api.commands.AssociateNuageVspDomainTemplateCmd;
 import com.cloud.api.commands.DeleteNuageVspDeviceCmd;
 import com.cloud.api.commands.DisableNuageUnderlayVlanIpRangeCmd;
 import com.cloud.api.commands.EnableNuageUnderlayVlanIpRangeCmd;
 import com.cloud.api.commands.ListNuageUnderlayVlanIpRangesCmd;
 import com.cloud.api.commands.ListNuageVspDevicesCmd;
+import com.cloud.api.commands.ListNuageVspDomainTemplatesCmd;
+import com.cloud.api.commands.ListNuageVspGlobalDomainTemplateCmd;
 import com.cloud.api.commands.UpdateNuageVspDeviceCmd;
 import com.cloud.api.response.NuageVlanIpRangeResponse;
 import com.cloud.api.response.NuageVspDeviceResponse;
+import com.cloud.api.response.NuageVspDomainTemplateResponse;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanDetailsVO;
@@ -104,14 +112,13 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NuageVspDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -120,14 +127,13 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.resource.NuageVspResource;
 import com.cloud.network.resource.NuageVspResourceConfiguration;
-import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
-import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -135,7 +141,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
-import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.util.NuageVspEntityBuilder;
 import com.cloud.util.NuageVspUtil;
@@ -158,7 +163,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     public static final Multimap<Network.Service, Network.Provider> NUAGE_VSP_VPC_SERVICE_MAP;
     private static final ConfigKey[] NUAGE_VSP_CONFIG_KEYS = new ConfigKey<?>[] { NuageVspConfigDns, NuageVspDnsExternal, NuageVspConfigGateway,
             NuageVspSharedNetworkDomainTemplateName, NuageVspVpcDomainTemplateName, NuageVspIsolatedNetworkDomainTemplateName };
-    public static final String CMSID_CONFIG_KEY = "nuagevsp.cms.id";
+
 
     @Inject
     ResourceManager _resourceMgr;
@@ -173,29 +178,21 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     @Inject
     NetworkDao _networkDao;
     @Inject
+    NetworkDetailsDao _networkDetailsDao;
+    @Inject
     VpcOfferingDao _vpcOffDao;
     @Inject
     VpcOfferingServiceMapDao _vpcOffSvcMapDao;
     @Inject
     VpcDao _vpcDao;
     @Inject
-    VpcManager _vpcManager;
+    private VpcDetailsDao _vpcDetailsDao;
     @Inject
     NuageVspDao _nuageVspDao;
     @Inject
     DataCenterDao _dataCenterDao;
     @Inject
     ConfigurationDao _configDao;
-    @Inject
-    NetworkModel _ntwkModel;
-    @Inject
-    AccountManager _accountMgr;
-    @Inject
-    IPAddressDao _ipAddressDao;
-    @Inject
-    FirewallRulesDao _firewallDao;
-    @Inject
-    VpcServiceMapDao _vpcSrvcDao;
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -212,7 +209,6 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     VlanDetailsDao _vlanDetailsDao;
     @Inject
     ResponseGenerator _responseGenerator;
-
     @Inject
     MessageBus _messageBus;
 
@@ -240,11 +236,16 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         return Lists.<Class<?>>newArrayList(
                 AddNuageVspDeviceCmd.class,
                 DeleteNuageVspDeviceCmd.class,
-                ListNuageVspDevicesCmd.class,
                 UpdateNuageVspDeviceCmd.class,
-                EnableNuageUnderlayVlanIpRangeCmd.class,
+                ListNuageVspDevicesCmd.class,
+
                 DisableNuageUnderlayVlanIpRangeCmd.class,
-                ListNuageUnderlayVlanIpRangesCmd.class
+                EnableNuageUnderlayVlanIpRangeCmd.class,
+                ListNuageUnderlayVlanIpRangesCmd.class,
+
+                ListNuageVspDomainTemplatesCmd.class,
+                ListNuageVspGlobalDomainTemplateCmd.class,
+                AssociateNuageVspDomainTemplateCmd.class
         );
     }
 
@@ -821,6 +822,166 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         return Lists.newArrayList();
     }
 
+
+    @Override
+    public List<NuageVspDomainTemplateResponse> listNuageVspDomainTemplates(ListNuageVspDomainTemplatesCmd cmd){
+        long domainId;
+
+        if (cmd.getDomainId() != null) {
+            domainId = cmd.getDomainId();
+        } else {
+            domainId = CallContext.current().getCallingAccount().getDomainId();
+        }
+
+        return listNuageVspDomainTemplates(domainId, cmd.getKeyword(), cmd.getZoneId(), cmd.getPhysicalNetworkId());
+    }
+
+    @Override
+    public List<NuageVspDomainTemplateResponse> listNuageVspDomainTemplates(long domainId, String keyword,  Long zoneId, Long passedPhysicalNetworkId) {
+        Optional<Long> physicalNetworkId;
+        Domain domain = _domainDao.findById(domainId);
+        VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
+
+        if (passedPhysicalNetworkId != null) {
+            physicalNetworkId = Optional.of(passedPhysicalNetworkId);
+        } else if (zoneId != null) {
+            physicalNetworkId = Optional.of(getPhysicalNetworkBasedOnZone(zoneId));
+        } else {
+            throw new InvalidParameterValueException("No zoneid or physicalnetworkid specified.");
+        }
+
+        List<VspDomainTemplate> domainTemplates;
+
+        ListVspDomainTemplatesCommand agentCmd = new ListVspDomainTemplatesCommand(vspDomain, keyword);
+        Long hostId = getNuageVspHostId(physicalNetworkId.get());
+
+        ListVspDomainTemplatesAnswer answer = (ListVspDomainTemplatesAnswer) _agentMgr.easySend(hostId, agentCmd);
+        domainTemplates = answer.getDomainTemplates();
+
+        return domainTemplates.stream()
+                       .map(NuageVspManagerImpl::createDomainTemplateResponse)
+                       .collect(Collectors.toList());
+    }
+
+    private static NuageVspDomainTemplateResponse createDomainTemplateResponse(VspDomainTemplate dt) {
+        return new NuageVspDomainTemplateResponse(dt.getName(), dt.getDescription());
+    }
+
+    /**
+     * Returns the PhysicalNetworkId based on a zoneId
+     * @param zoneId != null, the zone id for which we need to retrieve the PhysicalNetworkId
+     * @return the physical network id if it's found otherwise null
+     */
+    private Long getPhysicalNetworkBasedOnZone(Long zoneId){
+
+        Long physicalNetworkId = null;
+        List<PhysicalNetworkVO> physicalNetworkVOs = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, Networks.TrafficType.Guest);
+        for (PhysicalNetworkVO physicalNetwok : physicalNetworkVOs) {
+            if (physicalNetwok.getIsolationMethods().contains(NUAGE_VSP_ISOLATION)) {
+                physicalNetworkId = physicalNetwok.getId();
+                break;
+            }
+        }
+        return physicalNetworkId;
+    }
+
+    @Override
+    public boolean associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd){
+        VpcVO vpc = _vpcDao.findById(cmd.getVpcId());
+        Long physicalNetworkId;
+        if (cmd.getPhysicalNetworkId() != null) {
+            physicalNetworkId = cmd.getPhysicalNetworkId();
+        } else if (cmd.getZoneId() != null) {
+            physicalNetworkId = getPhysicalNetworkBasedOnZone(cmd.getZoneId());
+        } else {
+            throw new InvalidParameterValueException("No zoneid or physicalnetworkid specified.");
+        }
+
+        EntityExistsCommand entityCmd = new EntityExistsCommand(VpcVO.class, vpc.getUuid());
+        boolean exists = entityExist(entityCmd, physicalNetworkId);
+        if (exists) {
+            throw new CloudRuntimeException("Failed to associate domain template, VPC is already pushed to the Nuage VSP device.");
+        }
+
+        if (!checkIfDomainTemplateExist(vpc.getDomainId(), cmd.getDomainTemplate(), cmd.getZoneId(), cmd.getPhysicalNetworkId())) {
+            throw new InvalidParameterValueException("Could not find a Domain Template with name: " + cmd.getDomainTemplate());
+        }
+        setPreConfiguredDomainTemplateName(cmd.getVpcId(), cmd.getDomainTemplate());
+        return true;
+    }
+
+    @Override
+    public boolean checkIfDomainTemplateExist(Long domainId, String domainTemplate, Long zoneId, Long physicalNetworkId){
+        List<NuageVspDomainTemplateResponse> domainTemplateList = listNuageVspDomainTemplates(domainId, domainTemplate, zoneId, physicalNetworkId);
+        if (domainTemplateList != null) {
+            for (NuageVspDomainTemplateResponse val : domainTemplateList) {
+                if (val.getName().equals(domainTemplate)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean entityExist(EntityExistsCommand cmd, Long physicalNetworkId){
+        Long hostId = getNuageVspHostId(physicalNetworkId);
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+        if (answer != null) {
+            return answer.getResult();
+        }
+        throw new CloudRuntimeException("No answer received from the client");
+    }
+
+    /**
+     * Sets the preconfigured domain template of a vpc to the given value.
+     * @param vpcId
+     * @param domainTemplateName
+     */
+    private void setPreConfiguredDomainTemplateName(long vpcId, String domainTemplateName) {
+        //remove the previous nuageDomainTemplate if it is present.
+        if (_vpcDetailsDao.findDetail(vpcId, NuageVspManager.nuageDomainTemplateDetailName) != null) {
+           _vpcDetailsDao.removeDetail(vpcId, NuageVspManager.nuageDomainTemplateDetailName);
+        }
+        VpcDetailVO vpcDetail = new VpcDetailVO(vpcId, NuageVspManager.nuageDomainTemplateDetailName, domainTemplateName, false);
+        _vpcDetailsDao.persist(vpcDetail);
+    }
+
+    @Override
+    public void setPreConfiguredDomainTemplateName(Network network, String domainTemplateName) {
+
+        if (network.getVpcId() != null) {
+            setPreConfiguredDomainTemplateName(network.getVpcId(), domainTemplateName);
+        } else {
+            NetworkDetailVO networkDetail = new NetworkDetailVO(network.getId(), NuageVspManager.nuageDomainTemplateDetailName, domainTemplateName, false);
+            _networkDetailsDao.persist(networkDetail);
+        }
+    }
+
+    @Override
+    public String getPreConfiguredDomainTemplateName(Network network) {
+
+        if (network.getVpcId() != null) {
+            VpcDetailVO domainTemplateNetworkDetail = _vpcDetailsDao.findDetail(network.getVpcId(), NuageVspManager.nuageDomainTemplateDetailName);
+            if (domainTemplateNetworkDetail != null) {
+               return domainTemplateNetworkDetail.getValue();
+            }
+
+            return NuageVspVpcDomainTemplateName.value();
+        } else {
+            NetworkDetailVO domainTemplateNetworkDetail = _networkDetailsDao.findDetail(network.getId(), NuageVspManager.nuageDomainTemplateDetailName);
+            if (domainTemplateNetworkDetail != null) {
+                return domainTemplateNetworkDetail.getValue();
+            }
+
+            if (network.getGuestType() == Network.GuestType.Shared) {
+                return NuageVspSharedNetworkDomainTemplateName.value();
+            }
+
+            return NuageVspIsolatedNetworkDomainTemplateName.value();
+        }
+    }
+
     @Override
     public HostVO getNuageVspHost(long physicalNetworkId) {
         HostVO nuageVspHost;
@@ -830,7 +991,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
             List<PhysicalNetworkVO> physicalNetworksInZone = _physicalNetworkDao.listByZone(physicalNetwork.getDataCenterId());
             for (PhysicalNetworkVO physicalNetworkInZone : physicalNetworksInZone) {
-                if (physicalNetworkInZone.getIsolationMethods().contains("VSP")) {
+                if (physicalNetworkInZone.getIsolationMethods().contains(NUAGE_VSP_ISOLATION)) {
                     nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkInZone.getId());
                     break;
                 }
@@ -997,6 +1158,16 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                 }
             }
         });
+    }
+
+    private Long getNuageVspHostId(long physicalNetworkId) {
+        List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkId);
+        if (nuageVspDevices != null && (!nuageVspDevices.isEmpty())) {
+            NuageVspDeviceVO config = nuageVspDevices.iterator().next();
+            return config.getHostId();
+        }
+
+        throw new CloudRuntimeException("There is no Nuage VSP device configured on physical network " + physicalNetworkId);
     }
 
     @DB
