@@ -25,6 +25,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 public interface PrimaryDataStoreProviderManager {
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId);
 
+    public PrimaryDataStore getPrimaryDataStoreForExpunge(long dataStoreId);
+
     public PrimaryDataStore getPrimaryDataStore(String uuid);
 
     boolean registerDriver(String providerName, PrimaryDataStoreDriver driver);

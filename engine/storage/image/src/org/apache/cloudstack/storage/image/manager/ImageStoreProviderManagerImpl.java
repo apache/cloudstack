@@ -67,6 +67,16 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
 
     @Override
     public ImageStoreEntity getImageStore(long dataStoreId) {
+        return getImageStore(dataStoreId, false);
+    }
+
+    @Override
+    public ImageStoreEntity getImageStoreForExpunge(long dataStoreId) {
+        return getImageStore(dataStoreId, true);
+    }
+
+    protected ImageStoreEntity getImageStore(long dataStoreId, boolean forExpunge) {
+        //The forExpunge parameter is currently ignored.
         ImageStoreVO dataStore = dataStoreDao.findById(dataStoreId);
         String providerName = dataStore.getProviderName();
         ImageStoreProvider provider = (ImageStoreProvider)providerManager.getDataStoreProvider(providerName);

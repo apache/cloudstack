@@ -43,13 +43,28 @@ public class DataStoreManagerImpl implements DataStoreManager {
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
+        return getDataStore(storeId, role, false);
+    }
+
+    @Override
+    public DataStore getDataStoreForExpunge(long storeId, DataStoreRole role) {
+        return getDataStore(storeId, role, true);
+    }
+
+    protected DataStore getDataStore(long storeId, DataStoreRole role, boolean forExpunge) {
         try {
             if (role == DataStoreRole.Primary) {
-                return primaryStoreMgr.getPrimaryDataStore(storeId);
-            } else if (role == DataStoreRole.Image) {
-                return imageDataStoreMgr.getImageStore(storeId);
-            } else if (role == DataStoreRole.ImageCache) {
-                return imageDataStoreMgr.getImageStore(storeId);
+                if (forExpunge) {
+                    return primaryStoreMgr.getPrimaryDataStoreForExpunge(storeId);
+                } else {
+                    return primaryStoreMgr.getPrimaryDataStore(storeId);
+                }
+            } else if (role == DataStoreRole.Image || role == DataStoreRole.ImageCache) {
+                if (forExpunge) {
+                    return imageDataStoreMgr.getImageStoreForExpunge(storeId);
+                } else {
+                    return imageDataStoreMgr.getImageStore(storeId);
+                }
             }
         } catch (CloudRuntimeException e) {
             throw e;

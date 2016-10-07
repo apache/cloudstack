@@ -1125,7 +1125,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
 
                         try {
-                            volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
+                            volService.expungeVolumeAsync(volFactory.getVolumeForExpunge(vol.getId()));
                         } catch (Exception e) {
                             s_logger.warn("Unable to destroy volume " + vol.getUuid(), e);
                         }
