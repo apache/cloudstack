@@ -94,6 +94,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MIN_IOPS_FOR_SNAPSHOT_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
 
+    private static final String BASIC_SF_ID = "basicSfId";
+
     @Inject private AccountDao accountDao;
     @Inject private AccountDetailsDao accountDetailsDao;
     @Inject private ClusterDao clusterDao;
@@ -153,7 +155,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Preconditions.checkArgument(host != null, "'host' should not be 'null'");
         Preconditions.checkArgument(dataStore != null, "'dataStore' should not be 'null'");
 
-        long sfVolumeId = getSolidFireVolumeId(dataObject);
+        long sfVolumeId = getSolidFireVolumeId(dataObject, true);
         long clusterId = host.getClusterId();
         long storagePoolId = dataStore.getId();
 
@@ -215,7 +217,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             return;
         }
 
-        long sfVolumeId = getSolidFireVolumeId(dataObject);
+        long sfVolumeId = getSolidFireVolumeId(dataObject, false);
         long clusterId = host.getClusterId();
         long storagePoolId = dataStore.getId();
 
@@ -252,9 +254,31 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private long getSolidFireVolumeId(DataObject dataObject) {
+    private long getSolidFireVolumeId(DataObject dataObject, boolean grantAccess) {
         if (dataObject.getType() == DataObjectType.VOLUME) {
-            return Long.parseLong(((VolumeInfo)dataObject).getFolder());
+            final VolumeInfo volumeInfo = (VolumeInfo)dataObject;
+            final long volumeId = volumeInfo.getId();
+
+            if (grantAccess && isBasicGrantAccess(volumeId)) {
+                volumeDetailsDao.removeDetail(volumeInfo.getId(), BASIC_GRANT_ACCESS);
+
+                final Long sfVolumeId = getBasicSfVolumeId(volumeId);
+
+                Preconditions.checkNotNull(sfVolumeId, "'sfVolumeId' should not be 'null' (basic grant access).");
+
+                return sfVolumeId;
+            }
+            else if (!grantAccess && isBasicRevokeAccess(volumeId)) {
+                volumeDetailsDao.removeDetail(volumeInfo.getId(), BASIC_REVOKE_ACCESS);
+
+                final Long sfVolumeId = getBasicSfVolumeId(volumeId);
+
+                Preconditions.checkNotNull(sfVolumeId, "'sfVolumeId' should not be 'null' (basic revoke access).");
+
+                return sfVolumeId;
+            }
+
+            return Long.parseLong(volumeInfo.getFolder());
         }
 
         if (dataObject.getType() == DataObjectType.SNAPSHOT) {
@@ -271,7 +295,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             return getVolumeIdFrom_iScsiPath(((TemplateInfo)dataObject).getInstallPath());
         }
 
-        throw new CloudRuntimeException("Invalid DataObjectType (" + dataObject.getType() + ") passed to getSolidFireVolumeId(DataObject)");
+        throw new CloudRuntimeException("Invalid DataObjectType (" + dataObject.getType() + ") passed to getSolidFireVolumeId(DataObject, boolean)");
     }
 
     private long getVolumeIdFrom_iScsiPath(String iScsiPath) {
@@ -313,10 +337,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private SolidFireUtil.SolidFireVolume createSolidFireVolume(SolidFireUtil.SolidFireConnection sfConnection, DataObject dataObject, long sfAccountId) {
         long storagePoolId = dataObject.getDataStore().getId();
-        Long minIops = null;
-        Long maxIops = null;
-        Long volumeSize = dataObject.getSize();
-        String volumeName = null;
+
+        final Long minIops;
+        final Long maxIops;
+        final Long volumeSize;
+        final String volumeName;
 
         final Map<String, String> mapAttributes;
 
@@ -647,6 +672,58 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         snapshotDetailsDao.remove(snapshotDetails.getId());
     }
 
+    private Long getBasicSfVolumeId(long volumeId) {
+        VolumeDetailVO volumeDetail = volumeDetailsDao.findDetail(volumeId, BASIC_SF_ID);
+
+        if (volumeDetail != null && volumeDetail.getValue() != null) {
+            return new Long(volumeDetail.getValue());
+        }
+
+        return null;
+    }
+
+    private String getBasicIqn(long volumeId) {
+        VolumeDetailVO volumeDetail = volumeDetailsDao.findDetail(volumeId, BASIC_IQN);
+
+        if (volumeDetail != null && volumeDetail.getValue() != null) {
+            return volumeDetail.getValue();
+        }
+
+        return null;
+    }
+
+    // If isBasicCreate returns true, this means the calling code simply wants us to create a SolidFire volume with specified
+    // characteristics. We do not update the cloud.volumes table with this info.
+    private boolean isBasicCreate(long volumeId) {
+        return getBooleanValueFromVolumeDetails(volumeId, BASIC_CREATE);
+    }
+
+    private boolean isBasicDelete(long volumeId) {
+        return getBooleanValueFromVolumeDetails(volumeId, BASIC_DELETE);
+    }
+
+    private boolean isBasicDeleteFailure(long volumeId) {
+        return getBooleanValueFromVolumeDetails(volumeId, BASIC_DELETE_FAILURE);
+    }
+
+    private boolean isBasicGrantAccess(long volumeId) {
+        return getBooleanValueFromVolumeDetails(volumeId, BASIC_GRANT_ACCESS);
+    }
+
+    private boolean isBasicRevokeAccess(long volumeId) {
+        return getBooleanValueFromVolumeDetails(volumeId, BASIC_REVOKE_ACCESS);
+    }
+
+    private boolean getBooleanValueFromVolumeDetails(long volumeId, String name) {
+        VolumeDetailVO volumeDetail = volumeDetailsDao.findDetail(volumeId, name);
+
+        if (volumeDetail != null && volumeDetail.getValue() != null) {
+            return Boolean.parseBoolean(volumeDetail.getValue());
+        }
+
+        return false;
+    }
+
     private long getCsIdForCloning(long volumeId, String cloneOf) {
         VolumeDetailVO volumeDetail = volumeDetailsDao.findDetail(volumeId, cloneOf);
 
@@ -788,11 +865,13 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             LOGGER.error(errMsg);
         }
 
-        CommandResult result = new CommandResult();
+        if (callback != null) {
+            CommandResult result = new CommandResult();
 
-        result.setResult(errMsg);
+            result.setResult(errMsg);
 
-        callback.complete(result);
+            callback.complete(result);
+        }
     }
 
     @Override
@@ -950,18 +1029,42 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         snapshotDetailsDao.persist(snapshotDetail);
     }
 
+    private void addBasicCreateInfoToVolumeDetails(long volumeId, SolidFireUtil.SolidFireVolume sfVolume) {
+        VolumeDetailVO volumeDetailVo = new VolumeDetailVO(volumeId, BASIC_SF_ID, String.valueOf(sfVolume.getId()), false);
+
+        volumeDetailsDao.persist(volumeDetailVo);
+
+        volumeDetailVo = new VolumeDetailVO(volumeId, BASIC_IQN, sfVolume.getIqn(), false);
+
+        volumeDetailsDao.persist(volumeDetailVo);
+    }
+
     private String createVolume(VolumeInfo volumeInfo, long storagePoolId) {
-        verifySufficientBytesForStoragePool(volumeInfo, storagePoolId);
-        verifySufficientIopsForStoragePool(volumeInfo.getMinIops() != null ? volumeInfo.getMinIops() : getDefaultMinIops(storagePoolId), storagePoolId);
+        boolean isBasicCreate = isBasicCreate(volumeInfo.getId());
+
+        if (!isBasicCreate) {
+            verifySufficientBytesForStoragePool(volumeInfo, storagePoolId);
+            verifySufficientIopsForStoragePool(volumeInfo.getMinIops() != null ? volumeInfo.getMinIops() : getDefaultMinIops(storagePoolId), storagePoolId);
+        }
 
         SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
 
         long sfAccountId = getCreateSolidFireAccountId(sfConnection, volumeInfo.getAccountId(), storagePoolId);
 
+        SolidFireUtil.SolidFireVolume sfVolume;
+
+        if (isBasicCreate) {
+            sfVolume = createSolidFireVolume(sfConnection, volumeInfo, sfAccountId);
+
+            volumeDetailsDao.removeDetail(volumeInfo.getId(), BASIC_CREATE);
+
+            addBasicCreateInfoToVolumeDetails(volumeInfo.getId(), sfVolume);
+
+            return sfVolume.getIqn();
+        }
+
         long csSnapshotId = getCsIdForCloning(volumeInfo.getId(), "cloneOfSnapshot");
         long csTemplateId = getCsIdForCloning(volumeInfo.getId(), "cloneOfTemplate");
-
-        SolidFireUtil.SolidFireVolume sfVolume;
 
         if (csSnapshotId > 0) {
             // We are supposed to create a clone of the underlying volume or snapshot that supports the CloudStack snapshot.
@@ -1083,23 +1186,66 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return iqn;
     }
 
+    private void performBasicDelete(SolidFireUtil.SolidFireConnection sfConnection, long volumeId) {
+        Long sfVolumeId = getBasicSfVolumeId(volumeId);
+
+        Preconditions.checkNotNull(sfVolumeId, "'sfVolumeId' should not be 'null'.");
+
+        String iqn = getBasicIqn(volumeId);
+
+        Preconditions.checkNotNull(iqn, "'iqn' should not be 'null'.");
+
+        VolumeVO volumeVO = volumeDao.findById(volumeId);
+
+        SolidFireUtil.deleteSolidFireVolume(sfConnection, Long.parseLong(volumeVO.getFolder()));
+
+        volumeVO.setFolder(String.valueOf(sfVolumeId));
+        volumeVO.set_iScsiName(iqn);
+
+        volumeDao.update(volumeId, volumeVO);
+
+        volumeDetailsDao.removeDetail(volumeId, BASIC_SF_ID);
+        volumeDetailsDao.removeDetail(volumeId, BASIC_IQN);
+        volumeDetailsDao.removeDetail(volumeId, BASIC_DELETE);
+    }
+
+    private void performBasicDeleteFailure(SolidFireUtil.SolidFireConnection sfConnection, long volumeId) {
+        Long sfVolumeId = getBasicSfVolumeId(volumeId);
+
+        Preconditions.checkNotNull(sfVolumeId, "'sfVolumeId' should not be 'null'.");
+
+        SolidFireUtil.deleteSolidFireVolume(sfConnection, sfVolumeId);
+
+        volumeDetailsDao.removeDetail(volumeId, BASIC_SF_ID);
+        volumeDetailsDao.removeDetail(volumeId, BASIC_IQN);
+        volumeDetailsDao.removeDetail(volumeId, BASIC_DELETE_FAILURE);
+    }
+
     private void deleteVolume(VolumeInfo volumeInfo, long storagePoolId) {
         try {
             long volumeId = volumeInfo.getId();
 
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
 
-            deleteSolidFireVolume(sfConnection, volumeInfo);
+            if (isBasicDelete(volumeId)) {
+                performBasicDelete(sfConnection, volumeId);
+            }
+            else if (isBasicDeleteFailure(volumeId)) {
+                performBasicDeleteFailure(sfConnection, volumeId);
+            }
+            else {
+                deleteSolidFireVolume(sfConnection, volumeInfo);
 
-            volumeDetailsDao.removeDetails(volumeId);
+                volumeDetailsDao.removeDetails(volumeId);
 
-            StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
+                StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
 
-            long usedBytes = getUsedBytes(storagePool, volumeId);
+                long usedBytes = getUsedBytes(storagePool, volumeId);
 
-            storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
+                storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
 
-            storagePoolDao.update(storagePoolId, storagePool);
+                storagePoolDao.update(storagePoolId, storagePool);
+            }
         }
         catch (Exception ex) {
             LOGGER.debug(SolidFireUtil.LOG_PREFIX + "Failed to delete SolidFire volume. CloudStack volume ID: " + volumeInfo.getId(), ex);

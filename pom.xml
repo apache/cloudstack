@@ -30,7 +30,7 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.9.0</version>
+  <version>4.10.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>Apache CloudStack is an IaaS (“Infrastructure as a Service”) cloud orchestration platform.</description>
@@ -43,6 +43,13 @@
     <system>jira</system>
     <url>https://issues.apache.org/jira/browse/CLOUDSTACK</url>
   </issueManagement>
+
+  <repositories>
+    <repository>
+      <id>juniper-contrail</id>
+      <url>http://juniper.github.io/contrail-maven/snapshots</url>
+    </repository>
+  </repositories>
 
   <properties>
     <cs.jdk.version>1.7</cs.jdk.version>
@@ -63,6 +70,7 @@
     <!-- do not forget to also upgrade hamcrest library with junit -->
     <cs.junit.version>4.12</cs.junit.version>
     <cs.hamcrest.version>1.3</cs.hamcrest.version>
+    <cs.junit.dataprovider.version>1.10.0</cs.junit.dataprovider.version>
     <cs.bcprov.version>1.46</cs.bcprov.version>
     <cs.jsch.version>0.1.53</cs.jsch.version>
     <cs.jpa.version>2.1.1</cs.jpa.version>
@@ -121,7 +129,6 @@
     <cs.jetty.version>9.2.15.v20160210</cs.jetty.version>
     <cs.cxf.version>3.1.4</cs.cxf.version>
     <cs.groovy.version>2.4.6</cs.groovy.version>
-    <cs.apache-jsp.version>9.2.15.v20160210</cs.apache-jsp.version>
     <cs.nitro.version>10.1</cs.nitro.version>
   </properties>
 
@@ -214,11 +221,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>apache-jsp</artifactId>
-        <version>${cs.apache-jsp.version}</version>
-      </dependency>
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
@@ -506,6 +508,12 @@
           <groupId>org.hamcrest</groupId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.java</groupId>
+      <artifactId>junit-dataprovider</artifactId>
+      <version>${cs.junit.dataprovider.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.powermock</groupId>
@@ -825,6 +833,8 @@
               <exclude>**/*.json</exclude>
               <exclude>build/build.number</exclude>
               <exclude>services/console-proxy/server/js/jquery.js</exclude>
+              <exclude>debian/cloudstack-usage.dirs</exclude>
+              <exclude>debian/cloudstack-agent.dirs</exclude>
               <exclude>debian/compat</exclude>
               <exclude>debian/control</exclude>
               <exclude>debian/dirs</exclude>
@@ -860,6 +870,7 @@
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
               <exclude>tools/marvin/Marvin.egg-info/*</exclude>
               <exclude>ui/css/token-input-facebook.css</exclude>
+              <exclude>ui/l10n/*</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>

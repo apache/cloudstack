@@ -21,6 +21,10 @@ import SignedAPICall
 import time
 import XenAPI
 
+from solidfire.factory import ElementFactory
+
+from util import sf_util
+
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
 
@@ -35,7 +39,14 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_hosts, li
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
 
-from solidfire import solidfire_element_api as sf_api
+# Prerequisites:
+#  Only one zone
+#  Only one pod
+#  Only one cluster (two hosts with another added/removed during the tests)
+#
+# Running the tests:
+#  Set a breakpoint on each test after the first one. When the breakpoint is hit, reset the third
+#   host to a snapshot state and re-start it. Once it's up and running, run the test code.
 
 
 class TestData:
@@ -48,12 +59,10 @@ class TestData:
     diskSize = "disksize"
     domainId = "domainId"
     hypervisor = "hypervisor"
-    login = "login"
     mvip = "mvip"
     name = "name"
     newHost = "newHost"
     newHostDisplayName = "newHostDisplayName"
-    osType = "ostype"
     password = "password"
     podId = "podid"
     port = "port"
@@ -78,7 +87,7 @@ class TestData:
         self.testdata = {
             TestData.solidFire: {
                 TestData.mvip: "192.168.139.112",
-                TestData.login: "admin",
+                TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
@@ -159,7 +168,6 @@ class TestData:
                 "diskname": "testvolume2",
             },
             TestData.newHostDisplayName: "XenServer-6.5-3",
-            TestData.osType: "CentOS 5.6(64-bit) no GUI (XenServer)",
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
@@ -175,7 +183,9 @@ class TestAddRemoveHosts(cloudstackTestCase):
     def setUpClass(cls):
         # Set up API client
         testclient = super(TestAddRemoveHosts, cls).getClsTestClient()
+
         cls.apiClient = testclient.getApiClient()
+        cls.configData = testclient.getParsedTestDataConfig()
         cls.dbConnection = testclient.getDbConnection()
 
         cls.testdata = TestData().testdata
@@ -192,12 +202,14 @@ class TestAddRemoveHosts(cloudstackTestCase):
         cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
 
         # Set up SolidFire connection
-        cls.sf_client = sf_api.SolidFireAPI(endpoint_dict=cls.testdata[TestData.solidFire])
+        solidfire = cls.testdata[TestData.solidFire]
+
+        cls.sfe = ElementFactory.create(solidfire[TestData.mvip], solidfire[TestData.username], solidfire[TestData.password])
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, cls.testdata[TestData.osType])
+        cls.template = get_template(cls.apiClient, cls.zone.id, cls.configData["ostype"])
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -238,7 +250,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
         try:
             cleanup_resources(cls.apiClient, cls._cleanup)
 
-            cls._purge_solidfire_volumes()
+            sf_util.purge_solidfire_volumes(cls.sfe)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
@@ -286,7 +298,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         root_volume = self._get_root_volume(self.virtual_machine)
 
-        sf_iscsi_name = self._get_iqn(root_volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, root_volume, self)
 
         self._perform_add_remove_host(primary_storage.id, sf_iscsi_name)
 
@@ -342,7 +354,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         root_volume = self._get_root_volume(self.virtual_machine)
 
-        sf_iscsi_name = self._get_iqn(root_volume)
+        sf_iscsi_name = sf_util.get_iqn(self.cs_api, root_volume, self)
 
         primarystorage2 = self.testdata[TestData.primaryStorage2]
 
@@ -412,8 +424,8 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         self._perform_add_remove_host(primary_storage_2.id, sf_iscsi_name)
 
-    def _perform_add_remove_host(self, primary_storage_id, sf_iscsi_name):
-        xen_sr = self.xen_session.xenapi.SR.get_by_name_label(sf_iscsi_name)[0]
+    def _perform_add_remove_host(self, primary_storage_id, sr_name):
+        xen_sr = self.xen_session.xenapi.SR.get_by_name_label(sr_name)[0]
 
         pbds = self.xen_session.xenapi.SR.get_PBDs(xen_sr)
 
@@ -596,19 +608,6 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         self.assert_(False, "Unable to locate the ROOT volume of the VM with the following ID: " + str(vm.id))
 
-    def _get_iqn(self, volume):
-        # Get volume IQN
-        sf_iscsi_name_request = {'volumeid': volume.id}
-        # put this commented line back once PR 1403 is in
-        # sf_iscsi_name_result = self.cs_api.getVolumeiScsiName(sf_iscsi_name_request)
-        sf_iscsi_name_result = self.cs_api.getSolidFireVolumeIscsiName(sf_iscsi_name_request)
-        # sf_iscsi_name = sf_iscsi_name_result['apivolumeiscsiname']['volumeiScsiName']
-        sf_iscsi_name = sf_iscsi_name_result['apisolidfirevolumeiscsiname']['solidFireVolumeIscsiName']
-
-        self._check_iscsi_name(sf_iscsi_name)
-
-        return sf_iscsi_name
-
     def _get_iqn_2(self, primary_storage):
         sql_query = "Select path From storage_pool Where uuid = '" + str(primary_storage.id) + "'"
 
@@ -616,13 +615,6 @@ class TestAddRemoveHosts(cloudstackTestCase):
         sql_result = self.dbConnection.execute(sql_query)
 
         return sql_result[0][0]
-
-    def _check_iscsi_name(self, sf_iscsi_name):
-        self.assertEqual(
-            sf_iscsi_name[0],
-            "/",
-            "The iSCSI name needs to start with a forward slash."
-        )
 
     def _get_host_iscsi_iqns(self):
         hosts = self.xen_session.xenapi.host.get_all()
@@ -660,10 +652,10 @@ class TestAddRemoveHosts(cloudstackTestCase):
         return sf_vag_id
 
     def _get_sf_vag(self, sf_vag_id):
-        return self.sf_client.list_volume_access_groups(sf_vag_id, 1)["volumeAccessGroups"][0]
+        return self.sfe.list_volume_access_groups(sf_vag_id, 1).volume_access_groups[0]
 
     def _get_sf_vag_initiators(self, sf_vag):
-        return sf_vag["initiators"]
+        return sf_vag.initiators
 
     def _verifyVag(self, host_iscsi_iqns, sf_vag_initiators):
         self.assertEqual(
@@ -687,24 +679,3 @@ class TestAddRemoveHosts(cloudstackTestCase):
         for host_iscsi_iqn in host_iscsi_iqns:
             # an error should occur if host_iscsi_iqn is not in sf_vag_initiators
             sf_vag_initiators.index(host_iscsi_iqn)
-
-    def _check_list(self, in_list, expected_size_of_list, err_msg):
-        self.assertEqual(
-            isinstance(in_list, list),
-            True,
-            "'in_list' is not a list."
-        )
-
-        self.assertEqual(
-            len(in_list),
-            expected_size_of_list,
-            err_msg
-        )
-
-    @classmethod
-    def _purge_solidfire_volumes(cls):
-        deleted_volumes = cls.sf_client.list_deleted_volumes()
-
-        for deleted_volume in deleted_volumes:
-            cls.sf_client.purge_deleted_volume(deleted_volume['volumeID'])
-

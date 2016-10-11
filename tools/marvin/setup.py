@@ -27,7 +27,7 @@ except ImportError:
         raise RuntimeError("python setuptools is required to build Marvin")
 
 
-VERSION = "4.9.0"
+VERSION = "4.10.0.0-SNAPSHOT"
 
 setup(name="Marvin",
       version=VERSION,
@@ -53,6 +53,7 @@ setup(name="Marvin",
           "ddt >= 0.4.0",
           "pyvmomi >= 5.5.0",
           "netaddr >= 0.7.14",
+          "dnspython",
           "ipmisim >= 0.7"
       ],
       py_modules=['marvin.marvinPlugin'],

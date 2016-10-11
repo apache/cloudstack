@@ -1239,7 +1239,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         command.add("-p", cmdLine.replaceAll(" ", "%"));
         result = command.execute();
         if (result != null) {
-            s_logger.debug("passcmd failed:" + result);
+            s_logger.error("passcmd failed:" + result);
             return false;
         }
         return true;

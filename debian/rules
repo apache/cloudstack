@@ -6,14 +6,14 @@ SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
 
 %:
-	dh $@ --with python2
+	dh $@ --with python2,systemd
 
 override_dh_auto_configure:
 	cp packaging/debian/replace.properties replace.properties.tmp
 	echo VERSION=${VERSION} >> replace.properties.tmp
 
 override_dh_auto_build:
-	mvn -T C1.5 clean package -Psystemvm -DskipTests -Dsystemvm \
+	mvn -T C1.5 clean package -Psystemvm,developer -Dsystemvm \
 	    -Dcs.replace.properties=replace.properties.tmp \
 	    -Dmaven.repo.local=$(HOME)/.m2/repository \
 	     ${ACS_BUILD_OPTS}
@@ -26,6 +26,8 @@ override_dh_auto_install:
 	# Common packages
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/init.d
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/default
+
 	mkdir -p $(DESTDIR)/var/cache/$(PACKAGE)
 	mkdir -p $(DESTDIR)/var/log/$(PACKAGE)
 	mkdir -p $(DESTDIR)/var/lib/$(PACKAGE)
@@ -35,13 +37,20 @@ override_dh_auto_install:
 	# cloudstack-agent
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/agent
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/profile.d
-	mkdir $(DESTDIR)/var/log/$(PACKAGE)/agent
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/plugins
 	install -D agent/target/cloud-agent-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
-	install -D packaging/debian/init/cloud-agent $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
+
+	install -m0755 packaging/debian/$(PACKAGE)-agent.init $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
+	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
+	# Fix libvirt service name for Debian/Ubuntu
+	sed -i 's/Requires=libvirtd.service/Requires=libvirt-bin.service/g' packaging/systemd/$(PACKAGE)-agent.service
+	sed -i 's/After=libvirtd.service/After=libvirt-bin.service/g' packaging/systemd/$(PACKAGE)-agent.service
+	install -m0644 packaging/systemd/$(PACKAGE)-agent.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent.service
+	install -m0644 packaging/systemd/$(PACKAGE)-agent.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-agent
+
 	install -D agent/target/transformed/cloud-setup-agent $(DESTDIR)/usr/bin/cloudstack-setup-agent
 	install -D agent/target/transformed/cloud-ssh $(DESTDIR)/usr/bin/cloudstack-ssh
 	install -D agent/target/transformed/cloudstack-agent-profile.sh $(DESTDIR)/$(SYSCONFDIR)/profile.d/cloudstack-agent-profile.sh
@@ -116,17 +125,31 @@ override_dh_auto_install:
 
 	# cloudstack-usage
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage
-	mkdir $(DESTDIR)/var/log/$(PACKAGE)/usage
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage/plugins
 	install -D usage/target/cloud-usage-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
 	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
 	cp usage/target/transformed/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
 	cp usage/target/transformed/log4j-cloud_usage.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/log4j-cloud.xml
-	install -D packaging/debian/init/cloud-usage $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
+
+	install -D -m0755 packaging/debian/$(PACKAGE)-usage.init $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
+	install -d -m0755 debian/$(PACKAGE)-usage/lib/systemd/system
+	install -m0644 packaging/systemd/$(PACKAGE)-usage.service debian/$(PACKAGE)-usage/lib/systemd/system/$(PACKAGE)-usage.service
+	install -m0644 packaging/systemd/$(PACKAGE)-usage.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-usage
+
+	# cloudstack-marvin
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-marvin
+	cp tools/marvin/dist/Marvin-*.tar.gz $(DESTDIR)/usr/share/$(PACKAGE)-marvin/
+
+	# cloudstack-integration-tests
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests
+	cp -r test/integration/* $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests/
 
 override_dh_installinit:
 	dh_installinit -pcloudstack-management -pcloudstack-agent -pcloudstack-usage --onlyscripts --no-start
+
+override_dh_systemd_enable:
+	dh_systemd_enable -pcloudstack-agent -pcloudstack-usage
 
 override_dh_installdocs:
 	dh_installdocs -A tools/whisker/LICENSE tools/whisker/NOTICE INSTALL.md

@@ -1,129 +1,22 @@
 [main]
 host = https://www.transifex.com
 
-[CloudStack_UI.2-2messagesproperties]
-file_filter = translations/CloudStack_UI.2-2messagesproperties/<lang>.properties
+[CloudStack_UI.410_messagesjson]
+source_file = work-dir/en.json
 source_lang = en
-type = PROPERTIES
-
-[CloudStack_UI.30xmessagesproperties]
-file_filter = translations/CloudStack_UI.30xmessagesproperties/<lang>.properties
-source_lang = en
-type = PROPERTIES
-
-[CloudStack_UI.41xmessageproperties]
-file_filter = translations/CloudStack_UI.41xmessageproperties/<lang>.properties
-source_lang = en
-type = UNICODEPROPERTIES
-
-[CloudStack_UI.42xmessagesproperties]
-file_filter = translations/CloudStack_UI.42xmessagesproperties/<lang>.properties
-source_lang = en
-type = UNICODEPROPERTIES
-
-[CloudStack_UI.43xmessagesproperties]
-file_filter = translations/CloudStack_UI.43xmessagesproperties/<lang>.properties
-source_lang = en
-type = UNICODEPROPERTIES
-
-[CloudStack_UI.44xmessagesproperties]
-file_filter = translations/CloudStack_UI.44xmessagesproperties/<lang>.properties
-source_lang = en
-type = UNICODEPROPERTIES
-
-[CloudStack_UI.45xmessagesproperties]
-file_filter = translations/CloudStack_UI.45xmessagesproperties/<lang>.properties
-source_file = work-dir/messages.properties
-source_lang = en
-trans.ar = work-dir/messages_ar.properties
-trans.ca = work-dir/messages_ca.properties
-trans.de_DE = work-dir/messages_de_DE.properties
-trans.es = work-dir/messages_es.properties
-trans.fr_FR = work-dir/messages_fr_FR.properties
-trans.it_IT = work-dir/messages_it_IT.properties
-trans.ja_JP = work-dir/messages_ja_JP.properties
-trans.ko_KR = work-dir/messages_ko_KR.properties
-trans.nb_NO = work-dir/messages_nb_NO.properties
-trans.nl_NL = work-dir/messages_nl_NL.properties
-trans.pl = work-dir/messages_pl.properties
-trans.pt_BR = work-dir/messages_pt_BR.properties
-trans.ru_RU = work-dir/messages_ru_RU.properties
-trans.zh_CN = work-dir/messages_zh_CN.properties
-type = UNICODEPROPERTIES
-
-[CloudStack_UI.46xmessagesproperties]
-source_file = work-dir/messages.properties
-source_lang = en
-trans.ar = work-dir/messages_ar.properties
-trans.ca = work-dir/messages_ca.properties
-trans.de_DE = work-dir/messages_de_DE.properties
-trans.es = work-dir/messages_es.properties
-trans.fr_FR = work-dir/messages_fr_FR.properties
-trans.hu = work-dir/messages_hu.properties
-trans.it_IT = work-dir/messages_it_IT.properties
-trans.ja_JP = work-dir/messages_ja_JP.properties
-trans.ko_KR = work-dir/messages_ko_KR.properties
-trans.nb_NO = work-dir/messages_nb_NO.properties
-trans.nl_NL = work-dir/messages_nl_NL.properties
-trans.pl = work-dir/messages_pl.properties
-trans.pt_BR = work-dir/messages_pt_BR.properties
-trans.ru_RU = work-dir/messages_ru_RU.properties
-trans.zh_CN = work-dir/messages_zh_CN.properties
-
-[CloudStack_UI.47xmessagesproperties]
-source_file = work-dir/messages.properties
-source_lang = en
-trans.ar = work-dir/messages_ar.properties
-trans.ca = work-dir/messages_ca.properties
-trans.de_DE = work-dir/messages_de_DE.properties
-trans.es = work-dir/messages_es.properties
-trans.fr_FR = work-dir/messages_fr_FR.properties
-trans.hu = work-dir/messages_hu.properties
-trans.it_IT = work-dir/messages_it_IT.properties
-trans.ja_JP = work-dir/messages_ja_JP.properties
-trans.ko_KR = work-dir/messages_ko_KR.properties
-trans.nb_NO = work-dir/messages_nb_NO.properties
-trans.nl_NL = work-dir/messages_nl_NL.properties
-trans.pl = work-dir/messages_pl.properties
-trans.pt_BR = work-dir/messages_pt_BR.properties
-trans.ru_RU = work-dir/messages_ru_RU.properties
-trans.zh_CN = work-dir/messages_zh_CN.properties
-
-[CloudStack_UI.48xmessagesproperties]
-source_file = work-dir/messages.properties
-source_lang = en
-trans.ar = work-dir/messages_ar.properties
-trans.ca = work-dir/messages_ca.properties
-trans.de_DE = work-dir/messages_de_DE.properties
-trans.es = work-dir/messages_es.properties
-trans.fr_FR = work-dir/messages_fr_FR.properties
-trans.hu = work-dir/messages_hu.properties
-trans.it_IT = work-dir/messages_it_IT.properties
-trans.ja_JP = work-dir/messages_ja_JP.properties
-trans.ko_KR = work-dir/messages_ko_KR.properties
-trans.nb_NO = work-dir/messages_nb_NO.properties
-trans.nl_NL = work-dir/messages_nl_NL.properties
-trans.pl = work-dir/messages_pl.properties
-trans.pt_BR = work-dir/messages_pt_BR.properties
-trans.ru_RU = work-dir/messages_ru_RU.properties
-trans.zh_CN = work-dir/messages_zh_CN.properties
-
-[CloudStack_UI.49xmessagesproperties]
-source_file = work-dir/messages.properties
-source_lang = en
-trans.ar = work-dir/messages_ar.properties
-trans.ca = work-dir/messages_ca.properties
-trans.de_DE = work-dir/messages_de_DE.properties
-trans.es = work-dir/messages_es.properties
-trans.fr_FR = work-dir/messages_fr_FR.properties
-trans.hu = work-dir/messages_hu.properties
-trans.it_IT = work-dir/messages_it_IT.properties
-trans.ja_JP = work-dir/messages_ja_JP.properties
-trans.ko_KR = work-dir/messages_ko_KR.properties
-trans.nb_NO = work-dir/messages_nb_NO.properties
-trans.nl_NL = work-dir/messages_nl_NL.properties
-trans.pl = work-dir/messages_pl.properties
-trans.pt_BR = work-dir/messages_pt_BR.properties
-trans.ru_RU = work-dir/messages_ru_RU.properties
-trans.zh_CN = work-dir/messages_zh_CN.properties
+trans.ar = work-dir/ar.json
+trans.ca = work-dir/ca.json
+trans.de_DE = work-dir/de_DE.json
+trans.es = work-dir/es.json
+trans.fr_FR = work-dir/fr_FR.json
+trans.hu = work-dir/hu.json
+trans.it_IT = work-dir/it_IT.json
+trans.ja_JP = work-dir/ja_JP.json
+trans.ko_KR = work-dir/ko_KR.json
+trans.nb_NO = work-dir/nb_NO.json
+trans.nl_NL = work-dir/nl_NL.json
+trans.pl = work-dir/pl.json
+trans.pt_BR = work-dir/pt_BR.json
+trans.ru_RU = work-dir/ru_RU.json
+trans.zh_CN = work-dir/zh_CN.json
 

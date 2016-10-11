@@ -17,8 +17,9 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.9.0</version>
+    <version>4.10.0.0-SNAPSHOT</version>
   </parent>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -504,11 +505,6 @@
                 <copy todir="${basedir}/target/generated-webapp/WEB-INF/">
                   <fileset dir="${basedir}/WEB-INF/">
                     <include name="web.xml"/>
-                  </fileset>
-                </copy>
-                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/WEB-INF/classes">
-                    <include name="resources/**/*"/>
                   </fileset>
                 </copy>
                 <copy todir="${basedir}/target/generated-webapp">

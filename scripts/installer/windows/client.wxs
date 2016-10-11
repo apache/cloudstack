@@ -12,12 +12,6 @@
     <Fragment>
         <DirectoryRef Id="WEBAPPS">
             <Directory Id="dir96B1059B78BC5220348BC64D2C915517" Name="client">
-                <Component Id="cmp6F4C0541A24255F55077C2F2B9EA1716" Guid="{580A1DC7-692A-4C5E-BEFF-859FAEF9A4DD}">
-                    <File Id="filE25D632D05B768505A4E7DD377130748" KeyPath="yes" Source="!(wix.SourceClient)\dictionary.jsp" />
-                </Component>
-                <Component Id="cmpA3EAE442A4EFCD423DEDE8C08275003B" Guid="{02C33DD0-F4B0-496B-AA37-EF8D398B3B04}">
-                    <File Id="fil3725B99C98A189665F86E4F12796F408" KeyPath="yes" Source="!(wix.SourceClient)\index.jsp" />
-                </Component>
                 <Directory Id="dir1ACEF08E1E39353E790054E32AAB395B" Name="css">
                     <Component Id="cmp37A6D01A784CC885922881D8CC3D5BB8" Guid="{C7CDB7FC-BBC3-4D16-8841-0ADAAED648DA}">
                         <File Id="fil057A7F1A7D66E761998D3D3A2F236950" KeyPath="yes" Source="!(wix.SourceClient)\css\cloudstack3-ie7.css" />
