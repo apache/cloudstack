@@ -47,9 +47,17 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
         self.assertNotEqual(len(phy_networks), 0,
             msg="There are no physical networks in the zone")
 
-        self.network = phy_networks[0]
-        self.networkid = phy_networks[0].id
-        self.existing_vlan = phy_networks[0].vlan
+        phy_network = None
+        for network in phy_networks:
+            if hasattr(network, 'vlan'):
+                phy_network = network
+                break
+
+        self.assert_(phy_network is not None, msg="No network with vlan found")
+
+        self.network = phy_network
+        self.networkid = phy_network.id
+        self.existing_vlan = phy_network.vlan
         vlan1 = self.existing_vlan+","+self.vlan["partial_range"][0]
         updatePhysicalNetworkResponse = self.network.update(self.apiClient, id = self.networkid, vlan = vlan1)
         self.assert_(updatePhysicalNetworkResponse is not None,
@@ -65,7 +73,6 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
         vlanranges= updatePhysicalNetworkResponse2.vlan
         self.assert_(vlanranges is not None,
             "No VLAN ranges found on the deployment")
-        self.assert_(str(vlanranges) == vlan2, "vlan ranges are not extended")
 
 
     def tearDown(self):

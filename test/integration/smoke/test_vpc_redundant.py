@@ -18,6 +18,7 @@
 """ Test redundancy features for VPC routers
 """
 
+from marvin.codes import PASS, FAILED
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (stopRouter,
@@ -25,6 +26,7 @@ from marvin.lib.base import (stopRouter,
                              destroyRouter,
                              rebootRouter,
                              Account,
+                             Template,
                              VpcOffering,
                              VPC,
                              ServiceOffering,
@@ -191,8 +193,49 @@ class Services:
                 "publicport": 22,
                 "protocol": 'TCP',
             },
-            "ostype": 'CentOS 5.3 (64-bit)',
             "timeout": 10,
+            "template": {
+                "kvm": {
+                    "name": "tiny-kvm",
+                    "displaytext": "macchinina kvm",
+                    "format": "qcow2",
+                    "hypervisor": "kvm",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "xenserver": {
+                    "name": "tiny-xen",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "xen",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "hyperv": {
+                    "name": "tiny-hyperv",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "hyperv",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "vmware": {
+                    "name": "tiny-vmware",
+                    "displaytext": "macchinina vmware",
+                    "format": "ova",
+                    "hypervisor": "vmware",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                }
+            }
         }
 
 
@@ -210,17 +253,22 @@ class TestVPCRedundancy(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"])
+
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = Template.register(cls.api_client, cls.services["template"][cls.hypervisor.lower(
+        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), domainid=cls.domain.id)
+        cls.template.download(cls.api_client)
+
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template"
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"])
-        cls._cleanup = [cls.service_offering]
+        cls._cleanup = [cls.service_offering, cls.template]
 
         cls.logger = logging.getLogger('TestVPCRedundancy')
         cls.stream_handler = logging.StreamHandler()
@@ -592,7 +640,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         gc_interval = Configurations.list(self.apiclient, name="network.gc.interval")
         
         self.logger.debug("network.gc.wait is ==> %s" % gc_wait)
-        self.logger.debug("network.gc.interval is ==> %s" % gc_wait)
+        self.logger.debug("network.gc.interval is ==> %s" % gc_interval)
 
         total_sleep = 120
         if gc_wait and gc_interval:
@@ -695,14 +743,14 @@ class TestVPCRedundancy(cloudstackTestCase):
                     self.logger.debug("Ping to google.com from VM")
                     result = str(ssh.execute(ssh_command))
 
-                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
+                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count(" 0% packet loss")))
                 except Exception as e:
                     self.fail("SSH Access failed for %s: %s" % \
                               (vmObj.get_ip(), e)
                               )
         
                 self.assertEqual(
-                                 result.count("3 packets received"),
+                                 result.count(" 0% packet loss"),
                                  1,
                                  "Ping to outside world from VM should be successful"
                                  )

@@ -16,7 +16,7 @@
 # under the License.
 
 # Import Local Modules
-from marvin.codes import FAILED, KVM, PASS
+from marvin.codes import FAILED, KVM, PASS, XEN_SERVER
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import random_gen, cleanup_resources, validateList, is_snapshot_on_nfs
@@ -291,7 +291,7 @@ class TestSnapshots(cloudstackTestCase):
             cls.services = cls.testClient.getParsedTestDataConfig()
             cls.unsupportedHypervisor = False
             cls.hypervisor = cls.testClient.getHypervisorInfo()
-            if cls.hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
+            if cls.hypervisor.lower() in (KVM.lower(), "hyperv", "lxc", XEN_SERVER.lower()):
                 cls.unsupportedHypervisor = True
                 return
             # Get Domain, Zone, Template
@@ -362,12 +362,12 @@ class TestSnapshots(cloudstackTestCase):
     @attr(tags=["advanced", "basic", "smoke"], required_hardware="true")
     def test_01_test_vm_volume_snapshot(self):
         """
-        @Desc: Test that Volume snapshot for root volume is allowed
+        @Desc: Test that Volume snapshot for root volume is not allowed
         when VM snapshot is present for the VM
         @Steps:
         1: Deploy a VM and create a VM snapshot for VM
         2: Try to create snapshot for the root volume of the VM,
-        It should not fail
+        It should expect Exception
         """
 
         # Creating Virtual Machine
@@ -392,25 +392,10 @@ class TestSnapshots(cloudstackTestCase):
         self.assertEqual(validateList(volumes)[0], PASS,
                 "Failed to get root volume of the VM")
 
-        snapshot = Snapshot.create(
-            self.apiclient,
-            volumes[0].id,
-            account=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.debug("Snapshot created: ID - %s" % snapshot.id)
-        snapshots = list_snapshots(
-            self.apiclient,
-            id=snapshot.id
-        )
-        self.assertEqual(
-            validateList(snapshots)[0],
-            PASS,
-            "Invalid snapshot list"
-        )
-        self.assertEqual(
-            snapshots[0].id,
-            snapshot.id,
-            "Check resource id in list resources call"
-        )
+        volume = volumes[0]
+
+        with self.assertRaises(Exception):
+            Snapshot.create(self.apiclient,
+                            volume_id=volume.id)
+
         return
