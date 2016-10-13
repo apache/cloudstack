@@ -157,6 +157,9 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         if self.hypervisor.lower() in ["kvm","hyperv", "vmware", "lxc"]:
             raise self.skipTest("iscsi primary storage not supported on kvm, VMWare, Hyper-V, or LXC")
 
+        if not self.services["configurableData"]["iscsi"]["url"]:
+            raise self.skipTest("iscsi test storage url not setup, skipping")
+
         # Validate the following:
         # 1. List Clusters
         # 2. verify that the cluster is in 'Enabled' allocation state

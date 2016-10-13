@@ -49,6 +49,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         testClient = super(TestDeployvGPUenabledVM, self).getClsTestClient()
         self.apiclient = testClient.getApiClient()
         self.testdata = self.testClient.getParsedTestDataConfig()
+        self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         self._cleanup = []
         self.unsupportedHypervisor = False
         self.noSuitableHost = False
@@ -69,8 +70,8 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                     sshClient = SshClient(
                         host=ghost.ipaddress,
                         port=self.testdata['configurableData']['host']["publicport"],
-                        user=self.testdata['configurableData']['host']["username"],
-                        passwd=self.testdata['configurableData']['host']["password"])
+                        user=self.hostConfig['username'],
+                        passwd=self.hostConfig['password'])
                     if ghost.hypervisorversion == "6.2.0":
                         res = sshClient.execute(
                             "xe patch-list uuid=0850b186-4d47-11e3-a720-001b2151a503")
