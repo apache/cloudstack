@@ -163,7 +163,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     @Override
-    public List<VMSnapshotVO> listVMSnapshots(ListVMSnapshotCmd cmd) {
+    public Pair<List<? extends VMSnapshot>, Integer> listVMSnapshots(ListVMSnapshotCmd cmd) {
         Account caller = getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -243,7 +243,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             sc.setParameters("id", id);
         }
 
-        return _vmSnapshotDao.search(sc, searchFilter);
+        Pair<List<VMSnapshotVO>,Integer> searchAndCount = _vmSnapshotDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends VMSnapshot>, Integer>(searchAndCount.first(), searchAndCount.second());
 
     }
 
