@@ -118,4 +118,18 @@ public class LibvirtVMDefTest extends TestCase {
         assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
     }
 
+    public void testChannelDef() {
+        LibvirtVMDef.RngDef.RngBackendModel backendModel = LibvirtVMDef.RngDef.RngBackendModel.RANDOM;
+        String path = "/dev/random";
+        int period = 2000;
+        int bytes = 2048;
+
+        LibvirtVMDef.RngDef def = new LibvirtVMDef.RngDef(path, backendModel, bytes, period);
+        assertEquals(def.getPath(), path);
+        assertEquals(def.getRngBackendModel(), backendModel);
+        assertEquals(def.getRngModel(), LibvirtVMDef.RngDef.RngModel.VIRTIO);
+        assertEquals(def.getRngRateBytes(), bytes);
+        assertEquals(def.getRngRatePeriod(), period);
+    }
+
 }

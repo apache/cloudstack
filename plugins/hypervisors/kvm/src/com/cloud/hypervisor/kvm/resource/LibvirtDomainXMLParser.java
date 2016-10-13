@@ -25,6 +25,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.google.common.base.Strings;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -36,11 +37,14 @@ import org.xml.sax.SAXException;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
     private final List<InterfaceDef> interfaces = new ArrayList<InterfaceDef>();
     private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
+    private final List<RngDef> rngDefs = new ArrayList<RngDef>();
     private Integer vncPort;
     private String desc;
 
@@ -189,6 +193,25 @@ public class LibvirtDomainXMLParser {
                 }
             }
 
+            NodeList rngs = devices.getElementsByTagName("rng");
+            for (int i = 0; i < rngs.getLength(); i++) {
+                RngDef def = null;
+                Element rng = (Element)rngs.item(i);
+                String backendModel = getAttrValue("backend", "model", rng);
+                String path = getTagValue("backend", rng);
+                String bytes = getAttrValue("rate", "bytes", rng);
+                String period = getAttrValue("rate", "period", rng);
+
+                if (Strings.isNullOrEmpty(backendModel)) {
+                    def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
+                } else {
+                    def = new RngDef(path, RngBackendModel.valueOf(backendModel.toUpperCase()),
+                                     Integer.parseInt(bytes), Integer.parseInt(period));
+                }
+
+                rngDefs.add(def);
+            }
+
             return true;
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());
@@ -232,6 +255,10 @@ public class LibvirtDomainXMLParser {
 
     public List<DiskDef> getDisks() {
         return diskDefs;
+    }
+
+    public List<RngDef> getRngs() {
+        return rngDefs;
     }
 
     public String getDescription() {

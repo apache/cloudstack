@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.google.common.base.Strings;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
@@ -115,6 +116,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -244,6 +247,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected long _diskActivityCheckFileSizeMin = 10485760; // 10MB
     protected int _diskActivityCheckTimeoutSeconds = 120; // 120s
     protected long _diskActivityInactiveThresholdMilliseconds = 30000; // 30s
+    protected boolean _rngEnable = false;
+    protected RngBackendModel _rngBackendModel = RngBackendModel.RANDOM;
+    protected String _rngPath = "/dev/random";
+    protected int _rngRatePeriod = 1000;
+    protected int _rngRateBytes = 2048;
 
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
@@ -801,6 +809,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String) params.get("kvmclock.disable");
         if (Boolean.parseBoolean(value)) {
             _noKvmClock = true;
+        }
+
+        value = (String) params.get("vm.rng.enable");
+        if (Boolean.parseBoolean(value)) {
+            _rngEnable = true;
+
+            value = (String) params.get("vm.rng.model");
+            if (!Strings.isNullOrEmpty(value)) {
+                _rngBackendModel = RngBackendModel.valueOf(value.toUpperCase());
+            }
+
+            value = (String) params.get("vm.rng.path");
+            if (!Strings.isNullOrEmpty(value)) {
+                _rngPath = value;
+            }
+
+            value = (String) params.get("vm.rng.rate.bytes");
+            _rngRateBytes = NumbersUtil.parseInt(value, new Integer(_rngRateBytes));
+
+            value = (String) params.get("vm.rng.rate.period");
+            _rngRatePeriod = NumbersUtil.parseInt(value, new Integer(_rngRatePeriod));
         }
 
         LibvirtConnection.initialize(_hypervisorURI);
@@ -1981,6 +2010,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (vmTO.getType() != VirtualMachine.Type.User) {
             final VirtioSerialDef vserial = new VirtioSerialDef(vmTO.getName(), null);
             devices.addDevice(vserial);
+        }
+
+        if (_rngEnable) {
+            final RngDef rngDevice = new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
+            devices.addDevice(rngDevice);
         }
 
         final VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
