@@ -268,7 +268,9 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                 SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
                 if (snapshotOnPrimary != null) {
                     SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-                    if (((PrimaryDataStoreImpl)snapshotOnPrimaryInfo.getDataStore()).getPoolType() == StoragePoolType.RBD) {
+                    long volumeId = snapshotOnPrimary.getVolumeId();
+                    VolumeVO volumeVO = volumeDao.findById(volumeId);
+                    if (((PrimaryDataStoreImpl)snapshotOnPrimaryInfo.getDataStore()).getPoolType() == StoragePoolType.RBD && volumeVO != null) {
                         snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo);
                     }
                     snapshotOnPrimary.setState(State.Destroyed);
