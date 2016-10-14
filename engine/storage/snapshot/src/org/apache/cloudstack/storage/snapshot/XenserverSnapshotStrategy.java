@@ -82,28 +82,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
-
-        boolean backupFlag = Boolean.parseBoolean(configDao.getValue(Config.BackupSnapshotAfterTakingSnapshot.toString()));
-
         SnapshotInfo parentSnapshot = snapshot.getParent();
 
-        if(!backupFlag) {
-            // Fake it to get the transitions to fire in the proper order
-            s_logger.debug("skipping backup of snapshot due to configuration "+Config.BackupSnapshotAfterTakingSnapshot.toString());
-
-            SnapshotObject snapObj = (SnapshotObject)snapshot;
-            try {
-                snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
-            } catch (NoTransitionException e) {
-                s_logger.debug("Failed to change state: " + snapshot.getId() + ": " + e.toString());
-                throw new CloudRuntimeException(e.toString());
-            }
-            return snapshot;
-
-        }
         if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
             s_logger.debug("backup an empty snapshot");
-
             // don't need to backup this snapshot
             SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
             if (parentSnapshotOnBackupStore != null && parentSnapshotOnBackupStore.getState() == State.Ready) {
@@ -391,8 +373,24 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
             snapshot = result.getSnashot();
             DataStore primaryStore = snapshot.getDataStore();
+            boolean backupFlag = Boolean.parseBoolean(configDao.getValue(Config.BackupSnapshotAfterTakingSnapshot.toString()));
 
-            SnapshotInfo backupedSnapshot = backupSnapshot(snapshot);
+            SnapshotInfo backupedSnapshot;
+            if(backupFlag) {
+                backupedSnapshot = backupSnapshot(snapshot);
+            } else {
+                // Fake it to get the transitions to fire in the proper order
+                s_logger.debug("skipping backup of snapshot due to configuration "+Config.BackupSnapshotAfterTakingSnapshot.toString());
+
+                SnapshotObject snapObj = (SnapshotObject)snapshot;
+                try {
+                    snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Failed to change state: " + snapshot.getId() + ": " + e.toString());
+                    throw new CloudRuntimeException(e.toString());
+                }
+                backupedSnapshot = snapshot;
+            }
 
             try {
                 SnapshotInfo parent = snapshot.getParent();

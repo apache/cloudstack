@@ -71,7 +71,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -79,6 +81,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.Templa
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -250,6 +253,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private TemplateDataFactory _tmplFactory;
     @Inject
     private SnapshotDataFactory _snapshotFactory;
+    @Inject
+    StorageStrategyFactory _storageStrategyFactory;
     @Inject
     private TemplateService _tmpltSvr;
     @Inject
@@ -1472,6 +1477,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
 
                 if (dataStoreRole == DataStoreRole.Image) {
+                    if (snapInfo == null) {
+                        snapInfo = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+                        if(snapInfo == null) {
+                            throw new CloudRuntimeException("Cannot find snapshot "+snapshotId);
+                        }
+                        // We need to copy the snapshot onto secondary.
+                        SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
+                        snapshotStrategy.backupSnapshot(snapInfo);
+
+                        // Attempt to grab it again.
+                        snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+                        if(snapInfo == null) {
+                            throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + " on secondary and could not create backup");
+                        }
+                    }
                     DataStore snapStore = snapInfo.getDataStore();
 
                     if (snapStore != null) {
