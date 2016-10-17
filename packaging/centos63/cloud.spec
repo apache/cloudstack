@@ -97,6 +97,7 @@ management, and intelligence in CloudStack.
 Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python-argparse
+Requires: python-netaddr
 Obsoletes: cloud-test < 4.1.0 
 Obsoletes: cloud-scripts < 4.1.0
 Obsoletes: cloud-utils < 4.1.0

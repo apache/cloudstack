@@ -496,7 +496,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         return affectedVms;
     }
 
-    protected SecurityGroupRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature, long seqnum,
+    protected SecurityGroupRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestIp6, String guestMac, Long vmId, String signature, long seqnum,
             Map<PortAndProto, Set<String>> ingressRules, Map<PortAndProto, Set<String>> egressRules, List<String> secIps) {
         List<IpPortAndProto> ingressResult = new ArrayList<IpPortAndProto>();
         List<IpPortAndProto> egressResult = new ArrayList<IpPortAndProto>();
@@ -516,7 +516,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 egressResult.add(ipPortAndProto);
             }
         }
-        return new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, ingressResult.toArray(new IpPortAndProto[ingressResult.size()]),
+        return new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqnum, ingressResult.toArray(new IpPortAndProto[ingressResult.size()]),
                 egressResult.toArray(new IpPortAndProto[egressResult.size()]), secIps);
     }
 
@@ -1005,7 +1005,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                                     nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
                                 }
                             }
-                            SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(),
+                            SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), nic.getIPv6Address(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(),
                                     generateRulesetSignature(ingressRules, egressRules), seqnum, ingressRules, egressRules, nicSecIps);
                             Commands cmds = new Commands(cmd);
                             try {

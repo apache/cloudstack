@@ -41,6 +41,7 @@ public class SecurityGroupRulesCmd extends Command {
     private static final Logger LOGGER = Logger.getLogger(SecurityGroupRulesCmd.class);
 
     private final String guestIp;
+    private final String guestIp6;
     private final String vmName;
     private final String guestMac;
     private final String signature;
@@ -93,6 +94,7 @@ public class SecurityGroupRulesCmd extends Command {
 
     public SecurityGroupRulesCmd(
             final String guestIp,
+            final String guestIp6,
             final String guestMac,
             final String vmName,
             final Long vmId,
@@ -102,6 +104,7 @@ public class SecurityGroupRulesCmd extends Command {
             final IpPortAndProto[] egressRuleSet,
             final List<String> secIps) {
         this.guestIp = guestIp;
+        this.guestIp6 = guestIp6;
         this.vmName = vmName;
         setIngressRuleSet(ingressRuleSet);
         this.setEgressRuleSet(egressRuleSet);
@@ -146,6 +149,10 @@ public class SecurityGroupRulesCmd extends Command {
 
     public String getGuestIp() {
         return guestIp;
+    }
+
+    public String getGuestIp6() {
+        return guestIp6;
     }
 
     public List<String> getSecIps() {
