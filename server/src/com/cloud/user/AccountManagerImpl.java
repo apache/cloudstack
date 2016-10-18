@@ -2231,12 +2231,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
         final Long userId = cmd.getId();
 
         User user = getUserIncludingRemoved(userId);
         if (user == null) {
             throw new InvalidParameterValueException("unable to find user by id");
         }
+
+        Account account = _accountDao.findById(user.getAccountId());
+        checkAccess(caller, null, true, account);
 
         // don't allow updating system user
         if (user.getId() == User.UID_SYSTEM) {
