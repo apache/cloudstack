@@ -358,9 +358,19 @@
             dataProvider: function(args) {
                 var data = {};
                 listViewDataProvider(args, data);
+
+                if ("zones" in args.context && args.context.zones[0]) {
+                    data['zoneid'] = args.context.zones[0].id;
+                }
+
+                if ("pods" in args.context && args.context.pods[0]) {
+                    data['podid'] = args.context.pods[0].id;
+                }
+
                 if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
                     data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
                 }
+
                 $.ajax({
                     url: createURL('listClusters'),
                     data: data,
@@ -623,9 +633,29 @@
                 var data = {};
                 data.type = 'routing';
                 listViewDataProvider(args, data);
+
+                if (!args.context.instances) {
+                    if ("zones" in args.context && args.context.zones[0]) {
+                        data['zoneid'] = args.context.zones[0].id;
+                    }
+
+                    if ("pods" in args.context && args.context.pods[0]) {
+                        data['podid'] = args.context.pods[0].id;
+                    }
+
+                    if ("clusters" in args.context && args.context.clusters[0]) {
+                        data['clusterid'] = args.context.clusters[0].id;
+                    }
+                } else {
+                    if (args.context.instances[0]) {
+                        data['id'] = args.context.instances[0].hostid;
+                    }
+                }
+
                 if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
                     data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
                 }
+
                 $.ajax({
                     url: createURL('listHosts'),
                     data: data,
@@ -843,9 +873,15 @@
             dataProvider: function(args) {
                 var data = {};
                 listViewDataProvider(args, data);
+
+                if ("hosts" in args.context && args.context.hosts[0]) {
+                    data['hostid'] = args.context.hosts[0].id;
+                }
+
                 if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
                     data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
                 }
+
                 $.ajax({
                     url: createURL('listVirtualMachines'),
                     data: data,
@@ -942,9 +978,19 @@
             dataProvider: function(args) {
                 var data = {listAll: true};
                 listViewDataProvider(args, data);
+
+                if ("instances" in args.context && args.context.instances[0]) {
+                    data['virtualmachineid'] = args.context.instances[0].id;
+                }
+
+                if ("primarystorages" in args.context && args.context.primarystorages[0]) {
+                    data['storageid'] = args.context.primarystorages[0].id;
+                }
+
                 if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
                     data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
                 }
+
                 $.ajax({
                     url: createURL('listVolumes'),
                     data: data,
@@ -1044,9 +1090,23 @@
             dataProvider: function(args) {
                 var data = {};
                 listViewDataProvider(args, data);
+
+                if ("zones" in args.context && args.context.zones[0]) {
+                    data['zoneid'] = args.context.zones[0].id;
+                }
+
+                if ("pods" in args.context && args.context.pods[0]) {
+                    data['podid'] = args.context.pods[0].id;
+                }
+
+                if ("clusters" in args.context && args.context.clusters[0]) {
+                    data['clusterid'] = args.context.clusters[0].id;
+                }
+
                 if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
                     data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
                 }
+
                 $.ajax({
                     url: createURL('listStoragePools'),
                     data: data,
