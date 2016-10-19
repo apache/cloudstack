@@ -1144,7 +1144,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         }
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
-            final DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
+            final DomainRouterVO router = _routerDao.findById(vm.getId());
 
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
@@ -1156,7 +1156,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
+            final UserVmVO userVm = _userVmDao.findById(vm.getId());
             _userVmMgr.setupVmForPvlan(false, userVm.getHostId(), nic);
         }
         return true;
@@ -1169,7 +1169,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         }
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
-            final DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
+            final DomainRouterVO router = _routerDao.findById(vm.getId());
 
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
@@ -1181,7 +1181,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
+            final UserVmVO userVm = _userVmDao.findById(vm.getId());
             _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
         }
     }
@@ -1193,7 +1193,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         }
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             assert vm instanceof DomainRouterVO;
-            final DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
+            final DomainRouterVO router = _routerDao.findById(vm.getId());
 
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
@@ -1205,7 +1205,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
+            final UserVmVO userVm = _userVmDao.findById(vm.getId());
             _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
         }
     }
