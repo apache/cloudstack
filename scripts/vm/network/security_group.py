@@ -28,7 +28,7 @@ import re
 import libvirt
 import fcntl
 import time
-from netaddr import IPAddress
+from netaddr import IPAddress, IPNetwork
 from netaddr.core import AddrFormatError
 
 
@@ -542,15 +542,15 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         execute('ip6tables -A ' + vmchain_default + ' -m state --state RELATED,ESTABLISHED -j ACCEPT')
 
         # Allow Instances to receive Router Advertisements, send out solicitations, but block any outgoing Advertisement from a Instance
-        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-out ' + vif + ' --src fe80::/64 --dst ff02::1 -p icmpv6 --icmpv6-type router-advertisement -j ACCEPT')
-        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' --dst ff02::2 -p icmpv6 --icmpv6-type router-solicitation -j RETURN')
+        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-out ' + vif + ' --src fe80::/64 --dst ff02::1 -p icmpv6 --icmpv6-type router-advertisement -m hl --hl-eq 255 -j ACCEPT')
+        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' --dst ff02::2 -p icmpv6 --icmpv6-type router-solicitation -m hl --hl-eq 255 -j RETURN')
         execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p icmpv6 --icmpv6-type router-advertisement -j DROP')
 
         # Allow neighbor solicitations and advertisements
-        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p icmpv6 --icmpv6-type neighbor-solicitation -j RETURN')
-        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-out ' + vif + ' -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT')
-        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p icmpv6 --icmpv6-type neighbor-advertisement -m set --match-set ' + vm_ip6_set_name + ' src -j RETURN')
-        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-out ' + vif + ' -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT')
+        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p icmpv6 --icmpv6-type neighbor-solicitation -m hl --hl-eq 255 -j RETURN')
+        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-out ' + vif + ' -p icmpv6 --icmpv6-type neighbor-solicitation -m hl --hl-eq 255 -j ACCEPT')
+        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p icmpv6 --icmpv6-type neighbor-advertisement -m set --match-set ' + vm_ip6_set_name + ' src -m hl --hl-eq 255 -j RETURN')
+        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-out ' + vif + ' -p icmpv6 --icmpv6-type neighbor-advertisement -m hl --hl-eq 255 -j ACCEPT')
 
         # Packets to allow as per RFC4890
         execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p icmpv6 --icmpv6-type packet-too-big -m set --match-set ' + vm_ip6_set_name + ' src -j RETURN')
@@ -564,6 +564,9 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
         execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p icmpv6 --icmpv6-type parameter-problem -m set --match-set ' + vm_ip6_set_name + ' src -j RETURN')
         execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-out ' + vif + ' -p icmpv6 --icmpv6-type parameter-problem -j ACCEPT')
+
+        # MLDv2 discovery packets
+        execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p icmpv6 --dst ff02::16 -j RETURN')
 
         # Allow Instances to send out DHCPv6 client messages, but block server messages
         execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -p udp --sport 546 --dst ff02::1:2 --src ' + str(ipv6_link_local) + ' -j RETURN')
@@ -581,11 +584,6 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-in ' + vif + ' -m set --match-set ' + vm_ip6_set_name + ' src -j ' + vmchain_egress)
 
         execute('ip6tables -A ' + vmchain_default + ' -m physdev --physdev-is-bridged --physdev-out ' + vif + ' -j ' + vmchain)
-
-        # For now allow ICMPv6 echo-request, UDP and TCP traffic to the Unicast address of the Instance
-        execute('ip6tables -A ' + vmchain + ' -p icmpv6 --icmpv6-type echo-request -m set --match-set ' + vm_ip6_set_name + ' dst -j ACCEPT')
-        execute('ip6tables -A ' + vmchain + ' -p udp -m set --match-set ' + vm_ip6_set_name + ' dst -j ACCEPT')
-        execute('ip6tables -A ' + vmchain + ' -p tcp -m set --match-set ' + vm_ip6_set_name + ' dst -j ACCEPT')
 
         # Drop all other traffic into the Instance
         execute('ip6tables -A ' + vmchain + ' -j DROP')
@@ -904,6 +902,42 @@ def remove_rule_log_for_vm(vmName):
 def egress_chain_name(vm_name):
     return vm_name + "-eg"
 
+
+def parse_network_rules(rules):
+  ret = []
+
+  if rules is None or len(rules) == 0:
+    return ret
+
+  lines = rules.split(';')[:-1]
+  for line in lines:
+    tokens = line.split(':', 4)
+    if len(tokens) != 5:
+      continue
+
+    ruletype = tokens[0]
+    protocol = tokens[1]
+    start = int(tokens[2])
+    end = int(tokens[3])
+    cidrs = tokens.pop();
+
+    ipv4 = []
+    ipv6 = []
+    for ip in cidrs.split(","):
+        try:
+            network = IPNetwork(ip)
+            if network.version == 4:
+                ipv4.append(ip)
+            else:
+                ipv6.append(ip)
+        except:
+            pass
+
+    ret.append({'ipv4': ipv4, 'ipv6': ipv6, 'ruletype': ruletype,
+                'start': start, 'end': end, 'protocol': protocol})
+
+  return ret
+
 def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, rules, vif, brname, sec_ips):
   try:
     vmName = vm_name
@@ -919,83 +953,76 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
     if changes[0] or changes[1] or changes[2] or changes[3]:
         default_network_rules(vmName, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
 
-    if rules == "" or rules == None:
-        lines = []
-    else:
-        lines = rules.split(';')[:-1]
-
     logging.debug("    programming network rules for IP: " + vm_ip + " vmname=" + vm_name)
+
+    vmchain = vm_name
+    egress_chain_name(vm_name)
     try:
-      vmchain = vm_name
-      execute("iptables -F " + vmchain)
-      egress_vmchain = egress_chain_name(vm_name)
-      execute("iptables -F " + egress_vmchain)
+      for chain in [vmchain, egress_vmchain]:
+          execute('iptables -F ' + chain)
+          execute('ip6tables -F ' + chain)
     except:
       logging.debug("Error flushing iptables rules for " + vmchain + ". Presuming firewall rules deleted, re-initializing." )
       default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
-    egressrule = 0
-    for line in lines:
-        tokens = line.split(':')
-        if len(tokens) != 5:
-          continue
-        ruletype = tokens[0]
-        protocol = tokens[1]
-        start = tokens[2]
-        end = tokens[3]
-        cidrs = tokens.pop();
-        ips = cidrs.split(",")
-        ips.pop()
-        allow_any = False
-        if ruletype == 'E':
+
+    egressrule_v4 = 0
+    egressrule_v6 = 0
+
+    for rule in parse_network_rules(rules):
+        start = rule['start']
+        end = rule['end']
+        protocol = rule['protocol']
+
+        if rule['ruletype'] == 'E':
             vmchain = egress_chain_name(vm_name)
             direction = "-d"
             action = "RETURN"
-            egressrule = egressrule + 1
+            if rule['ipv4']:
+                egressrule_v4 =+ 1
+
+            if rule['ipv6']:
+                egressrule_v6 +=1
+
         else:
             vmchain = vm_name
             action = "ACCEPT"
             direction = "-s"
-        if '0.0.0.0/0' in ips:
-            i = ips.index('0.0.0.0/0')
-            del ips[i]
-            allow_any = True
-        range = start + ":" + end
-        if ips:
-            if protocol == 'all':
-                for ip in ips:
-                    execute("iptables -I " + vmchain + " -m state --state NEW " + direction + " " + ip + " -j "+action)
-            elif protocol != 'icmp':
-                for ip in ips:
-                    execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW " + direction + " " + ip + " -j "+ action)
-            else:
-                range = start + "/" + end
-                if start == "-1":
-                    range = "any"
-                for ip in ips:
-                    execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " " + direction + " " + ip + " -j "+ action)
 
-        if allow_any:
+        range = str(start) + ':' + str(end)
+        if 'icmp' == protocol:
+            range = str(start) + '/' + str(end)
+            if start == -1:
+                range = 'any'
+
+        for ip in rule['ipv4']:
             if protocol == 'all':
-                execute("iptables -I " + vmchain + " -m state --state NEW " + direction + " 0.0.0.0/0 -j "+action)
+                execute('iptables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
             elif protocol != 'icmp':
-                execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -j "+ action)
+                execute('iptables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
             else:
-                range = start + "/" + end
-                if start == "-1":
-                    range = "any"
-                execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -j "+action)
+                execute('iptables -I ' + vmchain + ' -p icmp --icmp-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
+
+        for ip in rule['ipv6']:
+            if protocol == 'all':
+                execute('ip6tables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+            elif 'icmp' != protocol:
+                execute('ip6tables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+            else:
+                execute('ip6tables -I ' + vmchain + ' -p icmpv6 --icmpv6-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
 
     egress_vmchain = egress_chain_name(vm_name)
-    if egressrule == 0 :
-        iptables = "iptables -A " + egress_vmchain + " -j RETURN"
-        execute(iptables)
+    if egressrule_v4 == 0 :
+        execute('iptables -A ' + egress_vmchain + ' -j RETURN')
     else:
-        iptables = "iptables -A " + egress_vmchain + " -j DROP"
-        execute(iptables)
+        execute('iptables -A ' + egress_vmchain + ' -j DROP')
 
-    vmchain = vm_name
-    iptables = "iptables -A " + vmchain + " -j DROP"
-    execute(iptables)
+    if egressrule_v6 == 0 :
+        execute('ip6tables -A ' + egress_vmchain + ' -j RETURN')
+    else:
+        execute('ip6tables -A ' + egress_vmchain + ' -j DROP')
+
+    execute('iptables -A ' + vm_name + ' -j DROP')
+    execute('ip6tables -A ' + vm_name + ' -j DROP')
 
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno) == False:
         return 'false'

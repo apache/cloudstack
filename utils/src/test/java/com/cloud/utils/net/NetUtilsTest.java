@@ -245,6 +245,10 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidCIDR(cidrFirst));
         assertTrue(NetUtils.isValidCIDR(cidrSecond));
         assertTrue(NetUtils.isValidCIDR(cidrThird));
+        assertTrue(NetUtils.isValidCIDR("2001:db8::/64"));
+        assertTrue(NetUtils.isValidCIDR("2001:db8::/48"));
+        assertTrue(NetUtils.isValidCIDR("2001:db8:fff::/56"));
+        assertFalse(NetUtils.isValidCIDR("2001:db8:gggg::/56"));
     }
 
     @Test
@@ -256,6 +260,8 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidCidrList(cidrFirst));
         assertTrue(NetUtils.isValidCidrList(cidrSecond));
         assertTrue(NetUtils.isValidCidrList(cidrThird));
+        assertTrue(NetUtils.isValidCidrList("2001:db8::/64,2001:db8:ffff::/48"));
+        assertTrue(NetUtils.isValidCidrList("2001:db8::/64,2001:db8:ffff::/48,192.168.0.0/24"));
     }
 
     @Test

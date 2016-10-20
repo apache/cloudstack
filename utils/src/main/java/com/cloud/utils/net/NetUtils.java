@@ -557,6 +557,12 @@ public class NetUtils {
         if (cidr == null || cidr.isEmpty()) {
             return false;
         }
+
+        try {
+            IPv6Network.fromString(cidr);
+            return true;
+        } catch (IllegalArgumentException e) {}
+
         final String[] cidrPair = cidr.split("\\/");
         if (cidrPair.length != 2) {
             return false;
