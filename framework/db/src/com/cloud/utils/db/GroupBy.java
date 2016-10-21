@@ -54,12 +54,9 @@ public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
         return this;
     }
 
-    public J having(final Func func, final Object obj, final Op op, final Object value) {
+    public J having(final Func func, final Attribute obj, final Op op) {
         assert (_having == null) : "You can only specify one having in a group by";
-        final List<Attribute> attrs = _builder.getSpecifiedAttributes();
-        assert attrs.size() == 1 : "You didn't specified an attribute";
-
-        _having = new Having(func, attrs.get(0), op, value);
+        _having = new Having(func, obj, op);
         _builder.getSpecifiedAttributes().clear();
         return _builder;
     }
@@ -88,13 +85,11 @@ public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
         public Func func;
         public Attribute attr;
         public Op op;
-        public Object value;
 
-        public Having(final Func func, final Attribute attr, final Op op, final Object value) {
+        public Having(final Func func, final Attribute attr, final Op op) {
             this.func = func;
             this.attr = attr;
             this.op = op;
-            this.value = value;
         }
 
         public void toSql(final StringBuilder builder) {
