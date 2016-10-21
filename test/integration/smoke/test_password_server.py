@@ -64,6 +64,7 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
         cls.testClient = super(TestIsolatedNetworksPasswdServer, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -141,8 +142,6 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
 
         cls.services["configurableData"] = {
             "host": {
-                "password": "password",
-                "username": "root",
                 "port": 22
             },
             "input": "INPUT",
@@ -170,6 +169,7 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         return
 
     def test_ssh_command(self, vm, nat_rule, rule_label):
@@ -181,12 +181,12 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
             ssh = vm.get_ssh_client(ipaddress=nat_rule.ipaddress, port=self.services[rule_label]["publicport"], retries=5)
             result = str(ssh.execute(ssh_command))
 
-            self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
+            self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count(" 0% packet loss")))
         except:
             self.fail("Failed to SSH into VM - %s" % (nat_rule.ipaddress))
 
         self.assertEqual(
-                         result.count("3 packets received"),
+                         result.count(" 0% packet loss"),
                          1,
                          "Ping to outside world from VM should be successful"
                          )
@@ -202,23 +202,34 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
             "Check for list hosts response return valid data")
 
         host = hosts[0]
-        host.user = self.services["configurableData"]["host"]["username"]
-        host.passwd = self.services["configurableData"]["host"]["password"]
+        host.user = self.hostConfig['username']
+        host.passwd = self.hostConfig['password']
         host.port = self.services["configurableData"]["host"]["port"]
-        
-        try:
+
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
-                host.ipaddress,
-                host.port,
-                host.user,
-                host.passwd,
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
                 router.linklocalip,
-                "cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}'" % (vm.nic[0].gateway, vm.nic[0].ipaddress))
-        except KeyError:
-            self.skipTest(
-                "Provide a marvin config file with host\
-                        credentials to run %s" %
-                self._testMethodName)
+                "cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}'" % (vm.nic[0].gateway, vm.nic[0].ipaddress),
+                hypervisor=self.hypervisor
+            )
+        else:
+            try:
+                result = get_process_status(
+                    host.ipaddress,
+                    host.port,
+                    host.user,
+                    host.passwd,
+                    router.linklocalip,
+                    "cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}'" % (vm.nic[0].gateway, vm.nic[0].ipaddress))
+            except KeyError:
+                self.skipTest(
+                    "Provide a marvin config file with host\
+                            credentials to run %s" %
+                    self._testMethodName)
 
         self.logger.debug("cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}' RESULT IS ==> %s" % (vm.nic[0].gateway, vm.nic[0].ipaddress, result))
         res = str(result)

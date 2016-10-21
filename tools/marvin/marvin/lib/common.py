@@ -1056,6 +1056,8 @@ def setNonContiguousVlanIds(apiclient, zoneid):
         list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
 
     for physical_network in list_physical_networks_response:
+        if not hasattr(physical_network, 'vlan'):
+            continue
 
         vlans = xsplit(physical_network.vlan, ['-', ','])
 

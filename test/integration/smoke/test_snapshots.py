@@ -22,6 +22,7 @@ from marvin.lib.utils import (cleanup_resources,
                               is_snapshot_on_nfs)
 from marvin.lib.base import (VirtualMachine,
                              Account,
+                             Template,
                              ServiceOffering,
                              Snapshot)
 from marvin.lib.common import (get_domain,
@@ -30,6 +31,57 @@ from marvin.lib.common import (get_domain,
                                list_volumes,
                                list_snapshots)
 from marvin.lib.decoratorGenerators import skipTestIf
+
+
+class Templates:
+    """Test data for templates
+    """
+
+    def __init__(self):
+        self.templates = {
+            "macchinina": {
+                "kvm": {
+                    "name": "tiny-kvm",
+                    "displaytext": "macchinina kvm",
+                    "format": "qcow2",
+                    "hypervisor": "kvm",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "xenserver": {
+                    "name": "tiny-xen",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "xen",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "hyperv": {
+                    "name": "tiny-hyperv",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "hyperv",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "vmware": {
+                    "name": "tiny-vmware",
+                    "displaytext": "macchinina vmware",
+                    "format": "ova",
+                    "hypervisor": "vmware",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+            }
+        }
 
 
 class TestSnapshotRootDisk(cloudstackTestCase):
@@ -47,23 +99,23 @@ class TestSnapshotRootDisk(cloudstackTestCase):
 
         cls.hypervisorNotSupported = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() in ['hyperv', 'lxc']:
+        if cls.hypervisor.lower() in ['hyperv', 'lxc'] or 'kvm-centos6' in cls.testClient.getZoneForTests():
             cls.hypervisorNotSupported = True
 
         cls._cleanup = []
         if not cls.hypervisorNotSupported:
-            template = get_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.services["ostype"]
-            )
-            if template == FAILED:
-                assert False, "get_template() failed to return template with description %s" % cls.services[
-                    "ostype"]
+            macchinina = Templates().templates["macchinina"]
+            cls.template = Template.register(cls.apiclient, macchinina[cls.hypervisor.lower()],
+                        cls.zone.id, hypervisor=cls.hypervisor.lower(), domainid=cls.domain.id)
+            cls.template.download(cls.apiclient)
+
+            if cls.template == FAILED:
+                assert False, "get_template() failed to return template"
+
 
             cls.services["domainid"] = cls.domain.id
             cls.services["small"]["zoneid"] = cls.zone.id
-            cls.services["templates"]["ostypeid"] = template.ostypeid
+            cls.services["templates"]["ostypeid"] = cls.template.ostypeid
             cls.services["zoneid"] = cls.zone.id
 
             # Create VMs, NAT Rules etc
@@ -72,23 +124,26 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                 cls.services["account"],
                 domainid=cls.domain.id
             )
-            cls._cleanup.append(cls.account)
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
                 cls.services["service_offerings"]["tiny"]
             )
-            cls._cleanup.append(cls.service_offering)
             cls.virtual_machine = cls.virtual_machine_with_disk = \
                 VirtualMachine.create(
                     cls.apiclient,
                     cls.services["small"],
-                    templateid=template.id,
+                    templateid=cls.template.id,
                     accountid=cls.account.name,
                     domainid=cls.account.domainid,
                     zoneid=cls.zone.id,
                     serviceofferingid=cls.service_offering.id,
                     mode=cls.services["mode"]
                 )
+
+            cls._cleanup.append(cls.virtual_machine)
+            cls._cleanup.append(cls.service_offering)
+            cls._cleanup.append(cls.account)
+            cls._cleanup.append(cls.template)
         return
 
     @classmethod
@@ -141,6 +196,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(snapshot)
         self.debug("Snapshot created: ID - %s" % snapshot.id)
 
         snapshots = list_snapshots(
