@@ -207,6 +207,10 @@ class updateDataBag:
         elif (self.qFile.data['cmd_line']['type'] == "dhcpsrvr"):
             self.processCLItem('0', "guest")
             self.processCLItem('1', "control")
+        elif (self.qFile.data['cmd_line']['type'] == "ilbvm"):
+            self.processCLItem('0', "guest")
+            self.processCLItem('1', "control")
+
         return cs_cmdline.merge(dbag, self.qFile.data)
 
     def processCLItem(self, num, nw_type):
@@ -218,10 +222,13 @@ class updateDataBag:
             dp['source_nat'] = False
             dp['add'] = True
             dp['one_to_one_nat'] = False
-            if('localgw' in self.qFile.data['cmd_line']):
-                dp['gateway'] = self.qFile.data['cmd_line']['localgw']
+            if nw_type == "public":
+                dp['gateway'] = self.qFile.data['cmd_line']['gateway']
             else:
-                dp['gateway'] = 'None'
+                if('localgw' in self.qFile.data['cmd_line']):
+                    dp['gateway'] = self.qFile.data['cmd_line']['localgw']
+                else:
+                    dp['gateway'] = 'None'
             dp['nic_dev_id'] = num
             dp['nw_type'] = nw_type
             qf = QueueFile()

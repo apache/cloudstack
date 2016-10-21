@@ -1237,43 +1237,45 @@ class Template:
             cmd.zoneid = zoneid
         apiclient.deleteTemplate(cmd)
 
-    def download(self, apiclient, timeout=5, interval=60):
+    def download(self, apiclient, retries=300, interval=5):
         """Download Template"""
-        # Sleep to ensure template is in proper state before download
-        time.sleep(interval)
-
-        while True:
+        while retries > -1:
+            time.sleep(interval)
             template_response = Template.list(
                 apiclient,
                 id=self.id,
                 zoneid=self.zoneid,
                 templatefilter='self'
             )
-            if isinstance(template_response, list):
 
+            if isinstance(template_response, list):
                 template = template_response[0]
+                if not hasattr(template, 'status') or not template or not template.status:
+                    retries = retries - 1
+                    continue
+
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
                 # Error - Any other string
-                if template.status == 'Download Complete':
-                    break
+                if template.status == 'Download Complete' and template.isready:
+                    return
 
                 elif 'Downloaded' in template.status:
-                    time.sleep(interval)
+                    retries = retries - 1
+                    continue
 
                 elif 'Installing' not in template.status:
+                    if retries >= 0:
+                        retries = retries - 1
+                        continue
                     raise Exception(
                         "Error in downloading template: status - %s" %
                         template.status)
 
-            elif timeout == 0:
-                break
-
             else:
-                time.sleep(interval)
-                timeout = timeout - 1
-        return
+                retries = retries - 1
+        raise Exception("Template download failed exception")
 
     def updatePermissions(self, apiclient, **kwargs):
         """Updates the template permissions"""
@@ -1376,11 +1378,10 @@ class Iso:
         apiclient.deleteIso(cmd)
         return
 
-    def download(self, apiclient, timeout=5, interval=60):
+    def download(self, apiclient, retries=300, interval=5):
         """Download an ISO"""
         # Ensuring ISO is successfully downloaded
-        retry = 1
-        while True:
+        while retries > -1:
             time.sleep(interval)
 
             cmd = listIsos.listIsosCmd()
@@ -1389,26 +1390,25 @@ class Iso:
 
             if isinstance(iso_response, list):
                 response = iso_response[0]
-                # Again initialize timeout to avoid listISO failure
-                timeout = 5
+                if not hasattr(response, 'status') or not response or not response.status:
+                    retries = retries - 1
+                    continue
+
                 # Check whether download is in progress(for Ex:10% Downloaded)
                 # or ISO is 'Successfully Installed'
-                if response.status == 'Successfully Installed':
+                if response.status == 'Successfully Installed' and response.isready:
                     return
                 elif 'Downloaded' not in response.status and \
                         'Installing' not in response.status:
-                    if retry == 1:
-                        retry = retry - 1
+                    if retries >= 0:
+                        retries = retries - 1
                         continue
                     raise Exception(
                         "Error In Downloading ISO: ISO Status - %s" %
                         response.status)
-
-            elif timeout == 0:
-                raise Exception("ISO download Timeout Exception")
             else:
-                timeout = timeout - 1
-        return
+                retries = retries - 1
+        raise Exception("ISO download failed exception")
 
     @classmethod
     def extract(cls, apiclient, id, mode, zoneid=None):
