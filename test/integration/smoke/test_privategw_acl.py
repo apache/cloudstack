@@ -876,5 +876,12 @@ class TestPrivateGwACL(cloudstackTestCase):
         if not physical_networks:
             return None
         for physical_network in physical_networks:
-            if physical_network.vlan:
-                return physical_network
+            if not physical_network.removed and physical_network.vlan:
+                traffic_type_list = self.dbclient.execute(
+                    "select traffic_type from physical_network_traffic_types where physical_network_id=\
+                    (select id from physical_network where uuid='%s');" % physical_network.id
+                )
+                for traffic_type in traffic_type_list:
+                    if "Guest" in  str(traffic_type[0]):
+                        return physical_network
+        return None
