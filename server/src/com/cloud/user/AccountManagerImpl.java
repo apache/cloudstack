@@ -159,6 +159,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -755,8 +756,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 s_logger.debug("Expunging # of vms (accountId=" + accountId + "): " + vms.size());
             }
 
-            // no need to catch exception at this place as expunging vm should pass in order to perform further cleanup
             for (UserVmVO vm : vms) {
+                if (vm.getState() != VirtualMachine.State.Destroyed && vm.getState() != VirtualMachine.State.Expunging) {
+                    try {
+                        _vmMgr.destroyVm(vm.getId());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        s_logger.warn("Failed destroying instance " + vm.getUuid() + " as part of account deletion.");
+                    }
+                }
+                // no need to catch exception at this place as expunging vm
+                // should pass in order to perform further cleanup
                 if (!_vmMgr.expunge(vm, callerUserId, caller)) {
                     s_logger.error("Unable to expunge vm: " + vm.getId());
                     accountCleanupNeeded = true;
