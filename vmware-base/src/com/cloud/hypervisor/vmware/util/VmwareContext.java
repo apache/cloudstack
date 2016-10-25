@@ -666,7 +666,7 @@ public class VmwareContext {
             s_logger.warn("Unexpected exception: ", e);
         } finally {
             if (_pool != null) {
-                _pool.unregisterOutstandingContext(this);
+                _pool.unregisterContext(this);
             }
             unregisterOutstandingContext();
         }

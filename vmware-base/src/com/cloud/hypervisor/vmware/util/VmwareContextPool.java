@@ -16,28 +16,30 @@
 // under the License.
 package com.cloud.hypervisor.vmware.util;
 
+import com.google.common.base.Strings;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.log4j.Logger;
+import org.joda.time.Duration;
+
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 
 public class VmwareContextPool {
     private static final Logger s_logger = Logger.getLogger(VmwareContextPool.class);
 
-    private static final long DEFAULT_CHECK_INTERVAL = 10000;
+    private static final Duration DEFAULT_CHECK_INTERVAL = Duration.millis(10000L);
     private static final int DEFAULT_IDLE_QUEUE_LENGTH = 128;
 
-    private List<VmwareContext> _outstandingRegistry = new ArrayList<VmwareContext>();
-
-    private Map<String, List<VmwareContext>> _pool;
+    private final ConcurrentMap<String, Queue<VmwareContext>> _pool;
     private int _maxIdleQueueLength = DEFAULT_IDLE_QUEUE_LENGTH;
-    private long _idleCheckIntervalMs = DEFAULT_CHECK_INTERVAL;
+    private Duration _idleCheckInterval = DEFAULT_CHECK_INTERVAL;
 
     private Timer _timer = new Timer();
 
@@ -45,76 +47,77 @@ public class VmwareContextPool {
         this(DEFAULT_IDLE_QUEUE_LENGTH, DEFAULT_CHECK_INTERVAL);
     }
 
-    public VmwareContextPool(int maxIdleQueueLength) {
-        this(maxIdleQueueLength, DEFAULT_CHECK_INTERVAL);
-    }
-
-    public VmwareContextPool(int maxIdleQueueLength, long idleCheckIntervalMs) {
-        _pool = new HashMap<String, List<VmwareContext>>();
+    public VmwareContextPool(int maxIdleQueueLength, Duration idleCheckInterval) {
+        _pool = new ConcurrentHashMap<String, Queue<VmwareContext>>();
 
         _maxIdleQueueLength = maxIdleQueueLength;
-        _idleCheckIntervalMs = idleCheckIntervalMs;
+        _idleCheckInterval = idleCheckInterval;
 
-        _timer.scheduleAtFixedRate(getTimerTask(), _idleCheckIntervalMs, _idleCheckIntervalMs);
+        _timer.scheduleAtFixedRate(getTimerTask(), _idleCheckInterval.getMillis(), _idleCheckInterval.getMillis());
     }
 
-    public void registerOutstandingContext(VmwareContext context) {
-        assert (context != null);
-        synchronized (this) {
-            _outstandingRegistry.add(context);
+    public VmwareContext getContext(final String vCenterAddress, final String vCenterUserName) {
+        final String poolKey = composePoolKey(vCenterAddress, vCenterUserName).intern();
+        if (Strings.isNullOrEmpty(poolKey)) {
+            return null;
         }
-    }
-
-    public void unregisterOutstandingContext(VmwareContext context) {
-        assert (context != null);
-        synchronized (this) {
-            _outstandingRegistry.remove(context);
-        }
-    }
-
-    public VmwareContext getContext(String vCenterAddress, String vCenterUserName) {
-        String poolKey = composePoolKey(vCenterAddress, vCenterUserName);
-        synchronized (this) {
-            List<VmwareContext> l = _pool.get(poolKey);
-            if (l == null)
-                return null;
-
-            if (l.size() > 0) {
-                VmwareContext context = l.remove(0);
-                context.setPoolInfo(this, poolKey);
-
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", outstanding count: " +
-                        VmwareContext.getOutstandingContextCount());
+        synchronized (poolKey) {
+            final Queue<VmwareContext> ctxList = _pool.get(poolKey);
+            if (ctxList != null && !ctxList.isEmpty()) {
+                final VmwareContext context = ctxList.remove();
+                if (context != null) {
+                    context.setPoolInfo(this, poolKey);
+                }
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + ctxList.size() + ", outstanding count: " +
+                            VmwareContext.getOutstandingContextCount());
+                }
                 return context;
             }
-
-            // TODO, we need to control the maximum number of outstanding VmwareContext object in the future
             return null;
         }
     }
 
-    public void returnContext(VmwareContext context) {
+    public void registerContext(final VmwareContext context) {
         assert (context.getPool() == this);
         assert (context.getPoolKey() != null);
-        synchronized (this) {
-            List<VmwareContext> l = _pool.get(context.getPoolKey());
-            if (l == null) {
-                l = new ArrayList<VmwareContext>();
-                _pool.put(context.getPoolKey(), l);
+
+        final String poolKey = context.getPoolKey().intern();
+        synchronized (poolKey) {
+            Queue<VmwareContext> ctxQueue = _pool.get(poolKey);
+
+            if (ctxQueue == null) {
+                ctxQueue = new ConcurrentLinkedQueue<>();
+                _pool.put(poolKey, ctxQueue);
             }
 
-            if (l.size() < _maxIdleQueueLength) {
-                context.clearStockObjects();
-                l.add(context);
+            if (ctxQueue.size() >= _maxIdleQueueLength) {
+                final VmwareContext oldestContext = ctxQueue.remove();
+                if (oldestContext != null) {
+                    try {
+                        oldestContext.close();
+                    } catch (Throwable t) {
+                        s_logger.error("Unexpected exception caught while trying to purge oldest VmwareContext", t);
+                    }
+                }
+            }
+            context.clearStockObjects();
+            ctxQueue.add(context);
 
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " + l.size() + ", outstanding count: " +
-                        VmwareContext.getOutstandingContextCount());
-            } else {
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("VmwareContextPool queue exceeds limits, queue size: " + l.size());
-                context.close();
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " + ctxQueue.size() + ", outstanding count: "
+                        + VmwareContext.getOutstandingContextCount());
+            }
+        }
+    }
+
+    public void unregisterContext(final VmwareContext context) {
+        assert (context != null);
+        final String poolKey = context.getPoolKey().intern();
+        final Queue<VmwareContext> ctxList = _pool.get(poolKey);
+        synchronized (poolKey) {
+            if (!Strings.isNullOrEmpty(poolKey) && ctxList != null && ctxList.contains(context)) {
+                ctxList.remove(context);
             }
         }
     }
@@ -124,8 +127,6 @@ public class VmwareContextPool {
             @Override
             protected void runInContext() {
                 try {
-                    // doIdleCheck();
-
                     doKeepAlive();
                 } catch (Throwable e) {
                     s_logger.error("Unexpected exception", e);
@@ -134,35 +135,30 @@ public class VmwareContextPool {
         };
     }
 
-    private void getKeepAliveCheckContexts(List<VmwareContext> l, int batchSize) {
-        synchronized (this) {
-            int size = Math.min(_outstandingRegistry.size(), batchSize);
-            while (size > 0) {
-                VmwareContext context = _outstandingRegistry.remove(0);
-                l.add(context);
-
-                _outstandingRegistry.add(context);
-                size--;
-            }
-        }
-    }
-
     private void doKeepAlive() {
-        List<VmwareContext> l = new ArrayList<VmwareContext>();
-        int batchSize = (int)(_idleCheckIntervalMs / 1000);    // calculate batch size at 1 request/sec rate
-        getKeepAliveCheckContexts(l, batchSize);
-
-        for (VmwareContext context : l) {
-            try {
-                context.idleCheck();
-            } catch (Throwable e) {
-                s_logger.warn("Exception caught during VmwareContext idle check, close and discard the context", e);
-                context.close();
+        final List<VmwareContext> closableCtxList = new ArrayList<>();
+        for (final Queue<VmwareContext> ctxQueue : _pool.values()) {
+            for (Iterator<VmwareContext> iterator = ctxQueue.iterator(); iterator.hasNext();) {
+                final VmwareContext context = iterator.next();
+                if (context == null) {
+                    iterator.remove();
+                    continue;
+                }
+                try {
+                    context.idleCheck();
+                } catch (Throwable e) {
+                    s_logger.warn("Exception caught during VmwareContext idle check, close and discard the context", e);
+                    closableCtxList.add(context);
+                    iterator.remove();
+                }
             }
+        }
+        for (final VmwareContext context : closableCtxList) {
+            context.close();
         }
     }
 
-    public static String composePoolKey(String vCenterAddress, String vCenterUserName) {
+    public static String composePoolKey(final String vCenterAddress, final String vCenterUserName) {
         assert (vCenterUserName != null);
         assert (vCenterAddress != null);
         return vCenterUserName + "@" + vCenterAddress;
