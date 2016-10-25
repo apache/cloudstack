@@ -152,11 +152,10 @@ public class VirtualRoutingResource {
         }
     }
 
-    private ExecutionResult applyConfigToVR(String routerAccessIp, ConfigItem c) {
-        return applyConfigToVR(routerAccessIp, c, VRScripts.DEFAULT_EXECUTEINVR_TIMEOUT);
-    }
-
     private ExecutionResult applyConfigToVR(String routerAccessIp, ConfigItem c, int timeout) {
+        if (timeout < VRScripts.DEFAULT_EXECUTEINVR_TIMEOUT) {
+            timeout = VRScripts.DEFAULT_EXECUTEINVR_TIMEOUT;
+        }
         if (c instanceof FileConfigItem) {
             FileConfigItem configItem = (FileConfigItem)c;
             return _vrDeployer.createFileInVR(routerAccessIp, configItem.getFilePath(), configItem.getFileName(), configItem.getFileContents());
@@ -180,7 +179,7 @@ public class VirtualRoutingResource {
         boolean finalResult = false;
         for (ConfigItem configItem : cfg) {
             long startTimestamp = System.currentTimeMillis();
-            ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem);
+            ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem, VRScripts.DEFAULT_EXECUTEINVR_TIMEOUT);
             if (s_logger.isDebugEnabled()) {
                 long elapsed = System.currentTimeMillis() - startTimestamp;
                 s_logger.debug("Processing " + configItem + " took " + elapsed + "ms");
@@ -375,11 +374,8 @@ public class VirtualRoutingResource {
                 ScriptConfigItem scriptConfigItem = new ScriptConfigItem(VRScripts.VR_CFG, "-c " + VRScripts.CONFIG_CACHE_LOCATION + cfgFileName);
                 // 120s is the minimal timeout
                 int timeout = answerCounts * _eachTimeout;
-                if (timeout < 120) {
-                    timeout = 120;
-                }
 
-                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem);
+                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem, timeout);
                 if (!result.isSuccess()) {
                     return new Answer(cmd, false, result.getDetails());
                 }
