@@ -71,10 +71,10 @@ stop() {
 
 set_ulimit() {
     fd_limit=`ulimit -n`
-    if [ "$fd_limit" != "4096" ]; then
+    if [ "$fd_limit" != "65536" ]; then
         user=`whoami`
         if [ $user == "root" ]; then
-            ulimit -n 4096
+            ulimit -n 65536
         fi
     fi
 }
