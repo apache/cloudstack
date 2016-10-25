@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
@@ -5070,7 +5069,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Recycling threadlocal context to pool");
             }
-            context.getPool().returnContext(context);
+            context.getPool().registerContext(context);
         }
     }
 

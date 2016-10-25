@@ -236,7 +236,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             VmwareContext context = currentContext.get();
             currentContext.set(null);
             assert (context.getPool() != null);
-            context.getPool().returnContext(context);
+            context.getPool().registerContext(context);
         }
     }
 
