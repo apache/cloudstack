@@ -490,7 +490,10 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
             TemplateInfo templateInfo = (TemplateInfo)dataObject;
 
-            volumeSize = (long)(templateInfo.getSize() + templateInfo.getSize() * (LOWEST_HYPERVISOR_SNAPSHOT_RESERVE / 100f));
+            // TemplateInfo sometimes has a size equal to null.
+            long templateSize = templateInfo.getSize() != null ? templateInfo.getSize() : 0;
+
+            volumeSize = (long)(templateSize + templateSize * (LOWEST_HYPERVISOR_SNAPSHOT_RESERVE / 100f));
         }
 
         return volumeSize;
