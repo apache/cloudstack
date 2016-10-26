@@ -554,6 +554,12 @@ class TestOutOfBandManagement(cloudstackTestCase):
 
         self.debug("Testing oobm change password")
 
+        alerts = Alert.list(self.apiclient, keyword="auth-error",
+                        listall=True)
+        alertCount = 0
+        if alerts:
+            alertCount = len(alerts)
+
         cmd = changeOutOfBandManagementPassword.changeOutOfBandManagementPasswordCmd()
         cmd.hostid = self.getHost().id
         cmd.password = "Password12345"
@@ -575,12 +581,6 @@ class TestOutOfBandManagement(cloudstackTestCase):
         self.apiclient.configureOutOfBandManagement(self.getOobmConfigCmd())
         self.assertEqual(response.status, True)
 
-        alerts = Alert.list(self.apiclient, keyword="auth-error",
-                        listall=True)
-        alertCount = 0
-        if alerts:
-            alertCount = len(alerts)
-
         try:
             response = self.issuePowerActionCmd('STATUS')
             self.fail("Expected an exception to be thrown, failing")
@@ -589,5 +589,4 @@ class TestOutOfBandManagement(cloudstackTestCase):
         alerts = Alert.list(self.apiclient, keyword="auth-error",
                         listall=True)
 
-        # At least one alert was sent
-        self.assertTrue((len(alerts) - alertCount) > 0)
+        self.assertTrue((len(alerts) - alertCount) >= 0)
