@@ -63,7 +63,6 @@ function install_packages() {
     nfs-common \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp ipsec-tools tdb-tools \
-    openswan=1:2.6.37-3+deb7u1 \
     xenstore-utils libxenstore3.0 \
     conntrackd ipvsadm libnetfilter-conntrack3 libnl-3-200 libnl-genl-3-200 \
     ipcalc \
@@ -76,9 +75,8 @@ function install_packages() {
     sharutils
 
   ${apt_get} -t wheezy-backports install keepalived irqbalance open-vm-tools qemu-guest-agent
+  ${apt_get} -t wheezy-backports install strongswan libcharon-extra-plugins libstrongswan-extra-plugins
 
-  # hold on installed openswan version, upgrade rest of the packages (if any)
-  apt-mark hold openswan
   apt-get update
   apt-get -y --force-yes upgrade
 

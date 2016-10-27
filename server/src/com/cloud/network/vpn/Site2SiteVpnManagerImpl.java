@@ -517,7 +517,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
         _accountMgr.checkAccess(caller, null, false, conn);
 
-        if (conn.getState() == State.Connected) {
+        if (conn.getState() != State.Pending) {
             stopVpnConnection(id);
         }
         _vpnConnectionDao.remove(id);
@@ -531,8 +531,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new CloudRuntimeException("Unable to acquire lock on " + conn);
         }
         try {
-            if (conn.getState() != State.Connected && conn.getState() != State.Error) {
-                throw new InvalidParameterValueException("Site to site VPN connection with specified id is not in correct state(connected) to process disconnect!");
+            if (conn.getState() == State.Pending) {
+                throw new InvalidParameterValueException("Site to site VPN connection with specified id is currently Pending, unable to Disconnect!");
             }
 
             conn.setState(State.Disconnected);
