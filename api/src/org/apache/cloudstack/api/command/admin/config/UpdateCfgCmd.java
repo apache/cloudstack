@@ -19,8 +19,8 @@ package org.apache.cloudstack.api.command.admin.config;
 import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
@@ -75,6 +76,13 @@ public class UpdateCfgCmd extends BaseCmd {
                description = "the ID of the Account to update the parameter value for corresponding account")
     private Long accountId;
 
+    @Parameter(name = ApiConstants.IMAGE_STORE_UUID,
+            type = CommandType.UUID,
+            entityType = ImageStoreResponse.class,
+            description = "the ID of the Image Store to update the parameter value for corresponding image store",
+            validations = ApiArgValidator.PositiveNumber)
+    private Long imageStoreId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,6 +113,10 @@ public class UpdateCfgCmd extends BaseCmd {
 
     public Long getAccountId() {
         return accountId;
+    }
+
+    public Long getImageStoreId() {
+        return imageStoreId;
     }
 
     /////////////////////////////////////////////////////

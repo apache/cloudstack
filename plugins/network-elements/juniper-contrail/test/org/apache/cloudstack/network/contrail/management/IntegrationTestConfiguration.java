@@ -80,8 +80,8 @@ import org.apache.cloudstack.region.dao.RegionDaoImpl;
 import org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
-import org.apache.cloudstack.storage.image.db.ImageStoreDaoImpl;
 import org.apache.cloudstack.storage.image.db.TemplateDataStoreDaoImpl;
 import org.apache.cloudstack.usage.UsageService;
 

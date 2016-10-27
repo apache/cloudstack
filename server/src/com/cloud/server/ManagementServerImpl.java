@@ -1672,6 +1672,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Long imageStoreId = cmd.getImageStoreId();
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -1694,6 +1695,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (storagepoolId != null) {
             scope = ConfigKey.Scope.StoragePool.toString();
             id = storagepoolId;
+            paramCountCheck++;
+        }
+        if (imageStoreId != null) {
+            scope = ConfigKey.Scope.ImageStore.toString();
+            id = imageStoreId;
             paramCountCheck++;
         }
 

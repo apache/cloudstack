@@ -31,7 +31,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ConfigKey<T> {
 
     public static enum Scope {
-        Global, Zone, Cluster, StoragePool, Account, ManagementServer
+        Global, Zone, Cluster, StoragePool, Account, ManagementServer, ImageStore
     }
 
     private final String _category;
