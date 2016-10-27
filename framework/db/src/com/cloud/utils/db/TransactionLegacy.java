@@ -67,6 +67,7 @@ public class TransactionLegacy implements Closeable {
     private static final Logger s_lockLogger = Logger.getLogger(Transaction.class.getName() + "." + "Lock");
     private static final Logger s_connLogger = Logger.getLogger(Transaction.class.getName() + "." + "Connection");
 
+
     private static final ThreadLocal<TransactionLegacy> tls = new ThreadLocal<TransactionLegacy>();
     private static final String START_TXN = "start_txn";
     private static final String CURRENT_TXN = "current_txn";
@@ -83,6 +84,8 @@ public class TransactionLegacy implements Closeable {
     public static final short CONNECTED_DB = -1;
 
     private static AtomicLong s_id = new AtomicLong();
+
+    private static final DbConnectionObserver dbConnectionObserver = new DbConnectionObserverImpl();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
     static {
         try {
@@ -557,7 +560,14 @@ public class TransactionLegacy implements Closeable {
             switch (_dbId) {
             case CLOUD_DB:
                 if (s_ds != null) {
-                    _conn = s_ds.getConnection();
+                    try {
+                        _conn = s_ds.getConnection();
+                        dbConnectionObserver.onSuccess();
+                    }
+                    catch (SQLException se){
+                        dbConnectionObserver.onError(se);
+                        throw  se;
+                    }
                 } else {
                     s_logger.warn("A static-initialized variable becomes null, process is dying?");
                     throw new CloudRuntimeException("Database is not initialized, process is dying?");

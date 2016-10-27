@@ -27,6 +27,8 @@ db.cloud.password=@DBPW@
 db.cloud.host=@DBHOST@
 db.cloud.port=3306
 db.cloud.name=cloud
+db.connection.errors.fence=true
+db.connection.error.tolerance=2
 
 # CloudStack database tuning parameters
 db.cloud.maxActive=250
