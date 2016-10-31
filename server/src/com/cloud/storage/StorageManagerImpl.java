@@ -31,7 +31,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -157,6 +156,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -290,6 +290,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ResourceLimitService _resourceLimitMgr;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    StoragePoolTagsDao _storagePoolTagsDao;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -776,51 +778,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
         // Input validation
         Long id = cmd.getId();
-        List<String> tags = cmd.getTags();
 
         StoragePoolVO pool = _storagePoolDao.findById(id);
         if (pool == null) {
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
-        Map<String, String> updatedDetails = new HashMap<String, String>();
-
-        if (tags != null) {
-            Map<String, String> existingDetails = _storagePoolDetailsDao.listDetailsKeyPairs(id);
-            Set<String> existingKeys = existingDetails.keySet();
-
-            Map<String, String> existingDetailsToKeep = new HashMap<String, String>();
-
-            for (String existingKey : existingKeys) {
-                String existingValue = existingDetails.get(existingKey);
-
-                if (!Boolean.TRUE.toString().equalsIgnoreCase(existingValue)) {
-                    existingDetailsToKeep.put(existingKey, existingValue);
-                }
+        final List<String> storagePoolTags = cmd.getTags();
+        if (storagePoolTags != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Updating Storage Pool Tags to :" + storagePoolTags);
             }
-
-            Map<String, String> details = new HashMap<String, String>();
-            for (String tag : tags) {
-                tag = tag.trim();
-                if (tag.length() > 0 && !details.containsKey(tag)) {
-                    details.put(tag, "true");
-                }
-            }
-
-            Set<String> existingKeysToKeep = existingDetailsToKeep.keySet();
-
-            for (String existingKeyToKeep : existingKeysToKeep) {
-                String existingValueToKeep = existingDetailsToKeep.get(existingKeyToKeep);
-
-                if (details.containsKey(existingKeyToKeep)) {
-                    throw new CloudRuntimeException("Storage tag '" + existingKeyToKeep +
-                            "' conflicts with a stored property of this primary storage. No changes were made.");
-                }
-
-                details.put(existingKeyToKeep, existingValueToKeep);
-            }
-
-            updatedDetails.putAll(details);
+            _storagePoolTagsDao.persist(pool.getId(), storagePoolTags);
         }
 
         Long updatedCapacityBytes = null;
@@ -863,8 +832,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 disablePrimaryStoragePool(pool);
             }
-        } else if (updatedDetails.size() >= 0) {
-            _storagePoolDao.updateDetails(id, updatedDetails);
         }
 
         if (updatedCapacityBytes != null) {
