@@ -29,7 +29,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
-@ResourceWrapper(handles =  OvsCreateTunnelCommand.class)
+@ResourceWrapper(handles = OvsCreateTunnelCommand.class)
 public final class LibvirtOvsCreateTunnelCommandWrapper extends CommandWrapper<OvsCreateTunnelCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtOvsCreateTunnelCommandWrapper.class);
@@ -40,13 +40,10 @@ public final class LibvirtOvsCreateTunnelCommandWrapper extends CommandWrapper<O
         try {
             if (!libvirtComputingResource.findOrCreateTunnelNetwork(bridge)) {
                 s_logger.debug("Error during bridge setup");
-                return new OvsCreateTunnelAnswer(command, false,
-                        "Cannot create network", bridge);
+                return new OvsCreateTunnelAnswer(command, false, "Cannot create network", bridge);
             }
 
-            libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getFrom(),
-                    command.getNetworkName());
-
+            libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getFrom(), command.getNetworkName());
             final Script scriptCommand = new Script(libvirtComputingResource.getOvsTunnelPath(), libvirtComputingResource.getTimeout(), s_logger);
             scriptCommand.add("create_tunnel");
             scriptCommand.add("--bridge", bridge);
@@ -57,8 +54,7 @@ public final class LibvirtOvsCreateTunnelCommandWrapper extends CommandWrapper<O
 
             final String result = scriptCommand.execute();
             if (result != null) {
-                return new OvsCreateTunnelAnswer(command, true, result, null,
-                        bridge);
+                return new OvsCreateTunnelAnswer(command, true, result, null, bridge);
             } else {
                 return new OvsCreateTunnelAnswer(command, false, result, bridge);
             }
