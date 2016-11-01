@@ -45,9 +45,14 @@ from marvin.lib.utils import cleanup_resources, wait_until
 #  Only one zone
 #  Only one pod
 #  Only one cluster
+#
+# Running the tests:
+#  Change the "hypervisor_type" variable to control which hypervisor type to test.
+#  If using KVM, set the Global Setting "kvm.snapshot.enabled" equal to true.
 
 
 class TestData():
+    # constants
     account = "account"
     capacityBytes = "capacitybytes"
     capacityIops = "capacityiops"
@@ -57,6 +62,7 @@ class TestData():
     diskOffering = "diskoffering"
     domainId = "domainId"
     hypervisor = "hypervisor"
+    kvm = "kvm"
     mvip = "mvip"
     password = "password"
     port = "port"
@@ -75,6 +81,9 @@ class TestData():
     xenServer = "xenserver"
     zoneId = "zoneId"
 
+    # modify to control which hypervisor type to test
+    hypervisor_type = xenServer
+
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
@@ -83,31 +92,6 @@ class TestData():
                 TestData.password: "admin",
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
-            },
-            TestData.xenServer: {
-                TestData.username: "root",
-                TestData.password: "solidfire"
-            },
-            TestData.account: {
-                "email": "test@test.com",
-                "firstname": "John",
-                "lastname": "Doe",
-                "username": "test",
-                "password": "test"
-            },
-            "testaccount": {
-                "email": "test2@test2.com",
-                "firstname": "Jane",
-                "lastname": "Doe",
-                TestData.username: "test2",
-                TestData.password: "test"
-            },
-            TestData.user: {
-                "email": "user@test.com",
-                "firstname": "Jane",
-                "lastname": "Doe",
-                TestData.username: "testuser",
-                TestData.password: "password"
             },
             TestData.primaryStorage: {
                 "name": "SolidFire-%d" % random.randint(0, 100),
@@ -121,6 +105,20 @@ class TestData():
                 TestData.capacityIops: 4500000,
                 TestData.capacityBytes: 2251799813685248,
                 TestData.hypervisor: "Any"
+            },
+            TestData.account: {
+                "email": "test@test.com",
+                "firstname": "John",
+                "lastname": "Doe",
+                "username": "test",
+                "password": "test"
+            },
+            TestData.user: {
+                "email": "user@test.com",
+                "firstname": "Jane",
+                "lastname": "Doe",
+                TestData.username: "testuser",
+                TestData.password: "password"
             },
             TestData.virtualMachine: {
                 "name": "TestVM",
@@ -149,71 +147,6 @@ class TestData():
                 "hypervisorsnapshotreserve": 200,
                 TestData.tags: TestData.storageTag,
                 "storagetype": "shared"
-            },
-            "testdiskofferings": {
-                "customiopsdo": {
-                    "name": "SF_Custom_Iops_DO",
-                    "displaytext": "Customized Iops DO",
-                    "disksize": 128,
-                    "customizediops": True,
-                    "miniops": 500,
-                    "maxiops": 1000,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "customsizedo": {
-                    "name": "SF_Custom_Size_DO",
-                    "displaytext": "Customized Size DO",
-                    "disksize": 175,
-                    "customizediops": False,
-                    "miniops": 500,
-                    "maxiops": 1000,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "customsizeandiopsdo": {
-                    "name": "SF_Custom_Iops_Size_DO",
-                    "displaytext": "Customized Size and Iops DO",
-                    "disksize": 200,
-                    "customizediops": True,
-                    "miniops": 400,
-                    "maxiops": 800,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newiopsdo": {
-                    "name": "SF_New_Iops_DO",
-                    "displaytext": "New Iops (min=350, max = 700)",
-                    "disksize": 128,
-                    "miniops": 350,
-                    "maxiops": 700,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newsizedo": {
-                    "name": "SF_New_Size_DO",
-                    "displaytext": "New Size: 175",
-                    "disksize": 175,
-                    "miniops": 400,
-                    "maxiops": 800,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newsizeandiopsdo": {
-                    "name": "SF_New_Size_Iops_DO",
-                    "displaytext": "New Size and Iops",
-                    "disksize": 200,
-                    "miniops": 200,
-                    "maxiops": 400,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                }
             },
             TestData.volume_1: {
                 TestData.diskName: "test-volume",
@@ -255,17 +188,6 @@ class TestSnapshots(cloudstackTestCase):
         cls.dbConnection = testclient.getDbConnection()
 
         cls.testdata = TestData().testdata
-
-        # Set up xenAPI connection
-        host_ip = "https://" + \
-                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name="XenServer-6.5-1")[0].ipaddress
-
-        # Set up XenAPI connection
-        cls.xen_session = XenAPI.Session(host_ip)
-
-        xenserver = cls.testdata[TestData.xenServer]
-
-        cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
 
         # Set up SolidFire connection
         solidfire = cls.testdata[TestData.solidFire]
@@ -349,9 +271,9 @@ class TestSnapshots(cloudstackTestCase):
     def tearDown(self):
         cleanup_resources(self.apiClient, self.cleanup)
 
-    @attr(hypervisor='XenServer')
     def test_01_create_volume_snapshot_using_sf_snapshot(self):
-        sf_util.set_supports_resign(True, self.dbConnection)
+        if TestData.hypervisor_type == TestData.xenServer:
+            sf_util.set_supports_resign(True, self.dbConnection)
 
         virtual_machine = VirtualMachine.create(
             self.apiClient,
@@ -599,6 +521,9 @@ class TestSnapshots(cloudstackTestCase):
 
     @attr(hypervisor='XenServer')
     def test_02_create_volume_snapshot_using_sf_volume(self):
+        if TestData.hypervisor_type != TestData.xenServer:
+            return
+
         sf_util.set_supports_resign(False, self.dbConnection)
 
         virtual_machine = VirtualMachine.create(
@@ -955,6 +880,9 @@ class TestSnapshots(cloudstackTestCase):
 
     @attr(hypervisor='XenServer')
     def test_03_create_volume_snapshot_using_sf_volume_and_sf_snapshot(self):
+        if TestData.hypervisor_type != TestData.xenServer:
+            return
+
         sf_util.set_supports_resign(False, self.dbConnection)
 
         virtual_machine = VirtualMachine.create(
@@ -1185,6 +1113,9 @@ class TestSnapshots(cloudstackTestCase):
 
     @attr(hypervisor='XenServer')
     def test_04_create_volume_snapshot_using_sf_snapshot_and_archiving(self):
+        if TestData.hypervisor_type != TestData.xenServer:
+            return
+
         sf_util.set_supports_resign(True, self.dbConnection)
 
         virtual_machine = VirtualMachine.create(
@@ -1439,6 +1370,72 @@ class TestSnapshots(cloudstackTestCase):
 
         sf_util.check_list(sf_volumes, 0, self, TestSnapshots._should_be_zero_volumes_in_list_err_msg)
 
+    @attr(hypervisor='KVM')
+    def test_05_create_volume_snapshot_using_sf_snapshot_and_revert_volume_to_snapshot(self):
+        if TestData.hypervisor_type != TestData.kvm:
+            return
+
+        virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=True
+        )
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            virtualmachineid=virtual_machine.id,
+            listall=True
+        )
+
+        sf_util.check_list(list_volumes_response, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
+
+        vm_1_root_volume = list_volumes_response[0]
+        vm_1_root_volume_name = vm_1_root_volume.name
+
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, self.primary_storage.id, self, TestSnapshots._sf_account_id_should_be_non_zero_int_err_msg)
+
+        # Get volume information from SolidFire cluster
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
+
+        sf_util.check_list(sf_volumes, 1, self, TestSnapshots._should_only_be_one_volume_in_list_err_msg)
+
+        sf_volume = self._get_sf_volume_by_name(sf_volumes, vm_1_root_volume_name)
+
+        # Get snapshot information for volume from SolidFire cluster
+        sf_snapshots = self.sfe.list_snapshots(volume_id=sf_volume.volume_id).snapshots
+
+        sf_util.check_list(sf_snapshots, 0, self, TestSnapshots._should_be_zero_snapshots_in_list_err_msg)
+
+        primary_storage_db_id = self._get_cs_storage_pool_db_id(self.primary_storage)
+
+        vol_snap_1 = self._create_and_test_snapshot(vm_1_root_volume.id, sf_volume, primary_storage_db_id, 1, TestSnapshots._should_only_be_one_snapshot_in_list_err_msg)
+
+        vol_snap_2 = self._create_and_test_snapshot(vm_1_root_volume.id, sf_volume, primary_storage_db_id, 2, TestSnapshots._should_be_two_snapshots_in_list_err_msg)
+
+        virtual_machine.stop(self.apiClient, False)
+
+        Volume.revertToSnapshot(self.apiClient, vol_snap_1.id)
+
+        virtual_machine.start(self.apiClient)
+
+        try:
+            Volume.revertToSnapshot(self.apiClient, vol_snap_1.id)
+
+            self.assertTrue(False, "An exception should have been thrown when trying to revert a volume to a snapshot and the volume is attached to a running VM.")
+        except:
+            pass
+
+        self._delete_and_test_snapshot(vol_snap_2)
+
+        self._delete_and_test_snapshot(vol_snap_1)
+
+        virtual_machine.delete(self.apiClient, True)
+
     def _check_list_not_empty(self, in_list):
         self.assertEqual(
             isinstance(in_list, list),
@@ -1636,7 +1633,7 @@ class TestSnapshots(cloudstackTestCase):
         vol_snap = Snapshot.create(
             self.apiClient,
             volume_id=volume_id_for_snapshot,
-            locationtype=2
+            locationtype="secondary"
         )
 
         self._wait_for_snapshot_state(vol_snap.id, Snapshot.BACKED_UP)
@@ -1745,3 +1742,4 @@ class TestSnapshots(cloudstackTestCase):
         sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, expected_num_volumes, self, volume_err_msg)
+

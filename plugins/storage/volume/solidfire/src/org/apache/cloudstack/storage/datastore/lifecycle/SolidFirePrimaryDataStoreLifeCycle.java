@@ -261,7 +261,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                     SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
                     long sfTemplateVolumeId = Long.parseLong(templatePoolRef.getLocalDownloadPath());
 
-                    SolidFireUtil.deleteSolidFireVolume(sfConnection, sfTemplateVolumeId);
+                    SolidFireUtil.deleteVolume(sfConnection, sfTemplateVolumeId);
                 }
                 catch (Exception ex) {
                     s_logger.error(ex.getMessage() != null ? ex.getMessage() : "Error deleting SolidFire template volume");

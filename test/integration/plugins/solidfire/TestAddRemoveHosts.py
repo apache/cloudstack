@@ -42,14 +42,19 @@ from marvin.lib.utils import cleanup_resources
 # Prerequisites:
 #  Only one zone
 #  Only one pod
-#  Only one cluster (two hosts with another added/removed during the tests)
+#  Only one cluster (two hosts for XenServer / one host for KVM with another added/removed during the tests)
 #
 # Running the tests:
-#  Set a breakpoint on each test after the first one. When the breakpoint is hit, reset the third
+#  Change the "hypervisor_type" variable to control which hypervisor type to test.
+#  If using XenServer, set a breakpoint on each test after the first one. When the breakpoint is hit, reset the added/removed
 #   host to a snapshot state and re-start it. Once it's up and running, run the test code.
+#  Check that ip_address_of_new_xenserver_host / ip_address_of_new_kvm_host is correct.
+#  If using XenServer, verify the "xen_server_master_hostname" variable is correct.
+#  If using KVM, verify the "kvm_1_ip_address" variable is correct.
 
 
 class TestData:
+    #constants
     account = "account"
     capacityBytes = "capacitybytes"
     capacityIops = "capacityiops"
@@ -59,9 +64,11 @@ class TestData:
     diskSize = "disksize"
     domainId = "domainId"
     hypervisor = "hypervisor"
+    kvm = "kvm"
     mvip = "mvip"
     name = "name"
-    newHost = "newHost"
+    newXenServerHost = "newXenServerHost"
+    newKvmHost = "newKvmHost"
     newHostDisplayName = "newHostDisplayName"
     password = "password"
     podId = "podid"
@@ -75,13 +82,19 @@ class TestData:
     storageTag2 = "SolidFire_Volume_1"
     tags = "tags"
     url = "url"
-    urlOfNewHost = "urlOfNewHost"
     user = "user"
     username = "username"
     virtualMachine = "virtualmachine"
     volume_1 = "volume_1"
     xenServer = "xenserver"
     zoneId = "zoneid"
+
+    # modify to control which hypervisor type to test
+    hypervisor_type = xenServer
+    xen_server_master_hostname = "XenServer-6.5-1"
+    kvm_1_ip_address = "192.168.129.84"
+    ip_address_of_new_xenserver_host = "192.168.129.243"
+    ip_address_of_new_kvm_host = "192.168.129.3"
 
     def __init__(self):
         self.testdata = {
@@ -92,11 +105,14 @@ class TestData:
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
             },
+            TestData.kvm: {
+                TestData.username: "root",
+                TestData.password: "solidfire"
+            },
             TestData.xenServer: {
                 TestData.username: "root",
                 TestData.password: "solidfire"
             },
-            TestData.urlOfNewHost: "https://192.168.129.243",
             TestData.account: {
                 "email": "test@test.com",
                 "firstname": "John",
@@ -111,10 +127,17 @@ class TestData:
                 TestData.username: "testuser",
                 TestData.password: "password"
             },
-            TestData.newHost: {
+            TestData.newXenServerHost: {
                 TestData.username: "root",
                 TestData.password: "solidfire",
-                TestData.url: "http://192.168.129.243",
+                TestData.url: "http://" + TestData.ip_address_of_new_xenserver_host,
+                TestData.podId : "1",
+                TestData.zoneId: "1"
+            },
+            TestData.newKvmHost: {
+                TestData.username: "root",
+                TestData.password: "solidfire",
+                TestData.url: "http://" + TestData.ip_address_of_new_kvm_host,
                 TestData.podId : "1",
                 TestData.zoneId: "1"
             },
@@ -164,9 +187,6 @@ class TestData:
             TestData.volume_1: {
                 "diskname": "testvolume",
             },
-            "volume2": {
-                "diskname": "testvolume2",
-            },
             TestData.newHostDisplayName: "XenServer-6.5-3",
             TestData.zoneId: 1,
             TestData.clusterId: 1,
@@ -190,16 +210,10 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         cls.testdata = TestData().testdata
 
-        cls.xs_pool_master_ip = list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name="XenServer-6.5-1")[0].ipaddress
+        if TestData.hypervisor_type == TestData.xenServer:
+            cls.xs_pool_master_ip = list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name=TestData.xen_server_master_hostname)[0].ipaddress
 
-        # Set up XenAPI connection
-        host_ip = "https://" + cls.xs_pool_master_ip
-
-        cls.xen_session = XenAPI.Session(host_ip)
-
-        xenserver = cls.testdata[TestData.xenServer]
-
-        cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
+        cls._connect_to_hypervisor()
 
         # Set up SolidFire connection
         solidfire = cls.testdata[TestData.solidFire]
@@ -296,13 +310,20 @@ class TestAddRemoveHosts(cloudstackTestCase):
             startvm=True
         )
 
-        root_volume = self._get_root_volume(self.virtual_machine)
+        if TestData.hypervisor_type == TestData.xenServer:
+            root_volume = self._get_root_volume(self.virtual_machine)
 
-        sf_iscsi_name = sf_util.get_iqn(self.cs_api, root_volume, self)
-
-        self._perform_add_remove_host(primary_storage.id, sf_iscsi_name)
+            sf_iscsi_name = sf_util.get_iqn(self.cs_api, root_volume, self)
+            self._perform_add_remove_xenserver_host(primary_storage.id, sf_iscsi_name)
+        elif TestData.hypervisor_type == TestData.kvm:
+            self._perform_add_remove_kvm_host(primary_storage.id)
+        else:
+            self.assertTrue(False, "Invalid hypervisor type")
 
     def test_add_remove_host_with_solidfire_plugin_2(self):
+        if TestData.hypervisor_type != TestData.xenServer:
+            return
+
         primarystorage2 = self.testdata[TestData.primaryStorage2]
 
         primary_storage_2 = StoragePool.create(
@@ -322,9 +343,12 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         sf_iscsi_name = self._get_iqn_2(primary_storage_2)
 
-        self._perform_add_remove_host(primary_storage_2.id, sf_iscsi_name)
+        self._perform_add_remove_xenserver_host(primary_storage_2.id, sf_iscsi_name)
 
     def test_add_remove_host_with_solidfire_plugin_3(self):
+        if TestData.hypervisor_type != TestData.xenServer:
+            return
+
         primarystorage = self.testdata[TestData.primaryStorage]
 
         primary_storage = StoragePool.create(
@@ -373,9 +397,12 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         self.cleanup.append(primary_storage_2)
 
-        self._perform_add_remove_host(primary_storage.id, sf_iscsi_name)
+        self._perform_add_remove_xenserver_host(primary_storage.id, sf_iscsi_name)
 
     def test_add_remove_host_with_solidfire_plugin_4(self):
+        if TestData.hypervisor_type != TestData.xenServer:
+            return
+
         primarystorage2 = self.testdata[TestData.primaryStorage2]
 
         primary_storage_2 = StoragePool.create(
@@ -422,9 +449,9 @@ class TestAddRemoveHosts(cloudstackTestCase):
             startvm=True
         )
 
-        self._perform_add_remove_host(primary_storage_2.id, sf_iscsi_name)
+        self._perform_add_remove_xenserver_host(primary_storage_2.id, sf_iscsi_name)
 
-    def _perform_add_remove_host(self, primary_storage_id, sr_name):
+    def _perform_add_remove_xenserver_host(self, primary_storage_id, sr_name):
         xen_sr = self.xen_session.xenapi.SR.get_by_name_label(sr_name)[0]
 
         pbds = self.xen_session.xenapi.SR.get_PBDs(xen_sr)
@@ -435,7 +462,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         sf_vag_id = self._get_sf_vag_id(self.cluster.id, primary_storage_id)
 
-        host_iscsi_iqns = self._get_host_iscsi_iqns()
+        host_iscsi_iqns = self._get_xenserver_host_iscsi_iqns()
 
         sf_vag = self._get_sf_vag(sf_vag_id)
 
@@ -445,7 +472,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         sf_vag_initiators_len_orig = len(sf_vag_initiators)
 
-        xen_session = XenAPI.Session(self.testdata[TestData.urlOfNewHost])
+        xen_session = XenAPI.Session("https://" + TestData.ip_address_of_new_xenserver_host)
 
         xenserver = self.testdata[TestData.xenServer]
 
@@ -482,7 +509,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
         host = Host.create(
             self.apiClient,
             self.cluster,
-            self.testdata[TestData.newHost],
+            self.testdata[TestData.newXenServerHost],
             hypervisor="XenServer"
         )
 
@@ -501,7 +528,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         self._verify_all_pbds_attached(pbds)
 
-        host_iscsi_iqns = self._get_host_iscsi_iqns()
+        host_iscsi_iqns = self._get_xenserver_host_iscsi_iqns()
 
         sf_vag = self._get_sf_vag(sf_vag_id)
 
@@ -529,7 +556,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         self._verify_all_pbds_attached(pbds)
 
-        host_iscsi_iqns = self._get_host_iscsi_iqns()
+        host_iscsi_iqns = self._get_xenserver_host_iscsi_iqns()
 
         sf_vag = self._get_sf_vag(sf_vag_id)
 
@@ -557,7 +584,81 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         self._verify_all_pbds_attached(pbds)
 
-        host_iscsi_iqns = self._get_host_iscsi_iqns()
+        host_iscsi_iqns = self._get_xenserver_host_iscsi_iqns()
+
+        sf_vag = self._get_sf_vag(sf_vag_id)
+
+        sf_vag_initiators = self._get_sf_vag_initiators(sf_vag)
+
+        self._verifyVag(host_iscsi_iqns, sf_vag_initiators)
+
+        sf_vag_initiators_len_new = len(sf_vag_initiators)
+
+        self.assertEqual(
+            sf_vag_initiators_len_new,
+            sf_vag_initiators_len_orig,
+            "sf_vag_initiators_len_new' != sf_vag_initiators_len_orig"
+        )
+
+    def _perform_add_remove_kvm_host(self, primary_storage_id):
+        sf_vag_id = self._get_sf_vag_id(self.cluster.id, primary_storage_id)
+
+        kvm_login = self.testdata[TestData.kvm]
+
+        kvm_hosts = []
+
+        kvm_hosts.append(TestData.kvm_1_ip_address)
+
+        host_iscsi_iqns = self._get_kvm_host_iscsi_iqns(kvm_hosts, kvm_login[TestData.username], kvm_login[TestData.password])
+
+        sf_vag = self._get_sf_vag(sf_vag_id)
+
+        sf_vag_initiators = self._get_sf_vag_initiators(sf_vag)
+
+        self._verifyVag(host_iscsi_iqns, sf_vag_initiators)
+
+        sf_vag_initiators_len_orig = len(sf_vag_initiators)
+
+        host = Host.create(
+            self.apiClient,
+            self.cluster,
+            self.testdata[TestData.newKvmHost],
+            hypervisor="KVM"
+        )
+
+        self.assertTrue(
+            isinstance(host, Host),
+            "'host' is not a 'Host'."
+        )
+
+        kvm_hosts = []
+
+        kvm_hosts.append(TestData.kvm_1_ip_address)
+        kvm_hosts.append(TestData.ip_address_of_new_kvm_host)
+
+        host_iscsi_iqns = self._get_kvm_host_iscsi_iqns(kvm_hosts, kvm_login[TestData.username], kvm_login[TestData.password])
+
+        sf_vag = self._get_sf_vag(sf_vag_id)
+
+        sf_vag_initiators = self._get_sf_vag_initiators(sf_vag)
+
+        self._verifyVag(host_iscsi_iqns, sf_vag_initiators)
+
+        sf_vag_initiators_len_new = len(sf_vag_initiators)
+
+        self.assertEqual(
+            sf_vag_initiators_len_new,
+            sf_vag_initiators_len_orig + 1,
+            "sf_vag_initiators_len_new' != sf_vag_initiators_len_orig + 1"
+        )
+
+        host.delete(self.apiClient)
+
+        kvm_hosts = []
+
+        kvm_hosts.append(TestData.kvm_1_ip_address)
+
+        host_iscsi_iqns = self._get_kvm_host_iscsi_iqns(kvm_hosts, kvm_login[TestData.username], kvm_login[TestData.password])
 
         sf_vag = self._get_sf_vag(sf_vag_id)
 
@@ -616,7 +717,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         return sql_result[0][0]
 
-    def _get_host_iscsi_iqns(self):
+    def _get_xenserver_host_iscsi_iqns(self):
         hosts = self.xen_session.xenapi.host.get_all()
 
         self.assertEqual(
@@ -628,14 +729,40 @@ class TestAddRemoveHosts(cloudstackTestCase):
         host_iscsi_iqns = []
 
         for host in hosts:
-            host_iscsi_iqns.append(self._get_host_iscsi_iqn(host))
+            host_iscsi_iqns.append(self._get_xenserver_host_iscsi_iqn(host))
 
         return host_iscsi_iqns
 
-    def _get_host_iscsi_iqn(self, host):
+    def _get_xenserver_host_iscsi_iqn(self, host):
         other_config = self.xen_session.xenapi.host.get_other_config(host)
 
         return other_config["iscsi_iqn"]
+
+    def _get_kvm_host_iscsi_iqns(self, kvm_ip_addresses, common_username, common_password):
+        host_iscsi_iqns = []
+
+        for kvm_ip_address in kvm_ip_addresses:
+            host_iscsi_iqn = self._get_kvm_iqn(kvm_ip_address, common_username, common_password)
+
+            host_iscsi_iqns.append(host_iscsi_iqn)
+
+        return host_iscsi_iqns
+
+    def _get_kvm_iqn(self, ip_address, username, password):
+        ssh_connection = sf_util.get_ssh_connection(ip_address, username, password)
+
+        searchFor = "InitiatorName="
+
+        stdin, stdout, stderr = ssh_connection.exec_command("sudo grep " + searchFor + " /etc/iscsi/initiatorname.iscsi")
+
+        result = stdout.read()
+
+        ssh_connection.close()
+
+        self.assertFalse(result is None, "Unable to locate the IQN of the KVM host (None)")
+        self.assertFalse(len(result.strip()) == 0, "Unable to locate the IQN of the KVM host (Zero-length string)")
+
+        return result[len(searchFor):].strip()
 
     def _get_sf_vag_id(self, cluster_id, primary_storage_id):
         # Get SF Volume Access Group ID
@@ -679,3 +806,18 @@ class TestAddRemoveHosts(cloudstackTestCase):
         for host_iscsi_iqn in host_iscsi_iqns:
             # an error should occur if host_iscsi_iqn is not in sf_vag_initiators
             sf_vag_initiators.index(host_iscsi_iqn)
+
+    @classmethod
+    def _connect_to_hypervisor(cls):
+        if TestData.hypervisor_type == TestData.kvm:
+            pass
+        elif TestData.hypervisor_type == TestData.xenServer:
+            host_ip = "https://" + \
+                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name=TestData.xen_server_master_hostname)[0].ipaddress
+
+            cls.xen_session = XenAPI.Session(host_ip)
+
+            xen_server = cls.testdata[TestData.xenServer]
+
+            cls.xen_session.xenapi.login_with_password(xen_server[TestData.username], xen_server[TestData.password])
+

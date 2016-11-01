@@ -29,8 +29,6 @@ from marvin.cloudstackAPI import destroySystemVm
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
 
-from nose.plugins.attrib import attr
-
 # Import Integration Libraries
 
 # base - contains all resources as entities and defines create, delete, list operations on them
@@ -50,12 +48,17 @@ from marvin.lib.utils import cleanup_resources, wait_until
 #  * Only one secondary storage VM and one console proxy VM running on NFS (no virtual router or user VMs exist)
 #  * Only one pod
 #  * Only one cluster
-#  * Set storage.cleanup.enabled to true
-#  * Set storage.cleanup.interval to 150
-#  * Set storage.cleanup.delay to 60
+#
+# Running the tests:
+#  Change the "hypervisor_type" variable to control which hypervisor type to test.
+#  If using XenServer, verify the "xen_server_hostname" variable is correct.
+#  Set the Global Setting "storage.cleanup.enabled" to true.
+#  Set the Global Setting "storage.cleanup.interval" to 150.
+#  Set the Global Setting "storage.cleanup.delay" to 60.
 
 
 class TestData():
+    # constants
     account = "account"
     capacityBytes = "capacitybytes"
     capacityIops = "capacityiops"
@@ -66,6 +69,7 @@ class TestData():
     email = "email"
     firstname = "firstname"
     hypervisor = "hypervisor"
+    kvm = "kvm"
     lastname = "lastname"
     max_iops = "maxiops"
     min_iops = "miniops"
@@ -88,6 +92,10 @@ class TestData():
     xenServer = "xenserver"
     zoneId = "zoneid"
 
+    # modify to control which hypervisor type to test
+    hypervisor_type = kvm
+    xen_server_hostname = "XenServer-6.5-1"
+
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
@@ -96,6 +104,10 @@ class TestData():
                 TestData.password: "admin",
                 TestData.port: 443,
                 TestData.url: "https://192.168.139.112:443"
+            },
+            TestData.kvm: {
+                TestData.username: "root",
+                TestData.password: "solidfire"
             },
             TestData.xenServer: {
                 TestData.username: "root",
@@ -203,16 +215,7 @@ class TestManagedSystemVMs(cloudstackTestCase):
 
         cls.testdata = TestData().testdata
 
-        # Set up xenAPI connection
-        host_ip = "https://" + \
-                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name="XenServer-6.5-1")[0].ipaddress
-
-        # Set up XenAPI connection
-        cls.xen_session = XenAPI.Session(host_ip)
-
-        xenserver = cls.testdata[TestData.xenServer]
-
-        cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
+        cls._connect_to_hypervisor()
 
         # Set up SolidFire connection
         solidfire = cls.testdata[TestData.solidFire]
@@ -306,7 +309,6 @@ class TestManagedSystemVMs(cloudstackTestCase):
         except Exception as e:
             logging.debug("Exception in tearDownClass(self): %s" % e)
 
-    @attr(hypervisor='XenServer')
     def test_01_create_system_vms_on_managed_storage(self):
         self._disable_zone_and_delete_system_vms(None, False)
 
@@ -387,7 +389,6 @@ class TestManagedSystemVMs(cloudstackTestCase):
 
         self._wait_for_and_get_running_system_vms(2)
 
-    @attr(hypervisor='XenServer')
     def test_02_failure_to_create_service_offering_with_customized_iops(self):
         try:
             ServiceOffering.create(
@@ -477,9 +478,19 @@ class TestManagedSystemVMs(cloudstackTestCase):
             "The volume should not be in a volume access group."
         )
 
-        sr_name = sf_util.format_iqn(sf_root_volume.iqn)
+        if TestData.hypervisor_type == TestData.xenServer:
+            sr_name = sf_util.format_iqn(sf_root_volume.iqn)
 
-        sf_util.check_xen_sr(sr_name, self.xen_session, self, False)
+            sf_util.check_xen_sr(sr_name, self.xen_session, self, False)
+        elif TestData.hypervisor_type == TestData.kvm:
+            list_hosts_response = list_hosts(
+                self.apiClient,
+                type="Routing"
+            )
+
+            sf_util.check_kvm_access_to_volume(sf_root_volume.iqn, list_hosts_response, self.testdata[TestData.kvm], self, False)
+        else:
+            self.assertTrue(False, "Invalid hypervisor type")
 
     def _wait_for_and_get_running_system_vms(self, expected_number_of_system_vms):
         retry_interval = 60
@@ -523,9 +534,19 @@ class TestManagedSystemVMs(cloudstackTestCase):
 
             sf_util.check_vag(sf_root_volume, sf_vag_id, self)
 
-            sr_name = sf_util.format_iqn(sf_root_volume.iqn)
+            if TestData.hypervisor_type == TestData.xenServer:
+                sr_name = sf_util.format_iqn(sf_root_volume.iqn)
 
-            sf_util.check_xen_sr(sr_name, self.xen_session, self)
+                sf_util.check_xen_sr(sr_name, self.xen_session, self)
+            elif TestData.hypervisor_type == TestData.kvm:
+                list_hosts_response = list_hosts(
+                    self.apiClient,
+                    type="Routing"
+                )
+
+                sf_util.check_kvm_access_to_volume(sf_root_volume.iqn, list_hosts_response, self.testdata[TestData.kvm], self)
+            else:
+                self.assertTrue(False, "Invalid hypervisor type")
 
     def _check_iops_against_iops_of_system_offering(self, cs_volume, system_offering):
         self.assertEqual(
@@ -585,4 +606,18 @@ class TestManagedSystemVMs(cloudstackTestCase):
 
         # make sure you can connect to MySQL: https://teamtreehouse.com/community/cant-connect-remotely-to-mysql-server-with-mysql-workbench
         self.dbConnection.execute(sql_query)
+
+    @classmethod
+    def _connect_to_hypervisor(cls):
+        if TestData.hypervisor_type == TestData.kvm:
+            pass
+        elif TestData.hypervisor_type == TestData.xenServer:
+            host_ip = "https://" + \
+                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name=TestData.xen_server_hostname)[0].ipaddress
+
+            cls.xen_session = XenAPI.Session(host_ip)
+
+            xen_server = cls.testdata[TestData.xenServer]
+
+            cls.xen_session.xenapi.login_with_password(xen_server[TestData.username], xen_server[TestData.password])
 

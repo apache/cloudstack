@@ -15,6 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import paramiko
+
 def check_list(in_list, expected_size_of_list, obj_assert, err_msg):
     obj_assert.assertEqual(
         isinstance(in_list, list),
@@ -153,6 +155,26 @@ def check_xen_sr(xen_sr_name, xen_session, obj_assert, should_exist=True):
     else:
         check_list(xen_sr, 0, obj_assert, "SR " + xen_sr_name + " exists, but shouldn't.")
 
+def check_kvm_access_to_volume(iscsi_name, kvm_hosts, kvm_login, obj_assert, should_exist=True):
+    count = 0
+
+    for kvm_host in kvm_hosts:
+        ssh_connection = sf_util.get_ssh_connection(kvm_host.ipaddress, kvm_login[TestData.username], kvm_login[TestData.password])
+
+        stdin, stdout, stderr = ssh_connection.exec_command("ls /dev/disk/by-path | grep " + iscsi_name)
+
+        result = stdout.read()
+
+        ssh_connection.close()
+
+        if result is not None and len(result.strip()) > len(iscsi_name):
+            count = count + 1
+
+    if should_exist:
+        obj_assert.assertTrue(count == 1, "Only one KVM host should be connected to the following IQN: " + iscsi_name)
+    else:
+        obj_assert.assertTrue(count == 0, "No KVM host should be connected to the following IQN: " + iscsi_name)
+
 def check_vag(sf_volume, sf_vag_id, obj_assert):
     obj_assert.assertEqual(
         len(sf_volume.volume_access_groups),
@@ -215,3 +237,13 @@ def get_volume_size_with_hsr(cs_api, cs_volume, obj_assert):
     )
 
     return sf_volume_size
+
+def get_ssh_connection(ip_address, username, password):
+    ssh_client = paramiko.SSHClient()
+
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    ssh_client.connect(ip_address, username=username, password=password)
+
+    return ssh_client
+
