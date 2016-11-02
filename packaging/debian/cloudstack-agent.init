@@ -33,6 +33,7 @@
 
 . /lib/lsb/init-functions
 
+TMP=/usr/share/cloudstack-agent/tmp
 SHORTNAME="cloudstack-agent"
 PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
@@ -44,6 +45,9 @@ SHUTDOWN_WAIT="30"
 
 unset OPTIONS
 [ -r /etc/default/"$SHORTNAME" ] && source /etc/default/"$SHORTNAME"
+
+# create java tmp dir if not found
+mkdir -m 0755 -p "$TMP"
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
 JDK_DIRS="/usr/lib/jvm/java-7-openjdk-amd64 /usr/lib/jvm/java-7-openjdk-i386 /usr/lib/jvm/java-7-oracle /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun"
@@ -96,7 +100,7 @@ start() {
 
     wait_for_network
 
-    if start_daemon -p $PIDFILE $DAEMON -Xms256m -Xmx2048m -cp "$CLASSPATH" -Djna.nosys=true -pidfile "$PIDFILE" -errfile SYSLOG $CLASS
+    if start_daemon -p $PIDFILE $DAEMON -Djava.io.tmpdir="$TMP" -Xms256m -Xmx2048m -cp "$CLASSPATH" -Djna.nosys=true -pidfile "$PIDFILE" -errfile SYSLOG $CLASS
         RETVAL=$?
     then
         rc=0
