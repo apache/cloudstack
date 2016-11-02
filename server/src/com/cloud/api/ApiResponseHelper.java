@@ -486,6 +486,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         snapshotResponse.setName(snapshot.getName());
         snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
         snapshotResponse.setState(snapshot.getState());
+        snapshotResponse.setLocationType(ApiDBUtils.getSnapshotLocationType(snapshot.getId()));
 
         SnapshotInfo snapshotInfo = null;
 

@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.storage;
 
-import java.util.Date;
-import java.util.UUID;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.GenericDao;
+import com.google.gson.annotations.Expose;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,11 +28,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.google.gson.annotations.Expose;
-
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "snapshots")
@@ -69,6 +67,11 @@ public class SnapshotVO implements Snapshot {
     @Column(name = "snapshot_type")
     short snapshotType;
 
+    @Expose
+    @Column(name = "location_type", updatable = true, nullable = true)
+    @Enumerated(value = EnumType.STRING)
+    private LocationType locationType;
+
     @Column(name = "type_description")
     String typeDescription;
 
@@ -103,7 +106,7 @@ public class SnapshotVO implements Snapshot {
     }
 
     public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name, short snapshotType, String typeDescription, long size,
-            Long minIops, Long maxIops, HypervisorType hypervisorType) {
+            Long minIops, Long maxIops, HypervisorType hypervisorType, LocationType locationType) {
         dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -119,6 +122,7 @@ public class SnapshotVO implements Snapshot {
         this.hypervisorType = hypervisorType;
         version = "2.2";
         uuid = UUID.randomUUID().toString();
+        this.locationType = locationType;
     }
 
     @Override
@@ -169,6 +173,15 @@ public class SnapshotVO implements Snapshot {
             return null;
         }
         return Type.values()[snapshotType];
+    }
+
+    @Override
+    public LocationType getLocationType() {
+        return locationType;
+    }
+
+    public void setLocationType(LocationType locationType) {
+        this.locationType = locationType;
     }
 
     @Override

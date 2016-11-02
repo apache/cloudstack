@@ -19,13 +19,12 @@
 
 package org.apache.cloudstack.storage.to;
 
-import java.util.Map;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+
+import java.util.Map;
 
 public class PrimaryDataStoreTO implements DataStoreTO {
     public static final String MANAGED = PrimaryDataStore.MANAGED;
@@ -52,6 +51,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     private Map<String, String> details;
     private static final String pathSeparator = "/";
     private Boolean fullCloneFlag;
+    private final boolean isManaged;
 
     public PrimaryDataStoreTO(PrimaryDataStore dataStore) {
         this.uuid = dataStore.getUuid();
@@ -63,6 +63,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
         this.setPort(dataStore.getPort());
         this.url = dataStore.getUri();
         this.details = dataStore.getDetails();
+        this.isManaged = dataStore.isManaged();
     }
 
     public long getId() {
@@ -152,5 +153,9 @@ public class PrimaryDataStoreTO implements DataStoreTO {
 
     public void setFullCloneFlag(Boolean fullCloneFlag) {
         this.fullCloneFlag = fullCloneFlag;
+    }
+
+    public boolean isManaged() {
+        return isManaged;
     }
 }

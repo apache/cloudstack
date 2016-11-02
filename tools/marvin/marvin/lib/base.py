@@ -968,7 +968,8 @@ class Volume:
         cmd.name = "-".join([services["diskname"], random_gen()])
         cmd.snapshotid = snapshot_id
         cmd.zoneid = services["zoneid"]
-        cmd.size = services["size"]
+        if "size" in services:
+            cmd.size = services["size"]
         if services["ispublic"]:
             cmd.ispublic = services["ispublic"]
         else:
@@ -1093,7 +1094,7 @@ class Snapshot:
 
     @classmethod
     def create(cls, apiclient, volume_id, account=None,
-               domainid=None, projectid=None):
+               domainid=None, projectid=None, locationtype=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
@@ -1103,6 +1104,8 @@ class Snapshot:
             cmd.domainid = domainid
         if projectid:
             cmd.projectid = projectid
+        if locationtype:
+            cmd.locationtype = locationtype
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
     def delete(self, apiclient):

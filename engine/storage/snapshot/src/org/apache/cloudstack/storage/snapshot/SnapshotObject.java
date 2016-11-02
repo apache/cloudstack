@@ -239,6 +239,9 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
+    public LocationType getLocationType() { return snapshot.getLocationType(); }
+
+    @Override
     public State getState() {
         return snapshot.getState();
     }

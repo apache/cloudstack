@@ -284,7 +284,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             if (res.isFailed()) {
                 throw new CloudRuntimeException(res.getResult());
             }
-            SnapshotInfo destSnapshot = res.getSnashot();
+            SnapshotInfo destSnapshot = res.getSnapshot();
             return destSnapshot;
         } catch (InterruptedException e) {
             s_logger.debug("failed copy snapshot", e);

@@ -883,6 +883,12 @@ public class ApiDBUtils {
         return snapshot.getRecurringType().name();
     }
 
+    public static String getSnapshotLocationType(long snapshotId) {
+        SnapshotVO snapshot = s_snapshotDao.findById(snapshotId);
+
+        return snapshot.getLocationType() != null ? snapshot.getLocationType().name() : null;
+    }
+
     public static String getStoragePoolTags(long poolId) {
         return s_storageMgr.getStoragePoolTags(poolId);
     }
