@@ -99,12 +99,14 @@ public class StoragePoolMonitor implements Listener {
                     }
 
                     Long hostId = host.getId();
-                    s_logger.debug("Host " + hostId + " connected, sending down storage pool information ...");
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Host " + hostId + " connected, connecting host to shared pool id " + pool.getId() + " and sending storage pool information ...");
+                    }
                     try {
                         _storageManager.connectHostToSharedPool(hostId, pool.getId());
                         _storageManager.createCapacityEntry(pool.getId());
                     } catch (Exception e) {
-                        s_logger.warn("Unable to connect host " + hostId + " to pool " + pool + " due to " + e.toString(), e);
+                        throw new ConnectionException(true, "Unable to connect host " + hostId + " to storage pool id " + pool.getId() + " due to " + e.toString(), e);
                     }
                 }
             }
