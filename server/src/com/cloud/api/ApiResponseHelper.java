@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -455,7 +456,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         cfgResponse.setCategory(cfg.getCategory());
         cfgResponse.setDescription(cfg.getDescription());
         cfgResponse.setName(cfg.getName());
-        cfgResponse.setValue(cfg.getValue());
+        if(cfg.isEncrypted()) {
+            cfgResponse.setValue(DBEncryptionUtil.encrypt(cfg.getValue()));
+        } else {
+            cfgResponse.setValue(cfg.getValue());
+        }
         cfgResponse.setObjectName("configuration");
 
         return cfgResponse;
