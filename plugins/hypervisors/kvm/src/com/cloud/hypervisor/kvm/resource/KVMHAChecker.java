@@ -57,7 +57,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
             s_logger.debug("reture: " + result);
             s_logger.debug("parser: " + parser.getLine());
             if (result == null && parser.getLine().contains("> DEAD <")) {
-                s_logger.debug("read heartbeat failed: " + result);
+                s_logger.debug("read heartbeat failed: ");
                 results.add(false);
             } else {
                 results.add(true);
