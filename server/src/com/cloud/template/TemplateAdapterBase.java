@@ -270,10 +270,15 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             zoneId = -1L;
         }
 
-        return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(),
-            cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId,
-            HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
-            cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
+        if(hypervisorType == HypervisorType.None) {
+            throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
+                    + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
+        }
+
+        return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
+                cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
+                cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
 
     }
 
@@ -293,9 +298,15 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             zoneId = -1L;
         }
 
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
+        if(hypervisorType == HypervisorType.None) {
+            throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
+                                                         + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
+        }
+
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(),
                        cmd.getRequiresHvm(), null, cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId,
-                       HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
+                       hypervisorType, cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
                        cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
 
     }
