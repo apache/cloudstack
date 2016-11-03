@@ -388,9 +388,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (policyId != Snapshot.MANUAL_POLICY_ID) {
             SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, true);
-            assert snapshotSchedule != null;
-            snapshotSchedule.setSnapshotId(snapshotId);
-            _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
+            if (snapshotSchedule !=null) {
+                snapshotSchedule.setSnapshotId(snapshotId);
+                _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
+            }
         }
 
         if (snapshot != null && snapshot.isRecursive()) {
