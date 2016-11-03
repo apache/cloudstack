@@ -83,6 +83,17 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-utils</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+           <artifactId>xml-apis</artifactId>
+           <groupId>xml-apis</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-spring-lifecycle</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
