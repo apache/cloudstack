@@ -90,18 +90,17 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshotInfo) {
-
         Preconditions.checkArgument(snapshotInfo != null, "backupSnapshot expects a valid snapshot");
 
         if (snapshotInfo.getLocationType() != Snapshot.LocationType.SECONDARY) {
-
             markAsBackedUp((SnapshotObject)snapshotInfo);
+
             return snapshotInfo;
         }
 
-        // At this point the snapshot is either taken as a native
+        // At this point, the snapshot is either taken as a native
         // snapshot on the storage or exists as a volume on the storage (clone).
-        // If archive flag is passed, we will copy this snapshot to secondary
+        // If archive flag is passed in, we should copy this snapshot to secondary
         // storage and delete it from the primary storage.
 
         HostVO host = getHost(snapshotInfo.getVolumeId());
@@ -109,15 +108,14 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(host.getClusterId());
 
         if (!canStorageSystemCreateVolumeFromSnapshot || !computeClusterSupportsResign) {
-            String mesg = "Cannot archive snapshot: Either canStorageSystemCreateVolumeFromSnapshot or " +
-                    "computeClusterSupportsResign were false.  ";
+            String msg = "Cannot archive snapshot: canStorageSystemCreateVolumeFromSnapshot and/or computeClusterSupportsResign were false.";
 
-            s_logger.warn(mesg);
-            throw new CloudRuntimeException(mesg);
+            s_logger.warn(msg);
+
+            throw new CloudRuntimeException(msg);
         }
 
         return snapshotSvr.backupSnapshot(snapshotInfo);
-
     }
 
     @Override
@@ -255,14 +253,13 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             backedUpSnapshot = backupSnapshot(snapshotOnPrimary);
 
             updateLocationTypeInDb(backedUpSnapshot);
-
         }
         finally {
             if (result != null && result.isSuccess()) {
                 volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
 
                 if (snapshotOnPrimary != null && snapshotInfo.getLocationType() == Snapshot.LocationType.SECONDARY) {
-                    // cleanup the snapshot on primary
+                    // remove the snapshot on primary storage
                     try {
                         snapshotSvr.deleteSnapshot(snapshotOnPrimary);
                     } catch (Exception e) {
@@ -276,6 +273,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         snapshotDao.releaseFromLockTable(snapshotInfo.getId());
+
         return backedUpSnapshot;
     }
 
@@ -586,7 +584,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         Snapshot.LocationType locationType = snapshot.getLocationType();
 
-        //If the snapshot exisits on Secondary Storage, we can't delete it.
+        // If the snapshot exists on Secondary Storage, we can't delete it.
         if (SnapshotOperation.DELETE.equals(op) && Snapshot.LocationType.SECONDARY.equals(locationType)) {
             return StrategyPriority.CANT_HANDLE;
         }

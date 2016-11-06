@@ -155,11 +155,11 @@ def check_xen_sr(xen_sr_name, xen_session, obj_assert, should_exist=True):
     else:
         check_list(xen_sr, 0, obj_assert, "SR " + xen_sr_name + " exists, but shouldn't.")
 
-def check_kvm_access_to_volume(iscsi_name, kvm_hosts, kvm_login, obj_assert, should_exist=True):
+def check_kvm_access_to_volume(iscsi_name, kvm_hosts, username, password, obj_assert, should_exist=True):
     count = 0
 
     for kvm_host in kvm_hosts:
-        ssh_connection = sf_util.get_ssh_connection(kvm_host.ipaddress, kvm_login[TestData.username], kvm_login[TestData.password])
+        ssh_connection = get_ssh_connection(kvm_host.ipaddress, username, password)
 
         stdin, stdout, stderr = ssh_connection.exec_command("ls /dev/disk/by-path | grep " + iscsi_name)
 

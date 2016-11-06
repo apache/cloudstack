@@ -488,7 +488,9 @@ class TestManagedSystemVMs(cloudstackTestCase):
                 type="Routing"
             )
 
-            sf_util.check_kvm_access_to_volume(sf_root_volume.iqn, list_hosts_response, self.testdata[TestData.kvm], self, False)
+            kvm_login = self.testdata[TestData.kvm]
+
+            sf_util.check_kvm_access_to_volume(sf_root_volume.iqn, list_hosts_response, kvm_login[TestData.username], kvm_login[TestData.password], self, False)
         else:
             self.assertTrue(False, "Invalid hypervisor type")
 
@@ -544,7 +546,9 @@ class TestManagedSystemVMs(cloudstackTestCase):
                     type="Routing"
                 )
 
-                sf_util.check_kvm_access_to_volume(sf_root_volume.iqn, list_hosts_response, self.testdata[TestData.kvm], self)
+                kvm_login = self.testdata[TestData.kvm]
+
+                sf_util.check_kvm_access_to_volume(sf_root_volume.iqn, list_hosts_response, kvm_login[TestData.username], kvm_login[TestData.password], self)
             else:
                 self.assertTrue(False, "Invalid hypervisor type")
 

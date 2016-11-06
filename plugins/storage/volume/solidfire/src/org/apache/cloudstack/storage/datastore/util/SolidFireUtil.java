@@ -403,9 +403,10 @@ public class SolidFireUtil {
                 SolidFireUtil.getIqnsFromHosts(hosts), new long[] { sfVolumeId });
         }
         catch (Exception ex) {
-            String iqnInVagAlready = "Exceeded maximum number of Volume Access Groups per initiator";
+            String iqnInVagAlready1 = "Exceeded maximum number of Volume Access Groups per initiator";
+            String iqnInVagAlready2 = "Exceeded maximum number of VolumeAccessGroups per Initiator";
 
-            if (!ex.getMessage().contains(iqnInVagAlready)) {
+            if (!ex.getMessage().contains(iqnInVagAlready1) && !ex.getMessage().contains(iqnInVagAlready2)) {
                 throw new CloudRuntimeException(ex.getMessage());
             }
 

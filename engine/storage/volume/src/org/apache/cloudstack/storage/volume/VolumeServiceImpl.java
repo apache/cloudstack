@@ -28,14 +28,6 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.offering.DiskOffering;
-import com.cloud.org.Cluster;
-import com.cloud.org.Grouping.AllocationState;
-import com.cloud.resource.ResourceState;
-import com.cloud.server.ManagementService;
-import com.cloud.storage.RegisterVolumePayload;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -85,6 +77,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
@@ -94,7 +87,13 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
+import com.cloud.org.Cluster;
+import com.cloud.org.Grouping.AllocationState;
+import com.cloud.resource.ResourceState;
+import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
@@ -111,6 +110,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -317,9 +317,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         VolumeVO vol = volDao.findById(volume.getId());
 
-        String volumePath = vol.getPath();
-        Long poolId = vol.getPoolId();
-        if (poolId == null || volumePath == null || volumePath.trim().isEmpty()) {
+        if (!volumeExistsOnPrimary(vol)) {
             // not created on primary store
             if (volumeStore == null) {
                 // also not created on secondary store
@@ -346,6 +344,32 @@ public class VolumeServiceImpl implements VolumeService {
 
         volume.getDataStore().getDriver().deleteAsync(volume.getDataStore(), volume, caller);
         return future;
+    }
+
+    private boolean volumeExistsOnPrimary(VolumeVO vol) {
+        Long poolId = vol.getPoolId();
+
+        if (poolId == null) {
+            return false;
+        }
+
+        PrimaryDataStore primaryStore = dataStoreMgr.getPrimaryDataStore(poolId);
+
+        if (primaryStore == null) {
+            return false;
+        }
+
+        if (primaryStore.isManaged()) {
+            return true;
+        }
+
+        String volumePath = vol.getPath();
+
+        if (volumePath == null || volumePath.trim().isEmpty()) {
+            return false;
+        }
+
+        return true;
     }
 
     public Void deleteVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, DeleteVolumeContext<VolumeApiResult> context) {
