@@ -113,6 +113,7 @@ class CsDhcp(CsDataBag):
         if self.config.is_vpc():
             self.add_host("127.0.0.1", CsHelper.get_hostname())
         if self.config.is_router():
+            self.add_host("127.0.0.1", "localhost %s" % CsHelper.get_hostname())
             self.add_host(self.config.address().get_guest_ip(), "%s data-server" % CsHelper.get_hostname())
 
     def write_hosts(self):
