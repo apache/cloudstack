@@ -44,6 +44,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.cluster.ClusterShutdownManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 
@@ -1241,6 +1242,10 @@ public class TransactionLegacy implements Closeable {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static void registerClusterShutdownManager(ClusterShutdownManager csm){
+        dbConnectionObserver.registerClusterShutdownManager(csm);
     }
 
 }
