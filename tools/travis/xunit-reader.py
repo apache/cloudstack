@@ -73,7 +73,7 @@ def _generate_file_list(args):
 
 def parse_reports(file_path_list):
     table = texttable.Texttable()
-    table.header(['Test', 'Result', 'Time'])
+    table.header(['Test', 'Result', 'Time', 'Test file'])
 
     exit_code = 0
 
@@ -99,7 +99,7 @@ def parse_reports(file_path_list):
                     if 'type' in children.attrib:
                         status = children.attrib['type']
 
-            table.add_row([name, status, time])
+            table.add_row([name, status, time, file_path.replace(".xml", "").split("/")[-1]])
 
     print table.draw()
 

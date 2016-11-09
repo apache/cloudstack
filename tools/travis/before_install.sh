@@ -21,26 +21,6 @@
 # or internet downloads.
 #
 
-export TEST_JOB_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f1`
-export TEST_SEQUENCE_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f2`
-
-echo "REGRESSION_CYCLE=$REGRESSION_CYCLE"
-echo "TEST_JOB_NUMBER=$TEST_JOB_NUMBER"
-echo "TEST_SEQUENCE_NUMBER=$TEST_SEQUENCE_NUMBER"
-
-#run regression test only on $REGRESSION_CYCLE
-MOD=$(( $TEST_JOB_NUMBER % $REGRESSION_CYCLE ))
-
-echo "MOD=$MOD"
-
-if [ $MOD -ne 0 ]; then
- if [ $TEST_SEQUENCE_NUMBER -ge $REGRESSION_INDEX ]; then
-   #skip test
-   echo "Skipping tests ... SUCCESS !"
-   exit 0
- fi
-fi
-
 echo -e "#### System Information ####"
 
 echo -e "\nJava Version: "
@@ -125,41 +105,3 @@ do
   cat /tmp/piplog
 done
 
-#Download project dependencies in a way we can retry if there's a failure, without failing the whole build
-
-#Resolve plugins first
-echo -e "\nDownloading Plugin dependencies"
-for ((i=0;i<$RETRY_COUNT;i++))
-do
- #The output file is used on the next phase by the downloadDeps.sh script
- mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins | grep "Plugin Resolved:" | sort -u | awk '{print $4}' | tee /tmp/resolvedPlugins
- if [[ $? -eq 0 ]]; then
-   echo -e "\nPlugin dependencies downloaded successfully"
-   break;
- fi
- echo -e "\nDependency download failed"
- #Test DNS record
- getent hosts repo1.maven.org
- while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
-done
-
-#Resolve remaining deps
-cd tools/travis
-echo -e "\nDownloading Project dependencies"
-
-for ((i=0;i<$RETRY_COUNT;i++))
-do
- ./downloadDeps.sh > /tmp/phase2
- if [[ $? -eq 0 ]]; then
-   echo -e "\n$(cat cleandeps.out |wc -l) project dependencies downloaded successfully"
-   break;
- fi
- echo -e "\nDependency download failed"
- #Print out errors from failed run
- cat /tmp/phase2 | grep -i -e "fail" -e "error" -e "exception"
- #Test DNS record
- getent hosts repo1.maven.org
- while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
- echo -e "\nRetrying download"
-done
-cd ../..

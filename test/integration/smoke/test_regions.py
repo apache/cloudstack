@@ -35,7 +35,7 @@ class TestRegions(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.cleanup = []
 
-    @attr(tags=["basic", "advanced"], required_hardware="true")
+    @attr(tags=["basic", "advanced"], required_hardware="false")
     def test_createRegion(self):
         """ Test for create region
         """
