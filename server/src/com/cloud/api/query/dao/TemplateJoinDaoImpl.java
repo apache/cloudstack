@@ -291,6 +291,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
         isoResponse.setOsTypeId(iso.getGuestOSUuid());
         isoResponse.setOsTypeName(iso.getGuestOSName());
+        isoResponse.setBits(iso.getBits());
 
         // populate owner.
         ApiResponseHelper.populateOwner(isoResponse, iso);

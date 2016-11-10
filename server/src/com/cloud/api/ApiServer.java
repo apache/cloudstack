@@ -147,6 +147,7 @@ import javax.servlet.http.HttpSession;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -174,6 +175,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.google.gson.reflect.TypeToken;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
@@ -264,10 +266,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         String info = job.getCmdInfo();
         String cmdEventType = "unknown";
         if (info != null) {
-            String marker = "\"cmdEventType\"";
-            int begin = info.indexOf(marker);
-            if (begin >= 0) {
-                cmdEventType = info.substring(begin + marker.length() + 2, info.indexOf(",", begin) - 1);
+            Type type = new TypeToken<Map<String, String>>(){}.getType();
+            Map<String, String> cmdInfo = ApiGsonHelper.getBuilder().create().fromJson(info, type);
+            String eventTypeObj = cmdInfo.get("cmdEventType");
+            if (eventTypeObj != null) {
+                cmdEventType = eventTypeObj;
 
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("Retrieved cmdEventType from job info: " + cmdEventType);
