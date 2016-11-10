@@ -179,6 +179,10 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     @Param(description = "the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
+    @SerializedName(ApiConstants.BITS)
+    @Param(description="the processor bit size", since = "4.10")
+    private int bits;
+
     @SerializedName(ApiConstants.SSHKEY_ENABLED)
     @Param(description = "true if template is sshkey enabled, false otherwise")
     private Boolean sshKeyEnabled;
@@ -361,4 +365,9 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     public String getZoneId() {
         return zoneId;
     }
+    public void setBits(int bits) {
+        this.bits = bits;
+    }
+
+
 }
