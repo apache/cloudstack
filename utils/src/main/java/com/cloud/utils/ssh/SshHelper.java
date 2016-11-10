@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.InputStream;
 
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.trilead.ssh2.ChannelCondition;
 
@@ -122,8 +123,13 @@ public class SshHelper {
         }
     }
 
-    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, int connectTimeoutInMs,
-        int kexTimeoutInMs, int waitResultTimeoutInMs) throws Exception {
+    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, Duration connectTimeout,
+            Duration kexTimeout, Duration waitTime) throws Exception {
+        return sshExecute(host, port, user, pemKeyFile, password, command, (int)connectTimeout.getMillis(), (int)kexTimeout.getMillis(), (int)waitTime.getMillis());
+    }
+
+    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, int connectTimeoutInMs, int kexTimeoutInMs,
+            int waitResultTimeoutInMs) throws Exception {
 
         com.trilead.ssh2.Connection conn = null;
         com.trilead.ssh2.Session sess = null;

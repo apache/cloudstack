@@ -19,6 +19,8 @@
 
 package com.cloud.agent.resource.virtualnetwork;
 
+import org.joda.time.Duration;
+
 public class VRScripts {
     public final static String CONFIG_PERSIST_LOCATION = "/var/cache/cloud/";
     public final static String IP_ASSOCIATION_CONFIG = "ip_associations.json";
@@ -40,7 +42,8 @@ public class VRScripts {
     public static final String LOAD_BALANCER_CONFIG = "load_balancer.json";
 
     public final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
-    public final static int DEFAULT_EXECUTEINVR_TIMEOUT = 120; //Seconds
+    public final static Duration VR_SCRIPT_EXEC_TIMEOUT = Duration.standardMinutes(10);
+    public final static Duration CONNECTION_TIMEOUT = Duration.standardMinutes(1);
 
     // New scripts for use with chef
     public static final String UPDATE_CONFIG = "update_config.py";
