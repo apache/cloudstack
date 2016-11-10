@@ -87,24 +87,25 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         SR sr = null;
         PBD pbd = null;
         try {
-            String srname = hypervisorResource.getHost().uuid + path.trim();
-            Set<SR> srs = SR.getByNameLabel(conn, srname);
-            if ( srs != null && !srs.isEmpty()) {
+            final String srname = path.trim();
+            synchronized (srname.intern()) {
+                Set<SR> srs = SR.getByNameLabel(conn, srname);
+                if ( srs != null && !srs.isEmpty()) {
                 return srs.iterator().next();
+                }
+                Map<String, String> smConfig = new HashMap<String, String>();
+                Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
+                String uuid = UUID.randomUUID().toString();
+                sr = SR.introduce(conn, uuid, srname, srname, "file", "file", false, smConfig);
+                PBD.Record record = new PBD.Record();
+                record.host = host;
+                record.SR = sr;
+                smConfig.put("location", path);
+                record.deviceConfig = smConfig;
+                pbd = PBD.create(conn, record);
+                pbd.plug(conn);
+                sr.scan(conn);
             }
-            Map<String, String> smConfig = new HashMap<String, String>();
-            Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
-            String uuid = UUID.randomUUID().toString();
-
-            sr = SR.introduce(conn, uuid, srname, srname, "file", "file", false, smConfig);
-            PBD.Record record = new PBD.Record();
-            record.host = host;
-            record.SR = sr;
-            smConfig.put("location", path);
-            record.deviceConfig = smConfig;
-            pbd = PBD.create(conn, record);
-            pbd.plug(conn);
-            sr.scan(conn);
             return sr;
         } catch (Exception e) {
             try {
