@@ -1287,7 +1287,11 @@
                                         dependsOn: 'isPublic',
                                         select: function(args) {
                                             $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
                                                 dataType: "json",
                                                 async: false,
                                                 success: function(json) {
@@ -1999,7 +2003,11 @@
                                         dependsOn: 'isPublic',
                                         select: function(args) {
                                             $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
                                                 dataType: "json",
                                                 async: false,
                                                 success: function(json) {
