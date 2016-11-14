@@ -655,4 +655,8 @@ public class ApiConstants {
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp;
     }
+
+    public enum DomainDetails {
+        all, resource, min;
+    }
 }

@@ -1877,7 +1877,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             respView = ResponseView.Full;
         }
 
-        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(respView, result.first().toArray(
+        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(respView, cmd.getDetails(), result.first().toArray(
                 new DomainJoinVO[result.first().size()]));
         response.setResponses(domainResponses, result.second());
         return response;

@@ -33,6 +33,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -1830,8 +1831,8 @@ public class ApiDBUtils {
         return s_imageStoreJoinDao.newImageStoreView(vr);
     }
 
-    public static DomainResponse newDomainResponse(ResponseView view, DomainJoinVO ve) {
-        return s_domainJoinDao.newDomainResponse(view, ve);
+    public static DomainResponse newDomainResponse(ResponseView view, EnumSet<DomainDetails> details, DomainJoinVO ve) {
+        return s_domainJoinDao.newDomainResponse(view, details, ve);
     }
 
     public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {

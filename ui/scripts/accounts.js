@@ -1741,7 +1741,11 @@
                                         select: function(args) {
                                             if (isAdmin() || isDomainAdmin()) {
                                                 $.ajax({
-                                                    url: createURL("listDomains&listAll=true"),
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
                                                     success: function(json) {
                                                         var items = [];
                                                         items.push({

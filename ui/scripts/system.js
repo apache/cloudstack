@@ -54,6 +54,7 @@
                             $.ajax({
                                 url: createURL('listDomains'),
                                 data: {
+                                    details: 'min',
                                     listAll: true
                                 },
                                 success: function (json) {
@@ -78,6 +79,7 @@
                         url: createURL('listDomains'),
                         data: {
                             id: data.domainid,
+                            details: 'min',
                             listAll: true
                         },
                         success: function (json) {
@@ -849,6 +851,7 @@
                                                                 $.ajax({
                                                                     url: createURL('listDomains'),
                                                                     data: {
+                                                                        details: 'min',
                                                                         listAll: true
                                                                     },
                                                                     success: function (json) {
@@ -2119,6 +2122,7 @@
                                                             $.ajax({
                                                                 url: createURL('listDomains'),
                                                                 data: {
+                                                                    details: 'min',
                                                                     listAll: true
                                                                 },
                                                                 success: function (json) {
@@ -8089,7 +8093,11 @@
                                                     },
                                                     select: function (args) {
                                                         $.ajax({
-                                                            url: createURL("listDomains&listAll=true"),
+                                                            url: createURL('listDomains'),
+                                                            data: {
+                                                                listAll: true,
+                                                                details: 'min'
+                                                            },
                                                             dataType: "json",
                                                             async: false,
                                                             success: function (json) {
@@ -13510,7 +13518,11 @@
                                         dependsOn: 'isDedicated',
                                         select: function (args) {
                                             $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
                                                 dataType: "json",
                                                 async: false,
                                                 success: function (json) {
@@ -13728,7 +13740,11 @@
                                             },
                                             select: function (args) {
                                                 $.ajax({
-                                                    url: createURL("listDomains&listAll=true"),
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
                                                     dataType: "json",
                                                     async: false,
                                                     success: function (json) {
@@ -14329,7 +14345,11 @@
                                         dependsOn: 'isDedicated',
                                         select: function (args) {
                                             $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
                                                 dataType: "json",
                                                 async: false,
                                                 success: function (json) {
@@ -14900,7 +14920,11 @@
                                             },
                                             select: function (args) {
                                                 $.ajax({
-                                                    url: createURL("listDomains&listAll=true"),
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
                                                     dataType: "json",
                                                     async: false,
                                                     success: function (json) {
@@ -15885,7 +15909,11 @@
                                         dependsOn: 'isDedicated',
                                         select: function (args) {
                                             $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
                                                 dataType: "json",
                                                 success: function (json) {
                                                     var domainObjs = json.listdomainsresponse.domain;
@@ -16231,7 +16259,11 @@
                                             },
                                             select: function (args) {
                                                 $.ajax({
-                                                    url: createURL("listDomains&listAll=true"),
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
                                                     dataType: "json",
                                                     async: false,
                                                     success: function (json) {
