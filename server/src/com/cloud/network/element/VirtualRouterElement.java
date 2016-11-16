@@ -24,9 +24,22 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.network.dao.NetworkDetailVO;
-import com.cloud.network.dao.NetworkDetailsDao;
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+
+import com.google.gson.Gson;
+
+import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
+import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.topology.NetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
@@ -60,6 +73,8 @@ import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.OvsProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -85,6 +100,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -96,23 +112,10 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.google.gson.Gson;
-
-import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
-import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
-import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.network.topology.NetworkTopology;
-import org.apache.cloudstack.network.topology.NetworkTopologyContext;
-import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinition;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource {
+NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
     public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
@@ -968,10 +971,24 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource {
         return true;
     }
 
+
     @Override
     public boolean configDhcpSupportForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,
-            final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network, Service.Dhcp)) {
+                                              final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+            return configureDhcpSupport(network, nic, vm, dest, Service.Dhcp);
+    }
+
+    @Override
+    public boolean configDnsSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        // Ignore if virtual router is already dhcp provider
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, getProvider())) {
+            return true;
+        }
+        return configureDhcpSupport(network, nic, vm, dest, Service.Dns);
+    }
+
+    protected boolean configureDhcpSupport(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, Service service) throws ResourceUnavailableException {
+        if (canHandle(network, service)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -994,15 +1011,30 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource {
 
     @Override
     public boolean removeDhcpSupportForSubnet(final Network network) throws ResourceUnavailableException {
-        if (canHandle(network, Service.Dhcp)) {
+        return removeDhcpSupportForSubnet(network, Service.Dhcp);
+    }
+
+    @Override
+    public boolean removeDnsSupportForSubnet(Network network) throws ResourceUnavailableException {
+        // Ignore if virtual router is already dhcp provider
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, getProvider())) {
+            return true;
+        } else {
+            return removeDhcpSupportForSubnet(network, Service.Dns);
+        }
+    }
+
+    protected boolean removeDhcpSupportForSubnet(Network network, Network.Service service) throws ResourceUnavailableException {
+        if (canHandle(network, service)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-            if (routers == null || routers.size() == 0) {
+
+            if (CollectionUtils.isEmpty(routers)) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
             try {
                 return _routerMgr.removeDhcpSupportForSubnet(network, routers);
             } catch (final ResourceUnavailableException e) {
-                s_logger.debug("Router resource unavailable ");
+                s_logger.info("Router resource unavailable ", e);
             }
         }
         return false;
@@ -1011,8 +1043,23 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource {
     @Override
     public boolean addDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        return applyDhcpEntries(network, nic, vm, dest, Service.Dhcp);
+    }
+
+    @Override
+    public boolean addDnsEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        // Ignore if virtual router is already dhcp provider
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, getProvider())) {
+            return true;
+        }
+
+        return applyDhcpEntries(network, nic, vm, dest, Service.Dns);
+    }
+
+    protected boolean applyDhcpEntries (final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest, final Network.Service service) throws ResourceUnavailableException {
+
         boolean result = true;
-        if (canHandle(network, Service.Dhcp)) {
+        if (canHandle(network, service)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }

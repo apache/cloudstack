@@ -19,6 +19,30 @@
 
 package com.cloud.network.resource;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
+
+import net.nuage.vsp.acs.client.api.NuageVspApiClient;
+import net.nuage.vsp.acs.client.api.NuageVspElementClient;
+import net.nuage.vsp.acs.client.api.NuageVspGuruClient;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
+import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import com.cloud.NuageTest;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingCommand;
@@ -31,25 +55,6 @@ import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
 import com.cloud.agent.api.guru.ReserveVmInterfaceVspCommand;
 import com.cloud.agent.api.guru.TrashNetworkVspCommand;
 import com.cloud.host.Host;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import net.nuage.vsp.acs.client.api.NuageVspApiClient;
-import net.nuage.vsp.acs.client.api.NuageVspElementClient;
-import net.nuage.vsp.acs.client.api.NuageVspGuruClient;
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doAnswer;
@@ -151,8 +156,9 @@ public class NuageVspResourceTest extends NuageTest {
         _resource.configure("NuageVspResource", _hostDetails);
 
         VspNetwork vspNetwork = buildVspNetwork();
-        ImplementNetworkVspCommand cmd = new ImplementNetworkVspCommand(vspNetwork, new ArrayList<String>());
-        doAnswer(genericAnswer).when(_mockNuageVspGuruClient).implement(vspNetwork, new ArrayList<String>());
+        VspDhcpDomainOption vspDhcpOptions = buildspDhcpDomainOption();
+        ImplementNetworkVspCommand cmd = new ImplementNetworkVspCommand(vspNetwork, vspDhcpOptions);
+        doAnswer(genericAnswer).when(_mockNuageVspGuruClient).implement(vspNetwork, vspDhcpOptions);
         com.cloud.agent.api.Answer implNtwkAns = _resource.executeRequest(cmd);
         assertTrue(implNtwkAns.getResult());
     }
@@ -165,8 +171,9 @@ public class NuageVspResourceTest extends NuageTest {
         VspVm vspVm = buildVspVm();
         VspNic vspNic = buildVspNic();
         VspStaticNat vspStaticNat = buildVspStaticNat();
-        ReserveVmInterfaceVspCommand cmd = new ReserveVmInterfaceVspCommand(vspNetwork, vspVm, vspNic, vspStaticNat);
-        doAnswer(genericAnswer).when(_mockNuageVspGuruClient).reserve(vspNetwork, vspVm, vspNic, vspStaticNat);
+        VspDhcpVMOption vspDhcpOption = buildspDhcpVMOption();
+        ReserveVmInterfaceVspCommand cmd = new ReserveVmInterfaceVspCommand(vspNetwork, vspVm, vspNic, vspStaticNat, vspDhcpOption);
+        doAnswer(genericAnswer).when(_mockNuageVspGuruClient).reserve(vspNetwork, vspVm, vspNic, vspStaticNat, vspDhcpOption);
         Answer rsrvVmInfAns = _resource.executeRequest(cmd);
         assertTrue(rsrvVmInfAns.getResult());
     }

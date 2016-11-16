@@ -59,6 +59,7 @@ import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
@@ -823,6 +824,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override
     public DhcpServiceProvider getDhcpServiceProvider(Network network) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public DnsServiceProvider getDnsServiceProvider(Network network) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 

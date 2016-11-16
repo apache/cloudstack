@@ -17,42 +17,35 @@
 // under the License.
 //
 
-package com.cloud.agent.api.sync;
+package com.cloud.agent.api.guru;
 
+import java.util.List;
 import java.util.Objects;
 
-import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.cloud.agent.api.Command;
 
-public class SyncDomainCommand extends Command {
+public class UpdateDhcpOptionVspCommand extends Command {
 
-    public enum Type { ADD, REMOVE }
-    private final VspDomain _domain;
-    private final Type _action;
+    private final List<VspDhcpVMOption> _dhcpOptions;
+    private final VspNetwork _network;
 
-    public SyncDomainCommand(VspDomain domain, Type action) {
-        super();
-        this._domain = domain;
-        this._action = action;
+    public UpdateDhcpOptionVspCommand(List<VspDhcpVMOption> dhcpOptions, VspNetwork network) {
+        this._dhcpOptions = dhcpOptions;
+        this._network = network;
     }
 
-    public VspDomain getDomain() {
-        return _domain;
+    public List<VspDhcpVMOption> getDhcpOptions() {
+        return _dhcpOptions;
     }
 
-    public Type getAction() {
-        return _action;
-    }
-
-    public boolean isToAdd() {
-        return Type.ADD.equals(_action);
-    }
-
-    public boolean isToRemove() {
-        return Type.REMOVE.equals(_action);
+    public VspNetwork getNetwork() {
+        return _network;
     }
 
     @Override
@@ -62,23 +55,33 @@ public class SyncDomainCommand extends Command {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SyncDomainCommand)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
 
-        SyncDomainCommand that = (SyncDomainCommand) o;
+        if (!(o instanceof UpdateDhcpOptionVspCommand)) {
+            return false;
+        }
+
+        UpdateDhcpOptionVspCommand that = (UpdateDhcpOptionVspCommand) o;
 
         return super.equals(that)
-                && Objects.equals(_action, that._action)
-                && Objects.equals(_domain, that._domain);
+                && Objects.equals(_network, that._network)
+                && Objects.equals(_dhcpOptions, that._dhcpOptions);
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder()
                 .appendSuper(super.hashCode())
-                .append(_domain)
-                .append(_action)
+                .append(_network)
                 .toHashCode();
+    }
+
+    public String toDetailString() {
+        return new ToStringBuilder(this)
+                .append("network", _network)
+                .append("dhcpOptions", _dhcpOptions)
+                .toString();
     }
 }
