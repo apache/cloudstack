@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -271,12 +272,18 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     s_logger.info(scheme + " is not a valid protocol for external statistics. No statistics will be send.");
                 }
 
-                externalStatsHost = uri.getHost();
+                if (!StringUtils.isEmpty(uri.getHost())) {
+                    externalStatsHost = uri.getHost();
+                }
+
                 externalStatsPort = uri.getPort();
-                externalStatsPrefix = uri.getPath().substring(1);
+
+                if (!StringUtils.isEmpty(uri.getPath())) {
+                    externalStatsPrefix = uri.getPath().substring(1);
+                }
 
                 /* Append a dot (.) to the prefix if it is set */
-                if (externalStatsPrefix != null && !externalStatsPrefix.equals("")) {
+                if (!StringUtils.isEmpty(externalStatsPrefix)) {
                     externalStatsPrefix += ".";
                 } else {
                     externalStatsPrefix = "";
