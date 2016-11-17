@@ -30,6 +30,8 @@ import static org.mockito.Mockito.times;
 import java.util.ArrayList;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import static org.powermock.api.mockito.PowerMockito.whenNew;
+
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -162,6 +164,7 @@ public class VmwareResourceTest {
         when(destDataTO.getHypervisorType()).thenReturn(HypervisorType.VMware);
         when(destDataTO.getDataStore()).thenReturn(destDataStoreTO);
         when(destDataStoreTO.isFullCloneFlag()).thenReturn(FULL_CLONE_FLAG);
+        when(volume.getPath()).thenReturn(VOLUME_PATH);
     }
 
     //Test successful scaling up the vm
@@ -330,6 +333,12 @@ public class VmwareResourceTest {
         _resource.storageNfsVersion = NFS_VERSION;
         _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
         verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(Matchers.eq(storageCmd), any(EnumMap.class));
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testFindVmOnDatacenterNullHyperHostReference() throws Exception {
+        when(hyperHost.getMor()).thenReturn(null);
+        _resource.findVmOnDatacenter(context, hyperHost, volume);
     }
 
     @Test(expected=CloudRuntimeException.class)
