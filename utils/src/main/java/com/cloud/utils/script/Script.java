@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -64,10 +65,15 @@ public class Script implements Callable<String> {
     Process _process;
     Thread _thread;
 
-    public int getExitValue()  {
+    public int getExitValue() {
         return _process.exitValue();
     }
 
+    public Script(String command, Duration timeout, Logger logger) {
+        this(command, timeout.getMillis(), logger);
+    }
+
+    @Deprecated
     public Script(String command, long timeout, Logger logger) {
         _command = new ArrayList<String>();
         _command.add(command);
@@ -80,6 +86,11 @@ public class Script implements Callable<String> {
         _logger = logger != null ? logger : s_logger;
     }
 
+    public Script(boolean runWithSudo, String command, Duration timeout, Logger logger) {
+        this(runWithSudo, command, timeout.getMillis(), logger);
+    }
+
+    @Deprecated
     public Script(boolean runWithSudo, String command, long timeout, Logger logger) {
         this(command, timeout, logger);
         if (runWithSudo) {
@@ -95,6 +106,11 @@ public class Script implements Callable<String> {
         this(command, 0, s_logger);
     }
 
+    public Script(String command, Duration timeout) {
+        this(command, timeout.getMillis(), s_logger);
+    }
+
+    @Deprecated
     public Script(String command, long timeout) {
         this(command, timeout, s_logger);
     }

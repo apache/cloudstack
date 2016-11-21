@@ -25,6 +25,7 @@ import java.io.Reader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -191,7 +192,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _clusterId;
 
     private long _hvVersion;
-    private int _timeout;
+    private Duration _timeout;
     private static final int NUMMEMSTATS =2;
 
     private KVMHAMonitor _monitor;
@@ -279,12 +280,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
-        return executeInVR(routerIp, script, args, _timeout / 1000);
+        return executeInVR(routerIp, script, args, _timeout);
     }
 
     @Override
-    public ExecutionResult executeInVR(final String routerIp, final String script, final String args, final int timeout) {
-        final Script command = new Script(_routerProxyPath, timeout * 1000, s_logger);
+    public ExecutionResult executeInVR(final String routerIp, final String script, final String args, final Duration timeout) {
+        final Script command = new Script(_routerProxyPath, timeout, s_logger);
         final AllLinesParser parser = new AllLinesParser();
         command.add(script);
         command.add(routerIp);
@@ -386,7 +387,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _updateHostPasswdPath;
     }
 
-    public int getTimeout() {
+    public Duration getTimeout() {
         return _timeout;
     }
 
@@ -777,7 +778,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         value = (String)params.get("scripts.timeout");
-        _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
+        _timeout = Duration.standardSeconds(NumbersUtil.parseInt(value, 30 * 60));
 
         value = (String)params.get("stop.script.timeout");
         _stopTimeout = NumbersUtil.parseInt(value, 120) * 1000;
