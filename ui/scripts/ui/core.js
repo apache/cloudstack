@@ -361,6 +361,7 @@
         $.validator.addMethod(
             "disallowSpecialCharacters",
             function(value, element) {
+                if (element.id == "label_outofbandmanagement_password") return true;
                 return (value.indexOf("<") == -1 && value.indexOf(">") == -1);
             },
             jQuery.format('message.disallowed.characters')
