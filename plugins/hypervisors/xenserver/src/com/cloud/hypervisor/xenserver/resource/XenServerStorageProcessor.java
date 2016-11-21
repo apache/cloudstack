@@ -416,9 +416,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     vbd.destroy(conn);
                 }
 
-                // Update the VDI's label to be "detached"
-                vdi.setNameLabel(conn, "detached");
-
                 hypervisorResource.umount(conn, vdi);
             }
 
