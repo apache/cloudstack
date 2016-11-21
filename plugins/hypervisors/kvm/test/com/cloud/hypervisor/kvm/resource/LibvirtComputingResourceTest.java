@@ -54,6 +54,7 @@ import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.lang.SystemUtils;
+import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -1631,7 +1632,7 @@ public class LibvirtComputingResourceTest {
         when(libvirtUtilitiesHelper.retrieveSshPubKeyPath()).thenReturn("/path/pub/keys");
         when(libvirtUtilitiesHelper.retrieveSshPrvKeyPath()).thenReturn("/path/pvt/keys");
 
-        when(libvirtComputingResource.getTimeout()).thenReturn(0);
+        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2187,7 +2188,7 @@ public class LibvirtComputingResourceTest {
         final OvsVpcPhysicalTopologyConfigCommand command = new OvsVpcPhysicalTopologyConfigCommand(hosts, tiers, vms, cidr);
 
         when(libvirtComputingResource.getOvsTunnelPath()).thenReturn("/path");
-        when(libvirtComputingResource.getTimeout()).thenReturn(0);
+        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
 
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -2231,7 +2232,7 @@ public class LibvirtComputingResourceTest {
         final OvsVpcRoutingPolicyConfigCommand command = new OvsVpcRoutingPolicyConfigCommand(id, cidr, acls, tiers);
 
         when(libvirtComputingResource.getOvsTunnelPath()).thenReturn("/path");
-        when(libvirtComputingResource.getTimeout()).thenReturn(0);
+        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
 
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -2707,6 +2708,7 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.findOrCreateTunnelNetwork(bridge)).thenReturn(true);
         when(libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getFrom(),
                 command.getNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -4287,8 +4289,7 @@ public class LibvirtComputingResourceTest {
         final String guestBridgeName = "br0";
         when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
 
-        final int timeout = 0;
-        when(libvirtComputingResource.getTimeout()).thenReturn(timeout);
+        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
         final String ovsPvlanDhcpHostPath = "/pvlan";
         when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
@@ -4329,8 +4330,7 @@ public class LibvirtComputingResourceTest {
 
         final String guestBridgeName = "br0";
         when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
-        final int timeout = 0;
-        when(libvirtComputingResource.getTimeout()).thenReturn(timeout);
+        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
 
         final String ovsPvlanVmPath = "/pvlan";
         when(libvirtComputingResource.getOvsPvlanVmPath()).thenReturn(ovsPvlanVmPath);
@@ -4359,8 +4359,7 @@ public class LibvirtComputingResourceTest {
         final String guestBridgeName = "br0";
         when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
 
-        final int timeout = 0;
-        when(libvirtComputingResource.getTimeout()).thenReturn(timeout);
+        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
         final String ovsPvlanDhcpHostPath = "/pvlan";
         when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
@@ -4401,8 +4400,7 @@ public class LibvirtComputingResourceTest {
         final String guestBridgeName = "br0";
         when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
 
-        final int timeout = 0;
-        when(libvirtComputingResource.getTimeout()).thenReturn(timeout);
+        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
         final String ovsPvlanDhcpHostPath = "/pvlan";
         when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);

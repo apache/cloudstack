@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -97,11 +98,11 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
-        return executeInVR(routerIp, script, args, 60);
+        return executeInVR(routerIp, script, args, Duration.standardSeconds(60L));
     }
 
     @Override
-    public ExecutionResult executeInVR(final String routerIp, final String script, final String args, final int timeout) {
+    public ExecutionResult executeInVR(final String routerIp, final String script, final String args, final Duration timeout) {
         assertEquals(routerIp, ROUTERIP);
         verifyCommand(_currentCmd, script, args);
         return new ExecutionResult(true, null);
