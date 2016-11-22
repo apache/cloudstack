@@ -72,4 +72,5 @@ public class CreatePrivateTemplateFromSnapshotCommand extends SnapshotCommand {
     public String getTemplateName() {
         return templateName;
     }
+
 }

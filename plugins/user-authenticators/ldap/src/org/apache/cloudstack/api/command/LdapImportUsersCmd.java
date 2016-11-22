@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
@@ -70,9 +72,11 @@ public class LdapImportUsersCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
                type = CommandType.SHORT,
-               required = true,
                description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Short accountType;
+
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
+    private Long roleId;
 
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
@@ -112,7 +116,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
         Account account = _accountService.getActiveAccountByName(accountName, domain.getId());
         if (account == null) {
             s_logger.debug("No account exists with name: " + accountName + " creating the account and an user with name: " + user.getUsername() + " in the account");
-            _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, accountType,
+            _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, getAccountType(), getRoleId(),
                     domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
         } else {
 //            check if the user exists. if yes, call update
@@ -131,7 +135,9 @@ public class LdapImportUsersCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException {
-
+        if (getAccountType() == null && getRoleId() == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Both account type and role ID are not provided");
+        }
         List<LdapUser> users;
         try {
             if (StringUtils.isNotBlank(groupName)) {
@@ -159,6 +165,14 @@ public class LdapImportUsersCmd extends BaseListCmd {
         response.setResponses(createLdapUserResponse(addedUsers));
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    public Short getAccountType() {
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), accountType);
+    }
+
+    public Long getRoleId() {
+        return RoleType.getRoleByAccountType(roleId, accountType);
     }
 
     private String getAccountName(LdapUser user) {

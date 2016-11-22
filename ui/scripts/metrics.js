@@ -23,7 +23,7 @@
                 name: {
                     label: 'metrics'
                 }
-            },
+            }
         }
     };
 
@@ -153,7 +153,7 @@
 
                                 $.ajax({
                                     url: createURL('listClusters'),
-                                    data: {zoneid: zone.id},
+                                    data: {zoneid: zone.id, pagesize: -1},
                                     success: function(json) {
                                         if (json && json.listclustersresponse && json.listclustersresponse.cluster && json.listclustersresponse.count) {
                                             items[idx].clusters += parseInt(json.listclustersresponse.count);
@@ -163,7 +163,7 @@
                                                 }
                                                 $.ajax({
                                                     url: createURL('listHosts'),
-                                                    data: {clusterid: cluster.id, type: 'routing'},
+                                                    data: {clusterid: cluster.id, type: 'routing', pagesize: -1},
                                                     success: function(json) {
                                                         if (json && json.listhostsresponse && json.listhostsresponse.host && json.listhostsresponse.count) {
                                                             items[idx].hosts += parseInt(json.listhostsresponse.count);
@@ -425,7 +425,7 @@
 
                                 $.ajax({
                                     url: createURL('listHosts'),
-                                    data: {clusterid: cluster.id, type: 'routing'},
+                                    data: {clusterid: cluster.id, type: 'routing', pagesize: -1},
                                     success: function(json) {
                                         if (json && json.listhostsresponse && json.listhostsresponse.host && json.listhostsresponse.count) {
                                             items[idx].hosts += parseInt(json.listhostsresponse.count);
@@ -556,7 +556,20 @@
                         'Error': 'off',
                         'Connecting': 'transition',
                         'Rebalancing': 'transition',
-                        'Alert': 'warning',
+                        'Alert': 'warning'
+                    },
+                    compact: true
+                },
+                outofbandmanagementpowerstate: {
+                    label: 'label.metrics.outofbandmanagementpowerstate',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
+                    indicator: {
+                        'On': 'on',
+                        'Off': 'off',
+                        'Unknown': 'warning'
                     },
                     compact: true
                 },
@@ -568,7 +581,7 @@
                     collapsible: true,
                     columns: {
                         cores: {
-                            label: 'label.metrics.num.cpu.cores',
+                            label: 'label.metrics.num.cpu.cores'
                         },
                         cputotal: {
                             label: 'label.metrics.cpu.total'
@@ -663,6 +676,9 @@
                         var items = json.listhostsresponse.host;
                         if (items) {
                             $.each(items, function(idx, host) {
+                                if (host && host.outofbandmanagement) {
+                                    items[idx].outofbandmanagementpowerstate = host.outofbandmanagement.powerstate;
+                                }
                                 items[idx].cores = host.cpunumber;
                                 items[idx].cputotal = (parseFloat(host.cpunumber) * parseFloat(host.cpuspeed) / 1000.0).toFixed(2);
                                 if (host.cpuused) {
@@ -808,7 +824,7 @@
                         'Stopping': 'transition',
                         'Starting': 'transition',
                         'Migrating': 'transition',
-                        'Shutdowned': 'warning',
+                        'Shutdowned': 'warning'
                     },
                     compact: true
                 },
@@ -823,13 +839,13 @@
                     collapsible: true,
                     columns: {
                         cores: {
-                            label: 'label.metrics.num.cpu.cores',
+                            label: 'label.metrics.num.cpu.cores'
                         },
                         cputotal: {
                             label: 'label.metrics.cpu.total'
                         },
                         cpuused: {
-                            label: 'label.metrics.cpu.used.avg',
+                            label: 'label.metrics.cpu.used.avg'
                         }
                     }
                 },
@@ -958,7 +974,7 @@
                         'Expunging': 'off',
                         'Migrating': 'warning',
                         'UploadOp': 'transition',
-                        'Snapshotting': 'warning',
+                        'Snapshotting': 'warning'
                     },
                     compact: true
                 },
@@ -973,7 +989,7 @@
                 },
                 storagepool: {
                     label: 'label.metrics.storagepool'
-                },
+                }
             },
             dataProvider: function(args) {
                 var data = {listAll: true};
@@ -1046,7 +1062,7 @@
                                 'ErrorInMaintenance': 'off',
                                 'PrepareForMaintenance': 'transition',
                                 'CancelMaintenance': 'warning',
-                                'Maintenance': 'warning',
+                                'Maintenance': 'warning'
                             },
                             compact: true
                         },
@@ -1055,7 +1071,7 @@
                         },
                         type: {
                             label: 'label.metrics.disk.storagetype'
-                        },
+                        }
                     }
                 },
                 disk: {

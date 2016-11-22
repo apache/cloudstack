@@ -16,25 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network;
-import com.cloud.network.Network.IpAddresses;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.VirtualMachine;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -59,17 +48,23 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
+import com.cloud.network.Network.IpAddresses;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
+public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
 
     private static final String s_name = "deployvirtualmachineresponse";
@@ -257,26 +252,12 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             return displayVm;
     }
 
-    public List<Long> getSecurityGroupIdList() {
-        if (securityGroupNameList != null && securityGroupIdList != null) {
-            throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
-        }
+    public List<String> getSecurityGroupNameList() {
+        return securityGroupNameList;
+    }
 
-       //transform group names to ids here
-       if (securityGroupNameList != null) {
-            List<Long> securityGroupIds = new ArrayList<Long>();
-            for (String groupName : securityGroupNameList) {
-                Long groupId = _responseGenerator.getSecurityGroupId(groupName, getEntityOwnerId());
-                if (groupId == null) {
-                    throw new InvalidParameterValueException("Unable to find group by name " + groupName);
-                } else {
-                    securityGroupIds.add(groupId);
-                }
-            }
-            return securityGroupIds;
-        } else {
-            return securityGroupIdList;
-        }
+    public List<Long> getSecurityGroupIdList() {
+        return securityGroupIdList;
     }
 
     public Long getServiceOfferingId() {
@@ -328,7 +309,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         return startVm == null ? true : startVm;
     }
 
-    private Map<Long, IpAddresses> getIpToNetworkMap() {
+    public Map<Long, IpAddresses> getIpToNetworkMap() {
         if ((networkIds != null || ipAddress != null || getIp6Address() != null) && ipToNetworkList != null) {
             throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
         }
@@ -363,6 +344,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         return ipToNetworkMap;
     }
 
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
     public String getIp6Address() {
         if (ip6Address == null) {
             return null;
@@ -390,6 +375,11 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         } else {
             return affinityGroupIdList;
         }
+    }
+
+    public String getKeyboard() {
+        // TODO Auto-generated method stub
+        return keyboard;
     }
 
     /////////////////////////////////////////////////////
@@ -478,129 +468,11 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
     }
 
-    // this is an opportunity to verify that parameters that came in via the Details Map are OK
-    // for example, minIops and maxIops should either both be specified or neither be specified and,
-    // if specified, minIops should be <= maxIops
-    private void verifyDetails() {
-        Map<String, String> map = getDetails();
-
-        if (map != null) {
-            String minIops = (String)map.get("minIops");
-            String maxIops = (String)map.get("maxIops");
-
-            verifyMinAndMaxIops(minIops, maxIops);
-
-            minIops = (String)map.get("minIopsDo");
-            maxIops = (String)map.get("maxIopsDo");
-
-            verifyMinAndMaxIops(minIops, maxIops);
-        }
-    }
-
-    private void verifyMinAndMaxIops(String minIops, String maxIops) {
-        if ((minIops != null && maxIops == null) || (minIops == null && maxIops != null)) {
-            throw new InvalidParameterValueException("Either 'Min IOPS' and 'Max IOPS' must both be specified or neither be specified.");
-        }
-
-        long lMinIops;
-
-        try {
-            if (minIops != null) {
-                lMinIops = Long.parseLong(minIops);
-            }
-            else {
-                lMinIops = 0;
-            }
-        }
-        catch (NumberFormatException ex) {
-            throw new InvalidParameterValueException("'Min IOPS' must be a whole number.");
-        }
-
-        long lMaxIops;
-
-        try {
-            if (maxIops != null) {
-                lMaxIops = Long.parseLong(maxIops);
-            }
-            else {
-                lMaxIops = 0;
-            }
-        }
-        catch (NumberFormatException ex) {
-            throw new InvalidParameterValueException("'Max IOPS' must be a whole number.");
-        }
-
-        if (lMinIops > lMaxIops) {
-            throw new InvalidParameterValueException("'Min IOPS' must be less than or equal to 'Max IOPS'.");
-        }
-    }
 
     @Override
     public void create() throws ResourceAllocationException {
         try {
-            //Verify that all objects exist before passing them to the service
-            Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
-
-            verifyDetails();
-
-            DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
-            if (zone == null) {
-                throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
-            }
-
-            ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
-            if (serviceOffering == null) {
-                throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
-            }
-
-            VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
-            // Make sure a valid template ID was specified
-            if (template == null) {
-                throw new InvalidParameterValueException("Unable to find the template " + templateId);
-            }
-
-            DiskOffering diskOffering = null;
-            if (diskOfferingId != null) {
-                diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
-                if (diskOffering == null) {
-                    throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
-                }
-            }
-
-            if (!zone.isLocalStorageEnabled()) {
-                if (serviceOffering.getUseLocalStorage()) {
-                    throw new InvalidParameterValueException("Zone is not configured to use local storage but service offering " + serviceOffering.getName() + " uses it");
-                }
-                if (diskOffering != null && diskOffering.getUseLocalStorage()) {
-                    throw new InvalidParameterValueException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
-                }
-            }
-
-            UserVm vm = null;
-            IpAddresses addrs = new IpAddresses(ipAddress, getIp6Address());
-            if (zone.getNetworkType() == NetworkType.Basic) {
-                if (getNetworkIds() != null) {
-                    throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
-                } else {
-                    vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name, displayName, diskOfferingId,
-                            size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(),
-                            getDetails(), getCustomId());
-                }
-            } else {
-                if (zone.isSecurityGroupEnabled())  {
-                    vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(), owner, name,
-                            displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard,
-                            getAffinityGroupIdList(), getDetails(), getCustomId());
-
-                } else {
-                    if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
-                        throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
-                    }
-                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName, diskOfferingId, size, group,
-                            getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(), getDetails(),
-                            getCustomId());
-                }
-            }
+            UserVm vm = _userVmService.createVirtualMachine(this);
 
             if (vm != null) {
                 setEntityId(vm.getId());

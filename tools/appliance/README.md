@@ -19,17 +19,17 @@ under the License.
 
 # Setting up Tools and Environment
 
-    - Install latest VirtualBox (at least 4.2)
-    - Install tools for exporting appliances: qemu-img, vboxmanage, vhd-util
+    - Install latest VirtualBox (5.0+)
+    - Install tools for exporting appliances: qemu-img, vboxmanage, vhd-util, ovftool
     - Install [RVM](https://rvm.io/rvm/install)
-    - Install shar
-          yum install sharutils
+    - Install dependencies (tested on Ubuntu 16.04):
+          apt-get install sharutils libxslt1-dev libxml2-dev zlib1g-dev build-essential ruby ruby-bundler ruby-dev qemu-utils blktap-utils faketime
     - Setup paths:
           export PATH=~/.rvm/bin:$PATH
-    - Install Ruby 1.9.3, if it installed some other version:
-          rvm install 1.9.3
-    - Set rvm to use that 1.9.3
-          rvm use ruby-1.9.3
+    - Install Ruby 2.3.0, if it installed some other version:
+          rvm install 2.3.0
+    - Set rvm to use that 2.3.0
+          rvm use ruby-2.3.0
     - Install bundler: (if you get any openssl issue see https://rvm.io/packages/openssl)
           gem install bundler
 
@@ -37,10 +37,6 @@ All the dependencies will be fetched automatically.
 
 To save some time if you've downloaded iso of your distro, put the isos in:
 tools/appliance/iso/
-
-Note, gem may require gcc-4.2, make sure link exists:
-
-    sudo ln -s /usr/bin/gcc /usr/bin/gcc-4.2
 
 # Setting up jenkins (CI) builds
 
@@ -69,9 +65,10 @@ bundle_args="--path vendor/bundle"
 # How to build SystemVMs automatically
 
 Just run build.sh, it will export archived appliances for KVM, XenServer,
-VMWare and HyperV in `dist`:
+VMWare and HyperV in `dist` directory:
 
-    bash build.sh [systemvmtemplate|systemvmtemplate64]
+    bundle install
+    bash build.sh systemvm64template
 
 # Building SystemVM template appliance manually
 
@@ -103,7 +100,7 @@ the systemvmtemplate:
 
 Troubleshooting
 ===============
-If you see following line in the screen, then veewee is failing 
+If you see following line in the screen, then veewee is failing
 extracting vboxmanage version.
 
     Downloading vbox guest additions iso v  - http://download.virtualbox.org/vi

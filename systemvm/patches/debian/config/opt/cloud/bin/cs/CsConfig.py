@@ -58,25 +58,38 @@ class CsConfig(object):
         return self.__LOG_LEVEL
 
     def is_vpc(self):
-        return self.cl.get_type() == "vpcrouter"
+        return self.cl.get_type() == 'vpcrouter'
 
     def is_router(self):
-        return self.cl.get_type() == "router"
+        return self.cl.get_type() == 'router'
+
+    def is_dhcp(self):
+        return self.cl.get_type() == 'dhcpsrvr'
+
+    def has_dns(self):
+        return not self.use_extdns()
+
+    def has_metadata(self):
+        return any((self.is_vpc(), self.is_router(), self.is_dhcp()))
 
     def get_domain(self):
         return self.cl.get_domain()
 
+    def use_extdns(self):
+        return self.cmdline().idata().get('useextdns', 'false') == 'true'
+
     def get_dns(self):
+        conf = self.cmdline().idata()
         dns = []
-        if not self.cl.get_use_ext_dns():
-            if not self.is_vpc() and self.cl.is_redundant():
+        if not self.use_extdns():
+            if not self.is_vpc() and self.cl.is_redundant() and self.cl.get_guest_gw():
                 dns.append(self.cl.get_guest_gw())
             else:
                 dns.append(self.address().get_guest_ip())
-        names = ["dns1", "dns2"]
-        for name in names:
-            if name in self.cmdline().idata():
-                dns.append(self.cmdline().idata()[name])
+
+        for name in ('dns1', 'dns2'):
+            if name in conf:
+                dns.append(conf[name])
         return dns
 
     def get_format(self):

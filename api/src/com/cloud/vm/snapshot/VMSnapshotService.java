@@ -27,11 +27,12 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
 public interface VMSnapshotService {
 
-    List<? extends VMSnapshot> listVMSnapshots(ListVMSnapshotCmd cmd);
+    Pair<List<? extends VMSnapshot>, Integer> listVMSnapshots(ListVMSnapshotCmd cmd);
 
     VMSnapshot getVMSnapshotById(Long id);
 

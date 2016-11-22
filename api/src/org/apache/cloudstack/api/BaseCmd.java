@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import com.cloud.utils.HttpUtils;
+import org.apache.cloudstack.acl.RoleService;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -85,6 +86,7 @@ import com.cloud.vm.snapshot.VMSnapshotService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
+    public static final String RESPONSE_SUFFIX = "response";
     public static final String RESPONSE_TYPE_XML = HttpUtils.RESPONSE_TYPE_XML;
     public static final String RESPONSE_TYPE_JSON = HttpUtils.RESPONSE_TYPE_JSON;
     public static final String USER_ERROR_MESSAGE = "Internal error executing command, please contact your system administrator";
@@ -104,11 +106,12 @@ public abstract class BaseCmd {
     @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
 
-
     @Inject
     public ConfigurationService _configService;
     @Inject
     public AccountService _accountService;
+    @Inject
+    public RoleService roleService;
     @Inject
     public UserVmService _userVmService;
     @Inject
@@ -323,7 +326,7 @@ public abstract class BaseCmd {
             if (allowedRoles.length > 0) {
                 roleIsAllowed = false;
                 for (final RoleType allowedRole : allowedRoles) {
-                    if (allowedRole.getValue() == caller.getType()) {
+                    if (allowedRole.getAccountType() == caller.getType()) {
                         roleIsAllowed = true;
                         break;
                     }

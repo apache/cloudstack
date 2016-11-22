@@ -3583,7 +3583,10 @@
                                             });
                                             networkServiceObjs.push({
                                                 name: 'Lb',
-                                                provider: [{name: 'VpcVirtualRouter'}]
+                                                provider: [
+                                                       {name: 'VpcVirtualRouter'},
+                                                       {name: 'InternalLbVm'}
+                                                ]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'Gateway',

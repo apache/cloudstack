@@ -15,15 +15,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from CsDatabag import CsDataBag, CsCmdLine
-from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
-import CsHelper
 import logging
 from netaddr import IPAddress, IPNetwork
-import CsHelper
-
 import subprocess
 import time
+import CsHelper
+from CsDatabag import CsDataBag
+from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
 from CsRoute import CsRoute
 from CsRule import CsRule
 
@@ -198,7 +196,7 @@ class CsInterface:
         return self.get_attr("add")
 
     def to_str(self):
-        pprint(self.address)
+        return self.address
 
 
 class CsDevice:
@@ -293,9 +291,10 @@ class CsIP:
 
             interfaces = [CsInterface(address, self.config)]
             CsHelper.reconfigure_interfaces(self.cl, interfaces)
-
             self.set_mark()
-            self.arpPing()
+
+            if 'gateway' in self.address:
+                self.arpPing()
 
             CsRpsrfs(self.dev).enable()
             self.post_config_change("add")
@@ -395,12 +394,13 @@ class CsIP:
         self.fw.append(["filter", "", "-A INPUT -i lo -j ACCEPT"])
 
         if self.get_type() in ["guest"]:
+            guestNetworkCidr = self.address['network']
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
             self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -j ACCEPT" % self.dev])
+                ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -j ACCEPT" % self.dev])
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -m state --state NEW -j ACCEPT" % self.dev])
             self.fw.append(
@@ -433,13 +433,20 @@ class CsIP:
         self.fw.append(["mangle", "front", "-A PREROUTING " +
                         "-m state --state RELATED,ESTABLISHED " +
                         "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
+        
+        self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])
+
         if self.get_type() in ["guest"]:
+            guestNetworkCidr = self.address['network']
             self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
-                            (self.address['network'], self.dev, self.dev)])
+                            (guestNetworkCidr, self.dev, self.dev)])
             self.fw.append(
                 ["filter", "front", "-A ACL_INBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
             self.fw.append(
                 ["filter", "front", "-A ACL_INBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
+            self.fw.append(
+                ["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
+
             self.fw.append(
                 ["mangle", "front", "-A ACL_OUTBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
             self.fw.append(
@@ -447,9 +454,9 @@ class CsIP:
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
             self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -j ACCEPT" % self.dev])
+                ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -j ACCEPT" % self.dev])
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
 
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -m state --state NEW -j ACCEPT" % self.dev])
@@ -457,18 +464,16 @@ class CsIP:
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -m state --state NEW -j ACCEPT" % self.dev])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
-                            (self.dev, self.address[
-                             'network'], self.address['gateway'], self.dev)
-                            ])
+                            (self.dev, guestNetworkCidr, self.address['gateway'], self.dev)])
+
+            self.fw.append(["", "front", "-A NETWORK_STATS_%s -i %s -d %s" %
+                            ("eth1", "eth1", guestNetworkCidr)])
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" %
-                            ("eth1", "eth1", self.address['network'])])
-            self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -d %s" %
-                            ("eth1", "eth1", self.address['network'])])
+                            ("eth1", "eth1", guestNetworkCidr)])
+
             self.fw.append(["nat", "front",
                             "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
-                            (self.address['network'], self.dev,
-                             self.address['public_ip'])
-                            ])
+                            (guestNetworkCidr, self.dev, self.address['public_ip'])])
 
         if self.get_type() in ["public"]:
             self.fw.append(["", "front",
@@ -497,7 +502,10 @@ class CsIP:
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
 
         self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -i lo -j ACCEPT"])
+
         self.fw.append(["filter", "", "-A INPUT -i eth0 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT"])
 
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
@@ -514,16 +522,19 @@ class CsIP:
         self.fw_vpcrouter()
 
         # On deletion nw_type will no longer be known
-        if self.get_type() in ["guest"] and self.config.is_vpc():
+        if self.get_type() in ('guest'):
+            if self.config.is_vpc() or self.config.is_router():
+                CsDevice(self.dev, self.config).configure_rp()
+                logging.error(
+                    "Not able to setup source-nat for a regular router yet")
 
-            CsDevice(self.dev, self.config).configure_rp()
+            if self.config.has_dns() or self.config.is_dhcp():
+                dns = CsDnsmasq(self)
+                dns.add_firewall_rules()
 
-            logging.error(
-                "Not able to setup source-nat for a regular router yet")
-            dns = CsDnsmasq(self)
-            dns.add_firewall_rules()
-            app = CsApache(self)
-            app.setup()
+            if self.config.has_metadata():
+                app = CsApache(self)
+                app.setup()
 
         cmdline = self.config.cmdline()
         # If redundant then this is dealt with by the master backup functions
@@ -534,7 +545,7 @@ class CsIP:
             if self.address["source_nat"]:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(
-                    ["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
+                    ["filter", 3, "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                 self.fw.append(
                     ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
 
@@ -685,3 +696,4 @@ class CsRpsrfs:
         if count < 2:
             logging.debug("Single CPU machine")
         return count
+

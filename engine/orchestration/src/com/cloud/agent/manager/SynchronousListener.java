@@ -79,6 +79,18 @@ public class SynchronousListener implements Listener {
     }
 
     @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
+    }
+
+    @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
     }
 

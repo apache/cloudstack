@@ -77,7 +77,7 @@ public class UploadVO implements Upload {
     @Column(name = "job_id")
     private String jobId;
 
-    @Column(name = "url")
+    @Column(name = "url", length = 2048)
     private String uploadUrl;
 
     @Column(name = "install_path")

@@ -191,8 +191,10 @@ import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -200,6 +202,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -342,6 +345,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private ClusterDetailsDao _clusterDetailsDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -549,6 +554,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
+            DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
+            if (datacenter != null) {
+                vmSnapshotResponse.setZoneId(datacenter.getUuid());
+            }
         }
         if (vmSnapshot.getParent() != null) {
             VMSnapshot vmSnapshotParent = ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent());
@@ -562,6 +571,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmSnapshotResponse.setProjectId(project.getUuid());
             vmSnapshotResponse.setProjectName(project.getName());
         }
+        Account account = ApiDBUtils.findAccountById(vmSnapshot.getAccountId());
+        if (account != null) {
+            vmSnapshotResponse.setAccountName(account.getAccountName());
+        }
+        DomainVO domain = ApiDBUtils.findDomainById(vmSnapshot.getDomainId());
+        if (domain != null) {
+            vmSnapshotResponse.setDomainId(domain.getUuid());
+            vmSnapshotResponse.setDomainName(domain.getName());
+        }
+
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
         vmSnapshotResponse.setObjectName("vmsnapshot");
@@ -1053,6 +1072,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         String memoryOvercommitRatio = ApiDBUtils.findClusterDetails(cluster.getId(), "memoryOvercommitRatio");
         clusterResponse.setCpuOvercommitRatio(cpuOvercommitRatio);
         clusterResponse.setMemoryOvercommitRatio(memoryOvercommitRatio);
+        clusterResponse.setResourceDetails(_clusterDetailsDao.findDetails(cluster.getId()));
 
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());
@@ -1388,7 +1408,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
         List<TemplateJoinVO> tvo = null;
-        if (zoneId == null || zoneId == -1) {
+        if (zoneId == null || zoneId == -1 || result.isCrossZones()) {
             tvo = ApiDBUtils.newTemplateView(result);
         } else {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);

@@ -110,6 +110,30 @@ public interface StorageManager extends StorageService {
 
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
 
+    /**
+     * This comment is relevant to managed storage only.
+     *
+     *  Long clusterId = only used for managed storage
+     *
+     *  Some managed storage can be more efficient handling VM templates (via cloning) if it knows the capabilities of the compute cluster it is dealing with.
+     *  If the compute cluster supports UUID resigning and the storage system can clone a volume from a volume, then this determines how much more space a
+     *  new root volume (that makes use of a template) will take up on the storage system.
+     *
+     *  For example, if a storage system can clone a volume from a volume and the compute cluster supports UUID resigning (relevant for hypervisors like
+     *  XenServer and ESXi that put virtual disks in clustered file systems), then the storage system will need to determine if it already has a copy of
+     *  the template or if it will need to create one first before cloning the template to a new volume to be used for the new root disk (assuming the root
+     *  disk is being deployed from a template). If the template doesn't already exists on the storage system, then you need to take into consideration space
+     *  required for that template (stored in one volume) and space required for a new volume created from that template volume (for your new root volume).
+     *
+     *  If UUID resigning is not available in the compute cluster or the storage system doesn't support cloning a volume from a volume, then for each new
+     *  root disk that uses a template, CloudStack will have the template be copied down to a newly created volume on the storage system (i.e. no need
+     *  to take into consideration the possible need to first create a volume on the storage system for a template that will be used for the root disk
+     *  via cloning).
+     *
+     *  Cloning volumes on the back-end instead of copying down a new template for each new volume helps to alleviate load on the hypervisors.
+     */
+    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
+
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;

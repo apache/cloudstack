@@ -1823,6 +1823,7 @@
         <script type="text/javascript" src="scripts/ui-custom/uploadVolume.js"></script>
         <script type="text/javascript" src="scripts/storage.js"></script>
         <script type="text/javascript" src="scripts/templates.js"></script>
+        <script type="text/javascript" src="scripts/roles.js"></script>
         <script type="text/javascript" src="scripts/accountsWizard.js"></script>
         <script type="text/javascript" src="scripts/ui-custom/accountsWizard.js"></script>
         <script type="text/javascript" src="scripts/accounts.js"></script>

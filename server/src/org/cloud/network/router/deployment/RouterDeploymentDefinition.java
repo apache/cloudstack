@@ -193,28 +193,45 @@ public class RouterDeploymentDefinition {
     }
 
     public List<DomainRouterVO> deployVirtualRouter() throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-
         findOrDeployVirtualRouter();
-
         return nwHelper.startRouters(this);
+    }
+
+    private boolean isRouterDeployed() throws ResourceUnavailableException {
+        boolean isDeployed = true;
+        checkPreconditions();
+        final List<DeployDestination> destinations = findDestinations();
+        for (final DeployDestination destination : destinations) {
+            dest = destination;
+            generateDeploymentPlan();
+            planDeploymentRouters();
+            if (getNumberOfRoutersToDeploy() > 0 && prepareDeployment()) {
+                isDeployed = false;
+                break;
+            }
+        }
+        return isDeployed;
     }
 
     @DB
     protected void findOrDeployVirtualRouter() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        try {
-            lock();
-            checkPreconditions();
+        if (!isRouterDeployed()) {
+            try {
+                lock();
+                // reset router list that got populated during isRouterDeployed()
+                routers.clear();
+                checkPreconditions();
 
-            // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
-            final List<DeployDestination> destinations = findDestinations();
-
-            for (final DeployDestination destination : destinations) {
-                dest = destination;
-                generateDeploymentPlan();
-                executeDeployment();
+                // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
+                final List<DeployDestination> destinations = findDestinations();
+                for (final DeployDestination destination : destinations) {
+                    dest = destination;
+                    generateDeploymentPlan();
+                    executeDeployment();
+                }
+            } finally {
+                unlock();
             }
-        } finally {
-            unlock();
         }
     }
 
@@ -378,7 +395,7 @@ public class RouterDeploymentDefinition {
         final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
 
         if (provider == null) {
-            throw new CloudRuntimeException(String.format("Cannot find service provider %s  in physical network %s", type.toString(), physicalNetworkId));
+            throw new CloudRuntimeException(String.format("Cannot find service provider %s in physical network %s", type.toString(), physicalNetworkId));
         }
 
         vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);

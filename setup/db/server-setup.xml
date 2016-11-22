@@ -239,6 +239,13 @@ under the License.
       <value>qatest-vmops.com</value>
     </configuration>
     <!--
+    Enable Dynamic RBAC by default for fresh installations
+    -->
+    <configuration>
+      <name>dynamic.apichecker.enabled</name>
+      <value>true</value>
+    </configuration>
+    <!--
     The instance.name parameter is tacked to the end of the names of the VMs you create.
     So, for example, with the TEST value as it ships by default, your VMs would be named:
     i-X-Y-TEST, where X is the account ID and Y is the serially incrementing VM ID.

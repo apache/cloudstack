@@ -26,6 +26,7 @@ under the License.
 <script type="text/javascript">
  $.extend(dictionary, {
 'label.add.ldap.account': '<fmt:message key="label.add.ldap.account" />',
+'label.rule': '<fmt:message key="label.rule" />',
 'label.rules': '<fmt:message key="label.rules" />',
 'label.running.vms': '<fmt:message key="label.running.vms" />',
 'label.s3.access_key': '<fmt:message key="label.s3.access_key" />',

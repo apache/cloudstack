@@ -28,6 +28,8 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -57,7 +59,9 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
     @Inject
-    protected HostPodDao _hostPodDao;
+    private ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    protected HostPodDao hostPodDao;
 
     public ClusterDaoImpl() {
         super();
@@ -214,7 +218,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     @Override
     public List<Long> listClustersWithDisabledPods(long zoneId) {
 
-        GenericSearchBuilder<HostPodVO, Long> disabledPodIdSearch = _hostPodDao.createSearchBuilder(Long.class);
+        GenericSearchBuilder<HostPodVO, Long> disabledPodIdSearch = hostPodDao.createSearchBuilder(Long.class);
         disabledPodIdSearch.selectFields(disabledPodIdSearch.entity().getId());
         disabledPodIdSearch.and("dataCenterId", disabledPodIdSearch.entity().getDataCenterId(), Op.EQ);
         disabledPodIdSearch.and("allocationState", disabledPodIdSearch.entity().getAllocationState(), Op.EQ);
@@ -259,5 +263,24 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         SearchCriteria<Long> sc = ClusterIdSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public boolean getSupportsResigning(long clusterId) {
+        ClusterVO cluster = findById(clusterId);
+
+        if (cluster == null || cluster.getAllocationState() != Grouping.AllocationState.Enabled) {
+            return false;
+        }
+
+        ClusterDetailsVO clusterDetailsVO = clusterDetailsDao.findDetail(clusterId, "supportsResign");
+
+        if (clusterDetailsVO != null) {
+            String value = clusterDetailsVO.getValue();
+
+            return Boolean.parseBoolean(value);
+        }
+
+        return false;
     }
 }

@@ -69,5 +69,7 @@
         <property name="snapshotStrategies" value="#{snapshotStrategiesRegistry.registered}" />
         <property name="vmSnapshotStrategies" value="#{vmSnapshotStrategiesRegistry.registered}" />
     </bean>
+    
+    <bean id="imageStoreDetailsUtil" class="com.cloud.storage.ImageStoreDetailsUtil" />
 
 </beans>

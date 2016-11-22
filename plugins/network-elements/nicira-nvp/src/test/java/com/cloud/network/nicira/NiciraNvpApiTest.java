@@ -33,9 +33,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpStatus;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;

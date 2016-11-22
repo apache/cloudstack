@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 
+import com.cloud.utils.Pair;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 @APICommand(name = "listVMSnapshot", description = "List virtual machine snapshot by conditions", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
@@ -38,6 +39,9 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, entityType = VMSnapshotResponse.class, description = "The ID of the VM snapshot")
     private Long id;
+
+    @Parameter(name=ApiConstants.VM_SNAPSHOT_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=VMSnapshotResponse.class, description="the IDs of the vm snapshots, mutually exclusive with vmsnapshotid", since = "4.9")
+    private List<Long> ids;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine snapshot")
     private String state;
@@ -66,15 +70,15 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute() {
-        List<? extends VMSnapshot> result = _vmSnapshotService.listVMSnapshots(this);
+        Pair<List<? extends VMSnapshot>,Integer> result = _vmSnapshotService.listVMSnapshots(this);
         ListResponse<VMSnapshotResponse> response = new ListResponse<VMSnapshotResponse>();
         List<VMSnapshotResponse> snapshotResponses = new ArrayList<VMSnapshotResponse>();
-        for (VMSnapshot r : result) {
+        for (VMSnapshot r : result.first()) {
             VMSnapshotResponse vmSnapshotResponse = _responseGenerator.createVMSnapshotResponse(r);
             vmSnapshotResponse.setObjectName("vmSnapshot");
             snapshotResponses.add(vmSnapshotResponse);
         }
-        response.setResponses(snapshotResponses);
+        response.setResponses(snapshotResponses, result.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -82,6 +86,10 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+
+    public List<Long> getIds() {
+        return ids;
     }
 
 }

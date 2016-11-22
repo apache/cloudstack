@@ -49,7 +49,8 @@ public final class CitrixModifyStoragePoolCommandWrapper extends CommandWrapper<
         final boolean add = command.getAdd();
         if (add) {
             try {
-                final SR sr = citrixResourceBase.getStorageRepository(conn, pool.getUuid());
+                final String srName = command.getStoragePath() != null ? command.getStoragePath() : pool.getUuid();
+                final SR sr = citrixResourceBase.getStorageRepository(conn, srName);
                 citrixResourceBase.setupHeartbeatSr(conn, sr, false);
                 final long capacity = sr.getPhysicalSize(conn);
                 final long available = capacity - sr.getPhysicalUtilisation(conn);
@@ -81,7 +82,7 @@ public final class CitrixModifyStoragePoolCommandWrapper extends CommandWrapper<
                 if (result == null || !result.split("#")[1].equals("0")) {
                     throw new CloudRuntimeException("Unable to remove heartbeat file entry for SR " + srUuid + " due to " + result);
                 }
-                return new Answer(command, true, "seccuss");
+                return new Answer(command, true, "success");
             } catch (final XenAPIException e) {
                 final String msg = "ModifyStoragePoolCommand remove XenAPIException:" + e.toString() + " host:" + citrixResourceBase.getHost().getUuid() + " pool: "
                         + pool.getHost() + pool.getPath();

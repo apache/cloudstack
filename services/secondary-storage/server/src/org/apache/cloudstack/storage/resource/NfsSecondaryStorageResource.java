@@ -16,7 +16,91 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
+import static com.cloud.utils.storage.S3.S3Utils.putFile;
+import static com.cloud.utils.StringUtils.join;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang.StringUtils.substringAfterLast;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.Storage;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.utils.EncryptionUtil;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.log4j.Logger;
+
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -51,13 +135,11 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -67,98 +149,20 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.RawImageProcessor;
 import com.cloud.storage.template.TARProcessor;
-import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.VmdkProcessor;
-import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.SecondaryStorageVm;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
-import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.cloudstack.storage.template.DownloadManager;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
-import org.apache.cloudstack.storage.template.UploadEntity;
-import org.apache.cloudstack.storage.template.UploadManager;
-import org.apache.cloudstack.storage.template.UploadManagerImpl;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
-
-import javax.naming.ConfigurationException;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static com.cloud.utils.StringUtils.join;
-import static com.cloud.utils.storage.S3.S3Utils.putFile;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
@@ -201,6 +205,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private String _storageIp;
     private String _storageNetmask;
     private String _storageGateway;
+    private Integer _nfsVersion;
     private final List<String> nfsIps = new ArrayList<String>();
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
@@ -222,6 +227,26 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     public void setInSystemVM(boolean inSystemVM) {
         _inSystemVM = inSystemVM;
+    }
+
+    /**
+     * Retrieve converted "nfsVersion" value from params
+     * @param params
+     * @return nfsVersion value if exists, null in other case
+     */
+    public static Integer retrieveNfsVersionFromParams(Map<String, Object> params){
+        Integer nfsVersion = null;
+        if (params.get("nfsVersion") != null){
+            String nfsVersionParam = (String)params.get("nfsVersion");
+            try {
+                nfsVersion = Integer.valueOf(nfsVersionParam);
+            }
+            catch (NumberFormatException e){
+                s_logger.error("Couldn't cast " + nfsVersionParam + " to integer");
+                return null;
+            }
+        }
+        return nfsVersion;
     }
 
     @Override
@@ -348,7 +373,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         final String storagePath = destImageStore.getUrl();
         final String destPath = destData.getPath();
         try {
-            String downloadPath = determineStorageTemplatePath(storagePath, destPath);
+            String downloadPath = determineStorageTemplatePath(storagePath, destPath, _nfsVersion);
             final File downloadDirectory = _storage.getFile(downloadPath);
 
             if (downloadDirectory.exists()) {
@@ -375,7 +400,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         try {
 
-            String downloadPath = determineStorageTemplatePath(storagePath, destPath);
+            String downloadPath = determineStorageTemplatePath(storagePath, destPath, _nfsVersion);
             final File downloadDirectory = _storage.getFile(downloadPath);
 
             if (downloadDirectory.exists()) {
@@ -387,15 +412,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     return new CopyCmdAnswer(errMsg);
                 }
             }
-
             File destFile = new File(downloadDirectory, substringAfterLast(srcData.getPath(), S3Utils.SEPARATOR));
-
             S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), destFile).waitForCompletion();
-
-
-            if (destFile == null) {
-                return new CopyCmdAnswer("Can't find template");
-            }
 
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
         } catch (Exception e) {
@@ -408,7 +426,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore, TemplateObjectTO destData,
             NfsTO destDataStore) {
-        String srcMountPoint = getRootDir(srcDataStore.getUrl());
+        String srcMountPoint = getRootDir(srcDataStore.getUrl(), _nfsVersion);
         String snapshotPath = srcData.getPath();
         int index = snapshotPath.lastIndexOf("/");
         String snapshotName = snapshotPath.substring(index + 1);
@@ -418,7 +436,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         snapshotPath = snapshotPath.substring(0, index);
 
         snapshotPath = srcMountPoint + File.separator + snapshotPath;
-        String destMountPoint = getRootDir(destDataStore.getUrl());
+        String destMountPoint = getRootDir(destDataStore.getUrl(), _nfsVersion);
         String destPath = destMountPoint + File.separator + destData.getPath();
 
         String errMsg = null;
@@ -476,8 +494,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (srcData.getHypervisorType() == HypervisorType.XenServer) {
             return copySnapshotToTemplateFromNfsToNfsXenserver(cmd, srcData, srcDataStore, destData, destDataStore);
         } else if (srcData.getHypervisorType() == HypervisorType.KVM) {
-            File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
-            File destFile = getFile(destData.getPath(), destDataStore.getUrl());
+            File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl(), _nfsVersion);
+            File destFile = getFile(destData.getPath(), destDataStore.getUrl(), _nfsVersion);
 
             VolumeObjectTO volumeObjectTO = srcData.getVolume();
             ImageFormat srcFormat = null;
@@ -561,8 +579,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new CopyCmdAnswer("");
     }
 
-    protected File getFile(String path, String nfsPath) {
-        String filePath = getRootDir(nfsPath) + File.separator + path;
+    protected File getFile(String path, String nfsPath, Integer nfsVersion) {
+        String filePath = getRootDir(nfsPath, nfsVersion) + File.separator + path;
         File f = new File(filePath);
         if (!f.exists()) {
             _storage.mkdirs(filePath);
@@ -674,7 +692,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
-    @SuppressWarnings("unchecked")
     protected String determineS3TemplateDirectory(final Long accountId, final Long templateId, final String templateUniqueName) {
         return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId, templateUniqueName), S3Utils.SEPARATOR);
     }
@@ -683,7 +700,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR);
     }
 
-    @SuppressWarnings("unchecked")
     protected String determineS3VolumeDirectory(final Long accountId, final Long volId) {
         return join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
     }
@@ -692,8 +708,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return Long.parseLong(StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR));
     }
 
-    private String determineStorageTemplatePath(final String storagePath, String dataPath) {
-        return join(asList(getRootDir(storagePath), dataPath), File.separator);
+    private String determineStorageTemplatePath(final String storagePath, String dataPath, Integer nfsVersion) {
+        return join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
     }
 
     protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path, String name) {
@@ -707,7 +723,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 throw new CloudRuntimeException("Failed to get url: " + url);
             }
 
-            String nfsMountPath = getRootDir(nfs.getUrl());
+            String nfsMountPath = getRootDir(nfs.getUrl(), _nfsVersion);
 
             String filePath = nfsMountPath + File.separator + path;
             File directory = new File(filePath);
@@ -868,7 +884,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         final S3TO s3 = (S3TO)destDataStore;
 
         try {
-            final String templatePath = determineStorageTemplatePath(srcStore.getUrl(), srcData.getPath());
+            final String templatePath = determineStorageTemplatePath(srcStore.getUrl(), srcData.getPath(), _nfsVersion);
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found " + srcData.getObjectType() + " from directory " + templatePath + " to upload to S3.");
@@ -999,7 +1015,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO srcDataStore = srcData.getDataStore();
         NfsTO srcStore = (NfsTO)srcDataStore;
         DataStoreTO destDataStore = destData.getDataStore();
-        File srcFile = getFile(srcData.getPath(), srcStore.getUrl());
+        File srcFile = getFile(srcData.getPath(), srcStore.getUrl(), _nfsVersion);
 
         SwiftTO swift = (SwiftTO)destDataStore;
 
@@ -1193,7 +1209,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO)dstore;
             String relativeSnapshotPath = cmd.getDirectory();
-            String parent = getRootDir(nfs.getUrl());
+            String parent = getRootDir(nfs.getUrl(), _nfsVersion);
 
             if (relativeSnapshotPath.startsWith(File.separator)) {
                 relativeSnapshotPath = relativeSnapshotPath.substring(1);
@@ -1271,7 +1287,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, false, "can't handle non nfs data store");
         }
         NfsTO nfsStore = (NfsTO)store;
-        String parent = getRootDir(nfsStore.getUrl());
+        String parent = getRootDir(nfsStore.getUrl(), _nfsVersion);
 
         if (relativeTemplatePath.startsWith(File.separator)) {
             relativeTemplatePath = relativeTemplatePath.substring(1);
@@ -1405,7 +1421,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 String nfsHostIp = getUriHostIp(uri);
 
                 addRouteToInternalIpOrCidr(_storageGateway, _storageIp, _storageNetmask, nfsHostIp);
-                String dir = mountUri(uri);
+
+                String dir = mountUri(uri, cmd.getNfsVersion());
 
                 configCerts(cmd.getCerts());
 
@@ -1481,7 +1498,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataStoreTO dstore = obj.getDataStore();
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO)dstore;
-            String parent = getRootDir(nfs.getUrl());
+            String parent = getRootDir(nfs.getUrl(), _nfsVersion);
             if (!parent.endsWith(File.separator)) {
                 parent += File.separator;
             }
@@ -1652,7 +1669,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (store instanceof NfsTO) {
             NfsTO nfs = (NfsTO)store;
             String secUrl = nfs.getUrl();
-            String root = getRootDir(secUrl);
+            String root = getRootDir(secUrl, cmd.getNfsVersion());
             Map<String, TemplateProp> templateInfos = _dlMgr.gatherTemplateInfo(root);
             return new ListTemplateAnswer(secUrl, templateInfos);
         } else if (store instanceof SwiftTO) {
@@ -1674,7 +1691,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         DataStoreTO store = cmd.getDataStore();
         if (store instanceof NfsTO) {
-            String root = getRootDir(cmd.getSecUrl());
+            String root = getRootDir(cmd.getSecUrl(), _nfsVersion);
             Map<Long, TemplateProp> templateInfos = _dlMgr.gatherVolumeInfo(root);
             return new ListVolumeAnswer(cmd.getSecUrl(), templateInfos);
         } else if (store instanceof S3TO) {
@@ -1809,7 +1826,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new GetStorageStatsAnswer(cmd, infinity, 0L);
         }
 
-        String rootDir = getRootDir(((NfsTO)store).getUrl());
+        String rootDir = getRootDir(((NfsTO)store).getUrl(), cmd.getNfsVersion());
         final long usedSize = getUsedSize(rootDir);
         final long totalSize = getTotalSize(rootDir);
         if (usedSize == -1 || totalSize == -1) {
@@ -1843,7 +1860,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO)dstore;
             String relativeTemplatePath = obj.getPath();
-            String parent = getRootDir(nfs.getUrl());
+            String parent = getRootDir(nfs.getUrl(), _nfsVersion);
 
             if (relativeTemplatePath.startsWith(File.separator)) {
                 relativeTemplatePath = relativeTemplatePath.substring(1);
@@ -1947,7 +1964,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO)dstore;
             String relativeVolumePath = obj.getPath();
-            String parent = getRootDir(nfs.getUrl());
+            String parent = getRootDir(nfs.getUrl(), _nfsVersion);
 
             if (relativeVolumePath.startsWith(File.separator)) {
                 relativeVolumePath = relativeVolumePath.substring(1);
@@ -2049,13 +2066,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     @Override
-    synchronized public String getRootDir(String secUrl) {
+    synchronized public String getRootDir(String secUrl, Integer nfsVersion) {
         if (!_inSystemVM) {
             return _parent;
         }
         try {
             URI uri = new URI(secUrl);
-            String dir = mountUri(uri);
+            String dir = mountUri(uri, nfsVersion);
             return _parent + "/" + dir;
         } catch (Exception e) {
             String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
@@ -2212,6 +2229,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             startAdditionalServices();
             _params.put("install.numthreads", "50");
             _params.put("secondary.storage.vm", "true");
+            _nfsVersion = retrieveNfsVersionFromParams(params);
         }
 
         try {
@@ -2386,15 +2404,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      * @param uri
      *            crresponding to the remote device. Will throw for unsupported
      *            scheme.
+     * @param imgStoreId
+     * @param nfsVersion NFS version to use in mount command
      * @return name of folder in _parent that device was mounted.
      * @throws UnknownHostException
      */
-    protected String mountUri(URI uri) throws UnknownHostException {
+    protected String mountUri(URI uri, Integer nfsVersion) throws UnknownHostException {
         String uriHostIp = getUriHostIp(uri);
         String nfsPath = uriHostIp + ":" + uri.getPath();
 
         // Single means of calculating mount directory regardless of scheme
-        String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
+        String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
         String localRootPath = _parent + "/" + dir;
 
         // remote device syntax varies by scheme.
@@ -2406,9 +2426,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             remoteDevice = nfsPath;
             s_logger.debug("Mounting device with nfs-style path of " + remoteDevice);
         }
-
-        mount(localRootPath, remoteDevice, uri);
-
+        mount(localRootPath, remoteDevice, uri, nfsVersion);
         return dir;
     }
 
@@ -2435,15 +2453,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         s_logger.debug("Successfully umounted " + localRootPath);
     }
 
-    protected void mount(String localRootPath, String remoteDevice, URI uri) {
-        s_logger.debug("mount " + uri.toString() + " on " + localRootPath);
+    protected void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
+        s_logger.debug("mount " + uri.toString() + " on " + localRootPath + ((nfsVersion != null) ? " nfsVersion="+nfsVersion : ""));
         ensureLocalRootPathExists(localRootPath, uri);
 
         if (mountExists(localRootPath, uri)) {
             return;
         }
 
-        attemptMount(localRootPath, remoteDevice, uri);
+        attemptMount(localRootPath, remoteDevice, uri, nfsVersion);
 
         // XXX: Adding the check for creation of snapshots dir here. Might have
         // to move it somewhere more logical later.
@@ -2451,9 +2469,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         checkForVolumesDir(localRootPath);
     }
 
-    protected void attemptMount(String localRootPath, String remoteDevice, URI uri) {
+    protected void attemptMount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
         String result;
-        s_logger.debug("Make cmdline call to mount " + remoteDevice + " at " + localRootPath + " based on uri " + uri);
+        s_logger.debug("Make cmdline call to mount " + remoteDevice + " at " + localRootPath + " based on uri " + uri
+                + ((nfsVersion != null) ? " nfsVersion=" + nfsVersion : ""));
         Script command = new Script(!_inSystemVM, "mount", _timeout, s_logger);
 
         String scheme = uri.getScheme().toLowerCase();
@@ -2465,7 +2484,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 command.add("-o", "resvport");
             }
             if (_inSystemVM) {
-                command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
+                command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0" + ((nfsVersion != null) ? ",vers=" + nfsVersion : ""));
             }
         } else if (scheme.equals("cifs")) {
             String extraOpts = parseCifsMountOptions(uri);
@@ -2742,7 +2761,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 //relative path with out ssvm mount info.
                 uploadEntity.setTemplatePath(absolutePath);
                 String dataStoreUrl = cmd.getDataTo();
-                String installPathPrefix = this.getRootDir(dataStoreUrl) + File.separator + absolutePath;
+                String installPathPrefix = this.getRootDir(dataStoreUrl, cmd.getNfsVersion()) + File.separator + absolutePath;
                 uploadEntity.setInstallPathPrefix(installPathPrefix);
                 uploadEntity.setHvm(cmd.getRequiresHvm());
                 uploadEntity.setChksum(cmd.getChecksum());
@@ -2764,7 +2783,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private synchronized void checkSecondaryStorageResourceLimit(TemplateOrVolumePostUploadCommand cmd, int contentLengthInGB) {
-        String rootDir = this.getRootDir(cmd.getDataTo()) + File.separator;
+        String rootDir = this.getRootDir(cmd.getDataTo(), cmd.getNfsVersion()) + File.separator;
         long accountId = cmd.getAccountId();
 
         long accountTemplateDirSize = 0;
@@ -2811,7 +2830,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private boolean isOneTimePostUrlUsed(TemplateOrVolumePostUploadCommand cmd) {
         String uuid = cmd.getEntityUUID();
-        String uploadPath = this.getRootDir(cmd.getDataTo()) + File.separator + cmd.getAbsolutePath();
+        String uploadPath = this.getRootDir(cmd.getDataTo(), cmd.getNfsVersion()) + File.separator + cmd.getAbsolutePath();
         return uploadEntityStateMap.containsKey(uuid) || new File(uploadPath).exists();
     }
 

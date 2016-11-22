@@ -36,6 +36,7 @@ public interface PrimaryDataStoreInfo extends StoragePool {
     static final String CHAP_INITIATOR_SECRET = "chapInitiatorSecret";
     static final String CHAP_TARGET_USERNAME = "chapTargetUsername";
     static final String CHAP_TARGET_SECRET = "chapTargetSecret";
+    static final String REMOVE_AFTER_COPY = "removeAfterCopy";
     static final String VOLUME_SIZE = "volumeSize";
 
     boolean isHypervisorSupported(HypervisorType hypervisor);

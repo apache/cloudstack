@@ -26,6 +26,7 @@
 
 # set environment variables
 
+TMP=/usr/share/cloudstack-agent/tmp
 SHORTNAME=$(basename $0 | sed -e 's/^[SK][0-9][0-9]//')
 PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
@@ -40,6 +41,9 @@ if [ -z "$JSVC" ]; then
     echo no jsvc found in path;
     exit 1;
 fi
+
+# create java tmp dir if not found
+mkdir -m 0755 -p "$TMP"
 
 unset OPTIONS
 [ -r /etc/sysconfig/"$SHORTNAME" ] && source /etc/sysconfig/"$SHORTNAME"
@@ -64,7 +68,7 @@ export CLASSPATH="/usr/share/java/commons-daemon.jar:$ACP:$PCP:/etc/cloudstack/a
 start() {
     echo -n $"Starting $PROGNAME: "
     if hostname --fqdn >/dev/null 2>&1 ; then
-        $JSVC -Xms256m -Xmx2048m -cp "$CLASSPATH" -pidfile "$PIDFILE" \
+        $JSVC -Djava.io.tmpdir="$TMP" -Xms256m -Xmx2048m -cp "$CLASSPATH" -pidfile "$PIDFILE" \
             -errfile $LOGDIR/cloudstack-agent.err -outfile $LOGDIR/cloudstack-agent.out $CLASS
         RETVAL=$?
         echo

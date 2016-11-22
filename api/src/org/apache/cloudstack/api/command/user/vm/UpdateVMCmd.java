@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.log4j.Logger;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -29,8 +31,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -38,14 +42,11 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-import java.util.Collection;
-import java.util.Map;
-
 @APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
         "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
         "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class UpdateVMCmd extends BaseCustomIdCmd {
+public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction {
     public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
 
@@ -96,6 +97,25 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs.")
     protected Map<String, String> details;
 
+    @ACL
+    @Parameter(name = ApiConstants.SECURITY_GROUP_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = SecurityGroupResponse.class,
+               description = "list of security group ids to be applied on the virtual machine.")
+    private List<Long> securityGroupIdList;
+
+    @ACL
+    @Parameter(name = ApiConstants.SECURITY_GROUP_NAMES,
+               type = CommandType.LIST,
+               collectionType = CommandType.STRING,
+               entityType = SecurityGroupResponse.class,
+               description = "comma separated list of security groups names that going to be applied to the virtual machine. " +
+                       "Should be passed only when vm is created from a zone with Basic Network support. " +
+                       "Mutually exclusive with securitygroupids parameter"
+            )
+    private List<String> securityGroupNameList;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -145,7 +165,15 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
         return (Map<String, String>) (paramsCollection.toArray())[0];
     }
 
-/////////////////////////////////////////////////////
+    public List<Long> getSecurityGroupIdList() {
+        return securityGroupIdList;
+    }
+
+    public List<String> getSecurityGroupNameList() {
+        return securityGroupNameList;
+    }
+
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 

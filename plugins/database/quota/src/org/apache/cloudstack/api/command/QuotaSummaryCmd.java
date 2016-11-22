@@ -59,7 +59,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     public void execute() {
         Account caller = CallContext.current().getCallingAccount();
         List<QuotaSummaryResponse> responses;
-        if (caller.getAccountId() <= 2) { //non root admin or system
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) { //admin account
             if (getAccountName() != null && getDomainId() != null)
                 responses = _responseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
             else

@@ -24,7 +24,6 @@ public class Profiler {
     private static final long MILLIS_FACTOR = 1000l;
     private static final double EXPONENT = 2d;
 
-
     private Long startTickNanoSeconds;
     private Long stopTickNanoSeconds;
 
@@ -46,8 +45,7 @@ public class Profiler {
      */
     public long getDuration() {
         if (startTickNanoSeconds != null && stopTickNanoSeconds != null) {
-            final long timeInNanoSeconds = stopTickNanoSeconds - startTickNanoSeconds;
-            return timeInNanoSeconds;
+            return stopTickNanoSeconds - startTickNanoSeconds;
         }
 
         return -1;
@@ -61,8 +59,7 @@ public class Profiler {
      */
     public long getDurationInMillis() {
         if (startTickNanoSeconds != null && stopTickNanoSeconds != null) {
-            final long timeInMillis = (stopTickNanoSeconds - startTickNanoSeconds) / (long)Math.pow(MILLIS_FACTOR, EXPONENT);
-            return timeInMillis;
+            return (stopTickNanoSeconds - startTickNanoSeconds) / (long)Math.pow(MILLIS_FACTOR, EXPONENT);
         }
 
         return -1;

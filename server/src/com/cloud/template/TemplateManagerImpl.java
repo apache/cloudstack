@@ -38,8 +38,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -62,12 +64,14 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCm
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -79,7 +83,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.Templa
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -262,7 +265,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private UserVmJoinDao _userVmJoinDao;
     @Inject
     private SnapshotDataStoreDao _snapshotStoreDao;
-
+    @Inject
+    private ImageStoreDao _imgStoreDao;
     @Inject
     MessageBus _messageBus;
 
@@ -275,6 +279,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private StorageCacheManager cacheMgr;
     @Inject
     private EndPointSelector selector;
+
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
@@ -689,7 +694,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         try {
+            templateStoragePoolRef.setTemplateSize(0);
             templateStoragePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+
             _tmpltPoolDao.update(templateStoragePoolRefId, templateStoragePoolRef);
         } finally {
             _tmpltPoolDao.releaseFromLockTable(templateStoragePoolRefId);
@@ -873,41 +880,55 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @DB
     public void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO) {
-        //Need to hold the lock, otherwise, another thread may create a volume from the template at the same time.
-        //Assumption here is that, we will hold the same lock during create volume from template
+        // Need to hold the lock; otherwise, another thread may create a volume from the template at the same time.
+        // Assumption here is that we will hold the same lock during create volume from template.
         VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolVO.getId());
+
         if (templatePoolRef == null) {
-            s_logger.debug("can't aquire the lock for template pool ref:" + templatePoolVO.getId());
+            s_logger.debug("Can't aquire the lock for template pool ref: " + templatePoolVO.getId());
+
             return;
         }
 
-        try {
-            StoragePool pool = (StoragePool)_dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
-            VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
+        PrimaryDataStore pool = (PrimaryDataStore)_dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
+        TemplateInfo template = _tmplFactory.getTemplate(templatePoolRef.getTemplateId(), pool);
 
+        try {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Evicting " + templatePoolVO);
             }
-            DestroyCommand cmd = new DestroyCommand(pool, templatePoolVO);
 
-            try {
+            if (pool.isManaged()) {
+                // For managed store, just delete the template volume.
+                AsyncCallFuture<TemplateApiResult> future = _tmpltSvr.deleteTemplateOnPrimary(template, pool);
+                TemplateApiResult result = future.get();
+
+                if (result.isFailed()) {
+                    s_logger.debug("Failed to delete template " + template.getId() + " from storage pool " + pool.getId());
+                } else {
+                    // Remove the templatePoolVO.
+                    if (_tmpltPoolDao.remove(templatePoolVO.getId())) {
+                        s_logger.debug("Successfully evicted template " + template.getName() + " from storage pool " + pool.getName());
+                    }
+                }
+            } else {
+                DestroyCommand cmd = new DestroyCommand(pool, templatePoolVO);
                 Answer answer = _storageMgr.sendToPool(pool, cmd);
 
                 if (answer != null && answer.getResult()) {
-                    // Remove the templatePoolVO
+                    // Remove the templatePoolVO.
                     if (_tmpltPoolDao.remove(templatePoolVO.getId())) {
-                        s_logger.debug("Successfully evicted template: " + template.getName() + " from storage pool: " + pool.getName());
+                        s_logger.debug("Successfully evicted template " + template.getName() + " from storage pool " + pool.getName());
                     }
                 } else {
-                    s_logger.info("Will retry evicte template: " + template.getName() + " from storage pool: " + pool.getName());
+                    s_logger.info("Will retry evict template " + template.getName() + " from storage pool " + pool.getName());
                 }
-            } catch (StorageUnavailableException e) {
-                s_logger.info("Storage is unavailable currently.  Will retry evicte template: " + template.getName() + " from storage pool: " + pool.getName());
             }
+        } catch (StorageUnavailableException | InterruptedException | ExecutionException e) {
+            s_logger.info("Storage is unavailable currently. Will retry evicte template " + template.getName() + " from storage pool " + pool.getName());
         } finally {
             _tmpltPoolDao.releaseFromLockTable(templatePoolRef.getId());
         }
-
     }
 
     @Override
@@ -926,7 +947,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String disableExtraction = _configDao.getValue(Config.DisableExtraction.toString());
         _disableExtraction = (disableExtraction == null) ? false : Boolean.parseBoolean(disableExtraction);
 
-        _preloadExecutor = Executors.newFixedThreadPool(8, new NamedThreadFactory("Template-Preloader"));
+        _preloadExecutor = Executors.newFixedThreadPool(TemplatePreloaderPoolSize.value(), new NamedThreadFactory("Template-Preloader"));
 
         return true;
     }
@@ -1482,14 +1503,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 future = _tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store);
             } else if (volumeId != null) {
                 VolumeInfo volInfo = _volFactory.getVolume(volumeId);
+
                 future = _tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store);
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");
             }
 
             CommandResult result = null;
+
             try {
                 result = future.get();
+
                 if (result.isFailed()) {
                     privateTemplate = null;
                     s_logger.debug("Failed to create template" + result.getResult());
@@ -1699,6 +1723,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 s_logger.debug("This template is getting created from other template, setting source template Id to: " + sourceTemplateId);
             }
         }
+
+
+        // for region wide storage, set cross zones flag
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (!CollectionUtils.isEmpty(stores)) {
+            privateTemplate.setCrossZones(true);
+        }
+
         privateTemplate.setSourceTemplateId(sourceTemplateId);
 
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
@@ -1975,7 +2007,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowPublicUserTemplates};
+        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

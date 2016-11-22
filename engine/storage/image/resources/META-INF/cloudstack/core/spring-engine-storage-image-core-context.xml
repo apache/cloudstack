@@ -29,7 +29,7 @@
 
     <bean id="templateServiceImpl"
         class="org.apache.cloudstack.storage.image.TemplateServiceImpl"
-        depends-on="dataObjectManagerImpl, dataStoreManagerImpl, dataMotionServiceImpl, objectInDataStoreManagerImpl, defaultEndPointSelector, templateDataFactoryImpl" />
+        depends-on="dataObjectManagerImpl, dataStoreManagerImpl, dataMotionServiceImpl, objectInDataStoreManagerImpl, defaultEndPointSelector, templateDataFactoryImpl, imageStoreDetailsUtil" />
 
     <bean id="templateDataFactoryImpl"
         class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />

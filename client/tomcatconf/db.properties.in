@@ -25,6 +25,7 @@ region.id=1
 db.cloud.username=@DBUSER@
 db.cloud.password=@DBPW@
 db.cloud.host=@DBHOST@
+db.cloud.driver=@DBDRIVER@
 db.cloud.port=3306
 db.cloud.name=cloud
 
@@ -56,6 +57,7 @@ db.cloud.encrypt.secret=
 db.usage.username=@DBUSER@
 db.usage.password=@DBPW@
 db.usage.host=@DBHOST@
+db.usage.driver=@DBDRIVER@
 db.usage.port=3306
 db.usage.name=cloud_usage
 
@@ -69,6 +71,7 @@ db.usage.url.params=
 db.simulator.username=@DBUSER@
 db.simulator.password=@DBPW@
 db.simulator.host=@DBHOST@
+db.simulator.driver=@DBDRIVER@
 db.simulator.port=3306
 db.simulator.name=simulator
 db.simulator.maxActive=250

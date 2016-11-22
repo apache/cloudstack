@@ -348,6 +348,26 @@ class TestEgressFWRules(cloudstackTestCase):
         except Exception as e:
             self.fail("Warning! Cleanup failed: %s" % e)
 
+    def create_another_vm(self):
+        self.debug("Deploying instance in the account: %s and network: %s" % (self.account.name, self.network.id))
+
+        project = None
+        self.virtual_machine1 = VirtualMachine.create(self.apiclient,
+                                                         self.services["virtual_machine"],
+                                                         accountid=self.account.name,
+                                                         domainid=self.domain.id,
+                                                         serviceofferingid=self.service_offering.id,
+                                                         mode=self.zone.networktype,
+                                                         networkids=[str(self.network.id)],
+                                                         projectid=project.id if project else None)
+        self.debug("Deployed instance %s in account: %s" % (self.virtual_machine.id,self.account.name))
+
+        # Checking if VM is running or not, in case it is deployed in error state, test case fails
+        self.vm_list = list_virtual_machines(self.apiclient, id=self.virtual_machine.id)
+
+        self.assertEqual(validateList(self.vm_list)[0], PASS, "vm list validation failed, vm list is %s" % self.vm_list)
+        self.assertEqual(str(self.vm_list[0].state).lower(),'running',"VM state should be running, it is %s" % self.vm_list[0].state)
+
     @attr(tags=["advanced"], required_hardware="true")
     def test_01_egress_fr1(self):
         """Test By-default the communication from guest n/w to public n/w is allowed.
@@ -385,6 +405,25 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_01_2_egress_fr1(self):
+        """Test egress rule with /32 CIDR of a VM, and check other VM in the
+           network does not have public access
+        """
+        # Validate the following:
+        # 1. deploy VM using network offering with egress policy false.
+        # 2. deploy another VM into the network created in step #1
+        # 3. create egress rule with /32 CIDR of the second VM
+        # 4. login to first VM.
+        # 5. ping public network.
+        # 6. public network should not be reachable from the first VM.
+        self.create_vm(egress_policy=False)
+        self.create_another_vm()
+        self.createEgressRule(protocol='all', cidr=self.virtual_machine1.ipaddress+"/32")
+        self.exec_script_on_user_vm('ping -c 1 www.google.com',
+                                    "| grep -oP \'\d+(?=% packet loss)\'",
+                                    "['100']",
+                                    negative_test=False)
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_02_egress_fr2(self):
@@ -415,6 +454,23 @@ class TestEgressFWRules(cloudstackTestCase):
         # 6. public network should be reachable from the VM.
         self.create_vm(egress_policy=False)
         self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
+        self.exec_script_on_user_vm('ping -c 1 www.google.com',
+                                    "| grep -oP \'\d+(?=% packet loss)\'",
+                                    "['0']",
+                                    negative_test=False)
+
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_02_2_egress_fr2(self):
+        """Test Allow Communication using Egress rule with /32 CIDR + Port Range + Protocol.
+        """
+        # Validate the following:
+        # 1. deploy VM using network offering with egress policy false.
+        # 3. create egress rule with specific /32 CIDR + port range.
+        # 4. login to VM.
+        # 5. ping public network.
+        # 6. public network should be reachable from the VM.
+        self.create_vm(egress_policy=False)
+        self.createEgressRule(cidr=self.virtual_machine.ipaddress+"/32")
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",

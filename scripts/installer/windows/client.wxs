@@ -595,9 +595,6 @@
                         <Component Id="cmp71D36BFB6B214FAAD323C31A1CE3BC19" Guid="{EF4C61E1-F77E-4E4D-80EA-131511E0804E}">
                             <File Id="fil44B623C422B90349A635A113C5F4D417" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\cloudmanagementserver.keystore" />
                         </Component>
-                        <Component Id="cmp19EB0E73466EB36D5AA02AB4CE8164B0" Guid="{D3EDCF5B-8A0F-444B-AE64-6C3EEE5F25F0}">
-                            <File Id="filAB20DD6954DD207821DD0311C1F48FAA" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\commands.properties" />
-                        </Component>
                         <Component Id="cmp68E096BB729948107692341D8202CC5A" Guid="{0D5D3AF3-0BC0-48EE-ABA3-AF07535169BF}">
                             <File Id="fil3E9BCB1A8CB8F8415FE3E71B65A94878" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\context.xml" />
                         </Component>
@@ -1058,7 +1055,7 @@
                                             <File Id="fil47212822DDAFFCD71C79615CF4583BAF" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\kvm\kvmheartbeat.sh" />
                                         </Component>
                                         <Component Id="cmpF2BBDD336FEC0B34B3C744ACF1E4B959" Guid="{56D8ECF7-49F8-4B26-A8F4-662252C0A647}">
-                                            <File Id="filD809C7F728AC5D1BD36E7DB403BFA141" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\kvm\patchviasocket.pl" />
+                                            <File Id="filD809C7F728AC5D1BD36E7DB403BFA141" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\kvm\patchviasocket.py" />
                                         </Component>
                                         <Component Id="cmp2F4D4D81563D153E86B0A652A83D363A" Guid="{7BFC7637-E33D-4BC4-8B25-3CDEA601110C}">
                                             <File Id="fil349420D6088A01C9F63E27634623F5BE" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\kvm\setup_agent.sh" />

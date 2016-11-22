@@ -46,13 +46,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 
 @Component
-public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> implements TemplateJoinDao {
+public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<TemplateJoinVO, TemplateResponse> implements TemplateJoinDao {
 
     public static final Logger s_logger = Logger.getLogger(TemplateJoinDaoImpl.class);
 
@@ -188,10 +187,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         // update tag information
         long tag_id = template.getTagId();
         if (tag_id > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                templateResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
+            addTagInformation(template, templateResponse);
         }
 
         templateResponse.setObjectName("template");
@@ -257,10 +253,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         // update tag information
         long tag_id = template.getTagId();
         if (tag_id > 0) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                templateResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
+            addTagInformation(template, templateResponse);
         }
 
         return templateResponse;

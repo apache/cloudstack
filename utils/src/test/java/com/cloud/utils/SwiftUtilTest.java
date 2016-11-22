@@ -19,9 +19,11 @@
 
 package com.cloud.utils;
 
+
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.io.File;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -31,7 +33,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
-
 
 public class SwiftUtilTest {
 
@@ -72,7 +73,7 @@ public class SwiftUtilTest {
 
     @Test
     public void testSplitSwiftPath(){
-        String input = "container/object";
+        String input = "container" + File.separator + "object";
         String[] output = SwiftUtil.splitSwiftPath(input);
         String[] expected = {"container", "object"};
 

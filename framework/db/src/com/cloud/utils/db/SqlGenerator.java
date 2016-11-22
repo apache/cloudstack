@@ -38,10 +38,12 @@ import javax.persistence.Embedded;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.TableGenerator;
 
+import org.apache.commons.lang.ArrayUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Attribute.Flag;
@@ -54,6 +56,7 @@ public class SqlGenerator {
     LinkedHashMap<String, List<Attribute>> _ids;
     HashMap<String, TableGenerator> _generators;
     ArrayList<Attribute> _ecAttrs;
+    Field[] _mappedSuperclassFields;
 
     public SqlGenerator(Class<?> clazz) {
         _clazz = clazz;
@@ -91,6 +94,12 @@ public class SqlGenerator {
 
     protected void buildAttributes(Class<?> clazz, String tableName, AttributeOverride[] overrides, boolean embedded, boolean isId) {
         if (!embedded && clazz.getAnnotation(Entity.class) == null) {
+            // A class designated with the MappedSuperclass annotation can be mapped in the same way as an entity
+            // except that the mappings will apply only to its subclasses since no table exists for the mapped superclass itself
+            if (clazz.getAnnotation(MappedSuperclass.class) != null){
+                Field[] declaredFields = clazz.getDeclaredFields();
+                _mappedSuperclassFields = (Field[]) ArrayUtils.addAll(_mappedSuperclassFields, declaredFields);
+            }
             return;
         }
 
@@ -105,6 +114,8 @@ public class SqlGenerator {
         }
 
         Field[] fields = clazz.getDeclaredFields();
+        fields = (Field[]) ArrayUtils.addAll(fields, _mappedSuperclassFields);
+        _mappedSuperclassFields = null;
         for (Field field : fields) {
             field.setAccessible(true);
 

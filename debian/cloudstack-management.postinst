@@ -55,9 +55,17 @@ if [ "$1" = configure ]; then
         fi
     fi
 
-    chmod 0640 /etc/cloudstack/management/db.properties
-    chgrp cloud /etc/cloudstack/management/db.properties
+    CONFDIR="/etc/cloudstack/management"
+    DBPROPS="db.properties"
+
+    chmod 0640 ${CONFDIR}/${DBPROPS}
+    chgrp cloud ${CONFDIR}/${DBPROPS}
     invoke-rc.d tomcat6 stop || true
+
+    # Add jdbc MySQL driver settings to db.properties if not present
+    grep -s -q "db.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
+    grep -s -q "db.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
+    grep -s -q "db.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
 fi
 
 #DEBHELPER#

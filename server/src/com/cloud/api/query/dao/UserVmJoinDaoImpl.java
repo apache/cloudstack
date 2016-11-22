@@ -27,9 +27,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -38,19 +35,18 @@ import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmDetailVO;
@@ -61,7 +57,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
-public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implements UserVmJoinDao {
+public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJoinVO, UserVmResponse> implements UserVmJoinDao {
     public static final Logger s_logger = Logger.getLogger(UserVmJoinDaoImpl.class);
 
     @Inject
@@ -202,20 +198,16 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
             if (vmStats != null) {
                 userVmResponse.setCpuUsed(new DecimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
-
                 userVmResponse.setNetworkKbsRead((long)vmStats.getNetworkReadKBs());
-
                 userVmResponse.setNetworkKbsWrite((long)vmStats.getNetworkWriteKBs());
+                userVmResponse.setDiskKbsRead((long)vmStats.getDiskReadKBs());
+                userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
+                userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
+                userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
+                userVmResponse.setMemoryKBs((long)vmStats.getMemoryKBs());
+                userVmResponse.setMemoryIntFreeKBs((long)vmStats.getIntFreeMemoryKBs());
+                userVmResponse.setMemoryTargetKBs((long)vmStats.getTargetMemoryKBs());
 
-                if ((userVm.getHypervisorType() != null) && (userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
-                    userVmResponse.setDiskKbsRead((long)vmStats.getDiskReadKBs());
-
-                    userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
-
-                    userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
-
-                    userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
-                }
             }
         }
 
@@ -283,10 +275,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         // update tag information
         long tag_id = userVm.getTagId();
         if (tag_id > 0 && !userVmResponse.containTag(tag_id)) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                userVmResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
+            addTagInformation(userVm, userVmResponse);
         }
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.affgrp)) {
@@ -383,10 +372,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
         long tag_id = uvo.getTagId();
         if (tag_id > 0 && !userVmData.containTag(tag_id)) {
-            ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if (vtag != null) {
-                userVmData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
-            }
+            addTagInformation(uvo, userVmData);
         }
 
         Long affinityGroupId = uvo.getAffinityGroupId();

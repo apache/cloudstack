@@ -46,7 +46,7 @@ public class StoragePoolMonitorTest {
         storageManager = Mockito.mock(StorageManagerImpl.class);
         poolDao = Mockito.mock(PrimaryDataStoreDao.class);
 
-        storagePoolMonitor = new StoragePoolMonitor(storageManager, poolDao);
+        storagePoolMonitor = new StoragePoolMonitor(storageManager, poolDao, null);
         host = new HostVO("some-uuid");
         pool = new StoragePoolVO();
         pool.setScope(ScopeType.CLUSTER);

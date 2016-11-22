@@ -50,4 +50,5 @@ public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
         super(pool, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
         setWait(wait);
     }
+
 }

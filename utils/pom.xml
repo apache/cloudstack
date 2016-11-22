@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.8.2.0-SNAPSHOT</version>
+    <version>4.9.1.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <dependencies>
@@ -69,7 +69,7 @@
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk16</artifactId>
+      <artifactId>bcprov-jdk15on</artifactId>
     </dependency>
     <dependency>
       <groupId>com.jcraft</groupId>
@@ -157,7 +157,7 @@
     <dependency>
       <groupId>commons-net</groupId>
       <artifactId>commons-net</artifactId>
-      <version>3.3</version>
+      <version>3.4</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

@@ -24,14 +24,16 @@ import com.cloud.agent.api.to.DataStoreTO;
 public class ListTemplateCommand extends StorageCommand {
     private DataStoreTO store;
 
-    //private String secUrl;
-
     public ListTemplateCommand() {
     }
 
     public ListTemplateCommand(DataStoreTO store) {
         this.store = store;
-//        this.secUrl = url;
+    }
+
+    public ListTemplateCommand(DataStoreTO store, Integer nfsVersion) {
+        super(nfsVersion);
+        this.store = store;
     }
 
     @Override
@@ -42,9 +44,5 @@ public class ListTemplateCommand extends StorageCommand {
     public DataStoreTO getDataStore() {
         return store;
     }
-
-    //   public String getSecUrl() {
-    //       return secUrl;
-    //   }
 
 }

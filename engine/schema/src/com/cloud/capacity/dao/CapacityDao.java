@@ -50,8 +50,7 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Long limit);
 
-    void updateCapacityState(Long dcId, Long podId, Long clusterId,
-        Long hostId, String capacityState);
+    void updateCapacityState(Long dcId, Long podId, Long clusterId, Long hostId, String capacityState, short[] capacityType);
 
     List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, String configName, long computeRequested);
 

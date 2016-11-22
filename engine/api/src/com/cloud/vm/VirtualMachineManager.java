@@ -49,11 +49,10 @@ import com.cloud.utils.fsm.NoTransitionException;
 public interface VirtualMachineManager extends Manager {
 
     static final ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<Boolean>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "false",
-            "If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side."
-                    + " If set to false, these commands become asynchronous. Default value is false.", false);
+            "If set to true, start, stop, reboot, copy and migrate commands will be serialized on the agent side. If set to false the commands are executed in parallel. Default value is false.", false);
 
     static final ConfigKey<String> VmConfigDriveLabel = new ConfigKey<String>("Hidden", String.class, "vm.configdrive.label", "config",
-            "The default lable name for the config drive", false);
+            "The default label name for the config drive", false);
 
     public interface Topics {
         public static final String VM_POWER_STATE = "vm.powerstate";
@@ -199,4 +198,6 @@ public interface VirtualMachineManager extends Manager {
         ConcurrentOperationException, ResourceUnavailableException;
 
     void migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException;
+
+    boolean getExecuteInSequence(HypervisorType hypervisorType);
 }

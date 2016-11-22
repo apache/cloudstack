@@ -110,24 +110,28 @@
                     required: false
                 }
             },
-            accounttype: {
-                label: 'label.type',
+            roleid: {
+                label: 'label.role',
                 docID: 'helpAccountType',
                 validation: {
                     required: true
                 },
                 select: function(args) {
-                    var items = [];
-                    items.push({
-                        id: 0,
-                        description: "User"
-                    }); //regular-user
-                    items.push({
-                        id: 1,
-                        description: "Admin"
-                    }); //root-admin
-                    args.response.success({
-                        data: items
+                    $.ajax({
+                        url: createURL("listRoles"),
+                        success: function(json) {
+                            var items = [];
+                            roleObjs = json.listrolesresponse.role;
+                            $(roleObjs).each(function() {
+                                items.push({
+                                    id: this.id,
+                                    description: this.name + ' (' + this.type + ')'
+                                });
+                            });
+                            args.response.success({
+                                data: items
+                            });
+                        }
                     });
                 }
             },
@@ -226,13 +230,9 @@
                 array1.push("&account=" + account);
             }
 
-            var accountType = args.data.accounttype;
-            if (accountType == "1") { //if "admin" is selected in account type dropdown
-                if (rootDomainId == undefined || args.data.domainid != rootDomainId ) { //but current login has no visibility to root domain object, or the selected domain is not root domain
-                    accountType = "2"; // change accountType from root-domain("1") to domain-admin("2")
-                }
+            if (args.data.roleid) {
+                array1.push("&roleid=" + args.data.roleid);
             }
-            array1.push("&accounttype=" + accountType);
 
             if (args.data.timezone !== null && args.data.timezone.length > 0) {
                 array1.push("&timezone=" + args.data.timezone);

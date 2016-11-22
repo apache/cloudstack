@@ -123,7 +123,7 @@ public class QuotaCreditsCmd extends BaseCmd {
         if (getValue() == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please send a valid non-empty quota value");
         }
-        if (getQuotaEnforce() != null && getQuotaEnforce()) {
+        if (getQuotaEnforce() != null) {
             _quotaService.setLockAccount(accountId, getQuotaEnforce());
         }
         if (getMinBalance() != null) {
@@ -133,7 +133,7 @@ public class QuotaCreditsCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please set a value for min balance");
         }
 
-        final QuotaCreditsResponse response = _responseBuilder.addQuotaCredits(accountId, getDomainId(), getValue(), CallContext.current().getCallingUserId());
+        final QuotaCreditsResponse response = _responseBuilder.addQuotaCredits(accountId, getDomainId(), getValue(), CallContext.current().getCallingUserId(), getQuotaEnforce());
         response.setResponseName(getCommandName());
         response.setObjectName("quotacredits");
         setResponseObject(response);

@@ -35,6 +35,7 @@ import org.libvirt.StorageVol;
 
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
+import com.ceph.rados.exceptions.ErrorCode;
 import com.ceph.rados.exceptions.RadosException;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
@@ -863,26 +864,36 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 RbdImage image = rbd.open(uuid);
                 s_logger.debug("Fetching list of snapshots of RBD image " + pool.getSourceDir() + "/" + uuid);
                 List<RbdSnapInfo> snaps = image.snapList();
-                for (RbdSnapInfo snap : snaps) {
-                    if (image.snapIsProtected(snap.name)) {
-                        s_logger.debug("Unprotecting snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
-                        image.snapUnprotect(snap.name);
-                    } else {
-                        s_logger.debug("Snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name + " is not protected.");
+                try {
+                    for (RbdSnapInfo snap : snaps) {
+                        if (image.snapIsProtected(snap.name)) {
+                            s_logger.debug("Unprotecting snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
+                            image.snapUnprotect(snap.name);
+                        } else {
+                            s_logger.debug("Snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name + " is not protected.");
+                        }
+                        s_logger.debug("Removing snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
+                        image.snapRemove(snap.name);
                     }
-                    s_logger.debug("Removing snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
-                    image.snapRemove(snap.name);
+                    s_logger.info("Succesfully unprotected and removed any remaining snapshots (" + snaps.size() + ") of "
+                        + pool.getSourceDir() + "/" + uuid + " Continuing to remove the RBD image");
+                } catch (RbdException e) {
+                    s_logger.error("Failed to remove snapshot with exception: " + e.toString() +
+                        ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
+                    throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
+                } finally {
+                    s_logger.debug("Closing image and destroying context");
+                    rbd.close(image);
+                    r.ioCtxDestroy(io);
                 }
-
-                rbd.close(image);
-                r.ioCtxDestroy(io);
-
-                s_logger.info("Succesfully unprotected and removed any remaining snapshots (" + snaps.size() + ") of "
-                              + pool.getSourceDir() + "/" + uuid + " Continuing to remove the RBD image");
             } catch (RadosException e) {
-                throw new CloudRuntimeException(e.toString());
+                s_logger.error("Failed to remove snapshot with exception: " + e.toString() +
+                    ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
+                throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
             } catch (RbdException e) {
-                throw new CloudRuntimeException(e.toString());
+                s_logger.error("Failed to remove snapshot with exception: " + e.toString() +
+                    ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
+                throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
             }
         }
 

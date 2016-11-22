@@ -1241,11 +1241,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-
-    protected boolean getExecuteInSequence(final HypervisorType hypervisorType) {
-        if (HypervisorType.KVM == hypervisorType || HypervisorType.LXC == hypervisorType || HypervisorType.XenServer == hypervisorType) {
+    @Override
+    public boolean getExecuteInSequence(final HypervisorType hypervisorType) {
+        if (HypervisorType.KVM == hypervisorType || HypervisorType.XenServer == hypervisorType || HypervisorType.Hyperv == hypervisorType || HypervisorType.LXC == hypervisorType) {
             return false;
-        } else if(HypervisorType.VMware == hypervisorType) {
+        } else if (HypervisorType.VMware == hypervisorType) {
             final Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
             return fullClone;
         } else {
@@ -2585,7 +2585,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
 
             final Commands cmds = new Commands(Command.OnError.Stop);
-            cmds.addCommand(new RebootCommand(vm.getInstanceName()));
+            cmds.addCommand(new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType())));
             _agentMgr.send(host.getId(), cmds);
 
             final Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
@@ -2642,7 +2642,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if(!found) {
                 VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
-                if(vm.getType() == VirtualMachine.Type.User) {
+                if(vm != null && vm.getType() == VirtualMachine.Type.User) {
                     updateVmMetaData(vm.getId(), platform);
                 }
             }
@@ -2784,6 +2784,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public boolean processDisconnect(final long agentId, final Status state) {
         return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
+    }
+
+    @Override
+    public void processHostAdded(long hostId) {
     }
 
     @Override
@@ -3686,7 +3698,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     //
 
     @MessageHandler(topic = Topics.VM_POWER_STATE)
-    private void HandlePowerStateReport(final String subject, final String senderAddress, final Object args) {
+    protected void HandlePowerStateReport(final String subject, final String senderAddress, final Object args) {
         assert args != null;
         final Long vmId = (Long)args;
 

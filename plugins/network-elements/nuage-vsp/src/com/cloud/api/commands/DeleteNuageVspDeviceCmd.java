@@ -28,9 +28,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -38,9 +40,13 @@ import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
 
-@APICommand(name = "deleteNuageVspDevice", responseObject = SuccessResponse.class, description = "delete a nuage vsp device", since = "4.5")
+@APICommand(name = DeleteNuageVspDeviceCmd.APINAME, description = "delete a nuage vsp device", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.5",
+        authorized = {RoleType.Admin})
 public class DeleteNuageVspDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "deletenuagevspdeviceresponse";
+    public static final String APINAME = "deleteNuageVspDevice";
+
     @Inject
     NuageVspManager _nuageVspManager;
 
@@ -83,7 +89,7 @@ public class DeleteNuageVspDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

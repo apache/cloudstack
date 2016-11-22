@@ -63,7 +63,7 @@ function install_packages() {
     nfs-common \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp ipsec-tools tdb-tools \
-    openswan=1:2.6.37-3 \
+    openswan=1:2.6.37-3+deb7u1 \
     xenstore-utils libxenstore3.0 \
     conntrackd ipvsadm libnetfilter-conntrack3 libnl-3-200 libnl-genl-3-200 \
     ipcalc \

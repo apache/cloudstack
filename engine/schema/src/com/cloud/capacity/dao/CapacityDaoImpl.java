@@ -962,35 +962,59 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public void updateCapacityState(Long dcId, Long podId, Long clusterId, Long hostId, String capacityState) {
+    public void updateCapacityState(Long dcId, Long podId, Long clusterId, Long hostId, String capacityState, short[] capacityType) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         StringBuilder sql = new StringBuilder(UPDATE_CAPACITY_STATE);
         List<Long> resourceIdList = new ArrayList<Long>();
+        StringBuilder where = new StringBuilder();
 
         if (dcId != null) {
-            sql.append(" data_center_id = ?");
+            where.append(" data_center_id = ? ");
             resourceIdList.add(dcId);
         }
         if (podId != null) {
-            sql.append(" pod_id = ?");
+            where.append((where.length() > 0) ? " and pod_id = ? " : " pod_id = ? ");
             resourceIdList.add(podId);
         }
         if (clusterId != null) {
-            sql.append(" cluster_id = ?");
+            where.append((where.length() > 0) ? " and cluster_id = ? " : " cluster_id = ? ");
             resourceIdList.add(clusterId);
         }
         if (hostId != null) {
-            sql.append(" host_id = ?");
+            where.append((where.length() > 0) ? " and host_id = ? " : " host_id = ? ");
             resourceIdList.add(hostId);
         }
+
+        if (capacityType != null && capacityType.length > 0) {
+            where.append((where.length() > 0) ? " and capacity_type in " : " capacity_type in ");
+
+            StringBuilder builder = new StringBuilder();
+            for( int i = 0 ; i < capacityType.length; i++ ) {
+                if(i==0){
+                    builder.append(" (? ");
+                }else{
+                    builder.append(" ,? ");
+                }
+            }
+            builder.append(" ) ");
+
+            where.append(builder);
+        }
+        sql.append(where);
 
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
-            pstmt.setString(1, capacityState);
-            for (int i = 0; i < resourceIdList.size(); i++) {
-                pstmt.setLong(2 + i, resourceIdList.get(i));
+            int i = 1;
+            pstmt.setString(i, capacityState);
+            i = i + 1;
+            for (int j=0 ; j < resourceIdList.size(); j++, i++) {
+                pstmt.setLong(i, resourceIdList.get(j));
             }
+            for(int j=0; j < capacityType.length; i++, j++ ) {
+                pstmt.setShort(i, capacityType[j]);
+            }
+
             pstmt.executeUpdate();
         } catch (Exception e) {
             s_logger.warn("Error updating CapacityVO", e);

@@ -64,6 +64,12 @@ public interface Listener {
     AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd);
 
     /**
+     * This method is called by AgentManager when a host is added to a cluster.
+     * @param long the ID of the newly added host
+     */
+    void processHostAdded(long hostId);
+
+    /**
      * This method is called by AgentManager when an agent made a
      * connection to this server if the listener has
      * been registered for host events.
@@ -85,6 +91,18 @@ public interface Listener {
      * @param state the current state of the agent.
      */
     boolean processDisconnect(long agentId, Status state);
+
+    /**
+     * This method is called by AgentManager when a host is about to be removed from a cluster.
+     * @param long the ID of the host that's about to be removed
+     */
+    void processHostAboutToBeRemoved(long hostId);
+
+    /**
+     * This method is called by AgentManager when a host is removed from a cluster.
+     * @param long the ID of the newly removed host
+     */
+    void processHostRemoved(long hostId, long clusterId);
 
     /**
      * If this Listener is passed to the send() method, this method

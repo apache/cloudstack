@@ -31,6 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -49,7 +50,6 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.host.Host;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.AccountDao;
@@ -78,8 +78,13 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    public long getDataObjectSizeIncludingHypervisorSnapshotReserve(DataObject dataObject, StoragePool pool) {
+        return 0;
+    }
+
+    @Override
+    public long getBytesRequiredForTemplate(TemplateInfo templateInfo, StoragePool storagePool) {
+        return 0;
     }
 
     @Inject
@@ -97,7 +102,7 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
+    public ChapInfo getChapInfo(DataObject dataObject) {
         return null;
     }
 

@@ -33,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCy
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
@@ -49,23 +50,27 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolAutomation;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
 
     @Inject private CapacityManager _capacityMgr;
-    @Inject private DataCenterDao zoneDao;
-    @Inject private PrimaryDataStoreDao storagePoolDao;
-    @Inject private PrimaryDataStoreHelper dataStoreHelper;
+    @Inject private DataCenterDao _zoneDao;
+    @Inject private PrimaryDataStoreDao _storagePoolDao;
+    @Inject private PrimaryDataStoreHelper _dataStoreHelper;
     @Inject private ResourceManager _resourceMgr;
     @Inject private SnapshotDao _snapshotDao;
     @Inject private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject private StorageManager _storageMgr;
-    @Inject private StoragePoolAutomation storagePoolAutomation;
+    @Inject private StoragePoolAutomation _storagePoolAutomation;
+    @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
+    @Inject private VMTemplatePoolDao _tmpltPoolDao;
 
     // invoked to add primary storage that is based on the SolidFire plug-in
     @Override
@@ -83,7 +88,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         String storageVip = SolidFireUtil.getStorageVip(url);
         int storagePort = SolidFireUtil.getStoragePort(url);
 
-        DataCenterVO zone = zoneDao.findById(zoneId);
+        DataCenterVO zone = _zoneDao.findById(zoneId);
 
         String uuid = SolidFireUtil.PROVIDER_NAME + "_" + zone.getUuid() + "_" + storageVip;
 
@@ -136,7 +141,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                 lClusterDefaultMinIops = Long.parseLong(clusterDefaultMinIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS +
+            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS +
                           ", using default value: " + lClusterDefaultMinIops +
                           ". Exception: " + ex);
         }
@@ -148,7 +153,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                 lClusterDefaultMaxIops = Long.parseLong(clusterDefaultMaxIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS +
+            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS +
                           ", using default value: " + lClusterDefaultMaxIops +
                           ". Exception: " + ex);
         }
@@ -160,7 +165,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                 fClusterDefaultBurstIopsPercentOfMaxIops = Float.parseFloat(clusterDefaultBurstIopsPercentOfMaxIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting of " + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
+            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
                           ", using default value: " + fClusterDefaultBurstIopsPercentOfMaxIops +
                           ". Exception: " + ex);
         }
@@ -179,7 +184,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         details.put(SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS, String.valueOf(fClusterDefaultBurstIopsPercentOfMaxIops));
 
         // this adds a row in the cloud.storage_pool table for this SolidFire cluster
-        return dataStoreHelper.createPrimaryDataStore(parameters);
+        return _dataStoreHelper.createPrimaryDataStore(parameters);
     }
 
     // do not implement this method for SolidFire's plug-in
@@ -196,7 +201,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        dataStoreHelper.attachZone(dataStore);
+        _dataStoreHelper.attachZone(dataStore);
 
         List<HostVO> xenServerHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.XenServer, scope.getScopeId());
         List<HostVO> vmWareServerHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.VMware, scope.getScopeId());
@@ -220,23 +225,25 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
     @Override
     public boolean maintain(DataStore dataStore) {
-        storagePoolAutomation.maintain(dataStore);
-        dataStoreHelper.maintain(dataStore);
+        _storagePoolAutomation.maintain(dataStore);
+        _dataStoreHelper.maintain(dataStore);
 
         return true;
     }
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        dataStoreHelper.cancelMaintain(store);
-        storagePoolAutomation.cancelMaintain(store);
+        _dataStoreHelper.cancelMaintain(store);
+        _storagePoolAutomation.cancelMaintain(store);
 
         return true;
     }
 
     // invoked to delete primary storage that is based on the SolidFire plug-in
     @Override
-    public boolean deleteDataStore(DataStore store) {
+    public boolean deleteDataStore(DataStore dataStore) {
+        long storagePoolId = dataStore.getId();
+
         List<SnapshotVO> lstSnapshots = _snapshotDao.listAll();
 
         if (lstSnapshots != null) {
@@ -244,13 +251,39 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                 SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.STORAGE_POOL_ID);
 
                 // if this snapshot belongs to the storagePool that was passed in
-                if (snapshotDetails != null && snapshotDetails.getValue() != null && Long.parseLong(snapshotDetails.getValue()) == store.getId()) {
+                if (snapshotDetails != null && snapshotDetails.getValue() != null && Long.parseLong(snapshotDetails.getValue()) == storagePoolId) {
                     throw new CloudRuntimeException("This primary storage cannot be deleted because it currently contains one or more snapshots.");
                 }
             }
         }
 
-        return dataStoreHelper.deletePrimaryDataStore(store);
+        List<VMTemplateStoragePoolVO> lstTemplatePoolRefs = _tmpltPoolDao.listByPoolId(storagePoolId);
+
+        if (lstTemplatePoolRefs != null) {
+            for (VMTemplateStoragePoolVO templatePoolRef : lstTemplatePoolRefs) {
+                try {
+                    SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
+                    long sfTemplateVolumeId = Long.parseLong(templatePoolRef.getLocalDownloadPath());
+
+                    SolidFireUtil.deleteSolidFireVolume(sfConnection, sfTemplateVolumeId);
+                }
+                catch (Exception ex) {
+                    s_logger.error(ex.getMessage() != null ? ex.getMessage() : "Error deleting SolidFire template volume");
+                }
+
+                _tmpltPoolDao.remove(templatePoolRef.getId());
+            }
+        }
+
+        StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+
+        storagePool.setUsedBytes(0);
+
+        _storagePoolDao.update(storagePoolId, storagePool);
+
+        _storagePoolDetailsDao.removeDetails(storagePoolId);
+
+        return _dataStoreHelper.deletePrimaryDataStore(dataStore);
     }
 
     /* (non-Javadoc)
@@ -263,7 +296,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
     @Override
     public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
-        StoragePoolVO storagePoolVo = storagePoolDao.findById(storagePool.getId());
+        StoragePoolVO storagePoolVo = _storagePoolDao.findById(storagePool.getId());
 
         String strCapacityBytes = details.get(PrimaryDataStoreLifeCycle.CAPACITY_BYTES);
         Long capacityBytes = strCapacityBytes != null ? Long.parseLong(strCapacityBytes) : null;
@@ -290,11 +323,11 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
     @Override
     public void enableStoragePool(DataStore dataStore) {
-        dataStoreHelper.enable(dataStore);
+        _dataStoreHelper.enable(dataStore);
     }
 
     @Override
     public void disableStoragePool(DataStore dataStore) {
-        dataStoreHelper.disable(dataStore);
+        _dataStoreHelper.disable(dataStore);
     }
 }
