@@ -620,7 +620,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         migrate_host.id
                                         ))
 
-        self.vm_to_migrate.migrate(self.apiclient, migrate_host.id)
+        self.vm_to_migrate.migrate_vm_with_volume(self.apiclient, migrate_host.id)
 
         retries_cnt = 3
         while retries_cnt >=0:
