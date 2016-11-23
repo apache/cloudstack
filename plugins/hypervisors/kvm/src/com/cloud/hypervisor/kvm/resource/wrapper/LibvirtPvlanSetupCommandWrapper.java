@@ -22,6 +22,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -45,8 +46,8 @@ public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanS
         final String op = command.getOp();
         final String dhcpName = command.getDhcpName();
         final String dhcpMac = command.getDhcpMac();
-        final String dhcpIp = command.getDhcpIp();
         final String vmMac = command.getVmMac();
+        final String dhcpIp = command.getDhcpIp();
         boolean add = true;
 
         String opr = "-A";
@@ -58,7 +59,7 @@ public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanS
         String result = null;
         try {
             final String guestBridgeName = libvirtComputingResource.getGuestBridgeName();
-            final int timeout = libvirtComputingResource.getTimeout();
+            final Duration timeout = libvirtComputingResource.getTimeout();
 
             if (command.getType() == PvlanSetupCommand.Type.DHCP) {
                 final String ovsPvlanDhcpHostPath = libvirtComputingResource.getOvsPvlanDhcpHostPath();

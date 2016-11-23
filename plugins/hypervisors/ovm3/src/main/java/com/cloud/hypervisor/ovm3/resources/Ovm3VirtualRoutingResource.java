@@ -17,6 +17,8 @@
 
 package com.cloud.hypervisor.ovm3.resources;
 
+import org.joda.time.Duration;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -27,6 +29,7 @@ import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Connection;
@@ -38,7 +41,6 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     private final Logger logger = Logger
             .getLogger(Ovm3VirtualRoutingResource.class);
     private String domRCloudPath = "/opt/cloud/bin/";
-    private int vrTimeout = 600;
     private Connection c;
     private String agentName;
     public Ovm3VirtualRoutingResource() {
@@ -53,12 +55,12 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     @Override
     public ExecutionResult executeInVR(String routerIp, String script,
             String args) {
-        return executeInVR(routerIp, script, args, vrTimeout);
+        return executeInVR(routerIp, script, args, VRScripts.VR_SCRIPT_EXEC_TIMEOUT);
     }
 
     @Override
     public ExecutionResult executeInVR(String routerIp, String script,
-            String args, int timeout) {
+            String args, Duration timeout) {
         if (!script.contains(domRCloudPath)) {
             script = domRCloudPath + "/" + script;
         }
