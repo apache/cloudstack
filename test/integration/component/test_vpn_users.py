@@ -77,7 +77,7 @@ class Services:
                                 },
                          "vpn_user": {
                                    "username": "test",
-                                   "password": "test",
+                                   "password": "p@a#s=s.w_o-r+d",
                                 },
                          "natrule": {
                                    "privateport": 1701,
