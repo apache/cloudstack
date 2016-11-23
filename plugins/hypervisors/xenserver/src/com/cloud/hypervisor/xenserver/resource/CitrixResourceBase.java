@@ -53,6 +53,7 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
@@ -113,6 +114,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
+import org.joda.time.Duration;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -1658,18 +1660,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public ExecutionResult executeInVR(final String routerIP, final String script, final String args) {
         // Timeout is 120 seconds by default
-        return executeInVR(routerIP, script, args, 120);
+        return executeInVR(routerIP, script, args, VRScripts.VR_SCRIPT_EXEC_TIMEOUT);
     }
 
     @Override
-    public ExecutionResult executeInVR(final String routerIP, final String script, final String args, final int timeout) {
+    public ExecutionResult executeInVR(final String routerIP, final String script, final String args, final Duration timeout) {
         Pair<Boolean, String> result;
         String cmdline = "/opt/cloud/bin/router_proxy.sh " + script + " " + routerIP + " " + args;
         // semicolon need to be escape for bash
         cmdline = cmdline.replaceAll(";", "\\\\;");
         try {
             s_logger.debug("Executing command in VR: " + cmdline);
-            result = SshHelper.sshExecute(_host.getIp(), 22, _username, null, _password.peek(), cmdline, 60000, 60000, timeout * 1000);
+            result = SshHelper.sshExecute(_host.getIp(), 22, _username, null, _password.peek(), cmdline, VRScripts.CONNECTION_TIMEOUT, VRScripts.CONNECTION_TIMEOUT, timeout);
         } catch (final Exception e) {
             return new ExecutionResult(false, e.getMessage());
         }
