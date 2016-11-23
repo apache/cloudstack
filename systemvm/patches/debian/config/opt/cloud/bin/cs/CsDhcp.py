@@ -106,12 +106,10 @@ class CsDhcp(CsDataBag):
             return
 
     def preseed(self):
-        self.add_host("127.0.0.1", "localhost")
+        self.add_host("127.0.0.1", "localhost %s" % CsHelper.get_hostname())
         self.add_host("::1", "localhost ip6-localhost ip6-loopback")
         self.add_host("ff02::1", "ip6-allnodes")
         self.add_host("ff02::2", "ip6-allrouters")
-        if self.config.is_vpc():
-            self.add_host("127.0.0.1", CsHelper.get_hostname())
         if self.config.is_router():
             self.add_host(self.config.address().get_guest_ip(), "%s data-server" % CsHelper.get_hostname())
 
