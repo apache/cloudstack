@@ -51,7 +51,9 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VimPortType;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
@@ -65,9 +67,12 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
+import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
@@ -135,6 +140,20 @@ public class VmwareResourceTest {
     DataTO destDataTO;
     @Mock
     PrimaryDataStoreTO destDataStoreTO;
+    @Mock
+    HostMO host;
+    @Mock
+    ManagedObjectReference hostRef;
+    @Mock
+    ManagedObjectReference computeRef;
+    @Mock
+    ManagedObjectReference envRef;
+    @Mock
+    VmwareClient client;
+    @Mock
+    VimPortType vimService;
+    @Mock
+    HostCapability hostCapability;
 
     CopyCommand storageCmd;
     EnumMap<VmwareStorageProcessorConfigurableFields, Object> params = new EnumMap<VmwareStorageProcessorConfigurableFields,Object>(VmwareStorageProcessorConfigurableFields.class);
@@ -144,6 +163,8 @@ public class VmwareResourceTest {
     private static final long VRAM_MEMORY_SIZE = 131072l;
     private static final long VIDEO_CARD_MEMORY_SIZE = 65536l;
     private static final Boolean FULL_CLONE_FLAG = true;
+
+    private Map<String,String> specsArray = new HashMap<String,String>();
 
     @Before
     public void setup() throws Exception {
@@ -163,6 +184,17 @@ public class VmwareResourceTest {
         when(destDataTO.getDataStore()).thenReturn(destDataStoreTO);
         when(destDataStoreTO.isFullCloneFlag()).thenReturn(FULL_CLONE_FLAG);
         when(volume.getPath()).thenReturn(VOLUME_PATH);
+        when(vmSpec.getDetails()).thenReturn(specsArray);
+
+        when(vmMo.getContext()).thenReturn(context);
+        when(vmMo.getRunningHost()).thenReturn(host);
+        when(host.getMor()).thenReturn(hostRef);
+        when(context.getVimClient()).thenReturn(client);
+        when(client.getMoRefProp(hostRef, "parent")).thenReturn(computeRef);
+        when(client.getMoRefProp(computeRef, "environmentBrowser")).thenReturn(envRef);
+        when(context.getService()).thenReturn(vimService);
+        when(vimService.queryTargetCapabilities(envRef, hostRef)).thenReturn(hostCapability);
+        when(hostCapability.isNestedHVSupported()).thenReturn(true);
     }
 
     //Test successful scaling up the vm
@@ -348,4 +380,28 @@ public class VmwareResourceTest {
         VirtualMachineMO result = _resource.findVmOnDatacenter(context, hyperHost, volume);
         assertEquals(vmMo, result);
     }
+
+    @Test
+    public void testConfigNestedHVSupportFlagTrue() throws Exception{
+        specsArray.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, "true");
+        _resource.configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
+        verify(vmMo).getRunningHost();
+        verify(host).getMor();
+        verify(context, times(2)).getVimClient();
+        verify(client).getMoRefProp(hostRef, "parent");
+        verify(client).getMoRefProp(computeRef, "environmentBrowser");
+        verify(context).getService();
+        verify(vimService).queryTargetCapabilities(envRef, hostRef);
+        verify(hostCapability).isNestedHVSupported();
+
+        verify(vmConfigSpec).setNestedHVEnabled(true);
+    }
+
+    @Test
+    public void testConfigNestedHVSupportFlagFalse() throws Exception{
+        specsArray.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, "false");
+        _resource.configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
+        verify(vmMo, never()).getRunningHost();
+    }
+
 }

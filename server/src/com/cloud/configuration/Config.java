@@ -1220,14 +1220,6 @@ public enum Config {
             "Specify whether or not to recycle hung worker VMs",
             null),
     VmwareHungWorkerTimeout("Advanced", ManagementServer.class, Long.class, "vmware.hung.wokervm.timeout", "7200", "Worker VM timeout in seconds", null),
-    VmwareEnableNestedVirtualization(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "vmware.nested.virtualization",
-            "false",
-            "When set to true this will enable nested virtualization when this is supported by the hypervisor",
-            null),
     VmwareVcenterSessionTimeout("Advanced", ManagementServer.class, Long.class, "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", null),
 
     // Midonet
