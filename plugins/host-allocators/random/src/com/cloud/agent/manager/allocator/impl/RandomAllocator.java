@@ -61,6 +61,7 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         Long clusterId = plan.getClusterId();
         ServiceOffering offering = vmProfile.getServiceOffering();
         List<Host> suitableHosts = new ArrayList<Host>();
+        List<Host> hostsCopy = new ArrayList<Host>(hosts);
 
         if (type == Host.Type.Storage) {
             return suitableHosts;
@@ -75,18 +76,18 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
 
         // list all computing hosts, regardless of whether they support routing...it's random after all
         if (hostTag != null) {
-            hosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag));
+            hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag));
         } else {
-            hosts.retainAll(_resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId));
+            hostsCopy.retainAll(_resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId));
         }
 
-        s_logger.debug("Random Allocator found " + hosts.size() + "  hosts");
-        if (hosts.size() == 0) {
+        s_logger.debug("Random Allocator found " + hostsCopy.size() + "  hosts");
+        if (hostsCopy.size() == 0) {
             return suitableHosts;
         }
 
-        Collections.shuffle(hosts);
-        for (Host host : hosts) {
+        Collections.shuffle(hostsCopy);
+        for (Host host : hostsCopy) {
             if (suitableHosts.size() == returnUpTo) {
                 break;
             }
