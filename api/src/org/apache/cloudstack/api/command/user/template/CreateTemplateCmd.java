@@ -20,6 +20,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -30,11 +38,6 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -124,6 +127,9 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
                description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     protected Boolean isDynamicallyScalable;
 
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "create template for the project")
+    private Long projectId;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -211,37 +217,43 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long volumeId = getVolumeId();
         Long snapshotId = getSnapshotId();
-        Long accountId = null;
+        Account callingAccount = CallContext.current().getCallingAccount();
         if (volumeId != null) {
             Volume volume = _entityMgr.findById(Volume.class, volumeId);
             if (volume != null) {
-                accountId = volume.getAccountId();
+                _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, volume);
             } else {
                 throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
             }
         } else {
             Snapshot snapshot = _entityMgr.findById(Snapshot.class, snapshotId);
             if (snapshot != null) {
-                accountId = snapshot.getAccountId();
+                _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, snapshot);
             } else {
                 throw new InvalidParameterValueException("Unable to find snapshot by id=" + snapshotId);
             }
         }
 
-        Account account = _accountService.getAccount(accountId);
-        //Can create templates for enabled projects/accounts only
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            Project project = _projectService.findByProjectAccountId(accountId);
-            if (project.getState() != Project.State.Active) {
-                PermissionDeniedException ex =
-                    new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
-                ex.addProxyObject(project.getUuid(), "projectId");
+        if(projectId != null){
+            final Project project = _projectService.getProject(projectId);
+            if (project != null) {
+                if (project.getState() == Project.State.Active) {
+                    Account projectAccount= _accountService.getAccount(project.getProjectAccountId());
+                    _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, projectAccount);
+                    return project.getProjectAccountId();
+                } else {
+                    final PermissionDeniedException ex =
+                            new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
+                                    " as it's no longer active");
+                    ex.addProxyObject(project.getUuid(), "projectId");
+                    throw ex;
+                }
+            } else {
+                throw new InvalidParameterValueException("Unable to find project by id");
             }
-        } else if (account.getState() == Account.State.disabled) {
-            throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
 
-        return accountId;
+        return callingAccount.getId();
     }
 
     @Override
@@ -267,7 +279,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException {
         VirtualMachineTemplate template = null;
         //TemplateOwner should be the caller https://issues.citrite.net/browse/CS-17530
-        template = _templateService.createPrivateTemplateRecord(this, CallContext.current().getCallingAccount());
+        template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
         if (template != null) {
             setEntityId(template.getId());
             setEntityUuid(template.getUuid());
