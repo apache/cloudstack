@@ -1038,31 +1038,28 @@ class TestNuageInternalLb(nuageTestCase):
         traffic tests within a VPC
         """
 
-        # 1. Create an Internal LB Rule "internal_lbrule" with source IP
+        # 1. Create three different Internal LB Rules with a single source IP
         #    Address specified on the Internal tier, check if the Internal LB
-        #    Rule is successfully created.
-        # 2. Create an Internal LB Rule "internal_lbrule_http" with source IP
-        #    Address (same as above) specified on the Internal tier, check if
-        #    the Internal LB Rule is successfully created.
-        # 3. Attach a VM to the above created Internal LB Rules, check if the
+        #    Rules are created successfully.
+        # 2. Attach a VM to the above created Internal LB Rules, check if the
         #    InternalLbVm is successfully deployed in the Internal tier.
-        # 4. Deploy two more VMs in the Internal tier, check if the VMs are
+        # 3. Deploy two more VMs in the Internal tier, check if the VMs are
         #    successfully deployed.
-        # 5. Attach the newly deployed VMs to the above created Internal LB
+        # 4. Attach the newly deployed VMs to the above created Internal LB
         #    Rules, verify the validity of the above created Internal LB Rules
         #    over three Load Balanced VMs in the Internal tier.
-        # 6. Create the corresponding Network ACL rules to make the created
+        # 5. Create the corresponding Network ACL rules to make the created
         #    Internal LB rules (SSH & HTTP) accessible, check if the Network
         #    ACL rules are successfully added to the internal tier.
-        # 7. Validate the Internal LB functionality by performing (wget)
+        # 6. Validate the Internal LB functionality by performing (wget)
         #    traffic tests from a VM in the Public tier to the Internal load
         #    balanced guest VMs in the Internal tier, using Static NAT
         #    functionality to access (ssh) the VM on the Public tier.
-        # 8. Verify that the InternalLbVm gets destroyed when the last Internal
+        # 7. Verify that the InternalLbVm gets destroyed when the last Internal
         #    LB rule is removed from the Internal tier.
-        # 9. Repeat the above steps for one more Internal tier as well,
+        # 8. Repeat the above steps for one more Internal tier as well,
         #    validate the Internal LB functionality.
-        # 10. Delete all the created objects (cleanup).
+        # 9. Delete all the created objects (cleanup).
 
         # Creating a VPC offering
         self.debug("Creating Nuage VSP VPC offering with Internal LB "
@@ -1139,7 +1136,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_vm(public_vm)
 
         # Creating Internal LB Rules in the Internal tiers
-        self.debug("Creating two Internal LB Rules (SSH & HTTP) using the "
+        self.debug("Creating three Internal LB Rules (SSH & HTTP) using the "
                    "same Load Balancing source IP Address...")
         int_lb_rule_1 = self.create_Internal_LB_Rule(
             internal_tier_1, vm_array=[internal_vm_1])
@@ -1151,6 +1148,17 @@ class TestNuageInternalLb(nuageTestCase):
             source_ip=int_lb_rule_1.sourceipaddress)
         self.validate_Internal_LB_Rule(
             int_lb_rule_2, state="Active", vm_array=[internal_vm_1])
+        internal_lbrule_http = copy.deepcopy(
+            self.test_data["internal_lbrule_http"])
+        internal_lbrule_http["sourceport"] = 8080
+        internal_lbrule_http["instanceport"] = 8080
+        int_lb_rule_3 = self.create_Internal_LB_Rule(
+            internal_tier_1,
+            vm_array=[internal_vm_1],
+            services=internal_lbrule_http,
+            source_ip=int_lb_rule_1.sourceipaddress)
+        self.validate_Internal_LB_Rule(
+            int_lb_rule_3, state="Active", vm_array=[internal_vm_1])
 
         # Validating InternalLbVm deployment and state
         int_lb_vm_1 = self.get_InternalLbVm(
@@ -1184,6 +1192,11 @@ class TestNuageInternalLb(nuageTestCase):
         self.validate_Internal_LB_Rule(
             int_lb_rule_2, state="Active",
             vm_array=[internal_vm_1, internal_vm_1_1, internal_vm_1_2])
+        int_lb_rule_3.assign(
+            self.api_client, [internal_vm_1_1, internal_vm_1_2])
+        self.validate_Internal_LB_Rule(
+            int_lb_rule_3, state="Active",
+            vm_array=[internal_vm_1, internal_vm_1_1, internal_vm_1_2])
 
         # Validating InternalLbVm state
         self.check_InternalLbVm_state(
@@ -1197,32 +1210,48 @@ class TestNuageInternalLb(nuageTestCase):
                    "rules (SSH & HTTP) accessible...")
         ssh_rule = self.create_NetworkAclRule(
             self.test_data["ingress_rule"], network=internal_tier_1)
-        http_rule = self.create_NetworkAclRule(
+        http_rule_1 = self.create_NetworkAclRule(
             self.test_data["http_rule"], network=internal_tier_1)
+        http_rule = copy.deepcopy(self.test_data["http_rule"])
+        http_rule["privateport"] = 8080
+        http_rule["publicport"] = 8080
+        http_rule["startport"] = 8080
+        http_rule["endport"] = 8080
+        http_rule_2 = self.create_NetworkAclRule(
+            http_rule, network=internal_tier_1)
 
         # VSD verification
         self.verify_vsd_firewall_rule(ssh_rule)
-        self.verify_vsd_firewall_rule(http_rule)
+        self.verify_vsd_firewall_rule(http_rule_1)
+        self.verify_vsd_firewall_rule(http_rule_2)
 
         # Creating Internal LB Rules in the Internal tier
-        self.debug("Creating two Internal LB Rules (SSH & HTTP) using the "
+        self.debug("Creating three Internal LB Rules (SSH & HTTP) using the "
                    "same Load Balancing source IP Address...")
-        int_lb_rule_3 = self.create_Internal_LB_Rule(
+        int_lb_rule_4 = self.create_Internal_LB_Rule(
             internal_tier_2, vm_array=[internal_vm_2])
         self.validate_Internal_LB_Rule(
-            int_lb_rule_3, state="Active", vm_array=[internal_vm_2])
-        int_lb_rule_4 = self.create_Internal_LB_Rule(
-            internal_tier_2, vm_array=[internal_vm_2],
-            services=self.test_data["internal_lbrule_http"],
-            source_ip=int_lb_rule_3.sourceipaddress)
-        self.validate_Internal_LB_Rule(
             int_lb_rule_4, state="Active", vm_array=[internal_vm_2])
+        int_lb_rule_5 = self.create_Internal_LB_Rule(
+            internal_tier_2,
+            vm_array=[internal_vm_2],
+            services=self.test_data["internal_lbrule_http"],
+            source_ip=int_lb_rule_4.sourceipaddress)
+        self.validate_Internal_LB_Rule(
+            int_lb_rule_5, state="Active", vm_array=[internal_vm_2])
+        int_lb_rule_6 = self.create_Internal_LB_Rule(
+            internal_tier_2,
+            vm_array=[internal_vm_2],
+            services=internal_lbrule_http,
+            source_ip=int_lb_rule_4.sourceipaddress)
+        self.validate_Internal_LB_Rule(
+            int_lb_rule_6, state="Active", vm_array=[internal_vm_2])
 
         # Validating InternalLbVm deployment and state
         int_lb_vm_2 = self.get_InternalLbVm(
-            internal_tier_2, int_lb_rule_3.sourceipaddress)
+            internal_tier_2, int_lb_rule_4.sourceipaddress)
         self.check_InternalLbVm_state(
-            internal_tier_2, int_lb_rule_3.sourceipaddress, state="Running")
+            internal_tier_2, int_lb_rule_4.sourceipaddress, state="Running")
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm_2)
@@ -1240,20 +1269,25 @@ class TestNuageInternalLb(nuageTestCase):
         # Adding newly deployed VMs to the created Internal LB rules
         self.debug("Adding two more virtual machines to the created Internal "
                    "LB rules...")
-        int_lb_rule_3.assign(
-            self.api_client, [internal_vm_2_1, internal_vm_2_2])
-        self.validate_Internal_LB_Rule(
-            int_lb_rule_3, state="Active",
-            vm_array=[internal_vm_2, internal_vm_2_1, internal_vm_2_2])
         int_lb_rule_4.assign(
             self.api_client, [internal_vm_2_1, internal_vm_2_2])
         self.validate_Internal_LB_Rule(
             int_lb_rule_4, state="Active",
             vm_array=[internal_vm_2, internal_vm_2_1, internal_vm_2_2])
+        int_lb_rule_5.assign(
+            self.api_client, [internal_vm_2_1, internal_vm_2_2])
+        self.validate_Internal_LB_Rule(
+            int_lb_rule_5, state="Active",
+            vm_array=[internal_vm_2, internal_vm_2_1, internal_vm_2_2])
+        int_lb_rule_6.assign(
+            self.api_client, [internal_vm_2_1, internal_vm_2_2])
+        self.validate_Internal_LB_Rule(
+            int_lb_rule_6, state="Active",
+            vm_array=[internal_vm_2, internal_vm_2_1, internal_vm_2_2])
 
         # Validating InternalLbVm state
         self.check_InternalLbVm_state(
-            internal_tier_2, int_lb_rule_3.sourceipaddress, state="Running")
+            internal_tier_2, int_lb_rule_4.sourceipaddress, state="Running")
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm_2)
@@ -1263,12 +1297,15 @@ class TestNuageInternalLb(nuageTestCase):
                    "rules (SSH & HTTP) accessible...")
         ssh_rule = self.create_NetworkAclRule(
             self.test_data["ingress_rule"], network=internal_tier_2)
-        http_rule = self.create_NetworkAclRule(
+        http_rule_1 = self.create_NetworkAclRule(
             self.test_data["http_rule"], network=internal_tier_2)
+        http_rule_2 = self.create_NetworkAclRule(
+            http_rule, network=internal_tier_2)
 
         # VSD verification
         self.verify_vsd_firewall_rule(ssh_rule)
-        self.verify_vsd_firewall_rule(http_rule)
+        self.verify_vsd_firewall_rule(http_rule_1)
+        self.verify_vsd_firewall_rule(http_rule_2)
 
         # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
@@ -1293,18 +1330,34 @@ class TestNuageInternalLb(nuageTestCase):
         # Internal LB (wget) traffic tests
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         wget_file_1 = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
+            ssh_client,
+            int_lb_rule_1.sourceipaddress,
             self.test_data["http_rule"]["publicport"])
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         wget_file_2 = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_3.sourceipaddress,
+            ssh_client,
+            int_lb_rule_1.sourceipaddress,
+            http_rule["publicport"])
+        ssh_client = self.ssh_into_VM(public_vm, public_ip)
+        wget_file_3 = self.wget_from_vm_cmd(
+            ssh_client,
+            int_lb_rule_4.sourceipaddress,
             self.test_data["http_rule"]["publicport"])
+        ssh_client = self.ssh_into_VM(public_vm, public_ip)
+        wget_file_4 = self.wget_from_vm_cmd(
+            ssh_client,
+            int_lb_rule_4.sourceipaddress,
+            http_rule["publicport"])
 
         # Verifying Internal LB (wget) traffic tests
         self.verify_lb_wget_file(
             wget_file_1, [internal_vm_1, internal_vm_1_1, internal_vm_1_2])
         self.verify_lb_wget_file(
-            wget_file_2, [internal_vm_2, internal_vm_2_1, internal_vm_2_2])
+            wget_file_2, [internal_vm_1, internal_vm_1_1, internal_vm_1_2])
+        self.verify_lb_wget_file(
+            wget_file_3, [internal_vm_2, internal_vm_2_1, internal_vm_2_2])
+        self.verify_lb_wget_file(
+            wget_file_4, [internal_vm_2, internal_vm_2_1, internal_vm_2_2])
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
     def test_06_nuage_internallb_algorithms_traffic(self):

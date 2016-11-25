@@ -28,4 +28,8 @@ public class MockVpcVirtualRouterElement extends VpcVirtualRouterElement {
         return true;
     }
 
+    @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return true;
+    }
 }

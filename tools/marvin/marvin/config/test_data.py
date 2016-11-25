@@ -443,6 +443,22 @@ test_data = {
         "supportedservices":
             "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL"
     },
+    "vpc_offering_multi_lb": {
+        "name": "VPC offering with multiple Lb service providers",
+        "displaytext": "VPC offering with multiple Lb service providers",
+        "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL",
+        "serviceProviderList": {
+            "Vpn": 'VpcVirtualRouter',
+            "Dhcp": 'VpcVirtualRouter',
+            "Dns": 'VpcVirtualRouter',
+            "SourceNat": 'VpcVirtualRouter',
+            "Lb": ["InternalLbVm", "VpcVirtualRouter"],
+            "PortForwarding": 'VpcVirtualRouter',
+            "UserData": 'VpcVirtualRouter',
+            "StaticNat": 'VpcVirtualRouter',
+            "NetworkACL": 'VpcVirtualRouter'
+        }
+    },
     "vpc": {
         "name": "TestVPC",
         "displaytext": "TestVPC",
