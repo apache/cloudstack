@@ -200,7 +200,7 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vm.getInstanceName()));
         cmd.addVmData("metadata", "public-ipv4", nic.getIPv4Address());
         cmd.addVmData("metadata", "public-hostname", StringUtils.unicodeEscape(vm.getInstanceName()));
-        cmd.addVmData("metadata", "instance-id", String.valueOf(vm.getId()));
+        cmd.addVmData("metadata", "instance-id", String.valueOf(vm.getUuid()));
         cmd.addVmData("metadata", "vm-id", String.valueOf(vm.getInstanceName()));
         cmd.addVmData("metadata", "public-keys", null);
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
