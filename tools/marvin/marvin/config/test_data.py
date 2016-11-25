@@ -763,6 +763,14 @@ test_data = {
         "protocol": "TCP",
         "cidrlist": '0.0.0.0/0',
     },
+    "dns_rule": {
+        "privateport": 53,
+        "publicport": 53,
+        "startport": 53,
+        "endport": 53,
+        "protocol": "UDP",
+        "cidrlist": '0.0.0.0/0',
+    },
     "icmprule": {
         "icmptype": -1,
         "icmpcode": -1,

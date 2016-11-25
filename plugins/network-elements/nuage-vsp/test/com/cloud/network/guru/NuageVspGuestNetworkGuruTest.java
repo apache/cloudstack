@@ -144,6 +144,7 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
         when(host.getId()).thenReturn(NETWORK_ID);
         when(_agentManager.easySend(eq(NETWORK_ID), any(Command.class))).thenReturn(new Answer(null));
+        when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         final NuageVspDeviceVO device = mock(NuageVspDeviceVO.class);
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(device));
@@ -158,7 +159,8 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(offering.getIsPersistent()).thenReturn(false);
         when(_configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(false);
 
-        when(_networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+        when(_networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(NETWORK_ID, Service.Connectivity, Network.Provider.NuageVsp)).thenReturn(true);
+        when(_networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(NETWORK_ID, Service.SourceNat, Network.Provider.NuageVsp)).thenReturn(true);
 
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
@@ -199,7 +201,8 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(offering.getIsPersistent()).thenReturn(false);
         when(_configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(false);
 
-        when(_networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+        when(_networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(NETWORK_ID, Service.Connectivity, Network.Provider.NuageVsp)).thenReturn(true);
+        when(_networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(NETWORK_ID, Service.SourceNat, Network.Provider.NuageVsp)).thenReturn(true);
 
         final DeploymentPlan plan = mock(DeploymentPlan.class);
         final Network network = mock(Network.class);

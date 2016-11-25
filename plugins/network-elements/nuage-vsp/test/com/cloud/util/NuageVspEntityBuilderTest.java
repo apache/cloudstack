@@ -20,8 +20,10 @@
 package com.cloud.util;
 
 import com.cloud.NuageTest;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.Network;
@@ -58,6 +60,8 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -77,6 +81,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private NetworkOfferingDao _networkOfferingDao = mock(NetworkOfferingDao.class);
     private NetworkOfferingServiceMapDao _networkOfferingServiceMapDao = mock(NetworkOfferingServiceMapDao.class);
     private VlanDao _vlanDao = mock(VlanDao.class);
+    private VlanDetailsDao _vlanDetailsDao = mock(VlanDetailsDao.class);
     private IPAddressDao _ipAddressDao = mock(IPAddressDao.class);
     private NetworkDetailsDao _networkDetailsDao = mock(NetworkDetailsDao.class);
     private NuageVspEntityBuilder _nuageVspEntityBuilder = new NuageVspEntityBuilder();
@@ -87,6 +92,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private NetworkOfferingVO _mockedSharedNetworkOffering = mock(NetworkOfferingVO.class);
     private NetworkOfferingVO _mockedL2NetworkOffering = mock(NetworkOfferingVO.class);
     private VlanVO _mockedVlan = mock(VlanVO.class);
+    private VlanDetailsVO _mockedVlanDetail = mock(VlanDetailsVO.class);
     private VpcVO _mockedVpc = mock(VpcVO.class);
     private NetworkVO _mockedNetwork = mock(NetworkVO.class);
     private NetworkVO _mockedVpcNetwork = mock(NetworkVO.class);
@@ -111,6 +117,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         _nuageVspEntityBuilder._networkOfferingDao = _networkOfferingDao;
         _nuageVspEntityBuilder._networkOfferingServiceMapDao = _networkOfferingServiceMapDao;
         _nuageVspEntityBuilder._vlanDao = _vlanDao;
+        _nuageVspEntityBuilder._vlanDetailsDao = _vlanDetailsDao;
         _nuageVspEntityBuilder._configurationDao = _configurationDao;
         _nuageVspEntityBuilder._ipAddressDao = _ipAddressDao;
         _nuageVspEntityBuilder._networkModel = _networkModel;
@@ -122,6 +129,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         setUpMockedNetworkOffering(_mockedSharedNetworkOffering, Network.GuestType.Shared);
         setUpMockedNetworkOffering(_mockedL2NetworkOffering, Network.GuestType.Isolated);
         setUpMockedVlan();
+        setUpMockedVlanDetail();
         setUpMockedVpc();
         setUpMockedNetwork(_mockedNetwork, NETWORK_OFFERING_ID, null);
         setUpMockedNetwork(_mockedVpcNetwork, NETWORK_OFFERING_ID, VPC_ID);
@@ -319,6 +327,10 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_mockedVlan.getIpRange()).thenReturn("192.168.2.2-192.168.2.200");
     }
 
+    private void setUpMockedVlanDetail() {
+        when(_mockedVlanDetail.getValue()).thenReturn("true");
+    }
+
     private void setUpMockedVpc() {
         when(_mockedVpc.getUuid()).thenReturn("vpcUuid");
         when(_mockedVpc.getName()).thenReturn("vpcName");
@@ -406,6 +418,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_networkModel.areServicesSupportedByNetworkOffering(SHARED_NETWORK_OFFERING_ID, Network.Service.Firewall)).thenReturn(true);
         when(_networkModel.areServicesSupportedByNetworkOffering(L2_NETWORK_OFFERING_ID, Network.Service.Firewall)).thenReturn(true);
         when(_vlanDao.listVlansByNetworkId(NETWORK_ID)).thenReturn(Lists.newArrayList(_mockedVlan));
+        when(_vlanDetailsDao.findDetail(anyLong(), anyString())).thenReturn(_mockedVlanDetail);
         when(_vpcDao.findById(VPC_ID)).thenReturn(_mockedVpc);
         when(_ipAddressDao.findById(SOURCE_IP_ADDRESS_ID)).thenReturn(_mockedStaticNatIp);
     }

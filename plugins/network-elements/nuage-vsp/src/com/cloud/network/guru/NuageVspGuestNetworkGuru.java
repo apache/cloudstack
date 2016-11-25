@@ -63,7 +63,6 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks;
-import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.IPAddressVO;
@@ -83,7 +82,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.util.NuageVspEntityBuilder;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -198,7 +196,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             implemented.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
             implemented.setBroadcastDomainType(Networks.BroadcastDomainType.Vsp);
 
-            HostVO nuageVspHost = getNuageVspHost(physicalNetworkId);
+            HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(physicalNetworkId);
             ImplementNetworkVspCommand cmd = new ImplementNetworkVspCommand(vspNetwork, _nuageVspEntityBuilder.buildNetworkDhcpOption(network, offering));
             Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
 
@@ -256,7 +254,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 throw new IllegalStateException("The broadcast URI path " + network.getBroadcastUri() + " is empty or in an incorrect format.");
             }
 
-            HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
+            HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
             VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
 
             // Set flags for dhcp options
@@ -344,7 +342,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && (offering.getGuestType() == Network.GuestType.Isolated || offering.getGuestType() == Network.GuestType.Shared)
-                && isMyIsolationMethod(physicalNetwork)) {
+                && isMyIsolationMethod(physicalNetwork) && hasRequiredServices(offering)) {
             if (_configMgr.isOfferingForVpc(offering) && !offering.getIsPersistent()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("NuageVsp can't handle VPC tiers which use a network offering which are not persistent");
@@ -358,6 +356,23 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             }
             return false;
         }
+    }
+
+    private boolean hasRequiredServices(NetworkOffering networkOffering) {
+        if (!_ntwkOfferingSrvcDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Network.Service.Connectivity, Network.Provider.NuageVsp)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("NuageVsp can't handle networks which use a network offering without NuageVsp as Connectivity provider");
+            }
+            return false;
+        }
+
+        if (!_ntwkOfferingSrvcDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Network.Service.SourceNat, Network.Provider.NuageVsp)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("NuageVsp can't handle networks which use a network offering without NuageVsp as SourceNat provider");
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -379,7 +394,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
             VspVm vspVm = _nuageVspEntityBuilder.buildVspVm(vm.getVirtualMachine(), network);
             VspNic vspNic = _nuageVspEntityBuilder.buildVspNic(nicFromDb.getUuid(), nic);
-            HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
+            HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
 
             DeallocateVmVspCommand cmd = new DeallocateVmVspCommand(vspNetwork, vspVm, vspNic);
             Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
@@ -431,7 +446,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 s_logger.debug("Handling trash() call back to delete the network " + network.getName() + " with uuid " + network.getUuid() + " from VSP");
             }
             VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
-            HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
+            HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
             TrashNetworkVspCommand cmd = new TrashNetworkVspCommand(vspNetwork);
             Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
@@ -445,19 +460,6 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             _networkDao.releaseFromLockTable(network.getId());
         }
         return super.trash(network, offering);
-    }
-
-    private HostVO getNuageVspHost(long physicalNetworkId) {
-        HostVO nuageVspHost;
-        List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkId);
-        if (nuageVspDevices != null && (!nuageVspDevices.isEmpty())) {
-            NuageVspDeviceVO config = nuageVspDevices.iterator().next();
-            nuageVspHost = _hostDao.findById(config.getHostId());
-            _hostDao.loadDetails(nuageVspHost);
-        } else {
-            throw new CloudRuntimeException("There is no Nuage VSP device configured on physical network " + physicalNetworkId);
-        }
-        return nuageVspHost;
     }
 
     private boolean networkHasDns(Network network) {
