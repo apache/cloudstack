@@ -78,18 +78,13 @@
             });
 
         } else { //non-portable IP which has only one NIC
-            /*
-            var nic = $.grep(instance.nic, function(nic) {
-                return nic.networkid == network.id;
-            })[0];
-            */
 
             // Get NIC IPs
             $.ajax({
                 url: createURL('listNics'),
                 data: {
                     virtualmachineid: instance.id,
-                    nicId: instance.nic[0].id
+                    networkid: network.id
                 },
                 success: function(json) {
                     var nic = json.listnicsresponse.nic[0];
