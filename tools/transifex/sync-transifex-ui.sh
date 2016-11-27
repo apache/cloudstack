@@ -77,7 +77,12 @@ doDownloadL10NLangs()
         # l10n languages
         for CODELANG in ${LIST_LANG} ; do
                 if [ -f "${WORKDIR}/${CODELANG}.json" ]; then
-                        sed -e '1s/^/var dictionary = /' -e "\$s/\}$/\};/" -e "1s~^~${AL2_STRING}~" ${WORKDIR}/${CODELANG}.json > ${DIRECTORY_RESOURCES}/${CODELANG}.js
+                        sed -e 's/":"/": "/' \
+                                -e 's/^/    /g' \
+                                -e '1s/^    {/var dictionary = {\n    /' \
+                                -e '$s/\}$/\n\};/' \
+                                -e "1s~^~${AL2_STRING}~" \
+                                ${WORKDIR}/${CODELANG}.json > ${DIRECTORY_RESOURCES}/${CODELANG}.js
                 else   
                         echo "Warning: the resource file for language ${CODELANG} doesn't exist on transifex"
                 fi
@@ -102,7 +107,12 @@ doDownloadSourceLang()
         tx pull -s -r ${ARGUMENTS} 
         # Source language
         if [ -f "${WORKDIR}/${SRCLANG}.json" ]; then
-                sed -e '1s/^/var dictionary = /' -e "\$s/\}$/\};/" -e "1s~^~${AL2_STRING}~" ${WORKDIR}/${SRCLANG}.json > ${DIRECTORY_RESOURCES}/${SRCLANG}.js
+                sed -e 's/":"/": "/' \
+                        -e 's/^/    /g' \
+                        -e '1s/^    {/var dictionary = {\n    /' \
+                        -e '$s/\}$/\n\};/' \
+                        -e "1s~^~${AL2_STRING}~" \
+                        ${WORKDIR}/${SRCLANG}.json > ${DIRECTORY_RESOURCES}/${SRCLANG}.js
         else
                 echo "Warning: the source language hasn't been retrieve!"
         fi
