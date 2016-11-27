@@ -137,15 +137,15 @@ class CsDhcp(CsDataBag):
         if entry['default_entry'] == True:
             self.cloud.add("%s,%s,%s,%sh" % (entry['mac_address'],
                                              entry['ipv4_adress'],
-                                             entry['host_name']),
-                                             lease)
+                                             entry['host_name'],
+                                             lease))
         else:
             tag = entry['ipv4_adress'].replace(".","_")
             self.cloud.add("%s,set:%s,%s,%s,%sh" % (entry['mac_address'],
                                                     tag,
                                                     entry['ipv4_adress'],
-                                                    entry['host_name']),
-                                                    lease)
+                                                    entry['host_name'],
+                                                    lease))
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))
