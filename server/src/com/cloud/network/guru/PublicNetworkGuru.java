@@ -128,7 +128,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
                 nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
                 nic.setBroadcastType(BroadcastDomainType.Vlan);
             }
-            nic.setFormat(AddressFormat.Ip4);
+            nic.setFormat(AddressFormat.IPv4);
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
         }

@@ -380,7 +380,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
                 nic.setIPv4Dns1(dc.getDns1());
                 nic.setIPv4Dns2(dc.getDns2());
-                nic.setFormat(AddressFormat.Ip4);
+                nic.setFormat(AddressFormat.IPv4);
             }
         }
 

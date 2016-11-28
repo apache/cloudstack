@@ -150,7 +150,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
                 nic.setMacAddress(mac);
                 nic.setIPv4Address("0.0.0.0");
                 nic.setIPv4Netmask("0.0.0.0");
-                nic.setFormat(AddressFormat.Ip4);
+                nic.setFormat(AddressFormat.IPv4);
                 nic.setIPv4Gateway("0.0.0.0");
                 return;
             }
@@ -163,7 +163,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         nic.setIPv4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
         nic.setIPv4Netmask("255.255.0.0");
-        nic.setFormat(AddressFormat.Ip4);
+        nic.setFormat(AddressFormat.IPv4);
         nic.setIPv4Gateway(NetUtils.getLinkLocalGateway());
     }
 

@@ -115,7 +115,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     }
 
     public NicProfile(ReservationStrategy strategy, String iPv4Address, String macAddress, String iPv4gateway, String iPv4netmask) {
-        format = AddressFormat.Ip4;
+        format = AddressFormat.IPv4;
         this.iPv4Address = iPv4Address;
         this.iPv4Gateway = iPv4gateway;
         this.iPv4Netmask = iPv4netmask;

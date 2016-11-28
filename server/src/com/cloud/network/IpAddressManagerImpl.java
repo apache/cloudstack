@@ -1879,7 +1879,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 nic.setBroadcastUri(network.getBroadcastUri());
                         else
                             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
-                nic.setFormat(AddressFormat.Ip4);
+                nic.setFormat(AddressFormat.IPv4);
                 nic.setReservationId(String.valueOf(ip.getVlanTag()));
                 nic.setMacAddress(ip.getMacAddress());
             }
@@ -1901,7 +1901,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
                     nic.setBroadcastType(BroadcastDomainType.Vlan);
                     nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
-                    nic.setFormat(AddressFormat.Ip6);
+                    nic.setFormat(AddressFormat.IPv6);
                     nic.setReservationId(String.valueOf(vlan.getVlanTag()));
                     nic.setMacAddress(ip.getMacAddress());
                 }
@@ -1952,7 +1952,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         nic.setBroadcastType(network.getBroadcastDomainType());
 
                         nic.setBroadcastUri(network.getBroadcastUri());
-                        nic.setFormat(AddressFormat.Ip4);
+                        nic.setFormat(AddressFormat.IPv4);
 
                         nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
                     }
@@ -1975,7 +1975,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
                             nic.setBroadcastType(BroadcastDomainType.Vlan);
                             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setFormat(AddressFormat.Ip6);
+                            nic.setFormat(AddressFormat.IPv6);
                             nic.setReservationId(String.valueOf(vlan.getVlanTag()));
                             nic.setMacAddress(ip.getMacAddress());
                         }

@@ -286,7 +286,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
                 nic.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
             }
             nic.setIPv4Gateway(network.getGateway());
-            nic.setFormat(AddressFormat.Ip4);
+            nic.setFormat(AddressFormat.IPv4);
         }
     }
 

@@ -194,7 +194,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getBroadcastUri()));
             nic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getBroadcastUri()));
             nic.setBroadcastType(BroadcastDomainType.Vlan);
-            nic.setFormat(AddressFormat.Ip4);
+            nic.setFormat(AddressFormat.IPv4);
             nic.setReservationId(String.valueOf(ip.getBroadcastUri()));
             nic.setMacAddress(ip.getMacAddress());
         }
