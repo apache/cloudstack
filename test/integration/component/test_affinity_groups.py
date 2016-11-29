@@ -1040,7 +1040,6 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         for aff_grp in aff_grps:
             aff_grp.delete(self.api_client)
 
-    @unittest.skip("Skip - Failing - work in progress")
     @attr(tags=["simulator", "basic", "advanced", "multihost", "NotRun"])
     def test_04_update_aff_grp_remove_all(self):
         """
@@ -1084,6 +1083,32 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         vm1.delete(self.api_client)
         #Wait for expunge interval to cleanup VM
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
+        for aff_grp in aff_grps:
+            aff_grp.delete(self.api_client)
+
+    @attr(tags=["simulator", "basic", "advanced", "multihost", "NotRun"])
+    def test_06_update_aff_grp_invalid_args(self):
+        """
+            Update the list of Affinity Groups with either both args or none
+        """
+
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        self.create_aff_grp(aff_grp=self.services["host_anti_affinity"])
+        vm1, hostid1 = self.create_vm_in_aff_grps([], account_name=self.account.name, domain_id=self.domain.id)
+
+        aff_grps = [self.aff_grp[0], self.aff_grp[1]]
+        vm1.stop(self.api_client)
+
+        with self.assertRaises(Exception):
+            vm1.update_affinity_group(self.api_client)
+
+        with self.assertRaises(Exception):
+            vm1.update_affinity_group(self.api_client, affinitygroupids=[self.aff_grp[0].id], affinitygroupnames=[self.aff_grp[1].name])
+
+        vm1.update_affinity_group(self.api_client, affinitygroupids=[])
+
+        vm1.delete(self.api_client)
+        # Can cleanup affinity groups since none are set on the VM
         for aff_grp in aff_grps:
             aff_grp.delete(self.api_client)
 
