@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -373,7 +374,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             List<DomainVO> domains = _domainDao.search(sc, null);
 
             SearchCriteria<DomainVO> sc1 = _domainDao.createSearchCriteria();
-            sc1.addAnd("path", SearchCriteria.Op.LIKE, "%" + domainHandle.getPath() + "%");
+            sc1.addAnd("path", SearchCriteria.Op.LIKE, "%" + StringUtils.replace(domainHandle.getPath(), "%", "/%") + "%");
             List<DomainVO> domainsToBeInactivated = _domainDao.search(sc1, null);
 
             // update all subdomains to inactive so no accounts/users can be created
