@@ -46,3 +46,5 @@ CREATE TABLE `cloud`.`vlan_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vlan_details__vlan_id` FOREIGN KEY `fk_vlan_details__vlan_id`(`vlan_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN supports_public_access boolean default false;

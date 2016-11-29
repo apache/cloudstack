@@ -513,7 +513,7 @@ class VirtualMachine:
 
         if ipaddress:
             cmd.ipaddress = ipaddress
-        elif ipaddress in services:
+        elif "ipaddress" in services:
             cmd.ipaddress = services["ipaddress"]
 
         if securitygroupids:

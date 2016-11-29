@@ -29,7 +29,6 @@ import net.nuage.vsp.acs.client.api.model.VspNetwork;
 import net.nuage.vsp.acs.client.api.model.VspNic;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 import net.nuage.vsp.acs.client.api.model.VspVm;
-import net.nuage.vsp.acs.client.common.model.Pair;
 
 import org.junit.Before;
 import org.mockito.Mock;
@@ -56,6 +55,7 @@ import static com.cloud.network.manager.NuageVspManager.NuageVspSharedNetworkDom
 import static com.cloud.network.manager.NuageVspManager.NuageVspVpcDomainTemplateName;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -78,7 +78,8 @@ public class NuageTest {
         when(_configurationDao.getValue(NuageVspSharedNetworkDomainTemplateName.key())).thenReturn("SharedDomainTemplate");
 
         when(_nuageVspEntityBuilder.buildVspDomain(any(Domain.class))).thenReturn(buildVspDomain());
-        when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class), anyBoolean())).thenReturn(buildVspNetwork());
+        when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class))).thenReturn(buildVspNetwork());
+        when(_nuageVspEntityBuilder.buildVspNetwork(anyLong(), any(Network.class))).thenReturn(buildVspNetwork());
         when(_nuageVspEntityBuilder.buildVspVm(any(VirtualMachine.class), any(Network.class))).thenReturn(buildVspVm());
         when(_nuageVspEntityBuilder.buildVspNic(anyString(), any(NicProfile.class))).thenReturn(buildVspNic());
         when(_nuageVspEntityBuilder.buildVspNic(any(NicVO.class))).thenReturn(buildVspNic());
@@ -112,7 +113,6 @@ public class NuageTest {
                 .cidr("networkCidr")
                 .gateway("networkGateway")
                 .virtualRouterIp("virtualRouterIp")
-                .ipAddressRanges(new ArrayList<Pair<String, String>>())
                 .build();
     }
 

@@ -23,6 +23,8 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -790,5 +792,73 @@ public class ConfigurationManagerTest {
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(arrayList);
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
+    }
+
+    @Test
+    public void hasSameSubnetTest() {
+        //Ipv4 Test
+        boolean result;
+        result = configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, false, null, null, null, null, null);
+        Assert.assertFalse(result);
+        try {
+            configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.255.0", "10.0.0.2", "255.255.255.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
+            Assert.fail();
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals(e.getMessage(), "The gateway of the subnet should be unique. The subnet already has a gateway 10.0.0.1");
+        }
+        try {
+            configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.0.0", "10.0.0.2", "255.255.255.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
+            Assert.fail();
+        } catch (InvalidParameterValueException e){
+            Assert.assertEquals(e.getMessage(), "The subnet you are trying to add is a subset of the existing subnet having gateway 10.0.0.1 and netmask 255.255.0.0");
+        }
+        try {
+            configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.255.0", "10.0.0.2", "255.255.0.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
+            Assert.fail();
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals(e.getMessage(), "The subnet you are trying to add is a superset of the existing subnet having gateway 10.0.0.1 and netmask 255.255.255.0");
+        }
+        result = configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.255.0", "10.0.0.1", "255.255.255.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
+        Assert.assertTrue(result);
+
+        //Ipv6 Test
+        Network ipV6Network = mock(Network.class);
+        when(ipV6Network.getIp6Gateway()).thenReturn("2001:db8:0:f101::1");
+        when(ipV6Network.getIp6Cidr()).thenReturn("2001:db8:0:f101::0/64");
+        doThrow(new InvalidParameterValueException("Exception from Mock: startIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel).checkIp6Parameters("2001:db9:0:f101::2", "2001:db9:0:f101::a", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
+        doThrow(new InvalidParameterValueException("Exception from Mock: endIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel).checkIp6Parameters("2001:db8:0:f101::a", "2001:db9:0:f101::2", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
+        doThrow(new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in")).when(configurationMgr._networkModel).checkIp6Parameters(Mockito.anyString(), Mockito.anyString(), Mockito.isNull(String.class), Mockito.isNull(String.class));
+
+
+        configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
+        Assert.assertTrue(result);
+        try {
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::2", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
+            Assert.fail();
+        } catch (InvalidParameterValueException e){
+            Assert.assertEquals(e.getMessage(), "The input gateway 2001:db8:0:f101::2 is not same as network gateway 2001:db8:0:f101::1");
+        }
+        try {
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/63", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
+            Assert.fail();
+        } catch (InvalidParameterValueException e){
+            Assert.assertEquals(e.getMessage(), "The input cidr 2001:db8:0:f101::0/63 is not same as network cidr 2001:db8:0:f101::0/64");
+        }
+
+        try {
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db9:0:f101::2", "2001:db9:0:f101::a", ipV6Network);
+            Assert.fail();
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals(e.getMessage(), "Exception from Mock: startIPv6 is not in ip6cidr indicated network!");
+        }
+        try {
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::a", "2001:db9:0:f101::2", ipV6Network);
+            Assert.fail();
+        } catch(InvalidParameterValueException e){
+            Assert.assertEquals(e.getMessage(), "Exception from Mock: endIPv6 is not in ip6cidr indicated network!");
+        }
+
+        result = configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, null, null, "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
+        Assert.assertTrue(result);
     }
 }

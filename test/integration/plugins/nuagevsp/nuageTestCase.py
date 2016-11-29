@@ -19,7 +19,8 @@
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.lib.base import (EgressFireWallRule,
+from marvin.lib.base import (Domain,
+                             EgressFireWallRule,
                              FireWallRule,
                              Host,
                              Hypervisor,
@@ -36,7 +37,8 @@ from marvin.lib.base import (EgressFireWallRule,
                              StaticNATRule,
                              VirtualMachine,
                              VPC,
-                             VpcOffering)
+                             VpcOffering,
+                             Zone)
 from marvin.lib.common import (get_domain,
                                get_template,
                                get_zone)
@@ -84,10 +86,17 @@ class nuageTestCase(cloudstackTestCase):
         # We want to fail quicker, if it's a failure
         socket.setdefaulttimeout(60)
 
+        # Get test client and test data
         cls.test_client = super(nuageTestCase, cls).getClsTestClient()
         cls.api_client = cls.test_client.getApiClient()
         cls.db_client = cls.test_client.getDbConnection()
         cls.test_data = cls.test_client.getParsedTestDataConfig()
+
+        # Get Zones and Domains
+        cls.zones = Zone.list(cls.api_client)
+        cls.domains = Domain.list(cls.api_client, listall=True)
+        cls.domain = get_domain(cls.api_client)
+        cls.root_domain = get_domain(cls.api_client, domain_name="ROOT")
 
         # Get Zone details
         cls.getZoneDetails()
@@ -106,12 +115,11 @@ class nuageTestCase(cloudstackTestCase):
 
     @classmethod
     def getZoneDetails(cls, zone=None):
-        # Get Zone, Domain and templates
+        # Get Zone details
         cls.zone = zone if zone else get_zone(
             cls.api_client,
             zone_name=cls.test_client.getZoneForTests()
         )
-        cls.domain = get_domain(cls.api_client)
         cls.template = get_template(cls.api_client,
                                     cls.zone.id,
                                     cls.test_data["ostype"]
@@ -160,33 +168,32 @@ class nuageTestCase(cloudstackTestCase):
         # Get data center Internet connectivity information from the Marvin
         # config file, which is required to perform Internet connectivity and
         # traffic tests from the guest VMs.
-        cls.isInternetConnectivityAvailable = False
-        cls.http_proxy = None
-        cls.https_proxy = None
-        dc_internet_conn_info = cls.config.dcInternetConnectivityInfo if \
-            cls.config.dcInternetConnectivityInfo else None
-        if dc_internet_conn_info:
-            dc_internet_conn_available = dc_internet_conn_info.available if \
-                dc_internet_conn_info.available else None
-            if dc_internet_conn_available:
-                cls.isInternetConnectivityAvailable = True if \
-                    dc_internet_conn_available == "true" else False
-            dc_internet_conn_http_proxy = dc_internet_conn_info.httpProxy if \
-                dc_internet_conn_info.httpProxy else None
-            if dc_internet_conn_http_proxy:
-                cls.http_proxy = dc_internet_conn_http_proxy
-            dc_internet_conn_https_proxy = dc_internet_conn_info.httpsProxy \
-                if dc_internet_conn_info.httpsProxy else None
-            if dc_internet_conn_https_proxy:
-                cls.https_proxy = dc_internet_conn_https_proxy
+        cls.dcInternetConnectivityInfo()
 
         # Check if the configured Nuage VSP SDN platform infrastructure
         # supports underlay networking
         cmd = listNuageUnderlayVlanIpRanges.listNuageUnderlayVlanIpRangesCmd()
+        cmd.zoneid = cls.zone.id
         cmd.underlay = True
         cls.isNuageInfraUnderlay = isinstance(
             cls.api_client.listNuageUnderlayVlanIpRanges(cmd), list)
         return
+
+    @classmethod
+    def dcInternetConnectivityInfo(cls):
+        cls.isInternetConnectivityAvailable = False
+        cls.http_proxy = None
+        cls.https_proxy = None
+        zone = next(zone for zone in cls.config.zones
+                    if zone.name == cls.zone.name)
+        if zone.dcInternetConnectivityInfo.available:
+            cls.isInternetConnectivityAvailable = \
+                zone.dcInternetConnectivityInfo.available == "true"
+        if cls.isInternetConnectivityAvailable:
+            if zone.dcInternetConnectivityInfo.httpProxy:
+                cls.http_proxy = zone.dcInternetConnectivityInfo.httpProxy
+            if zone.dcInternetConnectivityInfo.httpsProxy:
+                cls.https_proxy = zone.dcInternetConnectivityInfo.httpsProxy
 
     @classmethod
     def configureVSDSessions(cls):
@@ -906,6 +913,66 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully verified the creation and state of Network "
                    "- %s in VSD" % network.name)
 
+    # get_subnet_id - Calculates and returns the subnet ID in VSD with the
+    # given CloudStack network ID and subnet gateway
+    def get_subnet_id(self, network_id, gateway):
+        try:
+            import uuid
+
+            class NULL_NAMESPACE:
+                bytes = b''
+            # The UUID of the shared network in ACS
+            # The gateway IP of the address range
+            network_id = str(network_id)
+            bytes = bytearray(network_id)
+            ipbytes = bytearray(gateway)
+            subnet_id = uuid.uuid3(NULL_NAMESPACE, bytes + ipbytes)
+            self.debug("The required subnet id is %s in VSD" % subnet_id)
+            return str(subnet_id)
+        except Exception as e:
+            self.debug("Failed to get the subnet id due to %s" % e)
+            self.fail("Unable to get the subnet id, failing the test case")
+
+    # verify_vsd_shared_network - Verifies the given CloudStack domain and
+    # shared network against the corresponding installed enterprise, domain,
+    # zone, subnet, and shared network resource in VSD
+    def verify_vsd_shared_network(self, domain_id, network,
+                                  gateway="10.1.1.1"):
+        self.debug("Verifying the creation and state of Shared Network - %s "
+                   "in VSD" % network.name)
+        vsd_enterprise = self.vsd.get_enterprise(
+            filter=self.get_externalID_filter(domain_id))
+        ext_network_id_filter = self.get_externalID_filter(network.id)
+        vsd_domain = self.vsd.get_domain(filter=ext_network_id_filter)
+        vsd_zone = self.vsd.get_zone(filter=ext_network_id_filter)
+        subnet_id = self.get_subnet_id(network.id, gateway)
+        vsd_subnet = self.vsd.get_subnet(
+            filter=self.get_externalID_filter(subnet_id))
+        self.assertNotEqual(vsd_enterprise, None,
+                            "VSD enterprise (CloudStack domain) data format "
+                            "should not be of type None"
+                            )
+        self.assertEqual(vsd_domain.description, network.name,
+                         "VSD domain description should match network name in "
+                         "CloudStack"
+                         )
+        self.assertEqual(vsd_zone.description, network.name,
+                         "VSD zone description should match network name in "
+                         "CloudStack"
+                         )
+        self.assertEqual(vsd_subnet.description, network.name,
+                         "VSD subnet description '%s' should match network "
+                         "name in CloudStack" % vsd_subnet.description
+                         )
+        shared_resource = self.vsd.get_shared_network_resource(
+            filter=self.get_externalID_filter(subnet_id))
+        self.assertEqual(shared_resource.description, network.name,
+                         "VSD shared resources description should match "
+                         "network name in CloudStack"
+                         )
+        self.debug("Successfully verified the creation and state of Shared "
+                   "Network - %s in VSD" % network.name)
+
     # verify_vsd_object_status - Verifies the given CloudStack object status in
     # VSD
     def verify_vsd_object_status(self, cs_object, stopped):
@@ -914,7 +981,7 @@ class nuageTestCase(cloudstackTestCase):
         expected_status = cs_object.state.upper() if not stopped \
             else "DELETE_PENDING"
         tries = 0
-        while (vsd_object.status != expected_status) and (tries < 3):
+        while (vsd_object.status != expected_status) and (tries < 10):
             self.debug("Waiting for the CloudStack object " + cs_object.name +
                        " to be fully resolved in VSD...")
             time.sleep(30)
@@ -952,6 +1019,82 @@ class nuageTestCase(cloudstackTestCase):
                              "VSD VM interface IP address should match VM's "
                              "NIC IP address in CloudStack"
                              )
+        if not self.isSimulator:
+            self.verify_vsd_object_status(vm, stopped)
+        self.debug("Successfully verified the deployment and state of VM - %s "
+                   "in VSD" % vm.name)
+
+    # verify_vsd_enterprise_vm - Verifies the given CloudStack domain VM
+    # deployment and status in the corresponding VSD enterprise
+    def verify_vsd_enterprise_vm(self, domain_id, network, vm, vpc=None,
+                                 stopped=False, sharedsubnetid=None):
+        self.debug("Verifying the creation and state of Network - %s in VSD" %
+                   network.name)
+        vsd_enterprise = self.vsd.get_enterprise(
+            filter=self.get_externalID_filter(domain_id))
+        ext_network_id_filter = self.get_externalID_filter(vpc.id) if vpc \
+            else self.get_externalID_filter(network.id)
+        vsd_domain = self.vsd.get_domain(
+            enterprise=vsd_enterprise, filter=ext_network_id_filter)
+        vsd_zone = self.vsd.get_zone(
+            domain=vsd_domain, filter=ext_network_id_filter)
+        if sharedsubnetid:
+            vsd_subnet = self.vsd.get_subnet(
+                zone=vsd_zone,
+                filter=self.get_externalID_filter(sharedsubnetid))
+        else:
+            vsd_subnet = self.vsd.get_subnet(
+                zone=vsd_zone, filter=self.get_externalID_filter(network.id))
+        self.assertNotEqual(vsd_enterprise, None,
+                            "VSD enterprise (CloudStack domain) data format "
+                            "should not be of type None"
+                            )
+        if vpc:
+            self.assertEqual(vsd_domain.description, "VPC_" + vpc.name,
+                             "VSD domain description should match VPC name in "
+                             "CloudStack"
+                             )
+            self.assertEqual(vsd_zone.description, "VPC_" + vpc.name,
+                             "VSD zone description should match VPC name in "
+                             "CloudStack"
+                             )
+        else:
+            self.assertEqual(vsd_domain.description, network.name,
+                             "VSD domain description should match network "
+                             "name in CloudStack"
+                             )
+            self.assertEqual(vsd_zone.description, network.name,
+                             "VSD zone description should match network name "
+                             "in CloudStack"
+                             )
+        self.assertEqual(vsd_subnet.description, network.name,
+                         "VSD subnet description '%s' should match network "
+                         "name in CloudStack" % vsd_subnet.description
+                         )
+        self.debug("Successfully verified the creation and state of Network - "
+                   "%s in VSD" % network.name)
+        self.debug("Verifying the deployment and state of VM - %s in VSD" %
+                   vm.name)
+        vsd_vm = self.vsd.get_vm(
+            subnet=vsd_subnet, filter=self.get_externalID_filter(vm.id))
+        self.assertNotEqual(vsd_vm, None,
+                            "VM data format in VSD should not be of type None"
+                            )
+        vm_info = VirtualMachine.list(self.api_client, id=vm.id)[0]
+        for nic in vm_info.nic:
+            if nic.networkid == network.id:
+                vsd_vport = self.vsd.get_vport(
+                    subnet=vsd_subnet,
+                    filter=self.get_externalID_filter(nic.id))
+                vsd_vm_interface = self.vsd.get_vm_interface(
+                    filter=self.get_externalID_filter(nic.id))
+                self.assertEqual(vsd_vport.active, True,
+                                 "VSD VM vport should be active"
+                                 )
+                self.assertEqual(vsd_vm_interface.ip_address, nic.ipaddress,
+                                 "VSD VM interface IP address should match "
+                                 "VM's NIC IP address in CloudStack"
+                                 )
         if not self.isSimulator:
             self.verify_vsd_object_status(vm, stopped)
         self.debug("Successfully verified the deployment and state of VM - %s "

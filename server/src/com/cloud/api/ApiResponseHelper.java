@@ -1820,6 +1820,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setEgressDefaultPolicy(offering.getEgressDefaultPolicy());
         response.setConcurrentConnections(offering.getConcurrentConnections());
         response.setSupportsStrechedL2Subnet(offering.getSupportsStrechedL2());
+        response.setSupportsPublicAccess(offering.getSupportsPublicAccess());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();

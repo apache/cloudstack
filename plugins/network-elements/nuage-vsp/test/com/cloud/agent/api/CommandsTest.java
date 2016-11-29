@@ -21,7 +21,12 @@ package com.cloud.agent.api;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Map;
+
+import net.nuage.vsp.acs.client.api.model.Protocol;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,6 +48,8 @@ import com.cloud.agent.api.manager.SupportedApiVersionCommand;
 import com.cloud.agent.api.sync.SyncDomainCommand;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
 import com.cloud.serializer.GsonHelper;
+
+import static org.hamcrest.core.Is.is;
 
 public class CommandsTest {
     private static final Gson s_gson = GsonHelper.getGson();
@@ -92,6 +99,38 @@ public class CommandsTest {
         addCommandGsonEqualityGroup(new EntityExistsCommand(Command.class, "uuid"));
 
         tester.testEquals();
+    }
+
+    @Test
+    public void testApplyAclRuleVspCommandGsonEquals() throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        VspNetwork vspNetwork = new VspNetwork.Builder()
+                .id(1)
+                .uuid("uuid")
+                .name("name")
+                .cidr("192.168.1.0/24")
+                .gateway("192.168.1.1")
+                .build();
+
+        VspAclRule aclRule = new VspAclRule.Builder()
+                .action(VspAclRule.ACLAction.Allow)
+                .uuid("uuid")
+                .trafficType(VspAclRule.ACLTrafficType.Egress)
+                .protocol(Protocol.TCP)
+                .startPort(80)
+                .endPort(80)
+                .priority(1)
+                .state(VspAclRule.ACLState.Active)
+                .build();
+
+        ApplyAclRuleVspCommand before = new ApplyAclRuleVspCommand(VspAclRule.ACLType.NetworkACL, vspNetwork, Arrays.asList(aclRule), false);
+        ApplyAclRuleVspCommand after = serializeAndDeserialize(before);
+
+        Assert.assertThat(after.getAclRules().get(0).getProtocol().hasPort(), is(Protocol.TCP.hasPort()));
+    }
+
+    private <T extends Command> T serializeAndDeserialize(T command) {
+        Command[] forwardedCommands = s_gson.fromJson(s_gson.toJson(new Command[] { command }), Command[].class);
+        return (T) forwardedCommands[0];
     }
 
     private <T extends Command> void addCommandGsonEqualityGroup(Class<T> clazz) throws IllegalAccessException, InvocationTargetException, InstantiationException{

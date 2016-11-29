@@ -218,11 +218,11 @@ class TestNuageSourceNat(nuageTestCase):
         Source NAT service providers
         """
 
-        # 1. Create Nuage VSP Isolated Network offering with different
-        #    combinations of Source NAT service providers
-        #    (NuageVsp, VirtualRouter, no SourceNat service), check if only the
-        #    network offering with Source NAT service provider as NuageVsp is
-        #    successfully created and enabled.
+        # 1. Create Nuage VSP Isolated Network offerings and corresponding
+        #    Isolated networks with different combinations of Source NAT
+        #    service providers (NuageVsp, VirtualRouter, no SourceNat service),
+        #    check if only the Isolated networks with Source NAT service
+        #    provider as NuageVsp are successfully created.
         # 2. Recreate the above created Network offering with ispersistent flag
         #    set to True, check if the network offering is successfully created
         #    and enabled.
@@ -303,10 +303,7 @@ class TestNuageSourceNat(nuageTestCase):
             'Dhcp,Connectivity,StaticNat,UserData,Firewall,Dns'
         del network_offering["serviceProviderList"]["SourceNat"]
         del network_offering["serviceCapabilityList"]
-        with self.assertRaises(Exception):
-            self.create_NetworkOffering(network_offering)
-        self.debug("Nuage VSP does not support Network offerings without "
-                   "Source NAT service")
+        net_off_4 = self.create_NetworkOffering(network_offering)
 
         # Creating Isolated networks, and deploying VMs
         self.debug("Creating an Isolated network with Source NAT service "
@@ -375,6 +372,13 @@ class TestNuageSourceNat(nuageTestCase):
 
         # VSD verification for Source NAT functionality
         self.verify_vsd_SourceNAT_network(network_3)
+
+        self.debug("Creating an Isolated network without Source NAT "
+                   "service...")
+        with self.assertRaises(Exception):
+            self.create_Network(net_off_4, gateway='10.1.4.1')
+        self.debug("Nuage VSP does not support creation of Isolated networks "
+                   "without Source NAT service")
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_02_nuage_SourceNAT_vpc_networks(self):

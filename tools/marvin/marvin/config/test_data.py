@@ -1847,6 +1847,100 @@ test_data = {
                 "UserData": "VpcVirtualRouter",
                 "Dns": "VpcVirtualRouter"
             }
+        },
+        "shared_nuage_network_offering": {
+            "name": 'nuage_marvin',
+            "displaytext": 'nuage_marvin',
+            "guestiptype": 'shared',
+            "supportedservices": 'Dhcp,Connectivity',
+            "traffictype": 'GUEST',
+            "specifyVlan": "False",
+            "specifyIpRanges": "True",
+            "availability": 'Optional',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "Connectivity": "NuageVsp"
+            }
+        },
+        "shared_nuage_public_network_offering": {
+            "name": 'nuage_marvin',
+            "displaytext": 'nuage_marvin',
+            "guestiptype": 'shared',
+            "supportedservices": 'Dhcp,Connectivity',
+            "traffictype": 'GUEST',
+            "specifyVlan": "False",
+            "specifyIpRanges": "True",
+            "availability": 'Optional',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "Connectivity": "NuageVsp"
+            },
+            "serviceCapabilityList": {
+                "Connectivity": {
+                    "PublicAccess": "true"
+                }
+            }
+
+        },
+        # Test data for Shared Network creation
+        "network_all": {
+            "name": "SharedNetwork-All-nuage",
+            "displaytext": "SharedNetwork-All-nuage",
+            "gateway": "10.223.1.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.223.1.21",
+            "endip": "10.223.1.100",
+            "acltype": "Domain"
+        },
+        "network_domain_with_no_subdomain_access": {
+            "name": "SharedNetwork-Domain-nosubdomain-nuage",
+            "displaytext": "SharedNetwork-Domain-nosubdomain-nuage",
+            "gateway": "10.222.1.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.222.1.2",
+            "endip": "10.222.1.100",
+            "acltype": "Domain",
+            "subdomainaccess": "false"
+        },
+        "network_domain_with_subdomain_access": {
+            "name": "SharedNetwork-Domain-withsubdomain-nuage",
+            "displaytext": "SharedNetwork-Domain-withsubdomain-nuage",
+            "gateway": "10.221.1.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.221.1.2",
+            "endip": "10.221.1.100",
+            "acltype": "Domain",
+            "subdomainaccess": "true"
+        },
+        "network_account": {
+            "name": "SharedNetwork-Account-nuage",
+            "displaytext": "SharedNetwork-Account-nuage",
+            "gateway": "10.220.1.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.220.1.2",
+            "endip": "10.220.1.100",
+            "acltype": "Account"
+        },
+        "publiciprange1": {
+            "gateway": "10.223.1.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.223.1.101",
+            "endip": "10.223.1.105",
+            "forvirtualnetwork": "false"
+        },
+        "publiciprange2": {
+            "gateway": "10.219.1.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.219.1.2",
+            "endip": "10.219.1.5",
+            "forvirtualnetwork": "false"
+        },
+        "publiciprange3": {
+            "gateway": "10.223.1.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.223.1.2",
+            "endip": "10.223.1.20",
+            "forvirtualnetwork": "false"
         }
     }
 }

@@ -1558,6 +1558,32 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
+    public boolean providerSupportsCapability(Set<Provider> providers, Service service, Capability cap) {
+        for (Provider provider : providers) {
+            NetworkElement element = getElementImplementingProvider(provider.getName());
+            if (element != null) {
+                Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
+                if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
+                    throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() +
+                            " implementing Provider=" + provider.getName());
+                }
+                Map<Capability, String> serviceCapabilities = elementCapabilities.get(service);
+                if (serviceCapabilities == null || serviceCapabilities.isEmpty()) {
+                    throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capabilites for element=" + element.getName() +
+                            " implementing Provider=" + provider.getName());
+                }
+
+                if (serviceCapabilities.containsKey(cap)) {
+                    return true;
+                }
+            } else {
+                throw new UnsupportedServiceException("Unable to find network element for provider " + provider.getName());
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void checkCapabilityForProvider(Set<Provider> providers, Service service, Capability cap, String capValue) {
         for (Provider provider : providers) {
             NetworkElement element = getElementImplementingProvider(provider.getName());
@@ -1569,7 +1595,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 }
                 Map<Capability, String> serviceCapabilities = elementCapabilities.get(service);
                 if (serviceCapabilities == null || serviceCapabilities.isEmpty()) {
-                    throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capabilites for element=" + element.getName() +
+                    throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capabilities for element=" + element.getName() +
                         " implementing Provider=" + provider.getName());
                 }
 

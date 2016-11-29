@@ -199,138 +199,148 @@ class TestNuagePasswordReset(nuageTestCase):
         #     template.
         # 13. Delete all the created objects (cleanup).
 
-        self.debug("Testing user data & password reset functionality in an "
-                   "Isolated network...")
+        for zone in self.zones:
+            self.debug("Zone - %s" % zone.name)
+            # Get Zone details
+            self.getZoneDetails(zone=zone)
+            # Configure VSD sessions
+            self.configureVSDSessions()
 
-        self.debug("Creating an Isolated network...")
-        net_off = self.create_NetworkOffering(
-            self.test_data["nuagevsp"]["isolated_network_offering"])
-        self.network = self.create_Network(net_off)
-        self.validate_Network(self.network, state="Allocated")
+            self.debug("Testing user data & password reset functionality in "
+                       "an Isolated network...")
 
-        self.debug("Setting password enabled to false in the guest VM "
-                   "template...")
-        self.defaultTemplateVal = self.template.passwordenabled
-        if self.template.passwordenabled:
-            self.updateTemplate(False)
+            self.debug("Creating an Isolated network...")
+            net_off = self.create_NetworkOffering(
+                self.test_data["nuagevsp"]["isolated_network_offering"])
+            self.network = self.create_Network(net_off)
+            self.validate_Network(self.network, state="Allocated")
 
-        self.debug("Deploying a VM in the created Isolated network with user "
-                   "data...")
-        expected_user_data = "hello world vm1"
-        user_data = base64.b64encode(expected_user_data)
-        self.test_data["virtual_machine_userdata"]["userdata"] = user_data
-        self.vm_1 = self.create_VM(
-            self.network, testdata=self.test_data["virtual_machine_userdata"])
-        self.validate_Network(self.network, state="Implemented")
-        vr = self.get_Router(self.network)
-        self.check_Router_state(vr, state="Running")
-        self.check_VM_state(self.vm_1, state="Running")
+            self.debug("Setting password enabled to false in the guest VM "
+                       "template...")
+            self.defaultTemplateVal = self.template.passwordenabled
+            if self.template.passwordenabled:
+                self.updateTemplate(False)
 
-        # VSD verification
-        self.verify_vsd_network(self.domain.id, self.network)
-        self.verify_vsd_router(vr)
-        self.verify_vsd_vm(self.vm_1)
-
-        self.debug("verifying that the guest VM template is not password "
-                   "enabled...")
-        self.debug("VM - %s password - %s !" %
-                   (self.vm_1.name, self.vm_1.password))
-        self.assertEqual(
-            self.vm_1.password,
-            self.test_data["virtual_machine_userdata"]["password"],
-            "Password is enabled for the VM (vm_1)"
-        )
-
-        self.debug("SSHing into the VM for verifying its user data...")
-        public_ip_1 = self.acquire_PublicIPAddress(self.network)
-        self.create_and_verify_fw(self.vm_1, public_ip_1, self.network)
-        ssh = self.ssh_into_VM(self.vm_1, public_ip_1)
-        user_data_cmd = self.get_userdata_url(self.vm_1)
-        self.debug("Getting user data with command: " + user_data_cmd)
-        actual_user_data = base64.b64decode(self.execute_cmd
-                                            (ssh, user_data_cmd))
-        self.debug("Actual user data - " + actual_user_data +
-                   ", Expected user data - " + expected_user_data)
-        self.assertEqual(actual_user_data, expected_user_data,
-                         "Un-expected VM (VM_1) user data"
-                         )
-
-        self.debug("Checking for cloud-set-guest-password script in the VM "
-                   "for testing password reset functionality...")
-        ls_cmd = "ls /etc/init.d/cloud-set-guest-password"
-        ls_result = self.execute_cmd(ssh, ls_cmd)
-        ls_result = ls_result.lower()
-        self.debug("Response from ls_cmd: " + ls_result)
-        if "no such file" in ls_result:
-            self.debug("No cloud-set-guest-password script in the VM")
-            self.debug("Installing the cloud-set-guest-password script from "
-                       "people.apache.org in the VM...")
-            self.install_cloud_set_guest_password_script(ssh)
-            self.debug("Stopping the VM, and creating a new password enabled "
-                       "guest VM template with it...")
-            self.stop_vm(self.vm_1)
-            self.create_template(self.vm_1)
-
-            self.debug("Deploying a new VM in the created Isolated network "
-                       "with the newly created guest VM template...")
-            self.vm_2 = self.create_VM(
+            self.debug("Deploying a VM in the created Isolated network with "
+                       "user data...")
+            expected_user_data = "hello world vm1"
+            user_data = base64.b64encode(expected_user_data)
+            self.test_data["virtual_machine_userdata"]["userdata"] = user_data
+            self.vm_1 = self.create_VM(
                 self.network,
                 testdata=self.test_data["virtual_machine_userdata"])
-            self.debug("Starting the VM...")
-            vm_2a = self.vm_2.start(self.api_client)
-            self.vm_2.password = vm_2a.password.strip()
-            self.vm_2.nic = vm_2a.nic
+            self.validate_Network(self.network, state="Implemented")
+            vr = self.get_Router(self.network)
+            self.check_Router_state(vr, state="Running")
+            self.check_VM_state(self.vm_1, state="Running")
 
             # VSD verification
-            self.verify_vsd_vm(self.vm_2)
+            self.verify_vsd_network(self.domain.id, self.network)
+            self.verify_vsd_router(vr)
+            self.verify_vsd_vm(self.vm_1)
+
+            self.debug("verifying that the guest VM template is not password "
+                       "enabled...")
+            self.debug("VM - %s password - %s !" %
+                       (self.vm_1.name, self.vm_1.password))
+            self.assertEqual(
+                self.vm_1.password,
+                self.test_data["virtual_machine_userdata"]["password"],
+                "Password is enabled for the VM (vm_1)"
+            )
+
+            self.debug("SSHing into the VM for verifying its user data...")
+            public_ip_1 = self.acquire_PublicIPAddress(self.network)
+            self.create_and_verify_fw(self.vm_1, public_ip_1, self.network)
+            ssh = self.ssh_into_VM(self.vm_1, public_ip_1)
+            user_data_cmd = self.get_userdata_url(self.vm_1)
+            self.debug("Getting user data with command: " + user_data_cmd)
+            actual_user_data = base64.b64decode(self.execute_cmd
+                                                (ssh, user_data_cmd))
+            self.debug("Actual user data - " + actual_user_data +
+                       ", Expected user data - " + expected_user_data)
+            self.assertEqual(actual_user_data, expected_user_data,
+                             "Un-expected VM (VM_1) user data"
+                             )
+
+            self.debug("Checking for cloud-set-guest-password script in the "
+                       "VM for testing password reset functionality...")
+            ls_cmd = "ls /etc/init.d/cloud-set-guest-password"
+            ls_result = self.execute_cmd(ssh, ls_cmd)
+            ls_result = ls_result.lower()
+            self.debug("Response from ls_cmd: " + ls_result)
+            if "no such file" in ls_result:
+                self.debug("No cloud-set-guest-password script in the VM")
+                self.debug("Installing the cloud-set-guest-password script "
+                           "from people.apache.org in the VM...")
+                self.install_cloud_set_guest_password_script(ssh)
+                self.debug("Stopping the VM, and creating a new password "
+                           "enabled guest VM template with it...")
+                self.stop_vm(self.vm_1)
+                self.create_template(self.vm_1)
+
+                self.debug("Deploying a new VM in the created Isolated "
+                           "network with the newly created guest VM "
+                           "template...")
+                self.vm_2 = self.create_VM(
+                    self.network,
+                    testdata=self.test_data["virtual_machine_userdata"])
+                self.debug("Starting the VM...")
+                vm_2a = self.vm_2.start(self.api_client)
+                self.vm_2.password = vm_2a.password.strip()
+                self.vm_2.nic = vm_2a.nic
+
+                # VSD verification
+                self.verify_vsd_vm(self.vm_2)
+
+                self.debug("verifying that the guest VM template is password "
+                           "enabled...")
+                self.debug("VM - %s password - %s !" %
+                           (self.vm_2.name, self.vm_2.password))
+                self.assertNotEqual(
+                    self.vm_2.password,
+                    self.test_data["virtual_machine_userdata"]["password"],
+                    "Password is not enabled for the VM"
+                )
+
+                self.debug("SSHing into the VM for verifying its password...")
+                public_ip_2 = self.acquire_PublicIPAddress(self.network)
+                self.create_and_verify_fw(self.vm_2, public_ip_2, self.network)
+                self.ssh_into_VM(self.vm_2, public_ip_2)
+
+                vm_test = self.vm_2
+                vm_test_public_ip = public_ip_2
+            else:
+                self.debug("Updating the guest VM template to password "
+                           "enabled")
+                self.updateTemplate(True)
+                self.assertEqual(self.template.passwordenabled, True,
+                                 "Guest VM template is not password enabled"
+                                 )
+                vm_test = self.vm_1
+                vm_test_public_ip = public_ip_1
+
+            self.debug("Resetting password for VM - %s" % vm_test.name)
+            vm_test.password = vm_test.resetPassword(self.api_client)
+            self.debug("Password reset to - %s" % vm_test.password)
+
+            self.debug("Starting the VM")
+            vm_test.start(self.api_client)
 
             self.debug("verifying that the guest VM template is password "
                        "enabled...")
             self.debug("VM - %s password - %s !" %
-                       (self.vm_2.name, self.vm_2.password))
+                       (vm_test.name, vm_test.password))
             self.assertNotEqual(
-                self.vm_2.password,
+                vm_test.password,
                 self.test_data["virtual_machine_userdata"]["password"],
                 "Password is not enabled for the VM"
             )
 
-            self.debug("SSHing into the VM for verifying its password...")
-            public_ip_2 = self.acquire_PublicIPAddress(self.network)
-            self.create_and_verify_fw(self.vm_2, public_ip_2, self.network)
-            self.ssh_into_VM(self.vm_2, public_ip_2)
+            self.debug("SSHing into the VM for verifying its new password "
+                       "after its password reset...")
+            self.ssh_into_VM(vm_test, vm_test_public_ip)
 
-            vm_test = self.vm_2
-            vm_test_public_ip = public_ip_2
-        else:
-            self.debug("Updating the guest VM template to password enabled")
-            self.updateTemplate(True)
-            self.assertEqual(self.template.passwordenabled, True,
-                             "Guest VM template is not password enabled"
-                             )
-            vm_test = self.vm_1
-            vm_test_public_ip = public_ip_1
-
-        self.debug("Resetting password for VM - %s" % vm_test.name)
-        vm_test.password = vm_test.resetPassword(self.api_client)
-        self.debug("Password reset to - %s" % vm_test.password)
-
-        self.debug("Starting the VM")
-        vm_test.start(self.api_client)
-
-        self.debug("verifying that the guest VM template is password "
-                   "enabled...")
-        self.debug("VM - %s password - %s !" %
-                   (vm_test.name, vm_test.password))
-        self.assertNotEqual(
-            vm_test.password,
-            self.test_data["virtual_machine_userdata"]["password"],
-            "Password is not enabled for the VM"
-        )
-
-        self.debug("SSHing into the VM for verifying its new password after "
-                   "its password reset...")
-        self.ssh_into_VM(vm_test, vm_test_public_ip)
-
-        self.debug("Setting password enabled to the default value in the "
-                   "guest VM template...")
-        self.updateTemplate(self.defaultTemplateVal)
+            self.debug("Setting password enabled to the default value in the "
+                       "guest VM template...")
+            self.updateTemplate(self.defaultTemplateVal)

@@ -2367,6 +2367,7 @@
                                     var $serviceofferingid = args.$form.find('.form-item[rel=serviceofferingid]');
                                     var $conservemode = args.$form.find('.form-item[rel=conservemode]');
                                     var $supportsstrechedl2subnet = args.$form.find('.form-item[rel=supportsstrechedl2subnet]');
+                                    var $supportspublicaccess = args.$form.find('.form-item[rel=supportspublicaccess]');
                                     var $serviceSourceNatRedundantRouterCapabilityCheckbox = args.$form.find('.form-item[rel="service.SourceNat.redundantRouterCapabilityCheckbox"]');
                                     var hasAdvancedZones = false;
 
@@ -2674,6 +2675,20 @@
                                             $supportsstrechedl2subnet.css('display', 'inline-block');
                                         } else {
                                             $supportsstrechedl2subnet.hide();
+                                        }
+
+                                        //PublicAccess checkbox should be displayed only when 'Connectivity' service is checked
+                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked') && $guestTypeField.val() == 'Shared' &&
+                                            args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
+                                            $supportspublicaccess.css('display', 'inline-block');
+                                        } else {
+                                            $supportspublicaccess.hide();
+                                        }
+
+                                        //Uncheck specifyVlan checkbox when (1)guest type is Shared and (2)NuageVsp is selected as a Connectivity provider
+                                        if ($guestTypeField.val() == 'Shared') {
+                                            var $specifyVlanCheckbox = args.$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]');
+                                            $specifyVlanCheckbox.attr('checked', args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() != 'NuageVsp')
                                         }
                                     });
 
@@ -3055,6 +3070,13 @@
                                         isHidden: true
                                     },
 
+                                    supportspublicaccess: {
+                                        label: 'label.supportspublicaccess',
+                                        isBoolean: true,
+                                        isChecked: false,
+                                        isHidden: true
+                                    },
+
                                     conservemode: {
                                         label: 'label.conserve.mode',
                                         isBoolean: true,
@@ -3187,18 +3209,23 @@
                                     }
                                 }
 
-                                //passing supportsstrechedl2subnet's value as capability
+                                //passing supportsstrechedl2subnet and supportspublicaccess's value as capability
                                 for (var k in inputData) {
                                     if (k == 'supportsstrechedl2subnet' && ("Connectivity" in serviceProviderMap)) {
-                                            inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
-                                            inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'StretchedL2Subnet';
-                                            inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
-                                            serviceCapabilityIndex++;
-                                            break;
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'StretchedL2Subnet';
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
+                                        serviceCapabilityIndex++;
+                                    } else if (k == 'supportspublicaccess' && ("Connectivity" in serviceProviderMap) && serviceProviderMap['Connectivity'] == 'NuageVsp') {
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'PublicAccess';
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
+                                        serviceCapabilityIndex++;
                                     }
                                 }
-                                //removing supportsstrechedl2subnet from parameters, it has been set as capability
+                                //removing supportsstrechedl2subnet and supportspublicaccess from parameters, it has been set as capability
                                 delete inputData['supportsstrechedl2subnet'];
+                                delete inputData['supportspublicaccess'];
 
                                 // Make supported services list
                                 inputData['supportedServices'] = $.map(serviceProviderMap, function(value, key) {
@@ -3207,7 +3234,8 @@
 
 
                                 if (inputData['guestIpType'] == "Shared") { //specifyVlan checkbox is disabled, so inputData won't include specifyVlan
-                                    inputData['specifyVlan'] = true; //hardcode inputData['specifyVlan']
+                                    var $specifyVlanCheckbox = args.$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]');
+                                    inputData['specifyVlan'] = $specifyVlanCheckbox.is(':checked'); //hardcode inputData['specifyVlan']
                                     inputData['specifyIpRanges'] = true;
                                     delete inputData.isPersistent; //if Persistent checkbox is unchecked, do not pass isPersistent parameter to API call since we need to keep API call's size as small as possible (p.s. isPersistent is defaulted as false at server-side)
                                 } else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
@@ -3536,6 +3564,10 @@
                                     },
                                     supportsstrechedl2subnet: {
                                         label: 'label.supportsstrechedl2subnet',
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    supportspublicaccess: {
+                                        label: 'label.supportspublicaccess',
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     supportedServices: {

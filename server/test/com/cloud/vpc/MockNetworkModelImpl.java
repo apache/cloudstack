@@ -508,9 +508,14 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return false;
     }
 
+    @Override
+    public boolean providerSupportsCapability(Set<Provider> providers, Service service, Capability cap) {
+        return false;
+    }
+
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkModel#checkCapabilityForProvider(java.util.Set, com.cloud.network.Network.Service, com.cloud.network.Network.Capability, java.lang.String)
-     */
+         * @see com.cloud.network.NetworkModel#checkCapabilityForProvider(java.util.Set, com.cloud.network.Network.Service, com.cloud.network.Network.Capability, java.lang.String)
+         */
     @Override
     public void checkCapabilityForProvider(Set<Provider> providers, Service service, Capability cap, String capValue) {
         // TODO Auto-generated method stub

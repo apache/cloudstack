@@ -1203,7 +1203,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 NetworkOfferingVO defaultNetscalerNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
                                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, false, true, null, null, true,
-                                Availability.Optional, null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false, false);
+                                Availability.Optional, null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false, false, false);
 
                 defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);

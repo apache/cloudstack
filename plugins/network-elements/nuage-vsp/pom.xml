@@ -36,9 +36,9 @@
   </repositories>
   <dependencies>
     <dependency>
-      <groupId>net.nuage.vsp</groupId>
+      <groupId>net.nuagenetworks.vsp</groupId>
       <artifactId>nuage-vsp-acs-client</artifactId>
-      <version>3.2.8.1</version>
+      <version>1.0.0</version>
     </dependency>
   </dependencies>
   <build>

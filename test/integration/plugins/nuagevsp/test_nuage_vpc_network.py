@@ -20,7 +20,7 @@ Nuage VSP SDN plugin
 """
 # Import Local Modules
 from nuageTestCase import nuageTestCase
-from marvin.lib.base import Account, Zone
+from marvin.lib.base import Account
 # Import System Modules
 from nose.plugins.attrib import attr
 
@@ -123,13 +123,12 @@ class TestNuageVpcNetwork(nuageTestCase):
 
         self.debug("Testing basic VPC Network functionality with Nuage VSP "
                    "SDN plugin on multiple zones...")
-        zones = Zone.list(self.api_client)
-        if len(zones) == 1:
+        if len(self.zones) == 1:
             self.skipTest("There is only one Zone configured: skipping test")
-        for zone in zones:
+        for zone in self.zones:
             self.debug("Zone - %s" % zone.name)
             # Get Zone details
-            self.getZoneDetails()
+            self.getZoneDetails(zone=zone)
             # Configure VSD sessions
             self.configureVSDSessions()
             self.test_nuage_vpc_network()

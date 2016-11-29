@@ -97,59 +97,66 @@ class TestNuageVsp(nuageTestCase):
         #    valid VSD credentials, verify that the Nuage VSP device is
         #    successfully added in the Nuage VSP Physical Network.
 
-        # Nuage VSP network service provider validation
-        self.debug("Validating the Nuage VSP network service provider in the "
-                   "Nuage VSP Physical Network...")
-        self.validate_NetworkServiceProvider("NuageVsp", state="Enabled")
+        for zone in self.zones:
+            self.debug("Zone - %s" % zone.name)
+            # Get Zone details
+            self.getZoneDetails(zone=zone)
+            # Configure VSD sessions
+            self.configureVSDSessions()
 
-        # Nuage VSP device validation
-        self.debug("Validating the Nuage VSP device in the Nuage VSP Physical "
-                   "Network...")
-        self.validate_NuageVspDevice()
+            # Nuage VSP network service provider validation
+            self.debug("Validating the Nuage VSP network service provider in "
+                       "the Nuage VSP Physical Network...")
+            self.validate_NetworkServiceProvider("NuageVsp", state="Enabled")
 
-        # Nuage VSP device deletion
-        self.debug("Deleting the Nuage VSP device in the Nuage VSP Physical "
-                   "Network...")
-        self.delete_NuageVspDevice()
-
-        # Nuage VSP device validation
-        self.debug("Validating the Nuage VSP device in the Nuage VSP Physical "
-                   "Network...")
-        with self.assertRaises(Exception):
+            # Nuage VSP device validation
+            self.debug("Validating the Nuage VSP device in the Nuage VSP "
+                       "Physical Network...")
             self.validate_NuageVspDevice()
-        self.debug("Successfully deleted the Nuage VSP device in the Nuage "
-                   "VSP Physical Network")
 
-        # Adding the Nuage VSP device with invalid VSD credentials
-        self.debug("Adding the Nuage VSP device in the Nuage VSP Physical "
-                   "Network with invalid VSD credentials...")
-        vsd_info = self.nuage_vsp_device.__dict__
-        invalid_vsd_info = copy.deepcopy(vsd_info)
-        invalid_vsd_info["password"] = ""
-        with self.assertRaises(Exception):
-            Nuage.add(
-                self.api_client, invalid_vsd_info,
-                self.vsp_physical_network.id)
-        self.debug("Failed to add the Nuage VSP device in the Nuage VSP "
-                   "Physical Network due to invalid VSD credentials")
+            # Nuage VSP device deletion
+            self.debug("Deleting the Nuage VSP device in the Nuage VSP "
+                       "Physical Network...")
+            self.delete_NuageVspDevice()
 
-        # Nuage VSP device validation
-        self.debug("Validating the Nuage VSP device in the Nuage VSP "
-                   "Physical Network...")
-        with self.assertRaises(Exception):
+            # Nuage VSP device validation
+            self.debug("Validating the Nuage VSP device in the Nuage VSP "
+                       "Physical Network...")
+            with self.assertRaises(Exception):
+                self.validate_NuageVspDevice()
+            self.debug("Successfully deleted the Nuage VSP device in the "
+                       "Nuage VSP Physical Network")
+
+            # Adding the Nuage VSP device with invalid VSD credentials
+            self.debug("Adding the Nuage VSP device in the Nuage VSP Physical "
+                       "Network with invalid VSD credentials...")
+            vsd_info = self.nuage_vsp_device.__dict__
+            invalid_vsd_info = copy.deepcopy(vsd_info)
+            invalid_vsd_info["password"] = ""
+            with self.assertRaises(Exception):
+                Nuage.add(
+                    self.api_client, invalid_vsd_info,
+                    self.vsp_physical_network.id)
+            self.debug("Failed to add the Nuage VSP device in the Nuage VSP "
+                       "Physical Network due to invalid VSD credentials")
+
+            # Nuage VSP device validation
+            self.debug("Validating the Nuage VSP device in the Nuage VSP "
+                       "Physical Network...")
+            with self.assertRaises(Exception):
+                self.validate_NuageVspDevice()
+            self.debug("The Nuage VSP device is not added in the Nuage VSP "
+                       "Physical Network")
+
+            # Adding the Nuage VSP device with valid VSD credentials
+            self.debug("Adding the Nuage VSP device in the Nuage VSP Physical "
+                       "Network with valid VSD credentials...")
+            Nuage.add(self.api_client, vsd_info, self.vsp_physical_network.id)
+
+            # Nuage VSP device validation
+            self.debug("Validating the Nuage VSP device in the Nuage VSP "
+                       "Physical Network...")
             self.validate_NuageVspDevice()
-        self.debug("The Nuage VSP device is not added in the Nuage VSP "
-                   "Physical Network")
-
-        # Adding the Nuage VSP device with valid VSD credentials
-        self.debug("Adding the Nuage VSP device in the Nuage VSP Physical "
-                   "Network with valid VSD credentials...")
-        Nuage.add(self.api_client, vsd_info, self.vsp_physical_network.id)
-
-        # Nuage VSP device validation
-        self.debug("Validating the Nuage VSP device in the Nuage VSP Physical "
-                   "Network...")
-        self.validate_NuageVspDevice()
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_nuage_vsp(self):
@@ -172,49 +179,56 @@ class TestNuageVsp(nuageTestCase):
         #    check if the Isolated network is successfully deleted.
         # 7. Delete all the created objects (cleanup).
 
-        # Creating a network offering
-        self.debug("Creating and enabling Nuage VSP Isolated Network "
-                   "offering...")
-        network_offering = self.create_NetworkOffering(
-            self.test_data["nuagevsp"]["isolated_network_offering"])
-        self.validate_NetworkOffering(network_offering, state="Enabled")
+        for zone in self.zones:
+            self.debug("Zone - %s" % zone.name)
+            # Get Zone details
+            self.getZoneDetails(zone=zone)
+            # Configure VSD sessions
+            self.configureVSDSessions()
 
-        # Creating a network
-        self.debug("Creating an Isolated Network with Nuage VSP Isolated "
-                   "Network offering...")
-        network = self.create_Network(network_offering)
-        self.validate_Network(network, state="Allocated")
+            # Creating a network offering
+            self.debug("Creating and enabling Nuage VSP Isolated Network "
+                       "offering...")
+            network_offering = self.create_NetworkOffering(
+                self.test_data["nuagevsp"]["isolated_network_offering"])
+            self.validate_NetworkOffering(network_offering, state="Enabled")
 
-        # Deploying a VM in the network
-        vm_1 = self.create_VM(network)
-        self.validate_Network(network, state="Implemented")
-        vr = self.get_Router(network)
-        self.check_Router_state(vr, state="Running")
-        self.check_VM_state(vm_1, state="Running")
+            # Creating a network
+            self.debug("Creating an Isolated Network with Nuage VSP Isolated "
+                       "Network offering...")
+            network = self.create_Network(network_offering)
+            self.validate_Network(network, state="Allocated")
 
-        # VSD verification
-        self.verify_vsd_network(self.domain.id, network)
-        self.verify_vsd_router(vr)
-        self.verify_vsd_vm(vm_1)
+            # Deploying a VM in the network
+            vm_1 = self.create_VM(network)
+            self.validate_Network(network, state="Implemented")
+            vr = self.get_Router(network)
+            self.check_Router_state(vr, state="Running")
+            self.check_VM_state(vm_1, state="Running")
 
-        # Deploying one more VM in the network
-        vm_2 = self.create_VM(network)
-        self.check_VM_state(vm_2, state="Running")
-
-        # VSD verification
-        self.verify_vsd_vm(vm_2)
-
-        # Deleting the network
-        self.debug("Deleting the Isolated Network with Nuage VSP Isolated "
-                   "Network offering...")
-        self.delete_VM(vm_1)
-        self.delete_VM(vm_2)
-        self.delete_Network(network)
-        with self.assertRaises(Exception):
-            self.validate_Network(network)
-        self.debug("Isolated Network successfully deleted in CloudStack")
-
-        # VSD verification
-        with self.assertRaises(Exception):
+            # VSD verification
             self.verify_vsd_network(self.domain.id, network)
-        self.debug("Isolated Network successfully deleted in VSD")
+            self.verify_vsd_router(vr)
+            self.verify_vsd_vm(vm_1)
+
+            # Deploying one more VM in the network
+            vm_2 = self.create_VM(network)
+            self.check_VM_state(vm_2, state="Running")
+
+            # VSD verification
+            self.verify_vsd_vm(vm_2)
+
+            # Deleting the network
+            self.debug("Deleting the Isolated Network with Nuage VSP Isolated "
+                       "Network offering...")
+            self.delete_VM(vm_1)
+            self.delete_VM(vm_2)
+            self.delete_Network(network)
+            with self.assertRaises(Exception):
+                self.validate_Network(network)
+            self.debug("Isolated Network successfully deleted in CloudStack")
+
+            # VSD verification
+            with self.assertRaises(Exception):
+                self.verify_vsd_network(self.domain.id, network)
+            self.debug("Isolated Network successfully deleted in VSD")

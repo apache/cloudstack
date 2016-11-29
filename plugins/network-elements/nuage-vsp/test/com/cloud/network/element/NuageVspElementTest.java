@@ -24,7 +24,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.Before;
@@ -33,6 +32,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 
@@ -113,6 +113,9 @@ public class NuageVspElementTest extends NuageTest {
     public void setUp() throws Exception {
         super.setUp();
         _nuageVspElement._nuageVspEntityBuilder = _nuageVspEntityBuilder;
+        _nuageVspElement._vpcDetailsDao = _vpcDetailsDao;
+        _nuageVspElement._routerDao = _domainRouterDao;
+
         when(_networkServiceMapDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NuageVsp)).thenReturn(true);
         when(_networkServiceMapDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.SourceNat, Provider.NuageVsp)).thenReturn(true);
 
@@ -152,6 +155,9 @@ public class NuageVspElementTest extends NuageTest {
         // Only service Connectivity is supported
         assertFalse(_nuageVspElement.canHandle(net, Service.Dhcp));
 
+        // Can't handle network offerings with specify vlan = true
+        when(ntwkoffer.getSpecifyVlan()).thenReturn(true);
+        assertFalse(_nuageVspElement.canHandle(net, Service.Connectivity));
     }
 
     @Test
@@ -163,6 +169,7 @@ public class NuageVspElementTest extends NuageTest {
         when(network.getBroadcastUri()).thenReturn(new URI(""));
         when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
         when(network.getDomainId()).thenReturn(NETWORK_ID);
+        when(network.getDataCenterId()).thenReturn(NETWORK_ID);
         when(_networkModel.isProviderForNetwork(Provider.NuageVsp, NETWORK_ID)).thenReturn(true);
 
         final NetworkOffering offering = mock(NetworkOffering.class);
@@ -192,27 +199,28 @@ public class NuageVspElementTest extends NuageTest {
         when(_firewallRulesDao.listByNetworkPurposeTrafficType(NETWORK_ID, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress)).thenReturn(new ArrayList<FirewallRuleVO>());
         when(_firewallRulesDao.listByNetworkPurposeTrafficType(NETWORK_ID, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress)).thenReturn(new ArrayList<FirewallRuleVO>());
         when(_ipAddressDao.listStaticNatPublicIps(NETWORK_ID)).thenReturn(new ArrayList<IPAddressVO>());
-        when(_nuageVspManager.getDnsDetails(network)).thenReturn(new ArrayList<String>());
+        when(_nuageVspManager.getDnsDetails(network.getDataCenterId())).thenReturn(new ArrayList<String>());
 
         assertTrue(_nuageVspElement.implement(network, offering, deployDest, context));
     }
 
     @Test
     public void testVerifyServiceCombination() {
-        Set<Service> services = new HashSet<Service>();
-        services.add(Service.Dhcp);
-        services.add(Service.StaticNat);
-        services.add(Service.SourceNat);
-        services.add(Service.Connectivity);
-        services.add(Service.Firewall);
+
+        Set<Service> services = Sets.newHashSet(
+            Service.Dhcp,
+            Service.StaticNat,
+            Service.SourceNat,
+            Service.Connectivity,
+            Service.Firewall);
         assertTrue(_nuageVspElement.verifyServicesCombination(services));
 
-        services = new HashSet<Service>();
-        services.add(Service.Dhcp);
-        services.add(Service.StaticNat);
-        services.add(Service.Connectivity);
-        services.add(Service.Firewall);
-        assertFalse(_nuageVspElement.verifyServicesCombination(services));
+        services = Sets.newHashSet(
+                Service.Dhcp,
+                Service.StaticNat,
+                Service.Connectivity,
+                Service.Firewall);
+        assertTrue(_nuageVspElement.verifyServicesCombination(services));
     }
 
     @Test

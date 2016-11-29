@@ -167,12 +167,79 @@ class TestNuageInternalLb(nuageTestCase):
         self.debug("InternalLbVm instance - %s is in the expected state - %s" %
                    (internal_lb_vms[0].name, state))
 
+    # verify_vpc_vm_ingress_traffic - Verifies ingress traffic to the given VM
+    # (SSH into VM) via a created Static NAT rule in the given VPC network
+    def verify_vpc_vm_ingress_traffic(self, vm, network, vpc):
+        self.debug("Verifying ingress traffic to the VM (SSH into VM) - %s "
+                   "via a created Static NAT rule in the VPC network - %s" %
+                   (vm, network))
+
+        # Creating Static NAT rule for the given VM in the given VPC network
+        self.debug("Creating Static NAT Rule...")
+        test_public_ip = self.acquire_PublicIPAddress(network, vpc)
+        self.validate_PublicIPAddress(test_public_ip, network)
+        self.create_StaticNatRule_For_VM(vm, test_public_ip, network)
+        self.validate_PublicIPAddress(
+            test_public_ip, network, static_nat=True, vm=vm)
+
+        # VSD verification
+        self.verify_vsd_floating_ip(network, vm, test_public_ip.ipaddress, vpc)
+
+        # Adding Network ACL rule in the given VPC network
+        self.debug("Creating Network ACL rule ...")
+        test_public_ssh_rule = self.create_NetworkAclRule(
+            self.test_data["ingress_rule"], network=network)
+
+        # VSD verification
+        self.verify_vsd_firewall_rule(test_public_ssh_rule)
+
+        # SSH into VM
+        self.debug("Verifying VM ingress traffic (SSH into VM)...")
+        self.ssh_into_VM(vm, test_public_ip)
+
+        # Removing Network ACL rule in the given VPC network
+        self.debug("Removing the created Network ACL rule...")
+        test_public_ssh_rule.delete(self.api_client)
+
+        # VSD verification
+        with self.assertRaises(Exception):
+            self.verify_vsd_firewall_rule(test_public_ssh_rule)
+        self.debug("Network ACL rule successfully deleted in VSD")
+
+        # Deleting Static NAT Rule
+        self.debug("Deleting the created Static NAT Rule...")
+        self.delete_StaticNatRule_For_VM(test_public_ip)
+        with self.assertRaises(Exception):
+            self.validate_PublicIPAddress(
+                test_public_ip, network, static_nat=True, vm=vm)
+        self.debug("Static NAT Rule successfully deleted in CloudStack")
+
+        # VSD verification
+        with self.assertRaises(Exception):
+            self.verify_vsd_floating_ip(
+                network, vm, test_public_ip.ipaddress, vpc=vpc)
+        self.debug("Floating IP successfully deleted in VSD")
+
+        # Releasing acquired public IP
+        self.debug("Releasing the acquired public IP...")
+        test_public_ip.delete(self.api_client)
+        with self.assertRaises(Exception):
+            self.validate_PublicIPAddress(test_public_ip, network)
+        self.debug("Acquired public IP in the network successfully released "
+                   "in CloudStack")
+
+        self.debug("Successfully verified ingress traffic to the VM "
+                   "(SSH into VM) - %s via a created Static NAT rule in the "
+                   "VPC network - %s" % (vm, network))
+
     # wget_from_vm_cmd - From within the given VM (ssh client),
     # fetches index.html file of web server running with the given public IP
     def wget_from_vm_cmd(self, ssh_client, ip_address, port):
         wget_file = ""
-        cmd = "wget --no-cache --output-document=index.html -t 1 http://" + \
-              ip_address + ":" + str(port) + "/"
+        cmd = "rm -rf index.html*"
+        self.execute_cmd(ssh_client, cmd)
+        cmd = "wget --no-cache -t 1 http://" + ip_address + ":" + str(port) + \
+              "/"
         response = self.execute_cmd(ssh_client, cmd)
         if "200 OK" in response:
             self.debug("wget from a VM with http server IP address "
@@ -181,7 +248,7 @@ class TestNuageInternalLb(nuageTestCase):
             cmd = "cat index.html"
             wget_file = self.execute_cmd(ssh_client, cmd)
             # Removing the wget file
-            cmd = "rm -r index.html"
+            cmd = "rm -rf index.html*"
             self.execute_cmd(ssh_client, cmd)
         else:
             self.debug("Failed to wget from a VM with http server IP address "
@@ -198,11 +265,11 @@ class TestNuageInternalLb(nuageTestCase):
                 if str(nic.ipaddress) in str(wget_file):
                     wget_server_ip = str(nic.ipaddress)
         if wget_server_ip:
-            self.debug("Verified wget file from an Internal Load Balanced VM "
-                       "with http server IP address - %s" % wget_server_ip)
+            self.debug("Verified wget file from Internal Load Balanced VMs - "
+                       "%s" % vm_array)
         else:
-            self.fail("Did not wget file from the Internal Load Balanced VMs "
-                      "- %s" % vm_array)
+            self.fail("Failed to verify wget file from Internal Load Balanced "
+                      "VMs - %s" % vm_array)
         return wget_server_ip
 
     # validate_internallb_algorithm_traffic - Validates Internal LB algorithms
@@ -1207,9 +1274,7 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB "
-                   "rules (SSH & HTTP) accessible...")
-        ssh_rule = self.create_NetworkAclRule(
-            self.test_data["ingress_rule"], network=internal_tier_1)
+                   "rules (HTTP) accessible...")
         http_rule_1 = self.create_NetworkAclRule(
             self.test_data["http_rule"], network=internal_tier_1)
         http_rule = copy.deepcopy(self.test_data["http_rule"])
@@ -1221,7 +1286,6 @@ class TestNuageInternalLb(nuageTestCase):
             http_rule, network=internal_tier_1)
 
         # VSD verification
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule_1)
         self.verify_vsd_firewall_rule(http_rule_2)
 
@@ -1294,18 +1358,32 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB "
-                   "rules (SSH & HTTP) accessible...")
-        ssh_rule = self.create_NetworkAclRule(
-            self.test_data["ingress_rule"], network=internal_tier_2)
+                   "rules (HTTP) accessible...")
         http_rule_1 = self.create_NetworkAclRule(
             self.test_data["http_rule"], network=internal_tier_2)
         http_rule_2 = self.create_NetworkAclRule(
             http_rule, network=internal_tier_2)
 
         # VSD verification
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule_1)
         self.verify_vsd_firewall_rule(http_rule_2)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(
+            internal_vm_1, internal_tier_1, vpc)
+        self.verify_vpc_vm_ingress_traffic(
+            internal_vm_1_1, internal_tier_1, vpc)
+        self.verify_vpc_vm_ingress_traffic(
+            internal_vm_1_2, internal_tier_1, vpc)
+        self.verify_vpc_vm_ingress_traffic(
+            internal_vm_2, internal_tier_2, vpc)
+        self.verify_vpc_vm_ingress_traffic(
+            internal_vm_2_1, internal_tier_2, vpc)
+        self.verify_vpc_vm_ingress_traffic(
+            internal_vm_2_2, internal_tier_2, vpc)
 
         # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
@@ -1548,15 +1626,20 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB "
-                   "rules (SSH & HTTP) accessible...")
-        ssh_rule = self.create_NetworkAclRule(
-            self.test_data["ingress_rule"], network=internal_tier)
+                   "rules (HTTP) accessible...")
         http_rule = self.create_NetworkAclRule(
             self.test_data["http_rule"], network=internal_tier)
 
         # VSD verification
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
@@ -1742,15 +1825,20 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB "
-                   "rules (SSH & HTTP) accessible...")
-        ssh_rule = self.create_NetworkAclRule(
-            self.test_data["ingress_rule"], network=internal_tier)
+                   "rules (HTTP) accessible...")
         http_rule = self.create_NetworkAclRule(
             self.test_data["http_rule"], network=internal_tier)
 
         # VSD verification
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
@@ -1798,7 +1886,6 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_vm(internal_vm)
         self.verify_vsd_vm(internal_vm_1)
         self.verify_vsd_vm(internal_vm_2)
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
@@ -1810,6 +1897,14 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1837,7 +1932,6 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_vm(internal_vm)
         self.verify_vsd_vm(internal_vm_1)
         self.verify_vsd_vm(internal_vm_2)
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
@@ -1849,6 +1943,14 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -1885,6 +1987,14 @@ class TestNuageInternalLb(nuageTestCase):
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
 
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
+
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         wget_file = self.wget_from_vm_cmd(
@@ -1920,6 +2030,14 @@ class TestNuageInternalLb(nuageTestCase):
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
 
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
+
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         wget_file = self.wget_from_vm_cmd(
@@ -1949,7 +2067,6 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_vm(internal_vm, stopped=True)
         self.verify_vsd_vm(internal_vm_1, stopped=True)
         self.verify_vsd_vm(internal_vm_2, stopped=True)
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
@@ -1991,7 +2108,6 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_vm(internal_vm)
         self.verify_vsd_vm(internal_vm_1)
         self.verify_vsd_vm(internal_vm_2)
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
@@ -2000,6 +2116,14 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -2047,7 +2171,6 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_floating_ip(
             public_tier, public_vm, public_ip.ipaddress, vpc)
         self.verify_vsd_firewall_rule(public_ssh_rule)
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
@@ -2056,6 +2179,14 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -2094,7 +2225,6 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_floating_ip(
             public_tier, public_vm, public_ip.ipaddress, vpc)
         self.verify_vsd_firewall_rule(public_ssh_rule)
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
 
         # Validating InternalLbVm state
@@ -2103,6 +2233,14 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -2259,15 +2397,20 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Adding Network ACL rules in the Internal tier
         self.debug("Adding Network ACL rules to make the created Internal LB "
-                   "rules (SSH & HTTP) accessible...")
-        ssh_rule = self.create_NetworkAclRule(
-            self.test_data["ingress_rule"], network=internal_tier)
+                   "rules (HTTP) accessible...")
         http_rule = self.create_NetworkAclRule(
             self.test_data["http_rule"], network=internal_tier)
 
         # VSD verification
-        self.verify_vsd_firewall_rule(ssh_rule)
         self.verify_vsd_firewall_rule(http_rule)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Creating Static NAT rule for the VM in the Public tier
         public_ip = self.acquire_PublicIPAddress(public_tier, vpc)
@@ -2307,6 +2450,14 @@ class TestNuageInternalLb(nuageTestCase):
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm, stopped=True)
 
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
+
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         wget_file = self.wget_from_vm_cmd(
@@ -2327,6 +2478,14 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -2358,6 +2517,14 @@ class TestNuageInternalLb(nuageTestCase):
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm, stopped=True)
 
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
+
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         wget_file = self.wget_from_vm_cmd(
@@ -2378,6 +2545,14 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
@@ -2397,6 +2572,14 @@ class TestNuageInternalLb(nuageTestCase):
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm, stopped=True)
 
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
+
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         wget_file = self.wget_from_vm_cmd(
@@ -2417,6 +2600,14 @@ class TestNuageInternalLb(nuageTestCase):
 
         # VSD Verification
         self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
