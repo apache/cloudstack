@@ -76,8 +76,8 @@
     <!-- Another implementation of SSL protocol. Does not work with broken MS RDP SSL too. -->
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk16</artifactId>
-      <version>1.46</version>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>${cs.bcprov.version}</version>
     </dependency>
   </dependencies>
 </project>
