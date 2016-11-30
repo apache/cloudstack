@@ -308,6 +308,15 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         self.cleanup = [vpc_1, vpc_2, vpc_off, self.account]
 
+        network_1 = self.createNetwork(vpc_1, gateway = '10.0.1.1')
+        network_2 = self.createNetwork(vpc_2, gateway = '10.0.2.1')
+
+        vm1 = self.createVM(network_1)
+        vm2 = self.createVM(network_2)
+
+        self.cleanup.insert(0, vm1)
+        self.cleanup.insert(0, vm2)
+
         physical_network = self.get_guest_traffic_physical_network(self.apiclient, self.zone.id)
         if not physical_network:
             self.fail("No Physical Networks found!")
@@ -318,15 +327,6 @@ class TestPrivateGwACL(cloudstackTestCase):
         )
         vlans = qresultset
         vlan_1 = int(vlans[0][0])
-
-        network_1 = self.createNetwork(vpc_1, gateway = '10.0.1.1')
-        network_2 = self.createNetwork(vpc_2, gateway = '10.0.2.1')
-
-        vm1 = self.createVM(network_1)
-        vm2 = self.createVM(network_2)
-
-        self.cleanup.insert(0, vm1)
-        self.cleanup.insert(0, vm2)
 
         acl1 = self.createACL(vpc_1)
         self.createACLItem(acl1.id, cidr = "0.0.0.0/0")
