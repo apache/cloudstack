@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -1209,25 +1210,95 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class VirtioSerialDef {
-        private final String _name;
-        private String _path;
+    public final static class ChannelDef {
+        enum ChannelType {
+            UNIX("unix"), SERIAL("serial");
+            String type;
 
-        public VirtioSerialDef(String name, String path) {
-            _name = name;
-            _path = path;
+            ChannelType(String type) {
+                this.type = type;
+            }
+
+            @Override
+            public String toString() {
+                return this.type;
+            }
+        }
+
+        enum ChannelState {
+            DISCONNECTED("disconnected"), CONNECTED("connected");
+            String type;
+
+            ChannelState(String type) {
+                this.type = type;
+            }
+
+            @Override
+            public String toString() {
+                return type;
+            }
+        }
+
+        private final String name;
+        private File path = new File("");
+        private final ChannelType type;
+        private ChannelState state;
+
+        public ChannelDef(String name, ChannelType type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, File path) {
+            this.name = name;
+            this.path = path;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state) {
+            this.name = name;
+            this.state = state;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state, File path) {
+            this.name = name;
+            this.path = path;
+            this.state = state;
+            this.type = type;
+        }
+
+        public ChannelType getChannelType() {
+            return type;
+        }
+
+        public ChannelState getChannelState() {
+            return state;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public File getPath() {
+            return path;
         }
 
         @Override
         public String toString() {
             StringBuilder virtioSerialBuilder = new StringBuilder();
-            if (_path == null) {
-                _path = "/var/lib/libvirt/qemu";
+            virtioSerialBuilder.append("<channel type='" + type.toString() + "'>\n");
+            if (path == null) {
+                virtioSerialBuilder.append("<source mode='bind'/>\n");
+            } else {
+                virtioSerialBuilder.append("<source mode='bind' path='" + path.toString() + "'/>\n");
             }
-            virtioSerialBuilder.append("<channel type='unix'>\n");
-            virtioSerialBuilder.append("<source mode='bind' path='" + _path + "/" + _name + ".agent'/>\n");
-            virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
             virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
+            if (state == null) {
+                virtioSerialBuilder.append("<target type='virtio' name='" + name + "'/>\n");
+            } else {
+                virtioSerialBuilder.append("<target type='virtio' name='" + name + "' state='" + state.toString() + "'/>\n");
+            }
             virtioSerialBuilder.append("</channel>\n");
             return virtioSerialBuilder.toString();
         }
@@ -1363,6 +1434,107 @@ public class LibvirtVMDef {
                         .append("</nuage-extension>\n");
             }
             return fsBuilder.toString();
+        }
+    }
+
+    public static class RngDef {
+        enum RngModel {
+            VIRTIO("virtio");
+            String model;
+
+            RngModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum RngBackendModel {
+            RANDOM("random"), EGD("egd");
+            String model;
+
+            RngBackendModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        private String path = "/dev/random";
+        private RngModel rngModel = RngModel.VIRTIO;
+        private RngBackendModel rngBackendModel = RngBackendModel.RANDOM;
+        private int rngRateBytes = 2048;
+        private int rngRatePeriod = 1000;
+
+        public RngDef(String path) {
+            this.path = path;
+        }
+
+        public RngDef(String path, int rngRateBytes, int rngRatePeriod) {
+            this.path = path;
+            this.rngRateBytes = rngRateBytes;
+            this.rngRatePeriod = rngRatePeriod;
+        }
+
+        public RngDef(RngModel rngModel) {
+            this.rngModel = rngModel;
+        }
+
+        public RngDef(RngBackendModel rngBackendModel) {
+            this.rngBackendModel = rngBackendModel;
+        }
+
+        public RngDef(String path, RngBackendModel rngBackendModel) {
+            this.path = path;
+            this.rngBackendModel = rngBackendModel;
+        }
+
+        public RngDef(String path, RngBackendModel rngBackendModel, int rngRateBytes, int rngRatePeriod) {
+            this.path = path;
+            this.rngBackendModel = rngBackendModel;
+            this.rngRateBytes = rngRateBytes;
+            this.rngRatePeriod = rngRatePeriod;
+        }
+
+        public RngDef(String path, RngModel rngModel) {
+            this.path = path;
+            this.rngModel = rngModel;
+        }
+
+        public String getPath() {
+           return path;
+        }
+
+        public RngBackendModel getRngBackendModel() {
+            return rngBackendModel;
+        }
+
+        public RngModel getRngModel() {
+            return rngModel;
+        }
+
+        public int getRngRateBytes() {
+            return rngRateBytes;
+        }
+
+        public int getRngRatePeriod() {
+            return rngRatePeriod;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder rngBuilder = new StringBuilder();
+            rngBuilder.append("<rng model='" + rngModel + "'>\n");
+            rngBuilder.append("<rate period='" + rngRatePeriod + "' bytes='" + rngRateBytes + "' />\n");
+            rngBuilder.append("<backend model='" + rngBackendModel + "'>" + path + "</backend>");
+            rngBuilder.append("</rng>\n");
+            return rngBuilder.toString();
         }
     }
 

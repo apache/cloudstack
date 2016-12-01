@@ -31,7 +31,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
 import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
@@ -56,7 +55,7 @@ public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends C
     public Answer execute(final MigrateWithStorageReceiveCommand command, final XenServer610Resource xenServer610Resource) {
         final Connection connection = xenServer610Resource.getConnection();
         final VirtualMachineTO vmSpec = command.getVirtualMachine();
-        final List<Pair<VolumeTO, StorageFilerTO>> volumeToFiler = command.getVolumeToFiler();
+        final List<Pair<VolumeTO, String>> volumeToStorageUuid = command.getVolumeToStorageUuid();
 
         try {
             // In a cluster management server setup, the migrate with storage receive and send
@@ -69,10 +68,12 @@ public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends C
             // storage send command execution.
             Gson gson = new Gson();
             // Get a map of all the SRs to which the vdis will be migrated.
-            final List<Pair<VolumeTO, Object>> volumeToSr = new ArrayList<Pair<VolumeTO, Object>>();
-            for (final Pair<VolumeTO, StorageFilerTO> entry : volumeToFiler) {
-                final StorageFilerTO storageFiler = entry.second();
-                final SR sr = xenServer610Resource.getStorageRepository(connection, storageFiler.getUuid());
+            final List<Pair<VolumeTO, Object>> volumeToSr = new ArrayList<>();
+
+            for (final Pair<VolumeTO, String> entry : volumeToStorageUuid) {
+                final String storageUuid = entry.second();
+                final SR sr = xenServer610Resource.getStorageRepository(connection, storageUuid);
+
                 volumeToSr.add(new Pair<VolumeTO, Object>(entry.first(), sr));
             }
 

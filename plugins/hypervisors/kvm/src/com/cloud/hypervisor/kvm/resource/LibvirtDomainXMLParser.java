@@ -16,15 +16,18 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.google.common.base.Strings;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -33,14 +36,20 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.cloud.utils.StringUtils;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
     private final List<InterfaceDef> interfaces = new ArrayList<InterfaceDef>();
     private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
+    private final List<RngDef> rngDefs = new ArrayList<RngDef>();
+    private final List<ChannelDef> channels = new ArrayList<ChannelDef>();
     private Integer vncPort;
     private String desc;
 
@@ -171,6 +180,26 @@ public class LibvirtDomainXMLParser {
                 interfaces.add(def);
             }
 
+            NodeList ports = devices.getElementsByTagName("channel");
+            for (int i = 0; i < ports.getLength(); i++) {
+                Element channel = (Element)ports.item(i);
+
+                String type = channel.getAttribute("type");
+                String path = getAttrValue("source", "path", channel);
+                String name = getAttrValue("target", "name", channel);
+                String state = getAttrValue("target", "state", channel);
+
+                ChannelDef def = null;
+                if (!StringUtils.isNotBlank(state)) {
+                    def = new ChannelDef(name, ChannelDef.ChannelType.valueOf(type.toUpperCase()), new File(path));
+                } else {
+                    def = new ChannelDef(name, ChannelDef.ChannelType.valueOf(type.toUpperCase()),
+                            ChannelDef.ChannelState.valueOf(state.toUpperCase()), new File(path));
+                }
+
+                channels.add(def);
+            }
+
             Element graphic = (Element)devices.getElementsByTagName("graphics").item(0);
 
             if (graphic != null) {
@@ -187,6 +216,25 @@ public class LibvirtDomainXMLParser {
                         vncPort = null;
                     }
                 }
+            }
+
+            NodeList rngs = devices.getElementsByTagName("rng");
+            for (int i = 0; i < rngs.getLength(); i++) {
+                RngDef def = null;
+                Element rng = (Element)rngs.item(i);
+                String backendModel = getAttrValue("backend", "model", rng);
+                String path = getTagValue("backend", rng);
+                String bytes = getAttrValue("rate", "bytes", rng);
+                String period = getAttrValue("rate", "period", rng);
+
+                if (Strings.isNullOrEmpty(backendModel)) {
+                    def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
+                } else {
+                    def = new RngDef(path, RngBackendModel.valueOf(backendModel.toUpperCase()),
+                                     Integer.parseInt(bytes), Integer.parseInt(period));
+                }
+
+                rngDefs.add(def);
             }
 
             return true;
@@ -232,6 +280,14 @@ public class LibvirtDomainXMLParser {
 
     public List<DiskDef> getDisks() {
         return diskDefs;
+    }
+
+    public List<RngDef> getRngs() {
+        return rngDefs;
+    }
+
+    public List<ChannelDef> getChannels() {
+        return Collections.unmodifiableList(channels);
     }
 
     public String getDescription() {

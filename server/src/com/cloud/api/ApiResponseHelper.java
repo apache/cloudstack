@@ -486,6 +486,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         snapshotResponse.setName(snapshot.getName());
         snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
         snapshotResponse.setState(snapshot.getState());
+        snapshotResponse.setLocationType(ApiDBUtils.getSnapshotLocationType(snapshot.getId()));
 
         SnapshotInfo snapshotInfo = null;
 
@@ -633,83 +634,92 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan) {
-        Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
+        return createVlanIpRangeResponse(VlanIpRangeResponse.class, vlan);
+    }
 
-        VlanIpRangeResponse vlanResponse = new VlanIpRangeResponse();
-        vlanResponse.setId(vlan.getUuid());
-        if (vlan.getVlanType() != null) {
-            vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
-        }
-        vlanResponse.setVlan(vlan.getVlanTag());
-        DataCenter zone = ApiDBUtils.findZoneById(vlan.getDataCenterId());
-        if (zone != null) {
-            vlanResponse.setZoneId(zone.getUuid());
-        }
+    @Override
+    public VlanIpRangeResponse createVlanIpRangeResponse(Class<? extends VlanIpRangeResponse> subClass, Vlan vlan) {
+        try {
+            Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
 
-        if (podId != null) {
-            HostPodVO pod = ApiDBUtils.findPodById(podId);
-            if (pod != null) {
-                vlanResponse.setPodId(pod.getUuid());
-                vlanResponse.setPodName(pod.getName());
+            VlanIpRangeResponse vlanResponse = subClass.newInstance();
+            vlanResponse.setId(vlan.getUuid());
+            if (vlan.getVlanType() != null) {
+                vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
             }
-        }
-
-        vlanResponse.setGateway(vlan.getVlanGateway());
-        vlanResponse.setNetmask(vlan.getVlanNetmask());
-
-        // get start ip and end ip of corresponding vlan
-        String ipRange = vlan.getIpRange();
-        if (ipRange != null) {
-            String[] range = ipRange.split("-");
-            vlanResponse.setStartIp(range[0]);
-            vlanResponse.setEndIp(range[1]);
-        }
-
-        vlanResponse.setIp6Gateway(vlan.getIp6Gateway());
-        vlanResponse.setIp6Cidr(vlan.getIp6Cidr());
-
-        String ip6Range = vlan.getIp6Range();
-        if (ip6Range != null) {
-            String[] range = ip6Range.split("-");
-            vlanResponse.setStartIpv6(range[0]);
-            vlanResponse.setEndIpv6(range[1]);
-        }
-
-        if (vlan.getNetworkId() != null) {
-            Network nw = ApiDBUtils.findNetworkById(vlan.getNetworkId());
-            if (nw != null) {
-                vlanResponse.setNetworkId(nw.getUuid());
+            vlanResponse.setVlan(vlan.getVlanTag());
+            DataCenter zone = ApiDBUtils.findZoneById(vlan.getDataCenterId());
+            if (zone != null) {
+                vlanResponse.setZoneId(zone.getUuid());
             }
-        }
-        Account owner = ApiDBUtils.getVlanAccount(vlan.getId());
-        if (owner != null) {
-            populateAccount(vlanResponse, owner.getId());
-            populateDomain(vlanResponse, owner.getDomainId());
-        } else {
-            Domain domain = ApiDBUtils.getVlanDomain(vlan.getId());
-            if (domain != null) {
-                populateDomain(vlanResponse, domain.getId());
+
+            if (podId != null) {
+                HostPodVO pod = ApiDBUtils.findPodById(podId);
+                if (pod != null) {
+                    vlanResponse.setPodId(pod.getUuid());
+                    vlanResponse.setPodName(pod.getName());
+                }
+            }
+
+            vlanResponse.setGateway(vlan.getVlanGateway());
+            vlanResponse.setNetmask(vlan.getVlanNetmask());
+
+            // get start ip and end ip of corresponding vlan
+            String ipRange = vlan.getIpRange();
+            if (ipRange != null) {
+                String[] range = ipRange.split("-");
+                vlanResponse.setStartIp(range[0]);
+                vlanResponse.setEndIp(range[1]);
+            }
+
+            vlanResponse.setIp6Gateway(vlan.getIp6Gateway());
+            vlanResponse.setIp6Cidr(vlan.getIp6Cidr());
+
+            String ip6Range = vlan.getIp6Range();
+            if (ip6Range != null) {
+                String[] range = ip6Range.split("-");
+                vlanResponse.setStartIpv6(range[0]);
+                vlanResponse.setEndIpv6(range[1]);
+            }
+
+            if (vlan.getNetworkId() != null) {
+                Network nw = ApiDBUtils.findNetworkById(vlan.getNetworkId());
+                if (nw != null) {
+                    vlanResponse.setNetworkId(nw.getUuid());
+                }
+            }
+            Account owner = ApiDBUtils.getVlanAccount(vlan.getId());
+            if (owner != null) {
+                populateAccount(vlanResponse, owner.getId());
+                populateDomain(vlanResponse, owner.getDomainId());
             } else {
-                Long networkId = vlan.getNetworkId();
-                if (networkId != null) {
-                    Network network = _ntwkModel.getNetwork(networkId);
-                    if (network != null) {
-                        Long accountId = network.getAccountId();
-                        populateAccount(vlanResponse, accountId);
-                        populateDomain(vlanResponse, ApiDBUtils.findAccountById(accountId).getDomainId());
+                Domain domain = ApiDBUtils.getVlanDomain(vlan.getId());
+                if (domain != null) {
+                    populateDomain(vlanResponse, domain.getId());
+                } else {
+                    Long networkId = vlan.getNetworkId();
+                    if (networkId != null) {
+                        Network network = _ntwkModel.getNetwork(networkId);
+                        if (network != null) {
+                            Long accountId = network.getAccountId();
+                            populateAccount(vlanResponse, accountId);
+                            populateDomain(vlanResponse, ApiDBUtils.findAccountById(accountId).getDomainId());
+                        }
                     }
                 }
             }
-        }
 
-        if (vlan.getPhysicalNetworkId() != null) {
-            PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(vlan.getPhysicalNetworkId());
-            if (pnw != null) {
-                vlanResponse.setPhysicalNetworkId(pnw.getUuid());
+            if (vlan.getPhysicalNetworkId() != null) {
+                PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(vlan.getPhysicalNetworkId());
+                if (pnw != null) {
+                    vlanResponse.setPhysicalNetworkId(pnw.getUuid());
+                }
             }
+            vlanResponse.setObjectName("vlan");
+            return vlanResponse;
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new CloudRuntimeException("Failed to create Vlan IP Range response", e);
         }
-        vlanResponse.setObjectName("vlan");
-        return vlanResponse;
     }
 
     @Override

@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-sync-transifex-ui is a script to automate the synchronisation between
+sync-transifex-ui.sh is a script to automate the synchronisation between
 Apache CloudStack L10N resource files and Transifex CloudStack project.
 
 Requirements to use this script:
@@ -24,7 +24,7 @@ Requirements to use this script:
 http://support.transifex.com/customer/portal/topics/440187-transifex-client/articles
 On Debian/Ubuntu: apt-get install transifex-client
 
-Commun usage is:
+Common usage is:
 
 1/ Init and configure the transifex client CLI
 (Already made on git CloudStack repo)
@@ -34,38 +34,32 @@ Commun usage is:
 2/ Upload to Transifex the last version of the source language (en)
 which generally have the new keys/values to translate.
 
- ./sync-transifex-ui.sh upload-source-language CloudStack_UI.42xmessagesproperties
+ ./sync-transifex-ui.sh upload-source-language CloudStack_UI.410_messagesjson
 
-3/ Download the last L10N resource files from Transifex to resources
-files directory in CloudStack tree to upade the L10N resource files
+3/ Download the latest L10N resource files from Transifex to resource
+files directory in CloudStack tree to update the L10N resource files
 with the translatons from traductors.
 
- ./sync-transifex-ui.sh download-l10n-languages CloudStack_UI.42xmessagesproperties
+ ./sync-transifex-ui.sh download-l10n-languages CloudStack_UI.410_messagesjson
 
 =====
 The sync-transifex-ui provide too the ability to :
 
 * Download from Transifex the source language resource files. Be carrefully, 
-with this,you can remove some transation on Transifex if some keys has 
+with this, you can remove some transation on Transifex if some keys has 
 been removed inside the source language resource files.
 
- ./sync-transifex-ui.sh download-source-language CloudStack_UI.42xmessagesproperties
+ ./sync-transifex-ui.sh download-source-language CloudStack_UI.410_messagesjson
 
 * Upload the L10N resource files on Transifex. 
 
- ./sync-transifex-ui.sh upload-l10n-languages CloudStack_UI.42xmessagesproperties
+ ./sync-transifex-ui.sh upload-l10n-languages CloudStack_UI.410_messagesjson
 
 =====
-Note 1: 
-Choose the good branch on git matching with the good resource on Transifex:
-(no branch) <--> CloudStack_UI.2-2messagesproperties
-(no branch) <--> CloudStack_UI.30xmessagesproperties
-(4.1)       <--> CloudStack_UI.41xmessageproperties
-(master)    <--> CloudStack_UI.42xmessagesproperties
-
-Note 2:
+Note:
 If you want add a new L10N language, we need edit the sync-transifex-ui.sh script
 to add his language code in LIST_LANG variable, before run the download-l10n-languages
 command.
 
-
+======
+See: https://cwiki.apache.org/confluence/display/CLOUDSTACK/Update+L10N+files+from+Transifex+to+git+repo

@@ -23,7 +23,6 @@ import java.util.Map;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -39,6 +38,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -219,9 +219,21 @@ public interface NetworkOrchestrationService {
 
     DhcpServiceProvider getDhcpServiceProvider(Network network);
 
+    DnsServiceProvider getDnsServiceProvider(Network network);
+
     void removeDhcpServiceInSubnet(Nic nic);
 
     boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
+
+    boolean canUpdateInSequence(Network network);
+
+    List<String> getServicesNotSupportedInNewOffering(Network network, long newNetworkOfferingId);
+
+    void cleanupConfigForServicesInNetwork(List<String> services, Network network);
+
+    void configureUpdateInSequence(Network network);
+
+    int getResourceCount(Network network);
 }

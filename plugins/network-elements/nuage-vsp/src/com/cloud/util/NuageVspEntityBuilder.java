@@ -21,6 +21,7 @@ package com.cloud.util;
 
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -30,10 +31,12 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.manager.NuageVspManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -43,10 +46,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
+import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
 import net.nuage.vsp.acs.client.api.model.VspDomain;
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
 import net.nuage.vsp.acs.client.api.model.VspNic;
@@ -82,11 +89,20 @@ public class NuageVspEntityBuilder {
     @Inject
     VlanDao _vlanDao;
     @Inject
+    VlanDetailsDao _vlanDetailsDao;
+    @Inject
     ConfigurationDao _configurationDao;
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
     NetworkDetailsDao _networkDetailsDao;
+    @Inject
+    VMInstanceDao _vmInstanceDao;
+    @Inject
+    NuageVspManager _nuageVspManager;
+    @Inject
+    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+
 
     public VspDomain buildVspDomain(Domain domain) {
         return new VspDomain.Builder()
@@ -278,7 +294,8 @@ public class NuageVspEntityBuilder {
                 .oneToOneNat(staticNatIp.isOneToOneNat())
                 .vlanUuid(staticNatVlan.getUuid())
                 .vlanGateway(staticNatVlan.getVlanGateway())
-                .vlanNetmask(staticNatVlan.getVlanNetmask());
+                .vlanNetmask(staticNatVlan.getVlanNetmask())
+                .vlanUnderlay(NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, staticNatVlan));
 
         if (nic != null) {
             VspNic vspNic = buildVspNic(nic);
@@ -366,5 +383,33 @@ public class NuageVspEntityBuilder {
         }
 
         return vspAclRuleBuilder.build();
+    }
+
+    /** Build VspDhcpVMOption to put on the VM interface */
+    public VspDhcpVMOption buildVmDhcpOption (NicVO userNic, boolean defaultHasDns, boolean networkHasDns) {
+        VMInstanceVO userVm  = _vmInstanceDao.findById(userNic.getInstanceId());
+        VspDhcpVMOption.Builder vspDhcpVMOptionBuilder = new VspDhcpVMOption.Builder()
+                .nicUuid(userNic.getUuid())
+                .defaultHasDns(defaultHasDns)
+                .hostname(userVm.getHostName())
+                .networkHasDns(networkHasDns)
+                .isDefaultInterface(userNic.isDefaultNic())
+                .domainRouter(VirtualMachine.Type.DomainRouter.equals(userNic.getVmType()));
+        return vspDhcpVMOptionBuilder.build();
+    }
+
+    /** Build VspDhcpVMOption to put on the subnet */
+    public VspDhcpDomainOption buildNetworkDhcpOption(Network network, NetworkOffering offering) {
+        List<String> dnsProvider = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), Network.Service.Dns);
+        boolean isVrDnsProvider = dnsProvider.contains("VirtualRouter") || dnsProvider.contains("VpcVirtualRouter");
+        VspDhcpDomainOption.Builder vspDhcpDomainBuilder = new VspDhcpDomainOption.Builder()
+                .dnsServers(_nuageVspManager.getDnsDetails(network))
+                .vrIsDnsProvider(isVrDnsProvider);
+
+        if (isVrDnsProvider) {
+            vspDhcpDomainBuilder.networkDomain(network.getVpcId() != null ? _vpcDao.findById(network.getVpcId()).getNetworkDomain() : network.getNetworkDomain());
+        }
+
+        return vspDhcpDomainBuilder.build();
     }
 }

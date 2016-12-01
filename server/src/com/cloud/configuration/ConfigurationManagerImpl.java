@@ -81,6 +81,9 @@ import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -217,6 +220,8 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import com.google.common.base.Preconditions;
+
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
 
@@ -335,6 +340,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     AffinityGroupService _affinityGroupService;
     @Inject
     StorageManager _storageManager;
+    @Inject
+    ImageStoreDao _imageStoreDao;
+    @Inject
+    ImageStoreDetailsDao _imageStoreDetailsDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -520,6 +529,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _accountDetailsDao.update(accountDetailVO.getId(), accountDetailVO);
                 }
                 break;
+
+            case ImageStore:
+                final ImageStoreVO imgStore = _imageStoreDao.findById(resourceId);
+                Preconditions.checkState(imgStore != null);
+                _imageStoreDetailsDao.addDetail(resourceId, name, value, true);
+                break;
+
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
@@ -626,6 +642,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Long imageStoreId = cmd.getImageStoreId();
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
@@ -674,6 +691,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (storagepoolId != null) {
             scope = ConfigKey.Scope.StoragePool.toString();
             id = storagepoolId;
+            paramCountCheck++;
+        }
+        if (imageStoreId != null) {
+            scope = ConfigKey.Scope.ImageStore.toString();
+            id = imageStoreId;
             paramCountCheck++;
         }
 
@@ -1770,6 +1792,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public DataCenterVO doInTransaction(final TransactionStatus status) {
                 final DataCenterVO zone = _zoneDao.persist(zoneFinal);
+                CallContext.current().putContextParameter(DataCenter.class, zone.getUuid());
                 if (domainId != null) {
                     // zone is explicitly dedicated to this domain
                     // create affinity group associated and dedicate the zone.
@@ -1968,6 +1991,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String vmTypeString = cmd.getSystemVmType();
         VirtualMachine.Type vmType = null;
         boolean allowNetworkRate = false;
+
+        Boolean isCustomizedIops;
+
         if (cmd.getIsSystem()) {
             if (vmTypeString == null || VirtualMachine.Type.DomainRouter.toString().toLowerCase().equals(vmTypeString)) {
                 vmType = VirtualMachine.Type.DomainRouter;
@@ -1982,8 +2008,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Invalid systemVmType. Supported types are: " + VirtualMachine.Type.DomainRouter + ", " + VirtualMachine.Type.ConsoleProxy
                         + ", " + VirtualMachine.Type.SecondaryStorageVm);
             }
+
+            if (cmd.isCustomizedIops() != null) {
+                throw new InvalidParameterValueException("Customized IOPS is not a valid parameter for a system VM.");
+            }
+
+            isCustomizedIops = false;
+
+            if (cmd.getHypervisorSnapshotReserve() != null) {
+                throw new InvalidParameterValueException("Hypervisor snapshot reserve is not a valid parameter for a system VM.");
+            }
         } else {
             allowNetworkRate = true;
+            isCustomizedIops = cmd.isCustomizedIops();
         }
 
         if (cmd.getNetworkRate() != null) {
@@ -2008,7 +2045,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
-                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), cmd.isCustomizedIops(), cmd.getMinIops(), cmd.getMaxIops(),
+                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate(), cmd.getHypervisorSnapshotReserve());
     }
 

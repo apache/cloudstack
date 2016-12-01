@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.google.common.base.Strings;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
@@ -96,6 +97,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuModeDef;
@@ -115,7 +117,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -136,6 +139,7 @@ import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -245,6 +249,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected long _diskActivityCheckFileSizeMin = 10485760; // 10MB
     protected int _diskActivityCheckTimeoutSeconds = 120; // 120s
     protected long _diskActivityInactiveThresholdMilliseconds = 30000; // 30s
+    protected boolean _rngEnable = false;
+    protected RngBackendModel _rngBackendModel = RngBackendModel.RANDOM;
+    protected String _rngPath = "/dev/random";
+    protected int _rngRatePeriod = 1000;
+    protected int _rngRateBytes = 2048;
+    private File _qemuSocketsPath;
+    private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
 
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
@@ -769,6 +780,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _localStoragePath = "/var/lib/libvirt/images/";
         }
 
+        /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
+        _qemuSocketsPath = new File("/var/lib/libvirt/qemu");
+        String _qemuSocketsPathVar = (String)params.get("qemu.sockets.path");
+        if (_qemuSocketsPathVar != null && StringUtils.isNotBlank(_qemuSocketsPathVar)) {
+            _qemuSocketsPath = new File(_qemuSocketsPathVar);
+        }
+
         final File storagePath = new File(_localStoragePath);
         _localStoragePath = storagePath.getAbsolutePath();
 
@@ -802,6 +820,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String) params.get("kvmclock.disable");
         if (Boolean.parseBoolean(value)) {
             _noKvmClock = true;
+        }
+
+        value = (String) params.get("vm.rng.enable");
+        if (Boolean.parseBoolean(value)) {
+            _rngEnable = true;
+
+            value = (String) params.get("vm.rng.model");
+            if (!Strings.isNullOrEmpty(value)) {
+                _rngBackendModel = RngBackendModel.valueOf(value.toUpperCase());
+            }
+
+            value = (String) params.get("vm.rng.path");
+            if (!Strings.isNullOrEmpty(value)) {
+                _rngPath = value;
+            }
+
+            value = (String) params.get("vm.rng.rate.bytes");
+            _rngRateBytes = NumbersUtil.parseInt(value, new Integer(_rngRateBytes));
+
+            value = (String) params.get("vm.rng.rate.period");
+            _rngRatePeriod = NumbersUtil.parseInt(value, new Integer(_rngRatePeriod));
         }
 
         LibvirtConnection.initialize(_hypervisorURI);
@@ -1979,10 +2018,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final SerialDef serial = new SerialDef("pty", null, (short)0);
         devices.addDevice(serial);
 
+        /* Add a VirtIO channel for SystemVMs for communication and provisioning */
         if (vmTO.getType() != VirtualMachine.Type.User) {
-            final VirtioSerialDef vserial = new VirtioSerialDef(vmTO.getName(), null);
-            devices.addDevice(vserial);
+            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX,
+                              new File(_qemuSocketsPath + "/" + vmTO.getName() + ".agent")));
         }
+
+        if (_rngEnable) {
+            final RngDef rngDevice = new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
+            devices.addDevice(rngDevice);
+        }
+
+        /* Add a VirtIO channel for the Qemu Guest Agent tools */
+        devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX,
+                          new File(_qemuSocketsPath + "/" + vmTO.getName() + "." + _qemuGuestAgentSocketName)));
 
         final VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
         devices.addDevice(videoCard);

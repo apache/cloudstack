@@ -292,7 +292,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
-        if (canHandle(snapshot,SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
+        if (canHandle(snapshot, SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
             throw new CloudRuntimeException("Reverting not supported. Create a template or volume based on the snapshot instead.");
         }
 
@@ -374,7 +374,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                 }
             }
 
-            snapshot = result.getSnashot();
+            snapshot = result.getSnapshot();
             DataStore primaryStore = snapshot.getDataStore();
 
             SnapshotInfo backupedSnapshot = backupSnapshot(snapshot);

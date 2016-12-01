@@ -19,6 +19,24 @@
 
 package com.cloud.network.resource;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
+
+import javax.naming.ConfigurationException;
+
+import net.nuage.vsp.acs.NuageVspPluginClientLoader;
+import net.nuage.vsp.acs.client.api.NuageVspApiClient;
+import net.nuage.vsp.acs.client.api.NuageVspElementClient;
+import net.nuage.vsp.acs.client.api.NuageVspGuruClient;
+import net.nuage.vsp.acs.client.api.NuageVspManagerClient;
+import net.nuage.vsp.acs.client.common.model.Pair;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Strings;
+
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -34,10 +52,13 @@ import com.cloud.agent.api.element.ApplyAclRuleVspCommand;
 import com.cloud.agent.api.element.ApplyStaticNatVspCommand;
 import com.cloud.agent.api.element.ImplementVspCommand;
 import com.cloud.agent.api.element.ShutDownVpcVspCommand;
+import com.cloud.agent.api.element.ShutDownVspCommand;
 import com.cloud.agent.api.guru.DeallocateVmVspCommand;
 import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
 import com.cloud.agent.api.guru.ReserveVmInterfaceVspCommand;
 import com.cloud.agent.api.guru.TrashNetworkVspCommand;
+import com.cloud.agent.api.guru.UpdateDhcpOptionVspCommand;
+import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.agent.api.manager.GetApiDefaultsAnswer;
 import com.cloud.agent.api.manager.GetApiDefaultsCommand;
 import com.cloud.agent.api.manager.SupportedApiVersionCommand;
@@ -45,26 +66,14 @@ import com.cloud.agent.api.sync.SyncDomainAnswer;
 import com.cloud.agent.api.sync.SyncDomainCommand;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdAnswer;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
+import com.cloud.dc.Vlan;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.util.NuageVspUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
-import net.nuage.vsp.acs.NuageVspPluginClientLoader;
-import net.nuage.vsp.acs.client.api.NuageVspApiClient;
-import net.nuage.vsp.acs.client.api.NuageVspElementClient;
-import net.nuage.vsp.acs.client.api.NuageVspGuruClient;
-import net.nuage.vsp.acs.client.api.NuageVspManagerClient;
-import net.nuage.vsp.acs.client.common.model.Pair;
-import org.apache.log4j.Logger;
-
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
+import net.nuage.vsp.acs.client.common.model.NuageVspEntity;
 
 import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
 
@@ -291,6 +300,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             return executeRequest((DeallocateVmVspCommand)cmd);
         } else if (cmd instanceof TrashNetworkVspCommand) {
             return executeRequest((TrashNetworkVspCommand)cmd);
+        } else if (cmd instanceof UpdateDhcpOptionVspCommand) {
+            return executeRequest((UpdateDhcpOptionVspCommand)cmd);
         }
         //Element commands
         else if (cmd instanceof ImplementVspCommand) {
@@ -301,6 +312,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             return executeRequest((ApplyStaticNatVspCommand)cmd);
         } else if (cmd instanceof ShutDownVpcVspCommand) {
             return executeRequest((ShutDownVpcVspCommand)cmd);
+        } else if (cmd instanceof ShutDownVspCommand) {
+            return executeRequest((ShutDownVspCommand)cmd);
         }
         //Sync Commands
         else if (cmd instanceof SyncNuageVspCmsIdCommand) {
@@ -313,6 +326,8 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             return executeRequest((GetApiDefaultsCommand)cmd);
         } else if (cmd instanceof SupportedApiVersionCommand) {
             return executeRequest((SupportedApiVersionCommand)cmd);
+        } else if (cmd instanceof EntityExistsCommand) {
+            return executeRequest((EntityExistsCommand)cmd);
         }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Received unsupported command " + cmd.toString());
@@ -344,10 +359,10 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ImplementNetworkVspCommand cmd) {
         try {
             isNuageVspGuruLoaded();
-            _nuageVspGuruClient.implement(cmd.getNetwork(), cmd.getDnsServers());
+            _nuageVspGuruClient.implement(cmd.getNetwork(), cmd.getDhcpOption());
             return new Answer(cmd, true, "Created network mapping to " + cmd.getNetwork().getName() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
+            s_logger.error("Failure during " + cmd.toDetailString() + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
         }
     }
@@ -355,7 +370,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ReserveVmInterfaceVspCommand cmd) {
         try {
             isNuageVspGuruLoaded();
-            _nuageVspGuruClient.reserve(cmd.getNetwork(), cmd.getVm(), cmd.getNic(), cmd.getStaticNat());
+            _nuageVspGuruClient.reserve(cmd.getNetwork(), cmd.getVm(), cmd.getNic(), cmd.getStaticNat(), cmd.getDhcpOption());
             return new Answer(cmd, true, "Created NIC that maps to nicUuid" + cmd.getNic().getUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
@@ -386,6 +401,17 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         }
     }
 
+    private Answer executeRequest(UpdateDhcpOptionVspCommand cmd) {
+        try {
+            isNuageVspManagerLoaded();
+            _nuageVspGuruClient.applyDhcpOptions(cmd.getDhcpOptions(), cmd.getNetwork());
+            return new Answer(cmd, true, "Update DhcpOptions on VM's in network: " + cmd.getNetwork().getName() + " on Nuage VSD " + _hostName);
+        } catch (ExecutionException | ConfigurationException e) {
+            s_logger.error("Failure during " + cmd.toDetailString() + " on Nuage VSD " + _hostName, e);
+            return new Answer(cmd, e);
+        }
+    }
+
     private Answer executeRequest(ApplyStaticNatVspCommand cmd) {
         try {
             isNuageVspElementLoaded();
@@ -400,7 +426,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     private Answer executeRequest(ImplementVspCommand cmd) {
         try {
             isNuageVspElementLoaded();
-            boolean success = _nuageVspElementClient.implement(cmd.getNetwork(), cmd.getDnsServers(), cmd.getIngressFirewallRules(),
+            boolean success = _nuageVspElementClient.implement(cmd.getNetwork(), cmd.getDhcpOption(), cmd.getIngressFirewallRules(),
                     cmd.getEgressFirewallRules(), cmd.getFloatingIpUuids());
             return new Answer(cmd, success, "Implemented network " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
@@ -427,6 +453,17 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             return new Answer(cmd, true, "Shutdown VPC " + cmd.getVpcUuid() + " on Nuage VSD " + _hostName);
         } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
+            return new Answer(cmd, e);
+        }
+    }
+
+    private Answer executeRequest(ShutDownVspCommand cmd) {
+        try {
+            isNuageVspElementLoaded();
+            _nuageVspElementClient.shutdownNetwork(cmd.getNetwork(), cmd.getDhcpOptions());
+            return new Answer(cmd, true, "Shutdown VPC " + cmd.getNetwork().getUuid()+ " on Nuage VSD " + _hostName);
+        } catch (ConfigurationException e) {
+            s_logger.error("Failure during " + cmd.toDetailString() + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
         }
     }
@@ -477,6 +514,21 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
             boolean supported = _nuageVspManagerClient.isSupportedApiVersion(cmd.getApiVersion());
             return new Answer(cmd, supported, "Check if API version " + cmd.getApiVersion() + " is supported");
         } catch (ConfigurationException e) {
+            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
+            return new Answer(cmd, e);
+        }
+    }
+
+    private Answer executeRequest(EntityExistsCommand cmd) {
+        try {
+            isNuageVspApiLoaded();
+            NuageVspEntity entityType = null;
+            if (Vlan.class.isAssignableFrom(cmd.getType())) {
+                entityType = NuageVspEntity.SHARED_NETWORK;
+            }
+            boolean exists = _nuageVspApiClient.entityExists(entityType, cmd.getUuid());
+            return new Answer(cmd, exists, "Check if entity with UUID " + cmd.getUuid() + " of type " + entityType + " exists");
+        } catch (ExecutionException | ConfigurationException e) {
             s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
             return new Answer(cmd, e);
         }

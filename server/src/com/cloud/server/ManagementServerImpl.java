@@ -1205,12 +1205,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
+
             for (final VolumeVO volume : volumes) {
-                final Long volClusterId = _poolDao.findById(volume.getPoolId()).getClusterId();
-                // only check for volume which are not in zone wide primary store, as only those may require storage motion
-                if (volClusterId != null) {
-                    for (final Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
-                        final Host host = iterator.next();
+                final StoragePool storagePool = _poolDao.findById(volume.getPoolId());
+                final Long volClusterId = storagePool.getClusterId();
+
+                for (final Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                    final Host host = iterator.next();
+
+                    if (volClusterId != null) {
                         if (!host.getClusterId().equals(volClusterId) || usesLocal) {
                             if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
                                 requiresStorageMotion.put(host, true);
@@ -1219,8 +1222,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                             }
                         }
                     }
+                    else {
+                        if (storagePool.isManaged()) {
+                            if (srcHost.getClusterId() != host.getClusterId()) {
+                                requiresStorageMotion.put(host, true);
+                            }
+                        }
+                    }
                 }
             }
+
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), null, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
@@ -1249,7 +1260,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         for (final HostAllocator allocator : hostAllocators) {
-            if  (canMigrateWithStorage) {
+            if (canMigrateWithStorage) {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
@@ -1661,6 +1672,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Long imageStoreId = cmd.getImageStoreId();
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -1683,6 +1695,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (storagepoolId != null) {
             scope = ConfigKey.Scope.StoragePool.toString();
             id = storagepoolId;
+            paramCountCheck++;
+        }
+        if (imageStoreId != null) {
+            scope = ConfigKey.Scope.ImageStore.toString();
+            id = imageStoreId;
             paramCountCheck++;
         }
 

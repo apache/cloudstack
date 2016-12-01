@@ -30,7 +30,7 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.9.1.0-SNAPSHOT</version>
+  <version>4.10.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>Apache CloudStack is an IaaS (“Infrastructure as a Service”) cloud orchestration platform.</description>
@@ -129,7 +129,6 @@
     <cs.jetty.version>9.2.15.v20160210</cs.jetty.version>
     <cs.cxf.version>3.1.4</cs.cxf.version>
     <cs.groovy.version>2.4.6</cs.groovy.version>
-    <cs.apache-jsp.version>9.2.15.v20160210</cs.apache-jsp.version>
     <cs.nitro.version>10.1</cs.nitro.version>
   </properties>
 
@@ -222,11 +221,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>apache-jsp</artifactId>
-        <version>${cs.apache-jsp.version}</version>
-      </dependency>
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
@@ -876,6 +870,7 @@
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
               <exclude>tools/marvin/Marvin.egg-info/*</exclude>
               <exclude>ui/css/token-input-facebook.css</exclude>
+              <exclude>ui/l10n/*</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>

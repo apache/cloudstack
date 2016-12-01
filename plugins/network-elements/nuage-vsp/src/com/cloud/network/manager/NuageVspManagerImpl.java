@@ -27,6 +27,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingNuageVspCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.agent.api.manager.GetApiDefaultsAnswer;
 import com.cloud.agent.api.manager.GetApiDefaultsCommand;
 import com.cloud.agent.api.manager.SupportedApiVersionCommand;
@@ -37,11 +38,20 @@ import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNuageVspDeviceCmd;
 import com.cloud.api.commands.DeleteNuageVspDeviceCmd;
+import com.cloud.api.commands.DisableNuageUnderlayVlanIpRangeCmd;
+import com.cloud.api.commands.EnableNuageUnderlayVlanIpRangeCmd;
+import com.cloud.api.commands.ListNuageUnderlayVlanIpRangesCmd;
 import com.cloud.api.commands.ListNuageVspDevicesCmd;
 import com.cloud.api.commands.UpdateNuageVspDeviceCmd;
+import com.cloud.api.response.NuageVlanIpRangeResponse;
 import com.cloud.api.response.NuageVspDeviceResponse;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -108,6 +118,7 @@ import com.cloud.util.NuageVspEntityBuilder;
 import net.nuage.vsp.acs.NuageVspPluginClientLoader;
 import net.nuage.vsp.acs.client.api.model.VspApiDefaults;
 import net.nuage.vsp.acs.client.api.model.VspDomain;
+import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -185,13 +196,19 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     NetworkOfferingServiceMapDao _networkOfferingServiceMapDao;
     @Inject
     NuageVspEntityBuilder _nuageVspEntityBuilder;
+    @Inject
+    VlanDao _vlanDao;
+    @Inject
+    VlanDetailsDao _vlanDetailsDao;
+    @Inject
+    ResponseGenerator _responseGenerator;
 
     @Inject
     MessageBus _messageBus;
 
     static {
         Set<Network.Provider> nuageVspProviders = ImmutableSet.of(Network.Provider.NuageVsp);
-        Set<Network.Provider> userDataProviders = ImmutableSet.of(Network.Provider.VPCVirtualRouter);
+        Set<Network.Provider> vrProviders = ImmutableSet.of(Network.Provider.VPCVirtualRouter);
         Set<Network.Provider> lbProviders = ImmutableSet.of(Network.Provider.InternalLbVm);
         NUAGE_VSP_VPC_SERVICE_MAP = ImmutableMap.<Network.Service, Set<Network.Provider>>builder()
                 .put(Network.Service.Connectivity, nuageVspProviders)
@@ -200,15 +217,16 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                 .put(Network.Service.StaticNat, nuageVspProviders)
                 .put(Network.Service.SourceNat, nuageVspProviders)
                 .put(Network.Service.NetworkACL, nuageVspProviders)
-                .put(Network.Service.UserData, userDataProviders)
+                .put(Network.Service.UserData, vrProviders)
                 .put(Network.Service.Lb, lbProviders)
+                .put(Network.Service.Dns, vrProviders)
                 .build();
     }
 
     @Override
     public List<Class<?>> getCommands() {
         return Lists.<Class<?>>newArrayList(AddNuageVspDeviceCmd.class, DeleteNuageVspDeviceCmd.class, ListNuageVspDevicesCmd.class,
-                UpdateNuageVspDeviceCmd.class);
+                UpdateNuageVspDeviceCmd.class, EnableNuageUnderlayVlanIpRangeCmd.class, DisableNuageUnderlayVlanIpRangeCmd.class, ListNuageUnderlayVlanIpRangesCmd.class);
     }
 
     @Override
@@ -304,7 +322,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             resource.configure(cmd.getHostName(), Maps.<String, Object>newHashMap(resourceConfiguration.build()));
 
             if (matchingNuageVspDevice == null) {
-                auditDomainsOnVsp((HostVO) host, true, false);
+                auditDomainsOnVsp((HostVO) host, true);
             }
 
             return nuageVspDevice;
@@ -486,7 +504,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         HostVO host = findNuageVspHost(nuageVspDevice.getHostId());
         String nuageVspCmsId = findNuageVspCmsIdForDevice(nuageVspDevice.getId(), cmsIdConfig);
         if (matchingNuageVspDevice == null) {
-            if (!auditDomainsOnVsp(host, false, true)) {
+            if (!auditDomainsOnVsp(host, false)) {
                 return false;
             }
 
@@ -603,11 +621,11 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         }
 
         if (validateDomains) {
-            auditDomainsOnVsp(host, true, false);
+            auditDomainsOnVsp(host, true);
         }
     }
 
-    private boolean auditDomainsOnVsp(HostVO host, boolean add, boolean remove) {
+    private boolean auditDomainsOnVsp(HostVO host, boolean add) {
         List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByHost(host.getId());
         if (CollectionUtils.isEmpty(nuageVspDevices)) {
             return true;
@@ -617,7 +635,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         List<DomainVO> allDomains = _domainDao.listAll();
         for (DomainVO domain : allDomains) {
             VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
-            SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, add, remove);
+            SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, add ? SyncDomainCommand.Type.ADD :  SyncDomainCommand.Type.REMOVE);
             SyncDomainAnswer answer = (SyncDomainAnswer) _agentMgr.easySend(host.getId(), cmd);
             return answer.getSuccess();
         }
@@ -677,6 +695,63 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     }
 
     @Override
+    public HostVO getNuageVspHost(long physicalNetworkId) {
+        HostVO nuageVspHost;
+        List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkId);
+        if (CollectionUtils.isEmpty(nuageVspDevices)) {
+            // Perhaps another physical network is passed from within the same zone, find the VSP physical network in that case
+            PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+            List<PhysicalNetworkVO> physicalNetworksInZone = _physicalNetworkDao.listByZone(physicalNetwork.getDataCenterId());
+            for (PhysicalNetworkVO physicalNetworkInZone : physicalNetworksInZone) {
+                if (physicalNetworkInZone.getIsolationMethods().contains(PhysicalNetwork.IsolationMethod.VSP.name())) {
+                    nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkInZone.getId());
+                    break;
+                }
+            }
+        }
+
+        if (CollectionUtils.isNotEmpty(nuageVspDevices)) {
+            NuageVspDeviceVO config = nuageVspDevices.iterator().next();
+            nuageVspHost = _hostDao.findById(config.getHostId());
+            _hostDao.loadDetails(nuageVspHost);
+        } else {
+            throw new CloudRuntimeException("There is no Nuage VSP device configured on physical network " + physicalNetworkId);
+        }
+        return nuageVspHost;
+    }
+
+    @Override
+    public boolean updateNuageUnderlayVlanIpRange(long vlanIpRangeId, boolean enabled) {
+        VlanVO staticNatVlan = _vlanDao.findById(vlanIpRangeId);
+        HostVO nuageVspHost = getNuageVspHost(staticNatVlan.getPhysicalNetworkId());
+        EntityExistsCommand<Vlan> cmd = new EntityExistsCommand<Vlan>(Vlan.class, staticNatVlan.getUuid());
+        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
+        if (answer != null && !answer.getResult()) {
+            _vlanDetailsDao.addDetail(staticNatVlan.getId(), NuageVspManager.nuageUnderlayVlanIpRangeDetailKey, String.valueOf(enabled), false);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public List<NuageVlanIpRangeResponse> filterNuageVlanIpRanges(List<? extends Vlan> vlanIpRanges, Boolean underlay) {
+        List<NuageVlanIpRangeResponse> nuageVlanIpRanges = Lists.newArrayList();
+        for (Vlan vlanIpRange : vlanIpRanges) {
+            NuageVlanIpRangeResponse nuageVlanIpRange = (NuageVlanIpRangeResponse) _responseGenerator.createVlanIpRangeResponse(NuageVlanIpRangeResponse.class, vlanIpRange);
+
+            VlanDetailsVO nuageUnderlayDetail = _vlanDetailsDao.findDetail(vlanIpRange.getId(), NuageVspManager.nuageUnderlayVlanIpRangeDetailKey);
+            boolean underlayEnabled = nuageUnderlayDetail != null && nuageUnderlayDetail.getValue().equalsIgnoreCase(String.valueOf(true));
+            nuageVlanIpRange.setUnderlay(underlayEnabled);
+            if (underlay == null || underlayEnabled == underlay) {
+                nuageVlanIpRanges.add(nuageVlanIpRange);
+            }
+            nuageVlanIpRange.setObjectName("nuagevlaniprange");
+        }
+        return nuageVlanIpRanges;
+    }
+
+    @Override
     public boolean preStateTransitionEvent(Status oldState, Status.Event event, Status newState, Host host, boolean status, Object opaque) {
         return true;
     }
@@ -714,10 +789,9 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
 
                     List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
                     for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
-                        HostVO host = findNuageVspHost(nuageVspDevice.getHostId());
                         VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
-                        SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, true, false);
-                        _agentMgr.easySend(host.getId(), cmd);
+                        SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, SyncDomainCommand.Type.ADD);
+                        _agentMgr.easySend(nuageVspDevice.getHostId(), cmd);
                     }
                 } finally {
                     _domainDao.releaseFromLockTable(domain.getId());
@@ -732,10 +806,9 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                 DomainVO domain = (DomainVO) args;
                 List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
                 for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
-                    HostVO host = findNuageVspHost(nuageVspDevice.getHostId());
                     VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
-                    SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, false, true);
-                    _agentMgr.easySend(host.getId(), cmd);
+                    SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, SyncDomainCommand.Type.REMOVE);
+                    _agentMgr.easySend(nuageVspDevice.getHostId(), cmd);
                 }
             }
         });

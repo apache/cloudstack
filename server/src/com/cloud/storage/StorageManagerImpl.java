@@ -82,6 +82,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -1113,7 +1114,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     cleanupSecondaryStorage(recurring);
 
                     List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long) StorageCleanupDelay.value() << 10)));
+
                     for (VolumeVO vol : vols) {
+                        try {
+                            // If this fails, just log a warning. It's ideal if we clean up the host-side clustered file
+                            // system, but not necessary.
+                            handleManagedStorage(vol);
+                        } catch (Exception e) {
+                            s_logger.warn("Unable to destroy host-side clustered file system " + vol.getUuid(), e);
+                        }
+
                         try {
                             volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
                         } catch (Exception e) {
@@ -1230,6 +1240,47 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         } finally {
             scanLock.releaseRef();
+        }
+    }
+
+    private void handleManagedStorage(Volume volume) {
+        Long instanceId = volume.getInstanceId();
+
+        // The idea of this "if" statement is to see if we need to remove an SR/datastore before
+        // deleting the volume that supports it on a SAN. This only applies for managed storage.
+        if (instanceId != null) {
+            StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+
+            if (storagePool != null && storagePool.isManaged()) {
+                DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+                DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+
+                DettachCommand cmd = new DettachCommand(disk, null);
+
+                cmd.setManaged(true);
+
+                cmd.setStorageHost(storagePool.getHostAddress());
+                cmd.setStoragePort(storagePool.getPort());
+
+                cmd.set_iScsiName(volume.get_iScsiName());
+
+                VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
+
+                Long lastHostId = vmInstanceVO.getLastHostId();
+
+                if (lastHostId != null) {
+                    Answer answer = _agentMgr.easySend(lastHostId, cmd);
+
+                    if (answer != null && answer.getResult()) {
+                        VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
+                        HostVO host = _hostDao.findById(lastHostId);
+
+                        volService.revokeAccess(volumeInfo, host, volumeInfo.getDataStore());
+                    } else {
+                        s_logger.warn("Unable to remove host-side clustered file system for the following volume: " + volume.getUuid());
+                    }
+                }
+            }
         }
     }
 

@@ -1146,6 +1146,82 @@
                                             number: true
                                         }
                                     },
+                                    qosType: {
+                                        label: 'label.qos.type',
+                                        docID: 'helpDiskOfferingQoSType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: '',
+                                                description: ''
+                                            });
+                                            items.push({
+                                                id: 'hypervisor',
+                                                description: 'hypervisor'
+                                            });
+                                            items.push({
+                                                id: 'storage',
+                                                description: 'storage'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+                                                var $isCustomizedIops = $form.find('.form-item[rel=isCustomizedIops]');
+                                                var $minIops = $form.find('.form-item[rel=minIops]');
+                                                var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                var $diskBytesReadRate = $form.find('.form-item[rel=diskBytesReadRate]');
+                                                var $diskBytesWriteRate = $form.find('.form-item[rel=diskBytesWriteRate]');
+                                                var $diskIopsReadRate = $form.find('.form-item[rel=diskIopsReadRate]');
+                                                var $diskIopsWriteRate = $form.find('.form-item[rel=diskIopsWriteRate]');
+
+                                                var qosId = $(this).val();
+
+                                                if (qosId == 'storage') { // Storage QoS
+                                                    $diskBytesReadRate.hide();
+                                                    $diskBytesWriteRate.hide();
+                                                    $diskIopsReadRate.hide();
+                                                    $diskIopsWriteRate.hide();
+
+                                                    $minIops.css('display', 'inline-block');
+                                                    $maxIops.css('display', 'inline-block');
+                                                } else if (qosId == 'hypervisor') { // Hypervisor Qos
+                                                    $minIops.hide();
+                                                    $maxIops.hide();
+
+                                                    $diskBytesReadRate.css('display', 'inline-block');
+                                                    $diskBytesWriteRate.css('display', 'inline-block');
+                                                    $diskIopsReadRate.css('display', 'inline-block');
+                                                    $diskIopsWriteRate.css('display', 'inline-block');
+                                                } else { // No Qos
+                                                    $diskBytesReadRate.hide();
+                                                    $diskBytesWriteRate.hide();
+                                                    $diskIopsReadRate.hide();
+                                                    $diskIopsWriteRate.hide();
+                                                    $minIops.hide();
+                                                    $maxIops.hide();
+                                                }
+                                            });
+                                        }
+                                    },
+                                    minIops: {
+                                        label: 'label.disk.iops.min',
+                                        docID: 'helpDiskOfferingDiskIopsMin',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
+                                    maxIops: {
+                                        label: 'label.disk.iops.max',
+                                        docID: 'helpDiskOfferingDiskIopsMax',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
                                     diskBytesReadRate: {
                                         label: 'label.disk.bytes.read.rate',
                                         docID: 'helpSystemOfferingDiskBytesReadRate',
@@ -1255,25 +1331,43 @@
                                         networkrate: args.data.networkRate
                                     });
                                 }
-                                if (args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
-                                    $.extend(data, {
-                                        bytesreadrate: args.data.diskBytesReadRate
-                                    });
-                                }
-                                if (args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
-                                    $.extend(data, {
-                                        byteswriterate: args.data.diskBytesWriteRate
-                                    });
-                                }
-                                if (args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
-                                    $.extend(data, {
-                                        iopsreadrate: args.data.diskIopsReadRate
-                                    });
-                                }
-                                if (args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
-                                    $.extend(data, {
-                                        iopswriterate: args.data.diskIopsWriteRate
-                                    });
+
+                                if (args.data.qosType == 'storage') {
+                                    if (args.data.minIops != null && args.data.minIops.length > 0) {
+                                        $.extend(data, {
+                                            miniops: args.data.minIops
+                                        });
+                                    }
+
+                                    if (args.data.maxIops != null && args.data.maxIops.length > 0) {
+                                        $.extend(data, {
+                                            maxiops: args.data.maxIops
+                                        });
+                                    }
+                                } else if (args.data.qosType == 'hypervisor') {
+                                    if (args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
+                                        $.extend(data, {
+                                            bytesreadrate: args.data.diskBytesReadRate
+                                        });
+                                    }
+
+                                    if (args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
+                                        $.extend(data, {
+                                            byteswriterate: args.data.diskBytesWriteRate
+                                        });
+                                    }
+
+                                    if (args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
+                                        $.extend(data, {
+                                            iopsreadrate: args.data.diskIopsReadRate
+                                        });
+                                    }
+
+                                    if (args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
+                                        $.extend(data, {
+                                            iopswriterate: args.data.diskIopsWriteRate
+                                        });
+                                    }
                                 }
 
                                 $.extend(data, {
@@ -1475,6 +1569,24 @@
                                     },
                                     networkrate: {
                                         label: 'label.network.rate'
+                                    },
+                                    miniops: {
+                                        label: 'label.disk.iops.min',
+                                        converter: function(args) {
+                                            if (args > 0)
+                                                return args;
+                                            else
+                                                return "N/A";
+                                        }
+                                    },
+                                    maxiops: {
+                                        label: 'label.disk.iops.max',
+                                        converter: function(args) {
+                                            if (args > 0)
+                                                return args;
+                                            else
+                                                return "N/A";
+                                        }
                                     },
                                     diskBytesReadRate: {
                                         label: 'label.disk.bytes.read.rate'

@@ -181,7 +181,7 @@ public class VirtualRoutingResource {
         boolean finalResult = false;
         for (ConfigItem configItem : cfg) {
             long startTimestamp = System.currentTimeMillis();
-            ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem);
+            ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem, VRScripts.VR_SCRIPT_EXEC_TIMEOUT);
             if (s_logger.isDebugEnabled()) {
                 long elapsed = System.currentTimeMillis() - startTimestamp;
                 s_logger.debug("Processing " + configItem + " took " + elapsed + "ms");
@@ -380,7 +380,7 @@ public class VirtualRoutingResource {
                     timeout = VRScripts.VR_SCRIPT_EXEC_TIMEOUT;
                 }
 
-                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem);
+                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem, timeout);
                 if (!result.isSuccess()) {
                     return new Answer(cmd, false, result.getDetails());
                 }

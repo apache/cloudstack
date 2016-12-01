@@ -423,6 +423,11 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         return null;
     }
 
+    @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return false;
+    }
+
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 

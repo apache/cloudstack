@@ -281,7 +281,6 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -295,10 +294,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; // 3
 
     // seconds
-
-    public enum UserVmCloneType {
-        full, linked
-    }
 
     @Inject
     EntityManager _entityMgr;
@@ -318,8 +313,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected TemplateDataStoreDao _templateStoreDao;
     @Inject
     protected DomainDao _domainDao = null;
-    @Inject
-    protected UserVmCloneSettingDao _vmCloneSettingDao = null;
     @Inject
     protected UserVmDao _vmDao = null;
     @Inject
@@ -3554,19 +3547,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.setDisplayVm(isDisplayVm);
                 } else {
                     vm.setDisplayVm(true);
-                }
-
-                // If hypervisor is vSphere, check for clone type setting.
-                if (hypervisorType.equals(HypervisorType.VMware)) {
-                    // retrieve clone flag.
-                    UserVmCloneType cloneType = UserVmCloneType.linked;
-                    String value = _configDao.getValue(Config.VmwareCreateFullClone.key());
-                    if (value != null) {
-                        if (Boolean.parseBoolean(value) == true)
-                            cloneType = UserVmCloneType.full;
-                    }
-                    UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(id, cloneType.toString());
-                    _vmCloneSettingDao.persist(vmCloneSettingVO);
                 }
 
                 long guestOSId = template.getGuestOSId();
