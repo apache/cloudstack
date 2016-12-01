@@ -749,8 +749,19 @@ class TestRouterDHCPOpts(cloudstackTestCase):
             "Check list port forwarding rules"
         )
 
-        self.logger.debug("Testing DHCP options for VMs %s and %s" % (self.vm_1.id, self.vm_2.id))
-        self.test_dhcphopts(self.vm_2.nic[1].ipaddress, network1_router)
-        self.test_dhcphopts(self.vm_1.nic[0].ipaddress, network2_router)
+        vm1_non_default_nic_ip = self.get_vm_non_default_nic_ip(self.vm_1)
+        vm2_non_default_nic_ip = self.get_vm_non_default_nic_ip(self.vm_2)
+
+        self.logger.debug("Testing DHCP options for VM's %s IP address %s in virtual router %s" % (self.vm_2.id, vm2_non_default_nic_ip, str(network1_router) ))
+        self.test_dhcphopts(vm2_non_default_nic_ip, network1_router)
+
+        self.logger.debug("Testing DHCP options for VM's %s IP address %s in virtual router %s" % (self.vm_1.id, vm1_non_default_nic_ip, str(network2_router) ))
+        self.test_dhcphopts(vm1_non_default_nic_ip, network2_router)
 
         return
+
+    def get_vm_non_default_nic_ip(self, vm):
+        if vm.nic[0].isdefault:
+            return vm.nic[1].ipaddress
+        else:
+            return vm.nic[0].ipaddress
