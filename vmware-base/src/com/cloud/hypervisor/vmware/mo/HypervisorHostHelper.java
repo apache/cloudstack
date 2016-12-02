@@ -77,6 +77,7 @@ import com.vmware.vim25.VMwareDVSPvlanConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
 import com.vmware.vim25.VirtualBusLogicController;
 import com.vmware.vim25.VirtualController;
+import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualIDEController;
@@ -1289,6 +1290,18 @@ public class HypervisorHostHelper {
             vmConfig.getDeviceChange().add(scsiControllerSpec);
             busNum++;
             }
+        }
+
+        if (guestOsIdentifier.startsWith("darwin")) { //Mac OS
+            s_logger.debug("Add USB Controller device for blank Mac OS VM " + vmName);
+
+            //For Mac OS X systems, the EHCI+UHCI controller is enabled by default and is required for USB mouse and keyboard access.
+            VirtualDevice usbControllerDevice = VmwareHelper.prepareUSBControllerDevice();
+            VirtualDeviceConfigSpec usbControllerSpec = new VirtualDeviceConfigSpec();
+            usbControllerSpec.setDevice(usbControllerDevice);
+            usbControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+
+            vmConfig.getDeviceChange().add(usbControllerSpec);
         }
 
         VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
