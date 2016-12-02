@@ -529,7 +529,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                         // finalPath = folder + File.separator +
                         // snapshotBackupUuid;
                     } else {
-                        finalPath = folder + File.separator + snapshotBackupUuid + ".vhd";
+                        finalPath = folder + File.separator + snapshotBackupUuid;
                     }
 
                 } finally {
@@ -562,7 +562,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     final String[] tmp = result.split("#");
                     snapshotBackupUuid = tmp[0];
                     physicalSize = Long.parseLong(tmp[1]);
-                    finalPath = folder + File.separator + snapshotBackupUuid + ".vhd";
+                    finalPath = folder + File.separator + snapshotBackupUuid;
                 }
             }
             final String volumeUuid = snapshotTO.getVolume().getPath();
