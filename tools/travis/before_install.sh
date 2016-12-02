@@ -62,7 +62,8 @@ echo -e "\nCleaning up stale files in /tmp: "
 sudo find /tmp -type f -mtime +2 | grep -v "`sudo lsof | grep /tmp |awk '{print $9}'|sed -e '1 d' |sort |uniq | tr \\n \|`" | xargs sudo rm -vf
 
 echo -e "\nUpdating the system: "
-sudo apt-get -q -y update > /dev/null
+sudo apt-get -y clean
+sudo apt-get -y update > /dev/null
 
 echo -e "\nInstalling MySQL: "
 
