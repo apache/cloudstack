@@ -227,12 +227,6 @@ public class CitrixHelper {
             prodVersion = record.softwareVersion.get("platform_version").trim();
         } else {
             prodVersion = prodVersion.trim();
-            final String[] items = prodVersion.split("\\.");
-            if (Integer.parseInt(items[0]) > 6) {
-                prodVersion = "6.5.0";
-            } else if (Integer.parseInt(items[0]) == 6 && Integer.parseInt(items[1]) >= 4) {
-                prodVersion = "6.5.0";
-            }
         }
         return prodVersion;
     }

@@ -54,9 +54,9 @@ import com.cloud.hypervisor.xenserver.resource.XenServer600Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer620Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer620SP1Resource;
+import com.cloud.hypervisor.xenserver.resource.XenServer650Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServerConnectionPool;
 import com.cloud.hypervisor.xenserver.resource.Xenserver625Resource;
-import com.cloud.hypervisor.xenserver.resource.XenServer650Resource;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
@@ -81,7 +81,6 @@ import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
 import com.xensource.xenapi.Types.UuidInvalid;
 import com.xensource.xenapi.Types.XenAPIException;
-
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
@@ -89,7 +88,6 @@ import org.apache.xmlrpc.XmlRpcException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
-
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -408,8 +406,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return new XenServer600Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
-        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.5.0"))
-            return new XenServer650Resource();
         else if (prodBrand.equals("XenServer") && prodVersion.equals("6.2.0")) {
             if (hotfix != null && hotfix.equals(XenserverConfigs.XSHotFix62ESP1004)) {
                 return new Xenserver625Resource();
@@ -426,9 +422,18 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         } else if (prodBrand.equals("XCP_Kronos")) {
             return new XcpOssResource();
+        } else if (prodBrand.equals("XenServer")) {
+            final String[] items = prodVersion.split("\\.");
+            if ((Integer.parseInt(items[0]) > 6) ||
+                    (Integer.parseInt(items[0]) == 6 && Integer.parseInt(items[1]) >= 4)) {
+                s_logger.warn("defaulting to xenserver650 resource for product brand: " + prodBrand + " with product " +
+                        "version: " + prodVersion);
+                //default to xenserver650 resource.
+                return new XenServer650Resource();
+            }
         }
         String msg =
-                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0, 6.5.0 but this one is " +
+                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0, >6.4.0 but this one is " +
                         prodBrand + " " + prodVersion;
         s_logger.warn(msg);
         throw new RuntimeException(msg);
