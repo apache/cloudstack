@@ -94,6 +94,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -130,6 +131,9 @@ public class DeploymentPlanningManagerImplTest {
     @Inject
     DedicatedResourceDao _dedicatedDao;
 
+    @Inject
+    UserVmDetailsDao vmDetailsDao;
+
     private static long domainId = 5L;
 
     private static long dataCenterId = 1L;
@@ -149,6 +153,8 @@ public class DeploymentPlanningManagerImplTest {
 
         VMInstanceVO vm = new VMInstanceVO();
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
+
+        Mockito.when(vmDetailsDao.listDetailsKeyPairs(Matchers.anyLong())).thenReturn(null);
 
         Mockito.when(_dcDao.findById(Matchers.anyLong())).thenReturn(dc);
         Mockito.when(dc.getId()).thenReturn(dataCenterId);
@@ -380,6 +386,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public UserVmDao userVMDao() {
             return Mockito.mock(UserVmDao.class);
+        }
+
+        @Bean
+        public UserVmDetailsDao userVmDetailsDao() {
+            return Mockito.mock(UserVmDetailsDao.class);
         }
 
         @Bean

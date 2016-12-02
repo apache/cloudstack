@@ -3582,6 +3582,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 for (String key : customParameters.keySet()) {
                     vm.setDetail(key, customParameters.get(key));
                 }
+                vm.setDetail("deployvm", "true");
                 _vmDao.saveDetails(vm);
 
                 s_logger.debug("Allocating in the DB for vm");

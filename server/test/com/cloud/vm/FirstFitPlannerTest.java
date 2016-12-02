@@ -32,7 +32,12 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
@@ -63,6 +68,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.FirstFitPlanner;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -86,6 +92,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -101,6 +108,8 @@ public class FirstFitPlannerTest {
     @Inject
     UserVmDao vmDao;
     @Inject
+    UserVmDetailsDao vmDetailsDao;
+    @Inject
     ConfigurationDao configDao;
     @Inject
     CapacityDao capacityDao;
@@ -114,6 +123,10 @@ public class FirstFitPlannerTest {
     HostGpuGroupsDao hostGpuGroupsDao;
     @Inject
     HostTagsDao hostTagsDao;
+    @Inject
+    ConfigDepotImpl configDepot;
+    @Inject
+    ScopedConfigStorage scopedStorage;
 
     private static long domainId = 1L;
     long dataCenterId = 1L;
@@ -126,6 +139,8 @@ public class FirstFitPlannerTest {
 
     @Before
     public void setUp() {
+        ConfigKey.init(configDepot);
+
         when(configDao.getValue(Mockito.anyString())).thenReturn(null);
         when(configDao.getValue(Config.ImplicitHostTags.key())).thenReturn("GPU");
 
@@ -138,6 +153,7 @@ public class FirstFitPlannerTest {
 
     @After
     public void tearDown() {
+        ConfigKey.init(null);
         CallContext.unregister();
     }
 
@@ -157,7 +173,50 @@ public class FirstFitPlannerTest {
         reorderedClusterList.add(6L);
         reorderedClusterList.add(2L);
 
-        assertTrue("Reordered cluster list is not ownering the implict host tags", (clusterList.equals(reorderedClusterList)));
+        assertTrue("Reordered cluster list is not honoring the implict host tags", (clusterList.equals(reorderedClusterList)));
+    }
+
+    @Test
+    public void checkClusterReorderingForDeployVMWithThresholdCheckDisabled() throws InsufficientServerCapacityException {
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        ExcludeList avoids = mock(ExcludeList.class);
+        initializeForTest(vmProfile, plan, avoids);
+        List<Long> clustersCrossingThreshold = initializeForClusterThresholdDisabled();
+
+        Map<String, String> details = new HashMap<String, String>();
+        details.put("deployvm", "true");
+        when(vmDetailsDao.listDetailsKeyPairs(vmProfile.getVirtualMachine().getId())).thenReturn(details);
+
+        List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
+        assertTrue("Reordered cluster list have clusters exceeding threshold", (!clusterList.containsAll(clustersCrossingThreshold)));
+    }
+
+    @Test
+    public void checkClusterReorderingForStartVMWithThresholdCheckDisabled() throws InsufficientServerCapacityException {
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        ExcludeList avoids = mock(ExcludeList.class);
+        initializeForTest(vmProfile, plan, avoids);
+        List<Long> clustersCrossingThreshold = initializeForClusterThresholdDisabled();
+
+        List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
+        assertTrue("Reordered cluster list does not have clusters exceeding threshold", (clusterList.containsAll(clustersCrossingThreshold)));
+    }
+
+    private List<Long> initializeForClusterThresholdDisabled() {
+        when(configDepot.global()).thenReturn(configDao);
+
+        ConfigurationVO config = mock(ConfigurationVO.class);
+        when(config.getValue()).thenReturn(String.valueOf(false));
+        when(configDao.findById(DeploymentClusterPlanner.ClusterThresholdEnabled.key())).thenReturn(config);
+
+        List<Long> clustersCrossingThreshold = new ArrayList<Long>();
+        clustersCrossingThreshold.add(3L);
+        when(capacityDao.listClustersCrossingThreshold(
+                Mockito.anyShort(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(clustersCrossingThreshold);
+
+        return clustersCrossingThreshold;
     }
 
     private void initializeForTest(VirtualMachineProfileImpl vmProfile, DataCenterDeployment plan, ExcludeList avoids) {
@@ -312,6 +371,11 @@ public class FirstFitPlannerTest {
         }
 
         @Bean
+        public UserVmDetailsDao userVmDetailsDao() {
+            return Mockito.mock(UserVmDetailsDao.class);
+        }
+
+        @Bean
         public VMInstanceDao vmInstanceDao() {
             return Mockito.mock(VMInstanceDao.class);
         }
@@ -374,6 +438,16 @@ public class FirstFitPlannerTest {
         @Bean
         public ResourceManager resourceManager() {
             return Mockito.mock(ResourceManager.class);
+        }
+
+        @Bean
+        public ConfigDepot configDepot() {
+            return Mockito.mock(ConfigDepotImpl.class);
+        }
+
+        @Bean
+        public ScopedConfigStorage configStorage() {
+            return Mockito.mock(ScopedConfigStorage.class);
         }
 
         public static class Library implements TypeFilter {
