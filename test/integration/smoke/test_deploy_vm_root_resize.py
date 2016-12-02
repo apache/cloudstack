@@ -23,7 +23,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 #Import Integration Libraries
 
 #base - contains all resources as entities and defines create, delete, list operations on them
-from marvin.lib.base import Account, VirtualMachine, ServiceOffering
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering, Configurations
 
 #utils - utility classes for common cleanup, external library wrappers etc
 from marvin.lib.utils import cleanup_resources
@@ -114,7 +114,13 @@ class TestDeployVM(cloudstackTestCase):
         # 2. root disk has new size per listVolumes
         # 3. Rejects non-supported hypervisor types
         """
-        if(self.hypervisor.lower() == 'kvm'):
+        full_clone_config = Configurations.list(self.apiclient,
+                            name="vmware.create.full.clone")[0].value
+        if full_clone_config == 'false' and self.hypervisor.lower() == 'vmware':
+            self.skipTest("root disk resize is not supported "+
+                "when vmware.create.full.clone is %s" % full_clone_config)
+
+        if(self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() == 'xenserver' or self.hypervisor.lower() == 'vmware'):
             newrootsize = (self.template.size >> 30) + 2
             self.virtual_machine = VirtualMachine.create(
                 self.apiclient,
@@ -208,7 +214,7 @@ class TestDeployVM(cloudstackTestCase):
     def test_01_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize of 0
         """
-        if (self.hypervisor.lower() == 'kvm'):
+        if (self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() == 'xenserver' or self.hypervisor.lower() == 'vmware'):
             newrootsize = 0
             success = False
             try:
@@ -236,7 +242,7 @@ class TestDeployVM(cloudstackTestCase):
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
-        if (self.hypervisor.lower() == 'kvm'):
+        if (self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() == 'xenserver' or self.hypervisor.lower() == 'vmware'):
             newrootsize = (self.template.size >> 30) - 1
 
             self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")

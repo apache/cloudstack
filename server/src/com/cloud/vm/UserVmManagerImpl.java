@@ -3511,27 +3511,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                     rootDiskSize = Long.parseLong(customParameters.get("rootdisksize"));
 
-                    // only KVM supports rootdisksize override
-                    if (hypervisorType != HypervisorType.KVM) {
-                        throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
+                    // only KVM, XenServer and VMware  supports rootdisksize override
+                    if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware)) {
+                        throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support  rootdisksize override");
                     }
 
-                    // rotdisksize must be larger than template
                     VMTemplateVO templateVO = _templateDao.findById(template.getId());
                     if (templateVO == null) {
                         throw new InvalidParameterValueException("Unable to look up template by id " + template.getId());
                     }
 
-                    if ((rootDiskSize << 30) < templateVO.getSize()) {
-                        Long templateVOSizeGB = templateVO.getSize() / 1024 / 1024 / 1024;
-                        throw new InvalidParameterValueException("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize()
-                            + "B (" + templateVOSizeGB + "GB)");
-                    } else {
-                        s_logger.debug("rootdisksize of " + (rootDiskSize << 30) + " was larger than template size of " + templateVO.getSize());
-                    }
-
-                    s_logger.debug("found root disk size of " + rootDiskSize);
-                    customParameters.remove("rootdisksize");
+                    validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
                 }
 
                 if (isDisplayVm != null) {
@@ -3613,6 +3603,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         });
     }
+
+    public void validateRootDiskResize(final HypervisorType hypervisorType, Long rootDiskSize, VMTemplateVO templateVO, UserVmVO vm, final Map<String, String> customParameters) throws InvalidParameterValueException
+    {
+        // rootdisksize must be larger than template.
+        if ((rootDiskSize << 30) < templateVO.getSize()) {
+            Long templateVOSizeGB = templateVO.getSize() / 1024 / 1024 / 1024;
+            s_logger.error("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)");
+            throw new InvalidParameterValueException("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)");
+        } else if ((rootDiskSize << 30) > templateVO.getSize()) {
+             if (hypervisorType == HypervisorType.VMware && (vm.getDetails() == null || vm.getDetails().get("rootDiskController") == null)) {
+                s_logger.warn("If Root disk controller parameter is not overridden, then Root disk resize may fail because current Root disk controller value is NULL.");
+             } else if (hypervisorType == HypervisorType.VMware && !vm.getDetails().get("rootDiskController").toLowerCase().contains("scsi")) {
+                s_logger.error("Found unsupported root disk controller : " + vm.getDetails().get("rootDiskController"));
+                throw new InvalidParameterValueException("Found unsupported root disk controller :" + vm.getDetails().get("rootDiskController"));
+             } else {
+                s_logger.debug("Rootdisksize override validation successful. Template root disk size "+(templateVO.getSize() / 1024 / 1024 / 1024)+ " GB" + " Root disk size specified "+ rootDiskSize+" GB");
+             }
+        } else {
+            s_logger.debug("Root disk size specified is " + (rootDiskSize << 30) + " and Template root disk size is " + templateVO.getSize()+" . Both are equal so no need to override");
+            customParameters.remove("rootdisksize");
+        }
+    }
+
 
     @Override
     public void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType){
