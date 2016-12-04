@@ -921,9 +921,11 @@ def main(argv):
     config.address().compare()
     config.address().process()
 
-    logging.debug("Configuring vmpassword")
-    password = CsPassword("vmpassword", config)
-    password.process()
+    process_file = argv[1]
+    if process_file in ["cmd_line.json", "vm_password.json"]:
+        logging.debug("Configuring vmpassword")
+        password = CsPassword("vmpassword", config)
+        password.process()
 
     logging.debug("Configuring vmdata")
     metadata = CsVmMetadata('vmdata', config)
