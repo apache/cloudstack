@@ -77,7 +77,6 @@ public class VmwareContextFactory {
         context.registerStockObject("noderuninfo", String.format("%d-%d", s_clusterMgr.getManagementNodeId(), s_clusterMgr.getCurrentRunId()));
 
         context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
-        s_pool.registerOutstandingContext(context);
 
         return context;
     }

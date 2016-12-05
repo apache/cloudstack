@@ -5529,7 +5529,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Recycling threadlocal context to pool");
             }
-            context.getPool().returnContext(context);
+            context.getPool().registerContext(context);
         }
     }
 
