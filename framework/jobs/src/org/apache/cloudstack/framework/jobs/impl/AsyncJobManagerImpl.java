@@ -92,6 +92,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private static final ConfigKey<Integer> VmJobLockTimeout = new ConfigKey<Integer>("Advanced",
             Integer.class, "vm.job.lock.timeout", "1800",
             "Time in seconds to wait in acquiring lock to submit a vm worker job", false);
+    private static final ConfigKey<Long> VolumeSnapshotJobCancelThreshold = new ConfigKey<Long>("Advanced", Long.class, "volume.snapshot.job.cancel.threshold", "60",
+            "Time (in minutes) for volume snapshot async-job to be forcefully cancelled if it has been in process for long", true, ConfigKey.Scope.Global);
 
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
 
@@ -133,7 +135,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout};
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, VolumeSnapshotJobCancelThreshold};
     }
 
     @Override
@@ -809,7 +811,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     s_logger.info("Begin cleanup expired async-jobs");
 
                     // forcefully cancel blocking queue items if they've been staying there for too long
-                    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(JobCancelThresholdMinutes.value() * 60000, false);
+                    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(JobCancelThresholdMinutes.value() * 60000, VolumeSnapshotJobCancelThreshold.value() * 60000,
+                            "VmWorkTakeVolumeSnapshot", false);
                     if (blockItems != null && blockItems.size() > 0) {
                         for (SyncQueueItemVO item : blockItems) {
                             try {

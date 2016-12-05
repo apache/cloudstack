@@ -312,7 +312,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
         VmwareContext context = null;
         try {
-            context = VmwareContextFactory.create(url.getHost(), username, password);
+            int sessionTimeout = _vmwareMgr.getVcenterSessionTimeout();
+            context = VmwareContextFactory.create(url.getHost(), username, password, sessionTimeout);
             if (privateTrafficLabel != null)
                 context.registerStockObject("privateTrafficLabel", privateTrafficLabel);
 

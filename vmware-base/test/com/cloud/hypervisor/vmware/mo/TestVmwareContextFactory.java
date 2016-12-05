@@ -37,7 +37,7 @@ public class TestVmwareContextFactory {
         s_pool = new VmwareContextPool();
     }
 
-    public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+    public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword, int sessionTimeout) throws Exception {
         assert (vCenterAddress != null);
         assert (vCenterUserName != null);
         assert (vCenterPassword != null);
@@ -49,20 +49,20 @@ public class TestVmwareContextFactory {
                 StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
         VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
-        vimClient.setVcenterSessionTimeout(1200000);
+        vimClient.setVcenterSessionTimeout(sessionTimeout);
         vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
 
         VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
         return context;
     }
 
-    public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
-        VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
+    public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword, int sessionTimeout) throws Exception {
+        VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName, sessionTimeout);
         if (context == null)
-            context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+            context = create(vCenterAddress, vCenterUserName, vCenterPassword, sessionTimeout);
 
         if (context != null) {
-            context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+            context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName, sessionTimeout));
         }
 
         return context;

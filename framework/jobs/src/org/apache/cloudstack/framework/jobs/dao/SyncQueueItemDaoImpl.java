@@ -141,23 +141,46 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     }
 
     @Override
-    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
+    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, long snapshotThresholdMs, String jobCmd, boolean exclusive) {
         Date cutTime = DateUtil.currentGMTTime();
+        List<SyncQueueItemVO> l = new ArrayList<SyncQueueItemVO>();
 
-        SearchBuilder<SyncQueueItemVO> sbItem = createSearchBuilder();
-        sbItem.and("lastProcessMsid", sbItem.entity().getLastProcessMsid(), SearchCriteria.Op.NNULL);
-        sbItem.and("lastProcessNumber", sbItem.entity().getLastProcessNumber(), SearchCriteria.Op.NNULL);
-        sbItem.and("lastProcessTime", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.NNULL);
-        sbItem.and("lastProcessTime2", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.LT);
+        Date date1 = new Date(cutTime.getTime() - thresholdMs);
+        String  dateString1 = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), date1);
 
-        sbItem.done();
+        Date date2 = new Date(cutTime.getTime() - snapshotThresholdMs);
+        String  dateString2 = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), date2);
 
-        SearchCriteria<SyncQueueItemVO> sc = sbItem.create();
-        sc.setParameters("lastProcessTime2", new Date(cutTime.getTime() - thresholdMs));
-
-        if(exclusive)
-            return lockRows(sc, null, true);
-        return listBy(sc, null);
+        String sql = "SELECT s.id, s.queue_id, s.content_type, s.content_id, s.queue_proc_msid, s.queue_proc_number, s.queue_proc_time, s.created FROM sync_queue_item AS s " +
+                "JOIN async_job as a ON s.content_id = a.id WHERE s.queue_proc_msid IS NOT NULL AND s.queue_proc_number IS NOT NULL AND s.queue_proc_time IS NOT NULL" +
+                " AND ((a.job_cmd NOT LIKE ? AND s.queue_proc_time < ? ) OR (a.job_cmd LIKE ? AND s.queue_proc_time < ?))";
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setString(1, "%" + jobCmd + "%");
+            pstmt.setString(2, dateString1);
+            pstmt.setString(3, "%" + jobCmd + "%");
+            pstmt.setString(4, dateString2);
+            ResultSet rs = pstmt.executeQuery();
+            while(rs.next()) {
+                SyncQueueItemVO item = new SyncQueueItemVO();
+                item.setId(rs.getLong(1));
+                item.setQueueId(rs.getLong(2));
+                item.setContentType(rs.getString(3));
+                item.setContentId(rs.getLong(4));
+                item.setLastProcessMsid(rs.getLong(5));
+                item.setLastProcessNumber(rs.getLong(6));
+                item.setLastProcessTime(rs.getDate(7));
+                item.setCreated(rs.getDate(8));
+                l.add(item);
+            }
+        } catch (SQLException e) {
+            s_logger.error("Unexpected sql excetpion, ", e);
+        } catch (Throwable e) {
+            s_logger.error("Unexpected excetpion, ", e);
+        }
+        return l;
     }
 
     @Override

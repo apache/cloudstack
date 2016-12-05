@@ -80,4 +80,7 @@ public interface VmwareManager {
 
     public String getDataDiskController();
     boolean hasNexusVSM(Long clusterId);
+
+    public int getSnapshotBackupSessionTimeout();
+
 }

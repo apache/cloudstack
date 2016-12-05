@@ -1221,6 +1221,7 @@ public enum Config {
             null),
     VmwareHungWorkerTimeout("Advanced", ManagementServer.class, Long.class, "vmware.hung.wokervm.timeout", "7200", "Worker VM timeout in seconds", null),
     VmwareVcenterSessionTimeout("Advanced", ManagementServer.class, Long.class, "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", null),
+    VmwareSnapshotBackupSessionTimeout("Advanced", ManagementServer.class, Long.class, "vmware.snapshot.backup.session.timeout", "1200", "VMware client timeout in seconds for snapshot backup", null),
 
     // Midonet
     MidoNetAPIServerAddress(

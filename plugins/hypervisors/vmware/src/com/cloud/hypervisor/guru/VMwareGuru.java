@@ -492,7 +492,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             _cmdExecLogDao.persist(execLog);
             cmd.setContextParam("execid", String.valueOf(execLog.getId()));
             cmd.setContextParam("noderuninfo", String.format("%d-%d", _clusterMgr.getManagementNodeId(), _clusterMgr.getCurrentRunId()));
-            cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
+            if (cmd instanceof CopyCommand) { // Snapshot backup
+                CopyCommand cpyCommand = (CopyCommand)cmd;
+                DataTO srcData = cpyCommand.getSrcTO();
+                DataTO destData = cpyCommand.getDestTO();
+                if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.SNAPSHOT &&
+                        srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+                    cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getSnapshotBackupSessionTimeout()));
+                } else {
+                    cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
+                }
+            } else {
+                cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
+            }
 
             if (cmd instanceof BackupSnapshotCommand || cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
                 cmd instanceof CreatePrivateTemplateFromSnapshotCommand || cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand ||
