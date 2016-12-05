@@ -101,35 +101,24 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
         try {
             final String srname = hypervisorResource.getHost().getUuid() + path.trim();
-
-            final Set<SR> srs = SR.getByNameLabel(conn, srname);
-
-            if (srs != null && !srs.isEmpty()) {
-                return srs.iterator().next();
+            synchronized (srname.intern()) {
+                final Set<SR> srs = SR.getByNameLabel(conn, srname);
+                if (srs != null && !srs.isEmpty()) {
+                    return srs.iterator().next();
+                }
+                final Map<String, String> smConfig = new HashMap<String, String>();
+                final Host host = Host.getByUuid(conn, hypervisorResource.getHost().getUuid());
+                final String uuid = UUID.randomUUID().toString();
+                sr = SR.introduce(conn, uuid, srname, srname, "file", "file", false, smConfig);
+                final PBD.Record record = new PBD.Record();
+                record.host = host;
+                record.SR = sr;
+                smConfig.put("location", path);
+                record.deviceConfig = smConfig;
+                pbd = PBD.create(conn, record);
+                pbd.plug(conn);
+                sr.scan(conn);
             }
-
-            final Map<String, String> smConfig = new HashMap<String, String>();
-
-            final Host host = Host.getByUuid(conn, hypervisorResource.getHost().getUuid());
-            final String uuid = UUID.randomUUID().toString();
-
-            sr = SR.introduce(conn, uuid, srname, srname, "file", "file", false, smConfig);
-
-            final PBD.Record record = new PBD.Record();
-
-            record.host = host;
-            record.SR = sr;
-
-            smConfig.put("location", path);
-
-            record.deviceConfig = smConfig;
-
-            pbd = PBD.create(conn, record);
-
-            pbd.plug(conn);
-
-            sr.scan(conn);
-
             return sr;
         } catch (final Exception ex) {
             try {
