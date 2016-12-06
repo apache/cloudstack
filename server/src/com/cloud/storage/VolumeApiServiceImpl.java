@@ -99,7 +99,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -240,6 +240,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     VmWorkJobDao _workJobDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -712,7 +714,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume = _volsDao.persist(volume);
                 if (cmd.getSnapshotId() == null && displayVolume) {
                     // for volume created from snapshot, create usage event after volume creation
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                             diskOfferingId, null, size, Volume.class.getName(), volume.getUuid(), displayVolume);
                 }
 
@@ -798,7 +800,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         createdVolume = _volumeMgr.createVolumeFromSnapshot(volume, snapshot, vm);
         VolumeVO volumeVo = _volsDao.findById(createdVolume.getId());
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(),
+        _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(),
                 createdVolume.getName(), createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid(), volumeVo.isDisplayVolume());
 
         return volumeVo;
@@ -1591,11 +1593,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if ((displayVolume != null && displayVolume != volume.isDisplayVolume()) && !isVolumeDestroyed(volume)){
             if (displayVolume){
                 // flag turned 1 equivalent to freshly created volume
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                         volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
             }else {
                 // flag turned 0 equivalent to deleting a volume
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                         Volume.class.getName(), volume.getUuid());
             }
         }

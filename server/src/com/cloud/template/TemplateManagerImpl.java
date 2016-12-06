@@ -119,7 +119,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -264,6 +264,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private UserVmJoinDao _userVmJoinDao;
     @Inject
     private SnapshotDataStoreDao _snapshotStoreDao;
+    @Inject
+    private UsageEventEmitter _usageEventEmitter;
 
     @Inject
     MessageBus _messageBus;
@@ -749,7 +751,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
 
                 if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
-                    UsageEventUtils.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltStore.getPhysicalSize(),
+                    _usageEventEmitter.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltStore.getPhysicalSize(),
                             srcTmpltStore.getSize(), template.getClass().getName(), template.getUuid());
                 }
                 return true;
