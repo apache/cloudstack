@@ -114,7 +114,5 @@ public class VmwareContextPoolTest {
             totalRegistrations += client.count();
         }
         Mockito.verify(vmwareContextPool, Mockito.atLeast(totalRegistrations)).registerContext(Mockito.any(VmwareContext.class));
-        Assert.assertEquals(vmwareContextPool.composePoolKey(vmwareAddress, vmwareUsername),
-                vmwareContextPool.getContext(vmwareAddress, vmwareUsername).getPoolKey());
     }
 }
