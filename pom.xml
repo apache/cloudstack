@@ -71,7 +71,7 @@
     <cs.junit.version>4.12</cs.junit.version>
     <cs.hamcrest.version>1.3</cs.hamcrest.version>
     <cs.junit.dataprovider.version>1.10.0</cs.junit.dataprovider.version>
-    <cs.bcprov.version>1.46</cs.bcprov.version>
+    <cs.bcprov.version>1.55</cs.bcprov.version>
     <cs.jsch.version>0.1.53</cs.jsch.version>
     <cs.jpa.version>2.1.1</cs.jpa.version>
     <cs.jasypt.version>1.9.2</cs.jasypt.version>
@@ -93,7 +93,7 @@
     <cs.rampart.version>1.5.1</cs.rampart.version>
     <cs.axiom.version>1.2.8</cs.axiom.version>
     <cs.neethi.version>2.0.4</cs.neethi.version>
-    <cs.servlet.version>2.5</cs.servlet.version>
+    <cs.servlet.version>3.1.0</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
@@ -110,6 +110,7 @@
     <cs.commons-collections.version>3.2.2</cs.commons-collections.version>
     <cs.commons-validator.version>1.5.0</cs.commons-validator.version>
     <cs.reflections.version>0.9.10</cs.reflections.version>
+    <cs.javassist.version>3.18.2-GA</cs.javassist.version>
     <cs.java-ipv6.version>0.16</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
@@ -372,6 +373,11 @@
         <version>${cs.reflections.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.javassist</groupId>
+        <artifactId>javassist</artifactId>
+        <version>${cs.javassist.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.owasp.esapi</groupId>
         <artifactId>esapi</artifactId>
         <version>2.1.0.1</version>
@@ -388,7 +394,7 @@
       </dependency>
       <dependency>
         <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
+        <artifactId>javax.servlet-api</artifactId>
         <version>${cs.servlet.version}</version>
       </dependency>
       <dependency>

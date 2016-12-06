@@ -19,6 +19,13 @@
 
 package com.cloud.utils.security;
 
+import com.cloud.utils.Ternary;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,124 +47,143 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.codec.binary.Base64;
-
-import com.cloud.utils.Ternary;
-import org.bouncycastle.openssl.PEMReader;
-
 public class CertificateHelper {
-    public static byte[] buildAndSaveKeystore(String alias, String cert, String privateKey, String storePassword) throws KeyStoreException, CertificateException,
-        NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        KeyStore ks = buildKeystore(alias, cert, privateKey, storePassword);
+    public static byte[] buildAndSaveKeystore(final String alias, final String cert, final String privateKey, final String storePassword) throws KeyStoreException, CertificateException,
+    NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(alias), "Certificate alias cannot be blank");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(cert), "Certificate cannot be blank");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(privateKey), "Private key cannot be blank");
 
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        ks.store(os, storePassword != null ? storePassword.toCharArray() : null);
-        os.close();
-        return os.toByteArray();
+        final KeyStore ks = buildKeystore(alias, cert, privateKey, storePassword);
+
+        try (final ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            ks.store(os, storePassword != null ? storePassword.toCharArray() : null);
+            return os.toByteArray();
+        }
     }
 
-    public static byte[] buildAndSaveKeystore(List<Ternary<String, String, String>> certs, String storePassword) throws KeyStoreException, NoSuchAlgorithmException,
-        CertificateException, IOException, InvalidKeySpecException {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, storePassword != null ? storePassword.toCharArray() : null);
+    public static byte[] buildAndSaveKeystore(final List<Ternary<String, String, String>> certs, final String storePassword) throws KeyStoreException, NoSuchAlgorithmException,
+    CertificateException, IOException, InvalidKeySpecException {
+        Preconditions.checkNotNull(certs, "List of certificates to be saved in keystore cannot be null");
+        char password[] = null;
+        if (storePassword != null) {
+            password = storePassword.toCharArray();
+        }
+        final KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, password);
 
         //name,cert,key
-        for (Ternary<String, String, String> cert : certs) {
+        for (final Ternary<String, String, String> cert : certs) {
             if (cert.third() == null) {
-                Certificate c = buildCertificate(cert.second());
+                final Certificate c = buildCertificate(cert.second());
                 ks.setCertificateEntry(cert.first(), c);
             } else {
-                Certificate[] c = new Certificate[certs.size()];
+                final Certificate[] c = new Certificate[certs.size()];
                 int i = certs.size();
-                for (Ternary<String, String, String> ct : certs) {
+                for (final Ternary<String, String, String> ct : certs) {
                     c[i - 1] = buildCertificate(ct.second());
                     i--;
                 }
-                ks.setKeyEntry(cert.first(), buildPrivateKey(cert.third()), storePassword != null ? storePassword.toCharArray() : null, c);
+                ks.setKeyEntry(cert.first(), buildPrivateKey(cert.third()), password, c);
             }
         }
 
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        ks.store(os, storePassword != null ? storePassword.toCharArray() : null);
-        os.close();
-        return os.toByteArray();
+        try (final ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            ks.store(os, password);
+            return os.toByteArray();
+        }
     }
 
-    public static KeyStore loadKeystore(byte[] ksData, String storePassword) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException {
-        assert (ksData != null);
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new ByteArrayInputStream(ksData), storePassword != null ? storePassword.toCharArray() : null);
+    public static KeyStore loadKeystore(final byte[] ksData, final String storePassword) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException {
+        Preconditions.checkNotNull(ksData, "Keystore data cannot be null");
+        final KeyStore ks = KeyStore.getInstance("JKS");
+        try (final ByteArrayInputStream is = new ByteArrayInputStream(ksData)) {
+            ks.load(is, storePassword != null ? storePassword.toCharArray() : null);
+        }
 
         return ks;
     }
 
-    public static KeyStore buildKeystore(String alias, String cert, String privateKey, String storePassword) throws KeyStoreException, CertificateException,
-        NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+    public static KeyStore buildKeystore(final String alias, final String cert, final String privateKey, final String storePassword) throws KeyStoreException, CertificateException,
+    NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(alias), "Certificate alias cannot be blank");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(cert), "Certificate cannot be blank");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(privateKey), "Private key cannot be blank");
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, storePassword != null ? storePassword.toCharArray() : null);
-        Certificate[] certs = new Certificate[1];
+        char password[] = null;
+        if (storePassword != null) {
+            password = storePassword.toCharArray();
+        }
+        final KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, password);
+        final Certificate[] certs = new Certificate[1];
         certs[0] = buildCertificate(cert);
-        ks.setKeyEntry(alias, buildPrivateKey(privateKey), storePassword != null ? storePassword.toCharArray() : null, certs);
+        ks.setKeyEntry(alias, buildPrivateKey(privateKey), password, certs);
         return ks;
     }
 
-    public static Certificate buildCertificate(String content) throws CertificateException {
-        assert (content != null);
+    public static Certificate buildCertificate(final String content) throws CertificateException {
+        Preconditions.checkNotNull(content, "Certificate content cannot be null");
 
-        BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(content.getBytes()));
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        final BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(content.getBytes()));
+        final CertificateFactory cf = CertificateFactory.getInstance("X.509");
         return cf.generateCertificate(bis);
     }
 
-    public static Key buildPrivateKey(String base64EncodedKeyContent) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(Base64.decodeBase64(base64EncodedKeyContent));
+    public static Key buildPrivateKey(final String base64EncodedKeyContent) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+        Preconditions.checkNotNull(base64EncodedKeyContent);
+
+        final KeyFactory kf = KeyFactory.getInstance("RSA");
+        final PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(Base64.decodeBase64(base64EncodedKeyContent));
         return kf.generatePrivate(keysp);
     }
 
-    public static List<Certificate> parseChain(String chain) throws IOException {
+    public static List<Certificate> parseChain(final String chain) throws IOException, CertificateException {
+        Preconditions.checkNotNull(chain);
 
-        List<Certificate> certs = new ArrayList<Certificate>();
-        PEMReader reader = new PEMReader(new StringReader(chain));
+        final List<Certificate> certs = new ArrayList<Certificate>();
+        try(final PemReader pemReader = new PemReader(new StringReader(chain));)
+        {
+            final PemObject pemObject = pemReader.readPemObject();
+            final CertificateFactory certificateFactory = CertificateFactory.getInstance("X509");
+            final ByteArrayInputStream bais = new ByteArrayInputStream(pemObject.getContent());
 
-        Certificate crt = null;
-
-        while ((crt = (Certificate)reader.readObject()) != null) {
-            if (crt instanceof X509Certificate) {
-                certs.add(crt);
+            for (final Certificate cert : certificateFactory.generateCertificates(bais)) {
+                if (cert instanceof X509Certificate) {
+                    certs.add(cert);
+                }
+            }
+            if (certs.isEmpty()) {
+                throw new IllegalStateException("Unable to decode certificate chain");
             }
         }
-        if (certs.size() == 0)
-            throw new IllegalArgumentException("Unable to decode certificate chain");
-
         return certs;
     }
 
-    public static String generateFingerPrint(Certificate cert) {
+    public static String generateFingerPrint(final Certificate cert) {
+        Preconditions.checkNotNull(cert, "Certificate cannot be null");
 
         final char[] HEX = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-        StringBuilder buffer = new StringBuilder(60);
+        final StringBuilder buffer = new StringBuilder(60);
         try {
 
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            byte[] data = md.digest(cert.getEncoded());
+            final MessageDigest md = MessageDigest.getInstance("SHA-256");
+            final byte[] data = md.digest(cert.getEncoded());
 
-            for (int i = 0; i < data.length; i++) {
+            for (final byte element : data) {
                 if (buffer.length() > 0) {
                     buffer.append(":");
                 }
 
-                buffer.append(HEX[(0xF0 & data[i]) >>> 4]);
-                buffer.append(HEX[0x0F & data[i]]);
+                buffer.append(HEX[(0xF0 & element) >>> 4]);
+                buffer.append(HEX[0x0F & element]);
             }
 
-        } catch (CertificateEncodingException e) {
-            throw new CloudRuntimeException("Bad certificate encoding");
-        } catch (NoSuchAlgorithmException e) {
-            throw new CloudRuntimeException("Bad certificate algorithm");
+        } catch (final CertificateEncodingException e) {
+            throw new IllegalStateException("Bad certificate encoding");
+        } catch (final NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Bad certificate algorithm");
         }
 
         return buffer.toString();
