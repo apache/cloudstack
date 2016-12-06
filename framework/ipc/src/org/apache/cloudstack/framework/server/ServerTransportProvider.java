@@ -18,14 +18,7 @@
  */
 package org.apache.cloudstack.framework.server;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.security.SecureRandom;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
 import org.apache.cloudstack.framework.transport.TransportAddress;
 import org.apache.cloudstack.framework.transport.TransportDataPdu;
@@ -34,8 +27,15 @@ import org.apache.cloudstack.framework.transport.TransportEndpointSite;
 import org.apache.cloudstack.framework.transport.TransportPdu;
 import org.apache.cloudstack.framework.transport.TransportProvider;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import com.cloud.utils.concurrency.NamedThreadFactory;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ServerTransportProvider implements TransportProvider {
     private static final Logger s_logger = Logger.getLogger(ServerTransportProvider.class);
@@ -52,9 +52,16 @@ public class ServerTransportProvider implements TransportProvider {
 
     private MessageSerializer _messageSerializer;
 
+    static {
+        BouncyCastleProvider provider = new BouncyCastleProvider();
+        if (Security.getProvider(provider.getName()) == null) {
+            Security.addProvider(provider);
+        }
+    }
+
     public ServerTransportProvider() {
-       randomGenerator=new SecureRandom();
-       _nextEndpointId=randomGenerator.nextInt();
+        randomGenerator = new SecureRandom();
+        _nextEndpointId = randomGenerator.nextInt();
     }
 
     public String getNodeId() {
