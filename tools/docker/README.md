@@ -80,6 +80,28 @@ tag:latest = master branch
    docker stop cloudstack
    docker commit -m "init system.iso" -a "Apache CloudStack" cloudstack cloudstack/management_centos6
    ```
+### Ubuntu 14.04
+
+Ubuntu image use DEB's from jenkins.buildacloud.org
+tag:latest = master branch
+
+1. build the base image
+
+   ```
+   docker build -f Dockerfile.ubuntu1404 -t cloudstack/management_ubuntu1404 .
+   ```
+
+2. on jenkins, database and systemvm.iso are pre-deployed. the inital start require privileged container to
+   mount systemvm.iso and copy ssh_rsa.pub into it.
+
+   ```
+   docker run --name cloudstack-mysql -e MYSQL_ROOT_PASSWORD=password -d mysql:5.5
+   docker run --privileged --link cloudstack-mysql:mysql -d --name cloudstack cloudstack/management_ubuntu1404
+   sleep 300
+   docker exec cloudstack /etc/init.d/cloudstack-management stop
+   docker stop cloudstack
+   docker commit -m "init system.iso" -a "Apache CloudStack" cloudstack cloudstack/management_ubuntu1404
+   ```
 
 
 ### Marvin
