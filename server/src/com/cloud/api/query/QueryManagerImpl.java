@@ -3054,9 +3054,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
 
         boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
-            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all
-                        + " can be specified by root admin only");
+                        + " can be specified by admin only");
             }
             listAll = true;
         }
