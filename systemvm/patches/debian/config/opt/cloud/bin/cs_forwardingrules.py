@@ -64,6 +64,10 @@ def merge(dbag, rules):
                             print "removing index %s" % str(index)
                     if not index == -1:
                         del dbag[source_ip][index]
+                        # If all forwarding rules have been deleted
+                        # remove IP from databag
+                        if dbag[source_ip] == []:
+                            del dbag[source_ip]
 
     return dbag
 
