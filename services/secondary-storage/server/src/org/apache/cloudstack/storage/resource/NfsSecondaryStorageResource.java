@@ -984,12 +984,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      *
      * @param swift  The swift object
      * @param srcFile Source file on the staging NFS
-     * @param containerName Destination container
-     * @return true on successful write
+     * @param containerName Destination container  @return true on successful write
+     * @param uniqueName Unique name identifying the template
      */
-    protected boolean swiftUploadMetadataFile(SwiftTO swift, File srcFile, String containerName) throws IOException {
-
-        String uniqueName = FilenameUtils.getBaseName(srcFile.getName());
+    protected boolean swiftUploadMetadataFile(SwiftTO swift, File srcFile, String containerName, String uniqueName) throws IOException {
 
         File uniqDir = _storage.createUniqDir();
         String metaFileName = uniqDir.getAbsolutePath() + File.separator + _tmpltpp;
@@ -1041,7 +1039,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             DataTO retObj = null;
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
-                swiftUploadMetadataFile(swift, srcFile, containerName);
+                TemplateObjectTO destTemplateData = (TemplateObjectTO) destData;
+                String uniqueName = destTemplateData.getName();
+                swiftUploadMetadataFile(swift, srcFile, containerName, uniqueName);
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(swiftPath);
                 newTemplate.setSize(getVirtualSize(srcFile, getTemplateFormat(srcFile.getName())));
