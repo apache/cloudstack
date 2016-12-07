@@ -668,18 +668,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return null;
     }
 
-    protected Map<String, Object> createProxyInstance(long dataCenterId, VMTemplateVO template) throws ConcurrentOperationException {
-
-        long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
-        String name = VirtualMachineName.getConsoleProxyName(id, _instance);
-        DataCenterVO dc = _dcDao.findById(dataCenterId);
-        Account systemAcct = _accountMgr.getSystemAccount();
-
-        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
-
+    protected NetworkVO getDefaultNetworkForCreation(DataCenter dc) {
         NetworkVO defaultNetwork = null;
         if (dc.getNetworkType() == NetworkType.Advanced && dc.isSecurityGroupEnabled()) {
-            List<NetworkVO> networks = _networkDao.listByZoneSecurityGroup(dataCenterId);
+            List<NetworkVO> networks = _networkDao.listByZoneSecurityGroup(dc.getId());
             if (networks == null || networks.size() == 0) {
                 throw new CloudRuntimeException("Can not found security enabled network in SG Zone " + dc);
             }
@@ -689,7 +681,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
                 defaultTrafficType = TrafficType.Guest;
             }
-            List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
+            List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dc.getId(), defaultTrafficType);
 
             // api should never allow this situation to happen
             if (defaultNetworks.size() != 1) {
@@ -697,6 +689,20 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
             defaultNetwork = defaultNetworks.get(0);
         }
+
+        return defaultNetwork;
+    }
+
+    protected Map<String, Object> createProxyInstance(long dataCenterId, VMTemplateVO template) throws ConcurrentOperationException {
+
+        long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
+        String name = VirtualMachineName.getConsoleProxyName(id, _instance);
+        DataCenterVO dc = _dcDao.findById(dataCenterId);
+        Account systemAcct = _accountMgr.getSystemAccount();
+
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
+
+        NetworkVO defaultNetwork = getDefaultNetworkForCreation(dc);
 
         List<? extends NetworkOffering> offerings =
             _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
