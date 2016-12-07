@@ -19,6 +19,7 @@
 
 package com.cloud.util;
 
+import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.dc.dao.VlanDetailsDao;
@@ -30,7 +31,9 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.NetworkACLItem;
@@ -49,12 +52,17 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import net.nuage.vsp.acs.client.api.model.VspAclRule;
 import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
+import net.nuage.vsp.acs.client.api.model.VspAddressRange;
 import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
 import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspDomainCleanUp;
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
 import net.nuage.vsp.acs.client.api.model.VspNic;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
@@ -64,16 +72,20 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 public class NuageVspEntityBuilder {
     private static final Logger s_logger = Logger.getLogger(NuageVspEntityBuilder.class);
 
+    @Inject
+    NetworkDao _networkDao;
     @Inject
     VpcDao _vpcDao;
     @Inject
@@ -112,7 +124,31 @@ public class NuageVspEntityBuilder {
                 .build();
     }
 
-    public VspNetwork buildVspNetwork(Network network, boolean fillAddressRange) {
+    public VspDomainCleanUp buildVspDomainCleanUp(Domain domain) {
+        VspDomainCleanUp.Builder vspDomainCleanUpBuilder = new VspDomainCleanUp.Builder().uuid(domain.getUuid());
+
+        Map<String, List<String>> sharedNetworkUuids = Maps.newHashMap();
+        List<NetworkVO> allSharedNetworks = _networkDao.listByGuestType(Network.GuestType.Shared);
+        for (NetworkVO sharedNetwork : allSharedNetworks) {
+            if (_networkModel.isNetworkAvailableInDomain(sharedNetwork.getId(), domain.getId())) {
+                NetworkOffering networkOffering = _networkOfferingDao.findById(sharedNetwork.getNetworkOfferingId());
+                String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configurationDao, _networkDetailsDao, sharedNetwork, networkOffering);
+                if (!sharedNetworkUuids.containsKey(preConfiguredDomainTemplateName)) {
+                    sharedNetworkUuids.put(preConfiguredDomainTemplateName, Lists.<String>newArrayList());
+                }
+                sharedNetworkUuids.get(preConfiguredDomainTemplateName).add(sharedNetwork.getUuid());
+            }
+        }
+        vspDomainCleanUpBuilder.sharedNetworkUuids(sharedNetworkUuids);
+
+        return vspDomainCleanUpBuilder.build();
+    }
+
+    public VspNetwork buildVspNetwork(Network network) {
+        return buildVspNetwork(network.getDomainId(), network);
+    }
+
+    public VspNetwork buildVspNetwork(long domainId, Network network) {
         VspNetwork.Builder vspNetworkBuilder = new VspNetwork.Builder()
                 .id(network.getId())
                 .uuid(network.getUuid())
@@ -120,7 +156,7 @@ public class NuageVspEntityBuilder {
                 .cidr(network.getCidr())
                 .gateway(network.getGateway());
 
-        DomainVO domain = _domainDao.findById(network.getDomainId());
+        DomainVO domain = _domainDao.findById(domainId);
         VspDomain vspDomain = buildVspDomain(domain);
         vspNetworkBuilder.domain(vspDomain);
 
@@ -130,7 +166,7 @@ public class NuageVspEntityBuilder {
         }
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        vspNetworkBuilder.egressDefaultPolicy(networkOffering.getEgressDefaultPolicy());
+        vspNetworkBuilder.egressDefaultPolicy(networkOffering.getEgressDefaultPolicy()).publicAccess(networkOffering.getSupportsPublicAccess());
 
         if (network.getVpcId() != null) {
             VpcVO vpc = _vpcDao.findById(network.getVpcId());
@@ -139,7 +175,16 @@ public class NuageVspEntityBuilder {
                     .networkType(VspNetwork.NetworkType.Vpc);
         } else {
             if (networkOffering.getGuestType() == Network.GuestType.Shared) {
-                vspNetworkBuilder.networkType(VspNetwork.NetworkType.Shared);
+                List<VlanVO> vlans = _vlanDao.listVlansByNetworkIdIncludingRemoved(network.getId());
+                List<VspAddressRange> vspAddressRanges = Lists.transform(vlans, new Function<VlanVO, VspAddressRange>() {
+                    @Nullable
+                    @Override
+                    public VspAddressRange apply(VlanVO vlanVO) {
+                        return new VspAddressRange.Builder().gateway(vlanVO.getVlanGateway()).netmask(vlanVO.getVlanNetmask()).build();
+                    }
+                });
+
+                vspNetworkBuilder.networkType(VspNetwork.NetworkType.Shared).addressRanges(vspAddressRanges);
             } else if (_networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.SourceNat)
                     || _networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.StaticNat)) {
                 vspNetworkBuilder.networkType(VspNetwork.NetworkType.L3);
@@ -154,11 +199,10 @@ public class NuageVspEntityBuilder {
         String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configurationDao, _networkDetailsDao, network, networkOffering);
         vspNetworkBuilder.domainTemplateName(preConfiguredDomainTemplateName);
 
-        if (fillAddressRange) {
+        if (usesVirtualRouter(networkOffering.getId())) {
             try {
-                List<Pair<String, String>> ipAddressRanges = getIpAddressRanges(networkOffering, network);
-                vspNetworkBuilder.ipAddressRanges(ipAddressRanges);
-
+                List<Pair<String, String>> ipAddressRanges =
+                        networkOffering.getGuestType() == Network.GuestType.Shared ? getSharedIpAddressRanges(network.getId()) : getIpAddressRanges(network);
                 String virtualRouterIp = getVirtualRouterIP(network, ipAddressRanges);
                 vspNetworkBuilder.virtualRouterIp(virtualRouterIp);
             } catch (InsufficientVirtualNetworkCapacityException ex) {
@@ -170,21 +214,44 @@ public class NuageVspEntityBuilder {
         return vspNetworkBuilder.build();
     }
 
-    private List<Pair<String, String>> getIpAddressRanges(NetworkOfferingVO networkOffering, Network network) {
-        List<Pair<String, String>> ipAddressRanges = Lists.newArrayList();
-        if (networkOffering.getGuestType() == Network.GuestType.Shared) {
-            List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
-            ipAddressRanges = Lists.newArrayList();
-            for (VlanVO vlan : vlans) {
-                boolean isIpv4 = StringUtils.isNotBlank(vlan.getIpRange());
-                String[] range = isIpv4 ? vlan.getIpRange().split("-") : vlan.getIp6Range().split("-");
-                if (range.length == 2) {
-                    ipAddressRanges.add(Pair.of(range[0], range[1]));
-                }
-            }
-            return ipAddressRanges;
-        }
+    public boolean usesVirtualRouter(long networkOfferingId) {
+        return _networkOfferingServiceMapDao.isProviderForNetworkOffering(networkOfferingId, Network.Provider.VirtualRouter) ||
+                _networkOfferingServiceMapDao.isProviderForNetworkOffering(networkOfferingId, Network.Provider.VPCVirtualRouter);
+    }
 
+    public VspNetwork updateVspNetworkByPublicIp(VspNetwork vspNetwork, Network network, String publicIp) {
+        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
+        final long ip = NetUtils.ip2Long(publicIp);
+        VlanVO matchingVlan = Iterables.find(vlans, new Predicate<VlanVO>() {
+            @Override
+            public boolean apply(@Nullable VlanVO vlan) {
+                Pair<String, String> ipAddressRange = getIpAddressRange(vlan);
+                long startIp = NetUtils.ip2Long(ipAddressRange.getLeft());
+                long endIp = NetUtils.ip2Long(ipAddressRange.getRight());
+                return startIp <= ip && ip <= endIp;
+            }
+        });
+
+        return new VspNetwork.Builder().fromObject(vspNetwork)
+                .gateway(matchingVlan.getVlanGateway())
+                .cidr(NetUtils.getCidrFromGatewayAndNetmask(matchingVlan.getVlanGateway(), matchingVlan.getVlanNetmask()))
+                .build();
+    }
+
+    private List<Pair<String, String>> getSharedIpAddressRanges(long networkId) {
+        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+        List<Pair<String, String>> ipAddressRanges = Lists.newArrayList();
+        for (VlanVO vlan : vlans) {
+            Pair<String, String> ipAddressRange = getIpAddressRange(vlan);
+            if (ipAddressRange != null) {
+                ipAddressRanges.add(ipAddressRange);
+            }
+        }
+        return ipAddressRanges;
+    }
+
+    private List<Pair<String, String>> getIpAddressRanges(Network network) {
+        List<Pair<String, String>> ipAddressRanges = Lists.newArrayList();
         String subnet = NetUtils.getCidrSubNet(network.getCidr());
         String netmask = NetUtils.getCidrNetmask(network.getCidr());
         long cidrSize = NetUtils.getCidrSize(netmask);
@@ -195,29 +262,53 @@ public class NuageVspEntityBuilder {
 
         Iterator<Long> ipIterator = allIPsInCidr.iterator();
         long ip =  ipIterator.next();
-        if (NetUtils.ip2Long(network.getGateway()) == ip) {
+        long gatewayIp = NetUtils.ip2Long(network.getGateway());
+        String lastIp = NetUtils.getIpRangeEndIpFromCidr(subnet, cidrSize);
+        if (gatewayIp == ip) {
             ip = ipIterator.next();
+            ipAddressRanges.add(Pair.of(NetUtils.long2Ip(ip), lastIp));
+        } else if (!network.getGateway().equals(lastIp)) {
+            ipAddressRanges.add(Pair.of(NetUtils.long2Ip(ip), NetUtils.long2Ip(gatewayIp - 1)));
+            ipAddressRanges.add(Pair.of(NetUtils.long2Ip(gatewayIp + 1), lastIp));
+        } else {
+            ipAddressRanges.add(Pair.of(NetUtils.long2Ip(ip), NetUtils.long2Ip(gatewayIp - 1)));
         }
-        ipAddressRanges.add(Pair.of(NetUtils.long2Ip(ip), NetUtils.getIpRangeEndIpFromCidr(subnet, cidrSize)));
+
         return ipAddressRanges;
     }
 
+    public Pair<String, String> getIpAddressRange(Vlan vlan) {
+        boolean isIpv4 = StringUtils.isNotBlank(vlan.getIpRange());
+        String[] range = isIpv4 ? vlan.getIpRange().split("-") : vlan.getIp6Range().split("-");
+        if (range.length == 2) {
+            return Pair.of(range[0], range[1]);
+        }
+        return null;
+    }
+
     private String getVirtualRouterIP(Network network, List<Pair<String, String>> ipAddressRanges) throws InsufficientVirtualNetworkCapacityException {
+        if (network.getBroadcastUri() != null) {
+            return network.getBroadcastUri().getPath().substring(1);
+        }
+
         Pair<String, String> lowestIpAddressRange = null;
+        long ipCount = 0;
         if (ipAddressRanges.size() == 1) {
             lowestIpAddressRange = Iterables.getOnlyElement(ipAddressRanges);
+            ipCount = NetUtils.ip2Long(lowestIpAddressRange.getRight()) - NetUtils.ip2Long(lowestIpAddressRange.getLeft()) + 1;
         } else {
             for (Pair<String, String> ipAddressRange : ipAddressRanges) {
                 if (lowestIpAddressRange == null || NetUtils.ip2Long(ipAddressRange.getLeft()) < NetUtils.ip2Long(lowestIpAddressRange.getLeft())) {
                     lowestIpAddressRange = ipAddressRange;
                 }
+                ipCount += NetUtils.ip2Long(ipAddressRange.getRight()) - NetUtils.ip2Long(ipAddressRange.getLeft()) + 1;
             }
         }
 
-        if (lowestIpAddressRange == null) {
+        if (ipCount == 0) {
             throw new InsufficientVirtualNetworkCapacityException("VSP allocates an IP for VirtualRouter." + " But no ip address ranges are specified", Network.class,
                     network.getId());
-        } else if (NetUtils.ip2Long(lowestIpAddressRange.getRight()) - NetUtils.ip2Long(lowestIpAddressRange.getLeft()) < 2) {
+        } else if (ipCount < 3) {
             throw new InsufficientVirtualNetworkCapacityException("VSP allocates an IP for VirtualRouter." + " So, subnet should have atleast minimum 3 hosts", Network.class,
                     network.getId());
         }
@@ -269,20 +360,23 @@ public class NuageVspEntityBuilder {
     }
 
     public VspNic buildVspNic(String nicUuid, NicProfile nicProfile) {
-        VspNic.Builder vspNicBuilder = new VspNic.Builder()
-                .uuid(nicUuid)
-                .macAddress(nicProfile.getMacAddress())
-                .useStaticIp(true)
-                .ip(nicProfile.getIPv4Address());
-        return vspNicBuilder.build();
+        return buildVspNic(nicUuid, nicProfile.getMacAddress(), nicProfile.getIPv4Address(), nicProfile.getNetworkId());
     }
 
     public VspNic buildVspNic(NicVO nic) {
+        return buildVspNic(nic.getUuid(), nic.getMacAddress(), nic.getIPv4Address(), nic.getNetworkId());
+    }
+
+    private VspNic buildVspNic(String uuid, String macAddress, String ip, long networkId) {
         VspNic.Builder vspNicBuilder = new VspNic.Builder()
-                .uuid(nic.getUuid())
-                .macAddress(nic.getMacAddress())
+                .uuid(uuid)
+                .macAddress(macAddress)
                 .useStaticIp(true)
-                .ip(nic.getIPv4Address());
+                .ip(ip);
+
+        Network network = _networkDao.findById(networkId);
+        NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+
         return vspNicBuilder.build();
     }
 
@@ -403,7 +497,7 @@ public class NuageVspEntityBuilder {
         List<String> dnsProvider = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), Network.Service.Dns);
         boolean isVrDnsProvider = dnsProvider.contains("VirtualRouter") || dnsProvider.contains("VpcVirtualRouter");
         VspDhcpDomainOption.Builder vspDhcpDomainBuilder = new VspDhcpDomainOption.Builder()
-                .dnsServers(_nuageVspManager.getDnsDetails(network))
+                .dnsServers(_nuageVspManager.getDnsDetails(network.getDataCenterId()))
                 .vrIsDnsProvider(isVrDnsProvider);
 
         if (isVrDnsProvider) {

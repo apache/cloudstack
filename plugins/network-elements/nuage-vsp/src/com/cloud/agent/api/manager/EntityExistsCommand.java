@@ -19,6 +19,10 @@
 
 package com.cloud.agent.api.manager;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import java.util.Objects;
+
 import com.cloud.agent.api.Command;
 
 public class EntityExistsCommand<T> extends Command {
@@ -55,23 +59,27 @@ public class EntityExistsCommand<T> extends Command {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof EntityExistsCommand)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof EntityExistsCommand)) {
+            return false;
+        }
 
         EntityExistsCommand that = (EntityExistsCommand) o;
 
-        if (getType() != null ? !getType().equals(that.getType()) : that.getType() != null) return false;
-        if (_uuid != null ? !_uuid.equals(that._uuid) : that._uuid != null) return false;
-
-        return true;
+        return super.equals(that)
+                && Objects.equals(getType(), that.getType())
+                && Objects.equals(_uuid, that._uuid);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (getType() != null ? getType().hashCode() : 0);
-        result = 31 * result + (_uuid != null ? _uuid.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(getType())
+                .append(_uuid)
+                .toHashCode();
     }
 }

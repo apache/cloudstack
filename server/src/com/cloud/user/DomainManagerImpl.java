@@ -301,6 +301,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     hasDedicatedResources = true;
                 }
                 if (accountsForCleanup.isEmpty() && networkIds.isEmpty() && !hasDedicatedResources) {
+                    _messageBus.publish(_name, MESSAGE_PRE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domain);
                     if (!_domainDao.remove(domain.getId())) {
                         rollBackState = true;
                         CloudRuntimeException e =
@@ -309,6 +310,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                         e.addProxyObject(domain.getUuid(), "domainId");
                         throw e;
                     }
+                    _messageBus.publish(_name, MESSAGE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domain);
                 } else {
                     rollBackState = true;
                     String msg = null;
@@ -328,7 +330,6 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
             cleanupDomainOfferings(domain.getId());
             CallContext.current().putContextParameter(Domain.class, domain.getUuid());
-            _messageBus.publish(_name, MESSAGE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domain);
             return true;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
@@ -363,8 +364,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private boolean cleanupDomain(Long domainId, Long ownerId) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Cleaning up domain id=" + domainId);
         boolean success = true;
+        DomainVO domainHandle = _domainDao.findById(domainId);
         {
-            DomainVO domainHandle = _domainDao.findById(domainId);
             domainHandle.setState(Domain.State.Inactive);
             _domainDao.update(domainId, domainHandle);
 
@@ -452,7 +453,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                 }
             }
             //delete domain
+            _messageBus.publish(_name, MESSAGE_PRE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domainHandle);
             deleteDomainSuccess = _domainDao.remove(domainId);
+            _messageBus.publish(_name, MESSAGE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domainHandle);
 
             // Delete resource count and resource limits entries set for this domain (if there are any).
             _resourceCountDao.removeEntriesByOwner(domainId, ResourceOwnerType.Domain);

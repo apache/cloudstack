@@ -27,7 +27,6 @@ import com.cloud.api.response.NuageVlanIpRangeResponse;
 import com.cloud.api.response.NuageVspDeviceResponse;
 import com.cloud.dc.Vlan;
 import com.cloud.host.HostVO;
-import com.cloud.network.Network;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -84,7 +83,7 @@ public interface NuageVspManager extends PluggableService {
 
     List<NuageVspDeviceVO> listNuageVspDevices(ListNuageVspDevicesCmd cmd);
 
-    List<String> getDnsDetails(Network network);
+    List<String> getDnsDetails(long dataCenterId);
 
     List<String> getGatewaySystemIds();
 

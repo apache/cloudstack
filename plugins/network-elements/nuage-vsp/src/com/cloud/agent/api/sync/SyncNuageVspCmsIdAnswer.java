@@ -24,6 +24,7 @@ import java.util.Objects;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 
 public class SyncNuageVspCmsIdAnswer extends Answer {
 
@@ -35,6 +36,13 @@ public class SyncNuageVspCmsIdAnswer extends Answer {
         super();
         this._success = success;
         this._nuageVspCmsId = nuageVspCmsId;
+        this._syncType = syncType;
+    }
+
+    public SyncNuageVspCmsIdAnswer(Command command, Exception e, SyncNuageVspCmsIdCommand.SyncType syncType) {
+        super(command, e);
+        this._nuageVspCmsId = null;
+        this._success = false;
         this._syncType = syncType;
     }
 
