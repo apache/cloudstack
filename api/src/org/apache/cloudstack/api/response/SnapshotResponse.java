@@ -104,6 +104,14 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "indicates whether the underlying storage supports reverting the volume to this snapshot")
     private boolean revertable;
 
+    @SerializedName(ApiConstants.OS_TYPE_ID)
+    @Param(description = "id of the os on volume", since = "4.10")
+    private String osTypeId;
+
+    @SerializedName(ApiConstants.OS_DISPLAY_NAME)
+    @Param(description = "display name of the os on volume")
+    private String osDisplayName;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -198,11 +206,19 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.tags = tags;
     }
 
-    public boolean isRevertable() {
-        return revertable;
-    }
-
     public void setRevertable(boolean revertable) {
         this.revertable = revertable;
+    }
+
+    public String getOsTypeId() {
+        return osTypeId;
+    }
+
+    public void setOsTypeId(String osTypeId) {
+        this.osTypeId = osTypeId;
+    }
+
+    public void setOsDisplayName(String osDisplayName) {
+        this.osDisplayName = osDisplayName;
     }
 }
