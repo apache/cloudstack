@@ -57,6 +57,7 @@ import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
 import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule;
 import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRules;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.Networks.TrafficType;
 
 public class ConfigHelperTest {
 
@@ -272,9 +273,15 @@ public class ConfigHelperTest {
 
     protected IpAssocVpcCommand generateIpAssocVpcCommand() {
         final List<IpAddressTO> ips = new ArrayList<IpAddressTO>();
-        ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(2, "64.1.1.11", false, false, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(3, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false));
+        IpAddressTO ip1 = new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false);
+        IpAddressTO ip2 = new IpAddressTO(2, "64.1.1.11", false, false, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false);
+        IpAddressTO ip3 = new IpAddressTO(3, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false);
+        ip1.setTrafficType(TrafficType.Public);
+        ip2.setTrafficType(TrafficType.Public);
+        ip3.setTrafficType(TrafficType.Public);
+        ips.add(ip1);
+        ips.add(ip2);
+        ips.add(ip3);
 
         final IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
         final IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipArray);
