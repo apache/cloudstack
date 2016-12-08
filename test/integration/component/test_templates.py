@@ -675,6 +675,5 @@ class TestListTemplate(cloudstackTestCase):
                                     DomainName=self.newdomain_account.domain)
         try:
             list_template_response = Template.list(self.domain_user_api_client, templatefilter='all')
-            self.fail("Domain admin is able to use templatefilter='all' in listTemplates API call")
         except Exception as e:
-            self.debug("ListTemplates API with templatefilter='all' is not permitted for domain admin user")
+            self.fail("Domain admin should be able to use templatefilter='all' in listTemplates API call")
