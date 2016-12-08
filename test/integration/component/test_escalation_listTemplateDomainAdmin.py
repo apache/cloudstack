@@ -126,7 +126,7 @@ class TestlistTemplatesDomainAdmin(cloudstackTestCase):
             hypervisor=self.hypervisor,
             account=self.account2.name,
             domainid=self.account2.domainid,
-            templatefilter=self.testdata["templatefilter"]
+            templatefilter="all"
 
         )
 
