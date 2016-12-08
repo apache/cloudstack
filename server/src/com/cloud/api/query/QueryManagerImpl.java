@@ -3070,9 +3070,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
-            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all
-                        + " can be specified by root admin only");
+                        + " can be specified by admin only");
             }
             listAll = true;
         }
@@ -3253,6 +3253,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
                 if (!permittedAccounts.isEmpty()) {
                     scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                }
+                sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
+            }else if (templateFilter == TemplateFilter.all && caller.getType() != Account.ACCOUNT_TYPE_ADMIN ){
+                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+                scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
+
+                if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+                    scc.addOr("domainPath", SearchCriteria.Op.LIKE, _domainDao.findById(caller.getDomainId()).getPath() + "%");
+                } else {
+                    if (!permittedAccounts.isEmpty()) {
+                        scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                        scc.addOr("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                    }
                 }
                 sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
             }
