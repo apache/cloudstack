@@ -122,10 +122,10 @@ class CsAcl(CsDataBag):
             rnge = ''
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] == self.rule['last_port']:
-                    rnge = self.rule['first_port']
+                    rnge = " --dport %s " %self.rule['first_port']
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] != self.rule['last_port']:
-                    rnge = "%s:%s" % (rule['first_port'], rule['last_port'])
+                    rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
             if self.direction == 'ingress':
                 if rule['protocol'] == "icmp":
                     self.fw.append(["mangle", "front",
@@ -140,7 +140,7 @@ class CsAcl(CsDataBag):
                                     " -s %s " % cidr +
                                     " -p %s " % rule['protocol'] +
                                     " -m %s " % rule['protocol'] +
-                                    " --dport %s -j RETURN" % rnge])
+                                    "  %s -j RETURN" % rnge])
 
             logging.debug("Current ACL IP direction is ==> %s", self.direction)
             if self.direction == 'egress':
@@ -174,7 +174,7 @@ class CsAcl(CsDataBag):
                     fwr += " -s %s " % cidr + \
                            " -p %s " % rule['protocol'] + \
                            " -m %s " % rule['protocol'] + \
-                           " --dport %s" % rnge
+                           "  %s" % rnge
                 elif rule['protocol'] == "all":
                     fwr += " -s %s " % cidr
 
