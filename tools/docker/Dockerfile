@@ -20,7 +20,7 @@
 FROM ubuntu:14.04
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.6.0"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.8.0"
 
 RUN apt-get -y update && apt-get install -y \
     genisoimage \
@@ -40,8 +40,6 @@ RUN apt-get install -qqy mysql-server && \
 
 RUN (/usr/bin/mysqld_safe &); sleep 5; mysqladmin -u root -proot password ''
 
-RUN pip install --allow-external mysql-connector-python mysql-connector-python
-
 COPY tools/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY . ./root
 WORKDIR /root
@@ -51,9 +49,12 @@ RUN mvn -Pdeveloper -Dsimulator -DskipTests clean install
 RUN (/usr/bin/mysqld_safe &); \
     sleep 3; \
     mvn -Pdeveloper -pl developer -Ddeploydb; \
-    mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
-    MARVIN_FILE=`find tools/marvin/dist/ -name "Marvin*.tar.gz"` \
-    pip install $MARVIN_FILE
+    mvn -Pdeveloper -pl developer -Ddeploydb-simulator
+
+RUN pip install http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip
+RUN pip install paramiko
+RUN pip install /root/tools/marvin/dist/Marvin*.tar.gz
+   
 
 EXPOSE 8080 8096
 
