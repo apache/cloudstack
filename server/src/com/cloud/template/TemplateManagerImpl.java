@@ -1737,6 +1737,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Increment the number of templates
         if (template != null) {
             Map<String, String> details = new HashMap<String, String>();
+
+            if (sourceTemplateId != null) {
+                VMTemplateVO sourceTemplate = _tmpltDao.findById(sourceTemplateId);
+                if(sourceTemplate != null){
+                    details.putAll(sourceTemplate.getDetails());
+                }
+            }
+
             if (volume != null) {
                 Long vmId = volume.getInstanceId();
                 if (vmId != null) {
@@ -1903,7 +1911,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   sortKey == null &&
                   isDynamicallyScalable == null &&
                   isRoutingTemplate == null &&
-                  details == null);
+                        details == null);
         if (!updateNeeded) {
             return template;
         }
