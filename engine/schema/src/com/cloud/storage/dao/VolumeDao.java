@@ -80,7 +80,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> listVolumesToBeDestroyed();
 
-    List<VolumeVO> listVolumesToBeDestroyed(Date date);
+    List<VolumeVO> listNonRootVolumesToBeDestroyed(Date date);
 
     ImageFormat getImageFormat(Long volumeId);
 
