@@ -16286,6 +16286,7 @@
                                 action: function (args) {
                                     var data = args.data;
                                     data.hostid = args.context.hosts[0].id;
+                                    data.password = $("<span>").html(data.password).text();
 
                                     $.ajax({
                                         url: createURL('configureOutOfBandManagement'),
