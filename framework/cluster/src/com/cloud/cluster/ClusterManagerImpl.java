@@ -53,6 +53,7 @@ import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Profiler;
+import com.cloud.utils.cluster.ClusterShutdownManager;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -70,7 +71,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = {ClusterManager.class})
-public class ClusterManagerImpl extends ManagerBase implements ClusterManager, Configurable {
+public class ClusterManagerImpl extends ManagerBase implements ClusterManager, Configurable, ClusterShutdownManager {
     private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);
 
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
@@ -128,6 +129,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         //
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Worker"));
         setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
+        TransactionLegacy.registerClusterShutdownManager(this);
     }
 
     private void registerRequestPdu(ClusterServiceRequestPdu pdu) {
@@ -483,6 +485,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         SubscriptionMgr.getInstance().notifySubscribers(ClusterManager.ALERT_SUBJECT, this, new ClusterNodeLeftEventArgs(_mshostId, nodeList));
     }
 
+    @Override
     public void notifyNodeIsolated() {
         if (s_logger.isDebugEnabled())
             s_logger.debug("Notify management server node isolation to listeners");
