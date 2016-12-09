@@ -658,7 +658,7 @@ class TestListTemplate(cloudstackTestCase):
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         try:
-            list_template_response = Template.list(self.user_api_client, templatefilter='all')
+            list_template_response = Template.list(user_api_client, templatefilter='all')
             self.fail("Regular User is able to use templatefilter='all' in listTemplates API call")
         except Exception as e:
             self.debug("ListTemplates API with templatefilter='all' is not permitted for normal user")
@@ -674,6 +674,6 @@ class TestListTemplate(cloudstackTestCase):
                                     UserName=self.newdomain_account.name,
                                     DomainName=self.newdomain_account.domain)
         try:
-            list_template_response = Template.list(self.domain_user_api_client, templatefilter='all')
+            list_template_response = Template.list(domain_user_api_client, templatefilter='all')
         except Exception as e:
             self.fail("Domain admin should be able to use templatefilter='all' in listTemplates API call")
