@@ -26,6 +26,7 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
@@ -314,6 +315,8 @@ public interface ResponseGenerator {
     TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames, Long id);
 
     AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd);
+
+    AsyncJobResponse queryJobResult(CancelAsyncJobCmd cmd);
 
     NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering);
 

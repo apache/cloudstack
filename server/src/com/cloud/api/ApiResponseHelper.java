@@ -182,6 +182,7 @@ import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
@@ -1722,6 +1723,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setObjectName("templatepermission");
         return response;
+    }
+
+    @Override
+    public AsyncJobResponse queryJobResult(CancelAsyncJobCmd cmd) {
+        AsyncJob job = _entityMgr.findById(AsyncJob.class, cmd.getId());
+        return createAsyncJobResponse(_jobMgr.queryJob(cmd.getId(), true));
     }
 
     @Override

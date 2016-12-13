@@ -18,6 +18,7 @@
 package org.apache.cloudstack.framework.jobs.impl;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -35,6 +36,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.storage.dao.VolumeDetailsDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
+import org.apache.cloudstack.jobs.AsyncJobService;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -85,7 +88,7 @@ import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
+public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable, AsyncJobService {
     // Advanced
     public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
         "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global);
@@ -1086,5 +1089,44 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public List<AsyncJobVO> findFailureAsyncJobs(String... cmds) {
         return _jobDao.getFailureJobsSinceLastMsStart(getMsid(), cmds);
+    }
+
+    public boolean cancelAsyncJob(long jobId) {
+        final AsyncJobVO job = _jobDao.findById(jobId);
+        //TODO: allow cancellation for cancellable jobs only
+        if (job == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cannot cancel. job-" + jobId + " no longer exists.");
+            }
+            // still purge item from queue to avoid any blocking
+            _queueMgr.purgeAsyncJobQueueItemId(jobId);
+        } else if (job.getStatus() == Status.IN_PROGRESS) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("cancelling job-" + jobId + " which is in IN_PROGRESS state.");
+            }
+            try {
+                completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled on request by user using cancelAsyncJob api");
+                _jobMonitor.unregisterByJobId(jobId);
+
+                // purge the item and resume queue processing
+                _queueMgr.purgeItem(jobId);
+
+                return true;
+            } catch (Throwable t) {
+                s_logger.error("Unexpected exception when cancelling async job with id: " + jobId, t);
+            }
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cannot cancel. job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".");
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CancelAsyncJobCmd.class);
+        return cmdList;
     }
 }
