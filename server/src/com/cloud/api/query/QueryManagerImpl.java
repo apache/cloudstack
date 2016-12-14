@@ -25,12 +25,18 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -57,6 +63,8 @@ import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCm
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
+import org.apache.cloudstack.api.command.user.job.ListLongRunningAsyncJobsCmd;
+import org.apache.cloudstack.api.command.user.job.ListQueuedUpAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -103,6 +111,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -205,10 +220,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.DomainRouterVO;
@@ -229,6 +240,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private AccountManager _accountMgr;
+
+    @Inject
+    private SyncQueueDao _syncQueueDao;
+
+    @Inject
+    private SyncQueueItemDao _syncQueueItemDao;
 
     @Inject
     private ProjectManager _projectMgr;
@@ -374,6 +391,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     DataStoreManager dataStoreManager;
+
+    @Inject
+    private EntityManager _entityMgr;
+
+    @Inject
+    private AsyncJobJoinMapDao _joinMapDao;
 
     /*
      * (non-Javadoc)
@@ -1157,7 +1180,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result =
             searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, cmd.getHostId(), cmd.getKeyword(),
-                cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
+                    cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
@@ -2090,6 +2113,108 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<AsyncJobJoinVO>, Integer> searchForAsyncJobsInternal(ListAsyncJobsCmd cmd) {
 
+        SearchCriteria<AsyncJobJoinVO> sc = createSearchObject(cmd);
+        Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Object startDate = cmd.getStartDate();
+
+        if (startDate != null) {
+            sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
+        }
+
+        return _jobJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    @Override
+    public ListResponse<AsyncJobResponse> searchForLongRunningAsyncJobs(ListLongRunningAsyncJobsCmd cmd) {
+        Pair<List<AsyncJobJoinVO>, Integer> result = searchForLongRunningAsyncJobsInternal(cmd);
+        ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
+        List<AsyncJobResponse> jobResponses = ViewResponseHelper.createAsyncJobResponse(result.first().toArray(new AsyncJobJoinVO[result.first().size()]));
+        response.setResponses(jobResponses, result.second());
+        return response;
+    }
+
+
+    private Pair<List<AsyncJobJoinVO>, Integer> searchForLongRunningAsyncJobsInternal(ListLongRunningAsyncJobsCmd cmd) {
+
+
+        SearchCriteria<AsyncJobJoinVO> sc = createSearchObject(cmd);
+        Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Long time =cmd.getDuration();
+        if(time != null){
+            sc.addAnd("created",SearchCriteria.Op.LTEQ,new Date(System.currentTimeMillis()-time*1000));
+        }
+        sc.addAnd("status", SearchCriteria.Op.EQ ,0);
+        sc.addAnd("related", SearchCriteria.Op.EQ, "");
+
+        return _jobJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    @Override
+    public ListResponse<AsyncJobResponse> searchForQueuedUpAsyncJobs(ListQueuedUpAsyncJobsCmd cmd) {
+        Pair<List<AsyncJobJoinVO>, Integer> result = searchForQueuedUpAsyncJobsInternal(cmd);
+        ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
+        if(result==null){
+            return response;
+        }
+        List<AsyncJobJoinVO> parents= getParents(result.first(),cmd);
+        //result.first().addAll(parents);
+        List<AsyncJobResponse> jobResponses = ViewResponseHelper.createAsyncJobResponse(parents.toArray(new AsyncJobJoinVO[parents.size()]));
+        response.setResponses(jobResponses, result.second()+parents.size());
+        return response;
+    }
+
+    public List<AsyncJobJoinVO> getParents(List<AsyncJobJoinVO> childjobs,ListQueuedUpAsyncJobsCmd cmd){
+        List<Long> parentjobids = new ArrayList<Long>();
+        for (AsyncJobJoinVO results: childjobs){
+            if (!parentjobids.contains(Long.parseLong(results.getRelated())) ) {
+                parentjobids.add(Long.parseLong(results.getRelated()));
+            }
+        }
+        SearchCriteria<AsyncJobJoinVO> sc = createSearchObject(cmd);
+        Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        if (parentjobids.size()>0) {
+            sc.addAnd("id", Op.IN , parentjobids.toArray());
+        }
+        return _jobJoinDao.search(sc,searchFilter);
+
+    }
+
+    private Pair<List<AsyncJobJoinVO>, Integer> searchForQueuedUpAsyncJobsInternal(ListQueuedUpAsyncJobsCmd cmd) {
+
+
+        AsyncJob job = _entityMgr.findById(AsyncJob.class, cmd.getJobUuid());
+        if(job==null ){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cannot list jobs for id-" + cmd.getJobUuid() + " as it does not exists.");
+            }
+            return null;
+        }
+        List<AsyncJobJoinMapVO> workjobjoin = _joinMapDao.listJoinRecords(job.getId());
+        if(workjobjoin.isEmpty()){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cannot list jobs for id-" + cmd.getJobUuid() + " as it has no queued jobs");
+            }
+            return null;
+        }
+        Long queueitemid = _syncQueueItemDao.getQueueItemIdByContentIdAndType(workjobjoin.get(0).getJoinJobId(), SyncQueueItem.AsyncJobContentType);
+        Long queueid = _syncQueueItemDao.findById(queueitemid).getQueueId();
+        List<SyncQueueItemVO> queueitems = _syncQueueItemDao.getQueuedItems(queueid);
+        List<Long> workjobids = new ArrayList<Long>();
+        for (SyncQueueItemVO queueitem : queueitems){
+            workjobids.add(queueitem.getContentId());
+        }
+
+        Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        SearchCriteria<AsyncJobJoinVO> sc = createSearchObject(cmd);
+        if (queueitems.size()>0) {
+            sc.addAnd("id", Op.IN , workjobids.toArray());
+        }
+
+        return _jobJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    public SearchCriteria<AsyncJobJoinVO> createSearchObject(BaseListAccountResourcesCmd cmd){
         Account caller = CallContext.current().getCallingAccount();
 
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -2102,7 +2227,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<AsyncJobJoinVO> sb = _jobJoinDao.createSearchBuilder();
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         boolean accountJoinIsDone = false;
@@ -2127,7 +2251,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Object keyword = cmd.getKeyword();
-        Object startDate = cmd.getStartDate();
 
         SearchCriteria<AsyncJobJoinVO> sc = sb.create();
         if (listProjectResourcesCriteria != null) {
@@ -2148,12 +2271,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (keyword != null) {
             sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
-
-        if (startDate != null) {
-            sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
-        }
-
-        return _jobJoinDao.searchAndCount(sc, searchFilter);
+        return sc;
     }
 
     @Override

@@ -35,6 +35,8 @@ import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCm
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
+import org.apache.cloudstack.api.command.user.job.ListLongRunningAsyncJobsCmd;
+import org.apache.cloudstack.api.command.user.job.ListQueuedUpAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -120,7 +122,11 @@ public interface QueryService {
 
     ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
 
-    ListResponse<AsyncJobResponse>  searchForAsyncJobs(ListAsyncJobsCmd cmd);
+    ListResponse<AsyncJobResponse> searchForAsyncJobs(ListAsyncJobsCmd cmd);
+
+    ListResponse<AsyncJobResponse> searchForLongRunningAsyncJobs(ListLongRunningAsyncJobsCmd cmd);
+
+    ListResponse<AsyncJobResponse> searchForQueuedUpAsyncJobs(ListQueuedUpAsyncJobsCmd cmd);
 
     ListResponse<DiskOfferingResponse>  searchForDiskOfferings(ListDiskOfferingsCmd cmd);
 
