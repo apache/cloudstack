@@ -78,6 +78,7 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import java.io.File;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -1063,21 +1064,55 @@ public class XenServerStorageProcessor implements StorageProcessor {
     }
 
     boolean swiftUpload(final Connection conn, final SwiftTO swift, final String container, final String ldir, final String lfilename, final Boolean isISCSI, final int wait) {
-        String result = null;
+
+        List<String> params = getSwiftParams(swift, container, ldir, lfilename, isISCSI);
+
         try {
-            result =
-                    hypervisorResource.callHostPluginAsync(conn, "swiftxenserver", "swift", wait, "op", "upload", "url", swift.getUrl(), "account", swift.getAccount(), "username",
-                            swift.getUserName(), "key", swift.getKey(), "container", container, "ldir", ldir, "lfilename", lfilename, "isISCSI", isISCSI.toString());
-            if (result != null && result.equals("true")) {
-                return true;
-            }
+            String result = hypervisorResource.callHostPluginAsync(conn, "swiftxenserver", "swift", wait, params.toArray(new String[params.size()]));
+            return "true".equals(result);
         } catch (final Exception e) {
             s_logger.warn("swift upload failed due to " + e.toString(), e);
         }
         return false;
     }
 
-    protected String deleteSnapshotBackup(final Connection conn, final String localMountPoint, final String path, final String secondaryStorageMountPath, final String backupUUID) {
+    private List<String> getSwiftParams(SwiftTO swift, String container, String ldir, String lfilename,
+         Boolean isISCSI) {
+
+       // ORDER IS IMPORTANT
+       List<String> params = new ArrayList<>();
+       //operation
+       params.add("op");
+       params.add("upload");
+
+       //auth
+       params.add("url");
+       params.add(swift.getUrl());
+       params.add("account");
+       params.add(swift.getAccount());
+       params.add("username");
+       params.add(swift.getUserName());
+       params.add("key");
+       params.add(swift.getKey());
+
+       // object info
+       params.add("container");
+       params.add(container);
+       params.add("ldir");
+       params.add(ldir);
+       params.add("lfilename");
+       params.add(lfilename);
+       params.add("isISCSI");
+       params.add(isISCSI.toString());
+
+       if (swift.getStoragePolicy() != null) {
+          params.add("storagepolicy");
+          params.add(swift.getStoragePolicy());
+      }
+      return params;
+   }
+
+   protected String deleteSnapshotBackup(final Connection conn, final String localMountPoint, final String path, final String secondaryStorageMountPath, final String backupUUID) {
 
         // If anybody modifies the formatting below again, I'll skin them
         final String result =

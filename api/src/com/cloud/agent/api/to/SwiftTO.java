@@ -26,17 +26,19 @@ public class SwiftTO implements DataStoreTO, SwiftUtil.SwiftClientCfg {
 
     String userName;
     String key;
+    String storagePolicy;
     private static final String pathSeparator = "/";
 
     public SwiftTO() {
     }
 
-    public SwiftTO(Long id, String url, String account, String userName, String key) {
+    public SwiftTO(Long id, String url, String account, String userName, String key, String storagePolicy) {
         this.id = id;
         this.url = url;
         this.account = account;
         this.userName = userName;
         this.key = key;
+        this.storagePolicy = storagePolicy;
     }
 
     public Long getId() {
@@ -61,6 +63,11 @@ public class SwiftTO implements DataStoreTO, SwiftUtil.SwiftClientCfg {
     @Override
     public String getKey() {
         return key;
+    }
+
+    @Override
+    public String getStoragePolicy() {
+        return this.storagePolicy;
     }
 
     @Override

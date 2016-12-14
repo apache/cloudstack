@@ -52,6 +52,9 @@ def upload(args):
     lfilename = args['lfilename']
     isISCSI = args['isISCSI']
     segment = 0
+    storagepolicy = None
+    if "storagepolicy" in args:
+        storagepolicy = args["storagepolicy"]
     logging.debug("#### VMOPS upload %s to swift ####", lfilename)
     savedpath = os.getcwd()
     os.chdir(ldir)
@@ -72,6 +75,9 @@ def upload(args):
             cmd = [SWIFT, "-A", url, "-U", account + ":" + username, "-K", key, "upload", "-S", str(MAX_SEG_SIZE), container, lfilename]
         else :
             cmd = [SWIFT, "-A", url ,"-U", account + ":" + username, "-K", key, "upload", container, lfilename]
+        if storagepolicy is not None:
+            cmd.append("--storage-policy")
+            cmd.append(storagepolicy)
         util.pread2(cmd)
         return 'true'
     finally:
