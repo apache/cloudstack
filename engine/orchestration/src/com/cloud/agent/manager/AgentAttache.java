@@ -31,6 +31,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
@@ -391,6 +394,17 @@ public abstract class AgentAttache {
     }
 
     public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
+        AsyncJob job = null;
+        Long jobId = null;
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context != null && context.getJob() != null) {
+            job = context.getJob();
+            if (job.getRelated() != null && !job.getRelated().isEmpty()) {
+                jobId = Long.parseLong(job.getRelated());
+            } else {
+                jobId = job.getId();
+            }
+        }
         SynchronousListener sl = new SynchronousListener(null);
 
         long seq = req.getSequence();
@@ -399,10 +413,22 @@ public abstract class AgentAttache {
         try {
             for (int i = 0; i < 2; i++) {
                 Answer[] answers = null;
+                job = _agentMgr._asyncJobDao.findById(jobId);
+                if (job != null && job.getStatus() == JobInfo.Status.CANCELLED) {
+                    throw new AgentUnavailableException("Operation cancelled", _id, true);
+                }
                 try {
                     answers = sl.waitFor(wait);
+                    job = _agentMgr._asyncJobDao.findById(jobId);
+                    if (job != null && job.getStatus() == JobInfo.Status.CANCELLED) {
+                        throw new AgentUnavailableException("Operation cancelled", _id, true);
+                    }
                 } catch (final InterruptedException e) {
                     s_logger.debug(log(seq, "Interrupted"));
+                    job = _agentMgr._asyncJobDao.findById(jobId);
+                    if (job != null && job.getStatus() == JobInfo.Status.CANCELLED) {
+                        throw new AgentUnavailableException("Operation cancelled", _id, true);
+                    }
                 }
                 if (answers != null) {
                     if (s_logger.isDebugEnabled()) {
@@ -450,6 +476,14 @@ public abstract class AgentAttache {
             final Long current = _currentSequence;
             if (req.executeInSequence() && (current != null && current == seq)) {
                 sendNext(seq);
+            }
+            if (e instanceof AgentUnavailableException) {
+                AgentUnavailableException aue = (AgentUnavailableException)e;
+                if (aue.isCancelled()) {
+                    OperationTimedoutException ote = new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
+                    ote.setCancelled(aue.isCancelled());
+                    throw ote;
+                }
             }
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
         } finally {

@@ -45,6 +45,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> expiringUnfinishedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> expiringCompletedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> failureMsidAsyncJobSearch;
+    private final SearchBuilder<AsyncJobVO> cancelledAsyncJobSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -92,6 +93,11 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         failureMsidAsyncJobSearch.and("status", failureMsidAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         failureMsidAsyncJobSearch.and("job_cmd", failureMsidAsyncJobSearch.entity().getCmd(), Op.IN);
         failureMsidAsyncJobSearch.done();
+
+        cancelledAsyncJobSearch = createSearchBuilder();
+        cancelledAsyncJobSearch.and("status", cancelledAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        cancelledAsyncJobSearch.and("completeMsId", cancelledAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
+        cancelledAsyncJobSearch.done();
 
     }
 
@@ -224,6 +230,13 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         sc.setParameters("initMsid", msId);
         sc.setParameters("status", AsyncJobVO.Status.FAILED);
         sc.setParameters("job_cmd", (Object[])cmds);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AsyncJobVO> getCancelledJobs() {
+        SearchCriteria<AsyncJobVO> sc = cancelledAsyncJobSearch.create();
+        sc.setParameters("status", JobInfo.Status.CANCELLED);
         return listBy(sc);
     }
 }

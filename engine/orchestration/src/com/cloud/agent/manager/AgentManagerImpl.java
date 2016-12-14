@@ -42,6 +42,9 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -133,6 +136,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Long> _loadingAgents = new ArrayList<Long>();
     protected int _monitorId = 0;
     private final Lock _agentStatusLock = new ReentrantLock();
+    protected Map<Long, Pair<Long, Long>> _sequenceMap = new HashMap<Long, Pair<Long, Long>>();
 
     @Inject
     protected EntityManager _entityMgr;
@@ -150,6 +154,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ConfigurationDao _configDao = null;
     @Inject
     protected ClusterDao _clusterDao = null;
+    @Inject
+    public AsyncJobDao _asyncJobDao = null;
 
     @Inject
     protected HighAvailabilityManager _haMgr = null;
@@ -168,6 +174,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ScheduledExecutorService _directAgentExecutor;
     protected ScheduledExecutorService _cronJobExecutor;
     protected ScheduledExecutorService _monitorExecutor;
+    protected ScheduledExecutorService _cancelExecutor;
 
     private int _directAgentThreadCap;
 
@@ -234,6 +241,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _directAgentThreadCap = Math.round(DirectAgentPoolSize.value() * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
 
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
+        _cancelExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("CancelJob"));
 
         return true;
     }
@@ -433,6 +441,21 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException(-1);
         }
 
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context != null && context.getJob() != null) {
+            AsyncJob job = context.getJob();
+            Long jobId = null;
+            if (job.getRelated() != null && !job.getRelated().isEmpty()) {
+                jobId = Long.parseLong(job.getRelated());
+            } else {
+                jobId = job.getId();
+            }
+            job = _asyncJobDao.findById(jobId);
+            if (job.getStatus() == JobInfo.Status.CANCELLED) {
+                throw new AgentUnavailableException("Operation cancelled", hostId, true);
+            }
+        }
+
         if (timeout <= 0) {
             timeout = Wait.value();
         }
@@ -454,12 +477,27 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException("agent not logged into this management server", hostId);
         }
 
-        final Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
-        req.setSequence(agent.getNextSequence());
-        final Answer[] answers = agent.send(req, timeout);
-        notifyAnswersToMonitors(hostId, req.getSequence(), answers);
-        commands.setAnswers(answers);
-        return answers;
+        Long jobId = null;
+        try {
+            final Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
+            req.setSequence(agent.getNextSequence());
+            if (context != null && context.getJob() != null) {
+                final AsyncJob job = context.getJob();
+                if (job.getRelated() != null && !job.getRelated().isEmpty()) {
+                    jobId = Long.parseLong(job.getRelated());
+                } else {
+                    jobId = job.getId();
+                }
+                _sequenceMap.put(jobId, new Pair<Long, Long>(hostId, req.getSequence()));
+            }
+            final Answer[] answers = agent.send(req, timeout);
+            notifyAnswersToMonitors(hostId, req.getSequence(), answers);
+            commands.setAnswers(answers);
+            return answers;
+        } finally {
+            if (jobId != null)
+                _sequenceMap.remove(jobId);
+        }
     }
 
     protected Status investigate(final AgentAttache agent) {
@@ -620,6 +658,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
+        _cancelExecutor.scheduleWithFixedDelay(new CancelTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
 
         return true;
     }
@@ -780,6 +819,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _connectExecutor.shutdownNow();
         _monitorExecutor.shutdownNow();
+        _cancelExecutor.shutdownNow();
         return true;
     }
 
@@ -1632,6 +1672,24 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
 
             return agentsBehind;
+        }
+    }
+
+    protected class CancelTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            final List<AsyncJobVO> jobs = _asyncJobDao.getCancelledJobs();
+            for (final AsyncJobVO job : jobs) {
+                Pair<Long, Long> sequence = _sequenceMap.get(job.getId());
+                if (sequence != null) {
+                    try {
+                        final AgentAttache agent = getAttache(sequence.first());
+                        agent.cancel(sequence.second());
+                    } catch (AgentUnavailableException e) {
+                        s_logger.debug("Agent " + sequence.first() + " not found");
+                    }
+                }
+            }
         }
     }
 

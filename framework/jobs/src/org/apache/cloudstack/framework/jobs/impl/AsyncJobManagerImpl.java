@@ -246,7 +246,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return;
         }
 
-        if (job.getStatus() != JobInfo.Status.IN_PROGRESS) {
+        if (job.getStatus() != JobInfo.Status.IN_PROGRESS && job.getStatus() != JobInfo.Status.CANCELLED) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("job-" + jobId + " is already completed.");
             }

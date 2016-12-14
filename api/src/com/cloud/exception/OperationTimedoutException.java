@@ -38,6 +38,7 @@ public class OperationTimedoutException extends CloudException {
     //
     transient Command[] _cmds;
     boolean _isActive;
+    boolean _isCancelled;
 
     public OperationTimedoutException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
         super("Commands " + seqId + " to Host " + agentId + " timed out after " + time);
@@ -66,5 +67,13 @@ public class OperationTimedoutException extends CloudException {
 
     public boolean isActive() {
         return _isActive;
+    }
+
+    public boolean isCancelled() {
+        return _isCancelled;
+    }
+
+    public void setCancelled(boolean isCancelled) {
+        this._isCancelled = isCancelled;
     }
 }
