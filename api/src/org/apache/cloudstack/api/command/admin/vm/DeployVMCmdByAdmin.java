@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,7 +37,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class DeployVMCmdByAdmin extends DeployVMCmd {
+public class DeployVMCmdByAdmin extends DeployVMCmd implements CancellableCmd{
     public static final Logger s_logger = Logger.getLogger(DeployVMCmdByAdmin.class.getName());
 
 

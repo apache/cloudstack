@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.uservm.UserVm;
@@ -36,7 +37,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class AddNicToVMCmdByAdmin extends AddNicToVMCmd {
+public class AddNicToVMCmdByAdmin extends AddNicToVMCmd implements CancellableCmd{
     public static final Logger s_logger = Logger.getLogger(AddNicToVMCmdByAdmin.class);
 
     @Override

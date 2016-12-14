@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.jobs.AsyncJobService;
 import org.apache.log4j.Logger;
+import com.google.common.base.Strings;
 
 import javax.inject.Inject;
 
@@ -59,13 +60,14 @@ public class CancelAsyncJobCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException {
-        if(asyncJobService.cancelAsyncJob(getId())) {
+    public void execute() throws ResourceUnavailableException, ClassNotFoundException {
+        String errorString = asyncJobService.cancelAsyncJob(getId());
+        if(Strings.isNullOrEmpty(errorString)) {
             AsyncJobResponse response = _responseGenerator.queryJobResult(this);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "unable to cancel async job with id: " + getId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorString);
         }
     }
 

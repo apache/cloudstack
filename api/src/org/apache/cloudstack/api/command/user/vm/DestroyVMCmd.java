@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -43,7 +44,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
-public class DestroyVMCmd extends BaseAsyncCmd {
+public class DestroyVMCmd extends BaseAsyncCmd implements CancellableCmd{
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 
     private static final String s_name = "destroyvirtualmachineresponse";

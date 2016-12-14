@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.InsufficientCapacityException;
@@ -33,7 +34,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "rebootVirtualMachine", description = "Reboots a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class RebootVMCmdByAdmin extends RebootVMCmd {
+public class RebootVMCmdByAdmin extends RebootVMCmd implements CancellableCmd{
     public static final Logger s_logger = Logger.getLogger(RebootVMCmdByAdmin.class.getName());
 
     @Override

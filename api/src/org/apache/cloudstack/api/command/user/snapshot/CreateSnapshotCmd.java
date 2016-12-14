@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -41,7 +42,7 @@ import org.apache.log4j.Logger;
 
 @APICommand(name = "createSnapshot", description = "Creates an instant snapshot of a volume.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
+public class CreateSnapshotCmd extends BaseAsyncCreateCmd implements CancellableCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
     private static final String s_name = "createsnapshotresponse";
 

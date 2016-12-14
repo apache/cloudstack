@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -38,7 +39,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 
 @APICommand(name = "createVMSnapshot", description = "Creates snapshot for a vm.", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
+public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd implements CancellableCmd{
 
     public static final Logger s_logger = Logger.getLogger(CreateVMSnapshotCmd.class.getName());
     private static final String s_name = "createvmsnapshotresponse";

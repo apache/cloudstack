@@ -35,7 +35,7 @@ public class ListQueuedUpAsyncJobsCmd extends BaseListAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.UUID, type = CommandType.UUID, entityType = AsyncJobResponse.class, required = true, description = "uuid of the job for which queued up jobs are needed")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AsyncJobResponse.class, required = true, description = "uuid of the job for which queued up jobs are needed")
     private Long uuid;
 
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.TZDATE, description = "the start date of the async job")

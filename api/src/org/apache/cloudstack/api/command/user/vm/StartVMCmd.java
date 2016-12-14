@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -47,7 +48,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class StartVMCmd extends BaseAsyncCmd {
+public class StartVMCmd extends BaseAsyncCmd implements CancellableCmd{
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 
     private static final String s_name = "startvirtualmachineresponse";

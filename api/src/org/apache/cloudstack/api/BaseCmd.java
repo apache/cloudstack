@@ -194,7 +194,7 @@ public abstract class BaseCmd {
     public UUIDManager _uuidMgr;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException, NetworkRuleConflictException;
+            ResourceAllocationException, NetworkRuleConflictException, ClassNotFoundException;
 
     public void configure() {
     }

@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -32,7 +33,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class StopVMCmdByAdmin extends StopVMCmd {
+public class StopVMCmdByAdmin extends StopVMCmd implements CancellableCmd{
     public static final Logger s_logger = Logger.getLogger(StopVMCmdByAdmin.class.getName());
 
 

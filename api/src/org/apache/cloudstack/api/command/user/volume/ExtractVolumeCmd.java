@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
@@ -40,7 +41,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ExtractVolumeCmd extends BaseAsyncCmd {
+public class ExtractVolumeCmd extends BaseAsyncCmd implements CancellableCmd{
     public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
     private static final String s_name = "extractvolumeresponse";

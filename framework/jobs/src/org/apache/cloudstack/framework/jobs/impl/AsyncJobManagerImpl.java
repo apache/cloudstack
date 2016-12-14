@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.dao.VolumeDetailsDao;
+import org.apache.cloudstack.api.CancellableCmd;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.jobs.AsyncJobService;
@@ -1091,16 +1092,34 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return _jobDao.getFailureJobsSinceLastMsStart(getMsid(), cmds);
     }
 
-    public boolean cancelAsyncJob(long jobId) {
+    public String cancelAsyncJob(long jobId) {
         final AsyncJobVO job = _jobDao.findById(jobId);
-        //TODO: allow cancellation for cancellable jobs only
+        String errString;
+
         if (job == null) {
+            errString="Cannot cancel. job-" + jobId + " no longer exists.";
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Cannot cancel. job-" + jobId + " no longer exists.");
+                s_logger.debug(errString);
             }
             // still purge item from queue to avoid any blocking
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
-        } else if (job.getStatus() == Status.IN_PROGRESS) {
+            return errString;
+        }
+        try {
+            Class<?> cmdClass = Class.forName(job.getCmd());
+            if (! CancellableCmd.class.isAssignableFrom(cmdClass)) {
+                errString="Cannot cancel. job-" + jobId + " as it is not cancellable.";
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errString);
+                }
+                return errString;
+            }
+        }catch (ClassNotFoundException e){
+            errString="Command- " + job.getCmd() + " of jobid- " + jobId + " not found.";
+            s_logger.error(errString, e);
+            return errString;
+        }
+        if (job.getStatus() == Status.IN_PROGRESS) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("cancelling job-" + jobId + " which is in IN_PROGRESS state.");
             }
@@ -1111,16 +1130,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 // purge the item and resume queue processing
                 _queueMgr.purgeItem(jobId);
 
-                return true;
+                return "";
             } catch (Throwable t) {
-                s_logger.error("Unexpected exception when cancelling async job with id: " + jobId, t);
+                errString="Unexpected exception when cancelling async job with id: " + jobId;
+                s_logger.error(errString, t);
             }
         } else {
+            errString="Cannot cancel. job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".";
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Cannot cancel. job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".");
+                s_logger.debug(errString);
             }
+            _queueMgr.purgeAsyncJobQueueItemId(jobId);
         }
-        return false;
+        return errString;
     }
 
     @Override

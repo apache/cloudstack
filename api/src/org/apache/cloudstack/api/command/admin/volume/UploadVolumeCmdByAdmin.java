@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.CancellableCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -34,7 +35,7 @@ import com.cloud.storage.Volume;
 
 @APICommand(name = "uploadVolume", description = "Uploads a data disk.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UploadVolumeCmdByAdmin extends UploadVolumeCmd {
+public class UploadVolumeCmdByAdmin extends UploadVolumeCmd implements CancellableCmd{
     public static final Logger s_logger = Logger.getLogger(UploadVolumeCmdByAdmin.class.getName());
 
 
