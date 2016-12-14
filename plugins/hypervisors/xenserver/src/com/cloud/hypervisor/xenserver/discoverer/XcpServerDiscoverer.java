@@ -36,6 +36,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostInfo;
@@ -623,6 +624,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             s_logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
         } catch (OperationTimedoutException e) {
             s_logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
+        } catch (OperationCancelledException e) {
+            s_logger.warn("Unable to setup agent " + agentId + " because it is cancelled", e);
         }
         throw new ConnectionException(true, "Reinitialize agent after setup.");
     }

@@ -27,6 +27,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -444,7 +445,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     cacheMgr.deleteCacheObject(destOnStore);
                 }
 
-            } catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
+            } catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException | OperationCancelledException ex) {
                 String msg = "Failed to create template from snapshot (Snapshot ID = " + snapshotInfo.getId() + ") : ";
 
                 LOGGER.warn(msg, ex);
@@ -935,7 +936,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             answer = (ResignatureAnswer)_agentMgr.send(hostVO.getId(), command);
         }
-        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
+        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException |OperationCancelledException ex) {
             keepGrantedAccess = false;
 
             String msg = "Failed to resign the DataObject with the following ID: " + dataObj.getId();
@@ -1028,7 +1029,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
         }
-        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
+        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException | OperationCancelledException ex) {
             String msg = "Failed to perform VDI copy : ";
 
             LOGGER.warn(msg, ex);

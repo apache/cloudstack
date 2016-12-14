@@ -45,6 +45,7 @@ import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -175,7 +176,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         return keyFile;
     }
 
-    private boolean preparePxeInBasicZone(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) throws AgentUnavailableException, OperationTimedoutException {
+    private boolean preparePxeInBasicZone(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         NetworkVO nwVO = _nwDao.findById(nic.getNetworkId());
         QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
         sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());

@@ -30,6 +30,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -393,9 +394,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         try {
             ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null);
             _agentMgr.send(host.getId(), cmd);
-        } catch (AgentUnavailableException e) {
-            s_logger.warn("Sending ShutdownCommand failed: ", e);
-        } catch (OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             s_logger.warn("Sending ShutdownCommand failed: ", e);
         }
 

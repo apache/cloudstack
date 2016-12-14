@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -93,10 +94,9 @@ public class Ovm3FenceBuilder extends AdapterBase implements FenceBuilder {
                 FenceAnswer answer;
                 try {
                     answer = (FenceAnswer) agentMgr.send(h.getId(), fence);
-                } catch (AgentUnavailableException | OperationTimedoutException e) {
+                } catch (AgentUnavailableException | OperationTimedoutException |OperationCancelledException e) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Moving on to the next host because "
-                                + h.toString() + " is unavailable", e);
+                        LOGGER.debug("Moving on to the next host because " + h.toString() + " is unavailable", e);
                     }
                     continue;
                 }

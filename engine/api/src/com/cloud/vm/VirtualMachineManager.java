@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.to.NicTO;
@@ -108,7 +109,7 @@ public interface VirtualMachineManager extends Manager {
 
     void advanceStop(String vmUuid, boolean cleanupEvenIfUnableToStop) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException, OperationCancelledException;
 
     void destroy(String vmUuid, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 

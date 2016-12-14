@@ -127,7 +127,7 @@ public class AsyncJobExecutionContext  {
         AsyncJobJoinMapVO record = s_joinMapDao.getJoinRecord(_job.getId(), joinedJobId);
         s_jobMgr.disjoinJob(_job.getId(), joinedJobId);
 
-        if (record.getJoinStatus() == JobInfo.Status.FAILED) {
+        if (record != null && record.getJoinStatus() == JobInfo.Status.FAILED) {
             if (record.getJoinResult() != null) {
                 Object exception = JobSerializerHelper.fromObjectSerializedString(record.getJoinResult());
                 if (exception != null && exception instanceof Exception) {

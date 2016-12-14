@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.hypervisor.Hypervisor;
 
 import org.apache.log4j.Logger;
@@ -1022,9 +1023,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     answers.add(_agentMgr.send(targetHostId, cmd));
                 }
                 return new Pair<Long, Answer[]>(hostId, answers.toArray(new Answer[answers.size()]));
-            } catch (AgentUnavailableException e) {
-                s_logger.debug("Unable to send storage pool command to " + pool + " via " + hostId, e);
-            } catch (OperationTimedoutException e) {
+            } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
                 s_logger.debug("Unable to send storage pool command to " + pool + " via " + hostId, e);
             }
         }

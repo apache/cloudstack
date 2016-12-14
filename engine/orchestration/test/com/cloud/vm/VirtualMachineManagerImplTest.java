@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.service.dao.ServiceOfferingDao;
 import junit.framework.Assert;
 
@@ -323,7 +324,7 @@ public class VirtualMachineManagerImplTest {
         return serviceOffering;
     }
 
-    private void initializeMockConfigForMigratingVmWithVolumes() throws OperationTimedoutException, ResourceUnavailableException {
+    private void initializeMockConfigForMigratingVmWithVolumes() throws OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
 
         // Mock the source and destination hosts.
         when(_srcHostMock.getId()).thenReturn(5L);
@@ -420,7 +421,7 @@ public class VirtualMachineManagerImplTest {
     // Check migration of a vm with its volumes within a cluster.
     @Test
     public void testMigrateWithVolumeWithinCluster() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-    VirtualMachineMigrationException, OperationTimedoutException {
+    VirtualMachineMigrationException, OperationTimedoutException, OperationCancelledException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -432,7 +433,7 @@ public class VirtualMachineManagerImplTest {
     // Check migration of a vm with its volumes across a cluster.
     @Test
     public void testMigrateWithVolumeAcrossCluster() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-    VirtualMachineMigrationException, OperationTimedoutException {
+    VirtualMachineMigrationException, OperationTimedoutException, OperationCancelledException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -445,7 +446,7 @@ public class VirtualMachineManagerImplTest {
     // other is local.
     @Test(expected = CloudRuntimeException.class)
     public void testMigrateWithVolumeFail1() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-    VirtualMachineMigrationException, OperationTimedoutException {
+    VirtualMachineMigrationException, OperationTimedoutException, OperationCancelledException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -460,7 +461,7 @@ public class VirtualMachineManagerImplTest {
     // Check migration of a vm fails when vm is not in Running state.
     @Test(expected = ConcurrentOperationException.class)
     public void testMigrateWithVolumeFail2() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-    VirtualMachineMigrationException, OperationTimedoutException {
+    VirtualMachineMigrationException, OperationTimedoutException, OperationCancelledException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);

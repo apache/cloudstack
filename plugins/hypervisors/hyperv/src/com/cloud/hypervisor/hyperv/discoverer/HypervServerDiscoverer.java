@@ -51,6 +51,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostEnvironment;
@@ -171,6 +172,8 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             s_logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
         } catch (OperationTimedoutException e) {
             s_logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
+        } catch (OperationCancelledException e) {
+            s_logger.warn("Unable to setup agent " + agentId + " because operation is cancelled", e);
         }
         throw new ConnectionException(true, "Reinitialize agent after setup.");
     }

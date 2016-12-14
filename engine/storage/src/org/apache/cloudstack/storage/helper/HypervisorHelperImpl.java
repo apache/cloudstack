@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -138,9 +139,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
                 String errMsg = (answer != null) ? answer.getDetails() : null;
                 throw new CloudRuntimeException("Failed to quiesce vm, due to " + errMsg);
             }
-        } catch (AgentUnavailableException e) {
-            throw new CloudRuntimeException("Failed to quiesce vm", e);
-        } catch (OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             throw new CloudRuntimeException("Failed to quiesce vm", e);
         }
         return vmSnapshotTO;
@@ -161,9 +160,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
                 String errMsg = (answer != null) ? answer.getDetails() : null;
                 throw new CloudRuntimeException("Failed to unquiesce vm, due to " + errMsg);
             }
-        } catch (AgentUnavailableException e) {
-            throw new CloudRuntimeException("Failed to unquiesce vm", e);
-        } catch (OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             throw new CloudRuntimeException("Failed to unquiesce vm", e);
         }
     }

@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -93,7 +94,7 @@ public class SimulatorFencer extends AdapterBase implements FenceBuilder {
                         s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
                     }
                     continue;
-                } catch (OperationTimedoutException e) {
+                } catch (OperationTimedoutException | OperationCancelledException e) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
                     }

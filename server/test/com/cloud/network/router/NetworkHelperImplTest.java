@@ -25,6 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.cloud.exception.OperationCancelledException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -54,7 +55,7 @@ public class NetworkHelperImplTest {
 
     @Test(expected=ResourceUnavailableException.class)
     public void testSendCommandsToRouterWrongRouterVersion()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
         // Prepare
         NetworkHelperImpl nwHelperUT = spy(this.nwHelper);
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -69,7 +70,7 @@ public class NetworkHelperImplTest {
 
     @Test
     public void testSendCommandsToRouter()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
         // Prepare
         NetworkHelperImpl nwHelperUT = spy(this.nwHelper);
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -107,7 +108,7 @@ public class NetworkHelperImplTest {
      */
     @Test
     public void testSendCommandsToRouterWithTrueResult()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
         // Prepare
         NetworkHelperImpl nwHelperUT = spy(this.nwHelper);
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -145,7 +146,7 @@ public class NetworkHelperImplTest {
      */
     @Test
     public void testSendCommandsToRouterWithNoAnswers()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
         // Prepare
         NetworkHelperImpl nwHelperUT = spy(this.nwHelper);
         VirtualRouter vr = mock(VirtualRouter.class);

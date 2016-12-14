@@ -39,6 +39,7 @@ import javax.ejb.ConcurrentAccessException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
@@ -536,9 +537,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             cmds = new Commands(nrc);
             try {
                 _agentMgr.send(vm.getHostId(), cmds);
-            } catch (AgentUnavailableException e) {
-                s_logger.debug(e.toString());
-            } catch (OperationTimedoutException e) {
+            } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
                 s_logger.debug(e.toString());
             }
 
@@ -1385,9 +1384,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         cmds = new Commands(cmd);
         try {
             _agentMgr.send(vm.getHostId(), cmds);
-        } catch (AgentUnavailableException e) {
-            s_logger.debug(e.toString());
-        } catch (OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             s_logger.debug(e.toString());
         }
 

@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -116,6 +117,11 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
         } catch (OperationTimedoutException e) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped OperationTimedoutException returning Unknown state");
+            }
+            return Status.Unknown;
+        } catch (OperationCancelledException e) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped OperationCancelledException returning Unknown state");
             }
             return Status.Unknown;
         }

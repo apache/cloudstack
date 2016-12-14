@@ -132,6 +132,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
@@ -456,18 +457,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             advanceExpunge(vmUuid);
         } catch (final OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation timed out", e);
+        } catch (final OperationCancelledException e) {
+            throw new CloudRuntimeException("Operation cancelled", e);
         } catch (final ConcurrentOperationException e) {
             throw new CloudRuntimeException("Concurrent operation ", e);
         }
     }
 
     @Override
-    public void advanceExpunge(final String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    public void advanceExpunge(final String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException, OperationCancelledException {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         advanceExpunge(vm);
     }
 
-    protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException, OperationCancelledException {
         if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
@@ -1111,6 +1114,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                     canRetry = false;
                     throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
+                } catch (OperationCancelledException e) {
+                    s_logger.debug("Unable to send the start command to host " + dest.getHost()+" failed to start VM: "+vm.getUuid());
+                    if (e.isActive()) {
+                        _haMgr.scheduleStop(vm, destHostId, WorkType.CheckStop);
+                    }
+                    canRetry = false;
+                    throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
                 } catch (final ResourceUnavailableException e) {
                     s_logger.info("Unable to contact resource.", e);
                     if (!avoids.add(e)) {
@@ -1318,11 +1328,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return false;
             }
 
-        } catch (final AgentUnavailableException e) {
-            if (!force) {
-                return false;
-            }
-        } catch (final OperationTimedoutException e) {
+        } catch (final AgentUnavailableException | OperationCancelledException | OperationTimedoutException e) {
             if (!force) {
                 return false;
             }
@@ -1589,6 +1595,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.warn("Unable to stop vm, agent unavailable: " + e.toString());
         } catch (final OperationTimedoutException e) {
             s_logger.warn("Unable to stop vm, operation timed out: " + e.toString());
+        } catch (final OperationCancelledException e) {
+            s_logger.warn("Unable to stop vm, operation cancelled: " + e.toString());
         } finally {
             if (!stopped) {
                 if (!cleanUpEvenIfUnableToStop) {
@@ -1741,7 +1749,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected boolean checkVmOnHost(final VirtualMachine vm, final long hostId) throws AgentUnavailableException, OperationTimedoutException {
+    protected boolean checkVmOnHost(final VirtualMachine vm, final long hostId) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         final Answer answer = _agentMgr.send(hostId, new CheckVirtualMachineCommand(vm.getInstanceName()));
         if (answer == null || !answer.getResult()) {
             return false;
@@ -2018,6 +2026,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         } catch (final OperationTimedoutException e1) {
             throw new AgentUnavailableException("Operation timed out", dstHostId);
+        } catch (final OperationCancelledException e1) {
+            throw new AgentUnavailableException("Operation cancelled", dstHostId);
         } finally {
             if (pfma == null) {
                 _networkMgr.rollbackNicForMigration(vmSrc, profile);
@@ -2057,6 +2067,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _haMgr.scheduleRestart(vm, true);
                 }
                 throw new AgentUnavailableException("Operation timed out on migrating " + vm, dstHostId);
+            } catch (final OperationCancelledException e) {
+                if (e.isActive()) {
+                    s_logger.warn("Active migration command so scheduling a restart for " + vm);
+                    _haMgr.scheduleRestart(vm, true);
+                }
+                throw new AgentUnavailableException("Operation cancelled on migrating " + vm, dstHostId);
             }
 
             try {
@@ -2078,7 +2094,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
-            } catch (final OperationTimedoutException e) {
+            } catch (final OperationTimedoutException | OperationCancelledException e) {
                 s_logger.debug("Error while checking the vm " + vm + " on host " + dstHostId, e);
             }
 
@@ -2344,7 +2360,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     try {
                         _agentMgr.send(srcHost.getId(), dettachCommand);
                         s_logger.debug("Deleted config drive ISO for  vm " + vm.getInstanceName() + " In host " + srcHost);
-                    } catch (OperationTimedoutException e) {
+                    } catch (OperationTimedoutException | OperationCancelledException e) {
                         s_logger.debug("TIme out occured while exeuting command AttachOrDettachConfigDrive " + e.getMessage());
 
                     }
@@ -2369,7 +2385,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     throw new CloudRuntimeException("VM not found on desintation host. Unable to complete migration for " + vm);
                 }
-            } catch (final OperationTimedoutException e) {
+            } catch (final OperationTimedoutException | OperationCancelledException e) {
                 s_logger.warn("Error while checking the vm " + vm + " is on host " + destHost, e);
             }
 
@@ -2680,7 +2696,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return;
             }
             s_logger.info("Unable to reboot VM " + vm + " on " + dest.getHost() + " due to " + (rebootAnswer == null ? " no reboot answer" : rebootAnswer.getDetails()));
-        } catch (final OperationTimedoutException e) {
+        } catch (final OperationTimedoutException | OperationCancelledException e) {
             s_logger.warn("Unable to send the reboot command to host " + dest.getHost() + " for the vm " + vm + " due to operation timeout", e);
             throw new CloudRuntimeException("Failed to reboot the vm on host " + dest.getHost());
         }
@@ -2767,7 +2783,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void ensureVmRunningContext(final long hostId, VMInstanceVO vm, final Event cause) throws OperationTimedoutException, ResourceUnavailableException,
-    NoTransitionException, InsufficientAddressCapacityException {
+    NoTransitionException, InsufficientAddressCapacityException, OperationCancelledException {
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
 
         s_logger.debug("VM state is starting on full sync so updating it to running");
@@ -3506,7 +3522,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 pfma = null;
                 throw new AgentUnavailableException(msg, dstHostId);
             }
-        } catch (final OperationTimedoutException e1) {
+        } catch (final OperationTimedoutException | OperationCancelledException e1) {
             throw new AgentUnavailableException("Operation timed out", dstHostId);
         } finally {
             if (pfma == null) {
@@ -3546,6 +3562,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _haMgr.scheduleRestart(vm, true);
                 }
                 throw new AgentUnavailableException("Operation timed out on migrating " + vm, dstHostId);
+            } catch (final OperationCancelledException e) {
+                if (e.isActive()) {
+                    s_logger.warn("Active migration command so scheduling a restart for " + vm);
+                    _haMgr.scheduleRestart(vm, true);
+                }
+                throw new AgentUnavailableException("Operation cancelled on migrating " + vm, dstHostId);
             }
 
             try {
@@ -3570,7 +3592,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
-            } catch (final OperationTimedoutException e) {
+            } catch (final OperationTimedoutException | OperationCancelledException e) {
                 s_logger.debug("Error while checking the vm " + vm + " on host " + dstHostId, e);
             }
 
@@ -3616,7 +3638,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.warn("Unable to plug nic for vm " + vm.getName());
                     result = false;
                 }
-            } catch (final OperationTimedoutException e) {
+            } catch (final OperationTimedoutException | OperationCancelledException e) {
                 throw new AgentUnavailableException("Unable to plug nic for router " + vm.getName() + " in network " + network, dest.getHost().getId(), e);
             }
         } else {
@@ -3647,7 +3669,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.warn("Unable to unplug nic from router " + router);
                     result = false;
                 }
-            } catch (final OperationTimedoutException e) {
+            } catch (final OperationTimedoutException | OperationCancelledException e) {
                 throw new AgentUnavailableException("Unable to unplug nic from rotuer " + router + " from network " + network, dest.getHost().getId(), e);
             }
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
@@ -3755,7 +3777,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             success = true;
-        } catch (final OperationTimedoutException e) {
+        } catch (final OperationTimedoutException | OperationCancelledException e) {
             throw new AgentUnavailableException("Operation timed out on reconfiguring " + vm, dstHostId);
         } catch (final AgentUnavailableException e) {
             throw e;

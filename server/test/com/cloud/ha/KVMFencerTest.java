@@ -21,6 +21,7 @@ package com.cloud.ha;
 import java.util.Arrays;
 import java.util.Collections;
 
+import com.cloud.exception.OperationCancelledException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -97,7 +98,7 @@ public class KVMFencerTest {
     }
 
     @Test
-    public void testWithHosts() throws AgentUnavailableException, OperationTimedoutException {
+    public void testWithHosts() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getClusterId()).thenReturn(1l);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
@@ -125,7 +126,7 @@ public class KVMFencerTest {
     }
 
     @Test
-    public void testWithFailingFence() throws AgentUnavailableException, OperationTimedoutException {
+    public void testWithFailingFence() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getClusterId()).thenReturn(1l);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
@@ -152,7 +153,7 @@ public class KVMFencerTest {
     }
 
     @Test
-    public void testWithTimeoutingFence() throws AgentUnavailableException, OperationTimedoutException {
+    public void testWithTimeoutingFence() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getClusterId()).thenReturn(1l);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);

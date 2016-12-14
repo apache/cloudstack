@@ -28,6 +28,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -171,8 +172,10 @@ public class NetworkHelperImpl implements NetworkHelper {
         try {
             answers = _agentMgr.send(router.getHostId(), cmds);
         } catch (final OperationTimedoutException e) {
-            s_logger.warn("Timed Out", e);
+            s_logger.warn("Timed out", e);
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
+        } catch (final OperationCancelledException e) {
+            s_logger.warn("Operation cancelled", e);
         }
 
         if (answers == null || answers.length != cmds.size()) {

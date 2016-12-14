@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.log4j.Logger;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
@@ -229,10 +230,7 @@ public class ManagementServerMock {
         };
         try {
             Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenAnswer(callback);
-        } catch (AgentUnavailableException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationCancelledException | OperationTimedoutException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -278,9 +276,7 @@ public class ManagementServerMock {
 
         try {
             Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenAnswer(callback);
-        } catch (AgentUnavailableException e) {
-            e.printStackTrace();
-        } catch (OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             e.printStackTrace();
         }
 

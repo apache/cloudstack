@@ -37,6 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -368,7 +369,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         final Commands cmds = new Commands(Command.OnError.Stop);
         cmds.addCommand(cmd);
         send(hostId, cmds, cmd.getWait());
@@ -435,7 +436,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public Answer[] send(final Long hostId, final Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer[] send(final Long hostId, final Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         assert hostId != null : "Who's not checking the agent id before sending?  ... (finger wagging)";
         if (hostId == null) {
             throw new AgentUnavailableException(-1);
@@ -452,7 +453,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
             job = _asyncJobDao.findById(jobId);
             if (job.getStatus() == JobInfo.Status.CANCELLED) {
-                throw new AgentUnavailableException("Operation cancelled", hostId, true);
+                s_logger.debug("job-" + job.getId() + " for host: " + hostId + ", with commands: " + commands.toString() + " is cancelled");
+                throw new OperationCancelledException(commands.toCommands(), hostId, 0, 0, false);
             }
         }
 
@@ -658,7 +660,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
-        _cancelExecutor.scheduleWithFixedDelay(new CancelTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
+        _cancelExecutor.scheduleWithFixedDelay(new CancelTask(), 60, 60, TimeUnit.SECONDS);
 
         return true;
     }
@@ -1018,7 +1020,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public Answer[] send(final Long hostId, final Commands cmds) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer[] send(final Long hostId, final Commands cmds) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         int wait = 0;
         for (final Command cmd : cmds) {
             if (cmd.getWait() > wait) {

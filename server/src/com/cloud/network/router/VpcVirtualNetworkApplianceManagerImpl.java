@@ -40,6 +40,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
@@ -735,7 +736,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
         try {
             _agentMgr.send(router.getHostId(), cmds);
-        } catch (final OperationTimedoutException e) {
+        } catch (final OperationTimedoutException | OperationCancelledException e) {
             s_logger.debug("Failed to start remote access VPN: ", e);
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         }

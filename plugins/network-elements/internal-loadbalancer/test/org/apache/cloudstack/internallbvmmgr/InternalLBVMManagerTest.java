@@ -24,6 +24,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 import org.junit.Before;
@@ -115,7 +116,7 @@ public class InternalLBVMManagerTest extends TestCase {
 
     @Override
     @Before
-    public void setUp() {
+    public void setUp() throws OperationCancelledException, OperationTimedoutException, AgentUnavailableException {
         //mock system offering creation as it's used by configure() method called by initComponentsLifeCycle
         Mockito.when(_accountMgr.getAccount(1L)).thenReturn(new AccountVO());
         ServiceOfferingVO off = new ServiceOfferingVO("alena", 1, 1,
@@ -153,15 +154,7 @@ public class InternalLBVMManagerTest extends TestCase {
         final Answer[] answers = new Answer[1];
         answers[0] = answer;
 
-        try {
-            Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenReturn(answers);
-        } catch (final AgentUnavailableException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (final OperationTimedoutException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenReturn(answers);
 
         createNetwork();
         Mockito.when(_ntwkModel.getNetwork(Matchers.anyLong())).thenReturn(ntwk);

@@ -22,6 +22,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -224,7 +225,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
                     uservm.getId(), uservm.getUuid(), sshPublicKey));
             try {
                 _agentManager.send(dest.getHost().getId(), cmds);
-            } catch (OperationTimedoutException e) {
+            } catch (OperationTimedoutException | OperationCancelledException e) {
                 s_logger.debug("Unable to send vm data command to host " + dest.getHost());
                 return false;
             }

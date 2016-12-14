@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -98,10 +99,7 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
                 FenceAnswer answer;
                 try {
                     answer = (FenceAnswer)_agentMgr.send(h.getId(), fence);
-                } catch (AgentUnavailableException e) {
-                    s_logger.info("Moving on to the next host because " + h.toString() + " is unavailable");
-                    continue;
-                } catch (OperationTimedoutException e) {
+                } catch (AgentUnavailableException | OperationCancelledException | OperationTimedoutException e) {
                     s_logger.info("Moving on to the next host because " + h.toString() + " is unavailable");
                     continue;
                 }

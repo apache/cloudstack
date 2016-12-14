@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
@@ -165,7 +166,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         } catch (OperationTimedoutException e) {
             s_logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
             throw new CloudRuntimeException("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
-        } catch (AgentUnavailableException e) {
+        } catch (AgentUnavailableException | OperationCancelledException e) {
             s_logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed", e);
             throw new CloudRuntimeException("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } finally {
@@ -217,9 +218,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 s_logger.error("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
                 throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
             }
-        } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + e.getMessage());
-        } catch (AgentUnavailableException e) {
+        } catch (OperationTimedoutException | AgentUnavailableException | OperationCancelledException e) {
             throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + e.getMessage());
         }
     }
@@ -370,10 +369,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 s_logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
-        } catch (OperationTimedoutException e) {
-            s_logger.debug("Failed to revert vm snapshot", e);
-            throw new CloudRuntimeException(e.getMessage());
-        } catch (AgentUnavailableException e) {
+        } catch (OperationTimedoutException | AgentUnavailableException | OperationCancelledException e) {
             s_logger.debug("Failed to revert vm snapshot", e);
             throw new CloudRuntimeException(e.getMessage());
         } finally {
