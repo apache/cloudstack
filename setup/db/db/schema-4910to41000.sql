@@ -48,3 +48,8 @@ CREATE TABLE `cloud`.`vlan_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN supports_public_access boolean default false;
+
+ALTER TABLE `cloud`.`image_store_details` CHANGE COLUMN `value` `value` VARCHAR(255) NULL DEFAULT NULL COMMENT 'value of the detail', ADD COLUMN `display` tinyint(1) NOT
+NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user' AFTER `value`;
+
+ALTER TABLE `snapshots` ADD COLUMN `location_type` VARCHAR(32) COMMENT 'Location of snapshot (ex. Primary)';
