@@ -69,10 +69,10 @@ public class CancelAsyncJobCmdTest {
      */
     @Test
     public void testExecute_errorCancellation() throws Exception {
-        Long id = 1L;
+        long id = 1;
         String errorString = "Error cancelling job";
         cancelAsyncJobCmd.id = id;
-        Mockito.when(asyncJobService.cancelAsyncJob(id)).thenReturn(errorString);
+        Mockito.when(asyncJobService.cancelAsyncJob(Mockito.eq(id), Mockito.anyString())).thenReturn(errorString);
         try {
             cancelAsyncJobCmd.execute();
         } catch (Exception e) {
@@ -83,7 +83,7 @@ public class CancelAsyncJobCmdTest {
             }
         }
 
-        inorder.verify(asyncJobService, Mockito.times(1)).cancelAsyncJob(id);
+        inorder.verify(asyncJobService, Mockito.times(1)).cancelAsyncJob(Mockito.eq(id), Mockito.anyString());
         inorder.verify(_responseGenerator, Mockito.times(0)).queryJobResult((CancelAsyncJobCmd) Mockito.any());
         inorder.verifyNoMoreInteractions();
     }
@@ -93,14 +93,14 @@ public class CancelAsyncJobCmdTest {
      */
     @Test
     public void testExecute_successfulCancellation() throws Exception {
-        Long id = 1L;
+        long id = 1L;
         cancelAsyncJobCmd.id = id;
-        Mockito.when(asyncJobService.cancelAsyncJob(id)).thenReturn(null);
+        Mockito.when(asyncJobService.cancelAsyncJob(Mockito.eq(id), Mockito.anyString())).thenReturn(null);
         Mockito.when(_responseGenerator.queryJobResult((CancelAsyncJobCmd) Mockito.any())).thenReturn(Mockito.mock
                 (AsyncJobResponse.class));
 
         cancelAsyncJobCmd.execute();
-        inorder.verify(asyncJobService, Mockito.times(1)).cancelAsyncJob(id);
+        inorder.verify(asyncJobService, Mockito.times(1)).cancelAsyncJob(Mockito.eq(id), Mockito.anyString());
         inorder.verify(_responseGenerator, Mockito.times(1)).queryJobResult((CancelAsyncJobCmd) Mockito.any());
         inorder.verifyNoMoreInteractions();
     }

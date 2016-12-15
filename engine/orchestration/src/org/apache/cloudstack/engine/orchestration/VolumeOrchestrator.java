@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.VmWorkStart;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -102,6 +103,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -1502,11 +1504,28 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    private  void cleanupVolumeDuringVmCreationFailure(long instanceId){
+        List<VolumeVO> volumes = _volsDao.findByInstance(instanceId);
+        if (volumes.size() == 0) {
+            return;
+        }
+        for (VolumeVO volume : volumes) {
+            if ((volume.getState() == Volume.State.Allocated || volume.getState() == Volume.State.Creating) && volume.getVolumeType() == Type.ROOT) {
+                s_logger.debug("Marking left over ROOT volume- " + volume.getId()+" to Destroyed as part of cleanup");
+                try {
+                    stateTransitTo(volume, Event.DestroyRequested);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("No transition exists "+e);
+                }
+            }
+        }
+    }
+
     @Override
     public void cleanupStorageJobs() {
         //clean up failure jobs related to volume
         List<AsyncJobVO> jobs = _jobMgr.findFailureAsyncJobs(VmWorkAttachVolume.class.getName(),
-                VmWorkMigrateVolume.class.getName(), VmWorkTakeVolumeSnapshot.class.getName());
+                VmWorkMigrateVolume.class.getName(), VmWorkTakeVolumeSnapshot.class.getName(), VmWorkStart.class.getName());
 
         for (AsyncJobVO job : jobs) {
             try {
@@ -1519,6 +1538,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 } else if (job.getCmd().equalsIgnoreCase(VmWorkTakeVolumeSnapshot.class.getName())) {
                     VmWorkTakeVolumeSnapshot work = VmWorkSerializer.deserialize(VmWorkTakeVolumeSnapshot.class, job.getCmdInfo());
                     cleanupVolumeDuringSnapshotFailure(work.getVolumeId(), work.getSnapshotId());
+                }else if (job.getCmd().equalsIgnoreCase(VmWorkStart.class.getName())) {
+                    VmWorkStart work = VmWorkSerializer.deserialize(VmWorkStart.class, job.getCmdInfo());
+                    cleanupVolumeDuringVmCreationFailure(work.getVmId());
                 }
             } catch (Exception e) {
                 s_logger.debug("clean up job failure, will continue", e);

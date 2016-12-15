@@ -61,7 +61,7 @@ public class CancelAsyncJobCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ClassNotFoundException {
-        String errorString = asyncJobService.cancelAsyncJob(id);
+        String errorString = asyncJobService.cancelAsyncJob(id, "cancel request by user using cancelAsyncJob api");
         if(Strings.isNullOrEmpty(errorString)) {
             AsyncJobResponse response = _responseGenerator.queryJobResult(this);
             response.setResponseName(getCommandName());

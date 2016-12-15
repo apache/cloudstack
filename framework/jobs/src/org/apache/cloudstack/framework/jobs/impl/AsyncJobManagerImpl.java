@@ -127,6 +127,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private VMInstanceDao _vmInstanceDao;
     @Inject
     private VolumeDetailsDao _volumeDetailsDao;
+    @Inject
+    private SyncQueueItemDao _syncQueueItemDao;
 
     private volatile long _executionRunNumber = 1;
 
@@ -1078,6 +1080,17 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     public void onManagementNodeIsolated() {
     }
 
+    private static void shutdownAndAwaitTermination(ExecutorService pool) {
+        pool.shutdown();
+        try {
+            if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+                pool.shutdownNow();
+            }
+        } catch (InterruptedException ie) {
+            s_logger.debug("Exception while shutting down pool - " + pool.toString());
+        }
+    }
+
     @Override
     public boolean start() {
         cleanupLeftOverJobs(getMsid());
@@ -1090,9 +1103,25 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public boolean stop() {
+        List<SyncQueueItemVO> jobs = _syncQueueItemDao.getActiveQueueItems(getMsid(), false);
+        for (SyncQueueItemVO job : jobs) {
+            AsyncJobVO childjob = _jobDao.findById(job.getContentId());
+            if (childjob != null) {
+                Long parentjobid = Long.parseLong(childjob.getRelated());
+                try {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cancel left-over async. job- " + parentjobid);
+                    }
+                    cancelAsyncJob(parentjobid, "Management Server shutdown");
+                } catch (Exception e) {
+                    s_logger.error("Exception while cancelling job -" + parentjobid, e);
+                }
+            }
+            _queueMgr.purgeItem(job.getId());
+        }
+        shutdownAndAwaitTermination(_workerJobExecutor);
+        shutdownAndAwaitTermination(_apiJobExecutor);
         _heartbeatScheduler.shutdown();
-        _apiJobExecutor.shutdown();
-        _workerJobExecutor.shutdown();
         return true;
     }
 
@@ -1119,7 +1148,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return _jobDao.getFailureJobsSinceLastMsStart(getMsid(), cmds);
     }
 
-    public String cancelAsyncJob(long jobId) {
+    @Override
+    public String cancelAsyncJob(long jobId, String reason) {
         final AsyncJobVO job = _jobDao.findById(jobId);
         String errString;
 
@@ -1151,7 +1181,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 s_logger.debug("cancelling job-" + jobId + " which is in IN_PROGRESS state.");
             }
             try {
-                completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled on request by user using cancelAsyncJob api");
+                completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason);
                 _jobMonitor.unregisterByJobId(jobId);
 
                 // purge the item and resume queue processing

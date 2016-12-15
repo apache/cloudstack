@@ -20,5 +20,5 @@ import com.cloud.utils.component.PluggableService;
 // under the License.
 
 public interface AsyncJobService extends PluggableService{
-    public String cancelAsyncJob(long jobId);
+    public String cancelAsyncJob(long jobId, String reason);
 }
