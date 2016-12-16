@@ -1,12 +1,12 @@
-cloudstack (4.9.1.0) unstable; urgency=low
+cloudstack (4.9.2.0-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.9.1.0
+  * Update the version to 4.9.2.0-SNAPSHOT
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Sat, 10 Dec 2016 08:38:03 +0530
 
-cloudstack (4.9.1.0) unstable; urgency=low
+cloudstack (4.9.2.0-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.9.1.0
+  * Update the version to 4.9.2.0-SNAPSHOT
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 19 Aug 2016 13:48:00 +0530
 
