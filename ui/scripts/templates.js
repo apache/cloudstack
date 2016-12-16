@@ -35,7 +35,7 @@
                     filters: {
                         all: {
                             preFilter: function(args) {
-                                if (isAdmin()) //"listTemplates&templatefilter=all" only works for root-admin, but no domain-admin. Domain-admin is unable to see all templates until listTemplates API supports a new type of templatefilter for domain-admin to see all templates in his domain.
+                                if (isAdmin()|| isDomainAdmin()) //"listTemplates&templatefilter=all" only for root-admin and domain-admin. Domain-admin is able to see all templates in his domain.
                                     return true;
                                 else
                                     return false;
@@ -1793,7 +1793,7 @@
                     filters: {
                         all: {
                             preFilter: function(args) {
-                                if (isAdmin()) //"listIsos&filter=all" only works for root-admin, but no domain-admin. Domain-admin is unable to see all Isos until listIsos API supports a new type of isofilter for domain-admin to see all Isos in his domain.
+                                if (isAdmin()||isDomainAdmin()) //"listIsos&filter=all" works for root-admin and domain-admin. Domain-admin is able to see all Isos in his domain.
                                     return true;
                                 else
                                     return false;
