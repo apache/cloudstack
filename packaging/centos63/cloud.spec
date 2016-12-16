@@ -113,7 +113,6 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java-1.7.0-openjdk
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
