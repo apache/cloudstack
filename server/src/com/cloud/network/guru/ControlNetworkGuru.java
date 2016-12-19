@@ -136,7 +136,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
 
         // we have to get management/private ip for the control nic for vmware/hyperv due ssh issues.
-        HypervisorType hType = dest.getHost().getHypervisorType();
+        HypervisorType hType = vm.getHypervisorType();
         if (((hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv)) && isRouterVm(vm)) {
             if (dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
                 super.reserve(nic, config, vm, dest, context);
