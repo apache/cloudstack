@@ -75,9 +75,9 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      *            details to match. All must match for the pool to be returned.
      * @return List of StoragePoolVO
      */
-    List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details, ScopeType scope);
+    List<StoragePoolVO> findPoolsByDetails(long dcId, Long podId, Long clusterId, Map<String, String> details, ScopeType scope);
 
-    List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags);
+    List<StoragePoolVO> findPoolsByTags(long dcId, Long podId, Long clusterId, String[] tags);
 
     List<StoragePoolVO> findDisabledPoolsByScope(long dcId, Long podId, Long clusterId, ScopeType scope);
 
@@ -112,7 +112,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> listPoolsByCluster(long clusterId);
 
-    List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags);
+    List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, Long podId, Long clusterId, String[] tags);
 
     List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags);
 

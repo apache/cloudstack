@@ -37,6 +37,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -1383,8 +1384,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<StoragePoolVO> storagePools = null;
         if (srcVolumePool.getClusterId() == null) {
             storagePools = _poolDao.findZoneWideStoragePoolsByTags(volume.getDataCenterId(), null);
-        } else {
+        } else if (vm != null) {
             storagePools = _poolDao.findPoolsByTags(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
+        } else {
+            storagePools = _poolDao.findPoolsByTags(volume.getDataCenterId(), null, null, null);
         }
 
         storagePools.remove(srcVolumePool);
@@ -1399,12 +1402,30 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final ExcludeList avoid = new ExcludeList();
         avoid.addPool(srcVolumePool.getId());
 
-        // Volume stays in the same cluster after migration.
-        final DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
+        if(vm != null) {
+            // Volume stays in the same cluster after migration.
+            addSuitablePools(suitablePools, avoid, vm, volume, vm.getHypervisorType(), srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId());
+        } else {
+            final HypervisorType volHypervisorType = _volumeDao.getHypervisorType(volumeId);
+            if(srcVolumePool.getScope() == ScopeType.CLUSTER) {
+                for (HostPodVO podVo : _hostPodDao.listByDataCenterId(volume.getDataCenterId())) {
+                    addSuitablePools(suitablePools, avoid, vm, volume, volHypervisorType, volume.getDataCenterId(), podVo.getId(), null);
+                }
+            } else if (srcVolumePool.getScope() == ScopeType.ZONE) {
+                addSuitablePools(suitablePools, avoid, vm, volume, volHypervisorType, volume.getDataCenterId(), null, null);
+            }
+        }
+
+        return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+    }
+
+    private void addSuitablePools(List<StoragePool> suitablePools, ExcludeList avoid, VMInstanceVO vm, VolumeVO volume, HypervisorType volHypervisorType,
+            long dcId, Long podId, Long clusterId) {
+        final DataCenterDeployment plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
         final DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        final DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
+        final DiskProfile diskProfile = new DiskProfile(volume, diskOffering, volHypervisorType);
 
         // Call the storage pool allocator to find the list of storage pools.
         for (final StoragePoolAllocator allocator : _storagePoolAllocators) {
@@ -1414,8 +1435,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 break;
             }
         }
-
-        return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
 
     private Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type, final Object state, final Object zone, final Object pod, final Object cluster,

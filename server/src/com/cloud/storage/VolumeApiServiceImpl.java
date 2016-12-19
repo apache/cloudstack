@@ -29,6 +29,8 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -83,12 +85,15 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkAttachVolume;
@@ -1968,6 +1973,41 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         } else {
             throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
+        }
+
+        // Add all the pool except destPool in avoid list
+        final DeploymentPlanner.ExcludeList avoids = new DeploymentPlanner.ExcludeList();
+        List<StoragePoolVO> allPools = _storagePoolDao.listAll();
+        for (StoragePoolVO pool : allPools) {
+            if(destPool.getId() != pool.getId()) {
+                avoids.addPool(pool.getId());
+            }
+        }
+
+        // Volume will move to destPool after migration.
+        final DataCenterDeployment plan = new DataCenterDeployment(vol.getDataCenterId(), destPool.getPodId(), destPool.getClusterId(), null, null, null);
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+
+        final DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+        final DiskProfile diskProfile;
+        if(vm == null) {
+            diskProfile = new DiskProfile(vol, diskOffering, _volsDao.getHypervisorType(volumeId));
+        } else {
+            diskProfile = new DiskProfile(vol, diskOffering, profile.getHypervisorType());
+        }
+
+        boolean isPoolSuitable = false;
+        // Call the storage pool allocators to find whether destPool is suitable or not
+        for (final StoragePoolAllocator allocator : _storagePoolAllocators) {
+            final List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoids, StoragePoolAllocator.RETURN_UPTO_ALL);
+            if (pools != null && !pools.isEmpty()) {
+                isPoolSuitable = true;
+                break;
+            }
+        }
+
+        if(!isPoolSuitable) {
+            throw new InvalidParameterValueException("Failed to migrate Volume: " + vol.getName() + ". Specified pool: " + destPool.getName() + " doesn't have enough resources.");
         }
 
         if (vm != null) {
