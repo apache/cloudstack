@@ -561,6 +561,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
         String errorMsg = null;
         try {
             final VDI vdi = VDI.getByUuid(conn, volume.getPath());
+            for(VDI svdi : vdi.getSnapshots(conn)) {
+                deleteVDI(conn, svdi);
+            }
             deleteVDI(conn, vdi);
             return new Answer(null);
         } catch (final BadServerResponse e) {
