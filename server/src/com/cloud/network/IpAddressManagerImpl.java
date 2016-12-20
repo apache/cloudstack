@@ -52,7 +52,6 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
