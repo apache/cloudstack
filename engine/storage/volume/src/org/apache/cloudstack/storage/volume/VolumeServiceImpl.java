@@ -68,6 +68,8 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -140,6 +142,8 @@ public class VolumeServiceImpl implements VolumeService {
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
     VMTemplatePoolDao _tmpltPoolDao;
+    @Inject
+    SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
     VolumeDao _volumeDao;
     @Inject
@@ -358,6 +362,10 @@ public class VolumeServiceImpl implements VolumeService {
                 if (canVolumeBeRemoved(vo.getId())) {
                     s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
                     volDao.remove(vo.getId());
+                }
+                SnapshotDataStoreVO snapStoreVo = _snapshotStoreDao.findByVolume(vo.getId(), DataStoreRole.Primary);
+                if(snapStoreVo != null){
+                    _snapshotStoreDao.remove(snapStoreVo.getId());
                 }
             } else {
                 vo.processEvent(Event.OperationFailed);
