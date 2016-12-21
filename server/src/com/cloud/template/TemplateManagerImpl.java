@@ -1740,7 +1740,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             if (sourceTemplateId != null) {
                 VMTemplateVO sourceTemplate = _tmpltDao.findById(sourceTemplateId);
-                if(sourceTemplate != null){
+                if (sourceTemplate != null && sourceTemplate.getDetails() != null) {
                     details.putAll(sourceTemplate.getDetails());
                 }
             }
