@@ -961,7 +961,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated) {
+    public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long totalAllocated) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
@@ -999,15 +999,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         if (capacities.size() == 0) {
             CapacityVO capacity =
-                    new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity,
+                    new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), totalAllocated, totalOverProvCapacity,
                             capacityType);
             capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
-            if (capacity.getTotalCapacity() != totalOverProvCapacity || allocated != 0L || capacity.getCapacityState() != capacityState) {
+            if (capacity.getTotalCapacity() != totalOverProvCapacity || capacity.getUsedCapacity() != totalAllocated  || capacity.getCapacityState() != capacityState) {
                 capacity.setTotalCapacity(totalOverProvCapacity);
-                capacity.setUsedCapacity(allocated);
+                capacity.setUsedCapacity(totalAllocated);
                 capacity.setCapacityState(capacityState);
                 _capacityDao.update(capacity.getId(), capacity);
             }
