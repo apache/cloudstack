@@ -21,8 +21,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.user.AccountVO;
+import com.cloud.utils.db.JoinBuilder;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource;
@@ -59,11 +63,21 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         TypeSearch.done();
 
         AccountSearch = createSearchBuilder();
+        DomainSearch = createSearchBuilder();
+    }
+
+    @PostConstruct
+    protected void configure() {
         AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.NNULL);
+        SearchBuilder<AccountVO> joinAccount = _accountDao.createSearchBuilder();
+        joinAccount.and("notremoved", joinAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
+        AccountSearch.join("account", joinAccount, AccountSearch.entity().getAccountId(), joinAccount.entity().getId(), JoinBuilder.JoinType.INNER);
         AccountSearch.done();
 
-        DomainSearch = createSearchBuilder();
         DomainSearch.and("domainId", DomainSearch.entity().getDomainId(), SearchCriteria.Op.NNULL);
+        SearchBuilder<DomainVO> joinDomain = _domainDao.createSearchBuilder();
+        joinDomain.and("notremoved", joinDomain.entity().getRemoved(), SearchCriteria.Op.NULL);
+        DomainSearch.join("domain", joinDomain, DomainSearch.entity().getDomainId(), joinDomain.entity().getId(), JoinBuilder.JoinType.INNER);
         DomainSearch.done();
     }
 
