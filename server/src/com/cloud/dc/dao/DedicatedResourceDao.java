@@ -54,4 +54,5 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
 
     List<DedicatedResourceVO> listByAffinityGroupId(Long affinityGroupId);
 
+    List<DedicatedResourceVO> listAvailableResources(Long accountId, Long... domains);
 }

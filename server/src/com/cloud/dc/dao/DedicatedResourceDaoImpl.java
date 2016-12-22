@@ -18,7 +18,6 @@ package com.cloud.dc.dao;
 
 import java.util.List;
 
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DedicatedResourceVO;
@@ -54,6 +53,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
     protected SearchBuilder<DedicatedResourceVO> ListAllPodsSearch;
     protected SearchBuilder<DedicatedResourceVO> ListAllClustersSearch;
     protected SearchBuilder<DedicatedResourceVO> ListAllHostsSearch;
+    protected SearchBuilder<DedicatedResourceVO> ListAvailableResourcesSearch;
 
     protected SearchBuilder<DedicatedResourceVO> ListByAccountId;
     protected SearchBuilder<DedicatedResourceVO> ListByDomainId;
@@ -164,6 +164,12 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
         ListAllHostsSearch.and("domainId", ListAllHostsSearch.entity().getDomainId(), Op.EQ);
         ListAllHostsSearch.and("affinityGroupId", ListAllHostsSearch.entity().getAffinityGroupId(), Op.EQ);
         ListAllHostsSearch.done();
+
+        ListAvailableResourcesSearch = createSearchBuilder();
+        ListAvailableResourcesSearch.or("accountId", ListAvailableResourcesSearch.entity().getAccountId(), Op.EQ);
+        ListAvailableResourcesSearch.or().op("nullaccountId", ListAvailableResourcesSearch.entity().getAccountId(), Op.NULL);
+        ListAvailableResourcesSearch.and("domainId", ListAvailableResourcesSearch.entity().getDomainId(), Op.IN);
+        ListAvailableResourcesSearch.cp();
 
         ListByAccountId = createSearchBuilder();
         ListByAccountId.and("accountId", ListByAccountId.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -309,6 +315,14 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
             }
         }
         return searchAndCount(sc, null);
+    }
+
+    @Override
+    public List<DedicatedResourceVO> listAvailableResources(Long accountId, Long... domains) {
+        SearchCriteria<DedicatedResourceVO> sc = ListAvailableResourcesSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("domainId", domains);
+        return listBy(sc);
     }
 
     @Override
