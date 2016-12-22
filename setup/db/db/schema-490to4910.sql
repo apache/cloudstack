@@ -52,6 +52,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Ubuntu Trusty Tahr 14.04', 256, utc_timestamp(), 0);
 -- Ensure correct guest_os_name for guest OS type 'Windows Server 2008 R2 64-bit' for VMware
 UPDATE IGNORE `cloud`.`guest_os_hypervisor` SET guest_os_name = 'windows7Server64Guest' WHERE guest_os_id IN (SELECT id FROM guest_os WHERE display_name LIKE 'windows%2008%r2%64%') AND hypervisor_type = 'VMware' AND hypervisor_version != 'default';
+
 -- Adding hypervisor mappings for SUSE Linux guest OS variants on VMware 6.0
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '6.0', 'slesGuest', 40, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '6.0', 'sles10Guest', 41, utc_timestamp(), 0);
