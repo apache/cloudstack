@@ -66,7 +66,7 @@ public class DatabaseUpgradeCheckerTest {
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
 
         assertNotNull(upgrades);
-        assertEquals(1, upgrades.length);
+        assertTrue(upgrades.length >= 1);
         assertTrue(upgrades[0] instanceof Upgrade490to4910);
 
         assertTrue(Arrays.equals(new String[] { "4.9.0", currentVersion.toString()}, upgrades[0].getUpgradableVersionRange()));
