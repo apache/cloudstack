@@ -45,6 +45,8 @@ import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -123,12 +125,11 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 
-public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService {
+public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
 
     private static final int STARTUP_DELAY = 60000;                 // 60 seconds
     private static final long DEFAULT_HOST_SCAN_INTERVAL = 600000;     // every 10 minutes
-
     private long _hostScanInterval = DEFAULT_HOST_SCAN_INTERVAL;
     private int _timeout;
 
@@ -189,7 +190,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private String _rootDiskController = DiskControllerType.ide.toString();
 
-    private String _dataDiskController = DiskControllerType.osdefault.toString();
+    private final String _dataDiskController = DiskControllerType.osdefault.toString();
 
     private final Map<String, String> _storageMounts = new HashMap<String, String>();
 
@@ -202,6 +203,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     public VmwareManagerImpl() {
         _storageMgr = new VmwareStorageManagerImpl(this);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VmwareManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout};
     }
 
     @Override
