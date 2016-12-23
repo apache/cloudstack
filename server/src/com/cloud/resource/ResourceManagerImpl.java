@@ -1181,6 +1181,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             final CapacityState capacityState =  nextState == ResourceState.Enabled ? CapacityState.Enabled : CapacityState.Disabled;
             final short[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
             _capacityDao.updateCapacityState(null, null, null, host.getId(), capacityState.toString(), capacityTypes);
+
+            final StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
+
+            if(storagePool != null){
+                final short[] capacityTypesLocalStorage = {Capacity.CAPACITY_TYPE_LOCAL_STORAGE};
+                _capacityDao.updateCapacityState(null, null, null, storagePool.getId(), capacityState.toString(), capacityTypesLocalStorage);
+            }
         }
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
