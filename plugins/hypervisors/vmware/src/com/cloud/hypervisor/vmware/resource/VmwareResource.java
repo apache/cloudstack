@@ -22,6 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URL;
 import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import org.joda.time.Duration;
@@ -282,6 +283,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.PropertyMapDynamicBean;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
+import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -345,6 +347,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
         s_powerStatesTable.put(VirtualMachinePowerState.SUSPENDED, PowerState.PowerOn);
     }
+
+    protected static File s_systemVmKeyFile = null;
+    private static final Object s_syncLockObjectFetchKeyFile = new Object();
+    protected static final String s_relativePathSystemVmKeyFileInstallDir = "scripts/vm/systemvm/id_rsa.cloud";
+    protected static final String s_defaultPathSystemVmKeyFile = "/usr/share/cloudstack-common/scripts/vm/systemvm/id_rsa.cloud";
 
     public Gson getGson() {
         return _gson;
@@ -785,8 +792,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public ExecutionResult createFileInVR(String routerIp, String filePath, String fileName, String content) {
-        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-        File keyFile = mgr.getSystemVMKeyFile();
+        File keyFile = getSystemVmKeyFile();
         try {
             SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes("UTF-8"), fileName, null);
         } catch (Exception e) {
@@ -831,8 +837,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     //
     //
     private int findRouterEthDeviceIndex(String domrName, String routerIp, String mac) throws Exception {
-        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
+        File keyFile = getSystemVmKeyFile();
         s_logger.info("findRouterEthDeviceIndex. mac: " + mac);
         ArrayList<String> skipInterfaces = new ArrayList<String>(Arrays.asList("all", "default", "lo"));
 
@@ -842,7 +847,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         while (System.currentTimeMillis() - startTick < 15000) {
 
             // TODO : this is a temporary very inefficient solution, will refactor it later
-            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "ls /proc/sys/net/ipv4/conf");
+            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", keyFile, null, "ls /proc/sys/net/ipv4/conf");
             if (result.first()) {
                 String[] tokens = result.second().split("\\s+");
                 for (String token : tokens) {
@@ -851,7 +856,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                         if (s_logger.isDebugEnabled())
                             s_logger.debug("Run domr script " + cmd);
-                        Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null,
+                        Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", keyFile, null,
                                 // TODO need to find the dev index inside router based on IP address
                                 cmd);
                         if (s_logger.isDebugEnabled())
@@ -1283,8 +1288,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            result = SshHelper.sshExecute(routerIP, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/" + script + " " + args,
+            result = SshHelper.sshExecute(routerIP, DefaultDomRSshPort, "root", getSystemVmKeyFile(), null, "/opt/cloud/bin/" + script + " " + args,
                     VRScripts.CONNECTION_TIMEOUT, VRScripts.CONNECTION_TIMEOUT, timeout);
         } catch (Exception e) {
             String msg = "Command failed due to " + VmwareHelper.getExceptionMessage(e);
@@ -4286,8 +4290,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (controlIp != null) {
             String args = " -c 1 -n -q " + cmd.getPrivateIp();
             try {
-                VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/bin/ping" + args);
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", getSystemVmKeyFile(), null, "/bin/ping" + args);
                 if (result.first())
                     return new Answer(cmd);
             } catch (Exception e) {
@@ -5619,5 +5622,39 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmdkAbsFile = diskBackingInfo.getFileName();
         }
         return vmdkAbsFile;
+    }
+
+    protected File getSystemVmKeyFile() {
+        if (s_systemVmKeyFile == null) {
+            syncFetchSystemVmKeyFile();
+        }
+        return s_systemVmKeyFile;
+    }
+
+    private static void syncFetchSystemVmKeyFile() {
+        synchronized (s_syncLockObjectFetchKeyFile) {
+            if (s_systemVmKeyFile == null) {
+                s_systemVmKeyFile = fetchSystemVmKeyFile();
+            }
+        }
+    }
+
+    private static File fetchSystemVmKeyFile() {
+        String filePath = s_relativePathSystemVmKeyFileInstallDir;
+        s_logger.debug("Looking for file [" + filePath + "] in the classpath.");
+        URL url = Script.class.getClassLoader().getResource(filePath);
+        File keyFile = null;
+        if (url != null) {
+            keyFile = new File(url.getPath());
+        }
+        if (keyFile == null || !keyFile.exists()) {
+            filePath = s_defaultPathSystemVmKeyFile;
+            keyFile = new File(filePath);
+            s_logger.debug("Looking for file [" + filePath + "] in the classpath.");
+        }
+        if (!keyFile.exists()) {
+            s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
+        }
+        return keyFile;
     }
 }
