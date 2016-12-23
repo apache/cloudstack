@@ -997,6 +997,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
         }
+
+        if (storagePool.getScope() == ScopeType.HOST) {
+            List<StoragePoolHostVO> stoargePoolHostVO = _storagePoolHostDao.listByPoolId(storagePool.getId());
+
+            if(stoargePoolHostVO != null && !stoargePoolHostVO.isEmpty()){
+                HostVO host = _hostDao.findById(stoargePoolHostVO.get(0).getHostId());
+
+                if(host != null){
+                    capacityState = (host.getResourceState() == ResourceState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
+                }
+            }
+        }
+
         if (capacities.size() == 0) {
             CapacityVO capacity =
                     new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity,
