@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,6 +72,8 @@ import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.HostVO;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -121,6 +124,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
+import com.cloud.utils.UriUtils;
 import com.cloud.vm.DomainRouterVO;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService {
@@ -138,6 +142,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private AgentManager _agentMgr;
     @Inject
     private NetworkModel _netMgr;
+    @Inject
+    private HostDao _hostDao;
     @Inject
     private ClusterDao _clusterDao;
     @Inject
@@ -377,6 +383,29 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
+    private HostMO getOlderHostInCluster(Long clusterId, VmwareContext serviceContext) throws Exception {
+        HostVO host = _hostDao.findOlderHypervisorHostInCluster(clusterId);
+        if (host == null) {
+            return null;
+        }
+
+        ManagedObjectReference morSrcHost = HypervisorHostHelper.getHypervisorHostMorFromGuid(host.getGuid());
+        if (morSrcHost == null) {
+            Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
+            if (clusterDetails.get("url") == null) {
+                return null;
+            }
+
+            URI uriForHost = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url") + "/" + host.getName()));
+            morSrcHost = serviceContext.getHostMorByPath(URLDecoder.decode(uriForHost.getPath(), "UTF-8"));
+            if (morSrcHost == null) {
+                return null;
+            }
+        }
+
+        return new HostMO(serviceContext, morSrcHost);
+    }
+
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
             throws Exception {
@@ -429,6 +458,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, mor);
                 prepareHost(hostMo, privateTrafficLabel);
+                HostMO olderHostMo = getOlderHostInCluster(clusterId, serviceContext);
+                if (olderHostMo != null) {
+                    hostMo.copyPortGroupsFromHost(olderHostMo);
+                }
+
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {

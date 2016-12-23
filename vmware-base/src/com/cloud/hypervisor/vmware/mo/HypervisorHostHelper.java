@@ -1584,6 +1584,30 @@ public class HypervisorHostHelper {
         }
     }
 
+    public static ManagedObjectReference getHypervisorHostMorFromGuid(String guid) {
+        if (guid == null) {
+            return null;
+        }
+
+        String[] tokens = guid.split("@");
+        if (tokens == null || tokens.length != 2) {
+            s_logger.error("Invalid content in host guid");
+            return null;
+        }
+
+        String[] hostTokens = tokens[0].split(":");
+        if (hostTokens == null || hostTokens.length != 2) {
+            s_logger.error("Invalid content in host guid");
+            return null;
+        }
+
+        ManagedObjectReference morHyperHost = new ManagedObjectReference();
+        morHyperHost.setType(hostTokens[0]);
+        morHyperHost.setValue(hostTokens[1]);
+
+        return morHyperHost;
+    }
+
     public static String getScsiController(Pair<String, String> controllerInfo, String recommendedController) {
         String rootDiskController = controllerInfo.first();
         String dataDiskController = controllerInfo.second();
