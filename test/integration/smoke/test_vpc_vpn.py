@@ -168,7 +168,7 @@ class Services:
             "vpc2": {
                 "name": "TestVPC",
                 "displaytext": "VPC2",
-                "cidr": '10.2.0.0/16'
+                "cidr": '10.3.0.0/16'
             },
             "network_1": {
                 "name": "Test Network",
@@ -180,13 +180,13 @@ class Services:
                 "name": "Test Network",
                 "displaytext": "Test Network",
                 "netmask": '255.255.255.0',
-                "gateway": "10.2.1.1"
+                "gateway": "10.3.1.1"
             },
             "vpn": {
                 "vpn_user": "root",
                 "vpn_pass": "Md1s#dc",
                 "vpn_pass_fail": "abc!123",  # too short
-                "iprange": "10.2.2.1-10.2.2.10",
+                "iprange": "10.3.2.1-10.3.2.10",
                 "fordisplay": "true"
             },
             "vpncustomergateway": {

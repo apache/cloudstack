@@ -1082,8 +1082,11 @@ public class HypervisorHostHelper {
             }
         } else {
             if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-                hostMo.createPortGroup(vSwitch, networkName, vid, secPolicy, shapingPolicy);
-                bWaitPortGroupReady = true;
+                hostMo.createPortGroup(vSwitch, networkName, vid, secPolicy, shapingPolicy, timeOutMs);
+                // Setting flag "bWaitPortGroupReady" to false.
+                // This flag indicates whether we need to wait for portgroup on vCenter.
+                // Above createPortGroup() method itself ensures creation of portgroup as well as wait for portgroup.
+                bWaitPortGroupReady = false;
             } else {
                 HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
                 if (!isSpecMatch(spec, vid, shapingPolicy)) {
