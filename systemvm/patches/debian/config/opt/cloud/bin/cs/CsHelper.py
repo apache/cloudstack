@@ -42,14 +42,13 @@ def reconfigure_interfaces(router_config, interfaces):
                 # Reason: private gateways are public interfaces.
                 # master.py and keepalived will deal with eth1 public interface.
 
-                if router_config.is_redundant() and interface.is_public():
-                    state_cmd = STATE_COMMANDS[router_config.get_type()]
-                    logging.info("Check state command => %s" % state_cmd)
-                    state = execute(state_cmd)[0]
-                    logging.info("Route state => %s" % state)
-                    if interface.get_device() != PUBLIC_INTERFACES[router_config.get_type()] and state == "MASTER":
-                        execute(cmd)
-                else:
+                state_cmd = STATE_COMMANDS[router_config.get_type()]
+                logging.info("Check state command => %s" % state_cmd)
+                state = execute(state_cmd)[0]
+                logging.info("Route state => %s" % state)
+                if not router_config.is_redundant() or state == "MASTER":
+                    execute(cmd)
+                elif not interface.is_public():
                     execute(cmd)
 
 def is_mounted(name):
