@@ -1208,10 +1208,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 if (!Boolean.parseBoolean(serviceMonitoringFlag) || router.getVpcId() != null) {
                     continue;
                 }
+                String controlIP = getRouterControlIP(router);
 
-                final String privateIP = router.getPrivateIpAddress();
-
-                if (privateIP != null) {
+                if (controlIP != null && !controlIP.equals("0.0.0.0")) {
                     OpRouterMonitorServiceVO opRouterMonitorServiceVO = _opRouterMonitorServiceDao.findById(router.getId());
 
                     GetRouterAlertsCommand command = null;
@@ -1225,7 +1224,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         command = new GetRouterAlertsCommand(opRouterMonitorServiceVO.getLastAlertTimestamp());
                     }
 
-                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
 
                     try {
                         final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
@@ -1278,6 +1277,29 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         } catch (final Exception e) {
             s_logger.warn("Error while collecting alerts from router", e);
         }
+    }
+
+    private String getRouterControlIP(DomainRouterVO router){
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+        String controlIP = null;
+
+        if(router.getHypervisorType() == HypervisorType.VMware  && dcVo.getNetworkType() == NetworkType.Basic ){
+
+            final List<NicVO> nics = _nicDao.listByVmId(router.getId());
+            for (final NicVO nic : nics) {
+                final NetworkVO nc = _networkDao.findById(nic.getNetworkId());
+                if (nc.getTrafficType() == TrafficType.Guest && nic.getIPv4Address() != null) {
+                    controlIP = nic.getIPv4Address();
+                    break;
+                }
+            }
+            s_logger.debug("Vmware with Basic network selected Guest NIC ip as control IP " + controlIP );
+        }else{
+            controlIP = _routerControlHelper.getRouterControlIp(router.getId());
+        }
+
+        s_logger.debug("IP of control NIC " + controlIP );
+        return controlIP;
     }
 
     @Override

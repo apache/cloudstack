@@ -3052,12 +3052,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // Check if the new VLAN's subnet conflicts with the guest network
             // in
             // the specified zone (guestCidr is null for basic zone)
+            // when adding shared network with same cidr of zone guest cidr,
+            // if the specified vlan is not present in zone, physical network, allow to create the network as the isolation is based on VLAN.
             final String guestNetworkCidr = zone.getGuestNetworkCidr();
-            if (guestNetworkCidr != null) {
-                if (NetUtils.isNetworksOverlap(newCidr, guestNetworkCidr)) {
-                    throw new InvalidParameterValueException("The new IP range you have specified has  overlapped with the guest network in zone: " + zone.getName()
-                            + ". Please specify a different gateway/netmask.");
-                }
+            if (guestNetworkCidr != null && NetUtils.isNetworksOverlap(newCidr, guestNetworkCidr) && _zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).isEmpty() != true) {
+                throw new InvalidParameterValueException("The new IP range you have specified has  overlapped with the guest network in zone: " + zone.getName()
+                        + "along with existing Vlan also. Please specify a different gateway/netmask");
             }
 
             // Check if there are any errors with the IP range
