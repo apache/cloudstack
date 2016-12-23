@@ -187,6 +187,7 @@
             <exclude>com/cloud/vpc/VpcTestConfiguration.java</exclude>
             <exclude>com/cloud/vpc/VpcApiUnitTest.java</exclude>
             <exclude>com/cloud/vpc/VpcManagerTest.java</exclude>
+            <exclude>com/cloud/vm/DeploymentPlanningManagerImplTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>

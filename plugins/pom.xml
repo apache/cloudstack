@@ -149,6 +149,7 @@
         <module>file-systems/netapp</module>
       </modules>
     </profile>
+    <!--
     <profile>
       <id>f5</id>
       <activation>
@@ -160,6 +161,7 @@
         <module>network-elements/f5</module>
       </modules>
     </profile>
+    -->
     <profile>
       <id>srx</id>
       <activation>
