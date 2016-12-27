@@ -1717,7 +1717,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (!checkUsagedSpace(pool)) {
             return false;
         }
-
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Destination pool id: " + pool.getId());
+        }
         // allocated space includes templates
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
         long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
@@ -1747,7 +1749,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
 
-            if (volumeVO.getState() != Volume.State.Ready) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("pool id for the volume with id: " + volumeVO.getId() + " is: " + volumeVO.getPoolId());
+            }
+            if (volumeVO.getState() != Volume.State.Ready || volumeVO.getPoolId() != pool.getId()) {
                 totalAskingSize += getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeVO, pool);
 
                 if (ScopeType.ZONE.equals(poolVO.getScope()) && volumeVO.getTemplateId() != null) {
