@@ -1006,7 +1006,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 Command[] cmdArray = cmds.toCommands();
                 for (Command cmd : cmdArray) {
                     long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostId, cmd);
-
                     answers.add(_agentMgr.send(targetHostId, cmd));
                 }
                 return new Pair<Long, Answer[]>(hostId, answers.toArray(new Answer[answers.size()]));
@@ -2075,8 +2074,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         " for template id " +templateOnImageStore.getTemplateId(), th);
             }
         }
-
-
     }
 
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate

@@ -93,6 +93,7 @@ public enum ResourceState {
         s_fsm.addTransition(ResourceState.Enabled, Event.InternalCreated, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Enabled, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.Enabled, Event.AdminAskMaintenace, ResourceState.PrepareForMaintenance);
+        s_fsm.addTransition(ResourceState.Enabled, Event.InternalEnterMaintenance, ResourceState.Maintenance);
         s_fsm.addTransition(ResourceState.Disabled, Event.Enable, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Disabled, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.Disabled, Event.InternalCreated, ResourceState.Disabled);
@@ -109,5 +110,7 @@ public enum ResourceState {
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.InternalEnterMaintenance, ResourceState.Maintenance);
         s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Error, Event.InternalCreated, ResourceState.Error);
+        s_fsm.addTransition(ResourceState.Disabled, Event.DeleteHost, ResourceState.Disabled);
+
     }
 }

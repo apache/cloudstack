@@ -69,6 +69,12 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         }
     }
 
+    public NfsStoragePool getStoragePool(String uuid) {
+        synchronized (_storagePool) {
+            return _storagePool.get(uuid);
+        }
+    }
+
     private class Monitor extends ManagedContextRunnable {
 
         @Override

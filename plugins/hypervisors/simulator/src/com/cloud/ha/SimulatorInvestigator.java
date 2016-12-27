@@ -21,6 +21,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.ha.HAManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -50,6 +51,8 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
     ResourceManager _resourceMgr;
     @Inject
     MockConfigurationDao _mockConfigDao;
+    @Inject
+    private HAManager haManager;
 
     protected SimulatorInvestigator() {
     }
@@ -58,6 +61,10 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
     public Status isAgentAlive(Host agent) {
         if (agent.getHypervisorType() != HypervisorType.Simulator) {
             return null;
+        }
+
+        if (haManager.isHAEligible(agent)) {
+            return haManager.getHostStatus(agent);
         }
 
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
@@ -81,6 +88,10 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
 
     @Override
     public Boolean isVmAlive(VirtualMachine vm, Host host) {
+        if (haManager.isHAEligible(host)) {
+            return haManager.isVMAliveOnHost(host);
+        }
+
         CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), cmd);

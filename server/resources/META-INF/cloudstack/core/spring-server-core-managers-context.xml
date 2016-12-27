@@ -70,6 +70,15 @@
             value="#{resourceDiscoverersRegistry.registered}" />
     </bean>
 
+    <!-- the new background poll manager -->
+    <bean id="bgPollManager" class="org.apache.cloudstack.poll.BackgroundPollManagerImpl">
+    </bean>
+
+    <!-- the new HA manager -->
+    <bean id="haManagerImpl" class="org.apache.cloudstack.ha.HAManagerImpl">
+        <property name="haProviders" value="#{haProvidersRegistry.registered}" />
+    </bean>
+
     <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl">
         <property name="investigators" value="#{haInvestigatorsRegistry.registered}" />
         <property name="fenceBuilders" value="#{haFenceBuildersRegistry.registered}" />

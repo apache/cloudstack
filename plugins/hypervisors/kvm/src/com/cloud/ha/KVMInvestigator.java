@@ -1,4 +1,5 @@
 /*
+
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -29,7 +30,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.AdapterBase;
-
+import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.ha.HAManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -49,10 +51,17 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     ResourceManager _resourceMgr;
     @Inject
     PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private HAManager haManager;
 
     @Override
-    public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
+    public Boolean isVmAlive(VirtualMachine vm, Host host) {
+        if (haManager.isHAEligible(host)) {
+            return haManager.isVMAliveOnHost(host);
+        }
+
         Status status = isAgentAlive(host);
+        s_logger.debug("HA: HOST is ineligible legacy state " + status + " for host " + host.getId());
         if (status == null) {
             return null;
         }
@@ -63,6 +72,10 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     public Status isAgentAlive(Host agent) {
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             return null;
+        }
+
+        if (haManager.isHAEligible(agent)) {
+            return haManager.getHostStatus(agent);
         }
 
         List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
@@ -119,6 +132,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         if (neighbourStatus == Status.Down && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
             hostStatus = Status.Down;
         }
+        s_logger.debug("HA: HOST is ineligible legacy state " + hostStatus + " for host " + agent.getId());
         return hostStatus;
     }
 }

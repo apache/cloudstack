@@ -108,4 +108,8 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to prepare host for maintenance");
         }
     }
+
+    public void setHostId(final Long hostId) {
+        id = hostId;
+    }
 }

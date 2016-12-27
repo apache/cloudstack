@@ -36,6 +36,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 /**
@@ -98,6 +99,15 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name = "oobm_power_state")
     @Enumerated(value = EnumType.STRING)
     private OutOfBandManagement.PowerState outOfBandManagementPowerState;
+
+    @Column(name = "ha_enabled")
+    private boolean hostHAEnabled = false;
+
+    @Column(name = "ha_state")
+    private HAConfig.HAState hostHAState;
+
+    @Column(name = "ha_provider")
+    private String hostHAProvider;
 
     @Column(name = "resource_state")
     @Enumerated(value = EnumType.STRING)
@@ -258,6 +268,18 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public OutOfBandManagement.PowerState getOutOfBandManagementPowerState() {
         return outOfBandManagementPowerState;
+    }
+
+    public boolean isHostHAEnabled() {
+        return hostHAEnabled;
+    }
+
+    public HAConfig.HAState getHostHAState() {
+        return hostHAState;
+    }
+
+    public String getHostHAProvider() {
+        return hostHAProvider;
     }
 
     public ResourceState getResourceState() {

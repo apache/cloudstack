@@ -17,14 +17,18 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.util.ArrayList;
+
 import java.util.List;
 import java.util.concurrent.Callable;
+
+import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
+@Local(value = {KVMHAChecker.class})
 public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     private static final Logger s_logger = Logger.getLogger(KVMHAChecker.class);
     private List<NfsStoragePool> _pools;
@@ -40,10 +44,10 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
      * True means heartbeaing is on going, or we can't get it's status. False
      * means heartbeating is stopped definitely
      */
-    private Boolean checkingHB() {
+    @Override
+    public Boolean checkingHB() {
         List<Boolean> results = new ArrayList<Boolean>();
         for (NfsStoragePool pool : _pools) {
-
             Script cmd = new Script(s_heartBeatPath, _heartBeatCheckerTimeout, s_logger);
             cmd.add("-i", pool._poolIp);
             cmd.add("-p", pool._poolMountSourcePath);
@@ -53,9 +57,9 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
             cmd.add("-t", String.valueOf(_heartBeatUpdateFreq / 1000));
             OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
             String result = cmd.execute(parser);
-            s_logger.debug("pool: " + pool._poolIp);
-            s_logger.debug("reture: " + result);
-            s_logger.debug("parser: " + parser.getLine());
+            s_logger.debug("KVMHAChecker pool: " + pool._poolIp);
+            s_logger.debug("KVMHAChecker result: " + result);
+            s_logger.debug("KVMHAChecker parser: " + parser.getLine());
             if (result == null && parser.getLine().contains("> DEAD <")) {
                 s_logger.debug("read heartbeat failed: " + result);
                 results.add(false);
