@@ -161,6 +161,7 @@ import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -269,6 +270,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private ImageStoreDao _imgStoreDao;
     @Inject
     MessageBus _messageBus;
+    @Inject
+    private VMTemplateDetailsDao _tmpltDetailsDao;
 
     private boolean _disableExtraction = false;
     private List<TemplateAdapter> _adapters;
@@ -1880,6 +1883,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Integer sortKey = cmd.getSortKey();
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
+        boolean cleanupDetails = cmd.isCleanupDetails();
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);
@@ -1911,7 +1915,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   sortKey == null &&
                   isDynamicallyScalable == null &&
                   isRoutingTemplate == null &&
-                        details == null);
+                  (! cleanupDetails && details == null) //update details in every case except this one
+                  );
         if (!updateNeeded) {
             return template;
         }
@@ -1989,7 +1994,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        if (details != null && !details.isEmpty()) {
+        if (cleanupDetails) {
+            template.setDetails(null);
+            _tmpltDetailsDao.removeDetails(id);
+        }
+        else if (details != null && !details.isEmpty()) {
             template.setDetails(details);
             _tmpltDao.saveDetails(template);
         }

@@ -45,6 +45,7 @@ import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -160,6 +161,9 @@ public class TemplateManagerImplTest {
 
     @Inject
     SnapshotDao snapshotDao;
+
+    @Inject
+    VMTemplateDetailsDao tmpltDetailsDao;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -621,6 +625,11 @@ public class TemplateManagerImplTest {
         @Bean
         public TemplateAdapter templateAdapter() {
             return Mockito.mock(TemplateAdapter.class);
+        }
+
+        @Bean
+        public VMTemplateDetailsDao vmTemplateDetailsDao() {
+            return Mockito.mock(VMTemplateDetailsDao.class);
         }
 
         public static class Library implements TypeFilter {

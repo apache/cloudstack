@@ -2307,6 +2307,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<String,String> details = cmd.getDetails();
         Account caller = CallContext.current().getCallingAccount();
         List<Long> securityGroupIdList = getSecurityGroupIdList(cmd);
+        boolean cleanupDetails = cmd.isCleanupDetails();
 
         // Input validation and permission checks
         UserVmVO vmInstance = _vmDao.findById(id);
@@ -2345,14 +2346,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         }
 
-        if (details != null && !details.isEmpty()) {
-            _vmDao.loadDetails(vmInstance);
-
-            for(Map.Entry<String,String> entry : details.entrySet()) {
-                if(entry instanceof Map.Entry) {
-                    vmInstance.setDetail(entry.getKey(), entry.getValue());
-                }
-            }
+        if (cleanupDetails){
+            _vmDetailsDao.removeDetails(id);
+        }
+        else if (details != null && !details.isEmpty()) {
+            vmInstance.setDetails(details);
             _vmDao.saveDetails(vmInstance);
         }
 

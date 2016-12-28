@@ -1780,8 +1780,125 @@
                                         }
                                     }}
                                 }
-                            }
-                        }
+                            },
+                            /**
+							 * Settings tab
+							 */
+							settings: {
+								title: 'label.settings',
+								custom: cloudStack.uiCustom.granularDetails({
+									dataProvider: function(args) {
+										$.ajax({
+											url: createURL('listTemplates'),
+											data: {
+												templatefilter: "self",
+												id: args.context.templates[0].id
+											},
+											success: function(json) {
+												var details = json.listtemplatesresponse.template[0].details;
+												var listDetails = [];
+												for (detail in details){
+													var det = {};
+													det["name"] = detail;
+													det["value"] = details[detail];
+													listDetails.push(det);
+												}
+												args.response.success({
+													data: listDetails
+												});
+											},
+
+											error: function(json) {
+												args.response.error(parseXMLHttpResponse(json));
+											}
+										});
+
+									},
+									actions: {
+										edit: function(args) {
+											var data = {
+												name: args.data.jsonObj.name,
+												value: args.data.value
+											};
+											var existingDetails = args.context.templates[0].details;
+											var newDetails = '';
+											for (d in existingDetails) {
+												if (d != data.name) {
+													newDetails += 'details[0].' + d + '=' + existingDetails[d] + '&';
+												}
+											}
+											newDetails += 'details[0].' + data.name + '=' + data.value;
+											
+											$.ajax({
+												url: createURL('updateTemplate&id=' + args.context.templates[0].id + '&' + newDetails),
+												success: function(json) {
+													var template = json.updatetemplateresponse.template;
+													args.context.templates[0].details = template.details;
+													args.response.success({
+														data: template.details
+													});
+												},
+
+												error: function(json) {
+													args.response.error(parseXMLHttpResponse(json));
+												}
+											});
+										},
+										remove: function(args) {
+											var existingDetails = args.context.templates[0].details;
+											var detailToDelete = args.data.jsonObj.name;
+											var newDetails = ''
+											for (detail in existingDetails) {
+												if (detail != detailToDelete) {
+													newDetails += 'details[0].' + detail + '=' + existingDetails[detail] + '&';
+												}
+											}
+											if (newDetails != '') {
+												newDetails = newDetails.substring(0, newDetails.length - 1);
+											}
+											else {
+												newDetails += 'cleanupdetails=true';
+											}
+											$.ajax({
+												url: createURL('updateTemplate&id=' + args.context.templates[0].id + '&' + newDetails),
+												success: function(json) {
+													var template = json.updatetemplateresponse.template;
+													args.context.templates[0].details = template.details;
+													args.response.success({
+														data: template.details
+													});
+												},
+												error: function(json) {
+													args.response.error(parseXMLHttpResponse(json));
+												}
+											});
+										},
+										add: function(args) {
+											var name = args.data.name;
+											var value = args.data.value;
+											var details = args.context.templates[0].details;
+											var detailsFormat = '';
+											for (key in details) {
+												detailsFormat += "details[0]." + key + "=" + details[key] + "&";
+											}
+											// Add new detail to the existing ones
+											detailsFormat += "details[0]." + name + "=" + value;
+											$.ajax({
+												url: createURL('updateTemplate&id=' + args.context.templates[0].id + "&" + detailsFormat),
+												async: false,
+												success: function(json) {
+													var template = json.updatetemplateresponse.template;
+													args.context.templates[0].details = template.details;
+													args.response.success({
+														data: template.details
+													});
+												}
+											});
+										}
+									}
+								})
+							}
+						}
                     }
                 }
             },
