@@ -439,14 +439,6 @@ public enum Config {
             null),
     ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
     ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName"),
-    ConsoleProxyLoadscanInterval(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.loadscan.interval",
-            "10000",
-            "The time interval(in milliseconds) to scan console proxy working-load info",
-            null),
     ConsoleProxySessionMax(
             "Console Proxy",
             AgentManager.class,

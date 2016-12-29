@@ -193,7 +193,6 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("consoleproxy.url.port", "Console proxy port for AJAX viewer");
         s_configurationDescriptions.put("consoleproxy.ram.size", "RAM size (in MB) used to create new console proxy VMs");
         s_configurationDescriptions.put("consoleproxy.cmd.port", "Console proxy command port that is used to communicate with management server");
-        s_configurationDescriptions.put("consoleproxy.loadscan.interval", "The time interval(in milliseconds) to scan console proxy working-load info");
         s_configurationDescriptions.put("consoleproxy.capacityscan.interval",
             "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity");
         s_configurationDescriptions.put("consoleproxy.capacity.standby",
@@ -283,7 +282,6 @@ public class DatabaseConfig {
         s_configurationComponents.put("guest.domain.suffix", "AgentManager");
         s_configurationComponents.put("consoleproxy.ram.size", "AgentManager");
         s_configurationComponents.put("consoleproxy.cmd.port", "AgentManager");
-        s_configurationComponents.put("consoleproxy.loadscan.interval", "AgentManager");
         s_configurationComponents.put("consoleproxy.capacityscan.interval", "AgentManager");
         s_configurationComponents.put("consoleproxy.capacity.standby", "AgentManager");
         s_configurationComponents.put("consoleproxy.session.max", "AgentManager");
