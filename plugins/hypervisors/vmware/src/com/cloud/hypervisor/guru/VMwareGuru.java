@@ -94,6 +94,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -101,6 +102,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -127,6 +129,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private NetworkModel _networkMgr;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private DomainRouterDao _domainRouterDao;
     @Inject
     private PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject
@@ -292,6 +296,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 }
 
                 to.setNics(expandedNics);
+
+                VirtualMachine router = vm.getVirtualMachine();
+                DomainRouterVO routerVO = _domainRouterDao.findById(router.getId());
+                if (routerVO != null && routerVO.getIsRedundantRouter()) {
+                    Long peerRouterId = _nicDao.getPeerRouterId(publicNicProfile.getMacAddress(), router.getId());
+                    DomainRouterVO peerRouterVO = null;
+                    if (peerRouterId != null) {
+                        peerRouterVO = _domainRouterDao.findById(peerRouterId);
+                        if (peerRouterVO != null) {
+                            details.put("PeerRouterInstanceName", peerRouterVO.getInstanceName());
+                        }
+                    }
+                }
             }
 
             StringBuffer sbMacSequence = new StringBuffer();

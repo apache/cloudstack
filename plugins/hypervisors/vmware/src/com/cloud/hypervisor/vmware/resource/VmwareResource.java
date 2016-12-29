@@ -46,6 +46,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
+import org.apache.commons.lang.StringUtils;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
@@ -1955,6 +1956,40 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualDevice nic;
             int nicMask = 0;
             int nicCount = 0;
+
+            if (vmSpec.getType() == VirtualMachine.Type.DomainRouter) {
+                int extraPublicNics = mgr.getRouterExtraPublicNics();
+                if (extraPublicNics > 0 && vmSpec.getDetails().containsKey("PeerRouterInstanceName")) {
+                    //Set identical MAC address for RvR on extra public interfaces
+                    String peerRouterInstanceName = vmSpec.getDetails().get("PeerRouterInstanceName");
+
+                    VirtualMachineMO peerVmMo = hyperHost.findVmOnHyperHost(peerRouterInstanceName);
+                    if (peerVmMo == null) {
+                        peerVmMo = hyperHost.findVmOnPeerHyperHost(peerRouterInstanceName);
+                    }
+
+                    if (peerVmMo != null) {
+                        String oldMacSequence = generateMacSequence(nics);
+
+                        for (int nicIndex = nics.length - extraPublicNics; nicIndex < nics.length; nicIndex++) {
+                            VirtualDevice nicDevice = peerVmMo.getNicDeviceByIndex(nics[nicIndex].getDeviceId());
+                            if (nicDevice != null) {
+                                String mac = ((VirtualEthernetCard)nicDevice).getMacAddress();
+                                if (mac != null) {
+                                    s_logger.info("Use same MAC as previous RvR, the MAC is " + mac + " for extra NIC with device id: " + nics[nicIndex].getDeviceId());
+                                    nics[nicIndex].setMac(mac);
+                                }
+                            }
+                        }
+
+                        if (!StringUtils.isBlank(vmSpec.getBootArgs())) {
+                            String newMacSequence = generateMacSequence(nics);
+                            vmSpec.setBootArgs(replaceNicsMacSequenceInBootArgs(oldMacSequence, newMacSequence, vmSpec));
+                        }
+                    }
+                }
+            }
+
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.valueOf(vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER));
             if (s_logger.isDebugEnabled())
                 s_logger.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType);
@@ -2143,6 +2178,36 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+
+    /**
+     * Generate the mac sequence from the nics.
+     */
+    protected String generateMacSequence(NicTO[] nics) {
+        if (nics.length == 0) {
+            return "";
+        }
+
+        StringBuffer sbMacSequence = new StringBuffer();
+        for (NicTO nicTo : sortNicsByDeviceId(nics)) {
+            sbMacSequence.append(nicTo.getMac()).append("|");
+        }
+        if (!sbMacSequence.toString().isEmpty()) {
+            sbMacSequence.deleteCharAt(sbMacSequence.length() - 1); //Remove extra '|' char appended at the end
+        }
+
+        return sbMacSequence.toString();
+    }
+
+    /**
+     * Update boot args with the new nic mac addresses.
+     */
+    protected String replaceNicsMacSequenceInBootArgs(String oldMacSequence, String newMacSequence, VirtualMachineTO vmSpec) {
+        String bootArgs = vmSpec.getBootArgs();
+        if (!StringUtils.isBlank(bootArgs) && !StringUtils.isBlank(oldMacSequence) && !StringUtils.isBlank(newMacSequence)) {
+            return bootArgs.replace(oldMacSequence, newMacSequence);
+        }
+        return "";
+    }
 
     /**
      * Sets video card memory to the one provided in detail svga.vramSize (if provided) on {@code vmConfigSpec}.
