@@ -35,4 +35,5 @@ public final class TemplateConstants {
     public static final String DEFAULT_SSL_CERT_DOMAIN = "realhostip.com";
     public static final String DEFAULT_HTTP_AUTH_USER = "cloud";
 
+    public static final String VMWARE_SYSTEM_VM_TMPLT_PERMISSIONS = "0777";
 }

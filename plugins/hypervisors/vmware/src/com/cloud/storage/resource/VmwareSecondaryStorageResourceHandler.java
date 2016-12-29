@@ -307,4 +307,9 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     public String getMountPoint(String storageUrl, Integer nfsVersion) {
         return _resource.getRootDir(storageUrl, nfsVersion);
     }
+
+    @Override
+    public void setSystemVmTmpltPermission(String mountPoint) {
+        // Do nothing as SSVM uses root account.
+    }
 }

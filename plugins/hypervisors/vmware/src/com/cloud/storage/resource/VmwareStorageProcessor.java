@@ -105,6 +105,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.storage.template.OVAProcessor;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -190,6 +191,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, nfsVersion);
         s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
+        mountService.setSystemVmTmpltPermission(secondaryMountPoint + "/" + TemplateConstants.DEFAULT_TMPLT_ROOT_DIR);
 
         String srcOVAFileName =
                 VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templatePathAtSecondaryStorage, templateName,

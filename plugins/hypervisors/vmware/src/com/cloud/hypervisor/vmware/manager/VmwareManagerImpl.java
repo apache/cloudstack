@@ -113,6 +113,7 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -204,6 +205,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private final GlobalLock _exclusiveOpLock = GlobalLock.getInternLock("vmware.exclusive.op");
 
     private final ScheduledExecutorService _hostScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-Host-Scan"));
+
+    private static boolean s_isSystemVmTmpltPermissionSet = false;
 
     public VmwareManagerImpl() {
         _storageMgr = new VmwareStorageManagerImpl(this);
@@ -727,6 +730,22 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         return mountPoint;
+    }
+
+    @Override
+    public synchronized void setSystemVmTmpltPermission(String mountPoint) {
+        if (!s_isSystemVmTmpltPermissionSet) {
+            s_logger.debug("Set permissions for " + mountPoint);
+            String result = null;
+            Script script = new Script(true, "chmod", _timeout, s_logger);
+            script.add("-R", TemplateConstants.VMWARE_SYSTEM_VM_TMPLT_PERMISSIONS, mountPoint);
+            result = script.execute();
+            if (result != null) {
+                s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
+            } else {
+                s_isSystemVmTmpltPermissionSet = true;
+            }
+        }
     }
 
     private void startupCleanup(String parent) {
