@@ -2620,25 +2620,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return false;
     }
 
-    protected class RebootTask extends ManagedContextRunnable {
-
-        long _routerId;
-
-        public RebootTask(final long routerId) {
-            _routerId = routerId;
-        }
-
-        @Override
-        protected void runInContext() {
-            try {
-                s_logger.info("Reboot router " + _routerId + " to refresh network rules");
-                rebootRouter(_routerId, true);
-            } catch (final Exception e) {
-                s_logger.warn("Error while rebooting the router", e);
-            }
-        }
-    }
-
     protected boolean aggregationExecution(final AggregationControlCommand.Action action, final Network network, final List<DomainRouterVO> routers)
             throws AgentUnavailableException, ResourceUnavailableException {
 
