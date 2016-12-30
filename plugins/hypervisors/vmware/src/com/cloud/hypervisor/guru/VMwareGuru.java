@@ -216,6 +216,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
 
+        if (vm.getType() == VirtualMachine.Type.NetScalerVm) {
+            details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
+        }
+
         List<NicProfile> nicProfiles = vm.getNics();
 
         for (NicProfile nicProfile : nicProfiles) {

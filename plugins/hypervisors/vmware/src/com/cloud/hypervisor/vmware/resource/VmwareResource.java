@@ -1995,6 +1995,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
             configCustomExtraOption(extraOptions, vmSpec);
 
+            // config for NCC
+            VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
+            if (vmType.equals(VirtualMachine.Type.NetScalerVm)) {
+                NicTO mgmtNic = vmSpec.getNics()[0];
+                OptionValue option = new OptionValue();
+                option.setKey("machine.id");
+                option.setValue("ip=" + mgmtNic.getIp() + "&netmask=" + mgmtNic.getNetmask() + "&gateway=" + mgmtNic.getGateway());
+                extraOptions.add(option);
+            }
+
             // config VNC
             String keyboardLayout = null;
             if (vmSpec.getDetails() != null)
