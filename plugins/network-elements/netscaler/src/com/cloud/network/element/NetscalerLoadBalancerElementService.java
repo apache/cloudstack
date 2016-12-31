@@ -141,8 +141,6 @@ public interface NetscalerLoadBalancerElementService extends PluggableService {
 
     public NetScalerControlCenterVO registerNetscalerControlCenter(RegisterNetscalerControlCenterCmd registerNetscalerControlCenterCmd);
 
-    //public VirtualMachine deployNetscalerServiceVm(DeployNetscalerVpxCmd deployNetscalerVpxCmd);
-
     public Map<String, Object> deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd);
 
     public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException, ResourceUnavailableException;

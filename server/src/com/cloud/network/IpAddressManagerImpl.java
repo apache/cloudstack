@@ -1954,8 +1954,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         nic.setIPv4Gateway(ip.getGateway());
                         nic.setIPv4Netmask(ip.getNetmask());
                         nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-                        //nic.setBroadcastType(BroadcastDomainType.Vlan);
-                        //nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
                         nic.setBroadcastType(network.getBroadcastDomainType());
                         if (network.getBroadcastUri() != null)
                             nic.setBroadcastUri(network.getBroadcastUri());

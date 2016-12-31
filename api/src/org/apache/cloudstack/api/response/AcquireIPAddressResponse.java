@@ -150,11 +150,6 @@ public class AcquireIPAddressResponse  extends BaseResponse implements Controlle
  @Param(description = "is public ip for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
  private Boolean forDisplay;
 
- /*
-     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
-     private IdentityProxy jobId = new IdentityProxy("async_job");
- */
-
  public void setIpAddress(String ipAddress) {
      this.ipAddress = ipAddress;
  }

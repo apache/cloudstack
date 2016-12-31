@@ -948,7 +948,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String srcIpVlan = null;
             String srcIpGateway = null;
             String srcIpNetmask = null;
-            //IpAddress ipAddress =  _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getVlanId();
             Long vlanid =  _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getVlanId();
             if(vlanid != null ) {
               VlanVO publicVlan =   _vlanDao.findById(vlanid);
@@ -1236,14 +1235,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
         }
 
-/*        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
-        if (lbDeviceVO == null) {
-            s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
-            return null;
-        }
-
-        HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
-*/
         boolean externalLoadBalancerIsInline = _networkMgr.isNetworkInlineMode(network);
 
         if (network.getState() == Network.State.Allocated) {

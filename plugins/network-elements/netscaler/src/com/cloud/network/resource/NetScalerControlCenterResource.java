@@ -196,11 +196,7 @@ public class NetScalerControlCenterResource implements ServerResource {
     public void getServicePackages() throws ExecutionException {
             String result = null;
             try {
-                // If a previous session was open, log it out.
-                //logout();
-                //http://10.102.31.78/nitro/v2/config/login
                 URI agentUri = null;
-                //String url = protocol + "://" + _ip +"/nitro/v2/config/login";
                 agentUri =
                         new URI("https", null, _ip, DEFAULT_PORT,
                                 "/admin/v1/servicepackages", null, null);
@@ -209,7 +205,6 @@ public class NetScalerControlCenterResource implements ServerResource {
                 org.json.JSONObject jsonCredentials = new JSONObject();
                 result = getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
                 s_logger.debug("List of Service Packages in NCC:: " + result);
-                //return result;
                 } catch (URISyntaxException e) {
                     String errMsg = "Could not generate URI for Hyper-V agent";
                     s_logger.error(errMsg, e);
@@ -223,17 +218,12 @@ public class NetScalerControlCenterResource implements ServerResource {
         String result = null;
         JSONObject jsonResponse = null;
         try {
-            // If a previous session was open, log it out.
-            //logout();
-            //http://10.102.31.78/nitro/v2/config/login
             URI agentUri = null;
-            //String url = protocol + "://" + _ip +"/nitro/v2/config/login";
             agentUri =
                     new URI("https", null, _ip, DEFAULT_PORT,
                             "/nitro/v2/config/" + "login", null, null);
             org.json.JSONObject jsonBody = new JSONObject();
             org.json.JSONObject jsonCredentials = new JSONObject();
-            //String loginBody= "{ \"login\": {\"username\":\"" + _username  +"\", \"password\":\"" + _password +"\" }}";
             jsonCredentials.put("username", _username);
             jsonCredentials.put("password", _password);
             jsonBody.put("login", jsonCredentials);
@@ -257,7 +247,6 @@ public class NetScalerControlCenterResource implements ServerResource {
 
             } catch (JSONException e) {
                 s_logger.debug("JSON Exception :" +  e.getMessage());
-                //throw new ConfigurationException("Failed to add the device. Please check the device is NCC and It is reachable from Management Server.");
                 throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
             } catch (Exception e) {
             throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
@@ -330,39 +319,12 @@ public class NetScalerControlCenterResource implements ServerResource {
         } catch (URISyntaxException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        /*} catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            s_logger.debug("Seesion Alive" + e.getMessage());
-            e.printStackTrace();*/
         }
-
-
     }
 
     private String queryAsyncJob(String jobId) throws ExecutionException {
         String result = null;
         try {
-            // If a previous session was open, log it out.
-            //logout();
-/*            Polling for async tasks:
-                URL: http://10.102.31.78/admin/v1/journalcontexts/ <job-id>
-                Rwsponse:
-
-                {
-                  "journalcontext": {
-                    "id": "ctxt-6cfd63ba-b4d2-413d-af2d-caa6f1dc5cd9",
-                    "start_time": "2015-07-16T09:47:50.596664",
-                    "end_time": "2015-07-16T09:47:50.636356",
-                    "name": "Update devices",
-                    "service_name": "admin",
-                    "is_default": false,
-                    "scopes": [],
-                    "status": "Finished",
-                    "message": "Done"
-                  }
-                }
-*/
-
             URI agentUri = null;
             agentUri =
                     new URI("https", null, _ip, DEFAULT_PORT,
@@ -397,10 +359,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         } catch (URISyntaxException e) {
             String errMsg = "Could not generate URI for NetScaler ControlCenter";
             s_logger.error(errMsg, e);
-
-        /*} catch (Exception e) {
-            //throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
-*/        } catch (JSONException e) {
+          } catch (JSONException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -521,10 +480,6 @@ public class NetScalerControlCenterResource implements ServerResource {
         } catch (URISyntaxException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        /*} catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            s_logger.debug("Seesion Alive" + e.getMessage());
-            e.printStackTrace();*/
         }
         return response;
     }
@@ -542,8 +497,6 @@ public class NetScalerControlCenterResource implements ServerResource {
                             "/cs/adcaas/v1/loadbalancerCmds", null, null);
             JSONObject lbConfigCmd = new JSONObject();
             JSONObject lbcmd = new JSONObject(gsonLBConfig);
-/*            lbConfigCmd.put("LoadBalancerConfigCommand", lbConfigPaylod.getJSONArray("loadBalancers"));
-            s_logger.debug("LB config paylod : " + gsonLBConfig);*/
             s_logger.debug("LB config from gsonstring to JSONObject : " +  lbcmd.toString() + "\n" + "gson cmd is :: \t" + gsonLBConfig);
             lbConfigCmd.put("LoadBalancerConfigCommand",  lbcmd.getJSONArray("loadBalancers"));
             s_logger.debug("LB config paylod : " +  lbConfigCmd.toString());
@@ -689,23 +642,14 @@ public class NetScalerControlCenterResource implements ServerResource {
     }
 
     private boolean shouldRetry(int numRetries) {
-        //JSONObject jsonResponse = null;
         try {
             if (numRetries > 0) {
                 login();
-                /*if (response == null) {
-                    throw new ConfigurationException("No Response Received from the NetScalerControlCenter Device");
-                } else {
-                    jsonResponse = new JSONObject(response);
-                    org.json.JSONArray loginResponse = jsonResponse.getJSONArray("login");
-                    _sessionid = jsonResponse.getJSONArray("login").getJSONObject(0).getString("sessionid");
-                }*/
                 return true;
             }
         } catch (Exception e) {
             s_logger.error("Failed to log in to Netscaler ControlCenter device at " + _ip + " due to " + e.getMessage());
             return false;
-            //throw new ConfigurationException("No Response Received from the NetScalerControlCenter Device");
         }
         return false;
     }
@@ -863,7 +807,6 @@ public class NetScalerControlCenterResource implements ServerResource {
 
         // TODO: are there timeout settings and worker thread settings to tweak?
         try {
-            //HttpPost request = new HttpPost(agentUri);
             HttpGet request = new HttpGet(agentUri);
 
             // JSON encode command
@@ -872,7 +815,6 @@ public class NetScalerControlCenterResource implements ServerResource {
             StringEntity cmdJson = new StringEntity(jsonCmd);
             request.addHeader("content-type", "application/json");
             request.addHeader("Cookie", "SessId=" + sessionID);
-            //request.setEntity(cmdJson);
             s_logger.debug("Sending cmd to " + agentUri.toString()
                     + " cmd data:" + logMessage);
             HttpResponse response = httpClient.execute(request);
@@ -889,7 +831,6 @@ public class NetScalerControlCenterResource implements ServerResource {
                 String errMsg = "Failed send to " + agentUri.toString() + " : HTTP error code : " + response.getStatusLine().getStatusCode();
                 s_logger.error(errMsg);
                 throw new ExecutionException("UNAUTHORIZED");
-                //return null;
             } else {
                 result = EntityUtils.toString(response.getEntity());
                 String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result));
@@ -969,7 +910,6 @@ public class NetScalerControlCenterResource implements ServerResource {
                 String errMsg = "Command Not Success " + agentUri.toString() + " : HTTP error code : " + response.getStatusLine().getStatusCode();
                 s_logger.error(errMsg);
                 throw new ExecutionException(NccHttpCode.INTERNAL_ERROR + " " + errMsg);
-                //return null;
             } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
                 //Successfully created the resource in the NCC, Now get the Job ID and send to the response
                 // make login request and store new session id
@@ -977,7 +917,6 @@ public class NetScalerControlCenterResource implements ServerResource {
             } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
                 //Successfully created the resource in the NCC, Now get the Job ID and send to the response
                 result = response.getFirstHeader(NccHttpCode.JOB_ID).getValue();
-                //"jobid : " +
             } else {
                 result = EntityUtils.toString(response.getEntity());
                 String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result));

@@ -4817,12 +4817,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     + "To make the network offering unavaiable, disable it");
         }
 
-//        if (offering.getServicePackage() != null) {
-//            final NetworkOfferingVO temp = _networkOfferingDao.createForUpdate(offering.getId());
-//            temp.setServicePackage(null);
-//            _networkOfferingDao.update(offeringId, temp);
-//        }
-
         if (_networkOfferingDao.remove(offeringId)) {
             return true;
         } else {

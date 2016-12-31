@@ -416,7 +416,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                             s_logger.debug("Network " + network.getId() + " is not configured for external networking, so skipping usage check.");
                             continue;
                         }
-                        //if(network.getNet)
+
                         ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
                         HostVO externalNcc = null;
                         boolean isNccNetwork = isNccServiceProvider(network);

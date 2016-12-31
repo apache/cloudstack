@@ -144,6 +144,5 @@ public class DeployNetscalerVpxCmd extends BaseAsyncCmd {
         return _accountService.getActiveAccountById(getEntityOwnerId());
     }
     public void getReservationContext() {
-        //ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), null , cmd.getAccount());
     }
 }

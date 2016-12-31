@@ -136,11 +136,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         int i = 0;
         for (NicProfile nicProfile : nicProfiles) {
             if(vm.getType() == VirtualMachine.Type.NetScalerVm) {
-                //if(i == 0){
-                    nicProfile.setBroadcastType(BroadcastDomainType.Native);
-                //}
+                nicProfile.setBroadcastType(BroadcastDomainType.Native);
             }
-                nics[i++] = toNicTO(nicProfile);
+            nics[i++] = toNicTO(nicProfile);
         }
 
         to.setNics(nics);

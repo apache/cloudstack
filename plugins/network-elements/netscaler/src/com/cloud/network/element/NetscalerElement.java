@@ -154,7 +154,6 @@ import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
-//import com.cloud.network.dao.RegisteredServicePackageVO;
 
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager,
@@ -234,50 +233,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
                 .canProviderSupportServiceInNetwork(config.getId(), service, Network.Provider.Netscaler));
     }
 
-/*    @Override
-    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        super.configure(name, params);
-        _instance = configs.get("instance.name");
-        if (_instance == null) {
-            _instance = "DEFAULT";
-        }
-
-        _mgmtHost = configs.get("host");
-        _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
-
-        final String offUUID = configs.get(Config.InternalLbVmServiceOfferingId.key());
-        if (offUUID != null && !offUUID.isEmpty()) {
-            //get the id by offering UUID
-            final ServiceOfferingVO off = _serviceOfferingDao.findByUuid(offUUID);
-            if (off != null) {
-                _internalLbVmOfferingId = off.getId();
-            } else {
-                s_logger.warn("Invalid offering UUID is passed in " + Config.InternalLbVmServiceOfferingId.key() + "; the default offering will be used instead");
-            }
-        }
-
-        //if offering wasn't set, try to get the default one
-        if (_internalLbVmOfferingId == 0L) {
-            List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Internal LB VM",
-                    ServiceOffering.internalLbVmDefaultOffUniqueName, 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
-                    InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null,
-                    Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.InternalLoadBalancerVm, true);
-            if (offerings == null || offerings.size() < 2) {
-                String msg = "Data integrity problem : System Offering For Internal LB VM has been removed?";
-                s_logger.error(msg);
-                throw new ConfigurationException(msg);
-            }
-        }
-
-        _itMgr.registerGuru(VirtualMachine.Type.NetScalerVm, this);
-
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info(getName() + " has been configured");
-        }
-
-        return true;
-    }
-*/
     private boolean isBasicZoneNetwok(Network config) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
         return (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared
@@ -447,20 +402,12 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         } else {
             if (answer != null) {
                 if (answer.getResult() == true) {
-                    //TODO remove the guest ip acquired
-                    /*Nic selfipNic = getPlaceholderNic(guestConfig);
-                    _nicDao.remove(selfipNic.getId());*/
                     return true;
                 } else {
                     return false;
                 }
             }
-            // release the self-ip obtained from guest network
-            /*Nic selfipNic = getPlaceholderNic(guestConfig);
-            _nicDao.remove(selfipNic.getId());*/
-            // release the load balancer allocated for the network
             return false;
-            //write code to remove the self nic or the clean up work
         }
         return true;
     }
@@ -492,9 +439,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
             } else {
                 // if the network offering has service package implement it with Netscaler Control Center
                 return manageGuestNetworkWithNetscalerControlCenter(false, guestConfig, networkOffering);
-                //return true;
             }
-            //return manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception gracefully in case of
             // multple providers available
@@ -1550,8 +1495,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
                     NetScalerControlCenterVO nccVO = new NetScalerControlCenterVO(cmdinfo.getUsername(), DBEncryptionUtil.encrypt(cmdinfo.getPassword()),
                             cmdinfo.getIpaddress(), cmdinfo.getNumretries());
                     _netscalerControlCenterDao.persist(nccVO);
-                    /*DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.NETSCALER_CONTROLCENTER_ID , String.valueOf(nccVO.getId()));
-                    _hostDetailDao.persist(hostDetail);*/
                     return nccVO;
                 }
             });

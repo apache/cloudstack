@@ -40,11 +40,9 @@ public class NetScalerServicePackageDaoImpl extends GenericDaoBase<NetScalerServ
         super();
 
         podIdSearch = createSearchBuilder();
-        //podIdSearch.and("pod_id", podIdSearch.entity().getPodId(), Op.EQ);
         podIdSearch.done();
 
         deviceIdSearch = createSearchBuilder();
-        //deviceIdSearch.and("netscalerDeviceId", deviceIdSearch.entity().getNetscalerDeviceId(), Op.EQ);
         deviceIdSearch.done();
     }
 

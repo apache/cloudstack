@@ -150,8 +150,6 @@ public class SystemVmResponse extends BaseResponse {
     @Param(description = "public vlan range")
     private List<String> publicVlan;
 
-    // private Long objectId;
-
     @Override
     public String getObjectId() {
         return this.getId();

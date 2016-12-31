@@ -249,7 +249,6 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
      //TODO: get from type
      VirtualRouterProvider netScalerLbProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), com.cloud.network.VirtualRouterProvider.Type.NetScalerVm);
      if (netScalerLbProvider == null) {
-         //throw new CloudRuntimeException("Cannot find provider " + type.toString() + " as service provider " + provider.getId());
          //create the vrp for netscalerVM.
          netScalerLbProvider = addNetScalerLoadBalancerElement(provider.getId());
      }
@@ -329,8 +328,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
       defaultNic2.setIPv4Netmask("");
       String macAddress = _networkDao.getNextAvailableMacAddress(defaultPublicNetwork.getId());
       defaultNic2.setMacAddress(macAddress);
-      // To set the traffic id
-      //guestNic.setTrafficId(_ntwkModel.getPhysicalNetworkTrafficId(guestNetwork.getPhysicalNetworkId(), guestNetwork.getTrafficType()));
+
       networks.put(_networkMgr.setupNetwork(_accountMgr.getSystemAccount(), _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPublicNetwork), plan, null, null, false).get(0),
               new ArrayList<NicProfile>(Arrays.asList(defaultNic2)));
 
@@ -419,7 +417,6 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
      }
      _accountMgr.checkAccess(caller, null, true, netscalerVm);
      try {
-         //_itMgr.advanceStop(netscalerVm.getUuid(), forced);
          _itMgr.expunge(netscalerVm.getUuid());
          return _routerDao.findById(netscalerVm.getId());
      } catch (final Exception e) {
@@ -442,7 +439,6 @@ public VirtualRouter stopNetScalerVm(Long vmId, boolean forced, Account caller, 
     }
     _accountMgr.checkAccess(caller, null, true, netscalerVm);
     try {
-        //_itMgr.advanceStop(netscalerVm.getUuid(), forced); To Stop the VM
         _itMgr.expunge(netscalerVm.getUuid());
         return _routerDao.findById(netscalerVm.getId());
     } catch (final Exception e) {

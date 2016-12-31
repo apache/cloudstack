@@ -2639,13 +2639,6 @@
                                             args.$form.find('.form-item[rel=\"egressdefaultpolicy\"]').css('display', 'none');
                                         }
 
-                                        //show LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler OR F5
-                                        /*if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler' || args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp')) {
-                                            args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').css('display', 'inline-block');
-                                        } else {
-                                            args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').hide();
-                                        }*/
-
                                         //show Netscaler service packages only when (1)LB Service is checked (2)Service Provider is Netscaler
                                         if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler')) {
                                             args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages\"]').css('display', 'inline-block');
@@ -2658,11 +2651,6 @@
                                             args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").attr("disabled", "disabled");
                                             args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").text("");
                                         }
-
-                                        //show Netscaler service package is none then hide LbIsolationDropdown
-                                        /*if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler') && (args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages\"]').find('select').val() != "")) {
-                                            args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').hide();
-                                        }*/
 
                                         //show Elastic LB checkbox only when (1)LB Service is checked (2)Service Provider is Netscaler (3)Guest IP Type is Shared
                                         if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler') && (args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
