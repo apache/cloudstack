@@ -32,11 +32,27 @@ import com.cloud.utils.db.SearchBase.Select;
  */
 public class SearchCriteria<K> {
     public enum Op {
-        GT(" > ? ", 1), GTEQ(" >= ? ", 1), LT(" < ? ", 1), LTEQ(" <= ? ", 1), EQ(" = ? ", 1), NEQ(" != ? ", 1), BETWEEN(" BETWEEN ? AND ? ", 2), NBETWEEN(
-                " NOT BETWEEN ? AND ? ",
-                2), IN(" IN () ", -1), NOTIN(" NOT IN () ", -1), LIKE(" LIKE ? ", 1), NLIKE(" NOT LIKE ? ", 1), NIN(" NOT IN () ", -1), NULL(" IS NULL ", 0), NNULL(
-                " IS NOT NULL ",
-                0), SC(" () ", 1), TEXT("  () ", 1), RP("", 0), AND(" AND ", 0), OR(" OR ", 0), NOT(" NOT ", 0);
+        GT(" > ? ", 1),
+        GTEQ(" >= ? ", 1),
+        LT(" < ? ", 1),
+        LTEQ(" <= ? ", 1),
+        EQ(" = ? ", 1),
+        NEQ(" != ? ", 1),
+        BETWEEN(" BETWEEN ? AND ? ", 2),
+        NBETWEEN(" NOT BETWEEN ? AND ? ", 2),
+        IN(" IN () ", -1),
+        NOTIN(" NOT IN () ", -1),
+        LIKE(" LIKE ? ", 1),
+        NLIKE(" NOT LIKE ? ", 1),
+        NIN(" NOT IN () ", -1),
+        NULL(" IS NULL ", 0),
+        NNULL(" IS NOT NULL ", 0),
+        SC(" () ", 1),
+        TEXT("  () ", 1),
+        RP("", 0),
+        AND(" AND ", 0),
+        OR(" OR ", 0),
+        NOT(" NOT ", 0);
 
         private final String op;
         int params;
