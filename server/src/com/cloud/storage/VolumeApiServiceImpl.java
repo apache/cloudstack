@@ -1137,6 +1137,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         boolean isManaged = storagePool.isManaged();
+
+        List<Volume> volumes = new ArrayList<Volume>();
+        volumes.add(volume);
+
+        //check if there is space
+        if (!storageMgr.storagePoolHasEnoughSpaceForResize(storagePool, currentSize, newSize)) {
+            throw new CloudRuntimeException("Storage pool " + storagePool.getName() + " does not have enough space to resize volume " + volume.getName());
+        }
         /*
          * get a list of hosts to send the commands to, try the system the
          * associated vm is running on first, then the last known place it ran.
@@ -2059,6 +2067,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
         } else if (destPool.isInMaintenance()) {
             throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() + " as the storage pool is in maintenance mode.");
+        }
+
+        List<Volume> volumes = new ArrayList<Volume>();
+        volumes.add(vol);
+
+        //check if there is space
+        if (!storageMgr.storagePoolHasEnoughSpace(volumes, destPool)) {
+            throw new CloudRuntimeException("Storage pool " + destPool.getName() + " does not have enough space to migrate volume " + vol.getName());
         }
 
         if (_volumeMgr.volumeOnSharedStoragePool(vol)) {
