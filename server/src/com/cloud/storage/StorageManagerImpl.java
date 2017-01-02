@@ -1721,7 +1721,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             s_logger.debug("Destination pool id: " + pool.getId());
         }
         // allocated space includes templates
-        StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+        final StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
         long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
 
@@ -1772,12 +1772,37 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
+        return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize);
+    }
+
+    @Override
+    public boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz) {
+        if (!checkUsagedSpace(pool)) {
+            return false;
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Destination pool id: " + pool.getId());
+        }
+        long totalAskingSize = newSiz - currentSize;
+
+        if (totalAskingSize <= 0) {
+            return true;
+        } else {
+            final StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+            final long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
+            return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize);
+        }
+    }
+
+    private boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize) {
+        // allocated space includes templates
+        StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+
         long totalOverProvCapacity;
         if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.VMFS || pool.getPoolType() == StoragePoolType.Filesystem) {
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(pool.getId());
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
-            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor "
-                    + overProvFactor.toString());
+            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
             s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + pool.getCapacityBytes());
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
@@ -1787,26 +1812,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         s_logger.debug("Total capacity of the pool " + poolVO.getName() + " id: " + pool.getId() + " is " + totalOverProvCapacity);
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity +
-                    ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " +
-                    storageAllocatedThreshold);
+            s_logger.debug("Checking pool: " + pool.getId() + " for storage allocation , maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithTemplate
+                    + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " + storageAllocatedThreshold);
         }
 
         double usedPercentage = (allocatedSizeWithTemplate + totalAskingSize) / (double)(totalOverProvCapacity);
         if (usedPercentage > storageAllocatedThreshold) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() +
-                        " since its allocated percentage: " + usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " +
-                        storageAllocatedThreshold + ", skipping this pool");
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation since its allocated percentage: " + usedPercentage
+                        + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold + ", skipping this pool");
             }
             return false;
         }
 
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() +
-                        ", not enough storage, maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " +
-                        totalAskingSize);
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation, not enough storage, maxSize : " + totalOverProvCapacity
+                        + ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize);
             }
             return false;
         }
