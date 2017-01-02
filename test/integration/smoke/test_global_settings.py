@@ -63,6 +63,34 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
         self.assertEqual(configParam.value, updateConfigurationResponse.value, "Check if the update API returned \
                          is the same as the one we got in the list API")
 
+    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
+    def test_list_capabilities(self):
+        """
+        @summary: Test List Capabilities
+        @Steps
+        Step1: Listing all the Capabilities for a user
+        Step2: Verifying the listcapabilities object is not null
+        Step3: Verifying default.page.size is not null
+        Step4: Verifying enable.metrics.ui is not null
+        """
+        # Listing all the Capabilities for a user
+
+        listCapabilities = Configurations.listCapabilities(self.apiClient)
+        # Verifying the listcapabilities object is not null
+        self.assertIsNotNone(
+                listCapabilities,
+                "Failed to list Capabilities"
+        )
+
+        # Verifying enable.metrics.ui is not null
+        self.assertIsNotNone(
+                listCapabilities.enablemetricsui,
+                "Failed to fetch enable.metrics.ui"
+        )
+
+        return
+
+
 
     def tearDown(self):
         """

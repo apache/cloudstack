@@ -35,7 +35,6 @@ var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
 var g_appendIdpDomain = false;
-var g_defaultpagesize = 500;
 var g_enablemetricsui = false;
 
 //keyboard keycode

@@ -150,8 +150,6 @@
 
                         g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
-                        g_defaultpagesize = json.listcapabilitiesresponse.capability.defaultpagesize;
-
                         g_enablemetricsui = json.listcapabilitiesresponse.capability.enablemetricsui;
 
                         if (json.listcapabilitiesresponse.capability.apilimitinterval != null && json.listcapabilitiesresponse.capability.apilimitmax != null) {

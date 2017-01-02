@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.CapabilitiesResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -214,6 +215,8 @@ public interface ResponseGenerator {
     ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering);
 
     ConfigurationResponse createConfigurationResponse(Configuration cfg);
+
+    CapabilitiesResponse createCapabilitiesResponse(Map<String, Object> capabilities);
 
     SnapshotResponse createSnapshotResponse(Snapshot snapshot);
 
