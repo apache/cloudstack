@@ -70,8 +70,7 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
         @Steps
         Step1: Listing all the Capabilities for a user
         Step2: Verifying the listcapabilities object is not null
-        Step3: Verifying default.page.size is not null
-        Step4: Verifying enable.metrics.ui is not null
+        Step3: Verifying enable.metrics.ui is not null
         """
         # Listing all the Capabilities for a user
 
