@@ -308,7 +308,7 @@ function veewee_build() {
 
 function veewee_halt() {
   log INFO "shutting down new vm with veewee"
-  bundle exec veewee vbox halt "${appliance_build_name}" ${VEEWEE_ARGS}
+  bundle exec veewee vbox halt "${appliance_build_name}" -f ${VEEWEE_ARGS} || true
 }
 
 function save_mac_address() {

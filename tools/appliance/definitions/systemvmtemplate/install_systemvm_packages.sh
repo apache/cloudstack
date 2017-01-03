@@ -32,11 +32,12 @@ function debconf_packages() {
   echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
+  echo "libc6 libraries/restart-without-asking boolean false" | debconf-set-selections
 }
 
 function install_packages() {
-  DEBIAN_FRONTEND=noninteractive
-  DEBIAN_PRIORITY=critical
+  export DEBIAN_FRONTEND=noninteractive
+  export DEBIAN_PRIORITY=critical
   local arch=`dpkg --print-architecture`
 
   debconf_packages
@@ -53,7 +54,7 @@ function install_packages() {
 
   ${apt_get} install \
     rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables \
-    openssh-server e2fsprogs dhcp3-client tcpdump socat wget \
+    openssh-server e2fsprogs isc-dhcp-client tcpdump socat wget \
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping  curl \
     dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo \
@@ -66,16 +67,16 @@ function install_packages() {
     xenstore-utils libxenstore3.0 \
     conntrackd ipvsadm libnetfilter-conntrack3 libnl-3-200 libnl-genl-3-200 \
     ipcalc \
-    openjdk-7-jre-headless \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
     python-flask \
     haproxy \
     radvd \
-    sharutils
+    sharutils \
+    keepalived irqbalance open-vm-tools qemu-guest-agent \
+    strongswan libcharon-extra-plugins libstrongswan-extra-plugins
 
-  ${apt_get} -t wheezy-backports install keepalived irqbalance open-vm-tools qemu-guest-agent
-  ${apt_get} -t wheezy-backports install strongswan libcharon-extra-plugins libstrongswan-extra-plugins
+  ${apt_get} -t jessie-backports install openjdk-8-jre-headless
 
   apt-get update
   apt-get -y --force-yes upgrade
@@ -87,7 +88,8 @@ function install_packages() {
     dpkg -i hv-kvp-daemon_3.1_amd64.deb
     rm -f hv-kvp-daemon_3.1_amd64.deb
     # XS tools
-    wget https://raw.githubusercontent.com/bhaisaab/cloudstack-nonoss/master/xe-guest-utilities_6.5.0_amd64.deb
+    wget --no-check-certificate https://raw.githubusercontent.com/rhtyd/cloudstack-nonoss/master/xe-guest-utilities_6.5.0_amd64.deb
+    md5sum xe-guest-utilities_6.5.0_amd64.deb
     dpkg -i xe-guest-utilities_6.5.0_amd64.deb
     rm -f xe-guest-utilities_6.5.0_amd64.deb
   fi

@@ -37,7 +37,7 @@ set -e
 # docker run -ti -v /tmp:/src ubuntu:16.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-8-jdk genisoimage python-mysql.connector maven lsb-release devscripts dh-systemd python-setuptools && /src/cloudstack/packaging/build-deb.sh"
 #
 # Ubuntu 14.04
-# docker run -ti -v /tmp:/src ubuntu:14.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-7-jdk genisoimage python-mysql.connector maven lsb-release devscripts dh-systemd python-setuptools && /src/cloudstack/packaging/build-deb.sh"
+# docker run -ti -v /tmp:/src ubuntu:14.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-8-jdk genisoimage python-mysql.connector maven lsb-release devscripts dh-systemd python-setuptools && /src/cloudstack/packaging/build-deb.sh"
 #
 
 cd `dirname $0`
