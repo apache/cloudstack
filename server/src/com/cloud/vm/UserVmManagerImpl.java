@@ -3602,7 +3602,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 _vmDao.persist(vm);
                 for (String key : customParameters.keySet()) {
-                    vm.setDetail(key, customParameters.get(key));
+                    //handle double byte strings.
+                    vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
                 }
                 _vmDao.saveDetails(vm);
 
