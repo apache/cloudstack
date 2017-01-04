@@ -42,7 +42,7 @@ architectures = {
 config = {
     :cpu_count => '1',
     :memory_size => '256',
-    :disk_size => '3000', :disk_format => 'VDI', :hostiocache => 'off',
+    :disk_size => '3200', :disk_format => 'VDI', :hostiocache => 'off',
     :iso_download_timeout => '1200',
     :boot_wait => '10',
     :boot_cmd_sequence => [
@@ -71,7 +71,7 @@ config = {
     :ssh_key => '',
     :ssh_host_port => '7222',
     :ssh_guest_port => '22',
-    :sudo_cmd => "echo '%p'|sudo -S sh '%f'",
+    :sudo_cmd => "echo '%p'|sudo -S bash '%f'",
     :shutdown_cmd => 'halt -p',
     :postinstall_files => [
         # basic minimal vm creation

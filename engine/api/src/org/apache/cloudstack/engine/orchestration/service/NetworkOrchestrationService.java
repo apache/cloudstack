@@ -65,7 +65,7 @@ public interface NetworkOrchestrationService {
     static final String NetworkThrottlingRateCK = "network.throttling.rate";
     static final String MinVRVersionCK = "minreq.sysvmtemplate.version";
 
-    static final ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.6.0",
+    static final ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.10.0",
             "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
     static final ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
