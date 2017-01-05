@@ -151,16 +151,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 clusterDetails.put("password", password);
                 _clusterDetailsDao.persist(clusterId, clusterDetails);
             }
-            String updatedInventoryPath = validateCluster(url, vmwareDc);
-            try {
-                if (!URLDecoder.decode(url.getPath(), "UTF-8").equals(updatedInventoryPath)) {
-                    // If url from API doesn't specify DC then update url in database with DC associated with this zone.
-                    clusterDetails.put("url", url.getScheme() + "://" + url.getHost() + updatedInventoryPath);
-                    _clusterDetailsDao.persist(clusterId, clusterDetails);
-                }
-            } catch(UnsupportedEncodingException e) {
-                throw new DiscoveredWithErrorException("Unable to decode URL path, URL path : " + url.getPath(), e);
-            }
+            // Validate inventory url from API
+            validateCluster(url, vmwareDc);
         } else {
             // For legacy zones insist on the old model of asking for credentials for each cluster being added.
             if (usernameNotProvided) {
@@ -456,32 +448,30 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         return vmwareDc;
     }
 
-    private String validateCluster(URI url, VmwareDatacenterVO vmwareDc) throws DiscoveryException {
+    private void validateCluster(URI url, VmwareDatacenterVO vmwareDc) throws DiscoveryException {
         String msg;
         String vmwareDcNameFromDb;
         String vmwareDcNameFromApi;
         String vCenterHost;
-        String updatedInventoryPath;
         String clusterName = null;
-        String inventoryPath;
+        String inventoryPath = null;
 
         vmwareDcNameFromApi = vmwareDcNameFromDb = vmwareDc.getVmwareDatacenterName();
         vCenterHost = vmwareDc.getVcenterHost();
         try {
-            inventoryPath = updatedInventoryPath = URLDecoder.decode(url.getPath(), "UTF-8");
-        } catch(UnsupportedEncodingException e) {
-            throw new DiscoveredWithErrorException("Unable to decode URL path, URL path : " + url.getPath(), e);
+            inventoryPath = URLDecoder.decode(url.getPath(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            msg = "Unable to decode path of url : " + url.getPath();
+            s_logger.error(msg);
+            throw new DiscoveryException(msg);
         }
 
         assert (inventoryPath != null);
 
         String[] pathTokens = inventoryPath.split("/");
-        if (pathTokens.length == 2) {
-            // DC name is not present in url.
-            // Using DC name read from database.
-            clusterName = pathTokens[1];
-            updatedInventoryPath = "/" + vmwareDcNameFromDb + "/" + clusterName;
-        } else if (pathTokens.length == 3) {
+        if (pathTokens.length == 3 || pathTokens.length == 4) {
+            // Url would be /DC/Cluster while adding cluster
+            // Url would be /DC/Cluster/Host while adding host
             vmwareDcNameFromApi = pathTokens[1];
             clusterName = pathTokens[2];
         }
@@ -499,7 +489,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         }
-        return updatedInventoryPath;
     }
 
     private boolean validateDiscoveredHosts(VmwareContext context, ManagedObjectReference morCluster, List<ManagedObjectReference> morHosts) throws Exception {
