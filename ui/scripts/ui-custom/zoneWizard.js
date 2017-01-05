@@ -656,7 +656,7 @@
             var $physicalNetworkItem = $('<div>').addClass('select-container multi');
             var $deleteButton = $('<div>').addClass('button remove physical-network')
                 .attr({
-                    title: 'label.remove.this.physical.network'
+                    title: _l('label.remove.this.physical.network')
                 })
                 .append('<span>').addClass('icon').html('&nbsp;');
             var $icon = $('<div>').addClass('physical-network-icon');
