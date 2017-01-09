@@ -46,4 +46,11 @@ public interface VMSnapshotService {
         ConcurrentOperationException;
 
     VirtualMachine getVMBySnapshotId(Long id);
+
+    /**
+     * Delete vm snapshots only from database. Introduced as a Vmware optimization in which vm snapshots are deleted when
+     * the vm gets deleted on hypervisor (no need to delete each vm snapshot before deleting vm, just mark them as deleted on DB)
+     * @param id vm id
+     */
+    boolean deleteVMSnapshotsFromDB(Long vmId);
 }

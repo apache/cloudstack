@@ -392,4 +392,15 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
         return StrategyPriority.DEFAULT;
     }
+
+    @Override
+    public boolean deleteVMSnapshotFromDB(VMSnapshot vmSnapshot) {
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
+            throw new CloudRuntimeException("Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
+        }
+        return vmSnapshotDao.remove(vmSnapshot.getId());
+    }
 }

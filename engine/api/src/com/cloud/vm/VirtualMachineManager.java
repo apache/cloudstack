@@ -110,7 +110,7 @@ public interface VirtualMachineManager extends Manager {
 
     void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    void destroy(String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    void destroy(String vmUuid, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     void migrateAway(String vmUuid, long hostId) throws InsufficientServerCapacityException;
 

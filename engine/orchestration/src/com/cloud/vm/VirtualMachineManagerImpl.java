@@ -1679,7 +1679,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void destroy(final String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    public void destroy(final String vmUuid, final boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
@@ -1689,15 +1689,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying vm " + vm);
+            s_logger.debug("Destroying vm " + vm + ", expunge flag " + (expunge ? "on" : "off"));
         }
 
         advanceStop(vmUuid, VmDestroyForcestop.value());
 
-        if (!_vmSnapshotMgr.deleteAllVMSnapshots(vm.getId(), null)) {
-            s_logger.debug("Unable to delete all snapshots for " + vm);
-            throw new CloudRuntimeException("Unable to delete vm snapshots for " + vm);
-        }
+        deleteVMSnapshots(vm, expunge);
 
         // reload the vm object from db
         vm = _vmDao.findByUuid(vmUuid);
@@ -1709,6 +1706,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (final NoTransitionException e) {
             s_logger.debug(e.getMessage());
             throw new CloudRuntimeException("Unable to destroy " + vm, e);
+        }
+    }
+
+    /**
+     * Delete vm snapshots depending on vm's hypervisor type. For Vmware, vm snapshots removal is delegated to vm cleanup thread
+     * to reduce tasks sent to hypervisor (one tasks to delete vm snapshots and vm itself
+     * instead of one task for each vm snapshot plus another for the vm)
+     * @param vm vm
+     * @param expunge indicates if vm should be expunged
+     */
+    private void deleteVMSnapshots(VMInstanceVO vm, boolean expunge) {
+        if (! vm.getHypervisorType().equals(HypervisorType.VMware)) {
+            if (!_vmSnapshotMgr.deleteAllVMSnapshots(vm.getId(), null)) {
+                s_logger.debug("Unable to delete all snapshots for " + vm);
+                throw new CloudRuntimeException("Unable to delete vm snapshots for " + vm);
+            }
+        }
+        else {
+            if (expunge) {
+                _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId());
+            }
         }
     }
 

@@ -75,14 +75,14 @@ public interface UserVmService {
     /**
      * Destroys one virtual machine
      *
-     * @param userId
-     *            the id of the user performing the action
      * @param vmId
      *            the id of the virtual machine.
+     * @param expunge
+     *            indicates if vm should be expunged
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    UserVm destroyVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException;
+    UserVm destroyVm(long vmId, boolean expunge) throws ResourceUnavailableException, ConcurrentOperationException;
 
     /**
      * Resets the password of a virtual machine.
