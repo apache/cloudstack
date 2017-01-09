@@ -21,7 +21,11 @@ import java.util.List;
 import com.cloud.utils.component.Manager;
 
 public interface SyncQueueManager extends Manager {
-    public SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId, long queueSizeLimit);
+    public static final String VOLUME_SNAPSHOT_JOB = "com.cloud.vm.VmWorkTakeVolumeSnapshot";
+
+    public SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId);
+
+    public SyncQueueVO setQueueLimit(String syncObjType, long syncObjId, long limit);
 
     public SyncQueueItemVO dequeueFromOne(long queueId, Long msid);
 

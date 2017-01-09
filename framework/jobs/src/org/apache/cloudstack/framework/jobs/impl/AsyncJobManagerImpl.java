@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -189,10 +190,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return job.getId();
     }
 
+    @Override
+    public long submitAsyncJob(final AsyncJob job, final String syncObjType, final long syncObjId) {
+        return submitAsyncJob(job, syncObjType, syncObjId, 1);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     @DB
-    public long submitAsyncJob(final AsyncJob job, final String syncObjType, final long syncObjId) {
+    public long submitAsyncJob(final AsyncJob job, final String syncObjType, final long syncObjId, final long queueSizeLimit) {
         try {
             @SuppressWarnings("rawtypes")
             final GenericDao dao = GenericDaoBase.getDao(job.getClass());
@@ -211,7 +217,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         job.setInitMsid(getMsid());
                         dao.persist(job);
 
-                        syncAsyncJobExecution(job, syncObjType, syncObjId, 1);
+                        syncAsyncJobExecution(job, syncObjType, syncObjId, queueSizeLimit);
                         return job.getId();
                     }
                 });
@@ -415,8 +421,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             s_logger.debug("Sync job-" + job.getId() + " execution on object " + syncObjType + "." + syncObjId);
         }
 
+        AsyncJobVO jobVO = _jobDao.findById(job.getId());
+        if (jobVO != null && jobVO.getCmd().equalsIgnoreCase(SyncQueueManager.VOLUME_SNAPSHOT_JOB) && _vmInstanceDao.getHostId(syncObjId) != null) {
+            _queueMgr.setQueueLimit(BaseAsyncCmd.snapshotHostSyncObject, _vmInstanceDao.getHostId(syncObjId), queueSizeLimit);
+        }
+
         SyncQueueVO queue = null;
-        queue = _queueMgr.queue(syncObjType, syncObjId, SyncQueueItem.AsyncJobContentType, job.getId(), queueSizeLimit);
+        queue = _queueMgr.queue(syncObjType, syncObjId, SyncQueueItem.AsyncJobContentType, job.getId());
         if (queue == null)
             throw new CloudRuntimeException("Unable to insert queue item into database, DB is full?");
     }

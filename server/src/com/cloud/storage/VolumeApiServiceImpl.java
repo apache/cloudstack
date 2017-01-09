@@ -135,6 +135,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -172,7 +173,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
+public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler, Configurable {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
     public static final String VM_WORK_JOB_HANDLER = VolumeApiServiceImpl.class.getSimpleName();
 
@@ -2054,14 +2055,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "taking snapshot", async = true)
     public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType)
             throws ResourceAllocationException {
-        VolumeInfo volume = volFactory.getVolume(volumeId);
-        if (volume == null) {
-            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
-        }
-
-        if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
-        }
+        VolumeInfo volume = getVolumeInfoToTakeSnapshot(volumeId);
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
         if (storagePoolVO.isManaged() && locationType == null) {
@@ -2124,18 +2118,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                                                    boolean quiescevm, Snapshot.LocationType locationType)
             throws ResourceAllocationException {
 
-        VolumeInfo volume = volFactory.getVolume(volumeId);
-
-        if (volume == null) {
-            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
-        }
-
-        if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
-        }
+        VolumeInfo volume = getVolumeInfoToTakeSnapshot(volumeId);
 
         CreateSnapshotPayload payload = new CreateSnapshotPayload();
-
         payload.setSnapshotId(snapshotId);
         payload.setSnapshotPolicyId(policyId);
         payload.setAccount(account);
@@ -2152,10 +2137,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
-        VolumeInfo volume = volFactory.getVolume(volumeId);
-        if (volume == null) {
-            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
-        }
+        VolumeInfo volume = getVolumeInfoToTakeSnapshot(volumeId);
+
         DataCenter zone = _dcDao.findById(volume.getDataCenterId());
         if (zone == null) {
             throw new InvalidParameterValueException("Can't find zone by id " + volume.getDataCenterId());
@@ -2163,10 +2146,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getName());
-        }
-
-        if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
 
         if (ImageFormat.DIR.equals(volume.getFormat())){
@@ -2195,6 +2174,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return snapshotMgr.allocSnapshot(volumeId, policyId, snapshotName, locationType);
+    }
+
+    private VolumeInfo getVolumeInfoToTakeSnapshot(Long volumeId) {
+        VolumeInfo volume = volFactory.getVolume(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to volume: " + volumeId + " doesn't exist");
+        }
+
+        if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Snapshotting) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " or " + Volume.State.Snapshotting + " state but "
+                    + volume.getState() + ". Cannot take snapshot.");
+        }
+
+        return volume;
     }
 
     @Override
@@ -2982,7 +2975,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, policyId, snapshotId, quiesceVm, locationType);
         workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
-        _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+        HostVO host = _hostDao.findById(_vmInstanceDao.getHostId(vmId));
+        long concurrentSnapshotsThresholdPerHost = ConcurrentSnapshotsThresholdPerHost.valueIn(host.getClusterId());
+        _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId(), concurrentSnapshotsThresholdPerHost);
 
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -3056,5 +3051,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _workJobDao.persist(workJob);
 
         return workJob;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VolumeApiService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ConcurrentSnapshotsThresholdPerHost};
     }
 }

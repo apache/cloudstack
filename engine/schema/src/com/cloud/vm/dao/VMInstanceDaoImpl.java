@@ -853,4 +853,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             }
         });
     }
+
+    @Override
+    public Long getHostId(final long instanceId) {
+        VMInstanceVO vmInstance = findById(instanceId);
+        if (vmInstance != null) {
+            if (vmInstance.getHostId() != null) {
+                return vmInstance.getHostId();
+            } else if (vmInstance.getLastHostId() != null) {
+                return vmInstance.getLastHostId();
+            }
+        }
+        return null;
+    }
 }

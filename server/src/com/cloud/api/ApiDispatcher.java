@@ -48,8 +48,6 @@ import com.cloud.user.AccountManager;
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
-    Long _createSnapshotQueueSizeLimit;
-
     @Inject
     AsyncJobManager _asyncMgr;
 
@@ -74,11 +72,6 @@ public class ApiDispatcher {
         standardDispatchChain = dispatchChainFactory.getStandardDispatchChain();
         asyncCreationDispatchChain = dispatchChainFactory.getAsyncCreationDispatchChain();
     }
-
-    public void setCreateSnapshotQueueSizeLimit(final Long snapshotLimit) {
-        _createSnapshotQueueSizeLimit = snapshotLimit;
-    }
-
 
     public void dispatchCreateCmd(final BaseAsyncCreateCmd cmd, final Map<String, String> params) throws Exception {
         asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
@@ -121,21 +114,10 @@ public class ApiDispatcher {
 
             // Synchronise job on the object if needed
             if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
-                Long queueSizeLimit = null;
-                if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.snapshotHostSyncObject)) {
-                    queueSizeLimit = _createSnapshotQueueSizeLimit;
-                } else {
-                    queueSizeLimit = 1L;
-                }
-
-                if (queueSizeLimit != null) {
-                    if (!execute) {
-                        // if we are not within async-execution context, enqueue the command
-                        _asyncMgr.syncAsyncJobExecution((AsyncJob)asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
-                        return;
-                    }
-                } else {
-                    s_logger.trace("The queue size is unlimited, skipping the synchronizing");
+                if (!execute) {
+                    // if we are not within async-execution context, enqueue the command
+                    _asyncMgr.syncAsyncJobExecution((AsyncJob)asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), 1L);
+                    return;
                 }
             }
         }
@@ -148,6 +130,5 @@ public class ApiDispatcher {
         }
 
         cmd.execute();
-                            }
-
+    }
 }

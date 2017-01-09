@@ -140,4 +140,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     VMInstanceVO findVMByHostNameInZone(String hostName, long zoneId);
 
     boolean isPowerStateUpToDate(long instanceId);
+
+    Long getHostId(long instanceId);
 }

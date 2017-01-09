@@ -31,10 +31,20 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.net.MalformedURLException;
 
 public interface VolumeApiService {
+    static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost =
+            new ConfigKey<Long>(
+                Long.class,
+                "concurrent.snapshots.threshold.perhost",
+                "Advanced",
+                "-1",
+                "Limit number of snapshots that can be handled by the host concurrently, is unlimited when less than or equal to 0. Default is -1(unlimited).",
+                true, ConfigKey.Scope.Cluster, null);
+
     /**
      * Creates the database object for a volume based on the given criteria
      *

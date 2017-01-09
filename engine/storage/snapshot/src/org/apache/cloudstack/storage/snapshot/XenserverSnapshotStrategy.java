@@ -58,12 +58,14 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 @Component
 public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     private static final Logger s_logger = Logger.getLogger(XenserverSnapshotStrategy.class);
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 5; // 5 seconds
 
     @Inject
     SnapshotService snapshotSvr;
@@ -380,10 +382,29 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     throw new CloudRuntimeException(result.getResult());
                 }
             } finally {
-                if (result != null && result.isSuccess()) {
-                    volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
-                } else {
-                    volumeInfo.stateTransit(Volume.Event.OperationFailed);
+                GlobalLock volumeLock = GlobalLock.getInternLock(getVolumeLockName(snapshot.getVolumeId()));
+                try {
+                    if (volumeLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                        try {
+                            List<SnapshotVO> activeVolumeSnapshots = snapshotDao.listByStatus(snapshot.getVolumeId(), Snapshot.State.Creating);
+                            if (activeVolumeSnapshots.isEmpty()) {
+                                //Wait until all the pending volume snapshot creation jobs are done and then transition the State
+                                if (result != null && result.isSuccess()) {
+                                    volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
+                                } else {
+                                    volumeInfo.stateTransit(Volume.Event.OperationFailed);
+                                }
+                            }
+                        } finally {
+                            volumeLock.unlock();
+                        }
+                    } else {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Unable to acquire synchronization lock for volume id : " + snapshot.getVolumeId());
+                        }
+                    }
+                } finally {
+                    volumeLock.releaseRef();
                 }
             }
 
@@ -438,6 +459,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                 snapshotDao.releaseFromLockTable(snapshot.getId());
             }
         }
+    }
+
+    private String getVolumeLockName(long id) {
+        return "snapshotsOnVolume." + id;
     }
 
     @Override

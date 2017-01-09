@@ -1724,14 +1724,6 @@ public enum Config {
             null),
     VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
-    ConcurrentSnapshotsThresholdPerHost(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "concurrent.snapshots.threshold.perhost",
-            null,
-            "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited",
-            null),
     NetworkIPv6SearchRetryMax(
             "Network",
             ManagementServer.class,

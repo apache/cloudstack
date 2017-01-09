@@ -775,9 +775,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
         // If display is false we don't actually schedule snapshots.
-        if (volume.getState() != Volume.State.Ready && display) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() +
-                ". Cannot take snapshot.");
+        if ((volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Snapshotting) && display) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " or " + Volume.State.Snapshotting + " state but "
+                    + volume.getState() + ". Cannot take snapshot.");
         }
 
         if (volume.getTemplateId() != null) {
