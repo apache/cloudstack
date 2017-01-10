@@ -55,7 +55,7 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             "true",
             "Enable/Disable cluster thresholds. If disabled, an instance can start in a cluster even though the threshold may be crossed.",
             false,
-            ConfigKey.Scope.Zone);
+            ConfigKey.Scope.Global);
 
     /**
      * This is called to determine list of possible clusters where a virtual
