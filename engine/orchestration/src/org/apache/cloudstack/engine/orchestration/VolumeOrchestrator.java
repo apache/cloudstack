@@ -1459,7 +1459,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return true;
     }
 
-    private void cleanupVolumeDuringAttachFailure(Long volumeId) {
+    private void cleanupVolumeDuringAttachFailure(Long volumeId, Long vmId) {
         VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
             return;
@@ -1468,6 +1468,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (volume.getState().equals(Volume.State.Creating)) {
             s_logger.debug("Remove volume: " + volume.getId() + ", as it's leftover from last mgt server stop");
             _volsDao.remove(volume.getId());
+        }
+
+        if(volume.getState().equals(Volume.State.Attaching)) {
+            s_logger.warn("Vol: " + volume.getName() + " failed to attach to VM: " + _userVmDao.findById(vmId).getHostName() +
+                    " on last mgt server stop, changing state back to Ready");
+            volume.setState(Volume.State.Ready);
+            _volsDao.update(volumeId, volume);
         }
     }
 
@@ -1512,7 +1519,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             try {
                 if (job.getCmd().equalsIgnoreCase(VmWorkAttachVolume.class.getName())) {
                     VmWorkAttachVolume work = VmWorkSerializer.deserialize(VmWorkAttachVolume.class, job.getCmdInfo());
-                    cleanupVolumeDuringAttachFailure(work.getVolumeId());
+                    cleanupVolumeDuringAttachFailure(work.getVolumeId(), work.getVmId());
                 } else if (job.getCmd().equalsIgnoreCase(VmWorkMigrateVolume.class.getName())) {
                     VmWorkMigrateVolume work = VmWorkSerializer.deserialize(VmWorkMigrateVolume.class, job.getCmdInfo());
                     cleanupVolumeDuringMigrationFailure(work.getVolumeId(), work.getDestPoolId());
