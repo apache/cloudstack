@@ -1053,6 +1053,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 _resourceMgr.updateGPUDetails(destHostId, gpuDevice.getGroupDetails());
                             }
 
+                            // Remove the information on whether it was a deploy vm request.The deployvm=true information
+                            // is set only when the vm is being deployed. When a vm is started from a stop state the
+                            // information isn't set,
+                            if (_uservmDetailsDao.findDetail(vm.getId(), "deployvm") != null) {
+                                _uservmDetailsDao.removeDetail(vm.getId(), "deployvm");
+                            }
+
                             startedVm = vm;
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Start completed for VM " + vm);

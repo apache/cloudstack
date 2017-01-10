@@ -66,6 +66,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPlanner, Configurable, DeploymentPlanner {
@@ -88,6 +89,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     protected StoragePoolHostDao poolHostDao;
     @Inject
     protected UserVmDao vmDao;
+    @Inject
+    protected UserVmDetailsDao vmDetailsDao;
     @Inject
     protected VMInstanceDao vmInstanceDao;
     @Inject
@@ -309,6 +312,16 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     protected void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid,
             VirtualMachineProfile vmProfile, DeploymentPlan plan) {
 
+        // Check if cluster threshold for cpu/memory has to be checked or not. By default we
+        // always check cluster threshold isn't crossed. However, the check may be skipped for
+        // starting (not deploying) an instance.
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        Map<String, String> details = vmDetailsDao.listDetailsKeyPairs(vm.getId());
+        Boolean isThresholdEnabled = ClusterThresholdEnabled.value();
+        if (!(isThresholdEnabled || (details != null && details.containsKey("deployvm")))) {
+            return;
+        }
+
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
 
@@ -323,12 +336,13 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             if (clusterListForVmAllocation == null || clusterListForVmAllocation.size() == 0) {
                 return;
             }
+
             if (capacity == Capacity.CAPACITY_TYPE_CPU) {
                 clustersCrossingThreshold =
- capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterCPUCapacityDisableThreshold.key(), cpu_requested);
+                        capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterCPUCapacityDisableThreshold.key(), cpu_requested);
             } else if (capacity == Capacity.CAPACITY_TYPE_MEMORY) {
                 clustersCrossingThreshold =
- capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterMemoryCapacityDisableThreshold.key(), ram_requested);
+                        capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterMemoryCapacityDisableThreshold.key(), ram_requested);
             }
 
             if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0) {
@@ -565,6 +579,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold};
+        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled};
     }
 }

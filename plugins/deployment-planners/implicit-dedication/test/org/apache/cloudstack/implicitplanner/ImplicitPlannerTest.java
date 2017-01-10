@@ -94,6 +94,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -120,6 +121,8 @@ public class ImplicitPlannerTest {
     StoragePoolHostDao poolHostDao;
     @Inject
     UserVmDao vmDao;
+    @Inject
+    UserVmDetailsDao vmDetailsDao;
     @Inject
     VMInstanceDao vmInstanceDao;
     @Inject
@@ -518,6 +521,11 @@ public class ImplicitPlannerTest {
         @Bean
         public UserVmDao userVmDao() {
             return Mockito.mock(UserVmDao.class);
+        }
+
+        @Bean
+        public UserVmDetailsDao userVmDetailsDao() {
+            return Mockito.mock(UserVmDetailsDao.class);
         }
 
         @Bean
