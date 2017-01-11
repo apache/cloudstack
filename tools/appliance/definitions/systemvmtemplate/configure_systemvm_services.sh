@@ -26,8 +26,8 @@ function configure_apache2() {
    a2enmod ssl rewrite auth_basic auth_digest
    a2ensite default-ssl
    # Backup stock apache configuration since we may modify it in Secondary Storage VM
-   cp /etc/apache2/sites-available/default /etc/apache2/sites-available/default.orig
-   cp /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.orig
+   cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/default.orig
+   cp /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available/default-ssl.orig
    sed -i 's/SSLProtocol all -SSLv2$/SSLProtocol all -SSLv2 -SSLv3/g' /etc/apache2/mods-available/ssl.conf
 }
 

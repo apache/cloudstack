@@ -15,21 +15,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from pprint import pprint
+
 from netaddr import *
 
-
 def merge(dbag, ip):
-    added = False
     nic_dev_id = None
+    index = -1 # a non-valid array index
     for dev in dbag:
         if dev == "id":
             continue
-        for address in dbag[dev]:
+        for i, address in enumerate(dbag[dev]):
             if address['public_ip'] == ip['public_ip']:
                 if 'nic_dev_id' in address:
                     nic_dev_id = address['nic_dev_id']
-                dbag[dev].remove(address)
+                index = i
 
     ipo = IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
     if 'nic_dev_id' in ip:
@@ -44,8 +43,15 @@ def merge(dbag, ip):
     else:
         ip['nw_type'] = ip['nw_type'].lower()
     if ip['nw_type'] == 'control':
-        dbag['eth' + str(nic_dev_id)] = [ip]
+        dbag[ip['device']] = [ip]
     else:
-        dbag.setdefault('eth' + str(nic_dev_id), []).append(ip)
+        if ip['add']:
+            if index != -1:
+                dbag[ip['device']][index] = ip
+            else:
+                dbag.setdefault(ip['device'], []).append(ip)
+        else:
+            if index != -1:
+                del(dbag[ip['device']][index])
 
     return dbag
