@@ -22,13 +22,13 @@ FROM ubuntu:14.04
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
 LABEL Vendor="Apache.org" License="ApacheV2" Version="4.10.0.0-SNAPSHOT"
 
-RUN apt-get -y update && apt-get install -y \
+RUN add-apt-repository -y ppa:openjdk-r/ppa && apt-get -y update && apt-get install -y \
     genisoimage \
     libffi-dev \
     libssl-dev \
     git \
     maven \
-    openjdk-7-jdk \
+    openjdk-8-jdk \
     python-dev \
     python-setuptools \
     python-pip \
