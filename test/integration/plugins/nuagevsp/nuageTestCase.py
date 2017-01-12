@@ -186,9 +186,12 @@ class nuageTestCase(cloudstackTestCase):
         cls.https_proxy = None
         zone = next(zone for zone in cls.config.zones
                     if zone.name == cls.zone.name)
-        if zone.dcInternetConnectivityInfo.available:
-            cls.isInternetConnectivityAvailable = \
-                zone.dcInternetConnectivityInfo.available == "true"
+
+        cls.isInternetConnectivityAvailable = \
+            hasattr(zone, "dcInternetConnectivityInfo") \
+            and hasattr(zone.dcInternetConnectivityInfo, "available") \
+            and zone.dcInternetConnectivityInfo.available == "true"
+
         if cls.isInternetConnectivityAvailable:
             if zone.dcInternetConnectivityInfo.httpProxy:
                 cls.http_proxy = zone.dcInternetConnectivityInfo.httpProxy

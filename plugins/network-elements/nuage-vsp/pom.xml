@@ -34,11 +34,14 @@
       <url>http://cs.mv.nuagenetworks.net/releases/</url>
     </repository>
   </repositories>
+  <properties>
+      <nuage.vsp.client.version>1.0.1</nuage.vsp.client.version>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>net.nuagenetworks.vsp</groupId>
       <artifactId>nuage-vsp-acs-client</artifactId>
-      <version>1.0.0</version>
+      <version>${nuage.vsp.client.version}</version>
     </dependency>
   </dependencies>
   <build>
