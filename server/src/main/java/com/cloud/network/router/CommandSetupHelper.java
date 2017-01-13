@@ -26,7 +26,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -165,6 +167,8 @@ public class CommandSetupHelper {
     private VpnUserDao _vpnUsersDao;
     @Inject
     private Site2SiteCustomerGatewayDao _s2sCustomerGatewayDao;
+    @Inject
+    private Site2SiteCustomerGatewayDetailsDao _s2sCustomerGatewayDetailsDao;
     @Inject
     private Site2SiteVpnGatewayDao _s2sVpnGatewayDao;
     @Inject
@@ -911,8 +915,16 @@ public class CommandSetupHelper {
         final Boolean dpd = gw.getDpd();
         final Boolean encap = gw.getEncap();
 
+        _s2sCustomerGatewayDao.loadDetails(gw);
+        Integer ikeVersion = 2;
+        if (gw.getDetail(ApiConstants.IKE_VERSION) !=null) {
+            ikeVersion = Integer.parseInt(gw.getDetail(ApiConstants.IKE_VERSION));
+        }
+
+
         final Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(isCreate, localPublicIp, localPublicGateway, localGuestCidr, peerGatewayIp, peerGuestCidrList, ikePolicy,
-                espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive(), encap);
+                espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive(), encap, ikeVersion);
+
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

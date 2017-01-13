@@ -24,4 +24,6 @@ public interface Site2SiteCustomerGatewayDao extends GenericDao<Site2SiteCustome
     Site2SiteCustomerGatewayVO findByNameAndAccountId(String name, long accountId);
 
     List<Site2SiteCustomerGatewayVO> listByAccountId(long accountId);
+
+    void loadDetails(Site2SiteCustomerGatewayVO gw);
 }

@@ -66,6 +66,10 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     @Param(description = "Lifetime of IKE SA of customer gateway")
     private Long ikeLifetime;
 
+    @SerializedName(ApiConstants.IKE_VERSION)
+    @Param(description = "Version of IKE customer gateway")
+    private Integer ikeVersion;
+
     @SerializedName(ApiConstants.ESP_LIFETIME)
     @Param(description = "Lifetime of ESP SA of customer gateway")
     private Long espLifetime;
@@ -136,6 +140,10 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
 
     public void setIkeLifetime(Long ikeLifetime) {
         this.ikeLifetime = ikeLifetime;
+    }
+
+    public void setIkeVersion(Integer ikeVersion) {
+        this.ikeVersion = ikeVersion;
     }
 
     public void setEspLifetime(Long espLifetime) {

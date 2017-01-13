@@ -44,4 +44,6 @@ public interface Site2SiteCustomerGateway extends ControlledEntity, Identity, In
     public Date getRemoved();
 
     String getName();
+
+    public String getDetail(String name);
 }

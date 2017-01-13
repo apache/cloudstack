@@ -17,7 +17,12 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+import java.util.Map;
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDao;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -26,6 +31,11 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCustomerGatewayVO, Long> implements Site2SiteCustomerGatewayDao {
+
+    private static final Logger s_logger = Logger.getLogger(Site2SiteCustomerGatewayDaoImpl.class);
+
+    @Inject
+    Site2SiteCustomerGatewayDetailsDao _customerGatewayDetailsDao;
     private final SearchBuilder<Site2SiteCustomerGatewayVO> AllFieldsSearch;
 
     protected Site2SiteCustomerGatewayDaoImpl() {
@@ -49,5 +59,11 @@ public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCus
         SearchCriteria<Site2SiteCustomerGatewayVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc, null);
+    }
+
+    @Override
+    public void loadDetails(Site2SiteCustomerGatewayVO gw) {
+        Map<String, String> details = _customerGatewayDetailsDao.listDetailsKeyPairs(gw.getId());
+        gw.setDetails(details);
     }
 }

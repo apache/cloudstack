@@ -17,6 +17,7 @@
 package com.cloud.network.dao;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -25,6 +26,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
@@ -81,6 +83,9 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
+
+    @Transient
+    Map<String, String> details;
 
     public Site2SiteCustomerGatewayVO() {
     }
@@ -179,6 +184,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.ikePolicy = ikePolicy;
     }
 
+
     @Override
     public String getEspPolicy() {
         return espPolicy;
@@ -221,8 +227,19 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         return accountId;
     }
 
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+
     @Override
     public Class<?> getEntityType() {
         return Site2SiteCustomerGateway.class;
     }
+
+
+    @Override
+    public String getDetail(String name) {
+        return details != null ? details.get(name) : null ;
+    }
+
 }

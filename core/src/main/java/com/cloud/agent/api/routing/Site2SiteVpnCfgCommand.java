@@ -35,6 +35,7 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     private boolean dpd;
     private boolean passive;
     private boolean encap;
+    private Integer ikeVersion;
 
     @Override
     public boolean executeInSequence() {
@@ -46,7 +47,9 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     }
 
     public Site2SiteVpnCfgCommand(boolean create, String localPublicIp, String localPublicGateway, String localGuestCidr, String peerGatewayIp, String peerGuestCidrList,
-            String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd, boolean passive, boolean encap) {
+
+            String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd, boolean passive, boolean encap, Integer ikeVersion) {
+
         this.create = create;
         this.setLocalPublicIp(localPublicIp);
         this.setLocalPublicGateway(localPublicGateway);
@@ -61,6 +64,7 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.dpd = dpd;
         this.passive = passive;
         this.encap = encap;
+        this.ikeVersion = ikeVersion;
     }
 
     public boolean isCreate() {
@@ -86,6 +90,8 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     public void setIkePolicy(String ikePolicy) {
         this.ikePolicy = ikePolicy;
     }
+
+    public Integer getIkeVersion() {return ikeVersion;}
 
     public String getEspPolicy() {
         return espPolicy;

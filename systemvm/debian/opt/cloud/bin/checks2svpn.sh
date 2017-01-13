@@ -24,7 +24,7 @@ fi
 
 ipsec status  vpn-$1 > /tmp/vpn-$1.status
 
-cat /tmp/vpn-$1.status | grep "ESTABLISHED" > /dev/null
+cat /tmp/vpn-$1.status | grep -i "ESTABLISHED" > /dev/null
 ipsecok=$?
 if [ $ipsecok -ne 0 ]
 then

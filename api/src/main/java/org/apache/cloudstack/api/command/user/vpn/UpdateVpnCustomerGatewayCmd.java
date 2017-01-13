@@ -66,6 +66,9 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ESP_POLICY, type = CommandType.STRING, required = true, description = "ESP policy of the customer gateway")
     private String espPolicy;
 
+    @Parameter(name = ApiConstants.IKE_VERSION, type = CommandType.INTEGER, required = false, description = "Supported IKE version of the customer gateway, if not provided ike2 would be default")
+    private  Integer ikeVersion;
+
     @Parameter(name = ApiConstants.IKE_LIFETIME,
                type = CommandType.LONG,
                required = false,
@@ -117,6 +120,8 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public String getGatewayIp() {
         return gatewayIp;
     }
+
+    public Integer getIkeVersion() { return ikeVersion;}
 
     public String getIkePolicy() {
         return ikePolicy;
