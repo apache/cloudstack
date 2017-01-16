@@ -104,7 +104,6 @@ class TestVmSnapshot(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
 
         if self.unsupportedHypervisor:
             self.skipTest("Skipping test because unsupported hypervisor\
@@ -112,11 +111,6 @@ class TestVmSnapshot(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -150,18 +144,24 @@ class TestVmSnapshot(cloudstackTestCase):
 
         time.sleep(self.services["sleep"])
 
+        #KVM VM Snapshot needs to set snapshot with memory
+        MemorySnapshot = False
+        if self.hypervisor.lower() in (KVM.lower()):
+           MemorySnapshot = True
+
         vm_snapshot = VmSnapshot.create(
             self.apiclient,
             self.virtual_machine.id,
-            "false",
+            MemorySnapshot,
             "TestSnapshot",
-            "Dsiplay Text"
+            "Display Text"
         )
         self.assertEqual(
             vm_snapshot.state,
             "Ready",
             "Check the snapshot of vm is ready!"
         )
+
         return
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -213,13 +213,21 @@ class TestVmSnapshot(cloudstackTestCase):
             "Check the snapshot of vm is ready!"
         )
 
-        self.virtual_machine.stop(self.apiclient)
+        #We don't need to stop the VM when taking a VM Snapshot on KVM
+        if self.hypervisor.lower() in (KVM.lower()):
+           pass
+        else:
+           self.virtual_machine.stop(self.apiclient)
 
         VmSnapshot.revertToSnapshot(
             self.apiclient,
             list_snapshot_response[0].id)
 
-        self.virtual_machine.start(self.apiclient)
+        #We don't need to start the VM when taking a VM Snapshot on KVM
+        if self.hypervisor.lower() in (KVM.lower()):
+           pass
+        else:
+           self.virtual_machine.start(self.apiclient)
 
         try:
             ssh_client = self.virtual_machine.get_ssh_client(reconnect=True)
