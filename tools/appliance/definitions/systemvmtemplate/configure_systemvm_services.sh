@@ -54,6 +54,11 @@ function do_signature() {
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
 }
 
+function configure_strongswan() {
+  # change the charon stroke timeout from 3 minutes to 30 seconds
+  sed -i "s/# timeout = 0/timeout = 30000/" /etc/strongswan.d/charon/stroke.conf
+}
+
 function configure_services() {
   mkdir -p /var/www/html
   mkdir -p /opt/cloud/bin
@@ -81,6 +86,7 @@ function configure_services() {
   chkconfig radvd off
 
   configure_apache2
+  configure_strongswan
 }
 
 return 2>/dev/null || configure_services

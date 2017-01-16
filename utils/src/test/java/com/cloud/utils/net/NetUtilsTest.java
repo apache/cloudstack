@@ -105,18 +105,25 @@ public class NetUtilsTest {
 
     @Test
     public void testIsValidS2SVpnPolicy() {
-        assertTrue(NetUtils.isValidS2SVpnPolicy("aes128-sha1"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1,aes256-sha1"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-md5;modp1024"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1,aes128-sha1;modp1536"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy("des-md5;modp1024,aes128-sha1;modp1536"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy("des-sha1"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy("abc-123,ase-sha1"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy("de-sh,aes-sha1"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy(""));
-        assertFalse(NetUtils.isValidS2SVpnPolicy(";modp1536"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy(",aes;modp1536,,,"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "aes128-sha1"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "3des-sha1"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "3des-sha1,aes256-sha1"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "3des-md5;modp1024"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "3des-sha256,aes128-sha512;modp1536"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1;modp3072,aes128-sha1;modp1536"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-md5;modp1024"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1;modp3072,aes128-sha1;modp1536"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha256;modp3072,aes128-sha512;modp1536"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "aes128-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1,aes256-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", "des-md5;modp1024,aes128-sha1;modp1536"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", "des-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", "abc-123,ase-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", "de-sh,aes-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", ""));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", ";modp1536"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", ",aes;modp1536,,,"));
     }
 
     @Test

@@ -1187,7 +1187,10 @@ public class NetUtils {
         return false;
     }
 
-    public static boolean isValidS2SVpnPolicy(final String policys) {
+    public static boolean isValidS2SVpnPolicy(final String policyType, final String policys) {
+        if (policyType == null || policyType.isEmpty()) {
+            return false;
+        }
         if (policys == null || policys.isEmpty()) {
             return false;
         }
@@ -1208,14 +1211,17 @@ public class NetUtils {
             if (!cipher.matches("3des|aes128|aes192|aes256")) {
                 return false;
             }
-            if (!hash.matches("md5|sha1")) {
+            if (!hash.matches("md5|sha1|sha256|sha384|sha512")) {
                 return false;
             }
-            String pfsGroup = null;
+            String group = null;
             if (!policy.equals(cipherHash)) {
-                pfsGroup = policy.split(";")[1];
+                group = policy.split(";")[1];
             }
-            if (pfsGroup != null && !pfsGroup.matches("modp1024|modp1536")) {
+            if (group == null && policyType.toLowerCase().matches("ike")) {
+                return false; // StrongSwan requires a DH group for the IKE policy
+            }
+            if (group != null && !group.matches("modp1024|modp1536|modp2048|modp3072|modp4096|modp6144|modp8192")) {
                 return false;
             }
         }

@@ -186,7 +186,7 @@ class Services:
             },
             "vpn_customer_gw": {
                 "ipsecpsk": "s2svpn",
-                "ikepolicy": "3des-md5",
+                "ikepolicy": "3des-md5;modp1536",
                 "ikelifetime": "86400",
                 "esppolicy": "3des-md5",
                 "esplifetime": "3600",
