@@ -257,9 +257,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<Long> listAllCusters(long zoneId) {
+    public List<Long> listAllCusters(Long zoneId) {
         SearchCriteria<Long> sc = ClusterIdSearch.create();
-        sc.setParameters("dataCenterId", zoneId);
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
         return customSearch(sc, null);
     }
 }

@@ -522,4 +522,144 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     public void setTemplateDisplayText(String templateDisplayText) {
         this.templateDisplayText = templateDisplayText;
     }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public String getVolumeType() {
+        return volumeType;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public Long getDeviceId() {
+        return deviceId;
+    }
+
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+    public String getVirtualMachineName() {
+        return virtualMachineName;
+    }
+
+    public String getVirtualMachineDisplayName() {
+        return virtualMachineDisplayName;
+    }
+
+    public String getVirtualMachineState() {
+        return virtualMachineState;
+    }
+
+    public String getProvisioningType() {
+        return provisioningType;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public String getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public String getDiskOfferingName() {
+        return diskOfferingName;
+    }
+
+    public String getDiskOfferingDisplayText() {
+        return diskOfferingDisplayText;
+    }
+
+    public String getStoragePoolName() {
+        return storagePoolName;
+    }
+
+    public String getSnapshotId() {
+        return snapshotId;
+    }
+
+    public Date getAttached() {
+        return attached;
+    }
+
+    public String getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    public String getServiceOfferingName() {
+        return serviceOfferingName;
+    }
+
+    public String getServiceOfferingDisplayText() {
+        return serviceOfferingDisplayText;
+    }
+
+    public Boolean getExtractable() {
+        return extractable;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public Set<ResourceTagResponse> getTags() {
+        return tags;
+    }
+
+    public Boolean getDisplayVolume() {
+        return displayVolume;
+    }
 }

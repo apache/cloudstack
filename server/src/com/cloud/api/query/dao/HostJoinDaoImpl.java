@@ -71,6 +71,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
     private final SearchBuilder<HostJoinVO> hostIdSearch;
 
+    private final SearchBuilder<HostJoinVO> ClusterSearch;
+
     protected HostJoinDaoImpl() {
 
         hostSearch = createSearchBuilder();
@@ -80,6 +82,11 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostIdSearch = createSearchBuilder();
         hostIdSearch.and("id", hostIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         hostIdSearch.done();
+
+        ClusterSearch = createSearchBuilder();
+        ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        ClusterSearch.and("type", ClusterSearch.entity().getType(), SearchCriteria.Op.EQ);
+        ClusterSearch.done();
 
         this._count = "select count(distinct id) from host_view WHERE ";
     }
@@ -437,6 +444,14 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
         return uvList;
+    }
+
+    @Override
+    public List<HostJoinVO> findByClusterId(Long clusterId, Host.Type type) {
+        SearchCriteria<HostJoinVO> sc = ClusterSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("type", type);
+        return listBy(sc);
     }
 
 }

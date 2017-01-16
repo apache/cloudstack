@@ -205,4 +205,7 @@ public class NicResponse extends BaseResponse {
         this.secondaryIps = ipList;
     }
 
+    public String getIpaddress() {
+        return ipaddress;
+    }
 }
