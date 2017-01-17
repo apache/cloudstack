@@ -587,6 +587,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public Pair<List<? extends VpnUser>, Integer> searchForVpnUsers(ListVpnUsersCmd cmd) {
         String username = cmd.getUsername();
         Long id = cmd.getId();
+        String keyword = cmd.getKeyword();
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -602,6 +603,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), Op.IN);
 
         SearchCriteria<VpnUserVO> sc = sb.create();
@@ -609,6 +611,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         //list only active users
         sc.setParameters("state", State.Active, State.Add);
+
+        if(keyword != null){
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
 
         if (id != null) {
             sc.setParameters("id", id);
