@@ -432,7 +432,7 @@ public interface ResponseGenerator {
 
     NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result);
 
-    public NicResponse createNicResponse(Nic result);
+    public NicResponse createNicResponse(Nic result, String keyword);
 
     ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances);
 

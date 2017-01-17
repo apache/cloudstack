@@ -3470,7 +3470,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public NicResponse createNicResponse(Nic result) {
+    public NicResponse createNicResponse(Nic result, String keyword) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
@@ -3483,9 +3483,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setIpaddress(result.getIPv4Address());
+        List<NicSecondaryIpVO> secondaryIps = null;
 
         if (result.getSecondaryIp()) {
-            List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
+            if (keyword != null && !keyword.isEmpty()) {
+                secondaryIps = ApiDBUtils.findNicSecondaryIpsUsingKeyword(result.getId(), keyword);
+            }
+            else{
+                secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
+            }
+
             if (secondaryIps != null) {
                 List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
                 for (NicSecondaryIpVO ip : secondaryIps) {
