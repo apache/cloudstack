@@ -84,6 +84,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -174,6 +175,8 @@ public class CommandSetupHelper {
     private VlanDao _vlanDao;
     @Inject
     private IPAddressDao _ipAddressDao;
+    @Inject
+    private FirewallRulesDao _firewallsDao;
     @Inject
     private GuestOSDao _guestOSDao;
 
@@ -845,12 +848,38 @@ public class CommandSetupHelper {
                 associatedWithNetworkId = ipAddrList.get(0).getNetworkId();
             }
 
+            // for network if the ips does not have any rules, then only last ip
+            List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(associatedWithNetworkId, null);
+
+            int ipsWithrules = 0;
+            int ipsStaticNat = 0;
+            for (IPAddressVO ip : userIps) {
+                if ( _firewallsDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active) > 0 ) {
+                    ipsWithrules++;
+                }
+
+                if (ip.isOneToOneNat()) {
+                    ipsStaticNat++;
+                }
+            }
+
             final IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(associatedWithNetworkId, router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+
+            boolean remove = false;
+            // if there is only one static nat then it will be checked for remove at the resource
+            if (ipsWithrules == 0 && (ipsStaticNat == 0 || ipsStaticNat == 1)) {
+                remove = true;
+            }
+
+            if (remove) {
+                // there is only one ip address for the network.
+                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
+            }
 
             cmds.addCommand(ipAssocCommand, cmd);
         }

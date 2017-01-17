@@ -1734,6 +1734,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        final String lastIp = cmd.getAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP);
         Connect conn;
 
 
@@ -1770,9 +1771,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
 
-                if (numOfIps == 1 && !ip.isAdd()) {
-                    vifHotUnPlug(conn, routerName, ip.getVifMacAddress());
-                    networkUsage(routerIp, "deleteVif", "eth" + nicNum);
+                if (lastIp != null && !ip.isAdd()) {
+                    // in isolated network eth2 is the default public interface. We don't want to delete it.
+                    if (nicNum != 2) {
+                        vifHotUnPlug(conn, routerName, ip.getVifMacAddress());
+                        networkUsage(routerIp, "deleteVif", "eth" + nicNum);
+                    }
                 }
             }
 
