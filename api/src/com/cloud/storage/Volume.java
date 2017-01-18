@@ -90,6 +90,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.OperationSucceeded, Expunged,null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.OperationFailed, Destroy, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.SnapshotRequested, Snapshotting, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Snapshotting, Event.SnapshotRequested, Snapshotting, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Snapshotting, Event.OperationSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Snapshotting, Event.OperationFailed, Ready,null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.RevertSnapshotRequested, RevertSnapshotting, null));
