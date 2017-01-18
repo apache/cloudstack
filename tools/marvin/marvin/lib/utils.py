@@ -505,7 +505,7 @@ def verifyRouterState(apiclient, routerid, allowedstates):
         return [FAIL, "Redundant state of the router should be in %s but is %s" %
             (allowedstates, routers[0].redundantstate)]
     return [PASS, None]
-        
+
 
 def wait_until(retry_interval=2, no_of_times=2, callback=None, *callback_args):
     """ Utility method to try out the callback method at most no_of_times with a interval of retry_interval,
@@ -513,7 +513,7 @@ def wait_until(retry_interval=2, no_of_times=2, callback=None, *callback_args):
 
     if callback is None:
         raise ("Bad value for callback method !")
-            
+
     wait_result = False
     for i in range(0,no_of_times):
         time.sleep(retry_interval)
@@ -524,4 +524,3 @@ def wait_until(retry_interval=2, no_of_times=2, callback=None, *callback_args):
             break
 
     return wait_result, return_val
-

@@ -74,6 +74,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.ha.HAConfig;
 
 public class EventTypes {
 
@@ -317,6 +318,12 @@ public class EventTypes {
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION = "HOST.OOBM.ACTION";
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD = "HOST.OOBM.CHANGEPASSWORD";
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION = "HOST.OOBM.POWERSTATE.TRANSITION";
+
+    // HA
+    public static final String EVENT_HA_RESOURCE_ENABLE = "HA.RESOURCE.ENABLE";
+    public static final String EVENT_HA_RESOURCE_DISABLE = "HA.RESOURCE.DISABLE";
+    public static final String EVENT_HA_RESOURCE_CONFIGURE = "HA.RESOURCE.CONFIGURE";
+    public static final String EVENT_HA_STATE_TRANSITION = "HA.STATE.TRANSITION";
 
     // Maintenance
     public static final String EVENT_MAINTENANCE_CANCEL = "MAINT.CANCEL";
@@ -753,6 +760,12 @@ public class EventTypes {
         entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, Host.class);
         entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD, Host.class);
         entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION, Host.class);
+
+        // HA
+        entityEventDetails.put(EVENT_HA_RESOURCE_ENABLE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_RESOURCE_DISABLE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_RESOURCE_CONFIGURE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_STATE_TRANSITION, HAConfig.class);
 
         // Maintenance
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL, Host.class);

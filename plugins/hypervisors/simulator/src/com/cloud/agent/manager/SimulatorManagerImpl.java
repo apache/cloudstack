@@ -29,6 +29,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 
+import com.cloud.api.commands.ConfigureSimulatorHAProviderState;
+import com.cloud.api.commands.ListSimulatorHAStateTransitions;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -195,6 +197,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
         cmdList.add(ConfigureSimulatorCmd.class);
         cmdList.add(QuerySimulatorMockCmd.class);
         cmdList.add(CleanupSimulatorMockCmd.class);
+        cmdList.add(ConfigureSimulatorHAProviderState.class);
+        cmdList.add(ListSimulatorHAStateTransitions.class);
         return cmdList;
     }
 

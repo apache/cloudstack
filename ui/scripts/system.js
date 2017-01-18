@@ -8163,6 +8163,80 @@
                                         notification: {
                                             poll: pollAsyncJobResult
                                         }
+                                    },
+                                    enableHA: {
+                                        label: 'label.ha.enable',
+                                        action: function (args) {
+                                            var data = {
+                                                zoneid: args.context.physicalResources[0].id
+                                            };
+                                            $.ajax({
+                                                url: createURL("enableHAForZone"),
+                                                data: data,
+                                                success: function (json) {
+                                                    var jid = json.enablehaforzoneresponse.jobid;
+                                                    args.response.success({
+                                                        _custom: {
+                                                            jobId: jid,
+                                                            getActionFilter: function () {
+                                                                return zoneActionfilter;
+                                                            }
+                                                        }
+                                                    });
+                                                },
+                                                error: function (json) {
+                                                    args.response.error(parseXMLHttpResponse(json));
+                                                }
+                                            });
+                                        },
+                                        messages: {
+                                            confirm: function (args) {
+                                                return 'label.ha.enable';
+                                            },
+                                            notification: function (args) {
+                                                return 'label.ha.enable';
+                                            }
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                    },
+                                    disableHA: {
+                                        label: 'label.ha.disable',
+                                        action: function (args) {
+                                            var data = {
+                                                zoneid: args.context.physicalResources[0].id
+                                            };
+                                            $.ajax({
+                                                url: createURL("disableHAForZone"),
+                                                data: data,
+                                                success: function (json) {
+                                                    var jid = json.disablehaforzoneresponse.jobid;
+                                                    args.response.success({
+                                                        _custom: {
+                                                            jobId: jid,
+                                                            getActionFilter: function () {
+                                                                return zoneActionfilter;
+                                                            }
+                                                        }
+                                                    });
+                                                },
+                                                error: function (json) {
+                                                    args.response.error(parseXMLHttpResponse(json));
+                                                }
+                                            });
+                                        },
+                                        messages: {
+                                            confirm: function (args) {
+                                                return 'label.ha.disable';
+                                            },
+                                            notification: function (args) {
+                                                return 'label.ha.disable';
+                                            }
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
                                     }
                                 },
                                 tabs: {
@@ -14886,8 +14960,81 @@
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
+                            },
+                            enableHA: {
+                                label: 'label.ha.enable',
+                                action: function (args) {
+                                    var data = {
+                                        clusterid: args.context.clusters[0].id
+                                    };
+                                    $.ajax({
+                                        url: createURL("enableHAForCluster"),
+                                        data: data,
+                                        success: function (json) {
+                                            var jid = json.enablehaforclusterresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getActionFilter: function () {
+                                                        return clusterActionfilter;
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        error: function (json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'label.ha.enable';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.ha.enable';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disableHA: {
+                                label: 'label.ha.disable',
+                                action: function (args) {
+                                    var data = {
+                                        clusterid: args.context.clusters[0].id
+                                    };
+                                    $.ajax({
+                                        url: createURL("disableHAForCluster"),
+                                        data: data,
+                                        success: function (json) {
+                                            var jid = json.disablehaforclusterresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getActionFilter: function () {
+                                                        return clusterActionfilter;
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        error: function (json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'label.ha.disable';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.ha.disable';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
                             }
-
                         },
                         
                         tabs: {
@@ -16210,6 +16357,168 @@
                                 }
                             },
 
+                            blankHAForHost: {
+                                label: '',
+                                action: function (args) {
+                                }
+                            },
+
+                            configureHAForHost: {
+                                label: 'label.ha.configure',
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'label.ha.configure';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.ha.configure';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.ha.configure',
+                                    fields: {
+                                        provider: {
+                                            label: 'label.ha.provider',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function (args) {
+                                                $.ajax({
+                                                    url: createURL('listHostHAProviders'),
+                                                    data: {'hypervisor': args.context.hosts[0].hypervisor},
+                                                    dataType: 'json',
+                                                    success: function (json) {
+                                                        var response = json.listhosthaprovidersresponse;
+                                                        var items = [];
+                                                        items.push({
+                                                            id: '',
+                                                            description: _l('')
+                                                        });
+                                                        if (response.haprovider) {
+                                                            $.each(response.haprovider, function (idx, item) {
+                                                                items.push({
+                                                                    id: item.haprovider,
+                                                                    description: item.haprovider
+                                                                });
+                                                            });
+                                                        }
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    },
+                                                    error: function (json) {
+                                                        args.response.error(parseXMLHttpResponse(json));
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    var data = args.data;
+                                    data.hostid = args.context.hosts[0].id;
+                                    $.ajax({
+                                        url: createURL('configureHAForHost'),
+                                        data: data,
+                                        dataType: 'json',
+                                        success: function (json) {
+                                            var jid = json.configurehaforhostresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getActionFilter: function () {
+                                                        return hostActionfilter;
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        error: function (json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            enableHA: {
+                                label: 'label.ha.enable',
+                                action: function (args) {
+                                    var data = {
+                                        hostid: args.context.hosts[0].id,
+                                    };
+                                    $.ajax({
+                                        url: createURL("enableHAForHost"),
+                                        data: data,
+                                        success: function (json) {
+                                            var jid = json.enablehaforhostresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getActionFilter: function () {
+                                                        return hostActionfilter;
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        error: function (json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'label.ha.enable';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.ha.enable';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
+                            disableHA: {
+                                label: 'label.ha.disable',
+                                action: function (args) {
+                                    var data = {
+                                        hostid: args.context.hosts[0].id,
+                                    };
+                                    $.ajax({
+                                        url: createURL("disableHAForHost"),
+                                        data: data,
+                                        success: function (json) {
+                                            var jid = json.disablehaforhostresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getActionFilter: function () {
+                                                        return hostActionfilter;
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        error: function (json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'label.ha.disable';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.ha.disable';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
                             blankOutOfBandManagement: {
                                 label: '',
                                 action: function (args) {
@@ -16494,10 +16803,21 @@
                                                 required: false
                                             },
                                         },
+                                        reenterpassword: {
+                                            label: 'label.outofbandmanagement.reenterpassword',
+                                            isPassword: true,
+                                            validation: {
+                                                required: false
+                                            }
+                                        },
                                     }
                                 },
                                 action: function (args) {
                                     var data = args.data;
+                                    if (data.password != data.reenterpassword) {
+                                        args.response.error("Passwords do not match");
+                                        return;
+                                    }
                                     data.hostid = args.context.hosts[0].id;
                                     $.ajax({
                                         url: createURL('changeOutOfBandManagementPassword'),
@@ -16533,6 +16853,9 @@
                             }
                             if (host.outofbandmanagement == null || !host.outofbandmanagement.enabled) {
                                 hiddenTabs.push("outofbandmanagement");
+                            }
+                            if (host.hostha == null || (host.hypervisor != 'KVM' && host.hypervisor != 'Simulator')) {
+                                hiddenTabs.push("ha");
                             }
                             return hiddenTabs;
                         },
@@ -16581,6 +16904,12 @@
                                     },
                                     hypervisorversion: {
                                         label: 'label.hypervisor.version'
+                                    },
+                                    hastate: {
+                                        label: 'label.ha.state'
+                                    },
+                                    haprovider: {
+                                        label: 'label.ha.provider'
                                     },
                                     hosttags: {
                                         label: 'label.host.tags',
@@ -16687,6 +17016,11 @@
                                             if (item && item.outofbandmanagement) {
                                                 item.powerstate = item.outofbandmanagement.powerstate;
                                             }
+                                            if (item && item.hostha) {
+                                                item.hastate = item.hostha.hastate;
+                                                item.haprovider = item.hostha.haprovider;
+                                                item.haenabled = item.hostha.haenable;
+                                            }
 
                                             $.ajax({
                                                 url: createURL("listDedicatedHosts&hostid=" + args.context.hosts[0].id),
@@ -16712,6 +17046,39 @@
                                             args.response.success({
                                                 actionFilter: hostActionfilter,
                                                 data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            },
+
+                            ha: {
+                                title: 'label.ha',
+                                fields: {
+                                    haenable: {
+                                        label: 'label.ha.enabled',
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    hastate: {
+                                        label: 'label.ha.state'
+                                    },
+                                    haprovider: {
+                                        label: 'label.ha.provider'
+                                    },
+                                },
+                                dataProvider: function (args) {
+                                    $.ajax({
+                                        url: createURL("listHosts&id=" + args.context.hosts[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var host = json.listhostsresponse.host[0];
+                                            var hostha = {};
+                                            if (host && host.hostha) {
+                                                hostha = host.hostha;
+                                            }
+                                            args.response.success({
+                                                data: hostha
                                             });
                                         }
                                     });
@@ -21023,6 +21390,12 @@
             allowedActions.push("disableOutOfBandManagement");
         }
 
+        if (jsonObj.hasOwnProperty('resourcedetails') && jsonObj['resourcedetails'].hasOwnProperty('resourceHAEnabled') && jsonObj['resourcedetails']['resourceHAEnabled'] == 'false') {
+            allowedActions.push("enableHA");
+        } else {
+            allowedActions.push("disableHA");
+        }
+
         return allowedActions;
     }
     
@@ -21114,6 +21487,12 @@
             allowedActions.push("disableOutOfBandManagement");
         }
 
+        if (jsonObj.hasOwnProperty('resourcedetails') && jsonObj['resourcedetails'].hasOwnProperty('resourceHAEnabled') && jsonObj['resourcedetails']['resourceHAEnabled'] == 'false') {
+            allowedActions.push("enableHA");
+        } else {
+            allowedActions.push("disableHA");
+        }
+
         return allowedActions;
     }
     
@@ -21148,6 +21527,14 @@
             allowedActions.push("edit");
             allowedActions.push("enable");
             allowedActions.push("remove");
+        }
+
+        allowedActions.push("blankHAForHost");
+        allowedActions.push("configureHAForHost");
+        if (jsonObj.hasOwnProperty("hostha") && jsonObj.hostha.haenable) {
+            allowedActions.push("disableHA");
+        } else {
+            allowedActions.push("enableHA");
         }
 
         allowedActions.push("blankOutOfBandManagement");

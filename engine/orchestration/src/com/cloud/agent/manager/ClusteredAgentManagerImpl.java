@@ -43,6 +43,8 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import org.apache.cloudstack.ha.dao.HAConfigDao;
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -124,6 +126,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     ConfigurationDao _configDao;
     @Inject
     ConfigDepot _configDepot;
+    @Inject
+    private OutOfBandManagementDao outOfBandManagementDao;
+    @Inject
+    private HAConfigDao haConfigDao;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -729,7 +735,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             s_logger.info("Marking hosts as disconnected on Management server" + vo.getMsid());
             long lastPing = (System.currentTimeMillis() >> 10) - getTimeout();
             _hostDao.markHostsAsDisconnected(vo.getMsid(), lastPing);
-            outOfBandManagementDao.expireOutOfBandManagementOwnershipByServer(vo.getMsid());
+            outOfBandManagementDao.expireServerOwnership(vo.getMsid());
+            haConfigDao.expireServerOwnership(vo.getMsid());
             s_logger.info("Deleting entries from op_host_transfer table for Management server " + vo.getMsid());
             cleanupTransferMap(vo.getMsid());
         }

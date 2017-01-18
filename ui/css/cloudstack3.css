@@ -12674,6 +12674,38 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -137px -614px;
 }
 
+.blankHAForHost .icon {
+  background-position: -266px -31px;
+}
+
+.blankHAForHost:hover .icon {
+  background-position: -266px -31px;
+}
+
+.configureHAForHost .icon {
+  background-position: -270px -148px;
+}
+
+.configureHAForHost:hover .icon {
+  background-position: -270px -728px;
+}
+
+.enableHA .icon {
+  background-position: -265px -93px;
+}
+
+.enableHA:hover .icon {
+  background-position: -265px -673px;
+}
+
+.disableHA .icon {
+  background-position: -265px -120px;
+}
+
+.disableHA:hover .icon {
+  background-position: -265px -700px;
+}
+
 .blankOutOfBandManagement .icon {
   background-position: -266px -31px;
 }

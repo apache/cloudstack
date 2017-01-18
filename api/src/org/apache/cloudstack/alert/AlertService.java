@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.alert;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.InvalidParameterValueException;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public interface AlertService {
     public static class AlertType {
@@ -66,6 +66,7 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED = new AlertType((short)26, "ALERT.RESOURCE.EXCEED", true);
         public static final AlertType ALERT_TYPE_SYNC = new AlertType((short)27, "ALERT.TYPE.SYNC", true);
         public static final AlertType ALERT_TYPE_OOBM_AUTH_ERROR = new AlertType((short)29, "ALERT.OOBM.AUTHERROR", true);
+        public static final AlertType ALERT_TYPE_HA_ACTION = new AlertType((short)30, "ALERT.HA.ACTION", true);
 
         public short getType() {
             return type;

@@ -28,6 +28,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.host.dao.HostDetailsDao;
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -60,6 +62,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private ConfigurationDao _configDao;
     @Inject
     private HostDetailsDao hostDetailsDao;
+    @Inject
+    private HAConfigDao haConfigDao;
     @Inject
     private OutOfBandManagementDao outOfBandManagementDao;
 
@@ -224,6 +228,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
 
+        hostResponse.setHostHAResponse(haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host));
         hostResponse.setOutOfBandManagementResponse(outOfBandManagementDao.findByHost(host.getId()));
         hostResponse.setResourceState(host.getResourceState().toString());
 

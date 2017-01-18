@@ -1201,7 +1201,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     } else if (cmd instanceof ShutdownCommand) {
                         final ShutdownCommand shutdown = (ShutdownCommand)cmd;
                         final String reason = shutdown.getReason();
-                        s_logger.info("Host " + attache.getId() + " has informed us that it is shutting down with reason " + reason + " and detail " +
+                        s_logger.info("HA: Host " + attache.getId() + " has informed us that it is shutting down with reason " + reason + " and detail " +
                                 shutdown.getDetail());
                         if (reason.equals(ShutdownCommand.Update)) {
                             //disconnectWithoutInvestigation(attache, Event.UpdateNeeded);

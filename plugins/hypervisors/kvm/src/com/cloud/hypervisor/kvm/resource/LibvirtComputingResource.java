@@ -105,6 +105,7 @@ import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckStateCommand;
+import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
@@ -307,6 +308,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _resizeVolumePath;
     private String _createTmplPath;
     private String _heartBeatPath;
+    private String _vmActivityCheckPath;
     private String _securityGroupPath;
     private String _ovsPvlanDhcpHostPath;
     private String _ovsPvlanVmPath;
@@ -666,6 +668,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _resizeVolumePath = Script.findScript(storageScriptsDir, "resizevolume.sh");
         if (_resizeVolumePath == null) {
             throw new ConfigurationException("Unable to find the resizevolume.sh");
+        }
+
+        _vmActivityCheckPath = Script.findScript(kvmScriptsDir, "kvmvmactivity.sh");
+        if (_vmActivityCheckPath == null) {
+            throw new ConfigurationException("Unable to find kvmvmactivity.sh");
         }
 
         _createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
@@ -1396,6 +1403,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((PvlanSetupCommand)cmd);
             } else if (cmd instanceof CheckOnHostCommand) {
                 return execute((CheckOnHostCommand)cmd);
+            } else if (cmd instanceof CheckVMActivityOnStoragePoolCommand) {
+                return execute((CheckVMActivityOnStoragePoolCommand)cmd);
             } else if (cmd instanceof OvsFetchInterfaceCommand) {
                 return execute((OvsFetchInterfaceCommand)cmd);
             } else if (cmd instanceof OvsSetupBridgeCommand) {
@@ -1411,7 +1420,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             } else if (cmd instanceof OvsVpcRoutingPolicyConfigCommand) {
                 return execute((OvsVpcRoutingPolicyConfigCommand) cmd);
             } else {
-                s_logger.warn("Unsupported command ");
+                s_logger.warn("Unsupported command " + cmd.getClass());
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch (final IllegalArgumentException e) {
@@ -1742,17 +1751,39 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             Boolean result = future.get();
             if (result) {
-                return new Answer(cmd, false, "Heart is still beating...");
+                return new Answer(cmd, false, "Heart is beating...");
             } else {
                 s_logger.warn("Heartbeat failed for : " + cmd.getHost().getPrivateNetwork().getIp().toString());
                 return new Answer(cmd);
             }
         } catch (InterruptedException e) {
-            return new Answer(cmd, false, "can't get status of host:");
+            return new Answer(cmd, false, "CheckOnHostCommand: can't get status of host: InterruptedException");
         } catch (ExecutionException e) {
-            return new Answer(cmd, false, "can't get status of host:");
+            return new Answer(cmd, false, "CheckOnHostCommand: can't get status of host: ExecutionException");
         }
+    }
 
+    protected Answer execute(CheckVMActivityOnStoragePoolCommand cmd) {
+        ExecutorService executors = Executors.newSingleThreadExecutor();
+        StorageFilerTO pool = cmd.getPool();
+        if (StoragePoolType.NetworkFilesystem == pool.getType()){
+            NfsStoragePool nfspool = _monitor.getStoragePool(pool.getUuid());
+            KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(nfspool, cmd.getHost().getPrivateNetwork().getIp(), cmd.getVolumeList(), _vmActivityCheckPath, cmd.getSuspectTimeInSeconds());
+            Future<Boolean> future = executors.submit(ha);
+            try {
+                Boolean result = future.get();
+                if (result) {
+                    return new Answer(cmd, false, "VMHA disk activity detected ...");
+                } else {
+                    return new Answer(cmd);
+                }
+            } catch (InterruptedException e) {
+                return new Answer(cmd, false, "CheckVMActivityOnStoragePoolCommand: can't get status of host: InterruptedException");
+            } catch (ExecutionException e) {
+                return new Answer(cmd, false, "CheckVMActivityOnStoragePoolCommand: can't get status of host: ExecutionException");
+            }
+        }
+        return new Answer(cmd, false, "Unsupported Storage");
     }
 
     protected Storage.StorageResourceType getStorageResourceType() {

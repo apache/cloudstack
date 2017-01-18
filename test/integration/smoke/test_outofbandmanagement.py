@@ -193,8 +193,10 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cmd.driver = 'randomDriverThatDoesNotExist'
         try:
             response = self.apiclient.configureOutOfBandManagement(cmd)
+        except Exception:
+            pass
+        else:
             self.fail("Expected an exception to be thrown, failing")
-        except Exception: pass
 
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -221,20 +223,26 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cmd.hostid = -1
         try:
             response = self.apiclient.enableOutOfBandManagementForHost(cmd)
+        except Exception:
+            pass
+        else:
             self.fail("Expected an exception to be thrown, failing")
-        except Exception: pass
 
         try:
             cmd = enableOutOfBandManagementForCluster.enableOutOfBandManagementForClusterCmd()
             response = self.apiclient.enableOutOfBandManagementForCluster(cmd)
+        except Exception:
+            pass
+        else:
             self.fail("Expected an exception to be thrown, failing")
-        except Exception: pass
 
         try:
             cmd = enableOutOfBandManagementForZone.enableOutOfBandManagementForZoneCmd()
             response = self.apiclient.enableOutOfBandManagementForZone(cmd)
+        except Exception:
+            pass
+        else:
             self.fail("Expected an exception to be thrown, failing")
-        except Exception: pass
 
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -247,20 +255,26 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cmd.hostid = -1
         try:
             response = self.apiclient.disableOutOfBandManagementForHost(cmd)
+        except Exception:
+            pass
+        else:
             self.fail("Expected an exception to be thrown, failing")
-        except Exception: pass
 
         try:
             cmd = disableOutOfBandManagementForCluster.disableOutOfBandManagementForClusterCmd()
             response = self.apiclient.disableOutOfBandManagementForCluster(cmd)
+        except Exception:
+            pass
+        else:
             self.fail("Expected an exception to be thrown, failing")
-        except Exception: pass
 
         try:
             cmd = disableOutOfBandManagementForZone.disableOutOfBandManagementForZoneCmd()
             response = self.apiclient.disableOutOfBandManagementForZone(cmd)
+        except Exception:
+            pass
+        else:
             self.fail("Expected an exception to be thrown, failing")
-        except Exception: pass
 
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -323,8 +337,10 @@ class TestOutOfBandManagement(cloudstackTestCase):
 
         try:
             self.issuePowerActionCmd('STATUS')
-            self.fail("Exception was expected, oobm is disabled at zone level")
-        except Exception: pass
+        except Exception:
+            pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")
 
         # Enable at zone level
         cmd = enableOutOfBandManagementForZone.enableOutOfBandManagementForZoneCmd()
@@ -333,18 +349,16 @@ class TestOutOfBandManagement(cloudstackTestCase):
 
         try:
             self.issuePowerActionCmd('STATUS')
-            self.fail("Exception was expected, oobm is disabled at cluster level")
-        except Exception: pass
+        except Exception:
+            pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")
 
         # Check background thread syncs state to Disabled
         response = self.getHost(hostId=host.id).outofbandmanagement
         self.assertEqual(response.powerstate, 'Disabled')
         self.dbclient.execute("update oobm set power_state='On' where port=%d" % self.getIpmiServerPort())
-        interval = list_configurations(
-            self.apiclient,
-            name='outofbandmanagement.sync.interval'
-        )[0].value
-        self.checkSyncToState('Disabled', interval)
+        self.checkSyncToState('Disabled', 2)
 
         # Enable at cluster level
         cmd = enableOutOfBandManagementForCluster.enableOutOfBandManagementForClusterCmd()
@@ -353,8 +367,10 @@ class TestOutOfBandManagement(cloudstackTestCase):
 
         try:
             self.issuePowerActionCmd('STATUS')
-            self.fail("Exception was expected, oobm is disabled at host level")
-        except Exception: pass
+        except Exception:
+            pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")
 
         # Enable at host level
         cmd = enableOutOfBandManagementForHost.enableOutOfBandManagementForHostCmd()
@@ -446,26 +462,22 @@ class TestOutOfBandManagement(cloudstackTestCase):
             Tests out-of-band management background powerstate sync
         """
         self.debug("Testing oobm background sync")
-        interval = list_configurations(
-            self.apiclient,
-            name='outofbandmanagement.sync.interval'
-        )[0].value
 
         self.configureAndEnableOobm()
         self.startIpmiServer()
         bmc = IpmiServerContext().bmc
 
         bmc.powerstate = 'on'
-        self.checkSyncToState('On', interval)
+        self.checkSyncToState('On', 2)
 
         bmc.powerstate = 'off'
-        self.checkSyncToState('Off', interval)
+        self.checkSyncToState('Off', 2)
 
         self.server.shutdown()
         self.server.server_close()
 
         # Check for unknown state (ipmi server not reachable)
-        self.checkSyncToState('Unknown', interval)
+        self.checkSyncToState('Unknown', 2)
 
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -527,16 +539,12 @@ class TestOutOfBandManagement(cloudstackTestCase):
             self.fail("Management server failed to expire ownership of fenced peer")
 
         self.debug("Testing oobm background sync should claim new ownership")
-        interval = list_configurations(
-            self.apiclient,
-            name='outofbandmanagement.sync.interval'
-        )[0].value
 
         self.startIpmiServer()
         bmc = IpmiServerContext().bmc
         bmc.powerstate = 'on'
 
-        self.checkSyncToState('On', interval)
+        self.checkSyncToState('On', 2)
 
         result = self.dbclient.execute("select mgmt_server_id from oobm where port=%d" % (self.getIpmiServerPort()))
         newOwnerId = result[0][0]
@@ -577,8 +585,10 @@ class TestOutOfBandManagement(cloudstackTestCase):
 
         try:
             response = self.issuePowerActionCmd('STATUS')
+        except Exception:
+            pass
+        else:
             self.fail("Expected an exception to be thrown, failing")
-        except Exception: pass
 
         alerts = Alert.list(self.apiclient, keyword="auth-error",
                         listall=True)

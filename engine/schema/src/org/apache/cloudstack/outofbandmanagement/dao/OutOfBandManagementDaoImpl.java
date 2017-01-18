@@ -110,7 +110,7 @@ public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManageme
     }
 
     @Override
-    public void expireOutOfBandManagementOwnershipByServer(long serverId) {
+    public void expireServerOwnership(long serverId) {
         final String resetOwnerSql = "UPDATE oobm set mgmt_server_id=NULL, power_state=NULL where mgmt_server_id=?";
         executeExpireOwnershipSql(resetOwnerSql, serverId);
         if (LOG.isDebugEnabled()) {
