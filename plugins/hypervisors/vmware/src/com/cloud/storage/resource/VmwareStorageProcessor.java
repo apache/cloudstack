@@ -1571,11 +1571,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
 
                 synchronized (this) {
-                    // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
-
-                    vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
-                    vmMo.detachDisk(volumeDatastorePath, false);
+                    try {
+                        vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
+                        vmMo.detachDisk(volumeDatastorePath, false);
+                    }
+                    catch (Exception e) {
+                        s_logger.error("Deleting file " + volumeDatastorePath + " due to error: " + e.getMessage());
+                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
+                        throw new CloudRuntimeException("Unable to create volume due to: " + e.getMessage());
+                    }
                 }
 
                 VolumeObjectTO newVol = new VolumeObjectTO();
