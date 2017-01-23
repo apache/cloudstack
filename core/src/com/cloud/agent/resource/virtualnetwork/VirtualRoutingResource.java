@@ -273,6 +273,9 @@ public class VirtualRoutingResource {
 
         value = (String)params.get("router.aggregation.command.each.timeout");
         _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt(value, 10));
+        if (s_logger.isDebugEnabled()){
+            s_logger.debug("The router.aggregation.command.each.timeout in seconds is set to " + _eachTimeout.getStandardSeconds());
+        }
 
         if (_vrDeployer == null) {
             throw new ConfigurationException("Unable to find the resource for VirtualRouterDeployer!");
@@ -376,8 +379,8 @@ public class VirtualRoutingResource {
                 ScriptConfigItem scriptConfigItem = new ScriptConfigItem(VRScripts.VR_CFG, "-c " + VRScripts.CONFIG_CACHE_LOCATION + cfgFileName);
                 // 120s is the minimal timeout
                 Duration timeout = _eachTimeout.withDurationAdded(_eachTimeout.getStandardSeconds(), answerCounts);
-                if (timeout.isShorterThan(VRScripts.VR_SCRIPT_EXEC_TIMEOUT)) {
-                    timeout = VRScripts.VR_SCRIPT_EXEC_TIMEOUT;
+                if (s_logger.isDebugEnabled()){
+                    s_logger.debug("Aggregate action timeout in seconds is " + timeout.getStandardSeconds());
                 }
 
                 ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem);

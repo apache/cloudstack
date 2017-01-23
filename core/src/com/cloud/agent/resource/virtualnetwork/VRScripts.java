@@ -42,7 +42,7 @@ public class VRScripts {
     public static final String LOAD_BALANCER_CONFIG = "load_balancer.json";
 
     public final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
-    public final static Duration VR_SCRIPT_EXEC_TIMEOUT = Duration.standardMinutes(10);
+    public final static Duration VR_SCRIPT_EXEC_TIMEOUT = Duration.standardMinutes(2);
     public final static Duration CONNECTION_TIMEOUT = Duration.standardMinutes(1);
 
     // New scripts for use with chef
