@@ -51,7 +51,6 @@ tools/cli/build/
 *.jar
 *.war
 *.mar
-*.zip
 *.iso
 *.tar.gz
 *.tgz
