@@ -272,7 +272,7 @@ public class VirtualRoutingResource {
         _port = NumbersUtil.parseInt(value, 3922);
 
         value = (String)params.get("router.aggregation.command.each.timeout");
-        _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt(value, 10));
+        _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt(value, (int)VRScripts.VR_SCRIPT_EXEC_TIMEOUT.getStandardSeconds()));
         if (s_logger.isDebugEnabled()){
             s_logger.debug("The router.aggregation.command.each.timeout in seconds is set to " + _eachTimeout.getStandardSeconds());
         }
