@@ -342,11 +342,6 @@ class TestNuageInternalDns(nuageTestCase):
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
 
-        try:
-            vm_1.start(self.apiclient)
-        except Exception as e:
-            self.fail("Failed to start the virtual instances, %s" % e)
-
         self.test_data["virtual_machine"]["displayname"] = "vm2"
         self.test_data["virtual_machine"]["name"] = "vm2"
         vm_2 = self.create_VM(network_1)
@@ -358,6 +353,11 @@ class TestNuageInternalDns(nuageTestCase):
             self.verify_vsd_dhcp_option(
                 self.DOMAINNAME, "update.com", nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm2", nic, True)
+
+        try:
+            vm_1.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the virtual instances, %s" % e)
 
         public_ip_1 = self.acquire_PublicIPAddress(network_1)
         self.create_and_verify_fw(vm_1, public_ip_1, network_1)

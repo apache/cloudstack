@@ -503,7 +503,7 @@ class TestNuageStaticNat(nuageTestCase):
             self.validate_PublicIPAddress(public_ip, network_1)
         self.debug("Acquired public IP in the created Isolated network "
                    "successfully released in CloudStack")
-
+        self.delete_VM(vm_1)
         # Bug CLOUDSTACK-9398
         """
         self.debug("Creating a persistent Isolated network with Static NAT "
@@ -559,6 +559,7 @@ class TestNuageStaticNat(nuageTestCase):
             self.validate_PublicIPAddress(public_ip, network_2)
         self.debug("Acquired public IP in the created Isolated network "
                    "successfully released in CloudStack")
+        self.delete_VM(vm_2)
         """
 
         self.debug("Creating an Isolated network with Static NAT service and "
@@ -613,6 +614,7 @@ class TestNuageStaticNat(nuageTestCase):
             self.validate_PublicIPAddress(public_ip, network_3)
         self.debug("Acquired public IP in the created Isolated network "
                    "successfully released in CloudStack")
+        self.delete_VM(vm_3)
 
         self.debug("Creating an Isolated network with Static NAT service "
                    "provider as VirtualRouter...")
@@ -663,6 +665,7 @@ class TestNuageStaticNat(nuageTestCase):
             self.validate_PublicIPAddress(public_ip, network_4)
         self.debug("Acquired public IP in the created Isolated network "
                    "successfully released in CloudStack")
+        self.delete_VM(vm_4)
 
         self.debug("Creating an Isolated network with no Static NAT "
                    "service...")
@@ -699,6 +702,7 @@ class TestNuageStaticNat(nuageTestCase):
             self.validate_PublicIPAddress(public_ip, network_5)
         self.debug("Acquired public IP in the created Isolated network "
                    "successfully released in CloudStack")
+        self.delete_VM(vm_5)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_04_nuage_StaticNAT_vpc_networks(self):
