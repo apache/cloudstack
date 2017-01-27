@@ -1413,6 +1413,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vbdr.userdevice = "autodetect";
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
+            Long deviceId = volumeTO.getDeviceId();
+            if (deviceId != null) {
+                if (!isDeviceUsed(conn, vm, deviceId) || deviceId.longValue() > 3) {
+                    vbdr.userdevice = deviceId.toString();
+                }
+            }
             VBD.create(conn, vbdr);
         }
         return vm;
@@ -4394,6 +4400,34 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
         }
+    }
+
+    protected String skipOrRemoveSR(Connection conn, SR sr) {
+        if (sr == null) {
+            return null;
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(logX(sr, "Removing SR"));
+        }
+        try {
+            Set<VDI> vdis = sr.getVDIs(conn);
+            for (VDI vdi : vdis) {
+                Map<java.lang.String, Types.VdiOperations> currentOperation = vdi.getCurrentOperations(conn);
+                if (currentOperation == null || currentOperation.size() == 0) {
+                    continue;
+                }
+                return null;
+            }
+            removeSR(conn, sr);
+            return null;
+        } catch (XenAPIException e) {
+            s_logger.warn(logX(sr, "Unable to get current opertions " + e.toString()), e);
+        } catch (XmlRpcException e) {
+            s_logger.warn(logX(sr, "Unable to get current opertions " + e.getMessage()), e);
+        }
+        String msg = "Remove SR failed";
+        s_logger.warn(msg);
+        return msg;
     }
 
     public void removeSR(final Connection conn, final SR sr) {
