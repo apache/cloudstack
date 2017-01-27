@@ -15,10 +15,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from __future__ import print_function
+
 import CsHelper
-from pprint import pprint
-from CsDatabag import CsDataBag, CsCmdLine
+from CsDatabag import CsCmdLine
 import logging
+from cs_iptables_save import Tables
 
 
 class CsChain(object):
@@ -81,6 +83,7 @@ class CsNetfilters(object):
 
     def __init__(self, load=True):
         self.rules = []
+        self.iptablerules = []
         self.table = CsTable()
         self.chain = CsChain()
         if load:
@@ -91,7 +94,10 @@ class CsNetfilters(object):
             if i.startswith('*'):  # Table
                 self.table.add(i[1:])
             if i.startswith(':'):  # Chain
-                self.chain.add(self.table.last(), i[1:].split(' ')[0])
+                string = i[1:].split(' ')[0]
+                cmd = "iptables -t %s -N %s" % (self.table.last(), string)
+                self.iptablerules.append(cmd)
+                self.chain.add(self.table.last(), string)
             if i.startswith('-A'):  # Rule
                 self.chain.add_rule(i.split()[1])
                 rule = CsNetfilter()
@@ -125,10 +131,7 @@ class CsNetfilters(object):
     def get_unseen(self):
         del_list = [x for x in self.rules if x.unseen()]
         for r in del_list:
-            cmd = "iptables -t %s %s" % (r.get_table(), r.to_str(True))
-            logging.debug("unseen cmd:  %s ", cmd)
-            CsHelper.execute(cmd)
-            # print "Delete rule %s from table %s" % (r.to_str(True), r.get_table())
+            self.delete(r)
             logging.info("Delete rule %s from table %s", r.to_str(True), r.get_table())
 
     def compare(self, list):
@@ -137,12 +140,16 @@ class CsNetfilters(object):
             # Ensure all inbound/outbound chains have a default drop rule
             if c.startswith("ACL_INBOUND") or c.startswith("ACL_OUTBOUND"):
                 list.append(["filter", "", "-A %s -j DROP" % c])
-        # PASS 1:  Ensure all chains are present
+        # PASS 1:  Ensure all chains are present and cleanup unused rules.
         for fw in list:
             new_rule = CsNetfilter()
             new_rule.parse(fw[2])
             new_rule.set_table(fw[0])
-            self.add_chain(new_rule)
+            self.has_rule(new_rule)
+
+        self.del_standard()
+        self.get_unseen()
+
         # PASS 2: Create rules
         for fw in list:
             new_rule = CsNetfilter()
@@ -151,28 +158,32 @@ class CsNetfilters(object):
             if isinstance(fw[1], int):
                 new_rule.set_count(fw[1])
 
-            logging.debug("Checking if the rule already exists: rule=%s table=%s chain=%s", new_rule.get_rule(), new_rule.get_table(), new_rule.get_chain())
-            if self.has_rule(new_rule):
-                logging.debug("Exists: rule=%s table=%s", fw[2], new_rule.get_table())
-            else:
-                # print "Add rule %s in table %s" % ( fw[2], new_rule.get_table())
-                logging.info("Add: rule=%s table=%s", fw[2], new_rule.get_table())
-                # front means insert instead of append
-                cpy = fw[2]
-                if fw[1] == "front":
-                    cpy = cpy.replace('-A', '-I')
-                if isinstance(fw[1], int):
-                    cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), fw[1]))
+            logging.info("Add: rule=%s table=%s", fw[2], new_rule.get_table())
+            # front means insert instead of append
+            cpy = fw[2]
+            if fw[1] == "front":
+                cpy = cpy.replace('-A', '-I')
+            if isinstance(fw[1], int):
+                cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), fw[1]))
 
-                CsHelper.execute("iptables -t %s %s" % (new_rule.get_table(), cpy))
-        self.del_standard()
-        self.get_unseen()
+            self.iptablerules.append("iptables -t %s %s" % (new_rule.get_table(), cpy))
+        self.apply_rules()
 
-    def add_chain(self, rule):
-        """ Add the given chain if it is not already present """
-        if not self.has_chain(rule.get_table(), rule.get_chain()):
-            CsHelper.execute("iptables -t %s -N %s" % (rule.get_table(), rule.get_chain()))
-            self.chain.add(rule.get_table(), rule.get_chain())
+    def apply_rules(self):
+        s = []
+        for r in self.iptablerules:
+            if r not in s:
+                s.append(r)
+
+        chains = Tables(s)
+        chains.table_printout()
+
+        # COMMIT all rules.
+        result = CsHelper.execute("iptables-restore < /tmp/rules.save")
+        if result:
+            logging.info("iptables-restore result: %s", result)
+        else:
+            logging.info("iptables-restore result: success!")
 
     def del_standard(self):
         """ Del rules that are there but should not be deleted
