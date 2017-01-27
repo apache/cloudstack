@@ -2318,7 +2318,7 @@ $.validator.addMethod("ipv6cidr", function(value, element) {
     if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
         return false;
 
-    if (Number(parts[1]) < 0 || Number(parts[1] > 32))
+    if (Number(parts[1]) < 0 || Number(parts[1] > 128))
         return false;
 
     return true;
@@ -2344,3 +2344,13 @@ $.validator.addMethod("ipv4cidr", function(value, element) {
 
     return true;
 }, "The specified IPv4 CIDR is invalid.");
+
+$.validator.addMethod("ipv46cidr", function(value, element) {
+    if (this.optional(element) && value.length == 0)
+        return true;
+
+    if ($.validator.methods.ipv4cidr.call(this, value, element) || $.validator.methods.ipv6cidr.call(this, value, element))
+        return true;
+
+    return false;
+}, "The specified IPv4/IPv6 CIDR is invalid.");

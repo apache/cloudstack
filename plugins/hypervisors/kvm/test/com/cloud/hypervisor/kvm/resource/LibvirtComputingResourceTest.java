@@ -2912,6 +2912,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testSecurityGroupRulesCmdFalse() {
         final String guestIp = "127.0.0.1";
+        final String guestIp6 = "2001:db8::cad:40ff:fefd:75c4";
         final String guestMac = "00:00:00:00";
         final String vmName = "Test";
         final Long vmId = 1l;
@@ -2923,7 +2924,7 @@ public class LibvirtComputingResourceTest {
         final List<String> cidrs = new Vector<String>();
         cidrs.add("0.0.0.0/0");
 
-        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
+        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
 
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);
@@ -2967,6 +2968,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testSecurityGroupRulesCmdTrue() {
         final String guestIp = "127.0.0.1";
+        final String guestIp6 = "2001:db8::cad:40ff:fefd:75c4";
         final String guestMac = "00:00:00:00";
         final String vmName = "Test";
         final Long vmId = 1l;
@@ -2978,7 +2980,7 @@ public class LibvirtComputingResourceTest {
         final List<String> cidrs = new Vector<String>();
         cidrs.add("0.0.0.0/0");
 
-        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
+        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
 
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);
@@ -3011,7 +3013,7 @@ public class LibvirtComputingResourceTest {
         when(egressRuleSet[0].getEndPort()).thenReturn(22);
         when(egressRuleSet[0].getAllowedCidrs()).thenReturn(cidrs);
 
-        when(libvirtComputingResource.addNetworkRules(command.getVmName(), Long.toString(command.getVmId()), command.getGuestIp(), command.getSignature(),
+        when(libvirtComputingResource.addNetworkRules(command.getVmName(), Long.toString(command.getVmId()), command.getGuestIp(), command.getGuestIp6(), command.getSignature(),
                 Long.toString(command.getSeqNum()), command.getGuestMac(), command.stringifyRules(), vif, brname, command.getSecIpsString())).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -3032,6 +3034,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testSecurityGroupRulesCmdException() {
         final String guestIp = "127.0.0.1";
+        final String guestIp6 = "2001:db8::cad:40ff:fefd:75c4";
         final String guestMac = "00:00:00:00";
         final String vmName = "Test";
         final Long vmId = 1l;
@@ -3041,7 +3044,7 @@ public class LibvirtComputingResourceTest {
         final IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
         final List<String> secIps = new Vector<String>();
 
-        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
+        final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
 
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);

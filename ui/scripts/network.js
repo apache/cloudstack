@@ -4869,7 +4869,7 @@
                                             label: 'label.cidr',
                                             isHidden: true,
                                             validation: {
-                                                ipv4cidr: true
+                                                ipv46cidr: true
                                             }
                                         },
                                         'accountname': {
@@ -5079,7 +5079,7 @@
                                             label: 'label.cidr',
                                             isHidden: true,
                                             validation: {
-                                                ipv4cidr: true
+                                                ipv46cidr: true
                                             }
                                         },
                                         'accountname': {

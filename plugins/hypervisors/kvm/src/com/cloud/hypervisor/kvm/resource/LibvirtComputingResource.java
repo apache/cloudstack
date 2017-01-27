@@ -3254,6 +3254,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (nic.getIp() != null) {
             cmd.add("--vmip", nic.getIp());
         }
+        if (nic.getIp6Address() != null) {
+            cmd.add("--vmip6", nic.getIp6Address());
+        }
         cmd.add("--vmmac", nic.getMac());
         cmd.add("--vif", vif);
         cmd.add("--brname", brname);
@@ -3316,7 +3319,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
+    public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String guestIP6, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
             final String secIps) {
         if (!_canBridgeFirewall) {
             return false;
@@ -3328,6 +3331,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add("--vmname", vmName);
         cmd.add("--vmid", vmId);
         cmd.add("--vmip", guestIP);
+        cmd.add("--vmip6", guestIP6);
         cmd.add("--sig", sig);
         cmd.add("--seq", seq);
         cmd.add("--vmmac", mac);

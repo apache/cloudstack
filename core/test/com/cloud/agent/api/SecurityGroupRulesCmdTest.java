@@ -45,6 +45,7 @@ public class SecurityGroupRulesCmdTest {
     @Before
     public void setUp() throws Exception {
         final String guestIp = "10.10.10.10";
+        final String guestIp6 = "2001:db8::cad:40ff:fefd:75c4";
         final String guestMac = "aa:aa:aa:aa:aa:aa";
         final String vmName = "vm";
         final Long vmId = 1L;
@@ -57,7 +58,7 @@ public class SecurityGroupRulesCmdTest {
         final IpPortAndProto[] ingressRuleSet = new IpPortAndProto[]{new IpPortAndProto(proto, startPort, endPort, allowedCidrs)};
         final IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{new IpPortAndProto(proto, startPort, endPort, allowedCidrs)};
         final List<String> secIps = new Vector<String>();
-        securityGroupRulesCmd = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
+        securityGroupRulesCmd = new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
     }
 
     /**
