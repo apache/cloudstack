@@ -139,76 +139,8 @@ class TestData:
                 TestData.tags: TestData.storageTag,
                 "storagetype": "shared"
             },
-            "testdiskofferings": {
-                "customiopsdo": {
-                    "name": "SF_Custom_IOPS_DO",
-                    "displaytext": "Customized IOPS DO (Size = 128 GB; Min IOPS = 500; Max IOPS = 1000)",
-                    "disksize": 128,
-                    "customizediops": True,
-                    "miniops": 500,
-                    "maxiops": 1000,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "customsizedo": {
-                    "name": "SF_Custom_Size_DO",
-                    "displaytext": "Customized IOPS DO (Min IOPS = 500; Max IOPS = 1000)",
-                    "disksize": 175,
-                    "customizediops": False,
-                    "miniops": 500,
-                    "maxiops": 1000,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "customsizeandiopsdo": {
-                    "name": "SF_Custom_Size_IOPS_DO",
-                    "displaytext": "Customized Size and IOPS DO",
-                    "disksize": 200,
-                    "customizediops": True,
-                    "miniops": 400,
-                    "maxiops": 800,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newiopsdo": {
-                    "name": "SF_New_IOPS_DO",
-                    "displaytext": "New IOPS (Size = 128 GB; Min IOPS = 350, Max IOPS = 700)",
-                    "disksize": 128,
-                    "miniops": 350,
-                    "maxiops": 700,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newsizedo": {
-                    "name": "SF_New_Size_DO",
-                    "displaytext": "New Size: 175",
-                    "disksize": 175,
-                    "miniops": 400,
-                    "maxiops": 800,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newsizeandiopsdo": {
-                    "name": "SF_New_Size_IOPS_DO",
-                    "displaytext": "New Size and IOPS",
-                    "disksize": 200,
-                    "miniops": 200,
-                    "maxiops": 400,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                }
-            },
             TestData.volume_1: {
                 "diskname": "testvolume",
-            },
-            "volume2": {
-                "diskname": "testvolume2",
             },
             TestData.zoneId: 1,
             TestData.clusterId: 1,

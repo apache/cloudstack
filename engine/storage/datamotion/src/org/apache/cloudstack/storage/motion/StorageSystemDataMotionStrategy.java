@@ -19,7 +19,6 @@
 package org.apache.cloudstack.storage.motion;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -37,9 +36,9 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -79,15 +78,11 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachAnswer;
-import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -225,6 +220,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 if (canHandleDest) {
                     handleCreateVolumeFromSnapshotOnSecondaryStorage(snapshotInfo, volumeInfo, callback);
+
                     return;
                 }
 
@@ -415,8 +411,14 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
 
-                if (needCache) {
+                if (!copyCmdAnswer.getResult()) {
+                    // We were not able to copy. Handle it.
+                    errMsg = copyCmdAnswer.getDetails();
 
+                    throw new CloudRuntimeException(errMsg);
+                }
+
+                if (needCache) {
                     // If cached storage was needed (in case of object store as secondary
                     // storage), at this point, the data has been copied from the primary
                     // to the NFS cache by the hypervisor. We now invoke another copy
@@ -430,16 +432,17 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                     if (ep == null) {
                         errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+
                         LOGGER.error(errMsg);
+
                         copyCmdAnswer = new CopyCmdAnswer(errMsg);
                     } else {
-                        copyCmdAnswer = (CopyCmdAnswer) ep.sendMessage(cmd);
+                        copyCmdAnswer = (CopyCmdAnswer)ep.sendMessage(cmd);
                     }
 
                     // clean up snapshot copied to staging
-                    performCleanupCacheStorage(destOnStore);
+                    cacheMgr.deleteCacheObject(destOnStore);
                 }
-
 
             } catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
                 String msg = "Failed to create template from snapshot (Snapshot ID = " + snapshotInfo.getId() + ") : ";
@@ -447,17 +450,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 LOGGER.warn(msg, ex);
 
                 throw new CloudRuntimeException(msg + ex.getMessage());
-
             } finally {
-
-                // detach and remove access after the volume is created
-                SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO) snapshotInfo.getTO();
-                DiskTO disk = new DiskTO(snapshotObjectTO, null, snapshotInfo.getPath(), Volume.Type.UNKNOWN);
-                detachManagedStoreVolume(snapshotInfo, hostVO, getProperty(snapshotInfo.getId(), DiskTO.IQN), srcDataStore.getId(), disk);
+                _volumeService.revokeAccess(snapshotInfo, hostVO, srcDataStore);
 
                 if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
                     if (copyCmdAnswer != null && !StringUtils.isEmpty(copyCmdAnswer.getDetails())) {
                         errMsg = copyCmdAnswer.getDetails();
+
+                        if (needCache) {
+                            cacheMgr.deleteCacheObject(destOnStore);
+                        }
                     }
                     else {
                         errMsg = "Unable to create template from snapshot";
@@ -497,11 +499,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * @param callback  for async
      */
     private void handleCreateVolumeFromSnapshotOnSecondaryStorage(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo, AsyncCompletionCallback<CopyCommandResult> callback) {
-
         // at this point, the snapshotInfo and volumeInfo should have the same disk offering ID (so either one should be OK to get a DiskOfferingVO instance)
         DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volumeInfo.getDiskOfferingId());
         SnapshotVO snapshot = _snapshotDao.findById(snapshotInfo.getId());
-        DataStore destDataStore = volumeInfo.getDataStore();
 
         // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
         _volumeService.updateHypervisorSnapshotReserveForVolume(diskOffering, volumeInfo.getId(), snapshot.getHypervisorType());
@@ -510,9 +510,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         String errMsg = null;
 
         HostVO hostVO = null;
-        try {
 
-            //create a volume on the storage
+        try {
+            // create a volume on the storage
             AsyncCallFuture<VolumeApiResult> future = _volumeService.createVolumeAsync(volumeInfo, volumeInfo.getDataStore());
             VolumeApiResult result = future.get();
 
@@ -529,7 +529,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             hostVO = getHost(snapshotInfo.getDataCenterId(), false);
 
-            //copy the volume from secondary via the hypervisor
+            // copy the volume from secondary via the hypervisor
             copyCmdAnswer = performCopyOfVdi(volumeInfo, snapshotInfo, hostVO);
 
             if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
@@ -543,12 +543,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
         catch (Exception ex) {
             errMsg = ex.getMessage() != null ? ex.getMessage() : "Copy operation failed in 'StorageSystemDataMotionStrategy.handleCreateVolumeFromSnapshotBothOnStorageSystem'";
-        } finally {
-
-
-            DiskTO disk = new DiskTO(volumeInfo.getTO(), volumeInfo.getDeviceId(), volumeInfo.getPath(),volumeInfo.getVolumeType());
-            long storagePoolId = volumeInfo.getPoolId();
-            detachManagedStoreVolume(volumeInfo, hostVO, volumeInfo.get_iScsiName(), storagePoolId, disk);
         }
 
         CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
@@ -556,73 +550,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         result.setResult(errMsg);
 
         callback.complete(result);
-
-
-    }
-
-    /**
-     * Detaches a managed volume from a host
-     *  @param dataObject Volume to be detached
-     * @param hostVO    Host where the volume is currently attached
-     * @param storagePoolId Storage where volume resides
-     * @param disk  Object which stores disk attributes to send to the agents
-     */
-    private void detachManagedStoreVolume(DataObject dataObject, HostVO hostVO, String iqn, long storagePoolId, DiskTO disk) {
-
-        DataStore destDataStore = dataObject.getDataStore();
-        DettachCommand cmd = new DettachCommand(disk, null);
-        StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
-
-        cmd.setManaged(true);
-        cmd.setStorageHost(storagePool.getHostAddress());
-        cmd.setStoragePort(storagePool.getPort());
-        cmd.set_iScsiName(iqn);
-
-        try {
-            DettachAnswer dettachAnswer = (DettachAnswer) _agentMgr.send(hostVO.getId(), cmd);
-
-            if (!dettachAnswer.getResult()) {
-                LOGGER.warn("Error detaching DataObject:" + dettachAnswer.getDetails());
-            }
-
-        } catch (Exception e) {
-            LOGGER.warn("Error detaching DataObject " + dataObject.getId() + " Error: " + e.getMessage());
-        }
-
-
-        try {
-            _volumeService.revokeAccess(dataObject, hostVO, destDataStore);
-        } catch (Exception e) {
-            LOGGER.warn("Error revoking access to DataObject (DataObject ID = " + dataObject.getId() + "): " + e.getMessage(), e);
-        }
-    }
-
-    private void performCleanupCacheStorage(DataObject destOnStore) {
-        destOnStore.processEvent(Event.DestroyRequested);
-
-        DeleteCommand deleteCommand = new DeleteCommand(destOnStore.getTO());
-        EndPoint ep = selector.select(destOnStore);
-        try {
-            if (ep == null) {
-                LOGGER.warn("Unable to cleanup staging NFS because no endpoint was found " +
-                "Object: " + destOnStore.getType() + " ID: " + destOnStore.getId());
-
-                destOnStore.processEvent(Event.OperationFailed);
-            } else {
-                Answer deleteAnswer = ep.sendMessage(deleteCommand);
-                if (deleteAnswer != null && deleteAnswer.getResult()) {
-                    LOGGER.warn("Unable to cleanup staging NFS " + deleteAnswer.getDetails() +
-                    "Object: " + destOnStore.getType() + " ID: " + destOnStore.getId());
-                    destOnStore.processEvent(Event.OperationFailed);
-                }
-            }
-
-            destOnStore.processEvent(Event.OperationSuccessed);
-        } catch (Exception e) {
-            destOnStore.processEvent(Event.OperationFailed);
-            LOGGER.warn("Unable to clean up staging cache Exception " + e.getMessage() +
-                    "Object: " + destOnStore.getType() + " ID: " + destOnStore.getId());
-        }
     }
 
     /**
@@ -899,7 +826,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private Map<String, String> getSnapshotDetails(SnapshotInfo snapshotInfo) {
-        Map<String, String> snapshotDetails = new HashMap<String, String>();
+        Map<String, String> snapshotDetails = new HashMap<>();
 
         long storagePoolId = snapshotInfo.getDataStore().getId();
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
@@ -1066,30 +993,34 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * @return result of the copy
      */
     private CopyCmdAnswer performCopyOfVdi(VolumeInfo volumeInfo, SnapshotInfo snapshotInfo, HostVO hostVO) {
+        Snapshot.LocationType locationType = snapshotInfo.getLocationType();
+
         String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
 
         DataObject srcData = snapshotInfo;
         CopyCmdAnswer copyCmdAnswer = null;
         DataObject cacheData = null;
+
         boolean needCacheStorage = needCacheStorage(snapshotInfo, volumeInfo);
 
         if (needCacheStorage) {
             cacheData = cacheSnapshotChain(snapshotInfo, new ZoneScope(volumeInfo.getDataCenterId()));
             srcData = cacheData;
-
         }
 
         CopyCommand copyCommand = new CopyCommand(srcData.getTO(), volumeInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
         try {
+            if (Snapshot.LocationType.PRIMARY.equals(locationType)) {
+                _volumeService.grantAccess(snapshotInfo, hostVO, snapshotInfo.getDataStore());
 
-            _volumeService.grantAccess(snapshotInfo, hostVO, snapshotInfo.getDataStore());
+                Map<String, String> srcDetails = getSnapshotDetails(snapshotInfo);
+
+                copyCommand.setOptions(srcDetails);
+            }
+
             _volumeService.grantAccess(volumeInfo, hostVO, volumeInfo.getDataStore());
-
-            Map<String, String> srcDetails = getSnapshotDetails(snapshotInfo);
-
-            copyCommand.setOptions(srcDetails);
 
             Map<String, String> destDetails = getVolumeDetails(volumeInfo);
 
@@ -1105,11 +1036,14 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException(msg + ex.getMessage());
         }
         finally {
-            _volumeService.revokeAccess(snapshotInfo, hostVO, snapshotInfo.getDataStore());
+            if (Snapshot.LocationType.PRIMARY.equals(locationType)) {
+                _volumeService.revokeAccess(snapshotInfo, hostVO, snapshotInfo.getDataStore());
+            }
+
             _volumeService.revokeAccess(volumeInfo, hostVO, volumeInfo.getDataStore());
 
             if (needCacheStorage && copyCmdAnswer != null && copyCmdAnswer.getResult()) {
-                performCleanupCacheStorage(cacheData);
+                cacheMgr.deleteCacheObject(cacheData);
             }
         }
 

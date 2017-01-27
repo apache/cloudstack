@@ -39,7 +39,7 @@ from marvin.lib.utils import cleanup_resources
 # Prerequisites:
 #  Only one zone
 #  Only one pod
-#  Two clusters
+#  Two clusters (have system VMs (including the VR) running on local or NFS storage)
 
 
 class TestData():

@@ -532,6 +532,10 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     if (snapshotSr != null) {
                         hypervisorResource.removeSR(conn, snapshotSr);
                     }
+
+                    if (primaryStore.isManaged()) {
+                        hypervisorResource.removeSR(conn, primaryStorageSR);
+                    }
                 }
             } else {
                 final String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
@@ -553,9 +557,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     physicalSize = Long.parseLong(tmp[1]);
                     finalPath = folder + File.separator + snapshotBackupUuid + ".vhd";
                 }
+
+                final String volumeUuid = snapshotTO.getVolume().getPath();
+
+                destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
             }
-            final String volumeUuid = snapshotTO.getVolume().getPath();
-            destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
 
             final SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(finalPath);
@@ -708,9 +714,10 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         }
         SR srcSr = null;
         VDI destVdi = null;
-        try {
-            SR primaryStorageSR;
 
+        SR primaryStorageSR = null;
+
+        try {
             if (pool.isManaged()) {
                 Map<String,String> destDetails = cmd.getOptions2();
 
@@ -771,6 +778,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(volumeUUID);
             newVol.setSize(vdir.virtualSize);
+
             return new CopyCmdAnswer(newVol);
         } catch (final Types.XenAPIException e) {
             details += " due to " + e.toString();
@@ -782,6 +790,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             if (srcSr != null) {
                 hypervisorResource.removeSR(conn, srcSr);
             }
+
+            if (pool.isManaged()) {
+                hypervisorResource.removeSR(conn, primaryStorageSR);
+            }
+
             if (!result && destVdi != null) {
                 try {
                     destVdi.destroy(conn);
