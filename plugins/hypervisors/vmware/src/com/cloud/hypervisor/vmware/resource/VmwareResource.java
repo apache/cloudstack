@@ -41,6 +41,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -1717,6 +1718,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             // Setup ROOT/DATA disk devices
             //
+            String hddBootOrder = "";
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
             for (DiskTO vol : sortedDisks) {
                 if (vol.getType() == Volume.Type.ISO)
@@ -1725,6 +1727,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
                 controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
                 String diskController = getDiskController(vmMo, matchingExistingDisk, vol, new Pair<String, String>(rootDiskController, dataDiskController));
+
+                if (matchingExistingDisk != null && matchingExistingDisk.getDiskDeviceBusName() != null) {
+                    if (vol.getType() == Volume.Type.ROOT) {
+                        hddBootOrder = matchingExistingDisk.getDiskDeviceBusName() + "," + hddBootOrder;
+                    } else if (vol.getType() == Volume.Type.DATADISK) {
+                        hddBootOrder = hddBootOrder + matchingExistingDisk.getDiskDeviceBusName() + ",";
+                    }
+                }
 
                 if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
                     diskController = vmMo.getRecommendedDiskController(null);
@@ -1866,6 +1876,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // pass boot arguments through machine.id & perform customized options to VMX
             ArrayList<OptionValue> extraOptions = new ArrayList<OptionValue>();
             configBasicExtraOption(extraOptions, vmSpec);
+            configBasicWithBootOrder(extraOptions, hddBootOrder);
             configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
             configCustomExtraOption(extraOptions, vmSpec);
 
@@ -2074,6 +2085,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         newVal.setKey("devices.hotplug");
         newVal.setValue("true");
         extraOptions.add(newVal);
+    }
+
+    protected static void configBasicWithBootOrder(List<OptionValue> extraOptions, String hddBootOrder) {
+        if (StringUtils.isEmpty(hddBootOrder)) {
+            return;
+        }
+
+        hddBootOrder = hddBootOrder.replaceAll(",+$", "");
+        if (!hddBootOrder.isEmpty()) {
+            OptionValue newVal = new OptionValue();
+            newVal.setKey("bios.bootOrder");
+            newVal.setValue("cdrom,hdd,floppy");
+            extraOptions.add(newVal);
+
+            newVal = new OptionValue();
+            newVal.setKey("bios.hddOrder");
+            newVal.setValue(hddBootOrder);
+            extraOptions.add(newVal);
+        }
     }
 
     private static void configNvpExtraOption(List<OptionValue> extraOptions, VirtualMachineTO vmSpec, Map<String, String> nicUuidToDvSwitchUuid) {
