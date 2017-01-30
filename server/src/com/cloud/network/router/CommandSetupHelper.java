@@ -611,7 +611,9 @@ public class CommandSetupHelper {
                 final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
                 if (nic != null) {
                     s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
-                    createVmDataCommand(router, vm, nic, null, cmds);
+
+                    _userVmDao.loadDetails(vm);
+                    createVmDataCommand(router, vm, nic, vm.getDetail("SSH.PublicKey"), cmds);
                 }
             }
         }
