@@ -42,6 +42,16 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.networkId = networkId;
     }
 
+    public NicSecondaryIpVO(long nicId, String ip4Address, String ip6Address, long vmId, long accountId, long domainId, long networkId) {
+        this.nicId = nicId;
+        this.vmId = vmId;
+        this.ip4Address = ip4Address;
+        this.ip6Address = ip6Address;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.networkId = networkId;
+    }
+
     protected NicSecondaryIpVO() {
     }
 

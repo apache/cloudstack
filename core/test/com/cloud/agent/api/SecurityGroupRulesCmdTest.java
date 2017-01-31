@@ -86,7 +86,7 @@ public class SecurityGroupRulesCmdTest {
      */
     @Test
     public void testCompressStringifiedRules() throws Exception {
-        final String compressed = "eJzztEpMSrYytDKyMtQz0jPWM9E31THTM9ez0LPUN9Dxc40IUXAlrAQAPdoP3Q==";
+        final String compressed = "eJzztEpMSrY2tDayNtQz0jPWM9E31THTM9ez0LPUN9Dxc40IUXAlrAQAPusP4w==";
         final String a = securityGroupRulesCmd.compressStringifiedRules();
         assertTrue(compressed.equals(a));
     }

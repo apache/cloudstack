@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+import com.cloud.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -106,7 +107,13 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
         List<NicSecondaryIpVO> results = search(sc, null);
         List<String> ips = new ArrayList<String>(results.size());
         for (NicSecondaryIpVO result : results) {
-            ips.add(result.getIp4Address());
+            if (StringUtils.isNotBlank(result.getIp4Address())) {
+                ips.add(result.getIp4Address());
+            }
+
+            if (StringUtils.isNotBlank(result.getIp6Address())) {
+                ips.add(result.getIp6Address());
+            }
         }
         return ips;
     }

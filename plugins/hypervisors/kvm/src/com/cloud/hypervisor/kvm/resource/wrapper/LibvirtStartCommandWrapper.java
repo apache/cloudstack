@@ -102,11 +102,11 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         final StringBuilder sb = new StringBuilder();
                         if (nicSecIps != null) {
                             for (final String ip : nicSecIps) {
-                                sb.append(ip).append(":");
+                                sb.append(ip).append(";");
                             }
                             secIpsStr = sb.toString();
                         } else {
-                            secIpsStr = "0:";
+                            secIpsStr = "0;";
                         }
                         libvirtComputingResource.defaultNetworkRules(conn, vmName, nic, vmSpec.getId(), secIpsStr);
                     }
