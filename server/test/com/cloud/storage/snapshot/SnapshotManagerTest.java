@@ -56,6 +56,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
 import org.junit.Assert;
@@ -89,6 +91,8 @@ public class SnapshotManagerTest {
     @Mock
     VMSnapshotDao _vmSnapshotDao;
     @Mock
+    VMSnapshotVO vmSnapshotMock;
+    @Mock
     Account account;
     @Mock
     UserVmVO vmMock;
@@ -118,11 +122,16 @@ public class SnapshotManagerTest {
     ResourceManager _resourceMgr;
     @Mock
     DataStore storeMock;
+    @Mock
+    SnapshotDataStoreDao _snapshotStoreDao;
+    @Mock
+    SnapshotDataStoreVO snapshotStoreMock;
 
     private static final long TEST_SNAPSHOT_ID = 3L;
     private static final long TEST_VOLUME_ID = 4L;
     private static final long TEST_VM_ID = 5L;
     private static final long TEST_STORAGE_POOL_ID = 6L;
+    private static final long TEST_VM_SNAPSHOT_ID = 6L;
 
     @Before
     public void setup() throws ResourceAllocationException {
@@ -138,6 +147,7 @@ public class SnapshotManagerTest {
         _snapshotMgr._storagePoolDao = _storagePoolDao;
         _snapshotMgr._resourceMgr = _resourceMgr;
         _snapshotMgr._vmSnapshotDao = _vmSnapshotDao;
+        _snapshotMgr._snapshotStoreDao = _snapshotStoreDao;
 
         when(_snapshotDao.findById(anyLong())).thenReturn(snapshotMock);
         when(snapshotMock.getVolumeId()).thenReturn(TEST_VOLUME_ID);
@@ -147,9 +157,11 @@ public class SnapshotManagerTest {
         when(volumeMock.getState()).thenReturn(Volume.State.Ready);
         when(volumeFactory.getVolume(anyLong())).thenReturn(volumeInfoMock);
         when(volumeInfoMock.getDataStore()).thenReturn(storeMock);
+        when(volumeInfoMock.getState()).thenReturn(Volume.State.Ready);
         when(storeMock.getId()).thenReturn(TEST_STORAGE_POOL_ID);
 
         when(snapshotFactory.getSnapshot(anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(snapshotInfoMock);
+        when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.BACKUP))).thenReturn(snapshotStrategy);
         when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.REVERT))).thenReturn(snapshotStrategy);
         when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.DELETE))).thenReturn(snapshotStrategy);
 
@@ -278,4 +290,46 @@ public class SnapshotManagerTest {
         Snapshot snapshot = _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
         Assert.assertNotNull(snapshot);
     }
+
+    // vm on Xenserver, expected exception
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBackupSnapshotFromVmSnapshotF1() {
+        when(_vmDao.findById(anyLong())).thenReturn(vmMock);
+        when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        Snapshot snapshot = _snapshotMgr.backupSnapshotFromVmSnapshot(TEST_SNAPSHOT_ID, TEST_VM_ID, TEST_VOLUME_ID, TEST_VM_SNAPSHOT_ID);
+        Assert.assertNull(snapshot);
+    }
+
+    // vm on KVM, first time
+    @Test
+    public void testBackupSnapshotFromVmSnapshotF2() {
+        when(_vmDao.findById(anyLong())).thenReturn(vmMock);
+        when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(_vmSnapshotDao.findById(anyLong())).thenReturn(vmSnapshotMock);
+        when(_snapshotStoreDao.findParent(any(DataStoreRole.class), anyLong(), anyLong())).thenReturn(null);
+        when(snapshotFactory.getSnapshot(anyLong(), Mockito.any(DataStore.class))).thenReturn(snapshotInfoMock);
+        when(storeMock.create(snapshotInfoMock)).thenReturn(snapshotInfoMock);
+        when(_snapshotStoreDao.findBySnapshot(anyLong(), any(DataStoreRole.class))).thenReturn(snapshotStoreMock);
+        when(_snapshotStoreDao.update(anyLong(), any(SnapshotDataStoreVO.class))).thenReturn(true);
+        when(_snapshotDao.update(anyLong(), any(SnapshotVO.class))).thenReturn(true);
+        when(vmMock.getAccountId()).thenReturn(2L);
+        when(snapshotStrategy.backupSnapshot(any(SnapshotInfo.class))).thenReturn(snapshotInfoMock);;;
+
+        Snapshot snapshot = _snapshotMgr.backupSnapshotFromVmSnapshot(TEST_SNAPSHOT_ID, TEST_VM_ID, TEST_VOLUME_ID, TEST_VM_SNAPSHOT_ID);
+        Assert.assertNotNull(snapshot);
+    }
+
+    // vm on KVM, already backed up
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBackupSnapshotFromVmSnapshotF3() {
+        when(_vmDao.findById(anyLong())).thenReturn(vmMock);
+        when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(_vmSnapshotDao.findById(anyLong())).thenReturn(vmSnapshotMock);
+        when(_snapshotStoreDao.findParent(any(DataStoreRole.class), anyLong(), anyLong())).thenReturn(snapshotStoreMock);
+        when(snapshotStoreMock.getInstallPath()).thenReturn("VM_SNAPSHOT_NAME");
+        when(vmSnapshotMock.getName()).thenReturn("VM_SNAPSHOT_NAME");
+        Snapshot snapshot = _snapshotMgr.backupSnapshotFromVmSnapshot(TEST_SNAPSHOT_ID, TEST_VM_ID, TEST_VOLUME_ID, TEST_VM_SNAPSHOT_ID);
+        Assert.assertNull(snapshot);
+    }
+
 }

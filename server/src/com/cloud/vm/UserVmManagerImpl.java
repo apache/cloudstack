@@ -102,6 +102,8 @@ import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.RestoreVMSnapshotAnswer;
+import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
@@ -3804,11 +3806,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        finalizeCommandsOnStart(cmds, profile);
         return true;
     }
 
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
+        UserVmVO vm = _vmDao.findById(profile.getId());
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vm.getId());
+        RestoreVMSnapshotCommand command = _vmSnapshotMgr.createRestoreCommand(vm, vmSnapshots);
+        if (command != null)
+            cmds.addCommand("restoreVMSnapshot", command);
         return true;
     }
 
@@ -3891,6 +3899,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } catch (Exception ex) {
             s_logger.warn("Failed to get system ip and enable static nat for the vm " + profile.getVirtualMachine() + " due to exception ", ex);
             return false;
+        }
+
+        Answer answer = cmds.getAnswer("restoreVMSnapshot");
+        if (answer != null && answer instanceof RestoreVMSnapshotAnswer) {
+            RestoreVMSnapshotAnswer restoreVMSnapshotAnswer = (RestoreVMSnapshotAnswer) answer;
+            if (restoreVMSnapshotAnswer == null || !restoreVMSnapshotAnswer.getResult()) {
+                s_logger.warn("Unable to restore the vm snapshot from image file to the VM: " + restoreVMSnapshotAnswer.getDetails());
+            }
         }
 
         return true;

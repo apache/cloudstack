@@ -110,7 +110,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("VM Id: " + getVmId());
-        VMSnapshot result = _vmSnapshotService.creatVMSnapshot(getVmId(), getEntityId(), getQuiescevm());
+        VMSnapshot result = _vmSnapshotService.createVMSnapshot(getVmId(), getEntityId(), getQuiescevm());
         if (result != null) {
             VMSnapshotResponse response = _responseGenerator.createVMSnapshotResponse(result);
             response.setResponseName(getCommandName());

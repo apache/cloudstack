@@ -409,6 +409,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCm
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotFromVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
@@ -2837,6 +2838,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RevokeSecurityGroupEgressCmd.class);
         cmdList.add(RevokeSecurityGroupIngressCmd.class);
         cmdList.add(CreateSnapshotCmd.class);
+        cmdList.add(CreateSnapshotFromVMSnapshotCmd.class);
         cmdList.add(DeleteSnapshotCmd.class);
         cmdList.add(CreateSnapshotPolicyCmd.class);
         cmdList.add(UpdateSnapshotPolicyCmd.class);

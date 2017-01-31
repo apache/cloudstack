@@ -44,6 +44,7 @@ import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Ternary;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -67,6 +68,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Domain destDomain = null;
         Connect conn = null;
         String xmlDesc = null;
+        List<Ternary<String, Boolean, String>> vmsnapshots = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
@@ -98,6 +100,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final String target = command.getDestinationIp();
             xmlDesc = dm.getXMLDesc(xmlFlag);
             xmlDesc = replaceIpForVNCInDescFile(xmlDesc, target);
+
+            // delete the metadata of vm snapshots before migration
+            vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system");
 
@@ -149,6 +154,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     libvirtComputingResource.cleanupDisk(disk);
                 }
             }
+
         } catch (final LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
             result = e.getMessage();
@@ -163,6 +169,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             result = e.getMessage();
         } finally {
             try {
+                if (dm != null && result != null) {
+                    // restore vm snapshots in case of failed migration
+                    if (vmsnapshots != null) {
+                        libvirtComputingResource.restoreVMSnapshotMetadata(dm, vmName, vmsnapshots);
+                    }
+                }
                 if (dm != null) {
                     if (dm.isPersistent() == 1) {
                         dm.undefine();

@@ -102,4 +102,6 @@ public interface VolumeApiService {
     boolean isDisplayResourceEnabled(Long id);
 
     void updateDisplay(Volume volume, Boolean displayVolume);
+
+    Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException;
 }

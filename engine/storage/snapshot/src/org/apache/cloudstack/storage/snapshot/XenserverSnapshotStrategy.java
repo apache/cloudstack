@@ -218,6 +218,12 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     public boolean deleteSnapshot(Long snapshotId) {
         SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
+
+        if (snapshotVO.getState() == Snapshot.State.Allocated) {
+            snapshotDao.remove(snapshotId);
+            return true;
+        }
+
         if (snapshotVO.getState() == Snapshot.State.Destroyed) {
             return true;
         }
