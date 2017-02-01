@@ -248,14 +248,13 @@ public class SnapshotManagerTest {
         _snapshotMgr.allocSnapshot(TEST_VOLUME_ID, Snapshot.MANUAL_POLICY_ID, null, null);
     }
 
-    @Test
+    @Test(expected = InvalidParameterValueException.class)
     public void testDeleteSnapshotF1() {
         when(snapshotStrategy.deleteSnapshot(TEST_SNAPSHOT_ID)).thenReturn(true);
         when(snapshotMock.getState()).thenReturn(Snapshot.State.Destroyed);
         when(snapshotMock.getAccountId()).thenReturn(2L);
         when(snapshotMock.getDataCenterId()).thenReturn(2L);
-        boolean result =_snapshotMgr.deleteSnapshot(TEST_SNAPSHOT_ID);
-        Assert.assertTrue(result);
+        _snapshotMgr.deleteSnapshot(TEST_SNAPSHOT_ID);
     }
 
     // vm state not stopped
