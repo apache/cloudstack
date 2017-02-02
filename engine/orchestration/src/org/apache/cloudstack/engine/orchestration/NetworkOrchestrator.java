@@ -1351,6 +1351,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             nic.setIPv4Address(profile.getIPv4Address());
             nic.setAddressFormat(profile.getFormat());
             nic.setIPv6Address(profile.getIPv6Address());
+            nic.setIPv6Cidr(profile.getIPv6Cidr());
+            nic.setIPv6Gateway(profile.getIPv6Gateway());
             nic.setMacAddress(profile.getMacAddress());
             nic.setIsolationUri(profile.getIsolationUri());
             nic.setBroadcastUri(profile.getBroadCastUri());
