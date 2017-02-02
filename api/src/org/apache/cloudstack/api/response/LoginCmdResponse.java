@@ -58,6 +58,10 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     @Param(description = "user time zone")
     private String timeZone;
 
+    @SerializedName(value = ApiConstants.TIMEZONEOFFSET)
+    @Param(description = "user time zoneoffset")
+    private String timeZoneOffset;
+
     @SerializedName(value = ApiConstants.REGISTERED)
     @Param(description = "Is user registered")
     private String registered;
@@ -137,6 +141,12 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     public void setTimeZone(String timeZone) {
         this.timeZone = timeZone;
     }
+
+    public String getTimeZoneOffset() {
+        return timeZoneOffset;
+    }
+
+    public void setTimeZoneOffset(String timeZoneOffset) { this.timeZoneOffset = timeZoneOffset; }
 
     public String getRegistered() {
         return registered;
