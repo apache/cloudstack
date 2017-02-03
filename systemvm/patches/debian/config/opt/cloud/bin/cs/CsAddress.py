@@ -137,7 +137,7 @@ class CsInterface:
         return self.get_attr("netmask")
 
     def get_gateway(self):
-        if self.config.is_vpc() or self.config.cmdline().is_redundant():
+        if self.config.is_vpc() or not self.is_guest():
             return self.get_attr("gateway")
         else:
             return self.config.cmdline().get_guest_gw()
