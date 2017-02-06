@@ -466,8 +466,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 final Pattern pattern = Pattern.compile(CONTROL_CHARACTERS);
                 final Matcher matcher = pattern.matcher(value[0]);
                 if (matcher.find()) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Received value " + value[0] + " for parameter " + key +
-                            " is invalid, contains illegal ASCII non-printable characters");
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Received value containing illegal ASCII non-printable characters for parameter " + key);
                 }
             }
             stringMap.put(key, value[0]);
