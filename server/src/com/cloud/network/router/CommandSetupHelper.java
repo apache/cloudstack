@@ -858,7 +858,8 @@ public class CommandSetupHelper {
                     ipsWithrules++;
                 }
 
-                if (ip.isOneToOneNat()) {
+                // check onetoonenat and also check if the ip "add":false. If there are 2 PF remove 1 static nat add
+                if (ip.isOneToOneNat() && ip.getRuleState() == null) {
                     ipsStaticNat++;
                 }
             }
@@ -870,13 +871,8 @@ public class CommandSetupHelper {
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
-            boolean remove = false;
-            // if there is only one static nat then it will be checked for remove at the resource
-            if (ipsWithrules == 0 && (ipsStaticNat == 0 || ipsStaticNat == 1)) {
-                remove = true;
-            }
-
-            if (remove) {
+            // if there 1 static nat then it will be checked for remove at the resource
+            if (ipsWithrules == 0 && ipsStaticNat == 0 ) {
                 // there is only one ip address for the network.
                 cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
             }

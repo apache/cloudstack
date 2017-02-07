@@ -117,6 +117,10 @@ public class IPAddressVO implements IpAddress {
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "rule_state")
+    State ruleState;
+
     @Column(name= GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -366,5 +370,15 @@ public class IPAddressVO implements IpAddress {
     @Override
     public Date getCreated() {
         return created;
+    }
+
+    @Override
+    public State getRuleState() {
+        return ruleState;
+    }
+
+    @Override
+    public void setRuleState(State ruleState) {
+        this.ruleState = ruleState;
     }
 }

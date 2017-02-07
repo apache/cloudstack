@@ -255,4 +255,13 @@ public class PublicIp implements PublicIpAddress {
         return IpAddress.class;
     }
 
+    @Override
+    public State getRuleState() {
+        return _addr.getRuleState();
+    }
+
+    @Override
+    public void setRuleState(State ruleState) {
+        _addr.setRuleState(ruleState);
+    }
 }
