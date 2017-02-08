@@ -1095,7 +1095,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
 
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
-
+                if(snapshotStoreRef == null) {
+                    // The snapshot was not backed up to secondary.  Find the snap on primary
+                    snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
+                    if(snapshotStoreRef == null) {
+                        throw new CloudRuntimeException("Could not find snapshot");
+                    }
+                }
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
                     null, null, snapshotStoreRef.getPhysicalSize(), volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
 

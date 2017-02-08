@@ -68,6 +68,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -160,6 +161,9 @@ public class TemplateManagerImplTest {
 
     @Inject
     SnapshotDao snapshotDao;
+
+    @Inject
+    StorageStrategyFactory storageStrategyFactory;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -451,6 +455,11 @@ public class TemplateManagerImplTest {
         @Bean
         public VMTemplateDao vmTemplateDao() {
             return Mockito.mock(VMTemplateDao.class);
+        }
+
+        @Bean
+        public StorageStrategyFactory storageStrategyFactory() {
+            return Mockito.mock(StorageStrategyFactory.class);
         }
 
         @Bean
