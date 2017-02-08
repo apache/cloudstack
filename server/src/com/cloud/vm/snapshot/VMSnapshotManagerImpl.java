@@ -1133,4 +1133,25 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
         return result;
     }
+
+    @Override
+    public boolean deleteVMSnapshotsFromDB(Long vmId) {
+        List<VMSnapshotVO> listVmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if (listVmSnapshots == null || listVmSnapshots.isEmpty()) {
+            return true;
+        }
+        for (VMSnapshotVO snapshot : listVmSnapshots) {
+            try {
+                VMSnapshotStrategy strategy = findVMSnapshotStrategy(snapshot);
+                if (! strategy.deleteVMSnapshotFromDB(snapshot)) {
+                    s_logger.error("Couldn't delete vm snapshot with id " + snapshot.getId());
+                    return false;
+                }
+            }
+            catch (CloudRuntimeException e) {
+                s_logger.error("Couldn't delete vm snapshot due to: " + e.getMessage());
+            }
+        }
+        return true;
+    }
 }

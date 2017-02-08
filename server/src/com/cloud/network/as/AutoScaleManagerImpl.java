@@ -1514,7 +1514,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     public void run() {
                         try {
 
-                            _userVmManager.destroyVm(vmId);
+                            _userVmManager.destroyVm(vmId, false);
 
                         } catch (ResourceUnavailableException e) {
                             e.printStackTrace();

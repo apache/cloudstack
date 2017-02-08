@@ -759,7 +759,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (UserVmVO vm : vms) {
                 if (vm.getState() != VirtualMachine.State.Destroyed && vm.getState() != VirtualMachine.State.Expunging) {
                     try {
-                        _vmMgr.destroyVm(vm.getId());
+                        _vmMgr.destroyVm(vm.getId(), false);
                     } catch (Exception e) {
                         e.printStackTrace();
                         s_logger.warn("Failed destroying instance " + vm.getUuid() + " as part of account deletion.");

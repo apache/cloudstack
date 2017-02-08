@@ -1679,9 +1679,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             s_logger.info("Destroy root volume and VM itself. vmName " + vmName);
                         }
 
-                        // Remove all snapshots to consolidate disks for removal
-                        vmMo.removeAllSnapshots();
-
                         VirtualMachineDiskInfo diskInfo = null;
                         if (vol.getChainInfo() != null)
                             diskInfo = _gson.fromJson(vol.getChainInfo(), VirtualMachineDiskInfo.class);

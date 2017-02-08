@@ -229,8 +229,8 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     @Override
-    public boolean destroy(String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-        return manager.destroyVirtualMachine(this.vmEntityVO, caller);
+    public boolean destroy(String caller, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        return manager.destroyVirtualMachine(this.vmEntityVO, caller, expunge);
     }
 
     @Override
