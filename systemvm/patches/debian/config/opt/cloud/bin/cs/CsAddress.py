@@ -528,6 +528,7 @@ class CsIP:
                 # add 'defaul via gateway' rule in the device specific routing table
                 if "gateway" in self.address and self.address["gateway"] != "None":
                     route.add_route(self.dev, self.address["gateway"])
+                route.add_network_route(self.dev, str(self.address["network"]))
 
                 if self.get_type() in ["public"]:
                     CsRule(self.dev).addRule("from " + str(self.address["network"]))
