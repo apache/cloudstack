@@ -498,6 +498,10 @@
                     if (includingSecurityGroupService == false) {
                         hiddenTabs.push("securityGroups");
                     }
+					
+					if (args.context.instances[0].state == 'Running') {
+						hiddenTabs.push("settings");
+					}
 
                     return hiddenTabs;
                 },
@@ -2680,11 +2684,172 @@
                                 }
                             });
                         }
-                    }
+                    },
+					
+					/**
+                     * Settings tab
+                     */
+					settings: {
+						title: 'label.settings',
+						custom: cloudStack.uiCustom.granularDetails({
+							dataProvider: function(args) {
+								$.ajax({
+									url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
+									success: function(json) {
+										var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
+										args.response.success({
+											data: parseDetails(details)
+										});
+									},
+
+									error: function(json) {
+										args.response.error(parseXMLHttpResponse(json));
+									}
+								});
+
+							},
+							actions: {
+								edit: function(args) {
+									var data = {
+										name: args.data.jsonObj.name,
+										value: args.data.value
+									};
+									var existingDetails;
+									$.ajax({
+										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
+										async:false,
+										success: function(json) {
+											var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
+											console.log(details);
+											existingDetails = details;
+										},
+
+										error: function(json) {
+											args.response.error(parseXMLHttpResponse(json));
+										}
+									});
+									console.log(existingDetails);
+									var newDetails = '';
+									for (d in existingDetails) {
+										if (d != data.name) {
+											newDetails += 'details[0].' + d + '=' + existingDetails[d] + '&';
+										}
+									}
+									newDetails += 'details[0].' + data.name + '=' + data.value;
+									
+									$.ajax({
+										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
+										async:false,
+										success: function(json) {
+											var items = json.updatevirtualmachineresponse.virtualmachine.details;
+											args.response.success({
+												data: parseDetails(items)
+											});
+										},
+
+										error: function(json) {
+											args.response.error(parseXMLHttpResponse(json));
+										}
+									});
+								},
+								remove: function(args) {
+									var existingDetails;
+									$.ajax({
+										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
+										async:false,
+										success: function(json) {
+											var details = json.listvirtualmachinesresponse.virtualmachine[0].details;
+											existingDetails = details;
+										},
+
+										error: function(json) {
+											args.response.error(parseXMLHttpResponse(json));
+										}
+									});
+									
+									var detailToDelete = args.data.jsonObj.name;
+									var newDetails = ''
+									for (detail in existingDetails) {
+										if (detail != detailToDelete) {
+											newDetails += 'details[0].' + detail + '=' + existingDetails[detail] + '&';
+										}
+									}
+									if (newDetails != '') {
+										newDetails = newDetails.substring(0, newDetails.length - 1);
+									}
+									else {
+										newDetails += 'cleanupdetails=true'
+									}
+									$.ajax({
+										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + '&' + newDetails),
+										async:false,
+										success: function(json) {
+											var items = json.updatevirtualmachineresponse.virtualmachine.details;
+											args.response.success({
+												data: parseDetails(items)
+											});
+										},
+										error: function(json) {
+											args.response.error(parseXMLHttpResponse(json));
+										}
+									});
+								},
+								add: function(args) {
+									var name = args.data.name;
+									var value = args.data.value;
+									
+									var details;
+									$.ajax({
+										url: createURL('listVirtualMachines&id=' + args.context.instances[0].id),
+										async:false,
+										success: function(json) {
+											var dets = json.listvirtualmachinesresponse.virtualmachine[0].details;
+											details = dets;
+										},
+
+										error: function(json) {
+											args.response.error(parseXMLHttpResponse(json));
+										}
+									});
+									
+									var detailsFormat = '';
+									for (key in details) {
+										detailsFormat += "details[0]." + key + "=" + details[key] + "&";
+									}
+									// Add new detail to the existing ones
+									detailsFormat += "details[0]." + name + "=" + value;
+									$.ajax({
+										url: createURL('updateVirtualMachine&id=' + args.context.instances[0].id + "&" + detailsFormat),
+										async: false,
+										success: function(json) {
+											var items = json.updatevirtualmachineresponse.virtualmachine.details;
+											args.response.success({
+												data: parseDetails(items)
+											});
+										},
+										error: function(json) {
+											args.response.error(parseXMLHttpResponse(json));
+										}
+									});
+								}
+							}
+						})
+					}
                 }
             }
         }
     };
+	
+	var parseDetails = function(details) {
+		var listDetails = [];
+		for (detail in details){
+			var det = {};
+			det["name"] = detail;
+			det["value"] = details[detail];
+			listDetails.push(det);
+		}
+		return listDetails;
+	}
 
     var vmActionfilter = cloudStack.actionFilter.vmActionFilter = function(args) {
         var jsonObj = args.context.item;

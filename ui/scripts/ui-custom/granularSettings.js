@@ -54,4 +54,88 @@
             return $listView;
         }
     };
+	cloudStack.uiCustom.granularDetails = function(args) {
+        var dataProvider = args.dataProvider;
+        var actions = args.actions;
+
+        return function(args) {
+            var context = args.context;
+
+            var listView = {
+                id: 'details',
+                fields: {
+                    name: {
+                        label: 'label.name'
+                    },
+                    value: {
+                        label: 'label.value',
+                        editable: true
+                    }
+                },
+                actions: {
+                    edit: {
+                        label: 'label.change.value',
+                        action: actions.edit
+                    },
+					remove: {
+						label: 'Remove Setting',
+						messages: {
+							confirm: function(args) {
+								return 'Delete Setting';
+							},
+							notification: function(args) {
+								return 'Setting deleted';
+							}
+						},
+						action: actions.remove,
+						notification: {
+							poll: function(args) {
+								args.complete();
+							}
+						}
+					},
+					add : {
+						label: 'Add Setting',
+						messages: {
+							confirm: function(args) {
+								return 'Add Setting';
+							},
+							notification: function(args) {
+								return 'Setting added';
+							}
+						},
+						preFilter: function(args) {
+							return true;
+						},
+						createForm: {
+							title: 'Add New Setting',
+							fields: {
+								name: {
+									label: 'label.name',
+									validation: {
+										required: true
+									}
+								},
+								value: {
+									label: 'label.value',
+									validation: {
+										required: true
+									}
+								}
+							}
+						},
+						action: actions.add
+					}
+                },
+                dataProvider: dataProvider
+            };
+
+            var $listView = $('<div>').listView({
+                context: context,
+                listView: listView
+            });
+
+            return $listView;
+        }
+    };
 }(jQuery, cloudStack));

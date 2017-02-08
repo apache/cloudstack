@@ -51,7 +51,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -292,11 +291,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         // set resource details map
-        // only hypervisortoolsversion can be returned to the end user
-        UserVmDetailVO hypervisorToolsVersion = _userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.HYPERVISOR_TOOLS_VERSION);
-        if (hypervisorToolsVersion != null) {
+        // Allow passing details to end user
+        List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(userVm.getId());
+        if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
-            resourceDetails.put(hypervisorToolsVersion.getName(), hypervisorToolsVersion.getValue());
+            for (UserVmDetailVO userVmDetailVO : vmDetails) {
+                resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
+            }
             userVmResponse.setDetails(resourceDetails);
         }
 
