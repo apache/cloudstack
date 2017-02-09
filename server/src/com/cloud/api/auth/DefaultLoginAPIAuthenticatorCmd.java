@@ -166,7 +166,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
                     throw new CloudAuthenticationException("Unable to find the domain from the path " + domain);
                 }
                 final UserAccount userAccount = _accountService.getActiveUserAccount(username[0], domainId);
-                if (userAccount == null || !(User.Source.UNKNOWN.equals(userAccount.getSource()) || User.Source.LDAP.equals(userAccount.getSource()))) {
+                if (userAccount != null && User.Source.SAML2 == userAccount.getSource()) {
                     throw new CloudAuthenticationException("User is not allowed CloudStack login");
                 }
                 return ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
