@@ -56,6 +56,10 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the account name of the project's owner")
     private String ownerName;
 
+    @SerializedName("projectaccountname")
+    @Param(description="the project account name of the project")
+    private String projectAccountName;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the project")
     private String state;
@@ -226,6 +230,10 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
 
     public void setOwner(String owner) {
         ownerName = owner;
+    }
+
+    public void setProjectAccountName(String projectAccountName) {
+        this.projectAccountName = projectAccountName;
     }
 
     public void setState(String state) {

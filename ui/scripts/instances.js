@@ -1910,7 +1910,50 @@
                         label: 'label.assign.instance.another',
                         createForm: {
                             title: 'label.assign.instance.another',
+                            desc: 'message.assign.instance.another',
+                            preFilter: function(args) {
+                                var zone;
+                                $.ajax({
+                                    url: createURL('listZones'),
+                                    data: {
+                                        id: args.context.instances[0].zoneid
+                                    },
+                                    async: false,
+                                    success: function(json) {
+                                        zone = json.listzonesresponse.zone[0];
+                                    }
+                                });
+                                if (zone.securitygroupsenabled == true) {
+                                    args.$form.find('.form-item[rel=securitygroup]').css('display', 'inline-block');
+                                } else {
+                                    args.$form.find('.form-item[rel=securitygroup]').hide();
+                                }
+                            },
                             fields: {
+                                accountType: {
+                                    label: 'Account Type',
+                                    select: function(args) {
+                                        var items = [];
+                                        items.push({id: 'account', description: 'Account'});
+                                        items.push({id: 'project', description: 'Project'});
+                                        args.response.success({data: items});
+
+                                        args.$select.change(function() {
+                                            var $form = $(this).closest('form');
+                                            var $account = $form.find('.form-item[rel=account]');
+                                            var $project = $form.find('.form-item[rel=project]');
+
+                                            var accountType = $(this).val();
+                                            if (accountType == 'account') { // Account
+                                                $account.css('display', 'inline-block');
+                                                $project.hide();
+                                            } else if (accountType == 'project') { // Project
+                                                $project.css('display', 'inline-block');
+                                                $account.hide();
+                                            }
+                                        });
+                                    }
+                                },
                                 domainid: {
                                     label: 'label.domain',
                                     validation: {
@@ -1946,25 +1989,216 @@
                                 },
                                 account: {
                                     label: 'label.account',
+                                    dependsOn: 'domainid',
                                     validation: {
                                         required: true
-                                    }
-                                }
+                                    },
+                                    select: function(args) {
+                                        var dataObj = {
+                                            domainId: args.domainid,
+                                            state: 'Enabled',
+                                            listAll: true,
+                                        };
+                                        $.ajax({
+                                            url: createURL('listAccounts', {
+                                                ignoreProject: true
+                                            }),
+                                            data: dataObj,
+                                            success: function(json) {
+                                                accountObjs = json.listaccountsresponse.account;
+                                                var items = [{
+                                                    id: null,
+                                                    description: ''
+                                                }];
+                                                $(accountObjs).each(function() {
+                                                    items.push({
+                                                        id: this.name,
+                                                        description: this.name
+                                                    });
+                                                })
+
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    },
+                                },
+                                project: {
+                                    label: 'label.project',
+                                    dependsOn: 'domainid',
+                                    validation: {
+                                        required: true
+                                    },
+                                    select: function(args) {
+                                        var dataObj = {
+                                            domainId: args.domainid,
+                                            state: 'Active',
+                                            listAll: true,
+                                        };
+                                        $.ajax({
+                                            url: createURL('listProjects', {
+                                                ignoreProject: true
+                                            }),
+                                            data: dataObj,
+                                            success: function(json) {
+                                                projectObjs = json.listprojectsresponse.project;
+                                                var items = [{
+                                                    id: null,
+                                                    description: ''
+                                                }];
+                                                $(projectObjs).each(function() {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.name
+                                                    });
+                                                })
+
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    },
+                                },
+                                network: {
+                                    label: 'label.network',
+                                    dependsOn: ['accountType', 'domainid', 'account', 'project'],
+                                    select: function(args) {
+                                        var dataObj = {
+                                            domainId: args.domainid,
+                                            listAll: true,
+                                            isrecursive: false
+                                        };
+                                        if (args.data.accountType == 'account' && args.data.account != null && args.data.account != '') {
+                                            $.extend(dataObj, {
+                                                account: args.data.account
+                                            });
+                                        } else if (args.data.accountType == 'project' && args.data.project != null && args.data.project != '') {
+                                            $.extend(dataObj, {
+                                                projectid: args.data.project
+                                            });
+                                        } else {
+                                            args.response.success({
+                                                data: null
+                                            });
+                                            return;
+                                        }
+                                        $.ajax({
+                                            url: createURL('listNetworks', {
+                                                ignoreProject: true
+                                            }),
+                                            data: dataObj,
+                                            success: function(json) {
+                                                var networkObjs = json.listnetworksresponse.network;
+                                                var items = [{
+                                                    id: null,
+                                                    description: ''
+                                                }];
+                                                $(networkObjs).each(function() {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.name
+                                                    });
+                                                })
+
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    },
+                                },
+                                securitygroup: {
+                                    label: 'label.security.group',
+                                    dependsOn: ['accountType', 'domainid', 'account', 'project'],
+                                    select: function(args) {
+                                        var dataObj = {
+                                            domainId: args.domainid,
+                                            listAll: true,
+                                            isrecursive: false
+                                        };
+                                        if (args.data.accountType == 'account' && args.data.account != null && args.data.account != '') {
+                                            $.extend(dataObj, {
+                                                account: args.data.account
+                                            });
+                                        } else if (args.data.accountType == 'project' && args.data.project != null && args.data.project != '') {
+                                            $.extend(dataObj, {
+                                                projectid: args.data.project
+                                            });
+                                        } else {
+                                            args.response.success({
+                                                data: null
+                                            });
+                                            return;
+                                        }
+                                        $.ajax({
+                                            url: createURL('listSecurityGroups', {
+                                                ignoreProject: true
+                                            }),
+                                            data: dataObj,
+                                            success: function(json) {
+                                                var sgObjs = json.listsecuritygroupsresponse.securitygroup;
+                                                var items = [{
+                                                    id: null,
+                                                    description: ''
+                                                }];
+                                                $(sgObjs).each(function() {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.name
+                                                    });
+                                                })
+
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    },
+                                },
                             }
                         },
                         action: function(args) {
-                            $.ajax({
-                                url: createURL('assignVirtualMachine'),
-                                data: {
-                                    virtualmachineid: args.context.instances[0].id,
-                                    domainid: args.data.domainid,
+                            var dataObj = {
+                                virtualmachineid: args.context.instances[0].id,
+                                domainid: args.data.domainid,
+                            };
+                            var ignoreProject = false;
+                            if (args.data.accountType == 'account') {
+                                ignoreProject = true;
+                                $.extend(dataObj, {
                                     account: args.data.account
-                                },
+                                });
+                            } else if (args.data.accountType == 'project') {
+                                $.extend(dataObj, {
+                                    projectid: args.data.project
+                                });
+                            }
+                            if (args.data.network != null && args.data.network != '') {
+                                $.extend(dataObj, {
+                                    networkIds: args.data.network
+                                });
+                            } 
+                            if (args.data.securitygroup != null && args.data.securitygroup != '') {
+                                $.extend(dataObj, {
+                                    securitygroupIds: args.data.securitygroup
+                                });
+                            }
+
+                            $.ajax({
+                                url: createURL('assignVirtualMachine', {
+                                    ignoreProject: ignoreProject
+                                }),
+                                data: dataObj,
                                 success: function(json) {
                                     var item = json.assignvirtualmachineresponse.virtualmachine;
                                     args.response.success({
                                         data: item
                                     });
+                                },
+                                error: function(data) {
+                                    args.response.error(parseXMLHttpResponse(data));
                                 }
                             });
                         },
