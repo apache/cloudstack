@@ -47,7 +47,8 @@ public interface StorageManager extends StorageService {
     static final ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<Integer>(Integer.class, "storage.cleanup.interval", "Advanced", "86400",
             "The interval (in seconds) to wait before running the storage cleanup thread.", false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> StorageCleanupDelay = new ConfigKey<Integer>(Integer.class, "storage.cleanup.delay", "Advanced", "86400",
-            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.", false, ConfigKey.Scope.Global, null);
+            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.", false,
+            ConfigKey.Scope.Global, null);
     static final ConfigKey<Boolean> StorageCleanupEnabled = new ConfigKey<Boolean>(Boolean.class, "storage.cleanup.enabled", "Advanced", "true",
             "Enables/disables the storage cleanup thread.", false, ConfigKey.Scope.Global, null);
 
@@ -133,6 +134,8 @@ public interface StorageManager extends StorageService {
      *  Cloning volumes on the back-end instead of copying down a new template for each new volume helps to alleviate load on the hypervisors.
      */
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
+
+    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz);
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
