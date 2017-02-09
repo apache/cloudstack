@@ -950,12 +950,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     + "; make sure the virtual machine is stopped");
         }
 
-        // If target VM has associated VM snapshots then don't allow upgrading of VM
-        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-        if (vmSnapshots.size() > 0) {
-            throw new InvalidParameterValueException("Unable to change service offering for VM, please remove VM snapshots before changing service offering of VM");
-        }
-
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         // Check resource limits for CPU and Memory.
@@ -1616,11 +1610,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
 
         if (vmInstance != null) {
-            // If target VM has associated VM snapshots then don't allow upgrading of VM
-            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-            if (vmSnapshots.size() > 0) {
-                throw new InvalidParameterValueException("Unable to scale VM, please remove VM snapshots before scaling VM");
-            }
             if (vmInstance.getState().equals(State.Stopped)) {
                 upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
                 return true;
