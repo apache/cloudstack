@@ -1499,11 +1499,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (doCleanup) {
                 if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, cleanUpEvenIfUnableToStop)) {
                     try {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Updating work item to Done, id:" + work.getId());
-                        }
-                        if (!changeState(vm, Event.AgentReportStopped, null, work, Step.Done)) {
-                            throw new CloudRuntimeException("Unable to stop " + vm);
+                        if (work != null) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Updating work item to Done, id:" + work.getId());
+                            }
+                            if (!changeState(vm, Event.AgentReportStopped, null, work, Step.Done)) {
+                                throw new CloudRuntimeException("Unable to stop " + vm);
+                            }
                         }
                     } catch (final NoTransitionException e) {
                         s_logger.warn("Unable to cleanup " + vm);
