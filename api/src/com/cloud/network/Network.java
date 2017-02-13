@@ -141,7 +141,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         // add GloboDns provider
         public static final Provider GloboDns = new Provider("GloboDns", true);
         // add Big Switch Bcf Provider
-        public static final Provider BigSwitchBcf = new Provider("BigSwitchBcf", false);
+        public static final Provider BigSwitchBcf = new Provider("BigSwitchBcf", false);        
+        // add Vyos Router Provider
+        public static final Provider VyosRouter = new Provider("PaloAlto", true);
 
         private final String name;
         private final boolean isExternal;
