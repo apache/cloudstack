@@ -84,7 +84,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "destroying system vm: " + getId();
+        return "destroying system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override
@@ -99,7 +99,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         VirtualMachine instance = _mgr.destroySystemVM(this);
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);

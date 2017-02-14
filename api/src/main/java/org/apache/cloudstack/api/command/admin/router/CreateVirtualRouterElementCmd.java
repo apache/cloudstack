@@ -106,7 +106,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Virtual router element Id: " + getEntityId());
+        CallContext.current().setEventDetails("Virtual router element Id: " + getEntityUuid());
         VirtualRouterProvider result = _service.get(0).getCreatedElement(getEntityId());
         if (result != null) {
             VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);
@@ -137,6 +137,6 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding physical network ServiceProvider Virtual Router: " + getEntityId();
+        return "Adding physical network ServiceProvider Virtual Router: " + getEntityUuid();
     }
 }

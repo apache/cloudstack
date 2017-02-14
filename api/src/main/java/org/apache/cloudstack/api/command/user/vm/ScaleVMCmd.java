@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.offering.ServiceOffering;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -129,7 +130,7 @@ public class ScaleVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "upgrading vm: " + getId() + " to service offering: " + getServiceOfferingId();
+        return  "upgrading vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()) + " to service offering: " + this._uuidMgr.getUuid(ServiceOffering.class, getServiceOfferingId());
     }
 
     @Override

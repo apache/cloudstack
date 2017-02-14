@@ -82,7 +82,7 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "destroying router: " + getId();
+        return "destroying router: " + this._uuidMgr.getUuid(VirtualMachine.class,getId());
     }
 
     @Override
@@ -98,7 +98,7 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
         CallContext ctx = CallContext.current();
-        ctx.setEventDetails("Router Id: " + getId());
+        ctx.setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class,getId()));
 
         VirtualRouter result = _routerService.destroyRouter(getId(), ctx.getCallingAccount(), ctx.getCallingUserId());
         if (result != null) {

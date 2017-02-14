@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.dc.DataCenter;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -113,7 +114,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "extracting template: " + getId() + " from zone: " + getZoneId();
+     return "extracting template: " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId()) + ((getZoneId() != null) ? " from zone: " + this._uuidMgr.getUuid(DataCenter.class, getZoneId()) : "");
     }
 
     @Override

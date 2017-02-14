@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.template;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.dc.DataCenter;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -94,6 +95,10 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         return null;
     }
 
+    public Long getDestinationZoneId() {
+        return destZoneId;
+    }
+
     public Long getId() {
         return id;
     }
@@ -133,8 +138,19 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "copying template: " + getId() + " from zone: " + getSourceZoneId()
-                + " to zone: " + getDestinationZoneIds();
+        StringBuilder descBuilder = new StringBuilder();
+        if (getDestinationZoneIds() != null) {
+
+            for (Long destId : getDestinationZoneIds()) {
+                descBuilder.append(", ");
+                descBuilder.append(this._uuidMgr.getUuid(DataCenter.class, destId));
+            }
+            if (descBuilder.length() > 0) {
+                descBuilder.deleteCharAt(0);
+            }
+        }
+
+        return  "copying template: " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId()) +((getSourceZoneId() != null) ? " from zone: " + this._uuidMgr.getUuid(DataCenter.class, getSourceZoneId()) : "") + ((descBuilder.length() > 0) ? " to zones: " + descBuilder.toString() : "");
     }
 
     @Override

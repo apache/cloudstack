@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.template;
 
 import java.util.List;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -38,7 +40,7 @@ public class CreateTemplateCmdByAdmin extends CreateTemplateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
+        CallContext.current().setEventDetails("Template Id: " + getEntityUuid()+((getSnapshotId() == null) ? " from volume Id: " + this._uuidMgr.getUuid(Volume.class, getVolumeId()) : " from snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
         VirtualMachineTemplate template = null;
         template = _templateService.createPrivateTemplate(this);
 

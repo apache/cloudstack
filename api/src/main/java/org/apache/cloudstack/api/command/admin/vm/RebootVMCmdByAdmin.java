@@ -38,7 +38,7 @@ public class RebootVMCmdByAdmin extends RebootVMCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         UserVm result;
         result = _userVmService.rebootVirtualMachine(this);
 

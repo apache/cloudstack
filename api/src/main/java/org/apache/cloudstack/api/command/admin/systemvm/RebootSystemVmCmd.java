@@ -91,7 +91,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "rebooting system vm: " + getId();
+        return "rebooting system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override
@@ -106,7 +106,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         VirtualMachine result = _mgr.rebootSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

@@ -104,7 +104,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId();
+        return "Attempting to migrate VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
     }
 
     @Override
@@ -115,7 +115,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
         }
         try {
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
+            CallContext.current().setEventDetails("VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId()));
             //FIXME : Should not be calling UserVmService to migrate all types of VMs - need a generic VM layer
             VirtualMachine migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
             if (migratedVm != null) {

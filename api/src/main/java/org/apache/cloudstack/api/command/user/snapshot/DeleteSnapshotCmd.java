@@ -84,7 +84,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "deleting snapshot: " + getId();
+        return  "deleting snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId());
     }
 
     @Override
@@ -99,7 +99,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Snapshot Id: " + getId());
+        CallContext.current().setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
         boolean result = _snapshotService.deleteSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

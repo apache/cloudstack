@@ -119,7 +119,13 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId();
+        if (getHostId() != null) {
+            return "Attempting to migrate VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
+        } else if (getStoragePoolId() != null) {
+            return "Attempting to migrate VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to storage pool Id: " + this._uuidMgr.getUuid(StoragePool.class, getStoragePoolId());
+        } else {
+            return "Attempting to migrate VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId());
+        }
     }
 
     @Override
@@ -146,7 +152,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destinationHost.getType() != Host.Type.Routing) {
                 throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
             }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
+            CallContext.current().setEventDetails("VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + ((getHostId() != null) ?  " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId()) : "" ));
         }
 
         StoragePool destStoragePool = null;
@@ -155,7 +161,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destStoragePool == null) {
                 throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
             }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStoragePoolId());
+            CallContext.current().setEventDetails("VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to storage pool Id: " + this._uuidMgr.getUuid(StoragePool.class, getStoragePoolId()));
         }
 
         try {

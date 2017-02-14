@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
+import com.cloud.network.Network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -41,7 +42,7 @@ public class AddNicToVMCmdByAdmin extends AddNicToVMCmd {
 
     @Override
     public void execute(){
-        CallContext.current().setEventDetails("Vm Id: " + getVmId() + " Network Id: " + getNetworkId());
+        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()) + " Network Id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()));
         UserVm result = _userVmService.addNicToVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

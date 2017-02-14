@@ -32,7 +32,7 @@ public class UpdateVolumeCmdByAdmin extends UpdateVolumeCmd {
 
     @Override
     public void execute(){
-        CallContext.current().setEventDetails("Volume Id: "+getId());
+        CallContext.current().setEventDetails("Volume Id: "+this._uuidMgr.getUuid(Volume.class, getId()));
         Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(),
                 getCustomId(), getEntityOwnerId(), getChainInfo());
         if (result != null) {

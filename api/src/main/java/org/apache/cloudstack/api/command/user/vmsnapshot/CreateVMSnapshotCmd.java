@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vmsnapshot;
 
 import java.util.logging.Logger;
 
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -99,7 +100,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating snapshot for VM: " + getVmId();
+        return "creating snapshot for VM: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
     }
 
     @Override
@@ -109,7 +110,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("VM Id: " + getVmId());
+        CallContext.current().setEventDetails("VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()));
         VMSnapshot result = _vmSnapshotService.createVMSnapshot(getVmId(), getEntityId(), getQuiescevm());
         if (result != null) {
             VMSnapshotResponse response = _responseGenerator.createVMSnapshotResponse(result);

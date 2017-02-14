@@ -36,7 +36,7 @@ public class AttachVolumeCmdByAdmin extends AttachVolumeCmd {
 
     @Override
     public void execute(){
-        CallContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
+        CallContext.current().setEventDetails("Volume Id: "+this._uuidMgr.getUuid(Volume.class, getId())+" VmId: "+this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()));
         Volume result = _volumeService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);

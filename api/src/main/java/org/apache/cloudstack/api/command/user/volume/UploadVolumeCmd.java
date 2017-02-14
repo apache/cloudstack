@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import com.cloud.dc.DataCenter;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -169,7 +170,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "uploading volume: " + getVolumeName() + " in the zone " + getZoneId();
+        return  "uploading volume: " + getVolumeName() + " in the zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
     }
 
     @Override

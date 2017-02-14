@@ -37,7 +37,7 @@ public class ResizeVolumeCmdByAdmin extends ResizeVolumeCmd {
     public void execute() throws ResourceAllocationException{
         Volume volume = null;
         try {
-            CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
+            CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getEntityId()) + " to size " + getSize() + "G");
             volume = _volumeService.resizeVolume(this);
         } catch (InvalidParameterValueException ex) {
             s_logger.info(ex.getMessage());

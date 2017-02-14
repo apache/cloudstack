@@ -37,7 +37,7 @@ public class DetachVolumeCmdByAdmin extends DetachVolumeCmd {
 
     @Override
     public void execute(){
-        CallContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
+        CallContext.current().setEventDetails(getEventDescription());
         Volume result = _volumeService.detachVolumeFromVM(this);
         if (result != null){
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);

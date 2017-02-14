@@ -119,7 +119,7 @@ public class UpgradeVMCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceAllocationException {
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {

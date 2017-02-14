@@ -1626,7 +1626,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Long vmId = cmd.getId();
         Long newServiceOfferingId = cmd.getServiceOfferingId();
-        CallContext.current().setEventDetails("Vm Id: " + vmId);
+        VirtualMachine vm = (VirtualMachine) this._entityMgr.findById(VirtualMachine.class, vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find VM's UUID");
+        }
+        CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
 
         boolean result = upgradeVirtualMachine(vmId, newServiceOfferingId, cmd.getDetails());
         if (result) {
@@ -3812,7 +3816,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Successfully allocated DB entry for " + vm);
                 }
-                CallContext.current().setEventDetails("Vm Id: " + vm.getId());
+                CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
 
                 if (!offering.isDynamic()) {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(),

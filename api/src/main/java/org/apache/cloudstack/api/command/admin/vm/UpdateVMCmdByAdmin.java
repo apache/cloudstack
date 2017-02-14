@@ -42,7 +42,7 @@ public class UpdateVMCmdByAdmin extends UpdateVMCmd {
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         UserVm result = _userVmService.updateVirtualMachine(this);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", result).get(0);

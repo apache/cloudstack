@@ -105,7 +105,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "associating ip to nic id=" + getNicId() + " belonging to network id=" + getNetworkId();
+        return "associating ip to nic id=" + this._uuidMgr.getUuid(Nic.class, getNicId()) + " belonging to network id=" + this._uuidMgr.getUuid(Network.class, getNetworkId());
     }
 
     /////////////////////////////////////////////////////
@@ -124,11 +124,11 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
-        CallContext.current().setEventDetails("Nic Id: " + getNicId());
+        CallContext.current().setEventDetails("Nic Id: " + this._uuidMgr.getUuid(Nic.class, getNicId()));
         NicSecondaryIp result = _entityMgr.findById(NicSecondaryIp.class, getEntityId());
 
         if (result != null) {
-            CallContext.current().setEventDetails("secondary Ip Id: " + getEntityId());
+            CallContext.current().setEventDetails("secondary Ip Id: " + getEntityUuid());
             boolean success = false;
             success = _networkService.configureNicSecondaryIp(result, isZoneSGEnabled());
 
