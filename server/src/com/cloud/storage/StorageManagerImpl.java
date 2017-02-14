@@ -1719,6 +1719,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         // allocated space includes templates
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Destination pool id: " + pool.getId());
+        }
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
         long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
@@ -1746,10 +1749,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, tmpl);
                 }
             }
-
-            if (volumeVO.getState() != Volume.State.Ready) {
-                totalAskingSize += getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeVO, pool);
-
+            // A ready state volume is already allocated in a pool. so the asking size is zero for it.
+            // In case the volume is moving across pools or is not ready yet, the asking size has to be computed
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("pool id for the volume with id: " + volumeVO.getId() + " is " + volumeVO.getPoolId());
+            }
+            if ((volumeVO.getState() != Volume.State.Ready) || (volumeVO.getPoolId() != pool.getId())) {
                 if (ScopeType.ZONE.equals(poolVO.getScope()) && volumeVO.getTemplateId() != null) {
                     VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(volumeVO.getTemplateId());
 
