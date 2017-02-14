@@ -460,6 +460,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     }
                 } else {
                     if (activeCount != null && activeCount > 0) {
+                        if (network.getVpcId() != null) {
+                            // If there are more than one ip in the vpc tier network and services configured on it.
+                            // restart network with cleanup case, on network reprogramming this needs to be return true
+                            // because on the VR ips has removed. In VPC case restart tier network with cleanup will not
+                            // reboot the VR. So ipassoc is needed.
+                            return true;
+                        }
                         continue;
                     } else if (addCount != null && addCount.longValue() == totalCount.longValue()) {
                         s_logger.trace("All rules are in Add state, have to assiciate IP with the backend");
