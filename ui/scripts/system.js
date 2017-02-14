@@ -17228,9 +17228,16 @@
                                                     }
                                                 },
                                                 dataProvider: function (args) {
-                                                    var items = gpugroupObj.vgpu.sort(function(a, b) {
-                                                        return a.maxvgpuperpgpu >= b.maxvgpuperpgpu;
-                                                    });
+                                                    var items;
+
+                                                    if(typeof(gpugroupObj.vgpu) != "undefined") {
+                                                        items = gpugroupObj.vgpu.sort(function(a, b) {
+                                                            return a.maxvgpuperpgpu >= b.maxvgpuperpgpu;
+                                                        });
+                                                    }
+                                                    else {
+                                                        items = gpugroupObj.vgpu;
+                                                    }
                                                     $(items).each(function () {
                                                         this.maxresolution = (this.maxresolutionx == null || this.maxresolutionx == 0
                                                                 || this.maxresolutiony == null || this.maxresolutiony == 0)
