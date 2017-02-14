@@ -5993,10 +5993,6 @@
                                         select: function(args) {
                                             var items = [];
                                             items.push({
-                                                id: '3des',
-                                                description: '3des'
-                                            });
-                                            items.push({
                                                 id: 'aes128',
                                                 description: 'aes128'
                                             });
@@ -6007,6 +6003,10 @@
                                             items.push({
                                                 id: 'aes256',
                                                 description: 'aes256'
+                                            });
+                                            items.push({
+                                                id: '3des',
+                                                description: '3des'
                                             });
                                             args.response.success({
                                                 data: items
@@ -6019,12 +6019,24 @@
                                         select: function(args) {
                                             var items = [];
                                             items.push({
-                                                id: 'md5',
-                                                description: 'md5'
-                                            });
-                                            items.push({
                                                 id: 'sha1',
                                                 description: 'sha1'
+                                            });
+                                            items.push({
+                                                id: 'sha256',
+                                                description: 'sha256'
+                                            });
+                                            items.push({
+                                                id: 'sha384',
+                                                description: 'sha384'
+                                            });
+                                            items.push({
+                                                id: 'sha512',
+                                                description: 'sha512'
+                                            });
+                                            items.push({
+                                                id: 'md5',
+                                                description: 'md5'
                                             });
                                             args.response.success({
                                                 data: items
@@ -6036,17 +6048,38 @@
                                         docID: 'helpVPNGatewayIKEDH',
                                         select: function(args) {
                                             var items = [];
+                                            //  StrongSwan now requires a DH group to be specified...
+                                            //items.push({
+                                            //    id: '',
+                                            //    description: _l('label.none')
+                                            //});
                                             items.push({
-                                                id: '',
-                                                description: _l('label.none')
+                                                id: 'modp1536',
+                                                description: 'Group 5(modp1536)'
+                                            });
+                                            items.push({
+                                                id: 'modp2048',
+                                                description: 'Group 14(modp2048)'
+                                            });
+                                            items.push({
+                                                id: 'modp3072',
+                                                description: 'Group 15(modp3072)'
+                                            });
+                                            items.push({
+                                                id: 'modp4096',
+                                                description: 'Group 16(modp4096)'
+                                            });
+                                            items.push({
+                                                id: 'modp6144',
+                                                description: 'Group 17(modp6144)'
+                                            });
+                                            items.push({
+                                                id: 'modp8192',
+                                                description: 'Group 18(modp8192)'
                                             });
                                             items.push({
                                                 id: 'modp1024',
                                                 description: 'Group 2(modp1024)'
-                                            });
-                                            items.push({
-                                                id: 'modp1536',
-                                                description: 'Group 5(modp1536)'
                                             });
                                             args.response.success({
                                                 data: items
@@ -6061,10 +6094,6 @@
                                         select: function(args) {
                                             var items = [];
                                             items.push({
-                                                id: '3des',
-                                                description: '3des'
-                                            });
-                                            items.push({
                                                 id: 'aes128',
                                                 description: 'aes128'
                                             });
@@ -6075,6 +6104,10 @@
                                             items.push({
                                                 id: 'aes256',
                                                 description: 'aes256'
+                                            });
+                                            items.push({
+                                                id: '3des',
+                                                description: '3des'
                                             });
                                             args.response.success({
                                                 data: items
@@ -6087,12 +6120,24 @@
                                         select: function(args) {
                                             var items = [];
                                             items.push({
-                                                id: 'md5',
-                                                description: 'md5'
-                                            });
-                                            items.push({
                                                 id: 'sha1',
                                                 description: 'sha1'
+                                            });
+                                            items.push({
+                                                id: 'sha256',
+                                                description: 'sha256'
+                                            });
+                                            items.push({
+                                                id: 'sha384',
+                                                description: 'sha384'
+                                            });
+                                            items.push({
+                                                id: 'sha512',
+                                                description: 'sha512'
+                                            });
+                                            items.push({
+                                                id: 'md5',
+                                                description: 'md5'
                                             });
                                             args.response.success({
                                                 data: items
@@ -6109,12 +6154,32 @@
                                                 description: _l('label.none')
                                             });
                                             items.push({
-                                                id: 'modp1024',
-                                                description: 'Group 2(modp1024)'
-                                            });
-                                            items.push({
                                                 id: 'modp1536',
                                                 description: 'Group 5(modp1536)'
+                                            });
+                                            items.push({
+                                                id: 'modp2048',
+                                                description: 'Group 14(modp2048)'
+                                            });
+                                            items.push({
+                                                id: 'modp3072',
+                                                description: 'Group 15(modp3072)'
+                                            });
+                                            items.push({
+                                                id: 'modp4096',
+                                                description: 'Group 16(modp4096)'
+                                            });
+                                            items.push({
+                                                id: 'modp6144',
+                                                description: 'Group 17(modp6144)'
+                                            });
+                                            items.push({
+                                                id: 'modp8192',
+                                                description: 'Group 18(modp8192)'
+                                            });
+                                            items.push({
+                                                id: 'modp1024',
+                                                description: 'Group 2(modp1024)'
                                             });
                                             args.response.success({
                                                 data: items
@@ -6522,8 +6587,8 @@
                                         success: function(json) {
                                             var item = json.listvpncustomergatewaysresponse.vpncustomergateway[0];
 
-                                            //IKE POlicy
-                                            var a1 = item.ikepolicy.split('-'); //e.g. item.ikepolicy == '3des-md5' or '3des-md5;modp1024'
+                                            //IKE Policy
+                                            var a1 = item.ikepolicy.split('-'); //e.g. item.ikepolicy == '3des-md5;modp1024'
                                             item.ikeEncryption = a1[0];
                                             if (a1[1].indexOf(';') == -1) {
                                                 item.ikeHash = a1[1];

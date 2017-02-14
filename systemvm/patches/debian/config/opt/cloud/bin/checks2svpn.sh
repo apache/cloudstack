@@ -22,18 +22,9 @@ then
     exit 1
 fi
 
-ipsec auto --status | grep vpn-$1 > /tmp/vpn-$1.status
+ipsec status  vpn-$1 > /tmp/vpn-$1.status
 
-cat /tmp/vpn-$1.status | grep "ISAKMP SA established" > /dev/null
-isakmpok=$?
-if [ $isakmpok -ne 0 ]
-then
-    echo -n "ISAKMP SA NOT found but checking IPsec;"
-else
-    echo -n "ISAKMP SA found;"
-fi
-
-cat /tmp/vpn-$1.status | grep "IPsec SA established" > /dev/null
+cat /tmp/vpn-$1.status | grep "ESTABLISHED" > /dev/null
 ipsecok=$?
 if [ $ipsecok -ne 0 ]
 then
