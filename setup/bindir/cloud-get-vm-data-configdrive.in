@@ -17,7 +17,7 @@
 # under the License.
 
 
-mountdir=/mnt/configdrive
+mountdir=$(mktemp -d)
 filepath=$mountdir/cloudstack
 
 user_data=$filepath/userdata/user_data.txt
