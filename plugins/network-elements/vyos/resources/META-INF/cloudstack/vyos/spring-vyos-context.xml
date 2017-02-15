@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="VyosRouter" class="com.cloud.network.element.VyosRouterElement">
+    <bean id="VyosRouter" class="com.cloud.network.element.VyosRouterFirewallElement">
         <property name="name" value="VyosRouter" />
     </bean>
 </beans>

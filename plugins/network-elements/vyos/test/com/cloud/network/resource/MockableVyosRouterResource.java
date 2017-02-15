@@ -18,8 +18,6 @@ package com.cloud.network.resource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-
 import com.cloud.utils.exception.ExecutionException;
 // http client handling
 // for prettyFormat()
@@ -33,41 +31,48 @@ public class MockableVyosRouterResource extends VyosRouterResource {
 
     /* Fake the calls to the Vyos Router */
     @Override
-    protected String request(VyosRouterMethod method, VyosRouterCommandType commandType, ArrayList<String> commands) throws ExecutionException {
-        if (method != VyosRouterMethod.SHELL && method != VyosRouterMethod.HTTPSTUB) {
-            throw new ExecutionException("Invalid method used to access the Vyos Router.");
+    protected String request(VyosRouterMethod method,
+            VyosRouterCommandType commandType, ArrayList<String> commands)
+            throws ExecutionException {
+        if (method != VyosRouterMethod.SHELL
+                && method != VyosRouterMethod.HTTPSTUB) {
+            throw new ExecutionException(
+                    "Invalid method used to access the Vyos Router.");
         }
-        
+
         String response = "";
-        
-        //Allow the tests to be run against an actual vyos instance instead of returning mock results.
-        if (context.containsKey("use_test_router") && context.get("use_test_router").equals("true")) {
-        	//System.out.println("Testing against an actual Vyos instance.");
-        	response = super.request(method, commandType, commands);
-        	//System.out.println("response: "+response);
+
+        // Allow the tests to be run against an actual vyos instance instead of
+        // returning mock results.
+        if (context.containsKey("use_test_router")
+                && context.get("use_test_router").equals("true")) {
+            // System.out.println("Testing against an actual Vyos instance.");
+            response = super.request(method, commandType, commands);
+            // System.out.println("response: "+response);
         } else {
-        	
-	    	switch (commandType) {
-	    		case READ:
-	    			System.out.println("Mock Read request");
-	    			break;
-	    			
-	    		case WRITE:
-	    			System.out.println("Mock Write request");
-	    			break;
-	    		
-	    		default:
-	    			System.out.println("ERROR command type not supported. Type: "+commandType);
-	    			break;
-	    	}        	
-	    	System.out.println("Commands in current Request: ");
-	        for (String curCommand : commands) {        	
-	        		System.out.println(curCommand);
-	        	
-	        }
+
+            switch (commandType) {
+                case READ :
+                    System.out.println("Mock Read request");
+                    break;
+
+                case WRITE :
+                    System.out.println("Mock Write request");
+                    break;
+
+                default :
+                    System.out
+                            .println("ERROR command type not supported. Type: "
+                                    + commandType);
+                    break;
+            }
+            System.out.println("Commands in current Request: ");
+            for (String curCommand : commands) {
+                System.out.println(curCommand);
+
+            }
         }
-        		
-        
+
         return response;
     }
 }
