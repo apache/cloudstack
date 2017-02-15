@@ -49,6 +49,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.log4j.Logger;
 
@@ -123,6 +124,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     ConfigDepot _configDepot;
     @Inject
     private OutOfBandManagementDao outOfBandManagementDao;
+    @Inject
+    private HAConfigDao haConfigDao;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -744,6 +747,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             final long lastPing = (System.currentTimeMillis() >> 10) - getTimeout();
             _hostDao.markHostsAsDisconnected(vo.getMsid(), lastPing);
             outOfBandManagementDao.expireServerOwnership(vo.getMsid());
+            haConfigDao.expireServerOwnership(vo.getMsid());
             s_logger.info("Deleting entries from op_host_transfer table for Management server " + vo.getMsid());
             cleanupTransferMap(vo.getMsid());
         }

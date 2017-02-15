@@ -44,4 +44,9 @@
         <property name="typeClass" value="com.cloud.hypervisor.HypervisorGuru" />
     </bean>
 
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="haProvidersRegistry" />
+        <property name="typeClass" value="org.apache.cloudstack.ha.provider.HAProvider" />
+    </bean>
+
 </beans>
