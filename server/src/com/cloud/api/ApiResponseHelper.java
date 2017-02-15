@@ -3173,6 +3173,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(usageRecord.getDomainId());
         if (domain != null) {
             usageRecResponse.setDomainId(domain.getUuid());
+            usageRecResponse.setDomainName(domain.getName());
         }
 
         if (usageRecord.getZoneId() != null) {
