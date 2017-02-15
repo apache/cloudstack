@@ -26,7 +26,7 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.serializer.Param;
 
 @EntityReference(value = ExternalFirewallDeviceVO.class)
-@SuppressWarnings("unused")
+//@SuppressWarnings("unused")
 public class VyosRouterFirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.FIREWALL_DEVICE_ID)
