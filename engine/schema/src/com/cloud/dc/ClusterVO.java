@@ -16,8 +16,12 @@
 // under the License.
 package com.cloud.dc;
 
-import java.util.Date;
-import java.util.UUID;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster;
+import com.cloud.org.Grouping;
+import com.cloud.org.Managed.ManagedState;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,13 +31,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Cluster;
-import com.cloud.org.Grouping;
-import com.cloud.org.Managed.ManagedState;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "cluster")
@@ -191,5 +190,10 @@ public class ClusterVO implements Cluster {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public PartitionType partitionType() {
+        return PartitionType.Cluster;
     }
 }

@@ -30,5 +30,12 @@
     <bean id="KVMInvestigator" class="com.cloud.ha.KVMInvestigator">
         <property name="name" value="KVMInvestigator" />
     </bean>
+
+    <bean id="KVMHostActivityChecker" class="org.apache.cloudstack.kvm.ha.KVMHostActivityChecker">
+    </bean>
+
+    <bean id="KVMHAProvider" class="org.apache.cloudstack.kvm.ha.KVMHAProvider">
+        <property name="name" value="KVMHAProvider" />
+    </bean>
     
 </beans>

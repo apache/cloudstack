@@ -24,6 +24,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import java.util.Date;
@@ -205,6 +206,10 @@ public class HostResponse extends BaseResponse {
     @SerializedName("suitableformigration")
     @Param(description = "true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests vm limit etc) to migrate a VM to it , false otherwise")
     private Boolean suitableForMigration;
+
+    @SerializedName("hostha")
+    @Param(description = "the host HA information information")
+    private HostHAResponse hostHAResponse;
 
     @SerializedName("outofbandmanagement")
     @Param(description = "the host out-of-band management information")
@@ -411,6 +416,14 @@ public class HostResponse extends BaseResponse {
 
     public void setSuitableForMigration(Boolean suitableForMigration) {
         this.suitableForMigration = suitableForMigration;
+    }
+
+    public HostHAResponse getHostHAResponse() {
+        return hostHAResponse;
+    }
+
+    public void setHostHAResponse(final HAConfig config) {
+        this.hostHAResponse = new HostHAResponse(config);
     }
 
     public OutOfBandManagementResponse getOutOfBandManagementResponse() {

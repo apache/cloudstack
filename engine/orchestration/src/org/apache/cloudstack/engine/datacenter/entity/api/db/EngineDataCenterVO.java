@@ -16,9 +16,14 @@
 // under the License.
 package org.apache.cloudstack.engine.datacenter.entity.api.db;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+import com.cloud.network.Network.Provider;
+import com.cloud.org.Grouping;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.StateMachine;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,16 +37,9 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-
-import com.cloud.network.Network.Provider;
-import com.cloud.org.Grouping;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.StateMachine;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 @Entity
 @Table(name = "data_center")
@@ -500,5 +498,10 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
 
     public void setIp6Dns2(String ip6Dns2) {
         this.ip6Dns2 = ip6Dns2;
+    }
+
+    @Override
+    public PartitionType partitionType() {
+        return PartitionType.Zone;
     }
 }

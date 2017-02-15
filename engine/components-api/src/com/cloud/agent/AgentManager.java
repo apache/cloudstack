@@ -137,6 +137,8 @@ public interface AgentManager {
 
     void disconnectWithoutInvestigation(long hostId, Status.Event event);
 
+    void disconnectWithInvestigation(long hostId, Status.Event event);
+
     public void pullAgentToMaintenance(long hostId);
 
     public void pullAgentOutMaintenance(long hostId);

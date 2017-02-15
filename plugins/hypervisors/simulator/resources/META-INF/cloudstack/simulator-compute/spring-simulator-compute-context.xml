@@ -36,4 +36,8 @@
     <bean id="SimulatorFencer" class="com.cloud.ha.SimulatorFencer">
         <property name="name" value="Simulator Fencer"/>
     </bean>
+
+    <bean id="SimulatorHAProvider" class="org.apache.cloudstack.ha.SimulatorHAProvider">
+        <property name="name" value="SimulatorHAProvider" />
+    </bean>
 </beans>

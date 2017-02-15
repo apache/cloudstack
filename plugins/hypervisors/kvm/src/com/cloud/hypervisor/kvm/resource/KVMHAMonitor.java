@@ -16,22 +16,20 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.cloud.utils.script.Script;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-
-import com.cloud.utils.script.Script;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
@@ -70,6 +68,12 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     public List<NfsStoragePool> getStoragePools() {
         synchronized (_storagePool) {
             return new ArrayList<NfsStoragePool>(_storagePool.values());
+        }
+    }
+
+    public NfsStoragePool getStoragePool(String uuid) {
+        synchronized (_storagePool) {
+            return _storagePool.get(uuid);
         }
     }
 

@@ -16,11 +16,12 @@
 // under the License.
 package com.cloud.host;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -37,13 +38,11 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-
-import com.cloud.agent.api.VgpuTypesInfo;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ResourceState;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Entity
 @Table(name = "host")
@@ -176,6 +175,11 @@ public class HostVO implements Host {
     @Override
     public Long getClusterId() {
         return clusterId;
+    }
+
+    @Override
+    public ResourceType resourceType() {
+        return ResourceType.Host;
     }
 
     public void setClusterId(Long clusterId) {
@@ -713,6 +717,11 @@ public class HostVO implements Host {
         return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance || getResourceState() == ResourceState.PrepareForMaintenance);
     }
 
+    @Override
+    public boolean isDisabled() {
+        return (getResourceState() == ResourceState.Disabled);
+    }
+
     public long getUpdated() {
         return updated;
     }
@@ -729,5 +738,10 @@ public class HostVO implements Host {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public PartitionType partitionType() {
+        return PartitionType.Host;
     }
 }

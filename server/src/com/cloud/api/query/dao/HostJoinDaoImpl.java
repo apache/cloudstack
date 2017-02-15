@@ -35,6 +35,8 @@ import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.VgpuResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 
 import com.cloud.api.ApiDBUtils;
@@ -58,6 +60,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private ConfigurationDao _configDao;
     @Inject
     private HostDetailsDao hostDetailsDao;
+    @Inject
+    private HAConfigDao haConfigDao;
     @Inject
     private OutOfBandManagementDao outOfBandManagementDao;
 
@@ -231,6 +235,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
 
+        hostResponse.setHostHAResponse(haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host));
         hostResponse.setOutOfBandManagementResponse(outOfBandManagementDao.findByHost(host.getId()));
         hostResponse.setResourceState(host.getResourceState().toString());
 
