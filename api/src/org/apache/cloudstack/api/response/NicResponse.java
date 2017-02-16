@@ -16,15 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.List;
-
+import com.cloud.serializer.Param;
+import com.cloud.vm.Nic;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.serializer.Param;
-import com.cloud.vm.Nic;
-import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
 @SuppressWarnings("unused")
 @EntityReference(value = Nic.class)
@@ -221,4 +220,79 @@ public class NicResponse extends BaseResponse {
         this.nsxLogicalSwitchPort = nsxLogicalSwitchPort;
     }
 
+    public String getNetworkId() {
+        return networkId;
+    }
+
+    public String getNetworkName() {
+        return networkName;
+    }
+
+    public String getNetmask() {
+        return netmask;
+    }
+
+    public String getGateway() {
+        return gateway;
+    }
+
+    public String getIsolationUri() {
+        return isolationUri;
+    }
+
+    public String getBroadcastUri() {
+        return broadcastUri;
+    }
+
+    public String getTrafficType() {
+        return trafficType;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public Boolean getDefault() {
+        return isDefault;
+    }
+
+    public String getMacAddress() {
+        return macAddress;
+    }
+
+    public String getIpaddress() {
+        return ipaddress;
+    }
+
+    public String getIp6Gateway() {
+        return ip6Gateway;
+    }
+
+    public String getIp6Cidr() {
+        return ip6Cidr;
+    }
+
+    public String getIp6Address() {
+        return ip6Address;
+    }
+
+    public List<NicSecondaryIpResponse> getSecondaryIps() {
+        return secondaryIps;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public String getVmId() {
+        return vmId;
+    }
+
+    public String getNsxLogicalSwitch() {
+        return nsxLogicalSwitch;
+    }
+
+    public String getNsxLogicalSwitchPort() {
+        return nsxLogicalSwitchPort;
+    }
 }
