@@ -142,6 +142,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -493,7 +494,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotInfo = (SnapshotInfo)snapshot;
         } else {
             DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, _dataStoreMgr);
-
+            if (dataStoreRole == null){
+                return null;
+            }
             snapshotInfo = snapshotfactory.getSnapshot(snapshot.getId(), dataStoreRole);
         }
 
@@ -526,16 +529,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         long storagePoolId = snapshotStore.getDataStoreId();
-        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        if (snapshotStore.getState() != null && ! snapshotStore.getState().equals(ObjectInDataStoreStateMachine.State.Destroyed)) {
+            DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
-        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+            Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
 
-        if (mapCapabilities != null) {
-            String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-            Boolean supportsStorageSystemSnapshots = new Boolean(value);
+            if (mapCapabilities != null) {
+                String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+                Boolean supportsStorageSystemSnapshots = Boolean.valueOf(value);
 
-            if (supportsStorageSystemSnapshots) {
-                return DataStoreRole.Primary;
+                if (supportsStorageSystemSnapshots) {
+                    return DataStoreRole.Primary;
+                }
             }
         }
 

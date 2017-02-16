@@ -115,8 +115,10 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
         for (Snapshot snapshot : result.first()) {
             SnapshotResponse snapshotResponse = _responseGenerator.createSnapshotResponse(snapshot);
-            snapshotResponse.setObjectName("snapshot");
-            snapshotResponses.add(snapshotResponse);
+            if (snapshotResponse != null) {
+                snapshotResponse.setObjectName("snapshot");
+                snapshotResponses.add(snapshotResponse);
+            }
         }
         response.setResponses(snapshotResponses, result.second());
         response.setResponseName(getCommandName());
