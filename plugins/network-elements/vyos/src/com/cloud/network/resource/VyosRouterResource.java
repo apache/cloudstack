@@ -2,13 +2,13 @@ package com.cloud.network.resource;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,13 +44,17 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.SshException;
+import com.trilead.ssh2.ChannelCondition;
+import com.trilead.ssh2.Session;
 
-import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.common.IOUtils;
+//import net.schmizz.sshj.SSHClient;
+//import net.schmizz.sshj.common.IOUtils;
 //import net.schmizz.sshj.connection.channel.direct.Session;
 //import net.schmizz.sshj.connection.channel.direct.Session.Command;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
-import net.schmizz.sshj.userauth.UserAuthException;
+//import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
+//import net.schmizz.sshj.userauth.UserAuthException;
 
 public class VyosRouterResource implements ServerResource{
 
@@ -69,7 +73,7 @@ public class VyosRouterResource implements ServerResource{
     private String _virtualRouter;
     private static final Logger s_logger = Logger.getLogger(VyosRouterResource.class);
 
-    private static SSHClient s_sshClient;
+    private static com.trilead.ssh2.Connection s_sshClient;
     private static final String s_vyosShellScript = "#!/bin/vbash\nallParams=\"\\\"'$@'\\\"\"\nsource /opt/vyatta/etc/functions/script-template\n\"'$allParams'\"\n";
     private static final String s_vyosScriptPath="/home/vyos/";
     private static final String s_vyosScriptName="testShellScript.sh";
@@ -194,10 +198,11 @@ public class VyosRouterResource implements ServerResource{
             return true;
         } catch (Exception e) {
             try {
+
                 //System.out.println("In VyosRouterResource.configure(). attempting to disconnect the ssh client. ");
-                if (s_sshClient != null && s_sshClient.isConnected()) {
+                if (s_sshClient != null) {
                     //System.out.println("In VyosRouterResource.configure(). We are connected. Running disconnect. ");
-                    s_sshClient.disconnect();
+                    s_sshClient.close();
                 }
                 throw new ConfigurationException("Exception of type: "+e.getClass().getName()+" caught. message: "+e.getMessage());
             }catch (Exception f) {
@@ -206,8 +211,8 @@ public class VyosRouterResource implements ServerResource{
             }
         } finally {
             try {
-                if (s_sshClient != null && s_sshClient.isConnected()) {
-                    s_sshClient.disconnect();
+                if (s_sshClient != null) {
+                    s_sshClient.close();
                 }
             }catch (Exception e) {
                 throw new ConfigurationException("Exception of type: "+e.getClass().getName()+" caught. message: "+e.getMessage());
@@ -273,8 +278,8 @@ public class VyosRouterResource implements ServerResource{
         return;
     }
 
-    private boolean refreshVyosRouterConnection() throws IOException, UserAuthException {
-        if (s_sshClient == null || !s_sshClient.isConnected()) {
+   /* private boolean refreshVyosRouterConnection() throws IOException, UserAuthException {
+        if (s_sshClient == null) {
             try {
                 s_sshClient = new SSHClient();
                 s_sshClient.addHostKeyVerifier(new PromiscuousVerifier());
@@ -294,11 +299,123 @@ public class VyosRouterResource implements ServerResource{
         }
         return true;
     }
+*/
+    private boolean refreshVyosRouterConnection() throws IOException {
+            try {
+                //SSHCmdHelper sshHelper=new SSHCmdHelper();
+                s_sshClient = SSHCmdHelper.acquireAuthorizedConnection(_ip, _username, _password);
+            }catch(Exception e){
+                s_logger.error(e);
+                if (s_sshClient != null) {
+                    s_sshClient.close();
+                }
+            }
+        return true;
+    }
 
+    public static Map<String,String> sshExecuteCmd(String cmd) throws SshException {
+        Map<String, String> result = new HashMap<String, String>();
+        s_logger.debug("Executing cmd: " + cmd);
+        Session sshSession = null;
+        try {
+            sshSession = s_sshClient.openSession();
+            // There is a bug in Trilead library, wait a second before
+            // starting a shell and executing commands, from http://spci.st.ewi.tudelft.nl/chiron/xref/nl/tudelft/swerl/util/SSHConnection.html
+            Thread.sleep(1000);
+
+            if (sshSession == null) {
+                throw new SshException("Cannot open ssh session");
+            }
+
+            sshSession.execCommand(cmd);
+
+            InputStream stdout = sshSession.getStdout();
+            InputStream stderr = sshSession.getStderr();
+
+            byte[] buffer = new byte[8192];
+            StringBuffer sbStdout = new StringBuffer();
+            StringBuffer sbStderr = new StringBuffer();
+
+            int currentReadBytes = 0;
+            while (true) {
+                if (stdout == null || stderr == null) {
+                    throw new SshException("stdout or stderr of ssh session is null");
+                }
+                if ((stdout.available() == 0) && (stderr.available() == 0)) {
+                    int conditions = sshSession.waitForCondition(ChannelCondition.STDOUT_DATA
+                                | ChannelCondition.STDERR_DATA | ChannelCondition.EOF | ChannelCondition.EXIT_STATUS,
+                                120000);
+
+                    if ((conditions & ChannelCondition.TIMEOUT) != 0) {
+                        String msg = "Timed out in waiting SSH execution result";
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+
+                    if ((conditions & ChannelCondition.EXIT_STATUS) != 0) {
+                        if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
+                            break;
+                        }
+                    }
+
+                    if ((conditions & ChannelCondition.EOF) != 0) {
+                        if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
+                            break;
+                        }
+                    }
+                }
+
+                while (stdout.available() > 0) {
+                    currentReadBytes = stdout.read(buffer);
+                    sbStdout.append(new String(buffer, 0, currentReadBytes));
+                }
+
+                while (stderr.available() > 0) {
+                    currentReadBytes = stderr.read(buffer);
+                    sbStderr.append(new String(buffer, 0, currentReadBytes));
+                }
+            }
+
+            String stdoutString=sbStdout.toString();
+            String stderrString=sbStderr.toString();
+            result.put("stdout", stdoutString);
+            result.put("stderr", stderrString);
+
+            String resultString="";
+            if (stdoutString != null && !stdoutString.isEmpty()) {
+                resultString=result+" "+stdoutString;
+            }
+            if (stderrString != null && !stderrString.isEmpty()) {
+                resultString=result+" "+stderrString;
+            }
+            if (!result.isEmpty()) {
+                s_logger.debug(cmd + " output:" + resultString);
+            }
+            // exit status delivery might get delayed
+            for(int i = 0 ; i<10 ; i++ ) {
+                Integer status = sshSession.getExitStatus();
+                if( status != null ) {
+                    result.put("exitCode", status.toString());
+                    return result;
+                }
+                Thread.sleep(100);
+            }
+            result.put("exitCode", "-1");
+            return result;
+        } catch (Exception e) {
+            s_logger.debug("Ssh executed failed", e);
+            throw new SshException("Ssh executed failed " + e.getMessage());
+        } finally {
+            if (sshSession != null)
+                sshSession.close();
+        }
+    }
+
+    /*
     //Executes a shell command. Throws error on a nonzero return code. Returns the contents of stdout.
     public String executeVyosRouterCommand(String shellCommand)
             throws IOException {
-         if (s_sshClient == null || !s_sshClient.isConnected()) {
+         if (s_sshClient == null) {
              // TODO This will cause issues if the command being run is part of a set that must be atomic.
              // Must handle an ssh disconnection during the execution of a batch of write commands.
              refreshVyosRouterConnection();
@@ -333,13 +450,41 @@ public class VyosRouterResource implements ServerResource{
             }
         }
     }
+*/
+  //Executes a shell command. Throws error on a nonzero return code. Returns the contents of stdout.
+    public String executeVyosRouterCommand(String shellCommand)
+            throws IOException, SshException {
 
+         refreshVyosRouterConnection();
+
+         String tmpOutput="";
+        try {
+
+            tmpOutput=tmpOutput+"\nexecuting the following command: "+shellCommand;
+            Map<String,String> result=sshExecuteCmd(shellCommand);
+
+            if (!result.get("stdout").isEmpty()) {
+                tmpOutput=tmpOutput+"\n******\n stdout: \n"+result.get("stdout")+"\n******";
+            }
+            if (!result.get("stderr").isEmpty()) {
+                tmpOutput=tmpOutput+"\n******\n stderr: \n"+result.get("stderr")+"\n******";
+            }
+            //Validate the result of command execution and throw an exception on error.
+            this.validResponse(shellCommand, result.get("stdout"), result.get("stderr"));
+
+            return result.get("stdout");
+        } finally {
+            if (!shellCommand.contains("echo") && !shellCommand.contains("chmod") && !shellCommand.contains("show"))
+            {
+                System.out.println(tmpOutput);
+            }
+        }
+    }
     // Write the shell script we will be using to execute vyos commands to disk on the router.
     public void initializeVyosIntegration() throws IOException {
         try{
-            if (s_sshClient == null || !s_sshClient.isConnected()) {
-                refreshVyosRouterConnection();
-               }
+            refreshVyosRouterConnection();
+
             executeVyosRouterCommand("echo -e \""+s_vyosShellScript+"\" > ~/"+s_vyosScriptName);
             executeVyosRouterCommand("chmod +x ~/"+s_vyosScriptName);
         }catch (Exception e) {
@@ -830,14 +975,10 @@ public class VyosRouterResource implements ServerResource{
 
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_sub_params));
 
-
-
                 // Make sure there are rulesets for the public interface.
                 manageFirewallRulesets(cmdList, VyosRouterPrimative.ADD, interfaceName, publicVlanString, "Ingress", defaultEgressPolicy);
                 manageFirewallRulesets(cmdList, VyosRouterPrimative.ADD, interfaceName, publicVlanString, "Egress", defaultEgressPolicy);
                 manageFirewallRulesets(cmdList, VyosRouterPrimative.ADD, interfaceName, publicVlanString, "local", defaultEgressPolicy);
-
-
 
                 return true;
 
@@ -872,10 +1013,8 @@ public class VyosRouterResource implements ServerResource{
      */
 
 
-
     public boolean manageSrcNatRule(ArrayList<IVyosRouterCommand> cmdList, VyosRouterPrimative prim, GuestNetworkType type, Long publicVlanTag, String publicIp,
-        long privateVlanTag, String privateGateway) throws ExecutionException {
-
+            long privateVlanTag, String privateGateway) throws ExecutionException {
         //For default source nat rules we must make sure that they are the last rules in the source nat section. Vyos processes rules in ascending numerical order.
         //        Default source nat rules should only be applied if no other rule matches the packets being processed. So must have the highest possible vyos rule numbers.
         int sourceRuleNumber=0;
@@ -914,7 +1053,7 @@ public class VyosRouterResource implements ServerResource{
                     return true;
                 }
 
-             // Build the parameters needed for vyos
+                // Build the parameters needed for vyos
                 sourceRuleNumber=getVyosRuleNumber("set nat source rule ", "", true);
                 ArrayList<String> a_params = new ArrayList<String>();
                 a_params.add("set nat source rule "+sourceRuleNumber+" outbound-interface '"+_publicInterface+"'" );
@@ -1951,7 +2090,7 @@ public class VyosRouterResource implements ServerResource{
         }
 
     }
-  //Parses the vyos configuation to return the vyos rule number associated with the current cloudstack rule.
+    //Parses the vyos configuation to return the vyos rule number associated with the current cloudstack rule.
     //If no cloudstackRuleId is passed in then this will pass in the next available vyos rule number
     //commandIdentificationString is a String that is unique enough to identify all lines associated with the
     //        type of Vyos command we are looking for (EG Source Nat, Destination Nat, Firewall...etc)
