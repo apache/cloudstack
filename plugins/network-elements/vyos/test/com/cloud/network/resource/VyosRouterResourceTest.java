@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.resource;
 
+
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.exception.ExecutionException;
+
 
 public class VyosRouterResourceTest {
     // configuration data
@@ -106,6 +108,7 @@ public class VyosRouterResourceTest {
     }
 
     /*
+
      @Test(expected = ConfigurationException.class) public void
      resourceConfigureFailure() throws ConfigurationException { if
      (_context.containsKey("enable_console_output") &&
@@ -501,6 +504,7 @@ public class VyosRouterResourceTest {
                     "---------------------------------------------------");
         }
     }
+
 
 
 }

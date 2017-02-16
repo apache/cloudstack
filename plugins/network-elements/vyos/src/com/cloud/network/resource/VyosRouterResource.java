@@ -3,12 +3,14 @@ package com.cloud.network.resource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +46,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
+
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
 import com.trilead.ssh2.ChannelCondition;
@@ -55,6 +58,7 @@ import com.trilead.ssh2.Session;
 //import net.schmizz.sshj.connection.channel.direct.Session.Command;
 //import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 //import net.schmizz.sshj.userauth.UserAuthException;
+
 
 public class VyosRouterResource implements ServerResource{
 
@@ -73,7 +77,9 @@ public class VyosRouterResource implements ServerResource{
     private String _virtualRouter;
     private static final Logger s_logger = Logger.getLogger(VyosRouterResource.class);
 
+
     private static com.trilead.ssh2.Connection s_sshClient;
+
     private static final String s_vyosShellScript = "#!/bin/vbash\nallParams=\"\\\"'$@'\\\"\"\nsource /opt/vyatta/etc/functions/script-template\n\"'$allParams'\"\n";
     private static final String s_vyosScriptPath="/home/vyos/";
     private static final String s_vyosScriptName="testShellScript.sh";
@@ -199,6 +205,7 @@ public class VyosRouterResource implements ServerResource{
         } catch (Exception e) {
             try {
 
+
                 //System.out.println("In VyosRouterResource.configure(). attempting to disconnect the ssh client. ");
                 if (s_sshClient != null) {
                     //System.out.println("In VyosRouterResource.configure(). We are connected. Running disconnect. ");
@@ -211,8 +218,10 @@ public class VyosRouterResource implements ServerResource{
             }
         } finally {
             try {
+
                 if (s_sshClient != null) {
                     s_sshClient.close();
+
                 }
             }catch (Exception e) {
                 throw new ConfigurationException("Exception of type: "+e.getClass().getName()+" caught. message: "+e.getMessage());
@@ -278,6 +287,7 @@ public class VyosRouterResource implements ServerResource{
         return;
     }
 
+
    /* private boolean refreshVyosRouterConnection() throws IOException, UserAuthException {
         if (s_sshClient == null) {
             try {
@@ -299,6 +309,7 @@ public class VyosRouterResource implements ServerResource{
         }
         return true;
     }
+
 */
     private boolean refreshVyosRouterConnection() throws IOException {
             try {
@@ -450,6 +461,7 @@ public class VyosRouterResource implements ServerResource{
             }
         }
     }
+
 */
   //Executes a shell command. Throws error on a nonzero return code. Returns the contents of stdout.
     public String executeVyosRouterCommand(String shellCommand)
@@ -484,7 +496,6 @@ public class VyosRouterResource implements ServerResource{
     public void initializeVyosIntegration() throws IOException {
         try{
             refreshVyosRouterConnection();
-
             executeVyosRouterCommand("echo -e \""+s_vyosShellScript+"\" > ~/"+s_vyosScriptName);
             executeVyosRouterCommand("chmod +x ~/"+s_vyosScriptName);
         }catch (Exception e) {
@@ -1013,8 +1024,10 @@ public class VyosRouterResource implements ServerResource{
      */
 
 
+
     public boolean manageSrcNatRule(ArrayList<IVyosRouterCommand> cmdList, VyosRouterPrimative prim, GuestNetworkType type, Long publicVlanTag, String publicIp,
             long privateVlanTag, String privateGateway) throws ExecutionException {
+
         //For default source nat rules we must make sure that they are the last rules in the source nat section. Vyos processes rules in ascending numerical order.
         //        Default source nat rules should only be applied if no other rule matches the packets being processed. So must have the highest possible vyos rule numbers.
         int sourceRuleNumber=0;
@@ -1052,6 +1065,7 @@ public class VyosRouterResource implements ServerResource{
                 if (manageSrcNatRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, type, publicVlanTag, publicIp, privateVlanTag, privateGateway)) {
                     return true;
                 }
+
 
                 // Build the parameters needed for vyos
                 sourceRuleNumber=getVyosRuleNumber("set nat source rule ", "", true);
@@ -2090,7 +2104,9 @@ public class VyosRouterResource implements ServerResource{
         }
 
     }
+
     //Parses the vyos configuation to return the vyos rule number associated with the current cloudstack rule.
+
     //If no cloudstackRuleId is passed in then this will pass in the next available vyos rule number
     //commandIdentificationString is a String that is unique enough to identify all lines associated with the
     //        type of Vyos command we are looking for (EG Source Nat, Destination Nat, Firewall...etc)
@@ -2207,13 +2223,5 @@ public class VyosRouterResource implements ServerResource{
         // TODO Auto-generated method stub
 
     }
-
-
-
-
-
-
-
-
 
 }
