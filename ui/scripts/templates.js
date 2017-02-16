@@ -1447,7 +1447,11 @@
                                                  label: 'label.action.delete.template',
                                                  messages: {
                                                      confirm: function(args) {
-                                                         return 'message.action.delete.template';
+                                                         if(args.context.templates[0].crossZones == true) {
+                                                             return 'message.action.delete.template.for.all.zones';
+                                                         } else {
+                                                             return 'message.action.delete.template';
+                                                         }
                                                      },
                                                      notification: function(args) {
                                                          return 'label.action.delete.template';
