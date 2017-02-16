@@ -1111,8 +1111,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public List<HostVO> listAllHostsByType(Host.Type type) {
         SearchCriteria<HostVO> sc = TypeSearch.create();
         sc.setParameters("type", type);
-        sc.setParameters("resourceState", ResourceState.Enabled);
-
         return listBy(sc);
     }
 }
