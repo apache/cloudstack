@@ -19973,21 +19973,6 @@
                                             zonename: {
                                                 label: 'label.zone'
                                             },
-                                            details: {
-                                                label: 'label.details',
-                                                converter: function (array1) {
-                                                    var string1 = '';
-                                                    if (array1 != null) {
-                                                        for (var i = 0; i < array1.length; i++) {
-                                                            if (i > 0)
-                                                            string1 += ', ';
-
-                                                            string1 += array1[i].name + ': ' + array1[i].value;
-                                                        }
-                                                    }
-                                                    return string1;
-                                                }
-                                            },
                                             id: {
                                                 label: 'label.id'
                                             }
