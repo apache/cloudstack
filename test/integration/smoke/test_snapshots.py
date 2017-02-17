@@ -24,12 +24,17 @@ from marvin.lib.base import (VirtualMachine,
                              Account,
                              Template,
                              ServiceOffering,
-                             Snapshot)
+                             Snapshot,
+                             StoragePool,
+                             Volume)
 from marvin.lib.common import (get_domain,
                                get_template,
                                get_zone,
+                               get_pod,
                                list_volumes,
-                               list_snapshots)
+                               list_snapshots,
+                               list_storage_pools,
+                               list_clusters)
 from marvin.lib.decoratorGenerators import skipTestIf
 
 
@@ -95,6 +100,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.pod = get_pod(cls.apiclient, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
 
         cls.hypervisorNotSupported = False
@@ -140,7 +146,6 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                     mode=cls.services["mode"]
                 )
 
-            cls._cleanup.append(cls.virtual_machine)
             cls._cleanup.append(cls.service_offering)
             cls._cleanup.append(cls.account)
             cls._cleanup.append(cls.template)
@@ -254,4 +259,132 @@ class TestSnapshotRootDisk(cloudstackTestCase):
 
         self.assertTrue(is_snapshot_on_nfs(
             self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
+        return
+
+    @skipTestIf("hypervisorNotSupported")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_02_list_snapshots_with_removed_data_store(self):
+        """Test listing volume snapshots with removed data stores
+        """
+
+        # 1) Create new Primary Storage
+        clusters = list_clusters(
+            self.apiclient,
+            zoneid=self.zone.id
+        )
+        assert isinstance(clusters,list) and len(clusters)>0
+
+        storage = StoragePool.create(self.apiclient,
+                                     self.services["nfs"],
+                                     clusterid=clusters[0].id,
+                                     zoneid=self.zone.id,
+                                     podid=self.pod.id
+                                     )
+        self.assertEqual(
+            storage.state,
+            'Up',
+            "Check primary storage state"
+        )
+        self.assertEqual(
+            storage.type,
+            'NetworkFilesystem',
+            "Check storage pool type"
+        )
+        storage_pools_response = list_storage_pools(self.apiclient,
+                                                    id=storage.id)
+        self.assertEqual(
+            isinstance(storage_pools_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(storage_pools_response),
+            0,
+            "Check list Hosts response"
+        )
+        storage_response = storage_pools_response[0]
+        self.assertEqual(
+            storage_response.id,
+            storage.id,
+            "Check storage pool ID"
+        )
+        self.assertEqual(
+            storage.type,
+            storage_response.type,
+            "Check storage pool type "
+        )
+
+        # 2) Migrate VM ROOT volume to new Primary Storage
+        volumes = list_volumes(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine_with_disk.id,
+            type='ROOT',
+            listall=True
+        )
+        Volume.migrate(self.apiclient,
+                       storageid=storage.id,
+                       volumeid=volumes[0].id,
+                       livemigrate="true"
+                       )
+
+        volume_response = list_volumes(
+            self.apiclient,
+            id=volumes[0].id,
+        )
+        self.assertNotEqual(
+            len(volume_response),
+            0,
+            "Check list Volumes response"
+        )
+        volume_migrated = volume_response[0]
+        self.assertEqual(
+            volume_migrated.storageid,
+            storage.id,
+            "Check volume storage id"
+        )
+        self.cleanup.append(self.virtual_machine_with_disk)
+        self.cleanup.append(storage)
+
+        # 3) Take snapshot of VM ROOT volume
+        snapshot = Snapshot.create(
+            self.apiclient,
+            volume_migrated.id,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.debug("Snapshot created: ID - %s" % snapshot.id)
+
+        # 4) Delete VM and created Primery Storage
+        cleanup_resources(self.apiclient, self.cleanup)
+
+        # 5) List snapshot and verify it gets properly listed although Primary Storage was removed
+        snapshot_response = Snapshot.list(
+            self.apiclient,
+            id=snapshot.id
+        )
+        self.assertNotEqual(
+            len(snapshot_response),
+            0,
+            "Check list Snapshot response"
+        )
+        self.assertEqual(
+            snapshot_response[0].id,
+            snapshot.id,
+            "Check snapshot id"
+        )
+
+        # 6) Delete snapshot and verify it gets properly deleted (should not be listed)
+        self.cleanup = [snapshot]
+        cleanup_resources(self.apiclient, self.cleanup)
+
+        snapshot_response_2 = Snapshot.list(
+            self.apiclient,
+            id=snapshot.id
+        )
+        self.assertEqual(
+            snapshot_response_2,
+            None,
+            "Check list Snapshot response"
+        )
+
         return
