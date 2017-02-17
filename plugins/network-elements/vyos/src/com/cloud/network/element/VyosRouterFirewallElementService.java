@@ -59,7 +59,7 @@ public interface VyosRouterFirewallElementService extends PluggableService {
     public List<ExternalFirewallDeviceVO> listVyosRouterFirewalls(ListVyosRouterFirewallsCmd cmd);
 
     /**
-     * lists all the guest networks using a VyosRouter firewall device
+     * lists all the guest networks using a Vyos Router firewall device
      * @param ListVyosRouterFirewallNetworksCmd
      * @return list of the guest networks that are using this F5 load balancer
      */

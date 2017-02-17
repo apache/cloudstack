@@ -4010,6 +4010,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             firewallProvider = Provider.PaloAlto;
                         }
 
+                        if (provider == Provider.VyosRouter) {
+                            firewallProvider = Provider.VyosRouter;
+                        }
+
                         if ((service == Service.PortForwarding || service == Service.StaticNat) && provider == Provider.VirtualRouter) {
                             firewallProvider = Provider.VirtualRouter;
                         }
