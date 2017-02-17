@@ -2113,16 +2113,6 @@ class TestListInstances(cloudstackTestCase):
             len(list_keypairs_after),
             "List count is not matching"
         )
-        try:
-
-            # Registering second key pair using same public key
-            new_keypair2 = SSHKeyPair.register(
-                self.userapiclient,
-                name="keypair2",
-                publickey="ssh-rsa: e6:9a:1e:b5:98:75:88:5d:56:bc:92:7b:43:48:05:b2")
-            self.fail("SSH Key creation passed using same public key ")
-        except CloudstackAPIException  as e:
-            self.assertRaises("Exception Raised : %s" % e)
 
         # Deploying a VM with keypair 1
         first_vm_created = VirtualMachine.create(
@@ -2154,6 +2144,17 @@ class TestListInstances(cloudstackTestCase):
             "Running",
             "VM state should be running after deployment")
         self.assertEqual(vm.keypair , new_keypair1.name , "VM keypair name is not keypair1")
+
+        try:
+
+            # Registering second key pair using same public key
+            new_keypair2 = SSHKeyPair.register(
+                self.userapiclient,
+                name="keypair2",
+                publickey="ssh-rsa: e6:9a:1e:b5:98:75:88:5d:56:bc:92:7b:43:48:05:b2")
+            self.fail("SSH Key creation passed using same public key ")
+        except CloudstackAPIException  as e:
+            self.assertRaises("Exception Raised : %s" % e)
 
         return
 

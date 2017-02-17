@@ -221,8 +221,11 @@ class TestVmUsage(cloudstackTestCase):
 
         projectlist=Project.list(self.apiclient,account=self.account.name,
                                  domainid=self.account.domainid,id=self.project.id)
-
+        self.assertEqual(hasattr(projectlist[0],"vmrunning"), True ,
+                         "vmrunningattribute is not returned in list project api ")
         self.assertEqual(projectlist[0].vmrunning,0,"vmrunning value is not returned")
+        self.assertEqual(hasattr(projectlist[0], "vmrunning"), True,
+                         "vmrunningattribute is not returned in list project api ")
         self.assertEqual(projectlist[0].vmstopped,0,"vmstopped value is not returned")
 
         self.virtual_machine = VirtualMachine.create(
@@ -1931,8 +1934,8 @@ class TestVMSnapshotUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(speed = "slow")
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
+
+    @attr(tags=["advanced", "basic"])
     def test_01_vmsnapshot_usage(self):
         """Test Create/Delete a manual snap shot and verify
         correct usage is recorded

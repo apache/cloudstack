@@ -26,16 +26,13 @@ from marvin.lib.base import (Account,
                              Volume,
                              DiskOffering,
                              Template,
-                             listConfigurations,Configurations)
-from marvin.lib.common import (get_domain,list_isos,
+                             Configurations)
+from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template)
 from nose.plugins.attrib import attr
-from ast import literal_eval
 from marvin.codes import PASS
-from marvin.cloudstackException import CloudstackAPIException
 from marvin.sshClient import SshClient
-from marvin.cloudstackException import CloudstackAPIException
 import time
 
 class TestInstance(cloudstackTestCase):
@@ -134,7 +131,7 @@ class TestInstance(cloudstackTestCase):
     @attr(tags=["advanced"], required_hardware="true")
     def test1_attach_volume(self):
         """
-        @desc: Unable to attach 7th Disk to windows server 2012R2 instance
+        @desc: Unable to attach 7th Disk to windows server 2012R2 instance. Add a valid windows server 2012 URL to execute this test case
         Step1: Set global config vmware.root.disk.controller to 'osdefault'
         Step2: Deploy a Windows 2012 R2 instance.
         Step3:  Attach 6 disks to the VM.
@@ -146,7 +143,7 @@ class TestInstance(cloudstackTestCase):
             self.skipTest("This test can be run only on vmware")
         self.updateConfigurAndRestart("vmware.root.disk.controller","osdefault")
 
-
+        self.services["Windows Server 2012"]["url"]="http://10.147.28.7/templates/Windows2012/WindowsServer2012R2.ova.gz",
         template = Template.register(
            self.userapiclient,
           self.services["Windows Server 2012"],
@@ -234,7 +231,7 @@ class TestInstance(cloudstackTestCase):
         self.assertIsNotNone(template,"Failed to register CentOS 7 template")
         self.debug(
            "Registered a template with format {} and id {}".format(
-              self.services["Windows Server 2012"]["format"],template.id)
+              self.services["CentOS7template"]["format"],template.id)
         )
         template.download(self.userapiclient)
         self.cleanup.append(template)

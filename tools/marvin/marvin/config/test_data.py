@@ -835,9 +835,8 @@ test_data = {
     },
     "coreos_volume": {
         "diskname": "Volume_core",
-        "urlvmware":"http://10.147.28.7/templates/coreos/coreos_production_vmware.ova",
-        "urlxen":"http://10.147.28.7/templates/coreos/" \
-                         "coreos_production_cloudstack_image-xen.vhd.bz2",
+        "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
+        "urlxen":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
         "urlkvm": "http://dl.openvm.eu/cloudstack/coreos/x86_64/" \
                          "coreos_production_cloudstack_image-kvm.qcow2.bz2",
         "urlhyperv":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-hyperv.vhd.zip"
@@ -857,7 +856,7 @@ test_data = {
         "passwordenabled": False,
         "isdynamicallyscalable":True,
         "ostype": "CentOS 7",
-        "url": "http://10.147.28.7/templates/cenots7/Centos7.vhd",
+        "url": "http://dl.openvm.eu/cloudstack/centos/vanilla/7/x86_64/CentOS-7-x86_64-vanilla-xen.vhd.bz2",
         "format": "VHD",
         "ispublic": "true",
         "hypervisor":"Xenserver"
@@ -867,7 +866,6 @@ test_data = {
         "name": "Rhel",
         "passwordenabled": False,
         "ostype": "Red Hat Enterprise Linux 7",
-        "url": "http://10.147.28.7/templates/rhel71.ova",
         "format": "OVA",
         "ispublic": "true"
     },
@@ -895,7 +893,6 @@ test_data = {
             "displaytext": "Windows Server 2012",
             "name": "Windows Server 2012",
             "passwordenabled": False,
-            "url": "http://10.147.28.7/templates/Windows2012/WindowsServer2012R2.ova.gz",
             "format": "OVA",
             "ostype": "Windows Server 2012 (64-bit)",
             "ispublic": "true",

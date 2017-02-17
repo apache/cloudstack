@@ -270,7 +270,7 @@ class TestVMware(cloudstackTestCase):
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test3_attach_ISO_in_RHEL7OSVM(self):
         """
-        @desc:Incorrect guest os mapping in vmware for Rhel7
+        @desc:Incorrect guest os mapping in vmware for Rhel7. Add a valid RHEL7 URL to execute this test case
         Step1 :Register an RHEL 7 template
         Step2 :Launch a VM
         Step3: Try to attach VMware Tools ISO
@@ -279,6 +279,7 @@ class TestVMware(cloudstackTestCase):
         self.hypervisor = str(get_hypervisor_type(self.api_client)).lower()
         if self.hypervisor != "vmware":
             self.skipTest("This test can be run only on vmware")
+        self.services["Rhel7template"]["url"]="http://10.147.28.7/templates/rhel71.ova",
         template = Template.register(
             self.userapiclient,
             self.services["Rhel7template"],
