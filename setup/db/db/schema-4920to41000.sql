@@ -215,3 +215,17 @@ VIEW `image_store_view` AS
     FROM
         (`image_store`
         LEFT JOIN `data_center` ON ((`image_store`.`data_center_id` = `data_center`.`id`)));
+
+-- Add service_offering_id column to vm_snapshots table
+ALTER TABLE `cloud`.`vm_snapshots` ADD COLUMN `service_offering_id` BIGINT(20) UNSIGNED NOT NULL COMMENT '' AFTER `domain_id`;
+UPDATE `cloud`.`vm_snapshots` s JOIN `cloud`.`vm_instance` v ON v.id = s.vm_id SET s.service_offering_id = v.service_offering_id;
+ALTER TABLE `cloud`.`vm_snapshots` ADD CONSTRAINT `fk_vm_snapshots_service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `cloud`.`service_offering` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- Update vm snapshot details for instances with custom service offerings
+INSERT INTO `cloud`.`vm_snapshot_details` (vm_snapshot_id, name, value)
+SELECT s.id, d.name, d.value
+FROM `cloud`.`user_vm_details` d JOIN `cloud`.`vm_instance` v ON (d.vm_id = v.id)
+JOIN `cloud`.`service_offering` o ON (v.service_offering_id = o.id) 
+JOIN `cloud`.`vm_snapshots` s ON (s.service_offering_id = o.id AND s.vm_id = v.id)
+WHERE (o.cpu is null AND o.speed IS NULL AND o.ram_size IS NULL) AND
+(d.name = 'cpuNumber' OR d.name = 'cpuSpeed' OR d.name = 'memory');
