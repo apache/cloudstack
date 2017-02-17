@@ -39,14 +39,14 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.VyosRouterFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "configureVyosRouterFirewall", responseObject = VyosRouterFirewallResponse.class, description = "Configures a Palo Alto firewall device",
+@APICommand(name = "configureVyosRouterFirewall", responseObject = VyosRouterFirewallResponse.class, description = "Configures a Vyos Router device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureVyosRouterFirewallCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureVyosRouterFirewallCmd.class.getName());
     private static final String s_name = "configurevyosrouterfirewallresponse";
     @Inject
-    VyosRouterFirewallElementService _paFwService;
+    VyosRouterFirewallElementService _vyFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -56,7 +56,7 @@ public class ConfigureVyosRouterFirewallCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = VyosRouterFirewallResponse.class,
                required = true,
-               description = "Palo Alto firewall device ID")
+               description = "Vyos Router device ID")
     private Long fwDeviceId;
 
     @Parameter(name = ApiConstants.FIREWALL_DEVICE_CAPACITY,
@@ -85,14 +85,14 @@ public class ConfigureVyosRouterFirewallCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-            ExternalFirewallDeviceVO fwDeviceVO = _paFwService.configureVyosRouterFirewall(this);
+            ExternalFirewallDeviceVO fwDeviceVO = _vyFwService.configureVyosRouterFirewall(this);
             if (fwDeviceVO != null) {
-                VyosRouterFirewallResponse response = _paFwService.createVyosRouterFirewallResponse(fwDeviceVO);
-                response.setObjectName("pafirewall");
+                VyosRouterFirewallResponse response = _vyFwService.createVyosRouterFirewallResponse(fwDeviceVO);
+                response.setObjectName("vyfirewall");
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure Palo Alto firewall device due to internal error.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure Vyos Router device due to internal error.");
             }
         } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
@@ -103,7 +103,7 @@ public class ConfigureVyosRouterFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Configuring a Palo Alto firewall device";
+        return "Configuring a Vyos Router device";
     }
 
     @Override

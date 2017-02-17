@@ -42,14 +42,14 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.VyosRouterFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listVyosRouterFirewalls", responseObject = VyosRouterFirewallResponse.class, description = "lists Palo Alto firewall devices in a physical network",
+@APICommand(name = "listVyosRouterFirewalls", responseObject = VyosRouterFirewallResponse.class, description = "lists Vyos Router devices in a physical network",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVyosRouterFirewallsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListVyosRouterFirewallsCmd.class.getName());
     private static final String s_name = "listvyosrouterfirewallresponse";
     @Inject
-    VyosRouterFirewallElementService _paFwService;
+    VyosRouterFirewallElementService _vyFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,7 +58,7 @@ public class ListVyosRouterFirewallsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.FIREWALL_DEVICE_ID, type = CommandType.UUID, entityType = VyosRouterFirewallResponse.class, description = "Palo Alto firewall device ID")
+    @Parameter(name = ApiConstants.FIREWALL_DEVICE_ID, type = CommandType.UUID, entityType = VyosRouterFirewallResponse.class, description = "Vyos Router device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -81,13 +81,13 @@ public class ListVyosRouterFirewallsCmd extends BaseListCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-            List<ExternalFirewallDeviceVO> fwDevices = _paFwService.listVyosRouterFirewalls(this);
+            List<ExternalFirewallDeviceVO> fwDevices = _vyFwService.listVyosRouterFirewalls(this);
             ListResponse<VyosRouterFirewallResponse> response = new ListResponse<VyosRouterFirewallResponse>();
             List<VyosRouterFirewallResponse> fwDevicesResponse = new ArrayList<VyosRouterFirewallResponse>();
 
             if (fwDevices != null && !fwDevices.isEmpty()) {
                 for (ExternalFirewallDeviceVO fwDeviceVO : fwDevices) {
-                    VyosRouterFirewallResponse deviceResponse = _paFwService.createVyosRouterFirewallResponse(fwDeviceVO);
+                    VyosRouterFirewallResponse deviceResponse = _vyFwService.createVyosRouterFirewallResponse(fwDeviceVO);
                     fwDevicesResponse.add(deviceResponse);
                 }
             }

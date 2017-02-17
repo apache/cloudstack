@@ -43,14 +43,14 @@ import com.cloud.network.Network;
 import com.cloud.network.element.VyosRouterFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listVyosRouterFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using Palo Alto firewall device",
+@APICommand(name = "listVyosRouterFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using Vyos Router device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVyosRouterFirewallNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListVyosRouterFirewallNetworksCmd.class.getName());
     private static final String s_name = "listvyosrouterofirewallnetworksresponse";
     @Inject
-    VyosRouterFirewallElementService _paFwService;
+    VyosRouterFirewallElementService _vyFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -60,7 +60,7 @@ public class ListVyosRouterFirewallNetworksCmd extends BaseListCmd {
                type = CommandType.UUID,
                entityType = VyosRouterFirewallResponse.class,
                required = true,
-               description = "palo alto balancer device ID")
+               description = "Vyos Router Balancer device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class ListVyosRouterFirewallNetworksCmd extends BaseListCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-            List<? extends Network> networks = _paFwService.listNetworks(this);
+            List<? extends Network> networks = _vyFwService.listNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
             List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
 

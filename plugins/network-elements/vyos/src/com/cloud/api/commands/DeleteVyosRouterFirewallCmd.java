@@ -39,13 +39,13 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.VyosRouterFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteVyosRouterFirewall", responseObject = SuccessResponse.class, description = " delete a Palo Alto firewall device",
+@APICommand(name = "deleteVyosRouterFirewall", responseObject = SuccessResponse.class, description = " delete a Vyos Router device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVyosRouterFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVyosRouterFirewallCmd.class.getName());
     private static final String s_name = "deletevyosrouterfirewallresponse";
     @Inject
-    VyosRouterFirewallElementService _paElementService;
+    VyosRouterFirewallElementService _vyElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,7 +55,7 @@ public class DeleteVyosRouterFirewallCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = VyosRouterFirewallResponse.class,
                required = true,
-               description = "Palo Alto firewall device ID")
+               description = "Vyos Router device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -74,13 +74,13 @@ public class DeleteVyosRouterFirewallCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-            boolean result = _paElementService.deleteVyosRouterFirewall(this);
+            boolean result = _vyElementService.deleteVyosRouterFirewall(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Palo Alto firewall device");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Vyos Router device");
             }
         } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
@@ -91,7 +91,7 @@ public class DeleteVyosRouterFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Palo Alto firewall device";
+        return "Deleting Vyos Router firewall device";
     }
 
     @Override

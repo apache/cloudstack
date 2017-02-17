@@ -40,13 +40,13 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.VyosRouterFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addVyosRouterFirewall", responseObject = VyosRouterFirewallResponse.class, description = "Adds a Palo Alto firewall device",
+@APICommand(name = "addVyosRouterFirewall", responseObject = VyosRouterFirewallResponse.class, description = "Adds a Vyos Router device",
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddVyosRouterFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddVyosRouterFirewallCmd.class.getName());
     private static final String s_name = "addvyosrouterfirewallresponse";
     @Inject
-    VyosRouterFirewallElementService _paFwService;
+    VyosRouterFirewallElementService _vyFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,13 +59,13 @@ public class AddVyosRouterFirewallCmd extends BaseAsyncCmd {
                description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the Palo Alto appliance.")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the Vyos Router appliance.")
     private String url;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach Palo Alto firewall device")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach Vyos Router device")
     private String username;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to reach Palo Alto firewall device")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to reach Vyos Router device")
     private String password;
 
     @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "supports only VyosRouterFirewall")
@@ -103,10 +103,10 @@ public class AddVyosRouterFirewallCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-            ExternalFirewallDeviceVO fwDeviceVO = _paFwService.addVyosRouterFirewall(this);
+            ExternalFirewallDeviceVO fwDeviceVO = _vyFwService.addVyosRouterFirewall(this);
             if (fwDeviceVO != null) {
-                VyosRouterFirewallResponse response = _paFwService.createVyosRouterFirewallResponse(fwDeviceVO);
-                response.setObjectName("pafirewall");
+                VyosRouterFirewallResponse response = _vyFwService.createVyosRouterFirewallResponse(fwDeviceVO);
+                response.setObjectName("vyfirewall");
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {

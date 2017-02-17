@@ -300,7 +300,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
     public ExternalFirewallDeviceVO addVyosRouterFirewall(AddVyosRouterFirewallCmd cmd) {
         String deviceName = cmd.getDeviceType();
         if (!deviceName.equalsIgnoreCase(NetworkDevice.VyosRouter.getName())) {
-            throw new InvalidParameterValueException("Invalid Palo Alto firewall device type");
+            throw new InvalidParameterValueException("Invalid Vyos Router device type");
         }
         return addExternalFirewall(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, new VyosRouterResource());
     }
@@ -311,7 +311,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
 
         ExternalFirewallDeviceVO fwDeviceVO = _fwDevicesDao.findById(fwDeviceId);
         if (fwDeviceVO == null || !fwDeviceVO.getDeviceName().equalsIgnoreCase(NetworkDevice.VyosRouter.getName())) {
-            throw new InvalidParameterValueException("No Palo Alto firewall device found with ID: " + fwDeviceId);
+            throw new InvalidParameterValueException("No Vyos Router device found with ID: " + fwDeviceId);
         }
         return deleteExternalFirewall(fwDeviceVO.getHostId());
     }
@@ -323,7 +323,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
 
         ExternalFirewallDeviceVO fwDeviceVO = _fwDevicesDao.findById(fwDeviceId);
         if (fwDeviceVO == null || !fwDeviceVO.getDeviceName().equalsIgnoreCase(NetworkDevice.VyosRouter.getName())) {
-            throw new InvalidParameterValueException("No Palo Alto firewall device found with ID: " + fwDeviceId);
+            throw new InvalidParameterValueException("No Vyos Router device found with ID: " + fwDeviceId);
         }
 
         if (deviceCapacity != null) {
@@ -331,7 +331,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
             List<NetworkExternalFirewallVO> networks = _networkFirewallDao.listByFirewallDeviceId(fwDeviceId);
             if ((networks != null) && !networks.isEmpty()) {
                 if (deviceCapacity < networks.size()) {
-                    throw new CloudRuntimeException("There are more number of networks already using this Palo Alto firewall device than configured capacity");
+                    throw new CloudRuntimeException("There are more number of networks already using this Vyos Router device than configured capacity");
                 }
             }
             if (deviceCapacity != null) {
@@ -358,7 +358,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
         if (fwDeviceId != null) {
             ExternalFirewallDeviceVO fwDeviceVo = _fwDevicesDao.findById(fwDeviceId);
             if (fwDeviceVo == null || !fwDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.VyosRouter.getName())) {
-                throw new InvalidParameterValueException("Could not find Palo Alto firewall device with ID: " + fwDeviceId);
+                throw new InvalidParameterValueException("Could not find Vyos Router device with ID: " + fwDeviceId);
             }
             fwDevices.add(fwDeviceVo);
         }
@@ -381,7 +381,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
 
         ExternalFirewallDeviceVO fwDeviceVo = _fwDevicesDao.findById(fwDeviceId);
         if (fwDeviceVo == null || !fwDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.VyosRouter.getName())) {
-            throw new InvalidParameterValueException("Could not find Palo Alto firewall device with ID " + fwDeviceId);
+            throw new InvalidParameterValueException("Could not find Vyos Router device with ID " + fwDeviceId);
         }
 
         List<NetworkExternalFirewallVO> networkFirewallMaps = _networkFirewallDao.listByFirewallDeviceId(fwDeviceId);

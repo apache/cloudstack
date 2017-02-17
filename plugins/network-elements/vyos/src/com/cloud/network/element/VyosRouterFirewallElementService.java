@@ -31,28 +31,28 @@ import com.cloud.utils.component.PluggableService;
 public interface VyosRouterFirewallElementService extends PluggableService {
 
     /**
-     * adds a Palo Alto firewall device in to a physical network
+     * adds a Vyos Router device in to a physical network
      * @param AddVyosRouterFirewallCmd
      * @return ExternalFirewallDeviceVO object for the firewall added
      */
     public ExternalFirewallDeviceVO addVyosRouterFirewall(AddVyosRouterFirewallCmd cmd);
 
     /**
-     * removes Palo Alto firewall device from a physical network
+     * removes Vyos Router device from a physical network
      * @param DeleteVyosRouterFirewallCmd
      * @return true if firewall device successfully deleted
      */
     public boolean deleteVyosRouterFirewall(DeleteVyosRouterFirewallCmd cmd);
 
     /**
-     * configures a Palo Alto firewal device added in a physical network
+     * configures a Vyos Router device added in a physical network
      * @param ConfigureVyosRouterFirewallCmd
      * @return ExternalFirewallDeviceVO for the device configured
      */
     public ExternalFirewallDeviceVO configureVyosRouterFirewall(ConfigureVyosRouterFirewallCmd cmd);
 
     /**
-     * lists all the Palo Alto firewall devices added in to a physical network
+     * lists all the Vyos Router devices added in to a physical network
      * @param ListVyosRouterFirewallsCmd
      * @return list of ExternalFirewallDeviceVO for the devices in the physical network.
      */

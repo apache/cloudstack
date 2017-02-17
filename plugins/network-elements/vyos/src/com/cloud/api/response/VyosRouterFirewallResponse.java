@@ -30,11 +30,11 @@ import com.cloud.serializer.Param;
 public class VyosRouterFirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.FIREWALL_DEVICE_ID)
-    @Param(description = "device id of the Palo Alto firewall")
+    @Param(description = "device id of the Vyos Router")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network to which this Palo Alto firewall belongs to")
+    @Param(description = "the physical network to which this Vyos Router belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)

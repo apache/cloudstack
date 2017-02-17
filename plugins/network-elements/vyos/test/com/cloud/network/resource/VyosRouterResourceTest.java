@@ -30,22 +30,22 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.routing.IpAssocAnswer;
-import com.cloud.agent.api.routing.IpAssocCommand;
+//import com.cloud.agent.api.StartupCommand;
+//import com.cloud.agent.api.routing.IpAssocAnswer;
+//import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+//import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.to.FirewallRuleTO;
-import com.cloud.agent.api.to.IpAddressTO;
+//import com.cloud.agent.api.to.FirewallRuleTO;
+//import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRule.State;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.utils.exception.ExecutionException;
+//import com.cloud.network.rules.FirewallRule;
+//import com.cloud.network.rules.FirewallRule.Purpose;
+//import com.cloud.network.rules.FirewallRule.State;
+//import com.cloud.network.rules.FirewallRuleVO;
+//import com.cloud.utils.exception.ExecutionException;
 
 
 public class VyosRouterResourceTest {
