@@ -3,7 +3,8 @@
     rotate 5
     missingok
     notifempty
-    size 10M
+    maxsize 10M
+    compress
     postrotate  
       /bin/kill -HUP `cat /var/run/rsyslog.pid 2> /dev/null` 2> /dev/null || true
     endscript
