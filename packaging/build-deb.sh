@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -e
+#set -e
 
 #
 # This script builds Debian packages for CloudStack and does
@@ -43,11 +43,21 @@ set -e
 cd `dirname $0`
 cd ..
 
-dpkg-checkbuilddeps
+DCH=$(which dch)
+if [ -z "$DCH" ] ; then
+    echo -e "dch not found, please install devscripts at first. \nDEB Build Failed"
+    exit
+fi
 
-VERSION=$(grep '^  <version>' pom.xml| cut -d'>' -f2 |cut -d'<' -f1)
+VERSION=$(head -n1 debian/changelog  |awk -F [\(\)] '{print $2}')
 DISTCODE=$(lsb_release -sc)
 
-dch -b -v "${VERSION}~${DISTCODE}" -u low -m "Apache CloudStack Release ${VERSION}"
+/bin/cp debian/changelog /tmp/changelog.orig
 
-dpkg-buildpackage -j2 -b -uc -us
+dch -b -v "${VERSION}~${DISTCODE}" -u low -m "Apache CloudStack Release ${VERSION}"
+sed -i '0,/ UNRELEASED;/s// unstable;/g' debian/changelog
+
+dpkg-checkbuilddeps
+dpkg-buildpackage -uc -us
+
+/bin/mv /tmp/changelog.orig debian/changelog
