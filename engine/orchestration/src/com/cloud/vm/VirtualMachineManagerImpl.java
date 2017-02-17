@@ -744,14 +744,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected <T extends VMInstanceVO> boolean changeState(final T vm, final Event event, final Long hostId, final ItWorkVO work, final Step step) throws NoTransitionException {
         // FIXME: We should do this better.
-        final Step previousStep = work.getStep();
-        _workDao.updateStep(work, step);
+        Step previousStep = null;
+        if (work != null) {
+            previousStep = work.getStep();
+            _workDao.updateStep(work, step);
+        }
         boolean result = false;
         try {
             result = stateTransitTo(vm, event, hostId);
             return result;
         } finally {
-            if (!result) {
+            if (!result && previousStep != null) {
                 _workDao.updateStep(work, previousStep);
             }
         }
@@ -1499,12 +1502,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (doCleanup) {
                 if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, cleanUpEvenIfUnableToStop)) {
                     try {
-                        if (s_logger.isDebugEnabled()) {
+                        if (s_logger.isDebugEnabled() && work != null) {
                             s_logger.debug("Updating work item to Done, id:" + work.getId());
                         }
                         if (!changeState(vm, Event.AgentReportStopped, null, work, Step.Done)) {
                             throw new CloudRuntimeException("Unable to stop " + vm);
                         }
+
                     } catch (final NoTransitionException e) {
                         s_logger.warn("Unable to cleanup " + vm);
                         throw new CloudRuntimeException("Unable to stop " + vm, e);
