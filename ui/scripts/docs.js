@@ -887,6 +887,55 @@ cloudStack.docs = {
         desc: 'Number of guest networks/accounts that will share this device',
         externalLink: ''
     },
+ // Add Vyos Router
+    helpVyosRouterIPAddress: {
+        desc: 'The IP address of the device',
+        externalLink: ''
+    },
+    helpVyosRouterUsername: {
+        desc: 'A user ID with valid authentication credentials that provide to access the device',
+        externalLink: ''
+    },
+    helpVyosRouterPassword: {
+        desc: 'The password for the user ID provided in Username',
+        externalLink: ''
+    },
+    helpVyosRouterType: {
+        desc: 'The type of device that is being added',
+        externalLink: ''
+    },
+    helpVyosRouterPublicInterface: {
+        desc: 'Interface of device that is configured to be part of the public network. For example, ge-0/0/2',
+        externalLink: ''
+    },
+    helpVyosRouterPrivateInterface: {
+        desc: 'Interface of device that is configured to be part of the private network. For example, ge-0/0/1',
+        externalLink: ''
+    },
+    helpVyosRouterUsageInterface: {
+        desc: 'Interface used to meter traffic. If you don\'t want to use the public interface, specify a different interface name here.',
+        externalLink: ''
+    },
+    helpVyosRouterRetries: {
+        desc: 'Number of times to attempt a command on the device before considering the operation failed. Default is 2.',
+        externalLink: ''
+    },
+    helpVyosRouterTimeout: {
+        desc: 'The time to wait for a command on the Palo Alto before considering it failed. Default is 300 seconds.',
+        externalLink: ''
+    },
+    helpVyosRouterMode: {
+        desc: 'Side by side mode is supported for the Vyos Router.',
+        externalLink: ''
+    },    
+    helpVyosRouterDedicated: {
+        desc: 'Check this box to dedicate the device to a single account. The value in the Capacity field will be ignored.',
+        externalLink: ''
+    },
+    helpVyosRouterCapacity: {
+        desc: 'Number of guest networks/accounts that will share this device',
+        externalLink: ''
+    },
     // Add system service offering
     helpSystemOfferingName: {
         desc: 'Any desired name for the offering',
