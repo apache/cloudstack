@@ -110,7 +110,7 @@ public class AddVyosRouterFirewallCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Palo Alto firewall due to internal error.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Vyos Router due to internal error.");
             }
         } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
@@ -121,7 +121,7 @@ public class AddVyosRouterFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding a Palo Alto firewall device";
+        return "Adding a Vyos Router device";
     }
 
     @Override

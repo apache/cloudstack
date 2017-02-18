@@ -578,7 +578,6 @@ public class VyosRouterResource implements ServerResource{
         } catch (ExecutionException e) {
             s_logger.error(e);
 
-            //if (numRetries > 0 && refreshPaloAltoConnection()) {
             if (numRetries > 0 ) {
                 int numRetriesRemaining = numRetries - 1;
                 s_logger.debug("Retrying SetFirewallRulesCommand. Number of retries remaining: " + numRetriesRemaining);
@@ -616,7 +615,6 @@ public class VyosRouterResource implements ServerResource{
         } catch (ExecutionException e) {
             s_logger.error(e);
 
-          //if (numRetries > 0 && refreshPaloAltoConnection()) {
             if (numRetries > 0 ) {
                 int numRetriesRemaining = numRetries - 1;
                 s_logger.debug("Retrying SetStaticNatRulesCommand. Number of retries remaining: " + numRetriesRemaining);
@@ -654,7 +652,6 @@ public class VyosRouterResource implements ServerResource{
         } catch (ExecutionException e) {
             s_logger.error(e);
 
-          //if (numRetries > 0 && refreshPaloAltoConnection()) {
             if (numRetries > 0 ) {
                 int numRetriesRemaining = numRetries - 1;
                 s_logger.debug("Retrying SetPortForwardingRulesCommand. Number of retries remaining: " + numRetriesRemaining);

@@ -5596,6 +5596,290 @@
                             }
                         }
                     },
+                    
+                 // Vyos Router provider detailView
+                    vy: {
+                        type: 'detailView',
+                        id: 'vyProvider',
+                        label: 'label.VY',
+                        viewAll: {
+                            label: 'label.devices',
+                            path: '_zone.vyDevices'
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields:[ {
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                },
+                                {
+                                    state: {
+                                        label: 'label.state'
+                                    }
+                                }],
+                                dataProvider: function (args) {
+                                    refreshNspData("VyosRouter");
+                                    var providerObj;
+                                    $(nspHardcodingArray).each(function () {
+                                        if (this.id == "vy") {
+                                            providerObj = this;
+                                            return false; //break each loop
+                                        }
+                                    });
+                                    args.response.success({
+                                        data: providerObj,
+                                        actionFilter: networkProviderActionFilter('vy')
+                                    });
+                                }
+                            }
+                        },
+                        actions: {
+                            add: {
+                                label: 'label.add.VY.device',
+                                createForm: {
+                                    title: 'label.add.VY.device',
+                                    fields: {
+                                        ip: {
+                                            label: 'label.ip.address',
+                                            docID: 'helpVyosRouterIPAddress'
+                                        },
+                                        username: {
+                                            label: 'label.username',
+                                            docID: 'helpVyosRouterUsername'
+                                        },
+                                        password: {
+                                            label: 'label.password',
+                                            isPassword: true,
+                                            docID: 'helpVyosRouterPassword'
+                                        },
+                                        networkdevicetype: {
+                                            label: 'label.type',
+                                            docID: 'helpVyosRouterType',
+                                            select: function (args) {
+                                                var items =[];
+                                                items.push({
+                                                    id: "VyosRouterFirewall",
+                                                    description: "Vyos Router"
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        },
+                                        publicinterface: {
+                                            label: 'label.public.interface',
+                                            docID: 'helpVyosRouterPublicInterface'
+                                        },
+                                        privateinterface: {
+                                            label: 'label.private.interface',
+                                            docID: 'helpVyosRouterPrivateInterface'
+                                        },
+                                        //usageinterface: {
+                                        //  label: 'Usage interface',
+                                        //  docID: 'helpVyosRouterUsageInterface'
+                                        //},
+                                        numretries: {
+                                            label: 'label.numretries',
+                                            defaultValue: '2',
+                                            docID: 'helpVyosRouterRetries'
+                                        },
+                                        timeout: {
+                                            label: 'label.timeout',
+                                            defaultValue: '300',
+                                            docID: 'helpVyosRouterTimeout'
+                                        },
+                                        // inline: {
+                                        //   label: 'Mode',
+                                        //   docID: 'helpVyosRouterMode',
+                                        //   select: function(args) {
+                                        //     var items = [];
+                                        //     items.push({id: "false", description: "side by side"});
+                                        //     items.push({id: "true", description: "inline"});
+                                        //     args.response.success({data: items});
+                                        //   }
+                                        // },
+                                        //publicnetwork: {
+                                        //    label: 'label.public.network',
+                                        //    defaultValue: 'untrust',
+                                        //    docID: 'helpPaloAltoPublicNetwork'
+                                        //},
+                                        //privatenetwork: {
+                                        //    label: 'label.private.network',
+                                        //    defaultValue: 'trust',
+                                        //    docID: 'helpPaloAltoPrivateNetwork'
+                                        //},
+                                        //pavr: {
+                                        //    label: 'label.virtual.router',
+                                        //    docID: 'helpPaloAltoVirtualRouter'
+                                        //},
+                                        //patp: {
+                                        //    label: 'label.PA.threat.profile',
+                                        //    docID: 'helpPaloAltoThreatProfile'
+                                        //},
+                                        //palp: {
+                                        //    label: 'label.PA.log.profile',
+                                        //    docID: 'helpPaloAltoLogProfile'
+                                        //},
+                                        capacity: {
+                                            label: 'label.capacity',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            docID: 'helpVyosRouterCapacity'
+                                        },
+                                        dedicated: {
+                                            label: 'label.dedicated',
+                                            isBoolean: true,
+                                            isChecked: false,
+                                            docID: 'helpVyosRouterDedicated'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    if (nspMap[ "vy"] == null) {
+                                        $.ajax({
+                                            url: createURL("addNetworkServiceProvider&name=VyosRouter&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                            dataType: "json",
+                                            async: true,
+                                            success: function (json) {
+                                                var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                                var addVyosRouterProviderIntervalID = setInterval(function () {
+                                                    $.ajax({
+                                                        url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                        dataType: "json",
+                                                        success: function (json) {
+                                                            var result = json.queryasyncjobresultresponse;
+                                                            if (result.jobstatus == 0) {
+                                                                return; //Job has not completed
+                                                            } else {
+                                                                clearInterval(addVyosRouterProviderIntervalID);
+                                                                if (result.jobstatus == 1) {
+                                                                    nspMap[ "vy"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addVyosRouterFirewall", "addvyosrouterfirewallresponse", "vyfirewall");
+                                                                } else if (result.jobstatus == 2) {
+                                                                    alert("addNetworkServiceProvider&name=Vyos Router failed. Error: " + _s(result.jobresult.errortext));
+                                                                }
+                                                            }
+                                                        },
+                                                        error: function (XMLHttpResponse) {
+                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                            alert("addNetworkServiceProvider&name=Vyos Router failed. Error: " + errorMsg);
+                                                        }
+                                                    });
+                                                },
+                                                3000);
+                                            }
+                                        });
+                                    } else {
+                                        addExternalFirewall(args, selectedPhysicalNetworkObj, "addVyosRouterFirewall", "addvyosrouterfirewallresponse", "vyfirewall");
+                                    }
+                                },
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.add.VY.device';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "vy"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "vy"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            destroy: {
+                                label: 'label.shutdown.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("deleteNetworkServiceProvider&id=" + nspMap["vy"].id),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.deletenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+
+                                            $(window).trigger('cloudStack.fullRefresh');
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.shutdown.provider';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.shutdown.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    },
 
                     // Security groups detail view
                     securityGroups: {
@@ -12633,6 +12917,250 @@
                                         async: true,
                                         success: function (json) {
                                             var item = json.listpaloaltofirewallresponse.paloaltofirewall[0];
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            
+          //Vyos Router devices listView
+            vyDevices: {
+                id: 'vyDevices',
+                title: 'label.devices',
+                listView: {
+                    id: 'vyDevices',
+                    fields: {
+                        ipaddress: {
+                            label: 'label.ip.address'
+                        },
+                        fwdevicestate: {
+                            label: 'label.status'
+                        },
+                        fwdevicename: {
+                            label: 'label.type'
+                        }
+                    },
+                    actions: {
+                        add: {
+                            label: 'label.add.VY.device',
+                            createForm: {
+                                title: 'label.add.VY.device',
+                                fields: {
+                                    ip: {
+                                        label: 'label.ip.address'
+                                    },
+                                    username: {
+                                        label: 'label.username'
+                                    },
+                                    password: {
+                                        label: 'label.password',
+                                        isPassword: true
+                                    },
+                                    networkdevicetype: {
+                                        label: 'label.type',
+                                        select: function (args) {
+                                            var items =[];
+                                            items.push({
+                                                id: "VyosRouterFirewall",
+                                                description: "Vyos Router Firewall"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    publicinterface: {
+                                        label: 'label.public.interface'
+                                    },
+                                    privateinterface: {
+                                        label: 'label.private.interface'
+                                    },
+                                    //usageinterface: {
+                                    //  label: 'label.usage.interface'
+                                    //},
+                                    numretries: {
+                                        label: 'label.numretries',
+                                        defaultValue: '2'
+                                    },
+                                    timeout: {
+                                        label: 'label.timeout',
+                                        defaultValue: '300'
+                                    },
+                                    // inline: {
+                                    //   label: 'Mode',
+                                    //   select: function(args) {
+                                    //     var items = [];
+                                    //     items.push({id: "false", description: "side by side"});
+                                    //     items.push({id: "true", description: "inline"});
+                                    //     args.response.success({data: items});
+                                    //   }
+                                    // },
+                                    //publicnetwork: {
+                                    //    label: 'label.public.network',
+                                    //    defaultValue: 'untrust'
+                                    //},
+                                    //privatenetwork: {
+                                    //    label: 'label.private.network',
+                                    //    defaultValue: 'trust'
+                                    //},
+                                    //pavr: {
+                                    //    label: 'label.virtual.router'
+                                    //},
+                                    //patp: {
+                                    //    label: 'label.PA.threat.profile'
+                                    //},
+                                    //palp: {
+                                    //    label: 'label.PA.log.profile'
+                                    //},
+                                    capacity: {
+                                        label: 'label.capacity',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
+                                    dedicated: {
+                                        label: 'label.dedicated',
+                                        isBoolean: true,
+                                        isChecked: false
+                                    }
+                                }
+                            },
+                            action: function (args) {
+                                if (nspMap[ "vy"] == null) {
+                                    $.ajax({
+                                        url: createURL("addNetworkServiceProvider&name=VyosRouter&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                            var addVyosRouterProviderIntervalID = setInterval(function () {
+                                                $.ajax({
+                                                    url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                    dataType: "json",
+                                                    success: function (json) {
+                                                        var result = json.queryasyncjobresultresponse;
+                                                        if (result.jobstatus == 0) {
+                                                            return; //Job has not completed
+                                                        } else {
+                                                            clearInterval(addVyosRouterProviderIntervalID);
+                                                            if (result.jobstatus == 1) {
+                                                                nspMap[ "vy"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                addExternalFirewall(args, selectedPhysicalNetworkObj, "addVyosRouterFirewall", "addvyosrouterfirewallresponse", "vyfirewall");
+                                                            } else if (result.jobstatus == 2) {
+                                                                alert("addNetworkServiceProvider&name=Vyos Router failed. Error: " + _s(result.jobresult.errortext));
+                                                            }
+                                                        }
+                                                    },
+                                                    error: function (XMLHttpResponse) {
+                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                        alert("addNetworkServiceProvider&name=Vyos Router failed. Error: " + errorMsg);
+                                                    }
+                                                });
+                                            },
+                                            3000);
+                                        }
+                                    });
+                                } else {
+                                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addVyosRouterFirewall", "addVyosRouterfirewallresponse", "vyfirewall");
+                                }
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.add.VY.device';
+                                }
+                            },
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }
+                    },
+                    dataProvider: function (args) {
+                        $.ajax({
+                            url: createURL("listVyosRouterFirewalls&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                            data: {
+                                page: args.page,
+                                pageSize: pageSize
+                            },
+                            dataType: "json",
+                            async: false,
+                            success: function (json) {
+                                var items = json.listvyosrouterfirewallresponse.vyosrouterfirewall;
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    },
+                    detailView: {
+                        name: 'label.vyos.router.details',
+                        actions: {
+                            'remove': {
+                                label: 'label.delete.VY',
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.delete.VY';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.delete.VY';
+                                    }
+                                },
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("deleteVyosRouterFirewall&fwdeviceid=" + args.context.vyDevices[0].fwdeviceid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var jid = json.deletevyosrouterfirewallresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields:[ {
+                                    fwdeviceid: {
+                                        label: 'label.id'
+                                    },
+                                    ipaddress: {
+                                        label: 'label.ip.address'
+                                    },
+                                    fwdevicestate: {
+                                        label: 'label.status'
+                                    },
+                                    fwdevicename: {
+                                        label: 'label.type'
+                                    },
+                                    fwdevicecapacity: {
+                                        label: 'label.capacity'
+                                    },
+                                    timeout: {
+                                        label: 'label.timeout'
+                                    }
+                                }],
+                                dataProvider: function (args) {
+                                    $.ajax({
+                                        url: createURL("listVyosRouterFirewalls&fwdeviceid=" + args.context.vyDevices[0].fwdeviceid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.listvyosrouterfirewallresponse.vyosrouterfirewall[0];
                                             args.response.success({
                                                 data: item
                                             });
@@ -20905,6 +21433,7 @@
             url.push("palp=" + encodeURIComponent(externalLogProfile));
         }
         // END - Palo Alto Specific Fields
+          
 
         array1.push("&url=" + todb(url.join("")));
         //construct URL ends here
@@ -21785,6 +22314,9 @@
                             case "PaloAlto":
                             nspMap[ "pa"] = items[i];
                             break;
+                            case "VyosRouter":
+                                nspMap[ "vy"] = items[i];
+                                break;
                             case "SecurityGroupProvider":
                             nspMap[ "securityGroups"] = items[i];
                             break;
@@ -21906,6 +22438,11 @@
                 id: 'pa',
                 name: 'Palo Alto',
                 state: nspMap.pa ? nspMap.pa.state: 'Disabled'
+            });
+            nspHardcodingArray.push({
+                id: 'vy',
+                name: 'Vyos Router',
+                state: nspMap.vy ? nspMap.vy.state: 'Disabled'
             });
             nspHardcodingArray.push({
                 id: 'GloboDns',

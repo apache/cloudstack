@@ -160,7 +160,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception in more gracefule manner when multiple providers are present for
             // the network
-            s_logger.error("Fail to implement the Palo Alto for network " + network, capacityException);
+            s_logger.error("Fail to implement the Vyos Router for network " + network, capacityException);
             return false;
         }
     }
@@ -262,7 +262,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
 
         List<ExternalFirewallDeviceVO> fwDevices = _fwDevicesDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), Provider.VyosRouter.getName());
-        // true if at-least one Palo Alto device is added in to physical network and is in configured (in enabled state) state
+        // true if at-least one Vyos Router device is added in to physical network and is in configured (in enabled state) state
         if (fwDevices != null && !fwDevices.isEmpty()) {
             for (ExternalFirewallDeviceVO fwDevice : fwDevices) {
                 if (fwDevice.getDeviceState() == FirewallDeviceState.Enabled) {
@@ -327,7 +327,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
         }
 
         if (deviceCapacity != null) {
-            // check if any networks are using this Palo Alto device
+            // check if any networks are using this Vyos Router device
             List<NetworkExternalFirewallVO> networks = _networkFirewallDao.listByFirewallDeviceId(fwDeviceId);
             if ((networks != null) && !networks.isEmpty()) {
                 if (deviceCapacity < networks.size()) {
@@ -430,7 +430,7 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
         if (!services.contains(Service.Firewall)) {
-            s_logger.warn("Palo Alto must be used as Firewall Service Provider in the network");
+            s_logger.warn("Vyos Router must be used as Firewall Service Provider in the network");
             return false;
         }
         return true;
