@@ -1433,9 +1433,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // that supported by hypervisor
         if (deviceId == null || deviceId.longValue() != 0) {
             List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
-            int maxDataVolumesSupported = getMaxDataVolumesSupported(vm);
-            if (existingDataVolumes.size() >= maxDataVolumesSupported) {
-                throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxDataVolumesSupported + "). Please specify another VM.");
+            int maxAttachableDataVolumesSupported = getMaxDataVolumesSupported(vm) - 2; //IDs: 0 (ROOT) and 3 (CD-ROM) are reserved
+            if (existingDataVolumes.size() >= maxAttachableDataVolumesSupported) {
+                throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxAttachableDataVolumesSupported + ") attached. Please specify another VM.");
             }
         }
 
@@ -2527,7 +2527,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
 
-            deviceId = getDeviceId(vm.getId(), deviceId);
+            deviceId = getDeviceId(vm, deviceId);
 
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, volumeToAttach.getVolumeType(), deviceId, volumeToAttach.getPath(),
                     vm.getServiceOfferingId(), volumeToAttach.getDiskOfferingId());
@@ -2585,7 +2585,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                 }
             } else {
-                deviceId = getDeviceId(vm.getId(), deviceId);
+                deviceId = getDeviceId(vm, deviceId);
 
                 _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);
             }
@@ -2623,7 +2623,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _hostDao.loadDetails(host);
             maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(host.getHypervisorType(), host.getDetail("product_version"));
         }
-        if (maxDataVolumesSupported == null) {
+        if (maxDataVolumesSupported == null || maxDataVolumesSupported.intValue() <= 0) {
             maxDataVolumesSupported = 6; // 6 data disks by default if nothing
             // is specified in
             // 'hypervisor_capabilities' table
@@ -2632,27 +2632,31 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return maxDataVolumesSupported.intValue();
     }
 
-    private Long getDeviceId(long vmId, Long deviceId) {
+    private Long getDeviceId(UserVmVO vm, Long deviceId) {
         // allocate deviceId
-        List<VolumeVO> vols = _volsDao.findByInstance(vmId);
+        int maxDeviceId = getMaxDataVolumesSupported(vm) - 1;
+        List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         if (deviceId != null) {
-            if (deviceId.longValue() > 15 || deviceId.longValue() == 3) {
-                throw new RuntimeException("deviceId should be 1,2,4-15");
+            if (deviceId.longValue() <= 0 || deviceId.longValue() > maxDeviceId || deviceId.longValue() == 3) {
+                throw new RuntimeException("deviceId should be 1,2,4-" + maxDeviceId);
             }
             for (VolumeVO vol : vols) {
                 if (vol.getDeviceId().equals(deviceId)) {
-                    throw new RuntimeException("deviceId " + deviceId + " is used by vm" + vmId);
+                    throw new RuntimeException("deviceId " + deviceId + " is used by vm " + vm.getId());
                 }
             }
         } else {
             // allocate deviceId here
             List<String> devIds = new ArrayList<String>();
-            for (int i = 1; i < 15; i++) {
+            for (int i = 1; i <= maxDeviceId; i++) {
                 devIds.add(String.valueOf(i));
             }
             devIds.remove("3");
             for (VolumeVO vol : vols) {
                 devIds.remove(vol.getDeviceId().toString().trim());
+            }
+            if (devIds.isEmpty()) {
+                throw new RuntimeException("All device Ids are used by vm " + vm.getId());
             }
             deviceId = Long.parseLong(devIds.iterator().next());
         }
