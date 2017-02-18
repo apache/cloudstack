@@ -17,30 +17,30 @@
 package com.cloud.network.resource;
 
 
-import static org.junit.Assert.assertTrue;
+//import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
+//import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+//import java.util.List;
 import java.util.Map;
 
-import javax.naming.ConfigurationException;
+//import javax.naming.ConfigurationException;
 
 import org.junit.Before;
-import org.junit.Test;
+//import org.junit.Test;
 
-import com.cloud.agent.api.Answer;
+//import com.cloud.agent.api.Answer;
 //import com.cloud.agent.api.StartupCommand;
 //import com.cloud.agent.api.routing.IpAssocAnswer;
 //import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
+//import com.cloud.agent.api.routing.NetworkElementCommand;
 //import com.cloud.agent.api.routing.SetFirewallRulesCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+//import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+//import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 //import com.cloud.agent.api.to.FirewallRuleTO;
 //import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.agent.api.to.StaticNatRuleTO;
+//import com.cloud.agent.api.to.PortForwardingRuleTO;
+//import com.cloud.agent.api.to.StaticNatRuleTO;
 //import com.cloud.network.rules.FirewallRule;
 //import com.cloud.network.rules.FirewallRule.Purpose;
 //import com.cloud.network.rules.FirewallRule.State;
@@ -51,15 +51,12 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 public class VyosRouterResourceTest {
     // configuration data
     private String _testName = "VyosRouterTestDevice";
-    private String _testZoneId = "TestZone";
+    private String _testZoneId = "testZone";
     private String _testIp = "192.168.99.1";
     private String _testUsername = "vyos";
     private String _testPassword = "password";
     private String _testPublicInterface = "eth0";
     private String _testPrivateInterface = "eth1";
-    private String _testPublicZone = "untrust";
-    private String _testPrivateZone = "trust";
-    private String _testVirtualRouter = "default";
 
     MockableVyosRouterResource _resource;
     Map<String, Object> _resourceParams;
@@ -77,9 +74,6 @@ public class VyosRouterResourceTest {
         _resourceParams.put("password", _testPassword);
         _resourceParams.put("publicinterface", _testPublicInterface);
         _resourceParams.put("privateinterface", _testPrivateInterface);
-        _resourceParams.put("publicnetwork", _testPublicZone);
-        _resourceParams.put("privatenetwork", _testPrivateZone);
-        _resourceParams.put("pavr", _testVirtualRouter);
         _resourceParams.put("guid", "aaaaa-bbbbb-ccccc");
 
         _context = new HashMap<String, String>(); // global context
@@ -90,9 +84,7 @@ public class VyosRouterResourceTest {
         _context.put("password", _testPassword);
         _context.put("public_interface", _testPublicInterface);
         _context.put("private_interface", _testPrivateInterface);
-        _context.put("public_zone", _testPublicZone);
-        _context.put("private_zone", _testPrivateZone);
-        _context.put("pa_vr", _testVirtualRouter);
+
         // --
         _context.put("public_using_ethernet", "true");
         _context.put("private_using_ethernet", "true");
@@ -390,7 +382,7 @@ public class VyosRouterResourceTest {
          }
      }
 */
-
+/*
     @Test
     public void removeStaticNatRule() throws ConfigurationException, Exception {
         if (_context.containsKey("enable_console_output")
@@ -426,6 +418,7 @@ public class VyosRouterResourceTest {
                     "---------------------------------------------------");
         }
     }
+*/
 /*
     @Test
     public void addPortForwardingRule() throws ConfigurationException, Exception {
@@ -462,7 +455,7 @@ public class VyosRouterResourceTest {
         }
     }
 */
-
+/*
     @Test
     public void removePortForwardingRule()
             throws ConfigurationException, Exception {
@@ -504,7 +497,7 @@ public class VyosRouterResourceTest {
                     "---------------------------------------------------");
         }
     }
-
+*/
 
 
 }
