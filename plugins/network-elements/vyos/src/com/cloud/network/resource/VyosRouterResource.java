@@ -455,7 +455,7 @@ public class VyosRouterResource implements ServerResource{
             if (cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT) == "false" ) {
                 defaultEgressPolicy="deny";
             }
-            
+
             long cidrSize = NetUtils.cidrToLong(cidr)[1];
             String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);
 
