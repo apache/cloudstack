@@ -2919,7 +2919,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         ipv6, ip6Gateway, ip6Cidr, startIPv6, endIPv6, network);
                 if (sameSubnet) break;
             }
-        } else {
+        } else if(network.getGateway() != null && network.getCidr() != null) {
             vlanGateway = network.getGateway();
             vlanNetmask = NetUtils.getCidrNetmask(network.getCidr());
             sameSubnet = hasSameSubnet(ipv4, vlanGateway, vlanNetmask, newVlanGateway, newVlanNetmask, startIP, endIP,
