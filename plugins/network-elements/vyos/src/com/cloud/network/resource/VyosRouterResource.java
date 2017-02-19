@@ -1525,23 +1525,23 @@ public class VyosRouterResource implements ServerResource{
 
         debug_msg = debug_msg + "\n" + responseBody.replace("\"", "\\\"") + "\n\n"; // test cases
         s_logger.debug(debug_msg); // this can be commented if we don't want to show each request in the log.
-        if (commandType == VyosRouterCommandType.WRITE) {
-            System.out.println("Finished call to VyosRouterResource.request(). Debug Messages: "+debug_msg);
-        }
+        //if (commandType == VyosRouterCommandType.WRITE) {
+        //    System.out.println("Finished call to VyosRouterResource.request(). Debug Messages: "+debug_msg);
+        //}
         return responseBody;
     }
 
     private synchronized boolean requestWithCommit(ArrayList<IVyosRouterCommand> commandList) throws ExecutionException {
         // This loops through and executes all the commands in the commandList array.
         //If any commands fail then all commands are rolled back. Else, commands are saved to the vyos boot config
-        System.out.println("***************************************\nExecuting "+commandList.size()+" commands via requestWithCommit. numretries: "+_numRetries+" Commands:");
+        s_logger.debug("***************************************\nExecuting "+commandList.size()+" commands via requestWithCommit. numretries: "+_numRetries+" Commands:");
         for (IVyosRouterCommand commands : commandList) {
             int count=1;
             for (String curCommand : commands.getParams() ) {
-                System.out.println(count+":"+curCommand);
+                s_logger.debug(count+":"+curCommand);
             }
             count++;
-            System.out.println("");
+            s_logger.debug("");
         }
 
         boolean result = true;
