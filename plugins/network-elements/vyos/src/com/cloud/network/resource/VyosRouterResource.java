@@ -451,7 +451,11 @@ public class VyosRouterResource implements ServerResource{
             long guestVlanTag = Long.parseLong(cmd.getAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG));
             String guestVlanGateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
             String cidr = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
-            String defaultEgressPolicy = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
+            String defaultEgressPolicy = "allow";
+            if (cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT) == "false" ) {
+                defaultEgressPolicy="deny";
+            }
+            
             long cidrSize = NetUtils.cidrToLong(cidr)[1];
             String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);
 
