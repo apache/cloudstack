@@ -61,11 +61,8 @@ public class VyosRouterResource implements ServerResource{
     private String _password;
     private String _guid;
     private Integer _numRetries;
-    private String _publicZone;
-    private String _privateZone;
     private String _publicInterface;
     private String _privateInterface;
-    private String _virtualRouter;
     private static final Logger s_logger = Logger.getLogger(VyosRouterResource.class);
 
 
@@ -164,22 +161,6 @@ public class VyosRouterResource implements ServerResource{
             if (_privateInterface == null) {
                 throw new ConfigurationException("Unable to find private interface.");
             }
-
-            _publicZone = (String)params.get("publicnetwork");
-            if (_publicZone == null) {
-                throw new ConfigurationException("Unable to find public zone");
-            }
-
-            _privateZone = (String)params.get("privatenetwork");
-            if (_privateZone == null) {
-                throw new ConfigurationException("Unable to find private zone");
-            }
-
-            _virtualRouter = (String)params.get("pavr");
-            if (_virtualRouter == null) {
-                throw new ConfigurationException("Unable to find virtual router");
-            }
-
 
             _guid = (String)params.get("guid");
             if (_guid == null) {
