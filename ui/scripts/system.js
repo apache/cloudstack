@@ -5660,7 +5660,7 @@
                                             select: function (args) {
                                                 var items =[];
                                                 items.push({
-                                                    id: "VyosRouterFirewall",
+                                                    id: "VyosRouter",
                                                     description: "Vyos Router"
                                                 });
                                                 args.response.success({
@@ -12967,8 +12967,8 @@
                                         select: function (args) {
                                             var items =[];
                                             items.push({
-                                                id: "VyosRouterFirewall",
-                                                description: "Vyos Router Firewall"
+                                                id: "VyosRouter",
+                                                description: "Vyos Router"
                                             });
                                             args.response.success({
                                                 data: items
