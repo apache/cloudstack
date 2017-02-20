@@ -119,12 +119,8 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     public void execute() {
         VpnUser vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
         Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
-        try {
-            if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
-            }
-        }catch (Exception ex) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user due to resource unavailable");
+        if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
         }
 
         VpnUsersResponse vpnResponse = new VpnUsersResponse();

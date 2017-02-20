@@ -501,14 +501,13 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @DB
     @Override
-    public boolean applyVpnUsers(long vpnOwnerId, String userName) throws  ResourceUnavailableException {
+    public boolean applyVpnUsers(long vpnOwnerId, String userName) {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountDao.findById(vpnOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
 
         s_logger.debug("Applying vpn users for " + owner);
         List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
-        RemoteAccessVpnVO vpnTemp  = null;
 
         List<VpnUserVO> users = _vpnUsersDao.listByAccount(vpnOwnerId);
 
@@ -538,14 +537,12 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                             } else {
                                 finals[i] = false;
                                 success = false;
-                                vpnTemp = vpn;
                             }
                         }
                     }
                 } catch (Exception e) {
                     s_logger.warn("Unable to apply vpn users ", e);
                     success = false;
-                    vpnTemp = vpn;
 
                     for (int i = 0; i < finals.length; i++) {
                         finals[i] = false;
@@ -576,11 +573,6 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 }
                 s_logger.warn("Failed to apply vpn for user " + user.getUsername() + ", accountId=" + user.getAccountId());
             }
-        }
-
-        if (!success) {
-            throw new  ResourceUnavailableException("Failed add vpn user due to Resource unavailable ",
-                    RemoteAccessVPNServiceProvider.class, vpnTemp.getId());
         }
 
         return success;
