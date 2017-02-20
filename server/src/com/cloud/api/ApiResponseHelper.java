@@ -538,6 +538,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         long storagePoolId = snapshotStore.getDataStoreId();
         DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        if (dataStore == null) {
+            return DataStoreRole.Image;
+        }
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
 
