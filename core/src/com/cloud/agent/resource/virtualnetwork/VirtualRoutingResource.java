@@ -252,8 +252,8 @@ public class VirtualRoutingResource {
         if (!result.isSuccess()) {
             return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed");
         }
-        String[] lines = result.getDetails().split("&");
-        if (lines.length != 2) {
+        String[] lines = result.getDetails().split("+");
+        if (lines.length < 2) {
             return new GetDomRVersionAnswer(cmd, result.getDetails());
         }
         return new GetDomRVersionAnswer(cmd, result.getDetails(), lines[0], lines[1]);

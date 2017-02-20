@@ -42,5 +42,7 @@ then
     exit
 fi
 
-echo -n `cat /etc/cloudstack-release`'&'
+echo -n `cat /etc/cloudstack-release`'+'
 cat /var/cache/cloud/cloud-scripts-signature
+# Force stdout of above cat
+echo -n "+"
