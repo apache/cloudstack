@@ -2,10 +2,9 @@
 {
 	rotate 7
 	daily
-	size 50M
+	maxsize 10M
 	missingok
 	notifempty
-	delaycompress
 	compress
 	postrotate
 		/usr/sbin/invoke-rc.d rsyslog rotate > /dev/null
@@ -27,11 +26,10 @@
 {
 	rotate 10
 	daily
-	size 50M
+	maxsize 10M
 	missingok
 	notifempty
 	compress
-	delaycompress
 	sharedscripts
 	postrotate
 		/usr/sbin/invoke-rc.d rsyslog rotate > /dev/null

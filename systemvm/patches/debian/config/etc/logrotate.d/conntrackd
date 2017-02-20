@@ -1,10 +1,9 @@
 /var/log/conntrackd-stats.log {
     daily
-    size 10M
+    maxsize 10M
     rotate 2
     missingok
     compress
-    delaycompress
 
     postrotate
         if [ -e /var/run/conntrackd.sock ]; then
