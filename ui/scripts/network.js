@@ -965,53 +965,15 @@
                                         if (args.context.networks[0].type == "Isolated") { //Isolated network
                                             cloudStack.dialog.confirm({
                                                 message: 'message.confirm.current.guest.CIDR.unchanged',
-                                                action: function() { //"Yes"    button is clicked
-                                                    $.extend(data, {
-                                                        changecidr: false
-                                                    });
-
-                                                    $.ajax({
-                                                        url: createURL('updateNetwork'),
-                                                        data: data,
-                                                        success: function(json) {
-                                                            var jid = json.updatenetworkresponse.jobid;
-                                                            args.response.success({
-                                                                _custom: {
-                                                                    jobId: jid,
-                                                                    getUpdatedItem: function(json) {
-                                                                        var item = json.queryasyncjobresultresponse.jobresult.network;
-                                                                        return {
-                                                                            data: item
-                                                                        };
-                                                                    }
-                                                                }
-                                                            });
-                                                        }
-                                                    });
+                                                action: function() { //"Yes" button is clicked
+                                                    getForcedInfoAndUpdateNetwork(data);
                                                 },
                                                 cancelAction: function() { //"Cancel" button is clicked
                                                     $.extend(data, {
                                                         changecidr: true
                                                     });
 
-                                                    $.ajax({
-                                                        url: createURL('updateNetwork'),
-                                                        data: data,
-                                                        success: function(json) {
-                                                            var jid = json.updatenetworkresponse.jobid;
-                                                            args.response.success({
-                                                                _custom: {
-                                                                    jobId: jid,
-                                                                    getUpdatedItem: function(json) {
-                                                                        var item = json.queryasyncjobresultresponse.jobresult.network;
-                                                                        return {
-                                                                            data: item
-                                                                        };
-                                                                    }
-                                                                }
-                                                            });
-                                                        }
-                                                    });
+                                                    getForcedInfoAndUpdateNetwork(data);
                                                 }
                                             });
                                             return;
@@ -6494,6 +6456,81 @@
         });
 
         return data;
+    }
+
+    function getForcedInfoAndUpdateNetwork(data) {
+        if (isAdmin()) {
+            cloudStack.dialog.confirm({
+                message: "message.confirm.force.update",
+                action: function() {
+                    $.extend(data, {
+                        forced: true
+                    });
+
+                    $.ajax({
+                        url: createURL('updateNetwork'),
+                        async: false,
+                        data: data,
+                        success: function(json) {
+                            var jid = json.updatenetworkresponse.jobid;
+                            args.response.success({
+                                _custom: {
+                                    jobId: jid,
+                                    getUpdatedItem: function(json) {
+                                        var item = json.queryasyncjobresultresponse.jobresult.network;
+                                        return {
+                                            data: item
+                                        };
+                                    }
+                                }
+                            });
+                        }
+                    });
+                },
+                cancelAction: function() {
+                    $.ajax({
+                        url: createURL('updateNetwork'),
+                        async: false,
+                        data: data,
+                        success: function(json) {
+                            var jid = json.updatenetworkresponse.jobid;
+                            args.response.success({
+                                _custom: {
+                                    jobId: jid,
+                                    getUpdatedItem: function(json) {
+                                        var item = json.queryasyncjobresultresponse.jobresult.network;
+                                        return {
+                                            data: item
+                                        };
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        else {
+            $.ajax({
+                url: createURL('updateNetwork'),
+                async: false,
+                data: data,
+                success: function(json) {
+                    var jid = json.updatenetworkresponse.jobid;
+                    args.response.success({
+                        _custom: {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                                var item = json.queryasyncjobresultresponse.jobresult.network;
+                                return {
+                                    data: item
+                                };
+                            }
+                        }
+                    });
+                }
+            });
+        }
     }
 
 })(cloudStack, jQuery);
