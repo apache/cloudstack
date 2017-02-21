@@ -481,7 +481,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Type type = spstVO.getRecurringType();
         int maxSnaps = type.getMax();
 
-        List<SnapshotVO> snaps = listSnapsforVolumeType(volumeId, type);
+        List<SnapshotVO> snaps = listSnapsforVolumeTypeNotDestroyed(volumeId, type);
         SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         if (policy != null && policy.getMaxSnaps() < maxSnaps) {
             maxSnaps = policy.getMaxSnaps();
@@ -512,6 +512,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         if (snapshotCheck == null) {
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
+        }
+
+        if (snapshotCheck.getState() == Snapshot.State.Destroyed) {
+            throw new InvalidParameterValueException("Snapshot with id: " + snapshotId + " is already destroyed");
         }
 
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
@@ -898,8 +902,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return _snapshotDao.listByVolumeId(volumeId);
     }
 
-    private List<SnapshotVO> listSnapsforVolumeType(long volumeId, Type type) {
-        return _snapshotDao.listByVolumeIdType(volumeId, type);
+    private List<SnapshotVO> listSnapsforVolumeTypeNotDestroyed(long volumeId, Type type) {
+        return _snapshotDao.listByVolumeIdTypeNotDestroyed(volumeId, type);
     }
 
     @Override

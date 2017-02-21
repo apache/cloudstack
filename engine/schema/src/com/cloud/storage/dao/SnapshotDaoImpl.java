@@ -62,6 +62,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     private SearchBuilder<SnapshotVO> VolumeIdSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
+    private SearchBuilder<SnapshotVO> VolumeIdTypeNotDestroyedSearch;
     private SearchBuilder<SnapshotVO> ParentIdSearch;
     private SearchBuilder<SnapshotVO> backupUuidSearch;
     private SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
@@ -93,6 +94,15 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public List<SnapshotVO> listByVolumeIdType(long volumeId, Type type) {
         return listByVolumeIdType(null, volumeId, type);
+    }
+
+    @Override
+    public List<SnapshotVO> listByVolumeIdTypeNotDestroyed(long volumeId, Type type) {
+        SearchCriteria<SnapshotVO> sc = VolumeIdTypeNotDestroyedSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("type", type.ordinal());
+        sc.setParameters("status", State.Destroyed);
+        return listBy(sc, null);
     }
 
     @Override
@@ -146,6 +156,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         VolumeIdTypeSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdTypeSearch.and("type", VolumeIdTypeSearch.entity().getsnapshotType(), SearchCriteria.Op.EQ);
         VolumeIdTypeSearch.done();
+
+        VolumeIdTypeNotDestroyedSearch = createSearchBuilder();
+        VolumeIdTypeNotDestroyedSearch.and("volumeId", VolumeIdTypeNotDestroyedSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdTypeNotDestroyedSearch.and("type", VolumeIdTypeNotDestroyedSearch.entity().getsnapshotType(), SearchCriteria.Op.EQ);
+        VolumeIdTypeNotDestroyedSearch.and("status", VolumeIdTypeNotDestroyedSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        VolumeIdTypeNotDestroyedSearch.done();
 
         VolumeIdVersionSearch = createSearchBuilder();
         VolumeIdVersionSearch.and("volumeId", VolumeIdVersionSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
