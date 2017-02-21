@@ -987,6 +987,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.TIMEZONE.equalsIgnoreCase(attrName)) {
                     response.setTimeZone(attrObj.toString());
                 }
+                if (ApiConstants.TIMEZONEOFFSET.equalsIgnoreCase(attrName)) {
+                    response.setTimeZoneOffset(attrObj.toString());
+                }
                 if (ApiConstants.REGISTERED.equalsIgnoreCase(attrName)) {
                     response.setRegistered(attrObj.toString());
                 }
