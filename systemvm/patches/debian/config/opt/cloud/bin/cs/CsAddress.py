@@ -106,6 +106,10 @@ class CsAddress(CsDataBag):
                 ip.setAddress(address)
                 logging.info("Address found in DataBag ==> %s" % address)
 
+                if not address['add'] and not ip.configured():
+                    logging.info("Skipping %s as the add flag is set to %s " % (address['public_ip'], address['add']))
+                    continue
+
                 if ip.configured():
                     logging.info(
                         "Address %s on device %s already configured", ip.ip(), dev)
