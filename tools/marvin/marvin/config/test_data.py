@@ -962,6 +962,10 @@ test_data = {
         "url": "nfs://nfs/export/automation/1/testprimary",
         "name": "Primary XEN"
     },
+    "nfs2": {
+        "url": "nfs://nfs/export/automation/1/testprimary2",
+        "name": "Primary XEN 2"
+    },
     "iscsi": {
         "url":
             "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",

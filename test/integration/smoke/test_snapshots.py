@@ -275,7 +275,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         assert isinstance(clusters,list) and len(clusters)>0
 
         storage = StoragePool.create(self.apiclient,
-                                     self.services["nfs"],
+                                     self.services["nfs2"],
                                      clusterid=clusters[0].id,
                                      zoneid=self.zone.id,
                                      podid=self.pod.id
