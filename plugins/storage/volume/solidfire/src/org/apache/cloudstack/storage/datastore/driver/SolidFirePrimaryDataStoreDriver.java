@@ -16,22 +16,14 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -40,11 +32,11 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -57,9 +49,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import com.google.common.base.Preconditions;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -82,6 +72,13 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger LOGGER = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
@@ -1348,8 +1345,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
             SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection, sfVolumeId);
 
-            verifySufficientIopsForStoragePool(storagePoolId, volumeInfo.getId(), payload.newMinIops);
-            verifySufficientBytesForStoragePool(storagePoolId, volumeInfo.getId(), payload.newSize, payload.newHypervisorSnapshotReserve);
+            long newMinIops = payload.newMinIops != null ? payload.newMinIops : sfVolume.getMinIops();
+            long newMaxIops = payload.newMaxIops != null ? payload.newMaxIops : sfVolume.getMaxIops();
+            long newSize = payload.newSize != null ? payload.newSize : volumeInfo.getSize();
+
+            verifySufficientIopsForStoragePool(storagePoolId, sfVolume, newMinIops);
+            verifySufficientBytesForStoragePool(storagePoolId, volumeInfo.getId(), newSize, payload.newHypervisorSnapshotReserve);
 
             long sfNewVolumeSize = sfVolume.getTotalSize();
 
@@ -1367,7 +1368,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     }
                 }
 
-                sfNewVolumeSize = getVolumeSizeIncludingHypervisorSnapshotReserve(payload.newSize, hsr);
+                sfNewVolumeSize = getVolumeSizeIncludingHypervisorSnapshotReserve(newSize, hsr);
             }
 
             Map<String, String> mapAttributes = new HashMap<>();
@@ -1376,12 +1377,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             mapAttributes.put(SolidFireUtil.CloudStackVolumeSize, NumberFormat.getInstance().format(payload.newSize));
 
             SolidFireUtil.modifyVolume(sfConnection, sfVolumeId, sfNewVolumeSize, mapAttributes,
-                    payload.newMinIops, payload.newMaxIops, getDefaultBurstIops(storagePoolId, payload.newMaxIops));
+                    newMinIops, newMaxIops, getDefaultBurstIops(storagePoolId, newMaxIops));
 
             VolumeVO volume = volumeDao.findById(volumeInfo.getId());
 
-            volume.setMinIops(payload.newMinIops);
-            volume.setMaxIops(payload.newMaxIops);
+            volume.setMinIops(newMinIops);
+            volume.setMaxIops(newMaxIops);
             volume.setHypervisorSnapshotReserve(hsr);
 
             volumeDao.update(volume.getId(), volume);
@@ -1453,10 +1454,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private void verifySufficientIopsForStoragePool(long storagePoolId, long volumeId, long newMinIops) {
-        VolumeVO volume = volumeDao.findById(volumeId);
+    private void verifySufficientIopsForStoragePool(long storagePoolId, SolidFireUtil.SolidFireVolume sfVolume, long newMinIops) {
 
-        long currentMinIops = volume.getMinIops();
+        long currentMinIops = sfVolume.getMinIops();
         long diffInMinIops = newMinIops - currentMinIops;
 
         // if the desire is for more IOPS
