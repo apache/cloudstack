@@ -16,22 +16,14 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -40,11 +32,11 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -57,9 +49,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import com.google.common.base.Preconditions;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -82,6 +72,13 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger LOGGER = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
@@ -749,7 +746,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private SolidFireUtil.SolidFireVolume createClone(SolidFireUtil.SolidFireConnection sfConnection, long dataObjectId, VolumeInfo volumeInfo, long sfAccountId,
             long storagePoolId, DataObjectType dataObjectType) {
-        String sfNewVolumeName = volumeInfo.getName();
+        String sfNewVolumeName = SolidFireUtil.getSolidFireVolumeName(volumeInfo.getName());
 
         long sfVolumeId = Long.MIN_VALUE;
         long sfSnapshotId = Long.MIN_VALUE;
@@ -937,7 +934,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             else {
                 // We are supposed to create a new SolidFire volume to serve as the back-end for our CloudStack volume snapshot.
 
-                String sfNewVolumeName = volumeInfo.getName() + "-" + snapshotInfo.getUuid();
+                String sfNewVolumeName = SolidFireUtil.getSolidFireVolumeName(volumeInfo.getName() + "-" + snapshotInfo.getUuid());
 
                 final Iops iops = getIops(MIN_IOPS_FOR_SNAPSHOT_VOLUME, MAX_IOPS_FOR_SNAPSHOT_VOLUME, storagePoolId);
 
