@@ -2451,7 +2451,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        final List<SummedCapacity> summedCapacitiesForSecStorage = getSecStorageUsed(zoneId, capacityType);
+        List<SummedCapacity> summedCapacitiesForSecStorage = getStorageUsed(clusterId, podId, zoneId, capacityType);
         if (summedCapacitiesForSecStorage != null) {
             summedCapacities.addAll(summedCapacitiesForSecStorage);
         }
@@ -2489,7 +2489,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return capacities;
     }
 
-    List<SummedCapacity> getSecStorageUsed(final Long zoneId, final Integer capacityType) {
+    List<SummedCapacity> getStorageUsed(Long clusterId, Long podId, Long zoneId, Integer capacityType) {
         if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
             final List<SummedCapacity> list = new ArrayList<SummedCapacity>();
             if (zoneId != null) {
@@ -2497,19 +2497,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (zone == null || zone.getAllocationState() == AllocationState.Disabled) {
                     return null;
                 }
-                final CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
-                if (capacity.getTotalCapacity() != 0) {
-                    capacity.setUsedPercentage(capacity.getUsedCapacity() / capacity.getTotalCapacity());
-                } else {
-                    capacity.setUsedPercentage(0);
-                }
-                final SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(),
-                        capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
-                list.add(summedCapacity);
-            } else {
-                final List<DataCenterVO> dcList = _dcDao.listEnabledZones();
-                for (final DataCenterVO dc : dcList) {
-                    final CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, dc.getId());
+                List<CapacityVO> capacities=new ArrayList<CapacityVO>();
+                capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zoneId));
+                capacities.add(_storageMgr.getStoragePoolUsedStats(null,clusterId, podId, zoneId));
+                for (CapacityVO capacity : capacities) {
                     if (capacity.getTotalCapacity() != 0) {
                         capacity.setUsedPercentage((float)capacity.getUsedCapacity() / capacity.getTotalCapacity());
                     } else {
@@ -2518,6 +2509,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     final SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(),
                             capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
                     list.add(summedCapacity);
+                }
+            } else {
+                List<DataCenterVO> dcList = _dcDao.listEnabledZones();
+                for (DataCenterVO dc : dcList) {
+                    List<CapacityVO> capacities=new ArrayList<CapacityVO>();
+                    capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, dc.getId()));
+                    capacities.add(_storageMgr.getStoragePoolUsedStats(null, null, null, dc.getId()));
+                    for (CapacityVO capacity : capacities) {
+                        if (capacity.getTotalCapacity() != 0) {
+                            capacity.setUsedPercentage((float)capacity.getUsedCapacity() / capacity.getTotalCapacity());
+                        } else {
+                            capacity.setUsedPercentage(0);
+                        }
+                        SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(),
+                                capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
+                        list.add(summedCapacity);
+                    }
                 }// End of for
             }
             return list;
