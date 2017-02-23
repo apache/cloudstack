@@ -281,6 +281,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         // Supports only Public load balancing
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
 
+        // Support inline mode with firewall
+        lbCapabilities.put(Capability.InlineMode, "true");
+
         // Specifies that load balancing rules can support autoscaling and the list of counters it supports
         AutoScaleCounter counter;
         List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
