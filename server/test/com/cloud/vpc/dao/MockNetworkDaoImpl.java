@@ -106,7 +106,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
      * @see com.cloud.network.dao.NetworkDao#getNextAvailableMacAddress(long)
      */
     @Override
-    public String getNextAvailableMacAddress(final long networkConfigId) {
+    public String getNextAvailableMacAddress(final long networkConfigId, Integer zoneMacIdentifier) {
         // TODO Auto-generated method stub
         return null;
     }

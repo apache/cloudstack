@@ -555,6 +555,19 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testcreateSequenceBasedMacAddress(){
+        long mac1 = NetUtils.createSequenceBasedMacAddress(10l,10l);
+        assertEquals(10l,(mac1 & (0x0al<<32)) >> 32);
+        assertEquals(10l,mac1 & 0x0al);
+        assertEquals(30l, mac1>>40);
+
+        long mac2 = NetUtils.createSequenceBasedMacAddress(20l,15l);
+        assertEquals(15l, (mac2 & (0x0fl << 32)) >> 32);
+        assertEquals(20l, mac2 & 0x14l);
+        assertEquals(30l, mac1>>40);
+    }
+
+    @Test
     public void testIPv6LinkLocal() {
         assertEquals(IPv6Address.fromString("fe80::fc54:ff:fe00:3e05"), NetUtils.ipv6LinkLocal("fe:54:00:00:3e:05"));
         assertEquals(IPv6Address.fromString("fe80::42:e0ff:fee8:d6a3"), NetUtils.ipv6LinkLocal("02:42:e0:e8:d6:a3"));

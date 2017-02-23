@@ -740,7 +740,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             type = c.getType();
         }
-
+        //no need to validate further if a
+        //config can have null value.
         String errMsg = null;
         try {
             if (type.equals(Integer.class)) {
@@ -787,6 +788,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return "Please enter either 'true' or 'false'.";
             }
             return null;
+        }
+
+        if (type.equals(Integer.class) && NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
+            try {
+                final int val = Integer.parseInt(value);
+                //The value need to be between 0 to 255 because the mac generation needs a value of 8 bit
+                //0 value is considered as disable.
+                if(val < 0 || val > 255){
+                    throw new InvalidParameterValueException(name+" value should be between 0 and 255. 0 value will disable this feature");
+                }
+            } catch (final NumberFormatException e) {
+                s_logger.error("There was an error trying to parse the integer value for:" + name);
+                throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
+            }
         }
 
         if (type.equals(Integer.class) && configValuesForValidation.contains(name)) {
