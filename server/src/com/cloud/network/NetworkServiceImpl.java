@@ -835,7 +835,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
             }
             //check if the secondary ip associated with any static nat rule
-            IPAddressVO publicIpVO = _ipAddressDao.findByVmIp(secondaryIp);
+            IPAddressVO publicIpVO = _ipAddressDao.findByIpAndNetworkId(secIpVO.getNetworkId(), secondaryIp);
             if (publicIpVO != null) {
                 s_logger.debug("VM nic IP " + secondaryIp + " is associated with the static NAT rule public IP address id " + publicIpVO.getId());
                 throw new InvalidParameterValueException("Can' remove the ip " + secondaryIp + "is associate with static NAT rule public IP address id " + publicIpVO.getId());
