@@ -668,19 +668,38 @@ public class CommandSetupHelper {
         for (final Map.Entry<String, ArrayList<PublicIpAddress>> vlanAndIp : vlanIpMap.entrySet()) {
             final List<PublicIpAddress> ipAddrList = vlanAndIp.getValue();
 
+            // Source nat ip address should always be sent first
+            Collections.sort(ipAddrList, new Comparator<PublicIpAddress>() {
+                @Override
+                public int compare(final PublicIpAddress o1, final PublicIpAddress o2) {
+                    final boolean s1 = o1.isSourceNat();
+                    final boolean s2 = o2.isSourceNat();
+                    return s1 ^ s2 ? s1 ^ true ? 1 : -1 : 0;
+                }
+            });
+
+
             // Get network rate - required for IpAssoc
             final Integer networkRate = _networkModel.getNetworkRate(ipAddrList.get(0).getNetworkId(), router.getId());
             final Network network = _networkModel.getNetwork(ipAddrList.get(0).getNetworkId());
 
             final IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
             int i = 0;
+            boolean firstIP = true;
 
             for (final PublicIpAddress ipAddr : ipAddrList) {
                 final boolean add = ipAddr.getState() == IpAddress.State.Releasing ? false : true;
+                boolean sourceNat = ipAddr.isSourceNat();
+                /* enable sourceNAT for the first ip of the public interface
+                * For additional public subnet source nat rule needs to be added for vm to reach ips in that subnet
+                */
+                if (firstIP) {
+                    sourceNat = true;
+                }
 
                 final String macAddress = vlanMacAddress.get(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())));
 
-                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, false, ipAddr.isSourceNat(), BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
+                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, sourceNat, BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
                         ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
 
                 ip.setTrafficType(network.getTrafficType());
@@ -689,6 +708,12 @@ public class CommandSetupHelper {
                 if (ipAddr.isSourceNat()) {
                     sourceNatIpAdd = new Pair<IpAddressTO, Long>(ip, ipAddr.getNetworkId());
                     addSourceNat = add;
+                }
+
+                //for additional public subnet on delete it is not sure which ip is set to first ip. So on delete we
+                //want to set sourcenat to true for all ips to delete source nat rules.
+                if (!firstIP || add) {
+                    firstIP = false;
                 }
             }
             final IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipsToSend);
