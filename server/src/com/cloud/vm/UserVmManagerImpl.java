@@ -477,6 +477,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected IpAddressManager _ipAddrMgr;
 
     protected ScheduledExecutorService _executor = null;
+    protected ScheduledExecutorService _vmIpFetchExecutor = null;
     protected int _expungeInterval;
     protected int _expungeDelay;
     protected boolean _dailyOrHourly = false;
@@ -513,6 +514,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     static final ConfigKey<Integer> VmIpFetchThreadPoolMax = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmipFetch.threadPool.max", "10",
             "number of threads for fetching vms ip address", true);
+
+    static final ConfigKey<Integer> VmIpFetchTaskWorkers = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmipfetchtask.workers", "10",
+                        "number of worker threads for vm ip fetch task ", true);
 
 
     @Override
@@ -1947,6 +1951,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
 
+        String vmIpWorkers = configs.get(VmIpFetchTaskWorkers.value());
+        int vmipwrks = NumbersUtil.parseInt(vmIpWorkers, 10);
+
+        _vmIpFetchExecutor =   Executors.newScheduledThreadPool(vmipwrks, new NamedThreadFactory("UserVm-ipfetch"));
+
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         int _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
         int HOURLY_TIME = 60;
@@ -1966,7 +1975,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
         _instanceNameFlag = (value == null) ? false : Boolean.parseBoolean(value);
 
-       _scaleRetry = NumbersUtil.parseInt(configs.get(Config.ScaleRetry.key()), 2);
+        _scaleRetry = NumbersUtil.parseInt(configs.get(Config.ScaleRetry.key()), 2);
+
+        _vmIpFetchThreadExecutor = Executors.newFixedThreadPool(VmIpFetchThreadPoolMax.value(), new NamedThreadFactory("vmIpFetchThread"));
 
         s_logger.info("User VM Manager is configured.");
 
@@ -1981,7 +1992,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean start() {
         _executor.scheduleWithFixedDelay(new ExpungeTask(), _expungeInterval, _expungeInterval, TimeUnit.SECONDS);
-        _executor.scheduleWithFixedDelay(new VmIpFetchTask(), VmIpFetchWaitInterval.value(), VmIpFetchWaitInterval.value(), TimeUnit.SECONDS);
+        _vmIpFetchExecutor.scheduleWithFixedDelay(new VmIpFetchTask(), VmIpFetchWaitInterval.value(), VmIpFetchWaitInterval.value(), TimeUnit.SECONDS);
         loadVmDetailsInMapForExternalDhcpIp();
         return true;
     }
@@ -2015,6 +2026,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean stop() {
         _executor.shutdown();
+        _vmIpFetchExecutor.shutdown();
         return true;
     }
 
@@ -2599,7 +2611,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
         }
 
-        return rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId);
+        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId);
+        if (userVm != null ) {
+            // update the vmIdCountMap if the vm is in advanced shared network with out services
+            final List<NicVO> nics = _nicDao.listByVmId(vmId);
+            for (NicVO nic : nics) {
+                Network network = _networkModel.getNetwork(nic.getNetworkId());
+                if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                    s_logger.debug("Adding vm " +vmId +" nic id "+ nic.getId() +" into vmIdCountMap as part of vm " +
+                            "reboot for vm ip fetch ");
+                    vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
+                }
+            }
+            return  userVm;
+        }
+        return  null;
     }
 
     @Override
@@ -3808,7 +3834,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean  finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         UserVmVO vm = _vmDao.findById(profile.getId());
 
         Answer[] answersToCmds = cmds.getAnswers();
@@ -3895,6 +3921,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.warn("Unable to restore the vm snapshot from image file to the VM: " + restoreVMSnapshotAnswer.getDetails());
             }
         }
+
+        final VirtualMachineProfile vmProfile = profile;
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                final UserVmVO vm = _vmDao.findById(vmProfile.getId());
+                final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+                for (NicVO nic : nics) {
+                    Network network = _networkModel.getNetwork(nic.getNetworkId());
+                    if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                        vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
+                    }
+                }
+            }
+        });
 
         return true;
     }
@@ -5835,7 +5876,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax, VmIpFetchThreadPoolMax};
+        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax, VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers};
     }
 
     @Override

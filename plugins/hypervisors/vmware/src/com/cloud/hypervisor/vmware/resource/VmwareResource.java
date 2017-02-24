@@ -290,6 +290,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
+import com.vmware.vim25.GuestInfo;
+import com.vmware.vim25.VirtualMachineToolsStatus;
+import com.cloud.agent.api.GetVmIpAddressCommand;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -490,6 +493,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((ScaleVmCommand)cmd);
             } else if (clz == PvlanSetupCommand.class) {
                 return execute((PvlanSetupCommand)cmd);
+            } else if (clz == GetVmIpAddressCommand.class) {
+                return execute((GetVmIpAddressCommand)cmd);
             } else if (clz == UnregisterNicCommand.class) {
                 answer = execute((UnregisterNicCommand)cmd);
             } else {
@@ -3221,11 +3226,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource RebootCommand: " + _gson.toJson(cmd));
         }
 
+        boolean toolsInstallerMounted = false;
+        VirtualMachineMO vmMo = null;
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         try {
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             if (vmMo != null) {
+                if (vmMo.isToolsInstallerMounted()) {
+                    toolsInstallerMounted = true;
+                    s_logger.trace("Detected mounted vmware tools installer for :[" + cmd.getVmName() + "]");
+                }
                 try {
                     vmMo.rebootGuest();
                     return new RebootAnswer(cmd, "reboot succeeded", true);
@@ -3257,6 +3268,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String msg = "RebootCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg);
             return new RebootAnswer(cmd, msg, false);
+        } finally {
+            if (toolsInstallerMounted) {
+                try {
+                    vmMo.mountToolsInstaller();
+                    s_logger.debug("Successfully re-mounted vmware tools installer for :[" + cmd.getVmName() + "]");
+                } catch (Exception e) {
+                    s_logger.warn("Unabled to re-mount vmware tools installer for :[" + cmd.getVmName() + "]");
+                }
+            }
         }
     }
 
@@ -4365,6 +4385,59 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new Answer(cmd);
     }
 
+
+    protected Answer execute(GetVmIpAddressCommand cmd) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Executing resource command GetVmIpAddressCommand: " + _gson.toJson(cmd));
+        }
+
+        String details = "Unable to find IP Address of VM. ";
+        String vmName = cmd.getVmName();
+        boolean result = false;
+        String ip = null;
+        Answer answer = null;
+
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+        if (vmName == null || vmName.isEmpty()) {
+            details += "Name of instance provided is NULL or empty.";
+            return new Answer(cmd, result, details);
+        }
+
+        try {
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+            if (vmMo != null) {
+                GuestInfo guestInfo = vmMo.getGuestInfo();
+                VirtualMachineToolsStatus toolsStatus = guestInfo.getToolsStatus();
+                if (toolsStatus == VirtualMachineToolsStatus.TOOLS_NOT_INSTALLED) {
+                    details += "Vmware tools not installed.";
+                } else {
+                    ip = guestInfo.getIpAddress();
+                    if (ip != null) {
+                        result = true;
+                    }
+                    details = ip;
+                }
+            } else {
+                details += "VM " + vmName + " no longer exists on vSphere host: " + hyperHost.getHyperHostName();
+                s_logger.info(details);
+            }
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
+            details += "Encountered exception : " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(details);
+        }
+
+        answer = new Answer(cmd, result, details);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Returning GetVmIpAddressAnswer: " + _gson.toJson(answer));
+        }
+        return answer;
+    }
 
     @Override
     public PrimaryStorageDownloadAnswer execute(PrimaryStorageDownloadCommand cmd) {
