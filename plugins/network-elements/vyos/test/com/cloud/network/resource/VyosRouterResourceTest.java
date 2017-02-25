@@ -17,41 +17,40 @@
 package com.cloud.network.resource;
 
 
-//import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
-//import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.HashMap;
-//import java.util.List;
+import java.util.List;
 import java.util.Map;
 
-//import javax.naming.ConfigurationException;
+import javax.naming.ConfigurationException;
 
 import org.junit.Before;
-//import org.junit.Test;
-
-//import com.cloud.agent.api.Answer;
-//import com.cloud.agent.api.StartupCommand;
-//import com.cloud.agent.api.routing.IpAssocAnswer;
-//import com.cloud.agent.api.routing.IpAssocCommand;
-//import com.cloud.agent.api.routing.NetworkElementCommand;
-//import com.cloud.agent.api.routing.SetFirewallRulesCommand;
-//import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
-//import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-//import com.cloud.agent.api.to.FirewallRuleTO;
-//import com.cloud.agent.api.to.IpAddressTO;
-//import com.cloud.agent.api.to.PortForwardingRuleTO;
-//import com.cloud.agent.api.to.StaticNatRuleTO;
-//import com.cloud.network.rules.FirewallRule;
-//import com.cloud.network.rules.FirewallRule.Purpose;
-//import com.cloud.network.rules.FirewallRule.State;
-//import com.cloud.network.rules.FirewallRuleVO;
-//import com.cloud.utils.exception.ExecutionException;
+import org.junit.Test;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRule.State;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.utils.exception.ExecutionException;
 
 
 public class VyosRouterResourceTest {
     // configuration data
     private String _testName = "VyosRouterTestDevice";
-    private String _testZoneId = "testZone";
+    private String _testZoneId = "TestZone";
     private String _testIp = "192.168.99.1";
     private String _testUsername = "vyos";
     private String _testPassword = "password";
@@ -86,79 +85,80 @@ public class VyosRouterResourceTest {
         _context.put("private_interface", _testPrivateInterface);
 
         // --
-        _context.put("public_using_ethernet", "true");
-        _context.put("private_using_ethernet", "true");
-        _context.put("has_management_profile", "true");
         _context.put("enable_console_output", "true"); // CHANGE TO "true" TO
                                                        // ENABLE CONSOLE LOGGING
                                                        // OF TESTS
 
         // This will cause the tests to be run against an actual Vyos Router
         // instead of the mock router.
-        _context.put("use_test_router", "true");
+       // _context.put("use_test_router", "true");
         _resource.setMockContext(_context);
     }
 
-    /*
+     @Test(expected = ConfigurationException.class)
+     public void resourceConfigureFailure() throws ConfigurationException {
+         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
+             System.out.println("\nTEST: resourceConfigureFailure");
+             System.out.println("---------------------------------------------------");
+         }
+         _resource.configure("VyosRouterResource", new HashMap<String, Object>());
+     }
 
-     @Test(expected = ConfigurationException.class) public void
-     resourceConfigureFailure() throws ConfigurationException { if
-     (_context.containsKey("enable_console_output") &&
-     _context.get("enable_console_output").equals("true")) {
-     System.out.println("\nTEST: resourceConfigureFailure");
-     System.out.println("---------------------------------------------------")
-     ; } _resource.configure("VyosRouterResource", new HashMap<String,
-     Object>()); }
+     @Test
+     public void resourceConfigure() throws ConfigurationException {
+         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
+             System.out.println("\nTEST: resourceConfigure");
+             System.out.println("---------------------------------------------------");
+         }
+         _resource.configure("VyosRouterResource", _resourceParams);
+     }
 
-
-     @Test public void resourceConfigure() throws ConfigurationException { if
-     (_context.containsKey("enable_console_output") &&
-     _context.get("enable_console_output").equals("true")) {
-     System.out.println("\nTEST: resourceConfigure");
-     System.out.println("---------------------------------------------------")
-     ; } _resource.configure("VyosRouterResource", _resourceParams); }
-     */
     // TODO Not sure that this state has an analog in VYOS
     /*
-     @Test(expected = ConfigurationException.class) public void
-     simulateFirewallNotConfigurable() throws ConfigurationException { if
-     (_context.containsKey("enable_console_output") &&
-     _context.get("enable_console_output").equals("true")) {
-     System.out.println("\nTEST: simulateFirewallNotConfigurable");
-     System.out.println("---------------------------------------------------")
-     ; } _context.put("firewall_has_pending_changes", "true");
-     _context.remove("has_management_profile");
-     _resource.setMockContext(_context);
-     _resource.configure("VyosRouterResource", _resourceParams); }
-     */
+     @Test(expected = ConfigurationException.class)
+     public void simulateFirewallNotConfigurable() throws ConfigurationException {
+         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
+             System.out.println("\nTEST: simulateFirewallNotConfigurable");
+             System.out.println("---------------------------------------------------");
+         }
+         _context.put("firewall_has_pending_changes", "true");
+         _resource.setMockContext(_context);
+         _resource.configure("VyosRouterResource", _resourceParams);
+     }
+    */
     /*
-     // TODO Not Done
+    // TODO Not Done
+    @Test(expected = ConfigurationException.class)
+    public void simulateFirewallCommitFailure() throws ConfigurationException {
+        if (_context.containsKey("enable_console_output")
+                && _context.get("enable_console_output").equals("true")) {
+            System.out.println("\nTEST: simulateFirewallCommitFailure");
+            System.out.println(
+                    "---------------------------------------------------");
+        }
+        _context.put("simulate_commit_failure", "true");
 
-     @Test(expected = ConfigurationException.class) public void
-     simulateFirewallCommitFailure() throws ConfigurationException { if
-     (_context.containsKey("enable_console_output") &&
-     _context.get("enable_console_output").equals("true")) {
-     System.out.println("\nTEST: simulateFirewallCommitFailure");
-     System.out.println("---------------------------------------------------")
-     ; } _context.put("simulate_commit_failure", "true");
-     _context.remove("has_management_profile");
-     _resource.setMockContext(_context);
-     _resource.configure("VyosRouterResource", _resourceParams); }
+        _resource.setMockContext(_context);
+        _resource.configure("VyosRouterResource", _resourceParams);
+    }
+    */
+    @Test
+    public void testInitialize() throws ConfigurationException {
+        if (_context.containsKey("enable_console_output")
+                && _context.get("enable_console_output").equals("true")) {
+            System.out.println("\nTEST: testInitialize");
+            System.out.println(
+                    "---------------------------------------------------");
+        }
+        _resource.configure("VyosRouterResource", _resourceParams);
 
-     @Test public void testInitialize() throws ConfigurationException { if
-     (_context.containsKey("enable_console_output") &&
-     _context.get("enable_console_output").equals("true")) {
-     System.out.println("\nTEST: testInitialize");
-     System.out.println("---------------------------------------------------")
-     ; } _resource.configure("VyosRouterResource", _resourceParams);
+        StartupCommand[] sc = _resource.initialize();
+        assertTrue(sc.length == 1);
+        assertTrue("aaaaa-bbbbb-ccccc".equals(sc[0].getGuid()));
+        assertTrue("VyosRouterTestDevice".equals(sc[0].getName()));
+        assertTrue("TestZone".equals(sc[0].getDataCenter()));
+    }
 
-     StartupCommand[] sc = _resource.initialize(); assertTrue(sc.length == 1);
-     assertTrue("aaaaa-bbbbb-ccccc".equals(sc[0].getGuid()));
-     assertTrue("VyosRouterTestDevice".equals(sc[0].getName()));
-     assertTrue("TestZone".equals(sc[0].getDataCenter())); }
-     */
-
-/*
      @Test // implement public & private interfaces, source nat, guest network
      public void implementGuestNetwork() throws ConfigurationException, ExecutionException {
          if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
@@ -183,9 +183,7 @@ public class VyosRouterResourceTest {
              System.out.println("---------------------------------------------------");
          }
      }
-*/
 
-/*
      @Test // remove public & private interface details, source nat, guest network
      public void shutdownGuestNetwork() throws ConfigurationException, ExecutionException
      {
@@ -215,9 +213,7 @@ public class VyosRouterResourceTest {
              System.out.println("---------------------------------------------------");
          }
      }
-*/
 
-/*
      @Test public void addIngressFirewallRule() throws ConfigurationException, Exception {
          if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
              System.out.println("\nTEST: addIngressFirewallRule");
@@ -250,9 +246,7 @@ public class VyosRouterResourceTest {
              System.out.println("---------------------------------------------------");
          }
      }
-*/
 
-/*
      @Test public void removeIngressFirewallRule() throws ConfigurationException, Exception {
          if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
              System.out.println("\nTEST: removeIngressFirewallRule");
@@ -283,8 +277,7 @@ public class VyosRouterResourceTest {
              System.out.println("---------------------------------------------------");
          }
      }
-*/
-/*
+
      @Test public void addEgressFirewallRule() throws ConfigurationException, Exception {
          if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
              System.out.println("\nTEST: addEgressFirewallRule");
@@ -316,8 +309,7 @@ public class VyosRouterResourceTest {
              System.out.println("---------------------------------------------------");
          }
      }
-*/
-/*
+
      @Test public void removeEgressFirewallRule() throws ConfigurationException, Exception {
          if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
              System.out.println("\nTEST: removeEgressFirewallRule");
@@ -347,8 +339,7 @@ public class VyosRouterResourceTest {
              System.out.println("---------------------------------------------------");
          }
      }
-*/
-/*
+
      @Test public void addStaticNatRule() throws ConfigurationException, Exception {
          if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
              System.out.println("\nTEST: addStaticNatRule");
@@ -381,8 +372,7 @@ public class VyosRouterResourceTest {
              System.out.println("---------------------------------------------------");
          }
      }
-*/
-/*
+
     @Test
     public void removeStaticNatRule() throws ConfigurationException, Exception {
         if (_context.containsKey("enable_console_output")
@@ -418,8 +408,7 @@ public class VyosRouterResourceTest {
                     "---------------------------------------------------");
         }
     }
-*/
-/*
+
     @Test
     public void addPortForwardingRule() throws ConfigurationException, Exception {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
@@ -454,8 +443,7 @@ public class VyosRouterResourceTest {
                     "---------------------------------------------------");
         }
     }
-*/
-/*
+
     @Test
     public void removePortForwardingRule()
             throws ConfigurationException, Exception {
@@ -497,7 +485,5 @@ public class VyosRouterResourceTest {
                     "---------------------------------------------------");
         }
     }
-*/
-
 
 }

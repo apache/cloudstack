@@ -60,6 +60,10 @@ public class MockableVyosRouterResource extends VyosRouterResource {
                     System.out.println("Mock Write request");
                     break;
 
+                case SAVE :
+                    System.out.println("Mock Save request");
+                    break;
+
                 default :
                     System.out
                             .println("ERROR command type not supported. Type: "
