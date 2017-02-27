@@ -197,6 +197,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.network.dao.LoadBalancerDao;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -334,6 +335,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Inject
     NetworkDetailsDao _networkDetailsDao;
+
+    @Inject
+    LoadBalancerDao _loadBalancerDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -852,7 +856,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Can' remove the ip " + secondaryIp + "is associate with static NAT rule public IP address id " + publicIpVO.getId());
             }
 
-            if (_lbService.isLbRuleMappedToVmGuestIp(secondaryIp)) {
+            if (_loadBalancerDao.isLoadBalancerRulesMappedToVmGuestIp(vm.getId(), secondaryIp, network.getId())) {
                 s_logger.debug("VM nic IP " + secondaryIp + " is mapped to load balancing rule");
                 throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is mapped to load balancing rule");
             }
