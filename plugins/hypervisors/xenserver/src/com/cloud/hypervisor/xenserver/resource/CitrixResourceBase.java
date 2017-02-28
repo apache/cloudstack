@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+
+import org.apache.commons.collections.MapUtils;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -1147,8 +1149,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vbdr.unpluggable = (volume.getType() == Volume.Type.ROOT) ? false : true;
             vbdr.userdevice = "autodetect";
             final Long deviceId = volume.getDiskSeq();
-            if (deviceId != null && !isDeviceUsed(conn, vm, deviceId)) {
-                vbdr.userdevice = deviceId.toString();
+            if (deviceId != null && (!isDeviceUsed(conn, vm, deviceId) || deviceId > 3)) {
+                    vbdr.userdevice = deviceId.toString();
             }
         }
         final VBD vbd = VBD.create(conn, vbdr);
@@ -1413,6 +1415,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vbdr.userdevice = "autodetect";
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
+            Long deviceId = volumeTO.getDeviceId();
+            if (deviceId != null && (!isDeviceUsed(conn, vm, deviceId) || deviceId > 3)) {
+                vbdr.userdevice = deviceId.toString();
+            }
             VBD.create(conn, vbdr);
         }
         return vm;
@@ -4394,6 +4400,30 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
         }
+    }
+
+    protected void skipOrRemoveSR(Connection conn, SR sr) {
+        if (sr == null) {
+            return;
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(logX(sr, "Removing SR"));
+        }
+        try {
+            Set<VDI> vdis = sr.getVDIs(conn);
+            for (VDI vdi : vdis) {
+                if (MapUtils.isEmpty(vdi.getCurrentOperations(conn))) {
+                    continue;
+                }
+                return;
+            }
+            removeSR(conn, sr);
+            return;
+        } catch (XenAPIException | XmlRpcException e) {
+            s_logger.warn(logX(sr, "Unable to get current opertions " + e.toString()), e);
+        }
+        String msg = "Remove SR failed";
+        s_logger.warn(msg);
     }
 
     public void removeSR(final Connection conn, final SR sr) {
