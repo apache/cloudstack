@@ -1080,8 +1080,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                     cleanupSecondaryStorage(recurring);
 
-                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long) StorageCleanupDelay.value() << 10)));
-
+                    // ROOT volumes will be destroyed as part of VM cleanup
+                    List<VolumeVO> vols = _volsDao.listNonRootVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long) StorageCleanupDelay.value() << 10)));
                     for (VolumeVO vol : vols) {
                         try {
                             // If this fails, just log a warning. It's ideal if we clean up the host-side clustered file
@@ -1092,7 +1092,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
 
                         try {
-                            volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
+                            VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+                            if (volumeInfo != null) {
+                                volService.expungeVolumeAsync(volumeInfo);
+                            } else {
+                                s_logger.debug("Volume " + vol.getUuid() + " is already destroyed");
+                            }
                         } catch (Exception e) {
                             s_logger.warn("Unable to destroy volume " + vol.getUuid(), e);
                         }
