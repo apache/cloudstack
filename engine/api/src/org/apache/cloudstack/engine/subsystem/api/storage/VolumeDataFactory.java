@@ -31,5 +31,7 @@ public interface VolumeDataFactory {
 
     VolumeInfo getVolume(long volumeId);
 
+    VolumeInfo getVolumeForExpunge(long volumeId);
+
     List<VolumeInfo> listVolumeOnCache(long volumeId);
 }

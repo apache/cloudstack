@@ -28,6 +28,8 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 public interface ImageStoreProviderManager {
     ImageStoreEntity getImageStore(long dataStoreId);
 
+    ImageStoreEntity getImageStoreForExpunge(long dataStoreId);
+
     ImageStoreEntity getImageStore(String uuid);
 
     List<DataStore> listImageStores();

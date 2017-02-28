@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VolumeVO;
@@ -39,6 +40,8 @@ import com.cloud.storage.dao.VolumeDao;
 
 @Component
 public class VolumeDataFactoryImpl implements VolumeDataFactory {
+    private static final Logger logger = Logger.getLogger(VolumeDataFactoryImpl.class);
+
     @Inject
     VolumeDao volumeDao;
     @Inject
@@ -77,22 +80,51 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
 
     @Override
     public VolumeInfo getVolume(long volumeId) {
+        return getVolume(volumeId, false);
+    }
+
+    @Override
+    public VolumeInfo getVolumeForExpunge(long volumeId) {
+        return getVolume(volumeId, true);
+    }
+
+    protected VolumeInfo getVolume(long volumeId, boolean forExpunge) {
         VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
         if (volumeVO == null) {
             return null;
         }
+
+        String dataStoreRole = "";
         VolumeObject vol = null;
         if (volumeVO.getPoolId() == null) {
+            dataStoreRole = DataStoreRole.Image.toString();
             DataStore store = null;
             VolumeDataStoreVO volumeStore = volumeStoreDao.findByVolume(volumeId);
             if (volumeStore != null) {
-                store = storeMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
+                if (forExpunge) {
+                    store = storeMgr.getDataStoreForExpunge(volumeStore.getDataStoreId(), DataStoreRole.Image);
+                } else {
+                    store = storeMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
+                }
             }
+
             vol = VolumeObject.getVolumeObject(store, volumeVO);
         } else {
-            DataStore store = storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);
+            DataStore store = null;
+            dataStoreRole = DataStoreRole.Primary.toString();
+            if (forExpunge) {
+                store = storeMgr.getDataStoreForExpunge(volumeVO.getPoolId(), DataStoreRole.Primary);
+            } else {
+                store = storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);
+            }
+
             vol = VolumeObject.getVolumeObject(store, volumeVO);
         }
+
+        if (vol.getDataStore() == null && forExpunge) {
+            logger.warn(String.format("Was unable to find a DataStore (role = %1$s) for expunged volume %2$d", dataStoreRole, volumeId));
+        }
+
         return vol;
     }
 

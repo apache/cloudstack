@@ -35,12 +35,15 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
+    private Logger logger = Logger.getLogger(PrimaryDataStoreProviderManagerImpl.class);
+
     @Inject
     DataStoreProviderManager providerManager;
     @Inject
@@ -56,9 +59,24 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
 
     @Override
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
+        return getPrimaryDataStore(dataStoreId, false);
+    }
+
+    @Override
+    public PrimaryDataStore getPrimaryDataStoreForExpunge(long dataStoreId) {
+        return getPrimaryDataStore(dataStoreId, true);
+    }
+
+    protected PrimaryDataStore getPrimaryDataStore(long dataStoreId, boolean forExpunge) {
         StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStoreId);
         if (dataStoreVO == null) {
-            throw new CloudRuntimeException("Unable to locate datastore with id " + dataStoreId);
+            if (forExpunge) {
+                logger.warn("Retrieving data store for expunge - Unable to locate datastore with id " + dataStoreId);
+                return null;
+            }
+            else {
+                throw new CloudRuntimeException("Unable to locate datastore with id " + dataStoreId);
+            }
         }
         String providerName = dataStoreVO.getStorageProviderName();
         DataStoreProvider provider = providerManager.getDataStoreProvider(providerName);

@@ -29,6 +29,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.DummyEndpoint;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.log4j.Logger;
@@ -57,7 +59,11 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVm.Role;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
@@ -70,6 +76,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
                             + "join cluster c on c.id=h.cluster_id "
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
+
+    @Inject
+    SecondaryStorageVmDao ssvmDao;
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
@@ -345,8 +354,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
         } else if (action == StorageAction.DELETEVOLUME) {
             VolumeInfo volume = (VolumeInfo)object;
+            VirtualMachine vm = volume.getAttachedVM();
+
             if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                VirtualMachine vm = volume.getAttachedVM();
                 if (vm != null) {
                     Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
                     if (hostId != null) {
@@ -354,8 +364,49 @@ public class DefaultEndPointSelector implements EndPointSelector {
                     }
                 }
             }
+
+            if (vm != null) {
+                EndPoint ep = getDummyEndPoint(volume, vm);
+                if (ep != null) {
+                    return ep;
+                }
+            }
         }
         return select(object);
+    }
+
+
+
+    /***
+     * Handle the case where the volume is a volume of an expunging system VM and there are no other system VMs existing
+     * in the zone. If these requirements are not met, the method will throw an exception.
+     * @param volume - The VolumeInfo object.
+     * @param vm - The VM the volume is attached to.
+     * @return The DummyEndpoint, or null if the volume/VM doesn't meet the requirements to use DummyEndpoint.
+     */
+    public EndPoint getDummyEndPoint(VolumeInfo volume, VirtualMachine vm) {
+        VirtualMachine.Type type = volume.getAttachedVM().getType();
+        if ((type == VirtualMachine.Type.SecondaryStorageVm || type == VirtualMachine.Type.ConsoleProxy) &&
+                (vm.getState() == State.Expunging || vm.getState() == State.Destroyed)) {
+
+            List<SecondaryStorageVmVO> ssvms = ssvmDao.listByZoneId(Role.templateProcessor, volume.getDataCenterId());
+            if (CollectionUtils.isEmpty(ssvms)) {
+                s_logger.info("Volume " + volume.getName() + " is attached to a " + vm.getState() + " " + type + " and zone " +
+                        volume.getDataCenterId() + " has no SSVMs.");
+                s_logger.info("Volume " + volume.getName() + " will be handled by dummy endpoint.");
+                return DummyEndpoint.getEndpoint();
+            }
+            else {
+                s_logger.warn("There are SSVMs in the zone of volume " + volume + ". Refusing to" +
+                        "return dummy endpoint.");
+                return null;
+            }
+        }
+        else {
+            s_logger.warn("Volume " + volume.getName() + " attached to " + vm.getState() + " " +
+                                                type + " is not for a system VM, or the VM is not Expunging.");
+            return null;
+        }
     }
 
     @Override
