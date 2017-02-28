@@ -1151,8 +1151,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vbdr.unpluggable = (volume.getType() == Volume.Type.ROOT) ? false : true;
             vbdr.userdevice = "autodetect";
             final Long deviceId = volume.getDiskSeq();
-            if (deviceId != null && (!isDeviceUsed(conn, vm, deviceId) || deviceId > 3)) {
-                    vbdr.userdevice = deviceId.toString();
+            if (deviceId != null && !isDeviceUsed(conn, vm, deviceId)) {
+                vbdr.userdevice = deviceId.toString();
             }
         }
         final VBD vbd = VBD.create(conn, vbdr);
