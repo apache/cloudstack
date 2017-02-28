@@ -652,6 +652,8 @@ public class ApiConstants {
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
 
+    public static final String ZONE_ID_LIST = "zoneids";
+    public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";
     public static final String ADMIN = "admin";
 
     public enum HostDetails {

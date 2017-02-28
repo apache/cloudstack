@@ -276,6 +276,11 @@
 
                 // Determine field type of input
                 if (field.select) {
+                    var multiple = false;
+                    if (field.isMultiple != null){
+                        if (typeof(field.isMultiple) == 'boolean' && field.isMultiple == true)
+                            multiple = true;
+                    }
                     isAsync = true;
                     selectArgs = {
                         context: args.context,
@@ -321,10 +326,18 @@
                     };
 
                     selectFn = field.select;
-                    $input = $('<select>')
-                        .attr({
+                    var attrib = {};
+                    if (multiple)
+                        attrib = {
+                            name: key,
+                            multiple: 'multiple'
+                        };
+                    else
+                        attrib = {
                             name: key
-                        })
+                        }
+                    $input = $('<select>')
+                        .attr(attrib)
                         .data('dialog-select-fn', function(args) {
                             selectFn(args ? $.extend(true, {}, selectArgs, args) : selectArgs);
                         })

@@ -1442,6 +1442,23 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
+                                                          List<Long> zoneIds, boolean readyOnly) {
+        List<TemplateJoinVO> tvo = null;
+        if (zoneIds == null) {
+            return createTemplateResponses(view, result, (Long)null, readyOnly);
+        } else {
+            for (Long zoneId: zoneIds){
+                if (tvo == null)
+                    tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);
+                else
+                    tvo.addAll(ApiDBUtils.newTemplateView(result, zoneId, readyOnly));
+            }
+        }
+        return ViewResponseHelper.createTemplateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
+    }
+
+    @Override
     public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long zoneId, boolean readyOnly) {
         VirtualMachineTemplate template = findTemplateById(templateId);
         return createTemplateResponses(view, template, zoneId, readyOnly);
