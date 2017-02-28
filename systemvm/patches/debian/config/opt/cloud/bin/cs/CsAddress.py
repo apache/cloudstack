@@ -571,7 +571,7 @@ class CsIP:
         if self.get_type() in ["guest"] and not cmdline.is_redundant():
             pwdsvc = CsPasswdSvc(self.address['public_ip']).start()
 
-        if self.get_type() == "public" and self.config.is_vpc():
+        if self.get_type() == "public" and self.config.is_vpc() and method == "add":
             if self.address["source_nat"]:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(
