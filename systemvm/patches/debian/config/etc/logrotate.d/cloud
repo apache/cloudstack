@@ -15,9 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 /var/log/cloud.log {
-        rotate 4
+        rotate 10
         daily
-        size 10M
+        maxsize 10M
         missingok
         notifempty
         compress
