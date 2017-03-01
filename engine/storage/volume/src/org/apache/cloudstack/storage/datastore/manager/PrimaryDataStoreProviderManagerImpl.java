@@ -56,7 +56,7 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
 
     @Override
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
-        StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStoreId);
+        StoragePoolVO dataStoreVO = dataStoreDao.findByIdIncludingRemoved(dataStoreId);
         if (dataStoreVO == null) {
             throw new CloudRuntimeException("Unable to locate datastore with id " + dataStoreId);
         }

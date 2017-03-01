@@ -19,14 +19,16 @@ from marvin.codes import FAILED
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources,
-                              is_snapshot_on_nfs)
+                              is_snapshot_on_nfs,
+                              validateList)
 from marvin.lib.base import (VirtualMachine,
                              Account,
                              Template,
                              ServiceOffering,
                              Snapshot,
                              StoragePool,
-                             Volume)
+                             Volume,
+                             DiskOffering)
 from marvin.lib.common import (get_domain,
                                get_template,
                                get_zone,
@@ -36,6 +38,7 @@ from marvin.lib.common import (get_domain,
                                list_storage_pools,
                                list_clusters)
 from marvin.lib.decoratorGenerators import skipTestIf
+from marvin.codes import PASS
 
 
 class Templates:
@@ -134,6 +137,10 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                 cls.apiclient,
                 cls.services["service_offerings"]["tiny"]
             )
+            cls.disk_offering = DiskOffering.create(
+                cls.apiclient,
+                cls.services["disk_offering"]
+            )
             cls.virtual_machine = cls.virtual_machine_with_disk = \
                 VirtualMachine.create(
                     cls.apiclient,
@@ -149,6 +156,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             cls._cleanup.append(cls.service_offering)
             cls._cleanup.append(cls.account)
             cls._cleanup.append(cls.template)
+            cls._cleanup.append(cls.disk_offering)
         return
 
     @classmethod
@@ -267,7 +275,35 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         """Test listing volume snapshots with removed data stores
         """
 
-        # 1) Create new Primary Storage
+        # 1 - Create new volume -> V
+        # 2 - Create new Primary Storage -> PS
+        # 3 - Attach and detach volume V from vm
+        # 4 - Migrate volume V to PS
+        # 5 - Take volume V snapshot -> S
+        # 6 - List snapshot and verify it gets properly listed although Primary Storage was removed
+        
+        # Create new volume
+        vol = Volume.create(
+            self.apiclient,
+            self.services["volume"],
+            diskofferingid=self.disk_offering.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+        )
+        self.cleanup.append(vol)
+        self.assertIsNotNone(vol, "Failed to create volume")
+        vol_res = Volume.list(
+            self.apiclient,
+            id=vol.id
+        )
+        self.assertEqual(
+            validateList(vol_res)[0],
+            PASS,
+            "Invalid response returned for list volumes")
+        vol_uuid = vol_res[0].id
+        
+        # Create new Primary Storage
         clusters = list_clusters(
             self.apiclient,
             zoneid=self.zone.id
@@ -280,6 +316,9 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                                      zoneid=self.zone.id,
                                      podid=self.pod.id
                                      )
+        self.cleanup.append(self.virtual_machine_with_disk)
+        self.cleanup.append(storage)
+
         self.assertEqual(
             storage.state,
             'Up',
@@ -314,22 +353,26 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             "Check storage pool type "
         )
 
-        # 2) Migrate VM ROOT volume to new Primary Storage
-        volumes = list_volumes(
+        # Attach created volume to vm, then detach it to be able to migrate it
+        self.virtual_machine_with_disk.stop(self.apiclient)
+        self.virtual_machine_with_disk.attach_volume(
             self.apiclient,
-            virtualmachineid=self.virtual_machine_with_disk.id,
-            type='ROOT',
-            listall=True
+            vol
         )
+        self.virtual_machine_with_disk.detach_volume(
+            self.apiclient,
+            vol
+        )
+
+        # Migrate volume to new Primary Storage
         Volume.migrate(self.apiclient,
-                       storageid=storage.id,
-                       volumeid=volumes[0].id,
-                       livemigrate="true"
-                       )
+            storageid=storage.id,
+            volumeid=vol.id
+        )
 
         volume_response = list_volumes(
             self.apiclient,
-            id=volumes[0].id,
+            id=vol.id,
         )
         self.assertNotEqual(
             len(volume_response),
@@ -342,22 +385,21 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             storage.id,
             "Check volume storage id"
         )
-        self.cleanup.append(self.virtual_machine_with_disk)
-        self.cleanup.append(storage)
 
-        # 3) Take snapshot of VM ROOT volume
+        # Take snapshot of new volume
         snapshot = Snapshot.create(
             self.apiclient,
             volume_migrated.id,
             account=self.account.name,
             domainid=self.account.domainid
         )
+
         self.debug("Snapshot created: ID - %s" % snapshot.id)
 
-        # 4) Delete VM and created Primery Storage
+        # Delete volume, VM and created Primary Storage
         cleanup_resources(self.apiclient, self.cleanup)
 
-        # 5) List snapshot and verify it gets properly listed although Primary Storage was removed
+        # List snapshot and verify it gets properly listed although Primary Storage was removed
         snapshot_response = Snapshot.list(
             self.apiclient,
             id=snapshot.id
@@ -373,10 +415,11 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             "Check snapshot id"
         )
 
-        # 6) Delete snapshot and verify it gets properly deleted (should not be listed)
+        # Delete snapshot and verify it gets properly deleted (should not be listed)
         self.cleanup = [snapshot]
         cleanup_resources(self.apiclient, self.cleanup)
 
+        self.cleanup = []
         snapshot_response_2 = Snapshot.list(
             self.apiclient,
             id=snapshot.id
