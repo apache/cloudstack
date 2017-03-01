@@ -32,7 +32,6 @@ import time
 import hashlib
 import base64
 
-
 class Domain:
     """ Domain Life Cycle """
     def __init__(self, items):
@@ -449,7 +448,8 @@ class VirtualMachine:
                affinitygroupnames=None, affinitygroupids=None, group=None,
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
-               customcpuspeed=None, custommemory=None, rootdisksize=None):
+               customcpuspeed=None, custommemory=None, rootdisksize=None,
+               rootdiskcontroller=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -552,6 +552,9 @@ class VirtualMachine:
 
         if rootdisksize >= 0:
             cmd.details[0]["rootdisksize"] = rootdisksize
+
+        if rootdiskcontroller:
+            cmd.details[0]["rootDiskController"] = rootdiskcontroller
 
         if group:
             cmd.group = group
@@ -2264,6 +2267,33 @@ class SnapshotPolicy:
             cmd.listall = True
         return(apiclient.listSnapshotPolicies(cmd))
 
+class GuestOs:
+    """Guest OS calls (currently read-only implemented)"""
+    def __init(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def listMapping(cls, apiclient, **kwargs):
+        """List all Guest Os Mappings matching criteria"""
+        cmd = listGuestOsMapping.listGuestOsMappingCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+
+        return (apiclient.listGuestOsMapping(cmd))
+
+    @classmethod
+    def listCategories(cls, apiclient, **kwargs):
+        """List all Os Categories"""
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+
+        return (apiclient.listOsCategories(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all Os Types matching criteria"""
+
+        cmd = listOsTypes.listOsTypesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listOsTypes(cmd))
 
 class Hypervisor:
     """Manage Hypervisor"""
