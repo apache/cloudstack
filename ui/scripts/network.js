@@ -1194,6 +1194,10 @@
                                 hiddenTabs.push('egressRules');
                             }
 
+                            if (!isAdmin()) {
+                                hiddenTabs.push("virtualRouters");
+                            }
+
                             return hiddenTabs;
                         },
 
@@ -1892,6 +1896,11 @@
                                         }
                                     });
                                 }
+                            },
+
+                            virtualRouters: {
+                                title: "label.virtual.appliances",
+                                listView: cloudStack.sections.system.subsections.virtualRouters.sections.routerNoGroup.listView
                             }
                         }
                     }
@@ -5738,8 +5747,10 @@
                         tabFilter: function(args) {
                             var hiddenTabs = [];
                             var isRouterOwner = isAdmin();
-                            if (!isRouterOwner)
+                            if (!isRouterOwner) {
                                 hiddenTabs.push("router");
+                                hiddenTabs.push("virtualRouters");
+                            }
                             return hiddenTabs;
                         },
 
@@ -5905,6 +5916,10 @@
                                         }
                                     });
                                 }
+                            },
+                            virtualRouters: {
+                                title: "label.virtual.routers",
+                                listView: cloudStack.sections.system.subsections.virtualRouters.sections.routerNoGroup.listView
                             }
                         }
                     }
