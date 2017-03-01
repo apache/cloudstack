@@ -2217,24 +2217,29 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public NicVO getPlaceholderNicForRouter(Network network, Long podId) {
         List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkIdAndVmType(network.getId(), VirtualMachine.Type.DomainRouter);
+        List<? extends Vlan> vlans = new ArrayList<VlanVO>();
+        if (podId != null) {
+            vlans = _vlanDao.listVlansForPod(podId);
+        }
         for (NicVO nic : nics) {
             if (nic.getReserver() == null && (nic.getIPv4Address() != null || nic.getIPv6Address() != null)) {
                 if (podId == null) {
                     return nic;
                 } else {
+                    IpAddress ip = null;
+                    UserIpv6AddressVO ipv6 = null;
+
+                    if (nic.getIPv4Address() != null) {
+                        ip = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), nic.getIPv4Address());
+                    } else {
+                        ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIPv6Address());
+                    }
                     //return nic only when its ip address belong to the pod range (for the Basic zone case)
-                    List<? extends Vlan> vlans = _vlanDao.listVlansForPod(podId);
                     for (Vlan vlan : vlans) {
-                        if (nic.getIPv4Address() != null) {
-                            IpAddress ip = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), nic.getIPv4Address());
-                            if (ip != null && ip.getVlanId() == vlan.getId()) {
-                                return nic;
-                            }
-                        } else {
-                            UserIpv6AddressVO ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIPv6Address());
-                            if (ipv6 != null && ipv6.getVlanId() == vlan.getId()) {
-                                return nic;
-                            }
+                        if (ip != null && ip.getVlanId() == vlan.getId()) {
+                            return nic;
+                        } else if (ipv6 != null && ipv6.getVlanId() == vlan.getId()) {
+                            return nic;
                         }
                     }
                 }
