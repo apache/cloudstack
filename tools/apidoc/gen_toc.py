@@ -168,7 +168,17 @@ known_categories = {
     'CacheStore' : 'Cache Store',
     'IAM' : 'IAM',
     'OvsElement' : 'Ovs Element',
-    'StratosphereSsp' : ' Stratosphere SSP'
+    'StratosphereSsp' : ' Stratosphere SSP',
+    'listNetscalerControlCenter' : 'Load Balancer',
+    'listRegisteredServicePackages': 'Load Balancer',
+    'listNsVpx' : 'Load Balancer',
+    'destroyNsVPx': 'Load Balancer',
+    'deployNetscalerVpx' : 'Load Balancer',
+    'deleteNetscalerControlCenter' : 'Load Balancer',
+    'stopNetScalerVpx' : 'Load Balancer',
+    'deleteServicePackageOffering' : 'Load Balancer',
+    'destroyNsVpx' : 'Load Balancer',
+    'startNsVpx' : 'Load Balancer'
     }
 
 
