@@ -192,6 +192,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setKeyPairName(userVm.getKeypairName());
         userVmResponse.setOsTypeId(userVm.getGuestOsId());
 
+        if (userVm.getVpcUuid() != null) {
+            userVmResponse.setVpcId(userVm.getVpcUuid());
+        }
+
         if (details.contains(VMDetails.all) || details.contains(VMDetails.stats)) {
             // stats calculation
             VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
