@@ -1,4 +1,4 @@
-# Licensed to the Apache Software Foundation (ASF) under one
+#t	 Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
@@ -730,6 +730,17 @@ test_data = {
         "privateport": 22,
         "publicport": 22,
         "protocol": "TCP"
+    },
+    "natrulerange": {
+        "privateport": 70,
+        "privateendport": 75,
+        "publicport": 70,
+        "publicendport": 75,
+        "protocol": "TCP"
+    },
+    "updatenatrulerange": {
+        "privateport": 50,
+        "privateendport": 55,
     },
    "egress_80": {
         "startport": 80,
