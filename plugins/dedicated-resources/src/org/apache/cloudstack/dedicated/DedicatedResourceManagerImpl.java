@@ -67,6 +67,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -415,6 +416,9 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find cluster by id " + clusterId);
         } else {
+            if (cluster.getHypervisorType() == Hypervisor.HypervisorType.BareMetal) {
+                throw new InvalidParameterValueException("Dedicating cluster is not supported in the cluster " + clusterId + " of Hypervisor type Baremetal");
+            }
             DedicatedResourceVO dedicatedCluster = _dedicatedDao.findByClusterId(clusterId);
             DedicatedResourceVO dedicatedPodOfCluster = _dedicatedDao.findByPodId(cluster.getPodId());
             DedicatedResourceVO dedicatedZoneOfCluster = _dedicatedDao.findByZoneId(cluster.getDataCenterId());
@@ -528,6 +532,10 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             //check if host is of routing type
             if (host.getType() != Host.Type.Routing) {
                 throw new CloudRuntimeException("Invalid host type for host " + host.getName());
+            }
+
+            if (host.getHypervisorType() == Hypervisor.HypervisorType.BareMetal) {
+                throw new InvalidParameterValueException("Dedicate host is not supported for the Hypervisor type Baremetal");
             }
 
             DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(hostId);

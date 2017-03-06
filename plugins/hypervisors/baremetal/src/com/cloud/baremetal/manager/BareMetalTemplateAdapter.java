@@ -46,10 +46,12 @@ import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 import java.util.Date;
 import java.util.List;
 
+@Local(value = TemplateAdapter.class)
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
     private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
     @Inject
@@ -72,7 +74,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
         throw new CloudRuntimeException("Baremetal doesn't support ISO template");
     }
 
-    private void templateCreateUsage(VMTemplateVO template, long dcId) {
+    protected void templateCreateUsage(VMTemplateVO template, long dcId) {
         if (template.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
             UsageEventVO usageEvent =
                 new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), dcId, template.getId(), template.getName(), null,
@@ -132,49 +134,31 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
         s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
         Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
         String eventType = EventTypes.EVENT_TEMPLATE_DELETE;
-        List<TemplateDataStoreVO> templateHostVOs = this._tmpltStoreDao.listByTemplate(templateId);
-
-        for (TemplateDataStoreVO vo : templateHostVOs) {
-            TemplateDataStoreVO lock = null;
-            try {
-                lock = _tmpltStoreDao.acquireInLockTable(vo.getId());
-                if (lock == null) {
-                    s_logger.debug("Failed to acquire lock when deleting templateDataStoreVO with ID: " + vo.getId());
-                    success = false;
-                    break;
-                }
-
-                vo.setDestroyed(true);
-                _tmpltStoreDao.update(vo.getId(), vo);
-
-            } finally {
-                if (lock != null) {
-                    _tmpltStoreDao.releaseFromLockTable(lock.getId());
-                }
-            }
-        }
 
         if (profile.getZoneId() != null) {
             UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), profile.getZoneId(), templateId, null);
             _usageEventDao.persist(usageEvent);
+
+            VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(profile.getZoneId(), templateId);
+            if (templateZone != null) {
+                _tmpltZoneDao.remove(templateZone.getId());
+            }
         } else {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
             for (DataCenterVO dc : dcs) {
                 UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), dc.getId(), templateId, null);
                 _usageEventDao.persist(usageEvent);
+                VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(dc.getId(), templateId);
+                if (templateZone != null) {
+                    _tmpltZoneDao.remove(templateZone.getId());
+                }
             }
-        }
-
-        VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(profile.getZoneId(), templateId);
-
-        if (templateZone != null) {
-            _tmpltZoneDao.remove(templateZone.getId());
         }
 
         s_logger.debug("Successfully marked template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
 
-        // If there are no more non-destroyed template host entries for this template, delete it
-        if (success && (_tmpltStoreDao.listByTemplate(templateId).size() == 0)) {
+        // If there are no more non-destroyed template zone ref entries for this template, delete it
+        if (success && (_tmpltZoneDao.listActiveTemplate(templateId).size() == 0)) {
             long accountId = template.getAccountId();
 
             VMTemplateVO lock = _tmpltDao.acquireInLockTable(templateId);
@@ -184,9 +168,31 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
                     s_logger.debug("Failed to acquire lock when deleting template with ID: " + templateId);
                     success = false;
                 } else if (_tmpltDao.remove(templateId)) {
+                    List<TemplateDataStoreVO> templateHostVOs = this._tmpltStoreDao.listByTemplate(templateId);
+
+                    for (TemplateDataStoreVO vo : templateHostVOs) {
+                        TemplateDataStoreVO templateHostVOlock = null;
+                        try {
+                            templateHostVOlock = _tmpltStoreDao.acquireInLockTable(vo.getId());
+                            if (templateHostVOlock == null) {
+                                s_logger.debug("Failed to acquire lock when deleting templateDataStoreVO with ID: " + vo.getId());
+                                success = false;
+                                break;
+                            }
+
+                            vo.setDestroyed(true);
+                            _tmpltStoreDao.update(vo.getId(), vo);
+
+                        } finally {
+                            if (templateHostVOlock != null) {
+                                _tmpltStoreDao.releaseFromLockTable(lock.getId());
+                            }
+                        }
+                    }
+
                     // Decrement the number of templates and total secondary storage space used by the account.
                     _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
-                    _resourceLimitMgr.recalculateResourceCount(accountId, template.getDomainId(), ResourceType.secondary_storage.getOrdinal());
+                    _resourceLimitMgr.recalculateResourceCount(accountId, account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
                 }
 
             } finally {

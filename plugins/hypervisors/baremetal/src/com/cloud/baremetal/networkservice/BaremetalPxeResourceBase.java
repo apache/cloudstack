@@ -42,13 +42,13 @@ import com.cloud.utils.component.ManagerBase;
 
 public class BaremetalPxeResourceBase extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(BaremetalPxeResourceBase.class);
-    String _name;
-    String _guid;
-    String _username;
-    String _password;
-    String _ip;
-    String _zoneId;
-    String _podId;
+    protected String _name;
+    protected String _guid;
+    protected String _username;
+    protected String _password;
+    protected  String _ip;
+    protected String _zoneId;
+    protected String _podId;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

@@ -593,6 +593,10 @@ setup_common() {
   then
   	setup_interface "2" $ETH2_IP $ETH2_MASK $GW
   fi
+  if [ -n "$ETH3_IP" ]
+  then
+    setup_interface "3" $ETH3_IP $ETH3_MASK $GW
+  fi
    
   echo $NAME > /etc/hostname
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon

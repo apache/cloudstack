@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.dc.DataCenter.NetworkType;
@@ -34,6 +35,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -43,12 +45,19 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.log4j.Logger;
 
+@Local(value = NetworkElement.class)
 public class BaremetalUserdataElement extends AdapterBase implements NetworkElement, UserDataServiceProvider {
     private static Map<Service, Map<Capability, String>> capabilities;
+    private static final Logger s_logger = Logger.getLogger(BaremetalUserdataElement.class);
+
 
     @Inject
     private BaremetalPxeManager pxeMgr;
+
+    @Inject
+    NetworkModel _networkMdl;
 
     static {
         capabilities = new HashMap<Service, Map<Capability, String>>();
@@ -56,8 +65,16 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     private boolean canHandle(DeployDestination dest) {
-        if (dest.getDataCenter().getNetworkType() == NetworkType.Basic && dest.getHost().getHypervisorType() == HypervisorType.BareMetal) {
-            return true;
+        NetworkType networktype = dest.getDataCenter().getNetworkType();
+        if(dest.getHost() != null) {
+            HypervisorType hypervisorType = dest.getHost().getHypervisorType();
+            if (networktype == NetworkType.Basic &&  hypervisorType == HypervisorType.BareMetal) {
+                return true;
+            }
+        } else {
+            if (networktype == NetworkType.Basic) {
+                return true;
+            }
         }
         return false;
     }
@@ -73,7 +90,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
             return false;
         }
 
-        return pxeMgr.addUserData(nic, vm);
+        return pxeMgr.addUserData(network, nic, vm, dest);
     }
 
     @Override
@@ -95,14 +112,14 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
 
     @Override
     public Provider getProvider() {
-        return BaremetalPxeManager.BAREMETAL_USERDATA_PROVIDER;
+        return Provider.BAREMETAL_USERDATA_PROVIDER;
     }
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return false;
+     // TODO - are there furthermore checks required? could think of checking PXE as well.
+        return canHandle(dest);
     }
 
     @Override
@@ -145,8 +162,44 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+            if (!canHandle(network, null)) {
+                return false;
+            }
+
+            if (vm.getType() != VirtualMachine.Type.User) {
+                return false;
+            }
+
+            return pxeMgr.addUserData(network, nic, vm, null);
+    }
+
+    protected boolean canHandle(Network network, Service service) {
+        Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
+        if (physicalNetworkId == null) {
+            return false;
+        }
+
+        if (network.getVpcId() != null) {
+            return false;
+        }
+
+        if (!_networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())) {
+            return false;
+        }
+
+        if (service == null) {
+            if (!_networkMdl.isProviderForNetwork(getProvider(), network.getId())) {
+                s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
+                return false;
+            }
+        } else {
+            if (!_networkMdl.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
+                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override

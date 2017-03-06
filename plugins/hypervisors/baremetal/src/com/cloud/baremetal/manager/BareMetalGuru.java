@@ -25,8 +25,11 @@ package com.cloud.baremetal.manager;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -40,6 +43,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Local(value = HypervisorGuru.class)
 public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru {
     private static final Logger s_logger = Logger.getLogger(BareMetalGuru.class);
     @Inject
@@ -48,6 +52,8 @@ public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru 
     HostDao _hostDao;
     @Inject
     VMInstanceDao _vmDao;
+    @Inject
+    DataCenterDao _dcDao;
 
     protected BareMetalGuru() {
         super();
@@ -67,8 +73,11 @@ public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru 
             to.setBootArgs(BaremetalManager.DO_PXE);
         }
 
+        DataCenterVO dcVO = _dcDao.findById(vo.getDataCenterId());
+
         Map<String, String> details = new HashMap<String, String>();
         details.put("template", vm.getTemplate().getUrl());
+        details.put("NetworkType", dcVO.getNetworkType().toString());
         to.setDetails(details);
 
         // Determine the VM's OS description

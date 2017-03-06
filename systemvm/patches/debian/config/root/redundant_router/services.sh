@@ -59,6 +59,10 @@ case "$1" in
         service dnsmasq restart
 	ret=$?
         ;;
+    startBaremetalNotificationService)
+        python /opt/cloud/bin/baremetal-vr.py &
+    ret=$?
+        ;;
     *)
         echo "Usage: services {start|stop|restart}"
         exit 1

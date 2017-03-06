@@ -3116,6 +3116,14 @@
                                                 ]
                                             });
                                         }
+                                    },
+
+                                    baremetalinternalstorageserverip: {
+                                        label: 'label.baremetal.internal.storage.server.ip',
+                                        validation: {
+                                            ipv4: true
+                                        },
+                                        docID: 'helpNetworkOfferingBaremetalInternalStorageServerIP'
                                     }
                                 }
                             },
@@ -3181,7 +3189,7 @@
                                             serviceCapabilityIndex++;
                                         }
                                     } else if (value != '') { // normal data (serviceData.length ==1), e.g. "name", "displayText", "networkRate", "guestIpType", "lbType" (unwanted), "availability" (unwated when value is "Optional"), "egressdefaultpolicy", "state" (unwanted), "status" (unwanted), "allocationstate" (unwanted)
-                                        if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" )) {
+                                        if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" || key == "baremetalinternalstorageserverip")) {
                                         inputData[key] = value;
                                     }
                                     }
@@ -3284,6 +3292,13 @@
                                     delete inputData.serviceofferingid;
 
                                 inputData['traffictype'] = 'GUEST'; //traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
+
+                                var i=0;
+
+                                if(formData.baremetalinternalstorageserverip != '') {
+                                    inputData['details['+i+'].BaremetalInternalStorageServerIP'] = formData.baremetalinternalstorageserverip;
+                                    i++;
+                                }
 
                                 $.ajax({
                                     url: createURL('createNetworkOffering'),

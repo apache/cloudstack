@@ -38,7 +38,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     }
 
     public enum Detail {
-        InternalLbProvider, PublicLbProvider
+        InternalLbProvider, PublicLbProvider, BaremetalInternalStorageServerIP
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";

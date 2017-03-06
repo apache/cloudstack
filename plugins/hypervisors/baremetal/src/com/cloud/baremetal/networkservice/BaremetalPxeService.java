@@ -38,7 +38,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalPxeService extends Adapter {
 
-    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context);
+    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context, List<BaremetalPxeVO> bareMetalPxeVOs);
 
     public boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl);
 
@@ -49,6 +49,8 @@ public interface BaremetalPxeService extends Adapter {
     List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd);
 
     String getPxeServiceType();
+
+    boolean addUserData(NicProfile nic, VirtualMachineProfile profile, List<BaremetalPxeVO> bareMetalPxeVOs);
 
     public static final String PXE_PARAM_TYPE = "type";
     public static final String PXE_PARAM_ZONE = "zone";

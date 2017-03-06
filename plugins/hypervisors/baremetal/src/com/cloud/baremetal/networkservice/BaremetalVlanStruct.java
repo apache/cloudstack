@@ -33,6 +33,7 @@ public class BaremetalVlanStruct {
     private String hostMac;
     private String port;
     private int vlan;
+    private String switchUrlBase;
 
     public String getSwitchType() {
         return switchType;
@@ -88,5 +89,13 @@ public class BaremetalVlanStruct {
 
     public void setVlan(int vlan) {
         this.vlan = vlan;
+    }
+
+    public String getSwitchUrlBase() {
+        return switchUrlBase;
+    }
+
+    public void setSwitchUrlBase(String switchUrlBase) {
+        this.switchUrlBase = switchUrlBase;
     }
 }

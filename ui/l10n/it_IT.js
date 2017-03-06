@@ -1792,6 +1792,7 @@ var dictionary = {
     "label.zoneWizard.trafficType.public": "Public: Traffico di rete tra la rete internet e le virtual machine nell'infrastruttura cloud.",
     "label.zoneWizard.trafficType.storage": "Storage: Traffico di rete tra i server di primary e secondary storage, come ad esempio i template delle VM e le operazioni di snapshot",
     "label.zones": "Zone",
+    "label.baremetal.internal.storage.server.ip":"Baremetal Internal Storage Server IP",
     "managed.state": "Managed State",
     "message.XSTools61plus.update.failed": "Failed to update Original XS Version is 6.1+ field. Error:",
     "message.Zone.creation.complete": "Creazione zona completata",

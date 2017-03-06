@@ -62,6 +62,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
         public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet,
                 Capability.NoVlan, Capability.PublicAccess);
+        public static final Service BAREMETAL_PXE_SERVICE = new Network.Service("BaremetalPxeService");
 
         private final String name;
         private final Capability[] caps;
@@ -140,6 +141,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider BrocadeVcs = new Provider("BrocadeVcs", false);
         // add GloboDns provider
         public static final Provider GloboDns = new Provider("GloboDns", true);
+        public static final Provider BAREMETAL_PXE_SERVICE_PROVIDER = new Provider("BaremetalPxeProvider", false);
+        public static final Provider BAREMETAL_USERDATA_PROVIDER = new Provider("BaremetalUserdataProvider", true);
         // add Big Switch Bcf Provider
         public static final Provider BigSwitchBcf = new Provider("BigSwitchBcf", false);
 

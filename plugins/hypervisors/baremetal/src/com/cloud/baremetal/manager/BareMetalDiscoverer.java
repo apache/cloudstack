@@ -29,9 +29,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 
@@ -60,6 +62,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Local(value = Discoverer.class)
 public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
     protected static final Logger s_logger = Logger.getLogger(BareMetalDiscoverer.class);
     @Inject
@@ -81,11 +84,10 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags)
             throws DiscoveryException {
 
-        /* Enable this after we decide to use addBaremetalHostCmd instead of addHostCmd
         String discoverName = _params.get(ApiConstants.BAREMETAL_DISCOVER_NAME);
-        if (!this.getClass().getName().equals(discoverName)) {
+        if (StringUtils.isNotBlank(discoverName) && !this.getClass().getName().equals(discoverName)) {
             return null;
-        } */
+        }
 
         Map<BareMetalResourceBase, Map<String, String>> resources = new HashMap<BareMetalResourceBase, Map<String, String>>();
         Map<String, String> details = new HashMap<String, String>();

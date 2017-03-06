@@ -73,6 +73,7 @@ import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -147,6 +148,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected VirtualMachineManager _itMgr;
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    @Inject
+    NetworkOfferingServiceMapDao _ntwkOffServiceMapDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -447,10 +450,15 @@ public class NetworkHelperImpl implements NetworkHelper {
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
         final Account owner = routerDeploymentDefinition.getOwner();
 
+        boolean isPxeProviderForNetworkOffering = false;
+        if (routerDeploymentDefinition.getGuestNetwork() != null && _ntwkOffServiceMapDao.isProviderForNetworkOffering(routerDeploymentDefinition.getGuestNetwork().getNetworkOfferingId(), Network.Provider.BAREMETAL_PXE_SERVICE_PROVIDER)){
+            isPxeProviderForNetworkOffering = true;
+        }
+
         // Router is the network element, we don't know the hypervisor type yet.
         // Try to allocate the domR twice using diff hypervisors, and when
         // failed both times, throw the exception up
-        final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition);
+        final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition, isPxeProviderForNetworkOffering);
 
         int allocateRetry = 0;
         int startRetry = 0;
@@ -541,22 +549,25 @@ public class NetworkHelperImpl implements NetworkHelper {
         return "";
     }
 
-    protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientServerCapacityException {
-        final DeployDestination dest = routerDeploymentDefinition.getDest();
+    protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean isPxeProviderForNetworkOffering) throws InsufficientServerCapacityException {        final DeployDestination dest = routerDeploymentDefinition.getDest();
         List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-        if (dest.getCluster() != null) {
-            if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
-                hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
-            } else {
-                hypervisors.add(dest.getCluster().getHypervisorType());
-            }
+        if (isPxeProviderForNetworkOffering) {
+            hypervisors.add(HypervisorType.VMware);
         } else {
-            final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
-            if (defaults != HypervisorType.None) {
-                hypervisors.add(defaults);
+            if (dest.getCluster() != null) {
+                if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
+                    hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
+                } else {
+                    hypervisors.add(dest.getCluster().getHypervisorType());
+                }
             } else {
-                // if there is no default hypervisor, get it from the cluster
-                hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPlan().getPodId());
+                final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
+                if (defaults != HypervisorType.None) {
+                    hypervisors.add(defaults);
+                } else {
+                    // if there is no default hypervisor, get it from the cluster
+                    hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPlan().getPodId());
+                }
             }
         }
 
@@ -574,7 +585,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     /*
-     * Ovm won't support any system. So we have to choose a partner cluster in
+     * Ovm or Baremetal won't support any system. So we have to choose a partner cluster in
      * the same pod to start domain router for us
      */
     protected HypervisorType getClusterToStartDomainRouterForOvm(final long podId) {
@@ -666,7 +677,6 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
-
         final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         // 1) Guest Network

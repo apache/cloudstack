@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -74,6 +75,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
+@Local(value = {BaremetalDhcpManager.class})
 public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDhcpManager, ResourceStateAdapter {
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(BaremetalDhcpManagerImpl.class);
     protected String _name;
@@ -130,14 +132,13 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
     public boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
         throws ResourceUnavailableException {
         Long zoneId = profile.getVirtualMachine().getDataCenterId();
-        Long podId = profile.getVirtualMachine().getPodIdToDeployIn();
-        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.BaremetalDhcp, null, podId, zoneId);
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.BaremetalDhcp, null, null, zoneId);
         if (hosts.size() == 0) {
-            throw new CloudRuntimeException("No external Dhcp found in zone " + zoneId + " pod " + podId);
+            throw new CloudRuntimeException("No external Dhcp found in zone " + zoneId);
         }
 
         if (hosts.size() > 1) {
-            throw new CloudRuntimeException("Something wrong, more than 1 external Dhcp found in zone " + zoneId + " pod " + podId);
+            throw new CloudRuntimeException("Something wrong, more than 1 external Dhcp found in zone " + zoneId);
         }
 
         HostVO h = hosts.get(0);
@@ -256,6 +257,9 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
             } else if (cmd.getDhcpType().equalsIgnoreCase(BaremetalDhcpType.DHCPD.toString())) {
                 resource = new BaremetalDhcpdResource();
                 resource.configure("Dhcpd resource", params);
+            } else if(cmd.getDhcpType().equalsIgnoreCase(BaremetalDhcpType.EXTERNAL.toString())) {
+                resource = new BaremetalExternalDhcpResource();
+                resource.configure("External resource", params);
             } else {
                 throw new CloudRuntimeException("Unsupport DHCP server type: " + cmd.getDhcpType());
             }

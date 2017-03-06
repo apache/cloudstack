@@ -55,6 +55,7 @@ import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.baremetal.manager.BaremetalManager;
 import com.cloud.configuration.Config;
+import com.cloud.dc.DataCenter;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
@@ -74,12 +75,14 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
+import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Local(value = ServerResource.class)
 public class BareMetalResourceBase extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(BareMetalResourceBase.class);
     protected String _uuid;
@@ -511,7 +514,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         String infoStr = "Command not supported in present state";
         OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
         if (!doScript(_rebootCommand, interpreter, 10)) {
-            if (interpreter.getLines().contains(infoStr)) {
+            if (interpreter.getLines() != null && interpreter.getLines().contains(infoStr)) {
                 // try again, this error should be temporary
                 if (!doScript(_rebootCommand, interpreter, 10)) {
                     return new RebootAnswer(cmd, "IPMI reboot failed", false);
@@ -562,6 +565,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
     protected StartAnswer execute(StartCommand cmd) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
+        Map<String, String> details = vm.getDetails();
 
         OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
         if (!doScript(_getStatusCommand, interpreter)) {
@@ -586,7 +590,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
             }
         }
 
-        if (provisionDoneNotificationOn) {
+        if (provisionDoneNotificationOn && details.get("NetworkType").equals(DataCenter.NetworkType.Advanced.toString())) {
             QueryBuilder<VMInstanceVO> q = QueryBuilder.create(VMInstanceVO.class);
             q.and(q.entity().getInstanceName(), SearchCriteria.Op.EQ, vm.getName());
             VMInstanceVO vmvo = q.find();

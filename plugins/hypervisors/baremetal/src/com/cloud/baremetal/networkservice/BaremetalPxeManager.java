@@ -31,7 +31,6 @@ import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.HostVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.Provider;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
@@ -41,7 +40,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalPxeManager extends Manager, PluggableService {
     public enum BaremetalPxeType {
-        PING, KICK_START,
+        PING, KICK_START
     }
 
     boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context);
@@ -56,11 +55,8 @@ public interface BaremetalPxeManager extends Manager, PluggableService {
 
     List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd);
 
-    boolean addUserData(NicProfile nic, VirtualMachineProfile vm);
+    boolean addUserData(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest);
 
-    public static final Network.Service BAREMETAL_PXE_SERVICE = new Network.Service("BaremetalPxeService");
     public static final String BAREMETAL_PXE_CAPABILITY = "BaremetalPxe";
     public static final String BAREMETAL_PXE_SERVICE_PROPERTIES = "baremetalpxe_commands.properties";
-    public static final Provider BAREMETAL_PXE_SERVICE_PROVIDER = new Provider("BaremetalPxeProvider", true);;
-    public static final Provider BAREMETAL_USERDATA_PROVIDER = new Provider("BaremetalUserdataProvider", true);
 }

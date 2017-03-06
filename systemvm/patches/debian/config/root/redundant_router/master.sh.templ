@@ -54,6 +54,7 @@ then
     echo Fail to switch conntrackd mode, but try to continue working >> [RROUTER_LOG]
 fi
 [RROUTER_BIN_PATH]/arping_gateways.sh
+[RROUTER_BIN_PATH]/services.sh startBaremetalNotificationService >> [RROUTER_LOG] 2>&1
 echo Status: MASTER >> [RROUTER_LOG]
 
 releaseLockFile $lock $locked

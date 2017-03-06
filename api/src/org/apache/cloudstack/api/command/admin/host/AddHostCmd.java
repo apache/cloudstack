@@ -123,6 +123,50 @@ public class AddHostCmd extends BaseCmd {
     }
 
     /////////////////////////////////////////////////////
+    /////////////////// Setters /////////////////////////
+    /////////////////////////////////////////////////////
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
+    public void setHostTags(List<String> hostTags) {
+        this.hostTags = hostTags;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setPodId(Long podId) {
+        this.podId = podId;
+    }
+
+    public void setAllocationState(String allocationState) {
+        this.allocationState = allocationState;
+    }
+
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 

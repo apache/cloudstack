@@ -28,6 +28,7 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 public class VmDataCommand extends NetworkElementCommand {
 
     String vmIpAddress;
+    List<String> vmMacAddresses;
     String vmName;
     @LogLevel(Log4jLevel.Trace)
     List<String[]> vmData;
@@ -71,6 +72,14 @@ public class VmDataCommand extends NetworkElementCommand {
 
     public void addVmData(String folder, String file, String contents) {
         vmData.add(new String[] {folder, file, contents});
+    }
+
+    public void setVMMacAddresses(List<String> vmMacAddress) {
+        this.vmMacAddresses = vmMacAddress;
+    }
+
+    public List<String> getVmMacAddresses() {
+        return vmMacAddresses;
     }
 
 }

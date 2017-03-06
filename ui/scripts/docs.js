@@ -625,6 +625,10 @@ cloudStack.docs = {
         desc: 'Network tag to specify which physical network to use',
         externalLink: ''
     },
+    helpNetworkOfferingBaremetalInternalStorageServerIP: {
+            desc: 'This will override the global configuration parameter baremetal.internal.storage.server.ip',
+            externalLink: ''
+    },
     // Add pod
     helpPodZone: {
         desc: 'The zone where you want to add the pod',

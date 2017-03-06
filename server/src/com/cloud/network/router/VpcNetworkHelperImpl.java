@@ -156,9 +156,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
     }
 
     @Override
-    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
-
-        final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
+    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {        final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         // 1) Control network
         final LinkedHashMap<Network, List<? extends NicProfile>> controlNic = configureControlNic(routerDeploymentDefinition);

@@ -51,6 +51,8 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
     private Logger logger = Logger.getLogger(Force10BaremetalSwitchBackend.class);
     public static final String TYPE = "Force10";
 
+    public static final String SWITCH_URL_BASE = "/api/running/ftos/interface/";
+
     private static List<HttpStatus> successHttpStatusCode = new ArrayList<>();
     {
         successHttpStatusCode.add(HttpStatus.OK);
@@ -93,7 +95,11 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
 
     @Override
     public void prepareVlan(BaremetalVlanStruct struct) {
-        String link = buildLink(struct.getSwitchIp(), String.format("/api/running/ftos/interface/vlan/%s", struct.getVlan()));
+        String switchUrlBase = struct.getSwitchUrlBase();
+        if(switchUrlBase == null) {
+            switchUrlBase = SWITCH_URL_BASE;
+        }
+        String link = buildLink(struct.getSwitchIp(), String.format(switchUrlBase + "vlan/%s", struct.getVlan()));
         HttpHeaders headers = createBasicAuthenticationHeader(struct);
         HttpEntity<String> request = new HttpEntity<>(headers);
         ResponseEntity rsp = rest.exchange(link, HttpMethod.GET, request, String.class);
@@ -107,7 +113,7 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
                             .putElement("name", new XmlObject("name").setText(port.port)))
             ).putElement("shutdown", new XmlObject("shutdown").setText("false"));
             request = new HttpEntity<>(xml.dump(), headers);
-            link = buildLink(struct.getSwitchIp(), String.format("/api/running/ftos/interface/"));
+            link = buildLink(struct.getSwitchIp(), String.format(switchUrlBase));
             logger.debug(String.format("http get: %s, body: %s", link, request));
             rsp = rest.exchange(link, HttpMethod.POST, request, String.class);
             if (!successHttpStatusCode.contains(rsp.getStatusCode())) {
@@ -142,25 +148,33 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
             tag.putElement(port.interfaceType, new XmlObject(port.interfaceType)
                     .putElement("name", new XmlObject("name").setText(port.port)));
             request = new HttpEntity<>(xml.dump(), headers);
-            link = buildLink(struct.getSwitchIp(), String.format("/api/running/ftos/interface/vlan/%s", struct.getVlan()));
+            link = buildLink(struct.getSwitchIp(), String.format(switchUrlBase + "vlan/%s", struct.getVlan()));
             logger.debug(String.format("http get: %s, body: %s", link, request));
             rsp = rest.exchange(link, HttpMethod.PUT, request, String.class);
             if (!successHttpStatusCode.contains(rsp.getStatusCode())) {
-                throw new CloudRuntimeException(String.format("failed to program vlan[%s] for port[%s] on force10[ip:%s]. http status:%s, body dump:%s",
-                        struct.getVlan(), struct.getPort(), struct.getSwitchIp(), rsp.getStatusCode(), rsp.getBody()));
+                String error_msg = String.format("failed to program vlan[%s] for port[%s] on force10[ip:%s]. http status:%s, body dump:%s",
+                        struct.getVlan(), struct.getPort(), struct.getSwitchIp(), rsp.getStatusCode(), rsp.getBody());
+                logger.debug(error_msg);
+                throw new CloudRuntimeException(error_msg);
             } else {
                 logger.debug(String.format("successfully join port[%s] into vlan[%s] on Force10[ip:%s]. http response[status code:%s, body:%s]",
                         struct.getPort(), struct.getVlan(), struct.getSwitchIp(), rsp.getStatusCode(), rsp.getBody()));
             }
         } else {
-            throw new CloudRuntimeException(String.format("force10[ip:%s] returns unexpected error[%s] when http getting %s, body dump:%s",
-                    struct.getSwitchIp(), rsp.getStatusCode(), link, rsp.getBody()));
+            String error_msg = String.format("force10[ip:%s] returns unexpected error[%s] when http getting %s, body dump:%s",
+                    struct.getSwitchIp(), rsp.getStatusCode(), link, rsp.getBody());
+            logger.debug(error_msg);
+            throw new CloudRuntimeException(error_msg);
         }
     }
 
     @Override
     public void removePortFromVlan(BaremetalVlanStruct struct) {
-        String link = buildLink(struct.getSwitchIp(), String.format("/api/running/ftos/interface/vlan/%s", struct.getVlan()));
+        String switchUrlBase = struct.getSwitchUrlBase();
+        if(switchUrlBase == null) {
+            switchUrlBase = SWITCH_URL_BASE;
+        }
+        String link = buildLink(struct.getSwitchIp(), String.format(switchUrlBase + "vlan/%s", struct.getVlan()));
         HttpHeaders headers = createBasicAuthenticationHeader(struct);
         HttpEntity<String> request = new HttpEntity<>(headers);
         logger.debug(String.format("http get: %s, body: %s", link, request));
@@ -202,14 +216,18 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
             logger.debug(String.format("http get: %s, body: %s", link, request));
             rsp = rest.exchange(link, HttpMethod.PUT, request, String.class);
             if (!successHttpStatusCode.contains(rsp.getStatusCode())) {
-                throw new CloudRuntimeException(String.format("failed to program vlan[%s] for port[%s] on force10[ip:%s]. http status:%s, body dump:%s",
-                        struct.getVlan(), struct.getPort(), struct.getSwitchIp(), rsp.getStatusCode(), rsp.getBody()));
+                String exception = String.format("failed to program vlan[%s] for port[%s] on force10[ip:%s]. http status:%s, body dump:%s",
+                        struct.getVlan(), struct.getPort(), struct.getSwitchIp(), rsp.getStatusCode(), rsp.getBody());
+                logger.debug(exception);
+                throw new CloudRuntimeException(exception);
             } else {
                 logger.debug(String.format("removed port[%s] from vlan[%s] on force10[ip:%s]", struct.getPort(), struct.getVlan(), struct.getSwitchIp()));
             }
         } else {
-            throw new CloudRuntimeException(String.format("force10[ip:%s] returns unexpected error[%s] when http getting %s, body dump:%s",
-                    struct.getSwitchIp(), rsp.getStatusCode(), link, rsp.getBody()));
+            String error_msg = String.format("force10[ip:%s] returns unexpected error[%s] when http getting %s, body dump:%s",
+                    struct.getSwitchIp(), rsp.getStatusCode(), link, rsp.getBody());
+            logger.debug(error_msg);
+            throw new CloudRuntimeException(error_msg);
         }
     }
 

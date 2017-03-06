@@ -37,7 +37,7 @@ public abstract class BareMetalPxeServiceBase extends ManagerBase implements Bar
     @Inject
     HostDao _hostDao;
     @Inject
-    AgentManager _agentMgr;
+    protected AgentManager _agentMgr;
     @Inject
     HostPodDao _podDao;
     @Inject

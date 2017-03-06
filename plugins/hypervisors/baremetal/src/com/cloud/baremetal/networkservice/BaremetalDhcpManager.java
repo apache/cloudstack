@@ -40,7 +40,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalDhcpManager extends Manager, PluggableService {
     public static enum BaremetalDhcpType {
-        DNSMASQ, DHCPD,
+        DNSMASQ, DHCPD, EXTERNAL
     }
 
     boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)

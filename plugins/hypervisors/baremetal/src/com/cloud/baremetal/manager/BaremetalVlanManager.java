@@ -26,8 +26,13 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.AddBaremetalRctCmd;
 import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface BaremetalVlanManager extends Manager, PluggableService {
+
+    String BaremetalSwitchBaseUrlCK = "baremetal.switch.base.url";
+    ConfigKey<String> BaremetalSwitchBaseUrl = new ConfigKey<String>("Advanced", String.class, BaremetalSwitchBaseUrlCK,
+            "/api/running/ftos/interface/", "Base URL of Switch API used in Advance Baremetal Solution.", true, ConfigKey.Scope.Zone);
 
     BaremetalRctResponse addRct(AddBaremetalRctCmd cmd);
 

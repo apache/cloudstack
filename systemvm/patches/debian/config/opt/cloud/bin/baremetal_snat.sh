@@ -46,9 +46,9 @@ if [ $? -ne 0 ]; then
     iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
 fi
 
-rule="-A FORWARD -d $internal_server_ip/32 -i eth0 -o eth1 -j ACCEPT"
+rule="-A FORWARD -d $internal_server_ip/32 -i eth0 -o $interface -j ACCEPT"
 iptables-save | grep -- "$rule" > /dev/null
-if [ $? -ne 0 ]; then 
+if [ $? -ne 0 ]; then
     iptables -I FORWARD -d $internal_server_ip/32 -i eth0 -o eth1 -j ACCEPT
 fi
 
