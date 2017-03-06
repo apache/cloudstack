@@ -49,6 +49,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
@@ -70,6 +71,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
                             + "join cluster c on c.id=h.cluster_id "
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
+
+    private String findOneHypervisorHostInScopeByType = "select h.id from host h where h.status = 'Up' and h.hypervisor_type = ? ";
+    private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
@@ -383,5 +387,59 @@ public class DefaultEndPointSelector implements EndPointSelector {
             throw new CloudRuntimeException("shouldn't use it for other scope");
         }
         return endPoints;
+    }
+
+    @Override
+    public EndPoint selectHypervisorHostByType(Scope scope, HypervisorType htype) {
+        StringBuilder sbuilder = new StringBuilder();
+        if (htype != null) {
+            sbuilder.append(findOneHypervisorHostInScopeByType);
+        } else {
+            sbuilder.append(findOneHypervisorHostInScope);
+        }
+        if (scope.getScopeType() == ScopeType.ZONE) {
+            sbuilder.append(" and h.data_center_id = ");
+            sbuilder.append(scope.getScopeId());
+        } else if (scope.getScopeType() == ScopeType.CLUSTER) {
+            sbuilder.append(" and h.cluster_id = ");
+            sbuilder.append(scope.getScopeId());
+        }
+        sbuilder.append(" ORDER by rand() limit 1");
+
+        String sql = sbuilder.toString();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        HostVO host = null;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+        try {
+            pstmt = txn.prepareStatement(sql);
+            if (htype != null) {
+                pstmt.setString(1, htype.toString());
+            }
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                host = hostDao.findById(id);
+            }
+        } catch (SQLException e) {
+            s_logger.warn("can't find endpoint", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
+        if (host == null) {
+            return null;
+        }
+
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 }

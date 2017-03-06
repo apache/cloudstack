@@ -177,6 +177,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
         templateResponse.setTemplateTag(template.getTemplateTag());
 
+        if (template.getParentTemplateId() != null) {
+            templateResponse.setParentTemplateId(template.getParentTemplateUuid());
+        }
+
         // set details map
         if (template.getDetailName() != null) {
             Map<String, String> details = new HashMap<String, String>();

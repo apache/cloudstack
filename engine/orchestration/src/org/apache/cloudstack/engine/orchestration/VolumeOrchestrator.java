@@ -644,7 +644,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner) {
+    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner, Long deviceId) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -669,13 +669,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setInstanceId(vm.getId());
         }
 
-        if (type.equals(Type.ROOT)) {
+        if (deviceId != null) {
+            vol.setDeviceId(deviceId);
+        } else if (type.equals(Type.ROOT)) {
             vol.setDeviceId(0l);
         } else {
             vol.setDeviceId(1l);
         }
         if (template.getFormat() == ImageFormat.ISO) {
             vol.setIsoId(template.getId());
+        } else if (template.getTemplateType().equals(Storage.TemplateType.DATADISK)) {
+            vol.setTemplateId(template.getId());
         }
         // display flag matters only for the User vms
         if (vm.getType() == VirtualMachine.Type.User) {
