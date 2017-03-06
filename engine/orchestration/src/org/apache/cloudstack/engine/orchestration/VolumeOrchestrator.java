@@ -1220,7 +1220,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 }
             } else {
                 if (vol.getPoolId() == null) {
-                    throw new StorageUnavailableException("Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + vol,
+                    throw new StorageUnavailableException("MDOVA Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + vol,
                             Volume.class, vol.getId());
                 }
                 if (s_logger.isDebugEnabled()) {
@@ -1246,7 +1246,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             StoragePool pool = dest.getStorageForDisks().get(vol);
             destPool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         }
-
+        s_logger.info("MDOVF recreateVolume destPool.getId() "+ destPool.getId() + " vol.getState() " + vol.getState() );
         if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
             newVol = vol;
         } else {
@@ -1353,7 +1353,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
+            s_logger.debug("MDOVA Checking if we need to prepare " + vols.size() + " volumes for " + vm);
         }
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);

@@ -171,7 +171,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String secStorageUrl = nfsStore.getUrl();
         assert (secStorageUrl != null);
         String installPath = template.getPath();
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, _nfsVersion);
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsStore.getNfsVersion());
         String installFullPath = secondaryMountPoint + "/" + installPath;
         try {
             if (installFullPath.endsWith(".ova")) {
@@ -209,7 +209,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String installPath = volume.getPath();
         int index = installPath.lastIndexOf(File.separator);
         String volumeUuid = installPath.substring(index + 1);
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, _nfsVersion);
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsStore.getNfsVersion());
         //The real volume path
         String volumePath = installPath + File.separator + volumeUuid + ".ova";
         String installFullPath = secondaryMountPoint + "/" + installPath;
@@ -582,7 +582,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, secondaryStorageUuid);
             DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
 
-            String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl);
+            String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl, nfsImageStore.getNfsVersion());
             s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
 
             String srcOVAFileName = VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templateRelativeFolderPath, templateInfo.second(),
@@ -651,7 +651,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, secondaryStorageUuid);
             DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
 
-            String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl);
+            String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl, _nfsVersion);
             s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
 
             long templateId = dataDiskTemplate.getId();

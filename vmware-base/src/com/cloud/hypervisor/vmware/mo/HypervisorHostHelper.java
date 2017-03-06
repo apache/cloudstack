@@ -24,11 +24,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.io.FileWriter;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.CloudException;
-import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -45,6 +46,8 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
+import com.vmware.vim25.OvfCreateDescriptorParams;
+import com.vmware.vim25.OvfCreateDescriptorResult;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.CustomFieldStringValue;
@@ -67,9 +70,11 @@ import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
+import com.vmware.vim25.OvfFile;
 import com.vmware.vim25.ParaVirtualSCSIController;
 import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPortSetting;
@@ -79,6 +84,7 @@ import com.vmware.vim25.VMwareDVSPvlanMapEntry;
 import com.vmware.vim25.VirtualBusLogicController;
 import com.vmware.vim25.VirtualController;
 import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualIDEController;
@@ -90,6 +96,7 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
+import com.vmware.vim25.VirtualMachineImportSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
@@ -103,7 +110,6 @@ public class HypervisorHostHelper {
     private static final String UNTAGGED_VLAN_NAME = "untagged";
     private static final String VMDK_PACK_DIR = "ova";
     private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
-    
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
@@ -1498,6 +1504,7 @@ public class HypervisorHostHelper {
         importSpecParams.setDiskProvisioning(diskOption); // diskOption: thin, thick, etc
         //importSpecParams.setPropertyMapping(null);
 
+        s_logger.info("MDOVF importVmFromOVF ovfFilePath=" + ovfFilePath + ", diskOption: " + ", vmName: " + vmName + diskOption);
         String ovfDescriptor = HttpNfcLeaseMO.readOvfContent(ovfFilePath);
         VmwareContext context = host.getContext();
         OvfCreateImportSpecResult ovfImportResult =
@@ -1550,7 +1557,7 @@ public class HypervisorHostHelper {
                                 String absoluteFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
                                 String urlToPost = deviceUrl.getUrl();
                                 urlToPost = resolveHostNameInUrl(dcMo, urlToPost);
-
+                                s_logger.info("MDOVF importVmFromOVF urlToPost " + urlToPost + " absoluteFile " + absoluteFile + " bytesAlreadyWritten " + bytesAlreadyWritten);
                                 context.uploadVmdkFile(ovfFileItem.isCreate() ? "PUT" : "POST", urlToPost, absoluteFile, bytesAlreadyWritten, new ActionDelegate<Long>() {
                                     @Override
                                     public void action(Long param) {
@@ -1563,6 +1570,7 @@ public class HypervisorHostHelper {
                         }
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                     String erroMsg = "File upload task failed to complete due to: " + e.getMessage();
                     s_logger.error(erroMsg);
                     importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
@@ -1677,51 +1685,51 @@ public class HypervisorHostHelper {
         return ovfVolumeInfos;
     }
 
-     public static void createOvfFile(VmwareHypervisorHost host, String diskFileName, String ovfName, String datastorePath, String templatePath, long diskCapacity, long fileSize,
-             ManagedObjectReference morDs) throws Exception {
-         VmwareContext context = host.getContext();
-         ManagedObjectReference morOvf = context.getServiceContent().getOvfManager();
-         VirtualMachineMO workerVmMo = HypervisorHostHelper.createWorkerVM(host, new DatastoreMO(context, morDs), ovfName);
-         if (workerVmMo == null)
-             throw new Exception("Unable to find just-created worker VM");
- 
-         String[] disks = {datastorePath + File.separator + diskFileName};
-         try {
-             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
- 
-             // Reconfigure worker VM with datadisk
-             VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
-             deviceConfigSpec.setDevice(device);
-             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-             workerVmMo.configureVm(vmConfigSpec);
- 
-             // Write OVF descriptor file
-             OvfCreateDescriptorParams ovfDescParams = new OvfCreateDescriptorParams();
-             String deviceId = File.separator + workerVmMo.getMor().getValue() + File.separator + "VirtualIDEController0:0";
-             OvfFile ovfFile = new OvfFile();
-             ovfFile.setPath(diskFileName);
-             ovfFile.setDeviceId(deviceId);
-             ovfFile.setSize(fileSize);
-             ovfFile.setCapacity(diskCapacity);
-             ovfDescParams.getOvfFiles().add(ovfFile);
-             OvfCreateDescriptorResult ovfCreateDescriptorResult = context.getService().createDescriptor(morOvf, workerVmMo.getMor(), ovfDescParams);
- 
-             String ovfPath = templatePath + File.separator + ovfName + ".ovf";
-             try {
-                 FileWriter out = new FileWriter(ovfPath);
-                 out.write(ovfCreateDescriptorResult.getOvfDescriptor());
-                 out.close();
-             } catch (Exception e) {
-                 throw e;
-             }
-         } finally {
-             workerVmMo.detachAllDisks();
-             workerVmMo.destroy();
-         }
-     }
- 
+    public static void createOvfFile(VmwareHypervisorHost host, String diskFileName, String ovfName, String datastorePath, String templatePath, long diskCapacity, long fileSize,
+            ManagedObjectReference morDs) throws Exception {
+        VmwareContext context = host.getContext();
+        ManagedObjectReference morOvf = context.getServiceContent().getOvfManager();
+        VirtualMachineMO workerVmMo = HypervisorHostHelper.createWorkerVM(host, new DatastoreMO(context, morDs), ovfName);
+        if (workerVmMo == null)
+            throw new Exception("Unable to find just-created worker VM");
+
+        String[] disks = {datastorePath + File.separator + diskFileName};
+        try {
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+
+            // Reconfigure worker VM with datadisk
+            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
+            deviceConfigSpec.setDevice(device);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            workerVmMo.configureVm(vmConfigSpec);
+
+            // Write OVF descriptor file
+            OvfCreateDescriptorParams ovfDescParams = new OvfCreateDescriptorParams();
+            String deviceId = File.separator + workerVmMo.getMor().getValue() + File.separator + "VirtualIDEController0:0";
+            OvfFile ovfFile = new OvfFile();
+            ovfFile.setPath(diskFileName);
+            ovfFile.setDeviceId(deviceId);
+            ovfFile.setSize(fileSize);
+            ovfFile.setCapacity(diskCapacity);
+            ovfDescParams.getOvfFiles().add(ovfFile);
+            OvfCreateDescriptorResult ovfCreateDescriptorResult = context.getService().createDescriptor(morOvf, workerVmMo.getMor(), ovfDescParams);
+
+            String ovfPath = templatePath + File.separator + ovfName + ".ovf";
+            try {
+                FileWriter out = new FileWriter(ovfPath);
+                out.write(ovfCreateDescriptorResult.getOvfDescriptor());
+                out.close();
+            } catch (Exception e) {
+                throw e;
+            }
+        } finally {
+            workerVmMo.detachAllDisks();
+            workerVmMo.destroy();
+        }
+    }
+
     public static int getOsDiskFromOvfConf(VirtualMachineConfigSpec config, String deviceLocation) {
         List<VirtualDeviceConfigSpec> deviceConfigList = config.getDeviceChange();
         int controllerKey = 0;

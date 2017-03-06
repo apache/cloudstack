@@ -368,6 +368,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             return new CopyCmdAnswer(newTemplate);
         } catch (Throwable e) {
+            e.printStackTrace();
             if (e instanceof RemoteException) {
                 hostService.invalidateServiceContext(context);
             }

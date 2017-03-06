@@ -1007,7 +1007,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 try {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM is being created in podId: " + vm.getPodIdToDeployIn());
+                        s_logger.debug("MDOVA VM is being created in podId: " + vm.getPodIdToDeployIn());
                     }
                     _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null), ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
