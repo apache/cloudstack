@@ -133,6 +133,8 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
 
     boolean isDynamicallyScalable();
 
+    Long getParentTemplateId();
+
     long getUpdatedCount();
 
     void incrUpdatedCount();

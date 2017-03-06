@@ -58,10 +58,15 @@ import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateAnswer;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.storage.GetDatadisksAnswer;
+import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -81,6 +86,7 @@ import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
+import com.cloud.storage.resource.VmwareStorageLayoutHelper;
 import com.cloud.storage.template.OVAProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -165,7 +171,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String secStorageUrl = nfsStore.getUrl();
         assert (secStorageUrl != null);
         String installPath = template.getPath();
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, _nfsVersion);
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsStore.getNfsVersion());
         String installFullPath = secondaryMountPoint + "/" + installPath;
         try {
             if (installFullPath.endsWith(".ova")) {
@@ -203,7 +209,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String installPath = volume.getPath();
         int index = installPath.lastIndexOf(File.separator);
         String volumeUuid = installPath.substring(index + 1);
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, _nfsVersion);
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsStore.getNfsVersion());
         //The real volume path
         String volumePath = installPath + File.separator + volumeUuid + ".ova";
         String installFullPath = secondaryMountPoint + "/" + installPath;
@@ -550,6 +556,178 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
 
         return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
+    }
+
+    @Override
+    public Answer execute(VmwareHostService hostService, GetDatadisksCommand cmd) {
+        List<DatadiskTO> disks = new ArrayList<DatadiskTO>();
+        DataTO srcData = cmd.getData();
+        TemplateObjectTO template = (TemplateObjectTO)srcData;
+        DataStoreTO srcStore = srcData.getDataStore();
+        if (!(srcStore instanceof NfsTO)) {
+            return new CreateDatadiskTemplateAnswer("Unsupported protocol");
+        }
+        NfsTO nfsImageStore = (NfsTO)srcStore;
+        String secondaryStorageUrl = nfsImageStore.getUrl();
+        assert (secondaryStorageUrl != null);
+        String secondaryStorageUuid = HypervisorHostHelper.getSecondaryDatastoreUUID(secondaryStorageUrl).replace("-", "");
+        String templateUrl = secondaryStorageUrl + "/" + srcData.getPath();
+        Pair<String, String> templateInfo = VmwareStorageLayoutHelper.decodeTemplateRelativePathAndNameFromUrl(secondaryStorageUrl, templateUrl, template.getName());
+        String templateRelativeFolderPath = templateInfo.first();
+
+        VmwareContext context = hostService.getServiceContext(cmd);
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, secondaryStorageUuid);
+            DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
+
+            String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl, nfsImageStore.getNfsVersion());
+            s_logger.info("MDOVE Secondary storage mount point: " + secondaryMountPoint);
+
+            String srcOVAFileName = VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templateRelativeFolderPath, templateInfo.second(),
+                    ImageFormat.OVA.getFileExtension());
+
+            String ovfFilePath = getOVFFilePath(srcOVAFileName);
+            s_logger.info("MDOVA execute ovfFilePath " + ovfFilePath);
+            if (ovfFilePath == null) {
+                Script command = new Script("tar", 0, s_logger);
+                command.add("--no-same-owner");
+                command.add("-xf", srcOVAFileName);
+                command.setWorkDir(secondaryMountPoint + "/" + templateRelativeFolderPath);
+                s_logger.info("Executing command: " + command.toString());
+                String result = command.execute();
+                if (result != null) {
+                    String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            }
+
+            ovfFilePath = getOVFFilePath(srcOVAFileName);
+            s_logger.info("MDOVA execute ovfFilePath " + ovfFilePath);
+            if (ovfFilePath == null) {
+                String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            s_logger.debug("Reading OVF " + ovfFilePath + " to retrive the number of disks present in OVA");
+            List<Pair<String, Boolean>> ovfVolumeDetails = HypervisorHostHelper.readOVF(hyperHost, ovfFilePath, datastoreMo);
+
+            //  Get OVA disk details
+            for (Pair<String, Boolean> ovfVolumeDetail : ovfVolumeDetails) {
+                if (ovfVolumeDetail.second()) { // ROOT disk
+                    continue;
+                }
+                String dataDiskPath = ovfVolumeDetail.first();
+                String diskName = dataDiskPath.substring((dataDiskPath.lastIndexOf(File.separator)) + 1);
+                Pair<Long, Long> diskDetails = new OVAProcessor().getDiskDetails(ovfFilePath, diskName);
+                disks.add(new DatadiskTO(dataDiskPath, diskDetails.first(), diskDetails.second(), ovfVolumeDetail.second()));
+            }
+        } catch (Exception e) {
+            String msg = "Get Datadisk Template Count failed due to " + e.getMessage();
+            s_logger.error(msg);
+            return new GetDatadisksAnswer(msg);
+        }
+        return new GetDatadisksAnswer(disks);
+    }
+
+    @Override
+    public Answer execute(VmwareHostService hostService, CreateDatadiskTemplateCommand cmd) {
+        TemplateObjectTO diskTemplate = new TemplateObjectTO();
+        TemplateObjectTO dataDiskTemplate = (TemplateObjectTO)cmd.getDataDiskTemplate();
+        DataStoreTO dataStore = dataDiskTemplate.getDataStore();
+        if (!(dataStore instanceof NfsTO)) {
+            return new CreateDatadiskTemplateAnswer("Unsupported protocol");
+        }
+        NfsTO nfsImageStore = (NfsTO)dataStore;
+        String secondaryStorageUrl = nfsImageStore.getUrl();
+        assert (secondaryStorageUrl != null);
+        String secondaryStorageUuid = HypervisorHostHelper.getSecondaryDatastoreUUID(secondaryStorageUrl).replace("-", "");
+
+        VmwareContext context = hostService.getServiceContext(cmd);
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, secondaryStorageUuid);
+            DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
+
+            String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl, _nfsVersion);
+            s_logger.info("MDOVA Secondary storage mount point: " + secondaryMountPoint);
+
+            long templateId = dataDiskTemplate.getId();
+            String templateUniqueName = dataDiskTemplate.getUniqueName();
+            String dataDiskPath = cmd.getPath();
+            long virtualSize = dataDiskTemplate.getSize();
+            long fileSize = cmd.getFileSize();
+            String diskName = dataDiskPath.substring((dataDiskPath.lastIndexOf(File.separator)) + 1);
+            long physicalSize = new File(dataDiskPath).length();
+            String dataDiskTemplateFolderPath = getTemplateRelativeDirInSecStorage(dataDiskTemplate.getAccountId(), dataDiskTemplate.getId());
+            String dataDiskTemplateFolderFullPath = secondaryMountPoint + "/" + dataDiskTemplateFolderPath;
+
+            String ovfName = diskName.substring(0, diskName.lastIndexOf("-"));
+            String datastorePath = String.format("[%s] %s", datastoreMo.getName(), dataDiskTemplateFolderPath);
+            s_logger.info("MDOVA ovfName " + ovfName + " datastorePath " + datastorePath);
+            if (!cmd.getBootable()) {
+                // Create folder to hold datadisk template
+                synchronized (dataDiskTemplateFolderPath.intern()) {
+                    Script command = new Script(false, "mkdir", _timeout, s_logger);
+                    command.add("-p");
+                    command.add(dataDiskTemplateFolderFullPath);
+                    String result = command.execute();
+                    if (result != null) {
+                        String msg = "Unable to prepare template directory: " + dataDiskTemplateFolderPath + ", storage: " + secondaryStorageUrl + ", error msg: " + result;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+                // Move Datadisk VMDK from parent template folder to Datadisk template folder
+                synchronized (dataDiskPath.intern()) {
+                    Script command = new Script(false, "mv", _timeout, s_logger);
+                    command.add(dataDiskPath);
+                    command.add(dataDiskTemplateFolderFullPath);
+                    String result = command.execute();
+                    if (result != null) {
+                        String msg = "Unable to copy VMDK from parent template folder to datadisk template folder" + ", error msg: " + result;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+            } else {
+                // Delete original OVA as a new OVA will be created for the root disk template
+                String rootDiskTemplatePath = dataDiskTemplate.getPath();
+                String rootDiskTemplateFullPath = secondaryMountPoint + "/" + rootDiskTemplatePath;
+                s_logger.info("MDOVA rootDiskTemplatePath " + rootDiskTemplatePath + " rootDiskTemplateFullPath" + rootDiskTemplateFullPath);
+                synchronized (rootDiskTemplateFullPath.intern()) {
+                    Script command = new Script(false, "rm", _timeout, s_logger);
+                    command.add(rootDiskTemplateFullPath);
+                    String result = command.execute();
+                    if (result != null) {
+                        String msg = "Unable to delete original OVA" + ", error msg: " + result;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+            }
+
+            // Create OVF for Datadisk
+            s_logger.debug("Creating OVF file for datadisk " + diskName + " in " + dataDiskTemplateFolderFullPath);
+            HypervisorHostHelper.createOvfFile(hyperHost, diskName, ovfName, datastorePath, dataDiskTemplateFolderFullPath, virtualSize, fileSize, morDs);
+
+            postCreatePrivateTemplate(dataDiskTemplateFolderFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
+            writeMetaOvaForTemplate(dataDiskTemplateFolderFullPath, ovfName + ".ovf", diskName, templateUniqueName, physicalSize);
+
+            diskTemplate.setId(templateId);
+            diskTemplate.setPath(dataDiskTemplateFolderPath + "/" + templateUniqueName + ".ova");
+            diskTemplate.setSize(virtualSize);
+            diskTemplate.setPhysicalSize(physicalSize);
+        } catch (Exception e) {
+            String msg = "Create Datadisk template failed due to " + e.getMessage();
+            s_logger.error(msg);
+            return new CreateDatadiskTemplateAnswer(msg);
+        }
+        return new CreateDatadiskTemplateAnswer(diskTemplate);
     }
 
     // templateName: name in secondary storage

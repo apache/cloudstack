@@ -146,6 +146,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "dynamically_scalable")
     protected boolean dynamicallyScalable;
 
+    @Column(name = "parent_template_id")
+    private Long parentTemplateId;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -609,4 +612,14 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public Class<?> getEntityType() {
         return VirtualMachineTemplate.class;
     }
+
+    @Override
+    public Long getParentTemplateId() {
+        return parentTemplateId;
+    }
+
+    public void setParentTemplateId(Long parentTemplateId) {
+        this.parentTemplateId = parentTemplateId;
+    }
+
 }
