@@ -157,12 +157,14 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
 
             CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), _primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
+            s_logger.debug("MDOVF copyObject " + srcForCopy.getTO().getPath() + " dest = " + destData.getTO().getId());
             EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcForCopy, destData);
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
                 s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else {
+                s_logger.debug("MDOVA copyObject " + ep.getHostAddr());
                 answer = ep.sendMessage(cmd);
             }
 
@@ -444,6 +446,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         String errMsg = null;
         try {
             s_logger.debug("copyAsync inspecting src type " + srcData.getType().toString() + " copyAsync inspecting dest type " + destData.getType().toString());
+            s_logger.debug("MDOVF copyAsync inspecting src " + srcData.getTO().getPath() + " copyAsync inspecting dest " + destData.getTO().getPath());
+
 
             if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
                 answer = copyVolumeFromSnapshot(srcData, destData);

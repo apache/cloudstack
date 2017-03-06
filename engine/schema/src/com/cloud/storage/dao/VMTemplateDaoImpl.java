@@ -104,6 +104,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private GenericSearchBuilder<VMTemplateVO, Long> CountTemplatesByAccount;
     // private SearchBuilder<VMTemplateVO> updateStateSearch;
     private SearchBuilder<VMTemplateVO> AllFieldsSearch;
+    protected SearchBuilder<VMTemplateVO> ParentTemplateIdSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -133,6 +134,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         SearchCriteria<VMTemplateVO> sc = NameSearch.create();
         sc.setParameters("name", templateName);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId) {
+        SearchCriteria<VMTemplateVO> sc = ParentTemplateIdSearch.create();
+        sc.setParameters("parentTemplateId", parentTemplatetId);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
+        return listBy(sc);
     }
 
     @Override
@@ -402,6 +411,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
+
+        ParentTemplateIdSearch = createSearchBuilder();
+        ParentTemplateIdSearch.and("parentTemplateId", ParentTemplateIdSearch.entity().getParentTemplateId(), SearchCriteria.Op.EQ);
+        ParentTemplateIdSearch.and("state", ParentTemplateIdSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ParentTemplateIdSearch.done();
 
         return result;
     }

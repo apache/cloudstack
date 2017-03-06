@@ -68,4 +68,6 @@ public interface TemplateService {
     void associateTemplateToZone(long templateId, Long zoneId);
 
     void associateCrosszoneTemplatesToZone(long dcId);
+
+    AsyncCallFuture<TemplateApiResult> createDatadiskTemplateAsync(TemplateInfo parentTemplate, TemplateInfo dataDiskTemplate, String path, String diskId, long fileSize, boolean bootable);
 }

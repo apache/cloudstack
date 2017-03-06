@@ -18,8 +18,10 @@ package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -27,6 +29,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.ChildTemplateResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -37,10 +40,13 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -59,6 +65,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private ConfigurationDao  _configDao;
     @Inject
     private AccountService _accountService;
+    @Inject
+    private VMTemplateDao _vmTemplateDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -186,6 +194,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
         templateResponse.setTemplateTag(template.getTemplateTag());
 
+        if (template.getParentTemplateId() != null) {
+            templateResponse.setParentTemplateId(template.getParentTemplateUuid());
+        }
+
         // set details map
         if (template.getDetailName() != null) {
             Map<String, String> details = new HashMap<>();
@@ -200,6 +212,22 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         templateResponse.setDirectDownload(template.isDirectDownload());
+
+        //set template children disks
+        Set<ChildTemplateResponse> childTemplatesSet = new HashSet<ChildTemplateResponse>();
+        if (template.getHypervisorType() == HypervisorType.VMware) {
+            List<VMTemplateVO> childTemplates = _vmTemplateDao.listByParentTemplatetId(template.getId());
+            for (VMTemplateVO tmpl : childTemplates) {
+                if (tmpl.getTemplateType() != TemplateType.ISODISK) {
+                    ChildTemplateResponse childTempl = new ChildTemplateResponse();
+                    childTempl.setId(tmpl.getUuid());
+                    childTempl.setName(tmpl.getName());
+                    childTempl.setSize(Math.round(tmpl.getSize() / (1024 * 1024 * 1024)));
+                    childTemplatesSet.add(childTempl);
+                }
+            }
+            templateResponse.setChildTemplates(childTemplatesSet);
+        }
 
         templateResponse.setObjectName("template");
         return templateResponse;

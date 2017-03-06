@@ -314,7 +314,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         String templateUrl = secondaryStorageUrl + "/" + srcData.getPath();
-
+        s_logger.debug("MDOVA copyTemplateToPrimaryStorage templateUrl"  + templateUrl + " name " + template.getName());
         Pair<String, String> templateInfo = VmwareStorageLayoutHelper.decodeTemplateRelativePathAndNameFromUrl(secondaryStorageUrl, templateUrl, template.getName());
 
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -331,6 +331,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = null;
             Pair<VirtualMachineMO, Long> vmInfo = null;
 
+            s_logger.debug("MDOVA storageUuid copyTemplateToPrimaryStorage " + storageUuid + " templateUuidName " + templateUuidName + " templateMo "  + templateMo);
             if (templateMo == null) {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Template " + templateInfo.second() + " is not setup yet. Set up template from secondary storage with uuid name: " + templateUuidName);
@@ -505,6 +506,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                 ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+                s_logger.info("MDOVA the size of template is " + template.getSize() + " and size of volume is " + volume.getSize());
+                if (template.getSize() != null){
+                    _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
+                }
                 if (!_fullCloneFlag) {
                     createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
                 } else {
@@ -514,8 +519,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
                 assert (vmMo != null);
 
-                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0); // TO-DO: Support for base template containing multiple disks
-                s_logger.info("Move volume out of volume-wrapper VM ");
+                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
+                s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
                 String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
                 String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
 
@@ -529,7 +534,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.destroy();
 
                 String srcFile = dsMo.getDatastorePath(vmdkName, true);
+
                 dsMo.deleteFile(srcFile, dcMo.getMor(), true, searchExcludedFolders);
+
+                if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
+                    dsMo.deleteFolder(srcFile, dcMo.getMor());
+                }
             }
             // restoreVM - move the new ROOT disk into corresponding VM folder
             VirtualMachineMO restoreVmMo = dcMo.findVm(volume.getVmName());
@@ -542,7 +552,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vmdkFileBaseName);
-            newVol.setSize(volume.getSize());
+            if (template.getSize() != null){
+                newVol.setSize(template.getSize());
+            }
+            else {
+                newVol.setSize(volume.getSize());
+            }
             return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {

@@ -79,6 +79,7 @@ public class ApiConstants {
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
+    public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
     public static final String DESCRIPTION = "description";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
@@ -209,6 +210,7 @@ public class ApiConstants {
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
+    public static final String PARENT_TEMPLATE_ID = "parenttemplateid";
     public static final String PASSWORD = "password";
     public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
     public static final String NEW_PASSWORD = "new_password";

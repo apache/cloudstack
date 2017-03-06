@@ -174,7 +174,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private Map details;
 
     @SerializedName(ApiConstants.BITS)
-    @Param(description="the processor bit size", since = "4.10")
+    @Param(description = "the processor bit size", since = "4.10")
     private int bits;
 
     @SerializedName(ApiConstants.SSHKEY_ENABLED)
@@ -188,6 +188,14 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.DIRECT_DOWNLOAD)
     @Param(description = "KVM Only: true if template is directly downloaded to Primary Storage bypassing Secondary Storage")
     private Boolean directDownload;
+
+    @SerializedName("parenttemplateid")
+    @Param(description = "if Datadisk template, then id of the root disk template this template belongs to")
+    private String parentTemplateId;
+
+    @SerializedName("childtemplates")
+    @Param(description = "if root disk template, then ids of the datas disk templates this template owns")
+    private Set<ChildTemplateResponse> childTemplates;
 
     public TemplateResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -374,4 +382,13 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     public Boolean getDirectDownload() {
         return directDownload;
     }
+
+    public void setParentTemplateId(String parentTemplateId) {
+        this.parentTemplateId = parentTemplateId;
+    }
+
+    public void setChildTemplates(Set<ChildTemplateResponse> childTemplateIds) {
+        this.childTemplates = childTemplateIds;
+    }
+
 }

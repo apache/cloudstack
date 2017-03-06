@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.inject.Inject;
 
@@ -45,6 +46,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -155,7 +157,7 @@ public class CloudOrchestrator implements OrchestrationService {
     @Override
     public VirtualMachineEntity createVirtualMachine(String id, String owner, String templateId, String hostName, String displayName, String hypervisor, int cpu,
         int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan,
-        Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap) throws InsufficientCapacityException {
+        Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap) throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks,
         // vmEntityManager);
@@ -233,8 +235,20 @@ public class CloudOrchestrator implements OrchestrationService {
             dataDiskOfferings.add(dataDiskOfferingInfo);
         }
 
+        if (dataDiskTemplateToDiskOfferingMap != null && !dataDiskTemplateToDiskOfferingMap.isEmpty()) {
+            for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : dataDiskTemplateToDiskOfferingMap.entrySet()) {
+                DiskOffering diskOffering = datadiskTemplateToDiskOffering.getValue();
+                if (diskOffering == null) {
+                    throw new InvalidParameterValueException("Unable to find disk offering " + vm.getDiskOfferingId());
+                }
+                if (diskOffering.getDiskSize() == 0) { // Custom disk offering is not supported for volumes created from datadisk templates
+                    throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
+                }
+            }
+        }
+
         _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(templateId)), computeOffering, rootDiskOfferingInfo, dataDiskOfferings, networkIpMap, plan,
-            hypervisorType, extraDhcpOptionMap);
+            hypervisorType, extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap);
 
         return vmEntity;
     }
@@ -299,7 +313,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
         HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), computeOffering, rootDiskOfferingInfo, new ArrayList<DiskOfferingInfo>(), networkIpMap, plan, hypervisorType, extraDhcpOptionMap);
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), computeOffering, rootDiskOfferingInfo, new ArrayList<DiskOfferingInfo>(), networkIpMap, plan, hypervisorType, extraDhcpOptionMap, null);
 
         return vmEntity;
     }

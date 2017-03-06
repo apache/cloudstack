@@ -3097,6 +3097,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Map<String, String> tags = cmd.getTags();
         boolean showRemovedTmpl = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
+        Long parentTemplateId = cmd.getParentTemplateId();
 
         boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
@@ -3125,14 +3126,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null,
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
                 cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl,
-                cmd.getIds());
+                cmd.getIds(), parentTemplateId);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name,
             String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
             List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria,
-            Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids) {
+            Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -3376,6 +3377,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("dataCenterId", SearchCriteria.Op.SC, zoneSc);
         }
 
+        if (parentTemplateId != null) {
+            sc.addAnd("parentTemplateId", SearchCriteria.Op.EQ, parentTemplateId);
+        }
+
         // don't return removed template, this should not be needed since we
         // changed annotation for removed field in TemplateJoinVO.
         // sc.addAnd("removed", SearchCriteria.Op.NULL);
@@ -3459,7 +3464,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true,
                 cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true,
                 cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO,
-                null);
+                null, null);
     }
 
     @Override
