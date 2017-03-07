@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.9.1.0 to 4.9.2.0;
+-- Schema upgrade from 4.9.2.0 to 4.9.3.0;
 --;
 
 --;
