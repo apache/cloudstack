@@ -206,46 +206,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
 
                 s_logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInBytes);
 
-                byte[] block = new byte[CHUNK_SIZE];
-                long offset = 0;
-                boolean done = false;
-                boolean verifiedFormat=false;
-                status = TemplateDownloader.Status.IN_PROGRESS;
-                while (!done && status != Status.ABORTED && offset <= remoteSize) {
-                    if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
-                        out.write(block, 0, bytes);
-                        offset += bytes;
-                        out.seek(offset);
-                        totalBytes += bytes;
-                        if (!verifiedFormat && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
-                            String uripath = null;
-                            try {
-                                URI str = new URI(downloadUrl);
-                                uripath = str.getPath();
-                            } catch (URISyntaxException e) {
-                                s_logger.warn("Invalid download url: " + downloadUrl + ", This should not happen since we have validated the url before!!");
-                            }
-                            String unsupportedFormat = ImageStoreUtil.checkTemplateFormat(file.getAbsolutePath(), uripath);
-                            if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
-                                try {
-                                    request.abort();
-                                    out.close();
-                                    in.close();
-                                } catch (Exception ex) {
-                                    s_logger.debug("Error on http connection : " + ex.getMessage());
-                                }
-                                status = Status.UNRECOVERABLE_ERROR;
-                                errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
-                                return 0;
-                            }
-                            s_logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
-                            verifiedFormat = true;
-                        }
-                    } else {
-                        done = true;
-                    }
-                }
-                out.getFD().sync();
+                if (copyBytes(file, in, out)) return 0;
 
                 Date finish = new Date();
                 checkDowloadCompletion();
@@ -268,6 +229,36 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             }
         }
         return 0;
+    }
+
+    private boolean copyBytes(File file, InputStream in, RandomAccessFile out) throws IOException {
+        int bytes;
+        byte[] block = new byte[CHUNK_SIZE];
+        long offset = 0;
+        boolean done = false;
+        VerifyFormat verifyFormat = new VerifyFormat(file);
+        status = Status.IN_PROGRESS;
+        while (!done && status != Status.ABORTED && offset <= remoteSize) {
+            if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
+                offset = writeBlock(bytes, out, block, offset);
+                if (!verifyFormat.isVerifiedFormat() && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
+                    verifyFormat.invoke();
+                    if (verifyFormat.isInvalid()) return true;
+                }
+            } else {
+                done = true;
+            }
+        }
+        out.getFD().sync();
+        return false;
+    }
+
+    private long writeBlock(int bytes, RandomAccessFile out, byte[] block, long offset) throws IOException {
+        out.write(block, 0, bytes);
+        offset += bytes;
+        out.seek(offset);
+        totalBytes += bytes;
+        return offset;
     }
 
     private void checkDowloadCompletion() {
@@ -503,4 +494,48 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         return resourceType;
     }
 
+    private class VerifyFormat {
+        private boolean invalidFormat;
+        private File file;
+        private boolean verifiedFormat;
+
+        public VerifyFormat(File file) {
+            this.file = file;
+            this.verifiedFormat = false;
+        }
+
+        boolean isInvalid() {
+            return invalidFormat;
+        }
+
+        public boolean isVerifiedFormat() {
+            return verifiedFormat;
+        }
+
+        public VerifyFormat invoke() {
+            String uripath = null;
+            try {
+                URI str = new URI(downloadUrl);
+                uripath = str.getPath();
+            } catch (URISyntaxException e) {
+                s_logger.warn("Invalid download url: " + downloadUrl + ", This should not happen since we have validated the url before!!");
+            }
+            String unsupportedFormat = ImageStoreUtil.checkTemplateFormat(file.getAbsolutePath(), uripath);
+            if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
+                try {
+                    request.abort();
+                } catch (Exception ex) {
+                    s_logger.debug("Error on http connection : " + ex.getMessage());
+                }
+                status = Status.UNRECOVERABLE_ERROR;
+                errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
+                invalidFormat = true;
+            } else {
+                s_logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
+                verifiedFormat = true;
+                invalidFormat = false;
+            }
+            return this;
+        }
+    }
 }
