@@ -2090,27 +2090,57 @@
                                                 fields: {
                                                     vlanrange: {
                                                         label: 'label.vlan.vni.range',
-                                                        /*  select: function(args) {
-                                                        var items = [];
-                                                        if(args.context.physicalNetworks[0].vlan != null && args.context.physicalNetworks[0].vlan.length > 0) {
-                                                        var vlanranges = args.context.physicalNetworks[0].vlan.split(";");
-                                                        for(var i = 0; i < vlanranges.length ; i++) {
-                                                        items.push({id: vlanranges[i], description: vlanranges[i]});
-                                                        }
-                                                        }
-                                                        args.response.success({data: items});
-                                                        },*/
                                                         validation: {
                                                             required: true
                                                         }
                                                     },
-                                                    account: {
-                                                        label: 'label.account',
-                                                        validation: {
-                                                            required: true
+                                                    scope: {
+                                                        label: 'label.scope',
+                                                        docID: 'helpGuestNetworkZoneScope',
+                                                        select: function(args) {
+                                                            var array1 = [];
+
+                                                            array1.push({
+                                                                id: 'account-specific',
+                                                                description: 'label.account'
+                                                            });
+                                                            array1.push({
+                                                                id: 'project-specific',
+                                                                description: 'label.project'
+                                                            });
+
+                                                            args.response.success({
+                                                                data: array1
+                                                            });
+
+                                                            args.$select.change(function() {
+                                                                var $form = $(this).closest('form');
+
+                                                                if ($(this).val() == "account-specific") {
+                                                                    $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=projectId]').hide();
+                                                                } else if ($(this).val() == "project-specific") {
+                                                                    $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=account]').hide();
+                                                                    $form.find('.form-item[rel=projectId]').css('display', 'inline-block');
+                                                                }
+
+                                                                if (args.context.projects != null && args.context.projects.length > 0) {
+                                                                    $form.find('.form-item[rel=domainId]').hide();
+                                                                    $form.find('.form-item[rel=account]').hide();
+                                                                    $form.find('.form-item[rel=projectId]').hide();
+                                                                }
+                                                            });
+                                                        },
+                                                        isHidden: function(args) {
+                                                            if(args.context.projects != null && args.context.projects.length > 0)
+                                                                return true;
+                                                            else
+                                                                return false;
                                                         }
                                                     },
-                                                    domainid: {
+                                                    domainId: {
                                                         label: 'label.domain',
                                                         validation: {
                                                             required: true
@@ -2133,16 +2163,87 @@
                                                                 }
                                                             });
                                                         }
+                                                    },
+                                                    account: {
+                                                        label: 'label.account',
+                                                        validation: {
+                                                            required: true
+                                                        },
+                                                        dependsOn: 'domainId',
+                                                        select: function (args) {
+                                                            $.ajax({
+                                                                url: createURL('listAccounts&domainid=' + args.domainId),
+                                                                data: {
+                                                                    listAll: true
+                                                                },
+                                                                success: function (json) {
+                                                                    args.response.success({
+                                                                        data: $.map(json.listaccountsresponse.account, function (account) {
+                                                                            return {
+                                                                                id: account.name,
+                                                                                description: account.name
+                                                                            };
+                                                                        })
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
+                                                    },
+                                                    projectId: {
+                                                        label: 'label.project',
+                                                        validation: {
+                                                            required: true
+                                                        },
+                                                        dependsOn: 'domainId',
+                                                        select: function(args) {
+                                                            var items = [];
+                                                            $.ajax({
+                                                                url: createURL("listProjects&domainid=" + args.domainId),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function(json) {
+                                                                    projectObjs = json.listprojectsresponse.project;
+                                                                    $(projectObjs).each(function() {
+                                                                        items.push({
+                                                                            id: this.id,
+                                                                            description: this.name
+                                                                        });
+                                                                    });
+                                                                }
+                                                            });
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
                                                     }
                                                 }
                                             },
                                             action: function (args) {
                                                 var data = {
                                                     physicalnetworkid: args.context.physicalNetworks[0].id,
-                                                    vlanrange: args.data.vlanrange,
-                                                    domainid: args.data.domainid,
-                                                    account: args.data.account
+                                                    vlanrange: args.data.vlanrange
                                                 };
+
+                                                var $form = args.$form;
+
+                                                if (($form.find('.form-item[rel=domainId]').css("display") != "none") && (args.data.domainId != null && args.data.domainId.length > 0)) {
+                                                    $.extend(data, {
+                                                        domainid: args.data.domainId
+                                                    })
+                                                }
+
+                                                if (($form.find('.form-item[rel=account]').css("display") != "none") && (args.data.account != null && args.data.account.length > 0)) {
+                                                    $.extend(data, {
+                                                        account: args.data.account
+                                                    })
+                                                }
+
+                                                if (($form.find('.form-item[rel=projectId]').css("display") != "none") && (args.data.projectId != null && args.data.projectId.length > 0)) {
+                                                    $.extend(data, {
+                                                        projectid: args.data.projectId
+                                                    })
+                                                }
+
                                                 $.ajax({
                                                     url: createURL('dedicateGuestVlanRange'),
                                                     data: data,
@@ -19015,60 +19116,6 @@
                                                         ucsmanagerid: args.context.ucsManagers[0].id
                                                     },
                                                     success: function (json) {
-                                                        //for testing only (begin)
-                                                        /*
-                                                        json = {
-                                                        "refreshucsbladesresponse": {
-                                                        "count": 7,
-                                                        "ucsblade": [
-                                                        {
-                                                        "id": "6c6a2d2c-575e-41ac-9782-eee51b0b80f8",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-5"
-                                                        },
-                                                        {
-                                                        "id": "d371d470-a51f-489c-aded-54a63dfd76c7",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-6"
-                                                        },
-                                                        {
-                                                        "id": "c0f64591-4a80-4083-bb7b-576220b436a2",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-7"
-                                                        },
-                                                        {
-                                                        "id": "74b9b69a-cb16-42f5-aad6-06391ebdd759",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-1"
-                                                        },
-                                                        {
-                                                        "id": "713a5adb-0136-484f-9acb-d9203af497be",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-2"
-                                                        },
-                                                        {
-                                                        "id": "da633578-21cb-4678-9eb4-981a53198b41",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-4"
-                                                        },
-                                                        {
-                                                        "id": "3d491c6e-f0b6-40b0-bf6e-f89efdd73c30",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-3"
-                                                        }
-                                                        ]
-                                                        }
-                                                        };
-                                                         */
-                                                        //for testing only (end)
-
-                                                        /*
-                                                        var item = json.refreshucsbladesresponse.ucsblade[0];
-                                                        addExtraPropertiesToUcsBladeObject(item);
-                                                        args.response.success({
-                                                        data: item
-                                                        });
-                                                         */
                                                         $(window).trigger('cloudStack.fullRefresh');
                                                     }
                                                 });
