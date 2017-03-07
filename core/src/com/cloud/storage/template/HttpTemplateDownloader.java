@@ -62,7 +62,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private static final int CHUNK_SIZE = 1024 * 1024; //1M
     private String downloadUrl;
     private String toFile;
-    public TemplateDownloader.Status status = TemplateDownloader.Status.NOT_STARTED;
+    public TemplateDownloader.Status status;
     public String errorString = " ";
     private long remoteSize = 0;
     public long downloadTime = 0;
@@ -83,15 +83,82 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             String user, String password, Proxy proxy, ResourceType resourceType) {
         _storage = storageLayer;
         this.downloadUrl = downloadUrl;
-        setToDir(toDir);
-        status = TemplateDownloader.Status.NOT_STARTED;
+        this.toDir = toDir;
         this.resourceType = resourceType;
         this.maxTemplateSizeInBytes = maxTemplateSizeInBytes;
+        completionCallback = callback;
 
+        status = TemplateDownloader.Status.NOT_STARTED;
         totalBytes = 0;
         client = new HttpClient(s_httpClientManager);
+        myretryhandler = createRetryTwiceHandler();
+        try {
+            request = createRequest(downloadUrl);
+            checkTemporaryDestination(toDir);
+            checkProxy(proxy);
+            checkCredentials(user, password);
+        } catch (Exception ex) {
+            errorString = "Unable to start download -- check url? ";
+            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
+            s_logger.warn("Exception in constructor -- " + ex.toString());
+        } catch (Throwable th) {
+            s_logger.warn("throwable caught ", th);
+        }
+    }
 
-        myretryhandler = new HttpMethodRetryHandler() {
+    private GetMethod createRequest(String downloadUrl) {
+        GetMethod request = new GetMethod(downloadUrl);
+        request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
+        request.setFollowRedirects(true);
+        return request;
+    }
+
+    private void checkTemporaryDestination(String toDir) {
+        try {
+            File f = File.createTempFile("dnld", "tmp_", new File(toDir));
+
+            if (_storage != null) {
+                _storage.setWorldReadableAndWriteable(f);
+            }
+
+            toFile = f.getAbsolutePath();
+        } catch (IOException ex) {
+            errorString = "Unable to start download -- check url? ";
+            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
+            s_logger.warn("Exception in constructor -- " + ex.toString());
+        }
+    }
+
+    private void checkCredentials(String user, String password) {
+        try {
+            Pair<String, Integer> hostAndPort = UriUtils.validateUrl(downloadUrl);
+            if ((user != null) && (password != null)) {
+                client.getParams().setAuthenticationPreemptive(true);
+                Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
+                client.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+            } else {
+                s_logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
+            }
+        } catch (IllegalArgumentException iae) {
+            errorString = iae.getMessage();
+            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
+            inited = false;
+        }
+    }
+
+    private void checkProxy(Proxy proxy) {
+        if (proxy != null) {
+            client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
+            if (proxy.getUserName() != null) {
+                Credentials proxyCreds = new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPassword());
+                client.getState().setProxyCredentials(AuthScope.ANY, proxyCreds);
+            }
+        }
+    }
+
+    private HttpMethodRetryHandler createRetryTwiceHandler() {
+        return new HttpMethodRetryHandler() {
             @Override
             public boolean retryMethod(final HttpMethod method, final IOException exception, int executionCount) {
                 if (executionCount >= 2) {
@@ -111,48 +178,6 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 return false;
             }
         };
-
-        try {
-            request = new GetMethod(downloadUrl);
-            request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
-            completionCallback = callback;
-            this.request.setFollowRedirects(true);
-
-            File f = File.createTempFile("dnld", "tmp_", new File(toDir));
-
-            if (_storage != null) {
-                _storage.setWorldReadableAndWriteable(f);
-            }
-
-            toFile = f.getAbsolutePath();
-            Pair<String, Integer> hostAndPort = UriUtils.validateUrl(downloadUrl);
-
-            if (proxy != null) {
-                client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
-                if (proxy.getUserName() != null) {
-                    Credentials proxyCreds = new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPassword());
-                    client.getState().setProxyCredentials(AuthScope.ANY, proxyCreds);
-                }
-            }
-            if ((user != null) && (password != null)) {
-                client.getParams().setAuthenticationPreemptive(true);
-                Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                client.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
-            } else {
-                s_logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
-            }
-        } catch (IllegalArgumentException iae) {
-            errorString = iae.getMessage();
-            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-            inited = false;
-        } catch (Exception ex) {
-            errorString = "Unable to start download -- check url? ";
-            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-            s_logger.warn("Exception in constructor -- " + ex.toString());
-        } catch (Throwable th) {
-            s_logger.warn("throwable caught ", th);
-        }
     }
 
     @Override
@@ -236,7 +261,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             RandomAccessFile out = new RandomAccessFile(file, "rw");
             out.seek(localFileSize);
 
-            s_logger.info("Starting download from " + getDownloadUrl() + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInBytes);
+            s_logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInBytes);
 
             byte[] block = new byte[CHUNK_SIZE];
             long offset = 0;
@@ -252,10 +277,10 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                         if (!verifiedFormat && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
                         String uripath = null;
                         try {
-                            URI str = new URI(getDownloadUrl());
+                            URI str = new URI(downloadUrl);
                             uripath = str.getPath();
                         } catch (URISyntaxException e) {
-                            s_logger.warn("Invalid download url: " + getDownloadUrl() + ", This should not happen since we have validated the url before!!");
+                            s_logger.warn("Invalid download url: " + downloadUrl + ", This should not happen since we have validated the url before!!");
                         }
                         String unsupportedFormat = ImageStoreUtil.checkTemplateFormat(file.getAbsolutePath(), uripath);
                             if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
@@ -407,19 +432,12 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         this.resume = resume;
     }
 
-    public void setToDir(String toDir) {
-        this.toDir = toDir;
-    }
-
-    public String getToDir() {
-        return toDir;
-    }
-
     @Override
     public long getMaxTemplateSizeInBytes() {
         return maxTemplateSizeInBytes;
     }
 
+    // TODO move this test code to unit tests or integration tests
     public static void main(String[] args) {
         String url = "http:// dev.mysql.com/get/Downloads/MySQL-5.0/mysql-noinstall-5.0.77-win32.zip/from/http://mirror.services.wisc.edu/mysql/";
         try {
