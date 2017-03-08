@@ -333,6 +333,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             GetDatadisksAnswer getDatadisksAnswer = (GetDatadisksAnswer)answer;
             dataDiskDetails = getDatadisksAnswer.getDataDiskDetails(); // Details - Disk path, virtual size
         }
+        s_logger.debug("MDOVA getDatadiskTemplates dataDiskDetails " + dataDiskDetails.toString());
         return dataDiskDetails;
     }
 

@@ -42,5 +42,6 @@ then
     exit
 fi
 
-echo -n `cat /etc/cloudstack-release`'&'
-cat /var/cache/cloud/cloud-scripts-signature
+release=`cat /etc/cloudstack-release`
+sig=`cat /var/cache/cloud/cloud-scripts-signature`
+echo  "${release}&${sig}"

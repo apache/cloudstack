@@ -766,6 +766,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 // Copy every Datadisk template that belongs to the template to Destination zone
                 List<VMTemplateVO> dataDiskTemplates = _tmpltDao.listByParentTemplatetId(template.getId());
                 if (dataDiskTemplates != null && !dataDiskTemplates.isEmpty()) {
+                    s_logger.info("MDOVA copy template.getId()" + template.getId() + " dataDiskTemplates " + dataDiskTemplates.size());
                     for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
                         s_logger.debug("Copying " + dataDiskTemplates.size() + " for source template " + template.getId() + ". Copy all Datadisk templates to destination datastore " + dstSecStore.getName());
                         TemplateInfo srcDataDiskTemplate = _tmplFactory.getTemplate(dataDiskTemplate.getId(), srcSecStore);

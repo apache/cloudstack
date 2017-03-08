@@ -583,12 +583,13 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
 
             String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl, nfsImageStore.getNfsVersion());
-            s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
+            s_logger.info("MDOVE Secondary storage mount point: " + secondaryMountPoint);
 
             String srcOVAFileName = VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templateRelativeFolderPath, templateInfo.second(),
                     ImageFormat.OVA.getFileExtension());
 
             String ovfFilePath = getOVFFilePath(srcOVAFileName);
+            s_logger.info("MDOVA execute ovfFilePath " + ovfFilePath);
             if (ovfFilePath == null) {
                 Script command = new Script("tar", 0, s_logger);
                 command.add("--no-same-owner");
@@ -604,6 +605,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             ovfFilePath = getOVFFilePath(srcOVAFileName);
+            s_logger.info("MDOVA execute ovfFilePath " + ovfFilePath);
             if (ovfFilePath == null) {
                 String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
                 s_logger.error(msg);
@@ -652,7 +654,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
 
             String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl, _nfsVersion);
-            s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
+            s_logger.info("MDOVA Secondary storage mount point: " + secondaryMountPoint);
 
             long templateId = dataDiskTemplate.getId();
             String templateUniqueName = dataDiskTemplate.getUniqueName();
@@ -666,7 +668,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             String ovfName = diskName.substring(0, diskName.lastIndexOf("-"));
             String datastorePath = String.format("[%s] %s", datastoreMo.getName(), dataDiskTemplateFolderPath);
-
+            s_logger.info("MDOVA ovfName " + ovfName + " datastorePath " + datastorePath);
             if (!cmd.getBootable()) {
                 // Create folder to hold datadisk template
                 synchronized (dataDiskTemplateFolderPath.intern()) {
@@ -696,6 +698,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 // Delete original OVA as a new OVA will be created for the root disk template
                 String rootDiskTemplatePath = dataDiskTemplate.getPath();
                 String rootDiskTemplateFullPath = secondaryMountPoint + "/" + rootDiskTemplatePath;
+                s_logger.info("MDOVA rootDiskTemplatePath " + rootDiskTemplatePath + " rootDiskTemplateFullPath" + rootDiskTemplateFullPath);
                 synchronized (rootDiskTemplateFullPath.intern()) {
                     Script command = new Script(false, "rm", _timeout, s_logger);
                     command.add(rootDiskTemplateFullPath);

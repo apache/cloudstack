@@ -1515,7 +1515,7 @@ public class HypervisorHostHelper {
             s_logger.error(msg);
             throw new Exception(msg);
         }
-
+        s_logger.info("MDOVF importVmFromOVF ovfDescriptor " + ovfDescriptor);
         if(!ovfImportResult.getError().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
                 s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
@@ -1529,6 +1529,7 @@ public class HypervisorHostHelper {
             }
         }
 
+        s_logger.info("MDOVF importVmFromOVF ovfImportResult " + ovfImportResult.toString());
         DatacenterMO dcMo = new DatacenterMO(context, host.getHyperHostDatacenter());
         ManagedObjectReference morLease = context.getService().importVApp(morRp, ovfImportResult.getImportSpec(), dcMo.getVmFolder(), morHost);
         if (morLease == null) {
@@ -1553,6 +1554,7 @@ public class HypervisorHostHelper {
                     for (HttpNfcLeaseDeviceUrl deviceUrl : deviceUrls) {
                         String deviceKey = deviceUrl.getImportKey();
                         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
+                            s_logger.info("MDOVF importVmFromOVF " + ovfFileItem.getPath());
                             if (deviceKey.equals(ovfFileItem.getDeviceId())) {
                                 String absoluteFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
                                 String urlToPost = deviceUrl.getUrl();
@@ -1570,11 +1572,10 @@ public class HypervisorHostHelper {
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
                     String erroMsg = "File upload task failed to complete due to: " + e.getMessage();
                     s_logger.error(erroMsg);
                     importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
-                    throw new Exception(erroMsg);
+                    throw new Exception(erroMsg, e);
                 } catch (Throwable th) {
                     String errorMsg = "throwable caught during file upload task: " + th.getMessage();
                     s_logger.error(errorMsg);
@@ -1649,6 +1650,7 @@ public class HypervisorHostHelper {
         }
 
         File ovfFile = new File(ovfFilePath);
+        s_logger.info("MDOVA ovfPath ovfFile " + ovfFile);
         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
             String absFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
             files.add(absFile);
@@ -1717,6 +1719,7 @@ public class HypervisorHostHelper {
             OvfCreateDescriptorResult ovfCreateDescriptorResult = context.getService().createDescriptor(morOvf, workerVmMo.getMor(), ovfDescParams);
 
             String ovfPath = templatePath + File.separator + ovfName + ".ovf";
+            s_logger.info("MDOVA createOvfFile ovfPath " + ovfPath);
             try {
                 FileWriter out = new FileWriter(ovfPath);
                 out.write(ovfCreateDescriptorResult.getOvfDescriptor());
@@ -1738,6 +1741,8 @@ public class HypervisorHostHelper {
         int deviceNodeNumber = 0;
         int controllerCount = 0;
         String[] virtualNodeInfo = deviceLocation.split(":");
+
+        s_logger.info("MDOVA getOsDiskFromOvfConf deviceLocation " + deviceLocation);
         if (deviceLocation.startsWith("scsi")) {
 
            controllerNumber = Integer.parseInt(virtualNodeInfo[0].substring(4)); // get substring excluding prefix scsi

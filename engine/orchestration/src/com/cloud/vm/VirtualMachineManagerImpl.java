@@ -430,7 +430,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), vmFinal, template, owner, null);
                     }
                 }
+                s_logger.info("MDOVA allocate datadiskTemplateToDiskOfferingMap");
                 if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
+                    s_logger.info("MDOVA allocate datadiskTemplateToDiskOfferingMap isEmpty " + datadiskTemplateToDiskOfferingMap.isEmpty() );
                     int diskNumber = 1;
                     for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
                         DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
@@ -860,7 +862,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterId() + " and podId: " + vm.getPodIdToDeployIn());
+            s_logger.debug("MDOVA Trying to deploy VM, vm " + vm.getInstanceName() + "  has dcId: " + vm.getDataCenterId() + " and podId: " + vm.getPodIdToDeployIn());
         }
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
         if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
@@ -901,6 +903,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     // edit plan if this vm's ROOT volume is in READY state already
                     final List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
                     for (final VolumeVO vol : vols) {
+                        s_logger.debug("MDOVA orchestrateStart reuseVolume " + reuseVolume + " vol " + vol.getName());
                         // make sure if the templateId is unchanged. If it is changed,
                         // let planner
                         // reassign pool for the volume even if it ready.
@@ -1007,10 +1010,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 try {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("MDOVA VM is being created in podId: " + vm.getPodIdToDeployIn());
+                        s_logger.debug("MDOVA orchestrateStart VM is being created in podId: " + vm.getPodIdToDeployIn());
                     }
                     _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null), ctx);
+                    s_logger.debug("MDOVA orchestrateStart VM prepare network done");
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                        s_logger.debug("MDOVA orchestrateStart VM working on volume " + vmProfile._vm.getInstanceName());
                         volumeMgr.prepare(vmProfile, dest);
                     }
                     //since StorageMgr succeeded in volume creation, reuse Volume for further tries until current cluster has capacity
@@ -4620,7 +4625,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             orchestrateStart(vm.getUuid(), work.getParams(), work.getPlan(), _dpMgr.getDeploymentPlannerByName(work.getDeploymentPlanner()));
         }
         catch (CloudRuntimeException e){
-            s_logger.info("Caught CloudRuntimeException, returning job failed");
+            e.printStackTrace();
+            s_logger.warn("Caught CloudRuntimeException, returning job failed", e);
             return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, null);
         }
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);

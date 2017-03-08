@@ -1353,7 +1353,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("MDOVA Checking if we need to prepare " + vols.size() + " volumes for " + vm);
+            s_logger.debug("MDOVA prepare Checking if we need to prepare " + vols.size() + " volumes for " + vm);
         }
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
@@ -1371,6 +1371,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
+
+            s_logger.debug("MDOVA prepare task " + task.type + " for " + vol.getName() + ", id " + vol.getId());
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
             DataTO volTO = volumeInfo.getTO();
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(),
