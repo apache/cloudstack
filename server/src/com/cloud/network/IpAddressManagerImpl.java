@@ -680,6 +680,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 boolean fetchFromDedicatedRange = false;
                 List<Long> dedicatedVlanDbIds = new ArrayList<Long>();
                 List<Long> nonDedicatedVlanDbIds = new ArrayList<Long>();
+                DataCenter zone = _entityMgr.findById(DataCenter.class, dcId);
 
                 SearchCriteria<IPAddressVO> sc = null;
                 if (podId != null) {
@@ -693,10 +694,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                 // If owner has dedicated Public IP ranges, fetch IP from the dedicated range
                 // Otherwise fetch IP from the system pool
-                List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
-                for (AccountVlanMapVO map : maps) {
-                    if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
-                        dedicatedVlanDbIds.add(map.getVlanDbId());
+                Network network = _networksDao.findById(guestNetworkId);
+                //Checking if network is null in the case of system VM's. At the time of allocation of IP address to systemVm, no network is present.
+                if(network == null || !(network.getGuestType() == GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
+                    List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
+                    for (AccountVlanMapVO map : maps) {
+                        if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
+                            dedicatedVlanDbIds.add(map.getVlanDbId());
+                    }
                 }
                 List<DomainVlanMapVO> domainMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(owner.getDomainId());
                 for (DomainVlanMapVO map : domainMaps) {
@@ -728,8 +733,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 }
 
                 sc.setParameters("dc", dcId);
-
-                DataCenter zone = _entityMgr.findById(DataCenter.class, dcId);
 
                 // for direct network take ip addresses only from the vlans belonging to the network
                 if (vlanUse == VlanType.DirectAttached) {
