@@ -1267,19 +1267,19 @@ def cache_ipset_keyword():
     type = getIpsetType()
     tmpname = 'ipsetqzvxtmp'
     try:
-        util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + type])
+        util.pread2(['ipset', '-N', tmpname, type])
     except:
-        util.pread2(['/bin/bash', '-c', 'ipset -F ' + tmpname])
+        util.pread2(['ipset', '-F', tmpname])
 
     try:
-        util.pread2(['/bin/bash', '-c', 'iptables -A INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
-        util.pread2(['/bin/bash', '-c', 'iptables -D INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
+        util.pread2(['iptables -A INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
+        util.pread2(['iptables -D INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
         keyword = 'set'
     except:
         keyword = 'match-set'
 
     try:
-       util.pread2(['/bin/bash', '-c', 'ipset -X ' + tmpname])
+       util.pread2(['ipset', '-X', tmpname])
     except:
        pass
 
