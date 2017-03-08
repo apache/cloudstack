@@ -18,6 +18,8 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.StorageTagResponse;
+
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -26,5 +28,7 @@ public interface StoragePoolTagsDao extends GenericDao<StoragePoolTagVO, Long> {
     void persist(long poolId, List<String> storagePoolTags);
     List<String> getStoragePoolTags(long poolId);
     void deleteTags(long poolId);
+    List<StoragePoolTagVO> searchByIds(Long... stIds);
+    StorageTagResponse newStorageTagResponse(StoragePoolTagVO tag);
 
 }

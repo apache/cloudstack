@@ -524,7 +524,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolDetails(poolId, "true"));
+        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
     }
 
     @Override

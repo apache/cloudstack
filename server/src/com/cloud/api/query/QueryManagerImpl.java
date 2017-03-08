@@ -125,7 +125,6 @@ import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
-import com.cloud.api.query.dao.StorageTagDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -149,7 +148,6 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.api.query.vo.StorageTagVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -190,8 +188,10 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -306,7 +306,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private StoragePoolJoinDao _poolJoinDao;
 
     @Inject
-    private StorageTagDao _storageTagDao;
+    private StoragePoolTagsDao _storageTagDao;
 
     @Inject
     private HostTagDao _hostTagDao;
@@ -2268,43 +2268,43 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<StorageTagResponse> searchForStorageTags(ListStorageTagsCmd cmd) {
-        Pair<List<StorageTagVO>, Integer> result = searchForStorageTagsInternal(cmd);
+        Pair<List<StoragePoolTagVO>, Integer> result = searchForStorageTagsInternal(cmd);
         ListResponse<StorageTagResponse> response = new ListResponse<StorageTagResponse>();
-        List<StorageTagResponse> tagResponses = ViewResponseHelper.createStorageTagResponse(result.first().toArray(new StorageTagVO[result.first().size()]));
+        List<StorageTagResponse> tagResponses = ViewResponseHelper.createStorageTagResponse(result.first().toArray(new StoragePoolTagVO[result.first().size()]));
 
         response.setResponses(tagResponses, result.second());
 
         return response;
     }
 
-    private Pair<List<StorageTagVO>, Integer> searchForStorageTagsInternal(ListStorageTagsCmd cmd) {
-        Filter searchFilter = new Filter(StorageTagVO.class, "id", Boolean.TRUE, null, null);
+    private Pair<List<StoragePoolTagVO>, Integer> searchForStorageTagsInternal(ListStorageTagsCmd cmd) {
+        Filter searchFilter = new Filter(StoragePoolTagVO.class, "id", Boolean.TRUE, null, null);
 
-        SearchBuilder<StorageTagVO> sb = _storageTagDao.createSearchBuilder();
+        SearchBuilder<StoragePoolTagVO> sb = _storageTagDao.createSearchBuilder();
 
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
 
-        SearchCriteria<StorageTagVO> sc = sb.create();
+        SearchCriteria<StoragePoolTagVO> sc = sb.create();
 
         // search storage tag details by ids
-        Pair<List<StorageTagVO>, Integer> uniqueTagPair = _storageTagDao.searchAndCount(sc, searchFilter);
+        Pair<List<StoragePoolTagVO>, Integer> uniqueTagPair = _storageTagDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueTagPair.second();
 
         if (count.intValue() == 0) {
             return uniqueTagPair;
         }
 
-        List<StorageTagVO> uniqueTags = uniqueTagPair.first();
+        List<StoragePoolTagVO> uniqueTags = uniqueTagPair.first();
         Long[] vrIds = new Long[uniqueTags.size()];
         int i = 0;
 
-        for (StorageTagVO v : uniqueTags) {
+        for (StoragePoolTagVO v : uniqueTags) {
             vrIds[i++] = v.getId();
         }
 
-        List<StorageTagVO> vrs = _storageTagDao.searchByIds(vrIds);
+        List<StoragePoolTagVO> vrs = _storageTagDao.searchByIds(vrIds);
 
-        return new Pair<List<StorageTagVO>, Integer>(vrs, count);
+        return new Pair<List<StoragePoolTagVO>, Integer>(vrs, count);
     }
 
     @Override
