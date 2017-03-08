@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.volume.datastore;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -118,6 +119,8 @@ public class PrimaryDataStoreHelper {
             dataStoreVO.setPath(updatedPath);
         }
         String tags = params.getTags();
+        List<String> storageTags = new ArrayList<String>();
+
         if (tags != null) {
             String[] tokens = tags.split(",");
 
@@ -126,10 +129,10 @@ public class PrimaryDataStoreHelper {
                 if (tag.length() == 0) {
                     continue;
                 }
-                details.put(tag, "true");
+                storageTags.add(tag);
             }
         }
-        dataStoreVO = dataStoreDao.persist(dataStoreVO, details);
+        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags);
         return dataStoreMgr.getDataStore(dataStoreVO.getId(), DataStoreRole.Primary);
     }
 
@@ -231,6 +234,7 @@ public class PrimaryDataStoreHelper {
         poolVO.setUuid(null);
         this.dataStoreDao.update(poolVO.getId(), poolVO);
         dataStoreDao.remove(poolVO.getId());
+        dataStoreDao.deletePoolTags(poolVO.getId());
         deletePoolStats(poolVO.getId());
         // Delete op_host_capacity entries
         this._capacityDao.removeBy(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, null, null, null, poolVO.getId());
