@@ -264,8 +264,8 @@ install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUI
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
 
-install -D utils/conf/k8s-master ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
-install -D utils/conf/k8s-node ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+install -D utils/conf/k8s-master.yml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+install -D utils/conf/k8s-node.yml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 cp deps/kubectl ${RPM_BUILD_ROOT}%{_bindir}/
 
 # Don't package the scripts in the management webapp
