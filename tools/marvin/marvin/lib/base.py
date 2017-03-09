@@ -3858,7 +3858,7 @@ class Configurations:
     """Manage Configuration"""
 
     @classmethod
-    def update(cls, apiclient, name, value=None, zoneid=None):
+    def update(cls, apiclient, name, value=None, zoneid=None, clusterid=None, storageid=None):
         """Updates the specified configuration"""
 
         cmd = updateConfiguration.updateConfigurationCmd()
@@ -3867,7 +3867,12 @@ class Configurations:
 
         if zoneid:
             cmd.zoneid = zoneid
+        if clusterid:
+            cmd.clusterid = clusterid
+        if storageid:
+            cmd.storageid=storageid
         apiclient.updateConfiguration(cmd)
+
 
     @classmethod
     def list(cls, apiclient, **kwargs):
