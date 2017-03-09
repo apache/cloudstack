@@ -24,6 +24,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -359,6 +360,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_mockedStaticNatIp.getAddress()).thenReturn(new Ip("10.10.10.2"));
         when(_mockedStaticNatIp.isOneToOneNat()).thenReturn(true);
         when(_mockedStaticNatIp.getVmIp()).thenReturn("192.168.0.24");
+        when(_mockedStaticNatIp.getState()).thenReturn(IpAddress.State.Allocated);
     }
 
     private void setUpMockedStaticNatVlan() {
