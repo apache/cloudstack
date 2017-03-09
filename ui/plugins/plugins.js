@@ -16,7 +16,8 @@
 // under the License.
 (function($, cloudStack) {
   cloudStack.plugins = [
-    //'testPlugin',
+      //'testPlugin',
+    'applicationClusters',
     'quota'
   ];
 }(jQuery, cloudStack));
