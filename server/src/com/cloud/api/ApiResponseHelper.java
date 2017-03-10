@@ -883,6 +883,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         DataCenter zone = ApiDBUtils.findZoneById(publicIp.getDataCenterId());
         if (zone != null) {
             lbResponse.setZoneId(zone.getUuid());
+            lbResponse.setZoneName(zone.getName());
         }
 
         //set tag information
