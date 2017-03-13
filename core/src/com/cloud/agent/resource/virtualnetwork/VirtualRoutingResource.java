@@ -75,6 +75,7 @@ public class VirtualRoutingResource {
     private int _retry;
     private int _port;
     private Duration _eachTimeout;
+    private Map<String, Object> _params;
 
     private String _cfgVersion = "1.0";
 
@@ -259,8 +260,18 @@ public class VirtualRoutingResource {
         return new GetDomRVersionAnswer(cmd, result.getDetails(), lines[0], lines[1]);
     }
 
+    public boolean configureHostParams(final Map<String, String> params) {
+        if (_params.get("router.aggregation.command.each.timeout") == null) {
+            String value = (String)params.get("router.aggregation.command.each.timeout");
+            _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt(value, 10));
+        }
+
+        return true;
+    }
+
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
+        _params = params;
 
         String value = (String)params.get("ssh.sleep");
         _sleep = NumbersUtil.parseInt(value, 10) * 1000;
