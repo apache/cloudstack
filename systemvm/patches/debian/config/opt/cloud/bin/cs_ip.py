@@ -46,6 +46,8 @@ def merge(dbag, ip):
     else:
         if 'source_nat' in ip and ip['source_nat'] and ip['device'] in dbag and len(dbag[ip['device']]) > 0:
             dbag[ip['device']].insert(0, ip) # make sure the source_nat ip is first (primary) on the device
+        if index != -1 and ip['device'] in dbag and index in dbag[ip['device']]:
+            dbag[ip['device']][index] = ip
         else:
             dbag.setdefault(ip['device'], []).append(ip)
 
