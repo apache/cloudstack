@@ -173,6 +173,8 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.server.ResourceTag;
+import com.cloud.tags.dao.ResourceTagDao;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
@@ -288,6 +290,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     DataCenterIpAddressDao _privateIPAddressDao;
     @Inject
     HostPodDao _hpDao;
+    @Inject
+    ResourceTagDao _resourceTagDao;
 
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
@@ -595,6 +599,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             success = false;
         }
 
+        //Remove the tags corresponding to IP.
+        if(success) {
+            _resourceTagDao.removeByIdAndType(ipId, ResourceTag.ResourceObjectType.PublicIpAddress);
+        }
         return success;
     }
 
