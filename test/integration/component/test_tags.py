@@ -2543,3 +2543,163 @@ class TestResourceTags(cloudstackTestCase):
             "List tags should return empty response"
         )
         return
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_25_CLOUDSTACK_9606(self):
+            """ Test for checking automatic tag removal on released Public IP
+            """
+
+            # Validate the following
+            # 1. Create a domain and admin account under the new domain.
+            # 2. Create  a tag on acquired public IP address using createTags API.
+            # 3. Release the respective public IP address without deleting tags.
+            # 4. Verify that tags does not exists on the released public IP.
+
+            self.debug("Creating a sub-domain under: %s" % self.domain.name)
+            self.child_domain = Domain.create(
+                self.apiclient,
+                services=self.services["domain"],
+                parentdomainid=self.domain.id
+            )
+            self.child_do_admin = Account.create(
+                self.apiclient,
+                self.services["account"],
+                admin=True,
+                domainid=self.child_domain.id
+            )
+            # Cleanup the resources created at end of test
+            self.cleanup.append(self.child_do_admin)
+            self.cleanup.append(self.child_domain)
+            self.dom_admin_api_client = self.testClient.getUserApiClient(
+                UserName=self.child_do_admin.name,
+                DomainName=self.child_do_admin.domain
+            )
+            result = createEnabledNetworkOffering(
+                self.apiclient,
+                self.services["network_offering"]
+            )
+            assert result[0] == PASS, \
+                "Network offering create/enable failed with error %s" % result[2]
+            self.network_offering = result[1]
+            self.network = Network.create(
+                self.dom_admin_api_client,
+                self.services["network"],
+                networkofferingid=self.network_offering.id,
+                accountid=self.child_do_admin.name,
+                domainid=self.child_do_admin.domainid,
+                zoneid=self.zone.id
+            )
+            self.debug("Fetching the network details for account: %s" %
+                self.child_do_admin.name
+            )
+            networks = Network.list(
+                self.dom_admin_api_client,
+                account=self.child_do_admin.name,
+                domainid=self.child_do_admin.domainid,
+                listall=True
+            )
+            self.assertEqual(
+                isinstance(networks, list),
+                True,
+                "List networks should not return an empty response"
+            )
+            network = networks[0]
+            self.debug("Network for the account: %s is %s" %
+                        (self.child_do_admin.name, network.name)
+                        )
+            self.debug("Associating public IP for network: %s" % network.id)
+            PublicIPAddress.create(
+                self.dom_admin_api_client,
+                accountid=self.child_do_admin.name,
+                zoneid=self.zone.id,
+                domainid=self.child_do_admin.domainid,
+                networkid=network.id
+            )
+            public_ip = PublicIPAddress.create(
+                self.dom_admin_api_client,
+                accountid=self.child_do_admin.name,
+                zoneid=self.zone.id,
+                domainid=self.child_do_admin.domainid,
+                networkid=network.id
+            )
+            self.debug("Creating a tag for Public IP")
+            tag = Tag.create(
+                self.dom_admin_api_client,
+                resourceIds=public_ip.ipaddress.id,
+                resourceType='PublicIpAddress',
+                tags={'region': 'India'}
+            )
+            self.debug("Tag created: %s" % tag.__dict__)
+
+            tags = Tag.list(
+                self.dom_admin_api_client,
+                listall=True,
+                resourceType='PublicIpAddress',
+                account=self.child_do_admin.name,
+                domainid=self.child_do_admin.domainid,
+                key='region',
+                value='India'
+            )
+            self.assertEqual(
+                isinstance(tags, list),
+                True,
+                "List tags should not return empty response"
+            )
+            self.assertEqual(
+                tags[0].value,
+                'India',
+                'The tag should have original value'
+            )
+            publicIps = PublicIPAddress.list(
+                self.dom_admin_api_client,
+                account=self.child_do_admin.name,
+                domainid=self.child_do_admin.domainid,
+                listall=True,
+                key='region',
+                value='India'
+            )
+            self.assertEqual(
+                isinstance(publicIps, list),
+                True,
+                "List Public IPs should not return an empty response"
+            )
+
+            # release public IP address""
+            ip_id = public_ip.ipaddress.id
+            public_ip.delete(self.apiclient)
+
+            retriesCount = 10
+            isIpAddressDisassociated = False
+
+            while retriesCount > 0:
+                listResponse = list_publicIP(
+                    self.apiclient,
+                    id=ip_id
+                )
+                if listResponse is None:
+                    isIpAddressDisassociated = True
+                    break
+                retriesCount -= 1
+                time.sleep(60)
+            # End while
+
+            self.assertTrue(
+                isIpAddressDisassociated,
+                "Failed to disassociate IP address")
+
+            self.debug("Verifying if tag is actually deleted!")
+            tags = Tag.list(
+                self.dom_admin_api_client,
+                listall=True,
+                resourceType='PublicIpAddress',
+                account=self.child_do_admin.name,
+                domainid=self.child_do_admin.domainid,
+                key='region',
+                value='India'
+            )
+            self.assertEqual(
+                tags,
+                None,
+                "List tags should return empty response"
+            )
+            return
