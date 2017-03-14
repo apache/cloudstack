@@ -158,7 +158,7 @@ public class ApiServlet extends HttpServlet {
         try {
 
             if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType(apiServer.getJSONContentType());
+                resp.setContentType(ApiServer.JSONcontentType.value());
             } else if (HttpUtils.RESPONSE_TYPE_XML.equalsIgnoreCase(responseType)){
                 resp.setContentType(HttpUtils.XML_CONTENT_TYPE);
             }
@@ -189,12 +189,10 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                         session = req.getSession(true);
-                        if (apiServer.isSecureSessionCookieEnabled()) {
+                        if (ApiServer.EnableSecureSessionCookie.value()) {
                             resp.setHeader("SET-COOKIE", String.format("JSESSIONID=%s;Secure;HttpOnly;Path=/client", session.getId()));
                             if (s_logger.isDebugEnabled()) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Session cookie is marked secure!");
-                                }
+                                s_logger.debug("Session cookie is marked secure!");
                             }
                         }
                     }
@@ -231,7 +229,7 @@ public class ApiServlet extends HttpServlet {
                         sessionKeyCookie.setMaxAge(0);
                         resp.addCookie(sessionKeyCookie);
                     }
-                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, apiServer.getJSONContentType());
+                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONcontentType.value());
                     return;
                 }
             }
@@ -256,7 +254,7 @@ public class ApiServlet extends HttpServlet {
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
                     final String serializedResponse =
                             apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, apiServer.getJSONContentType());
+                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
                     return;
                 }
 
@@ -267,7 +265,7 @@ public class ApiServlet extends HttpServlet {
                         s_logger.info("missing command, ignoring request...");
                         auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
                         final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
-                        HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, apiServer.getJSONContentType());
+                        HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
                         return;
                     }
                     final User user = entityMgr.findById(User.class, userId);
@@ -283,7 +281,7 @@ public class ApiServlet extends HttpServlet {
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
                     final String serializedResponse =
                             apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, apiServer.getJSONContentType());
+                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
                     return;
                 }
             } else {
@@ -297,7 +295,7 @@ public class ApiServlet extends HttpServlet {
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[] {req.getMethod()});
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
-                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, apiServer.getJSONContentType());
+                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
             } else {
                 if (session != null) {
                     try {
@@ -310,13 +308,13 @@ public class ApiServlet extends HttpServlet {
                 final String serializedResponse =
                         apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                                 responseType);
-                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, apiServer.getJSONContentType());
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
 
             }
         } catch (final ServerApiException se) {
             final String serializedResponseText = apiServer.getSerializedApiError(se, params, responseType);
             resp.setHeader("X-Description", se.getDescription());
-            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, apiServer.getJSONContentType());
+            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, ApiServer.JSONcontentType.value());
             auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (final Exception ex) {
             s_logger.error("unknown exception writing api response", ex);
