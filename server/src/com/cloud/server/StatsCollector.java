@@ -41,7 +41,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -53,6 +52,7 @@ import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.exception.StorageUnavailableException;
@@ -86,11 +86,11 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.VmDiskStatisticsDao;
@@ -139,11 +139,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    private ImageStoreDao _imageStoreDao;
-    @Inject
     private StorageManager _storageManager;
-    @Inject
-    private StoragePoolHostDao _storagePoolHostDao;
     @Inject
     private DataStoreManager _dataStoreMgr;
     @Inject
@@ -183,7 +179,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
-    private final ConcurrentHashMap<Long, VolumeStats> _volumeStats = new ConcurrentHashMap<Long, VolumeStats>();
+    private final Map<String, VolumeStats> _volumeStats = new ConcurrentHashMap<String, VolumeStats>();
     private ConcurrentHashMap<Long, StorageStats> _storageStats = new ConcurrentHashMap<Long, StorageStats>();
     private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
@@ -192,7 +188,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     long storageStatsInterval = -1L;
     long volumeStatsInterval = -1L;
     long autoScaleStatsInterval = -1L;
-    int vmDiskStatsInterval = 0;
+    long vmDiskStatsInterval = -1L;
     List<Long> hostIds = null;
 
     private ScheduledExecutorService _diskStatsUpdateExecutor;
@@ -229,9 +225,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), 60000L);
         hostAndVmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), 60000L);
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), 60000L);
-        volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), -1L);
+        volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), 60000L);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), 60000L);
-        vmDiskStatsInterval = NumbersUtil.parseInt(configs.get("vm.disk.stats.interval"), 0);
+        vmDiskStatsInterval = NumbersUtil.parseLong(configs.get("vm.disk.stats.interval"), 60000L);
 
         if (hostStatsInterval > 0) {
             _executor.scheduleWithFixedDelay(new HostCollector(), 15000L, hostStatsInterval, TimeUnit.MILLISECONDS);
@@ -250,9 +246,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         if (vmDiskStatsInterval > 0) {
-            if (vmDiskStatsInterval < 300)
-                vmDiskStatsInterval = 300;
-            _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsInterval, vmDiskStatsInterval, TimeUnit.SECONDS);
+            _executor.scheduleAtFixedRate(new VmDiskStatsTask(), 15000L, vmDiskStatsInterval, TimeUnit.MILLISECONDS);
+        }
+
+        if (volumeStatsInterval > 0) {
+            _executor.scheduleAtFixedRate(new VolumeStatsTask(), 15000L, volumeStatsInterval, TimeUnit.MILLISECONDS);
         }
 
         //Schedule disk stats update task
@@ -477,6 +475,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             // collect the vm disk statistics(total) from hypervisor. added by weizhou, 2013.03.
+            s_logger.trace("Running VM disk stats ...");
             try {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
@@ -596,6 +595,51 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 s_logger.warn("Error while collecting vm disk stats from hosts", e);
             }
         }
+    }
+
+
+    class VolumeStatsTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            try {
+                List<StoragePoolVO> pools = _storagePoolDao.listAll();
+
+                for (StoragePoolVO pool : pools) {
+                    List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
+                    List<String> volumeLocators = new ArrayList<String>();
+                    for (VolumeVO volume: volumes){
+                        if (volume.getFormat() == ImageFormat.QCOW2) {
+                            volumeLocators.add(volume.getUuid());
+                        }
+                        else if (volume.getFormat() == ImageFormat.VHD){
+                            volumeLocators.add(volume.getPath());
+                        }
+                        else if (volume.getFormat() == ImageFormat.OVA){
+                            volumeLocators.add(volume.getChainInfo());
+                        }
+                        else {
+                            s_logger.warn("Volume stats not implemented for this format type " + volume.getFormat() );
+                            break;
+                        }
+                    }
+                    try {
+                        HashMap<String, VolumeStatsEntry> volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators);
+                        if (volumeStatsByUuid != null){
+                            _volumeStats.putAll(volumeStatsByUuid);
+                        }
+                    } catch (Exception e) {
+                        s_logger.warn("Failed to get volume stats for cluster with ID: " + pool.getClusterId(), e);
+                        continue;
+                    }
+                }
+            } catch (Throwable t) {
+                s_logger.error("Error trying to retrieve volume stats", t);
+            }
+        }
+    }
+
+    public VolumeStats getVolumeStats(String volumeLocator) {
+        return _volumeStats.get(volumeLocator);
     }
 
     class StorageCollector extends ManagedContextRunnable {

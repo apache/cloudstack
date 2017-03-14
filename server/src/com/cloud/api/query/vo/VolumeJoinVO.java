@@ -119,6 +119,21 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "pod_id")
     private long podId;
 
+    @Column(name = "pod_name")
+    private String podName;
+
+    @Column(name = "pod_uuid")
+    private String podUuid;
+
+    @Column(name = "cluster_id")
+    private long clusterId;
+
+    @Column(name = "cluster_name")
+    private String clusterName;
+
+    @Column(name = "cluster_uuid")
+    private String clusterUuid;
+
     @Column(name = "data_center_id")
     private long dataCenterId;
 
@@ -509,6 +524,38 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getPoolName() {
         return poolName;
+    }
+
+    public String getPodName() {
+        return podName;
+    }
+
+    public void setPodName(String podName) {
+        this.podName = podName;
+    }
+
+    public String getPodUuid() {
+        return podUuid;
+    }
+
+    public void setPodUuid(String podUuid) {
+        this.podUuid = podUuid;
+    }
+
+    public void setPodId(long podId) {
+        this.podId = podId;
+    }
+
+    public long getClusterId() {
+        return clusterId;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getClusterUuid() {
+        return clusterUuid;
     }
 
     public long getTemplateId() {

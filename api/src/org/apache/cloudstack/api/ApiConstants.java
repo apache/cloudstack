@@ -194,6 +194,7 @@ public class ApiConstants {
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String POD_ID = "podid";
+    public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
     public static final String POLICY_ID = "policyid";
     public static final String PORT = "port";
@@ -634,6 +635,8 @@ public class ApiConstants {
     public static final String STRECHED_L2_SUBNET = "strechedl2subnet";
     public static final String NETWORK_SPANNED_ZONES = "zonesnetworkspans";
     public static final String PHYSICAL_SIZE = "physicalsize";
+    public static final String VIRTUAL_SIZE = "virtualsize";
+    public static final String UTILIZATION = "utilization";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

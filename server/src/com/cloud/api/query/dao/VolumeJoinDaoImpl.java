@@ -83,6 +83,13 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         volResponse.setZoneId(volume.getDataCenterUuid());
         volResponse.setZoneName(volume.getDataCenterName());
 
+        if (view == ResponseView.Full) {
+            volResponse.setClusterId(volume.getClusterUuid());
+            volResponse.setClusterName(volume.getClusterName());
+            volResponse.setPodId(volume.getPodUuid());
+            volResponse.setPodName(volume.getPodName());
+        }
+
         volResponse.setVolumeType(volume.getVolumeType().toString());
         volResponse.setDeviceId(volume.getDeviceId());
 
