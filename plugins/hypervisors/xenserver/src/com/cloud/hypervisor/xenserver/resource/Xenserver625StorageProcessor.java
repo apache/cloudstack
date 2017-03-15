@@ -99,7 +99,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         PBD pbd = null;
 
         try {
-            final String srname = hypervisorResource.getHost().getUuid() + path.trim();
+            final String srname = path.trim();
             synchronized (srname.intern()) {
                 final Set<SR> srs = SR.getByNameLabel(conn, srname);
                 if (srs != null && !srs.isEmpty()) {
