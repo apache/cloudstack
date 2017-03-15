@@ -337,7 +337,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
         }
 
         if (!validateServiceOffering(_srvOfferingDao.findById(serviceOfferingId))) {
-            throw new InvalidParameterValueException("This service offering is not suitable for k8s cluster, service offering id is " + networkId);
+            throw new InvalidParameterValueException("This service offering is not suitable for an application cluster, service offering id is " + networkId);
         }
 
         validateDockerRegistryParams(dockerRegistryUserName, dockerRegistryPassword, dockerRegistryUrl, dockerRegistryEmail);
@@ -352,12 +352,12 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
                     throw new InvalidParameterValueException("Unable to find network by ID " + networkId);
                 }
                 if (!validateNetwork(network)){
-                    throw new InvalidParameterValueException("This network is not suitable for k8s cluster, network id is " + networkId);
+                    throw new InvalidParameterValueException("This network is not suitable for an application cluster, network id is " + networkId);
                 }
                 _networkModel.checkNetworkPermissions(owner, network);
             }
             else {
-                throw new InvalidParameterValueException("This network is already under use by another k8s cluster, network id is " + networkId);
+                throw new InvalidParameterValueException("This network is already under use by another application cluster, network id is " + networkId);
             }
         } else { // user has not specified network in which cluster VM's to be provisioned, so create a network for container cluster
             NetworkOfferingVO networkOffering = _networkOfferingDao.findByUniqueName(
@@ -499,12 +499,12 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
         }
         publicIp = ips.get(0);
 
-        UserVm k8sMasterVM = null;
+        UserVm masterNode = null;
         try {
-            k8sMasterVM = createK8SMaster(containerCluster, publicIp);
+            masterNode = createK8SMaster(containerCluster, publicIp);
 
             final long clusterId = containerCluster.getId();
-            final long masterVmId = k8sMasterVM.getId();
+            final long masterVmId = masterNode.getId();
             Transaction.execute(new TransactionCallback<ApplicationClusterVmMapVO>() {
                 @Override
                 public ApplicationClusterVmMapVO doInTransaction(TransactionStatus status) {
@@ -514,8 +514,8 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
                 }
             });
 
-            startK8SVM(k8sMasterVM, containerCluster);
-            k8sMasterVM = _vmDao.findById(k8sMasterVM.getId());
+            startClusterVM(masterNode, containerCluster);
+            masterNode = _vmDao.findById(masterNode.getId());
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Provisioned the master VM's in to the container cluster name:" + containerCluster.getName());
             }
@@ -529,7 +529,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
             throw new ManagementServerException("Provisioning the master VM' failed in the container cluster: " + containerCluster.getName(), e);
         }
 
-        String masterIP = k8sMasterVM.getPrivateIpAddress();
+        String masterIP = masterNode.getPrivateIpAddress();
 
         long anyNodeVmId = 0;
         UserVm k8anyNodeVM = null;
@@ -546,7 +546,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
                         return newClusterVmMap;
                     }
                 });
-                startK8SVM(vm, containerCluster);
+                startClusterVM(vm, containerCluster);
 
                 vm = _vmDao.findById(vm.getId());
                 if (s_logger.isDebugEnabled()) {
@@ -572,7 +572,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
             s_logger.debug("Container cluster : " + containerCluster.getName() + " VM's are successfully provisioned.");
         }
 
-        setupContainerClusterNetworkRules(publicIp, account, containerClusterId, k8sMasterVM.getId());
+        setupContainerClusterNetworkRules(publicIp, account, containerClusterId, masterNode.getId());
 
         int retryCounter = 0;
         int maxRetries = 10;
@@ -678,7 +678,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
                     stateTransitTo(containerClusterId, ApplicationCluster.Event.OperationFailed);
                     throw new ManagementServerException("Failed to start all VMs in container cluster id: " + containerClusterId);
                 }
-                startK8SVM(vm, containerCluster);
+                startClusterVM(vm, containerCluster);
             } catch (ServerApiException ex) {
                 s_logger.warn("Failed to start VM in container cluster id:" + containerClusterId + " due to " + ex);
                 // dont bail out here. proceed further to stop the reset of the VM's
@@ -1059,7 +1059,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
                     stateTransitTo(containerClusterId, ApplicationCluster.Event.OperationFailed);
                     throw new ManagementServerException("Failed to start all VMs in container cluster id: " + containerClusterId);
                 }
-                stopK8SVM(vmMapVO);
+                stopClusterVM(vmMapVO);
             } catch (ServerApiException ex) {
                 s_logger.warn("Failed to stop VM in container cluster id:" + containerClusterId + " due to " + ex);
                 // dont bail out here. proceed further to stop the reset of the VM's
@@ -1407,7 +1407,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
         return nodeVm;
     }
 
-    private void startK8SVM(final UserVm vm, final ApplicationClusterVO containerCluster) throws ServerApiException {
+    private void startClusterVM(final UserVm vm, final ApplicationClusterVO containerCluster) throws ServerApiException {
 
         try {
             StartVMCmd startVm = new StartVMCmd();
@@ -1443,7 +1443,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
         }
     }
 
-    private void stopK8SVM(final ApplicationClusterVmMapVO vmMapVO) throws ServerApiException {
+    private void stopClusterVM(final ApplicationClusterVmMapVO vmMapVO) throws ServerApiException {
         try {
             _userVmService.stopVirtualMachine(vmMapVO.getVmId(), false);
         } catch (ConcurrentOperationException ex) {
