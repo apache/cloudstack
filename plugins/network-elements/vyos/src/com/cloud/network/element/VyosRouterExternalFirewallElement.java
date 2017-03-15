@@ -24,10 +24,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddVyosRouterFirewallCmd;
@@ -158,8 +157,6 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
         try {
             return manageGuestNetworkWithExternalFirewall(true, network);
         } catch (InsufficientCapacityException capacityException) {
-            // TODO: handle out of capacity exception in more gracefule manner when multiple providers are present for
-            // the network
             s_logger.error("Fail to implement the Vyos Router for network " + network, capacityException);
             return false;
         }

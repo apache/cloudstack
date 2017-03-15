@@ -3,14 +3,12 @@ package com.cloud.network.resource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,7 +44,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
-
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
 import com.trilead.ssh2.ChannelCondition;
@@ -65,12 +62,15 @@ public class VyosRouterResource implements ServerResource{
     private String _privateInterface;
     private static final Logger s_logger = Logger.getLogger(VyosRouterResource.class);
 
-
     private static com.trilead.ssh2.Connection s_sshClient;
 
     private static final String s_vyosShellScript = "#!/bin/vbash\nallParams=\"\\\"'$@'\\\"\"\nsource /opt/vyatta/etc/functions/script-template\n\"'$allParams'\"\n";
     private static final String s_vyosScriptPath="/home/vyos/";
     private static final String s_vyosScriptName="testShellScript.sh";
+
+    protected enum VyosNextIdNumber {
+        ASCENDING, DESCENDING
+    }
 
     protected enum VyosRouterMethod {
         SHELL, HTTPSTUB;
@@ -175,9 +175,7 @@ public class VyosRouterResource implements ServerResource{
             return true;
         } catch (Exception e) {
             try {
-                //System.out.println("In VyosRouterResource.configure(). attempting to disconnect the ssh client. ");
                 if (s_sshClient != null) {
-                    //System.out.println("In VyosRouterResource.configure(). We are connected. Running disconnect. ");
                     s_sshClient.close();
                 }
                 throw new ConfigurationException("Exception of type: "+e.getClass().getName()+" caught. message: "+e.getMessage());
@@ -386,7 +384,8 @@ public class VyosRouterResource implements ServerResource{
         } finally {
             if (!shellCommand.contains("echo") && !shellCommand.contains("chmod") && !shellCommand.contains("show"))
             {
-                System.out.println(tmpOutput);
+                //Uncomment this to see the full shell command being sent to the vyos router.
+                //s_logger.debug(tmpOutput);
             }
         }
     }
@@ -452,7 +451,6 @@ public class VyosRouterResource implements ServerResource{
             String guestVlanGateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
             String cidr = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
             String defaultEgressPolicy = "allow";
-            s_logger.debug("*************************** FIREWALL EGRESS DEFAULT***************************\n"+cmd.FIREWALL_EGRESS_DEFAULT+"\n"+cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT)+"\n\n********************************************");
             if (cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT) == "false" ) {
                 defaultEgressPolicy="deny";
             }
@@ -483,7 +481,6 @@ public class VyosRouterResource implements ServerResource{
             }
 
             requestWithCommit(commandList);
-            System.out.println("Finished Executing commands via requestWithCommit\n***************************************");
             results[i++] = ip.getPublicIp() + " - success";
         } catch (ExecutionException e) {
             s_logger.error(e);
@@ -545,17 +542,7 @@ public class VyosRouterResource implements ServerResource{
         //Get the private network information associated with the current rule.
         String guestVlanTag = cmd.getAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG);
         String guestCidr = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
-        String guestGateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
-        s_logger.debug("***************Printing Firewall Command Variables***************************\n"+cmd.toString()+"\nACCESSDETAILS:");
-        for (String curKey : cmd.accessDetails.keySet()) {
-            s_logger.debug(curKey+" --> "+cmd.getAccessDetail(curKey));
-        }
-        s_logger.debug("\nCONTEXTMAP");
-        for (String curKey : cmd.contextMap.keySet()) {
-            s_logger.debug(curKey+" --> "+cmd.contextMap.get(curKey));
-        }
-        s_logger.debug("\n***************************************");
-
+        //String guestGateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
 
         FirewallRuleTO[] rules = cmd.getRules();
         try {
@@ -662,7 +649,7 @@ public class VyosRouterResource implements ServerResource{
 
  // IMPLEMENTATIONS...
 
-    //FIXME Store the list of public Ips associated with each guest network in the description field of the default ingress rule for the guest network.
+    //Store the list of public Ips associated with each guest network in the description field of the default ingress rule for the guest network.
     public String buildPublicIpList(String firewallRulesetName, String publicIp) throws ExecutionException {
         try {
             ArrayList<String> params = new ArrayList<String>();
@@ -685,18 +672,17 @@ public class VyosRouterResource implements ServerResource{
 
     /*
      * Vyos Firewall Rule-set implementation
-     * In Vyos, each interface can have three different sets of firewall rules in (inbound packets), out (outbound packets),
+     * In Vyos, each interface can have three different sets of firewall rules: in (inbound packets), out (outbound packets),
      * and local (packets whose destination is the router itself). To add firewall rules we must first create rule sets to hold them.
      */
     public boolean manageFirewallRulesets(ArrayList<IVyosRouterCommand> cmdList, VyosRouterPrimative prim, String interfaceName, String privateVlanTag, String trafficType, String defaultEgressPolicy, String publicIp)
             throws ExecutionException {
-        String firewallRulesetName=privateVlanTag+"_"+trafficType;
+        String firewallRulesetName=interfaceName+"_"+trafficType;
         String description="defaultFirewallRule";
         String vlanConfigString="";
         boolean isPrivate=true;
         //Handle firewall for public interfaces
         if (privateVlanTag.isEmpty()) {
-            firewallRulesetName=interfaceName+"_"+trafficType;
             isPrivate=false;
         } else {
             description=buildPublicIpList(firewallRulesetName, publicIp);
@@ -714,7 +700,7 @@ public class VyosRouterResource implements ServerResource{
         // out : applies to packets that are exiting the router bound for a network associated with the interface.
         // local : applies to packets entering the interface whose end point is the router itself.
 
-        //    This means that all packets traversing the router must pass filtering by two firewalls, on "in" and one "out" .
+        //    This means that all packets traversing the router must pass filtering by two firewalls, on "in" and one "out or local" .
         //    The firewalls that are applied to each packet will differ based on the interface at which they enter the router
         //    and the interface at which they leave the router.
 
@@ -731,7 +717,6 @@ public class VyosRouterResource implements ServerResource{
         switch (prim) {
             case CHECK_IF_EXISTS:
             // check if one exists already
-
                 ArrayList<String> params = new ArrayList<String>();
                 params.add("run show configuration commands");
                 String response = request(VyosRouterMethod.SHELL, VyosRouterCommandType.READ, params);
@@ -802,9 +787,7 @@ public class VyosRouterResource implements ServerResource{
     public boolean managePrivateInterface(ArrayList<IVyosRouterCommand> cmdList, VyosRouterPrimative prim, long privateVlanTag, String privateGateway, String defaultEgressPolicy, String publicIp)
         throws ExecutionException {
         String interfaceName = _privateInterface; //genPrivateInterfaceName(privateVlanTag);
-
         switch (prim) {
-
             case CHECK_IF_EXISTS:
                 // check if one exists already
                 //
@@ -819,8 +802,6 @@ public class VyosRouterResource implements ServerResource{
                     s_logger.debug("Private sub-interface does not exist: " + interfaceName +"."+ privateVlanTag +" address: "+ privateGateway);
                     return false;
                 }
-
-
             case ADD:
                 if (managePrivateInterface(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, privateVlanTag, privateGateway, defaultEgressPolicy, publicIp)) {
                     return true;
@@ -837,7 +818,6 @@ public class VyosRouterResource implements ServerResource{
                 manageFirewallRulesets(cmdList, VyosRouterPrimative.ADD, interfaceName, Long.toString(privateVlanTag), "Egress", defaultEgressPolicy, publicIp);
 
                 return true;
-
             case DELETE:
                 if (!managePrivateInterface(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, privateVlanTag, privateGateway, defaultEgressPolicy, publicIp)) {
                     return true;
@@ -850,12 +830,9 @@ public class VyosRouterResource implements ServerResource{
                 // delete vlan and privateGateway ip from private interface
                 ArrayList<String> d_sub_params = new ArrayList<String>();
                 d_sub_params.add("delete interfaces ethernet "+interfaceName+" vif "+privateVlanTag);
-
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, d_sub_params));
 
-
                 return true;
-
             default:
                 s_logger.debug("Unrecognized command.");
                 return false;
@@ -877,9 +854,7 @@ public class VyosRouterResource implements ServerResource{
 
         }
 
-
         switch (prim) {
-
             case CHECK_IF_EXISTS:
                 // check if one exists already
                 ArrayList<String> params = new ArrayList<String>();
@@ -894,8 +869,6 @@ public class VyosRouterResource implements ServerResource{
                     s_logger.debug("Public sub-interface does not exist: " + interfaceName +" "+ publicVlanString +" address: "+ publicIp);
                     return false;
                 }
-
-
             case ADD:
                 if (managePublicInterface(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, publicVlanTag, publicIp, privateVlanTag, defaultEgressPolicy)) {
                     return true;
@@ -914,7 +887,6 @@ public class VyosRouterResource implements ServerResource{
                 manageFirewallRulesets(cmdList, VyosRouterPrimative.ADD, interfaceName, publicVlanString, "local", defaultEgressPolicy, publicIp);
 
                 return true;
-
             case DELETE:
                 if (!managePublicInterface(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, publicVlanTag, publicIp, privateVlanTag, defaultEgressPolicy)) {
                     return true;
@@ -926,7 +898,6 @@ public class VyosRouterResource implements ServerResource{
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, d_sub_params));
 
                 return true;
-
             default:
                 s_logger.debug("Unrecognized command.");
                 return false;
@@ -939,8 +910,6 @@ public class VyosRouterResource implements ServerResource{
      * Source NAT rule implementation
      */
 
-
-
     public boolean manageSrcNatRule(ArrayList<IVyosRouterCommand> cmdList, VyosRouterPrimative prim, GuestNetworkType type, Long publicVlanTag, String publicIp,
             long privateVlanTag, String privateGateway) throws ExecutionException {
 
@@ -949,9 +918,7 @@ public class VyosRouterResource implements ServerResource{
         int sourceRuleNumber=0;
         String cloudstackRuleName= Long.toString(privateVlanTag);
 
-
         switch (prim) {
-
             case CHECK_IF_EXISTS:
                 // check if one exists already
                 sourceRuleNumber=getVyosRuleNumber("set nat source rule ", cloudstackRuleName, true);
@@ -963,23 +930,19 @@ public class VyosRouterResource implements ServerResource{
                     s_logger.debug("Source Nat Rule does not exist.");
                     return false;
                 }
-
             case ADD:
                 if (manageSrcNatRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, type, publicVlanTag, publicIp, privateVlanTag, privateGateway)) {
                     return true;
                 }
 
-                // Build the parameters needed for vyos
-                sourceRuleNumber=getVyosRuleNumber("set nat source rule ", "", true);
                 ArrayList<String> a_params = new ArrayList<String>();
-                a_params.add("set nat source rule "+sourceRuleNumber+" outbound-interface '"+_publicInterface+"'" );
-                a_params.add("set nat source rule "+sourceRuleNumber+" source address '"+privateGateway+"'" );
-                a_params.add("set nat source rule "+sourceRuleNumber+" translation address masquerade" );
-                a_params.add("set nat source rule "+sourceRuleNumber+" description '"+cloudstackRuleName+"'");
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} outbound-interface '"+_publicInterface+"'" );
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} source address '"+privateGateway+"'" );
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} translation address masquerade" );
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} description '"+cloudstackRuleName+"'");
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_params));
 
                 return true;
-
             case DELETE:
                 if (!manageSrcNatRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, type, publicVlanTag, publicIp, privateVlanTag, privateGateway)) {
                     return true;
@@ -992,7 +955,6 @@ public class VyosRouterResource implements ServerResource{
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, d_sub_params));
 
                 return true;
-
             default:
                 s_logger.debug("Unrecognized command.");
                 return false;
@@ -1002,24 +964,16 @@ public class VyosRouterResource implements ServerResource{
     /*
      * Destination NAT rules (Port Forwarding) implementation
      */
-
     public boolean manageDstNatRule(ArrayList<IVyosRouterCommand> cmdList, VyosRouterPrimative prim, PortForwardingRuleTO rule) throws ExecutionException {
         String publicIp = rule.getSrcIp();
         String dstIp= rule.getDstIp();
-
-
-
         String publicInterfaceName=_publicInterface;
         String cloudstackRuleName= Long.toString(rule.getId());
         int destinationRuleNumber=0;
-
         Long publicVlanTag = null;
         long privateVlanTag = 0;
 
-
-
         switch (prim) {
-
             case CHECK_IF_EXISTS:
                 // check if one exists already
                 destinationRuleNumber=getVyosRuleNumber("set nat destination rule ", cloudstackRuleName);
@@ -1031,14 +985,10 @@ public class VyosRouterResource implements ServerResource{
                     s_logger.debug("Destination Nat Rule does not exist.");
                     return false;
                 }
-
             case ADD:
                 if (manageDstNatRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, rule)) {
                     return true;
                 }
-
-                //get vyos destination nat rule number
-                destinationRuleNumber=getVyosRuleNumber("set nat destination rule ", "");
 
                 // build source port range string
                 String protocol = rule.getProtocol();
@@ -1067,21 +1017,20 @@ public class VyosRouterResource implements ServerResource{
                     throw new ExecutionException("Could not add the public Ip");
                 }
                 ArrayList<String> a_params = new ArrayList<String>();
-                a_params.add("set nat destination rule "+destinationRuleNumber+" translation port '"+dstPortRangeString+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" inbound-interface '"+publicInterfaceName+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" protocol '"+protocol+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" translation address '"+dstIp+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" description '"+cloudstackRuleName+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" destination address '"+publicIp+"'" );
+                a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} translation port '"+dstPortRangeString+"'" );
+                a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} inbound-interface '"+publicInterfaceName+"'" );
+                a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} protocol '"+protocol+"'" );
+                a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} translation address '"+dstIp+"'" );
+                a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} description '"+cloudstackRuleName+"'" );
+                a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} destination address '"+publicIp+"'" );
 
                 if (srcPortRangeString != "") {
-                    a_params.add("set nat destination rule "+destinationRuleNumber+" destination port '"+srcPortRangeString+"'" );
+                    a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} destination port '"+srcPortRangeString+"'" );
 
                 }
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_params));
 
                 return true;
-
             case DELETE:
                 if (!manageDstNatRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, rule)) {
                     return true;
@@ -1105,14 +1054,12 @@ public class VyosRouterResource implements ServerResource{
      * Static NAT rule implementation
      */
 
-
     public boolean manageStcNatRule(ArrayList<IVyosRouterCommand> cmdList, VyosRouterPrimative prim, StaticNatRuleTO rule) throws ExecutionException {
         String publicIp = rule.getSrcIp();
         String privateIp = rule.getDstIp();
         String cloudstackRuleName= Long.toString(rule.getId());
         int sourceRuleNumber=0;
         int destinationRuleNumber=0;
-
         String publicInterfaceName=_publicInterface;
 
         //Dummy values for calling managePublicInterface
@@ -1120,7 +1067,6 @@ public class VyosRouterResource implements ServerResource{
         long privateVlanTag = 0;
 
         switch (prim) {
-
             case CHECK_IF_EXISTS:
                 // check if one exists already
                 sourceRuleNumber=getVyosRuleNumber("set nat source rule ", cloudstackRuleName);
@@ -1133,14 +1079,10 @@ public class VyosRouterResource implements ServerResource{
                     s_logger.debug("Static Nat Rule does not exist.");
                     return false;
                 }
-
             case ADD:
                 if (manageStcNatRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, rule)) {
                     return true;
                 }
-                sourceRuleNumber=getVyosRuleNumber("set nat source rule ", "");
-                destinationRuleNumber=getVyosRuleNumber("set nat destination rule ", "");
-
 
                 // Make sure the public IP referenced in this rule exists.
                 if (managePublicInterface(cmdList, VyosRouterPrimative.ADD, publicVlanTag, publicIp+"/32", privateVlanTag, null) == false ) {
@@ -1149,19 +1091,21 @@ public class VyosRouterResource implements ServerResource{
 
                 // add the static nat rule for the public IP
                 ArrayList<String> a_params = new ArrayList<String>();
-                a_params.add("set nat source rule "+sourceRuleNumber+" source address '"+privateIp+"'" );
-                a_params.add("set nat source rule "+sourceRuleNumber+" outbound-interface '"+publicInterfaceName+"'" );
-                a_params.add("set nat source rule "+sourceRuleNumber+" translation address '"+publicIp+"'" );
-                a_params.add("set nat source rule "+sourceRuleNumber+" description '"+cloudstackRuleName+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" inbound-interface '"+publicInterfaceName+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" destination address '"+publicIp+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" translation address '"+privateIp+"'" );
-                a_params.add("set nat destination rule "+destinationRuleNumber+" description '"+cloudstackRuleName+"'" );
-
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.ASCENDING+" }} source address '"+privateIp+"'" );
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.ASCENDING+" }} outbound-interface '"+publicInterfaceName+"'" );
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.ASCENDING+" }} translation address '"+publicIp+"'" );
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.ASCENDING+" }} description '"+cloudstackRuleName+"'" );
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_params));
 
-                return true;
+                ArrayList<String> b_params = new ArrayList<String>();
+                b_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} inbound-interface '"+publicInterfaceName+"'" );
+                b_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} destination address '"+publicIp+"'" );
+                b_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} translation address '"+privateIp+"'" );
+                b_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} description '"+cloudstackRuleName+"'" );
 
+                cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, b_params));
+
+                return true;
             case DELETE:
                 if (!manageStcNatRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, rule)) {
                     return true;
@@ -1175,8 +1119,11 @@ public class VyosRouterResource implements ServerResource{
                 d_sub_params.add("delete nat source rule " +sourceRuleNumber);
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, d_sub_params));
 
+                // Make sure the public IP referenced in this rule is removed.
+                if (managePublicInterface(cmdList, VyosRouterPrimative.DELETE, publicVlanTag, publicIp+"/32", privateVlanTag, null) == false ) {
+                    throw new ExecutionException("Could not add the public Ip");
+                }
                 return true;
-
             default:
                 s_logger.debug("Unrecognized command.");
                 return false;
@@ -1222,20 +1169,11 @@ public class VyosRouterResource implements ServerResource{
         String publicInterfaceFirewallType="";
 
         String cloudstackRuleName="";
-        String privateInterfaceNameString=_privateInterface+" vif "+guestVlanTag;
-        String publicInterfaceNameString=_publicInterface;;
-        String privateFirewallRuleSetName=guestVlanTag+"_"+trafficType;
+        String privateFirewallRuleSetName=_privateInterface+"_"+trafficType;
         String publicFirewallRuleSetName=_publicInterface+"_"+trafficType;
-
-        if (guestVlanTag == null || guestVlanTag.isEmpty()) {
-            privateInterfaceNameString=_privateInterface+" vif "+rule.getSrcVlanTag();
-            privateFirewallRuleSetName=rule.getSrcVlanTag()+"_"+trafficType;
-        }
 
         if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
             cloudstackRuleName = genFirewallRuleName(rule.getId(), rule.getSrcVlanTag());
-            privateInterfaceNameString=_privateInterface+" vif "+rule.getSrcVlanTag();
-            privateFirewallRuleSetName=rule.getSrcVlanTag()+"_"+trafficType;
             privateInterfaceFirewallType="in";
             publicInterfaceFirewallType="out";
         } else { //Ingress
@@ -1245,7 +1183,6 @@ public class VyosRouterResource implements ServerResource{
         }
 
         switch (prim) {
-
             case CHECK_IF_EXISTS:
                 // check if one exists already
                 privateRuleName=getVyosRuleNumber(privateFirewallRuleSetName, cloudstackRuleName);
@@ -1258,92 +1195,87 @@ public class VyosRouterResource implements ServerResource{
                     s_logger.debug("Firewall Rules do not exist: Private: " + privateFirewallRuleSetName +" Public: " + publicFirewallRuleSetName);
                     return false;
                 }
-
             case ADD:
                 if (manageFirewallRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, rule, guestVlanTag, guestCidr)) {
                     return true;
                 }
 
                 //System rules are assigned in descending order. User rules in ascending. This ensures that system rules are applied only if no user rules match.
-                boolean isDescending=false;
+                VyosNextIdNumber ruleNamePlaceholder=VyosNextIdNumber.ASCENDING;
                 if (rule.getType() == FirewallRule.FirewallRuleType.System) {
-                    isDescending=true;
+                    ruleNamePlaceholder=VyosNextIdNumber.DESCENDING;
                 }
-                privateRuleName=getVyosRuleNumber(privateFirewallRuleSetName, "", isDescending);
-                publicRuleName=getVyosRuleNumber(publicFirewallRuleSetName, "", isDescending);
-
-
-                privateNetworkGroupName=privateFirewallRuleSetName+"-"+privateRuleName;
-                publicNetworkGroupName=publicFirewallRuleSetName+"-"+publicRuleName;
-
-                if (privateRuleName == 0 || publicRuleName == 0) {
-                    throw new ExecutionException("Could not determine a valid new Vyos rule number for the firewall rule with Cloudstack Rule Id: "+Long.toString(rule.getId()));
-                }
+                privateNetworkGroupName=privateFirewallRuleSetName+"-{{ "+ruleNamePlaceholder+" }}";
+                publicNetworkGroupName=publicFirewallRuleSetName+"-{{ "+ruleNamePlaceholder+" }}";
 
                 String action = "accept";
-
                 String protocol=rule.getProtocol();
+
+                //Handle the default egress firewall policy
+                if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                    // defaults to 'allow', the deny rules are as follows
+                    if (rule.getType() == FirewallRule.FirewallRuleType.System) {
+                        if (!rule.isDefaultEgressPolicy()) { // default of deny && system rule, so deny
+                            action = "drop";
+                        }
+                    } else {
+                        if (rule.isDefaultEgressPolicy()) { // default is allow && user rule, so deny
+                            action = "drop";
+                        }
+                    }
+                } else if (rule.getType() == FirewallRule.FirewallRuleType.System) {
+                    s_logger.debug("*********************\nSomething Called for the creation of a system INGRESS firewall rule. This is a rule type that is currently not defined in this code:\n "+rule.toString()+"\n***************************");
+                }
+
                 if (protocol.equals(Protocol.ICMP.toString())) {
-                    ArrayList<String> a_params = new ArrayList<String>();
-                    a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" action 'accept'");
+                    ArrayList<String> aParams = new ArrayList<String>();
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} action '"+action+"'");
 
                     if (rule.getIcmpType().equals(-1) || rule.getIcmpCode().equals(-1)) {
                         //allow all icmp types
-                        a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" icmp type-name 'any'");
+                        aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} icmp type-name 'any'");
                     }else {
-                        a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" icmp type '"+rule.getIcmpType()+"'");
-                        a_params.add( "set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" icmp code '"+rule.getIcmpCode()+"'");
+                        aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} icmp type '"+rule.getIcmpType()+"'");
+                        aParams.add( "set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} icmp code '"+rule.getIcmpCode()+"'");
                     }
-                    a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" protocol 'icmp'");
-                    a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" state new 'enable'");
-                    a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" description '"+cloudstackRuleName+"'");
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} protocol 'icmp'");
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} state new 'enable'");
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} description '"+cloudstackRuleName+"'");
 
-                    a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" action 'accept'");
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} action 'accept'");
 
                     if (rule.getIcmpType().equals(-1) || rule.getIcmpCode().equals(-1)) {
                         //allow all icmp types
-                        a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" icmp type-name 'any'");
+                        aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} icmp type-name 'any'");
                     }else {
-                        a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" icmp type '"+rule.getIcmpType()+"'");
-                        a_params.add( "set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" icmp code '"+rule.getIcmpCode()+"'");
+                        aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} icmp type '"+rule.getIcmpType()+"'");
+                        aParams.add( "set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} icmp code '"+rule.getIcmpCode()+"'");
                     }
 
-                    a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" protocol 'icmp'");
-                    a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" state new 'enable'");
-                    a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" description '"+cloudstackRuleName+"'");
-                    cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_params));
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} protocol 'icmp'");
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} state new 'enable'");
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} description '"+cloudstackRuleName+"'");
+
+                 // Create the network-group and associated it with the firewall rule
+                    aParams.add("set firewall group network-group '"+privateNetworkGroupName+"'");
+                    aParams.add("set firewall group network-group '"+publicNetworkGroupName+"'");
+
+                    buildFirewallRuleCidrList(aParams, rule, privateNetworkGroupName, publicNetworkGroupName, ruleNamePlaceholder, privateFirewallRuleSetName, publicFirewallRuleSetName);
+                    cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, aParams));
 
                 }
                 else if (protocol.equalsIgnoreCase(Protocol.TCP.toString()) || protocol.equalsIgnoreCase(Protocol.UDP.toString()) || protocol.equalsIgnoreCase(Protocol.ALL.toString())) {
 
-                    //Handle the default egress firewall policy
-                    if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-                        // defaults to 'allow', the deny rules are as follows
-                        if (rule.getType() == FirewallRule.FirewallRuleType.System) {
-                            if (!rule.isDefaultEgressPolicy()) { // default of deny && system rule, so deny
-                                action = "drop";
-                            }
-                            // This is the call to set the default egress policy.
-                            s_logger.debug("*********************\nSETTING DEFAULT EGRESS POLICY TO "+action+"\n***************************");
-                            //return setDefaultEgressPolicy(cmdList, privateFirewallRuleSetName, publicFirewallRuleSetName, action);
-                        } else {
-                            if (rule.isDefaultEgressPolicy()) { // default is allow && user rule, so deny
-                                action = "drop";
-                            }
-                        }
-                    } else if (rule.getType() == FirewallRule.FirewallRuleType.System) {
-                        s_logger.debug("*********************\nSomething Called for the creation of a system ingress firewall rule:\n "+rule.toString()+"\n***************************");
-                    }
-                    ArrayList<String> a_params = new ArrayList<String>();
-                    a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" action '"+action+"'");
-                    a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" protocol '"+protocol+"'");
-                    a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" state new 'enable'");
-                    a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" description '"+cloudstackRuleName+"'");
+                    ArrayList<String> aParams = new ArrayList<String>();
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} action '"+action+"'");
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} protocol '"+protocol+"'");
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} state new 'enable'");
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} description '"+cloudstackRuleName+"'");
 
-                    a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" action '"+action+"'");
-                    a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" protocol '"+protocol+"'");
-                    a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" state new 'enable'");
-                    a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" description '"+cloudstackRuleName+"'");
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} action '"+action+"'");
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} protocol '"+protocol+"'");
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} state new 'enable'");
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} description '"+cloudstackRuleName+"'");
 
                     // Build source port range. In Vyos these are called destination ports.
                     int[] srcPortRange = rule.getSrcPortRange();
@@ -1354,9 +1286,9 @@ public class VyosRouterResource implements ServerResource{
                         } else {
                             srcPortRangeString = String.valueOf(srcPortRange[0]) + "-" + String.valueOf(srcPortRange[1]);
                         }
-                        a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" destination port '"+srcPortRangeString+"'");
+                        aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} destination port '"+srcPortRangeString+"'");
 
-                        a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" destination port '"+srcPortRangeString+"'");
+                        aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} destination port '"+srcPortRangeString+"'");
                     }
 
                     // Build allowed cidr range
@@ -1364,52 +1296,12 @@ public class VyosRouterResource implements ServerResource{
                     // group names will be the firewall ruleset name and the rule name separated by a dash.
                     // This is to ensure that the names do not collide.
 
-
                     // Create the network-group and associated it with the firewall rule
-                    a_params.add("set firewall group network-group '"+privateNetworkGroupName+"'");
-                    a_params.add("set firewall group network-group '"+publicNetworkGroupName+"'");
+                    aParams.add("set firewall group network-group '"+privateNetworkGroupName+"'");
+                    aParams.add("set firewall group network-group '"+publicNetworkGroupName+"'");
 
 
-                    List<String> ruleSrcCidrList = rule.getSourceCidrList();
-
-                    if (ruleSrcCidrList.size() > 0) { // a cidr was entered, modify as needed...
-                        for (int i = 0; i < ruleSrcCidrList.size(); i++) {
-                            String curCidr="";
-
-                            if (ruleSrcCidrList.get(i).trim().equals("0.0.0.0/0")) { // allow any
-                                if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-                                    curCidr = getPrivateSubnet(rule.getSrcVlanTag());
-                                } else {
-                                    //Do not associate the network group with the firewall rule since it is set to allow all.
-                                    continue;
-                                }
-                            } else {
-                                curCidr = ruleSrcCidrList.get(i).trim();
-                            }
-                            if (curCidr != "") {
-
-                                //Build network group cidrs
-                                a_params.add("set firewall group network-group "+privateNetworkGroupName+" network '"+curCidr+"'");
-                                a_params.add("set firewall group network-group "+publicNetworkGroupName+" network '"+curCidr+"'");
-
-                                //Associate the network group with the firewall rule.
-                                a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" source group network-group '"+privateNetworkGroupName+"'");
-                                a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" source group network-group '"+publicNetworkGroupName+"'");
-
-                            }
-
-                        }
-                    } else { // no cidr was entered, so allow ALL according to firewall rule type
-                        if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-                            a_params.add("set firewall group network-group "+privateNetworkGroupName+" network '"+getPrivateSubnet(rule.getSrcVlanTag())+"'");
-                            a_params.add("set firewall group network-group "+publicNetworkGroupName+" network '"+getPrivateSubnet(rule.getSrcVlanTag())+"'");
-
-                            //Associate the network group with the firewall rule.
-                            a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" source group network-group '"+privateNetworkGroupName+"'");
-                            a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" source group network-group '"+publicNetworkGroupName+"'");
-                        }
-
-                    }
+                    buildFirewallRuleCidrList(aParams, rule, privateNetworkGroupName, publicNetworkGroupName, ruleNamePlaceholder, privateFirewallRuleSetName, publicFirewallRuleSetName);
 
                     // Build destination address
                     if (rule.getSrcIp() != null){
@@ -1421,18 +1313,18 @@ public class VyosRouterResource implements ServerResource{
                             //The public Ip cannot be used in the firewall rules since Vyos performs destination nat before applying any firewall rules.
                             //We must use the guest network cidr instead.
 
-                            //If guestCidr is null we have to derive the guestCidr from the srcVlanTag. I think?
+                            //If guestCidr is null we have to query Vyos for the private subnet associated with this rule.
                             if (guestCidr == null || guestCidr.isEmpty() ) {
-                                guestCidr=getPrivateSubnet(rule.getSrcVlanTag());
+                                guestCidr=getPrivateSubnet();
                             }
-                            a_params.add("set firewall name "+privateFirewallRuleSetName+" rule "+privateRuleName+" destination address '"+guestCidr+"'");
+                            aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} destination address '"+guestCidr+"'");
 
-                            a_params.add("set firewall name "+publicFirewallRuleSetName+" rule "+publicRuleName+" destination address '"+guestCidr+"'");
+                            aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} destination address '"+guestCidr+"'");
                         }
                     }
 
 
-                    cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_params));
+                    cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, aParams));
                 }
                 else {
                     throw new ExecutionException("The protocol is not supported: "+protocol+" supported are: "+Protocol.TCP.toString()+" -- "+Protocol.UDP.toString()+" -- "+Protocol.ALL.toString());
@@ -1440,7 +1332,6 @@ public class VyosRouterResource implements ServerResource{
                 }
 
                 return true;
-
             case DELETE:
                 if (!manageFirewallRule(cmdList, VyosRouterPrimative.CHECK_IF_EXISTS, rule, guestVlanTag, guestCidr)) {
                     return true;
@@ -1454,13 +1345,22 @@ public class VyosRouterResource implements ServerResource{
                 privateNetworkGroupName=privateFirewallRuleSetName+"-"+privateRuleName;
                 publicNetworkGroupName=publicFirewallRuleSetName+"-"+publicRuleName;
 
+
+                // Derive the proper vyos interface names for the private and public networks.
+                Map<String, String> privateInterfaces=getVyosInterfacesWithFirewalls(privateFirewallRuleSetName);
+                Map<String, String> publicInterfaces=getVyosInterfacesWithFirewalls(publicFirewallRuleSetName);
+
                 //Temporarily disassociate the firewall ruleset from its interface so we can delete the firewall rule.
                 ArrayList<String> d_eth_assoc_params = new ArrayList<String>();
-                d_eth_assoc_params.add("delete interface ethernet "+privateInterfaceNameString+" firewall "+privateInterfaceFirewallType);
+                for (String curInterfaceNameString : privateInterfaces.keySet() ) {
+                    d_eth_assoc_params.add("delete interface ethernet "+curInterfaceNameString+" firewall "+privateInterfaceFirewallType);
+                }
 
-                d_eth_assoc_params.add("delete interface ethernet "+publicInterfaceNameString+" firewall "+publicInterfaceFirewallType);
+                for (String curInterfaceNameString : publicInterfaces.keySet() ) {
+                    d_eth_assoc_params.add("delete interface ethernet "+curInterfaceNameString+" firewall "+publicInterfaceFirewallType);
+                }
+
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, d_eth_assoc_params));
-
 
                 // delete the firewall rule
                 ArrayList<String> d_params = new ArrayList<String>();
@@ -1478,9 +1378,14 @@ public class VyosRouterResource implements ServerResource{
 
                 //reassociate the firewall ruleset from its interface.
                 ArrayList<String> a_eth_assoc_params = new ArrayList<String>();
-                a_eth_assoc_params.add("set interface ethernet "+privateInterfaceNameString+" firewall "+privateInterfaceFirewallType+" name "+privateFirewallRuleSetName);
+                for (String curInterfaceNameString : privateInterfaces.keySet() ) {
+                    a_eth_assoc_params.add("set interface ethernet "+curInterfaceNameString+" firewall "+privateInterfaceFirewallType+" name "+privateFirewallRuleSetName);
+                }
 
-                a_eth_assoc_params.add("set interface ethernet "+publicInterfaceNameString+" firewall "+publicInterfaceFirewallType+" name "+publicFirewallRuleSetName);
+                for (String curInterfaceNameString : publicInterfaces.keySet() ) {
+                    a_eth_assoc_params.add("set interface ethernet "+curInterfaceNameString+" firewall "+publicInterfaceFirewallType+" name "+publicFirewallRuleSetName);
+                }
+
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_eth_assoc_params));
 
                 return true;
@@ -1494,8 +1399,6 @@ public class VyosRouterResource implements ServerResource{
     /*
      * Helper config functions
      */
-
-
     private String extractIpAddress(String ipString){
         String IPADDRESS_PATTERN =
                 "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
@@ -1508,13 +1411,14 @@ public class VyosRouterResource implements ServerResource{
             return null;
         }
     }
-    private String getPrivateSubnet(String vlan) throws ExecutionException {
+
+    // This method queries Vyos and returns the subnet for the private network configured for the router.
+    // TODO This will not work if multiple guest networks use the same vyos router.
+    protected String getPrivateSubnet() throws ExecutionException {
         String interfaceName = _privateInterface;
-        // TODO Build the parameters needed for vyos
-        //Query Vyos to get the ip for the interface.
 
         ArrayList<String> params = new ArrayList<String>();
-        params.add("ip addr show "+interfaceName+"."+vlan+" | grep inet | grep "+interfaceName+"."+vlan);
+        params.add("ip addr show  | grep "+interfaceName+" | grep inet");
         String response = request(VyosRouterMethod.SHELL, VyosRouterCommandType.READ, params);
         if (response == null || response.isEmpty()) {
             return null;
@@ -1529,8 +1433,75 @@ public class VyosRouterResource implements ServerResource{
         }
     }
 
-    /* Function to make calls to the Vyos Router API. */
-    /* All API calls will end up going through this function. */
+
+    //Sometimes cloudstack does not pass a valid cidr for firewall rules. In that case, use the guest network cidr listed in vyos.
+    // TODO This will not work if multiple guest networks use the same vyos router.
+    private String getPrivateCidr() throws ExecutionException {
+        String interfaceName = _privateInterface;
+
+        ArrayList<String> params = new ArrayList<String>();
+        params.add("ip addr show  | grep "+interfaceName+" | grep inet");
+        String response = request(VyosRouterMethod.SHELL, VyosRouterCommandType.READ, params);
+        if (response == null || response.isEmpty()) {
+            return null;
+        }
+        String cidr= response.split("/")[1].split(" ")[0];
+        if (cidr == null)
+            return null;
+        else {
+
+            return cidr;
+        }
+    }
+
+    //Refactor to remove redundancy in this process since ICMP and TCP/UDP both use this code. This builds our list of cidrs associated with the
+    //given firewall rule and creates the vyos commands necessary to implement them.
+    private void buildFirewallRuleCidrList(ArrayList<String> aParams, FirewallRuleTO rule, String privateNetworkGroupName, String publicNetworkGroupName, VyosNextIdNumber ruleNamePlaceholder, String privateFirewallRuleSetName, String publicFirewallRuleSetName) throws ExecutionException {
+        List<String> ruleSrcCidrList = rule.getSourceCidrList();
+
+        if (ruleSrcCidrList.size() > 0) { // a cidr was entered, modify as needed...
+            for (int i = 0; i < ruleSrcCidrList.size(); i++) {
+                String curCidr=ruleSrcCidrList.get(i).trim();
+                if (curCidr.equals("0.0.0.0/0")) { // allow any
+                    if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                        curCidr = getPrivateSubnet();
+                    } else {
+                        //Do not associate the network group with the firewall rule since it is set to allow all.
+                        continue;
+                    }
+                } else if (curCidr.contains("/0")) {
+                  //The cidr passed in from cloudstack is /0 but contains nonzero ip octets. use cidr from the guest network in vyos.
+                    String defaultCidr=getPrivateCidr();
+                    curCidr = curCidr.split("/")[0]+"/"+defaultCidr;
+                }
+                if (curCidr != null && !curCidr.isEmpty() ) {
+                    //Build network group cidrs
+                    aParams.add("set firewall group network-group "+privateNetworkGroupName+" network '"+curCidr+"'");
+                    aParams.add("set firewall group network-group "+publicNetworkGroupName+" network '"+curCidr+"'");
+
+                    //Associate the network group with the firewall rule.
+                    aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} source group network-group '"+privateNetworkGroupName+"'");
+                    aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} source group network-group '"+publicNetworkGroupName+"'");
+
+                }
+
+            }
+        } else { // no cidr was entered, so allow ALL according to firewall rule type
+            if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                aParams.add("set firewall group network-group "+privateNetworkGroupName+" network '"+getPrivateSubnet()+"'");
+                aParams.add("set firewall group network-group "+publicNetworkGroupName+" network '"+getPrivateSubnet()+"'");
+
+                //Associate the network group with the firewall rule.
+                aParams.add("set firewall name "+privateFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} source group network-group '"+privateNetworkGroupName+"'");
+                aParams.add("set firewall name "+publicFirewallRuleSetName+" rule {{ "+ruleNamePlaceholder+" }} source group network-group '"+publicNetworkGroupName+"'");
+            }
+
+        }
+
+    }
+
+    // Function to make calls to the Vyos Router API.
+    // All API calls will end up going through this function.
     protected String request(VyosRouterMethod method, VyosRouterCommandType commandType, ArrayList<String> commands) throws ExecutionException {
         if (method != VyosRouterMethod.SHELL && method != VyosRouterMethod.HTTPSTUB) {
             throw new ExecutionException("Invalid method used to access the Vyos Router API.");
@@ -1549,8 +1520,6 @@ public class VyosRouterResource implements ServerResource{
         //        execution mode. DANGEROUS!
         // commands is an ordered list of commands to execute.
 
-        //executeVyosRouterCommand("echo -e \""+s_vyosShellScript+"\" > "+s_vyosScriptPath+s_vyosScriptName);
-        //executeVyosRouterCommand("chmod +x "+s_vyosScriptPath+s_vyosScriptName);
         String commandsString="\"";
 
         if (method == VyosRouterMethod.SHELL) {
@@ -1566,9 +1535,34 @@ public class VyosRouterResource implements ServerResource{
             } else if (commandType == VyosRouterCommandType.WRITE) {
                 debug_msg = debug_msg + "Command Type: "+commandType;
 
+
                 //Enter Configuration Mode
                 commandsString=commandsString+" eval "+"configure;";
+
+                int nextId=-1;
+                boolean isDescending=false;
                 for (String curCommand : commands) {
+                    //Get Next available ID number for the current command set.
+                    //For write operations the unique rule id number must be ascertained at write time to eliminate race conditions.
+                    if (nextId == -1) {
+                        if (curCommand.contains("{{ "+VyosNextIdNumber.ASCENDING+" }}") ) {
+                            nextId=getVyosRuleNumber(curCommand, "", isDescending);
+                        } else if (curCommand.contains("{{ "+VyosNextIdNumber.DESCENDING+" }}") ) {
+                            isDescending=true;
+                            nextId=getVyosRuleNumber(curCommand, "", isDescending);
+                        }
+                    }
+                    if (nextId == 0) {
+                        throw new ExecutionException("Could not determine a valid new Vyos rule number for the current Command: "+curCommand);
+                    }
+
+                    if (!isDescending && nextId != -1) {
+                        curCommand=curCommand.replace("{{ "+VyosNextIdNumber.ASCENDING+" }}", String.valueOf(nextId));
+                    } else if (isDescending && nextId != -1) {
+                        curCommand=curCommand.replace("{{ "+VyosNextIdNumber.DESCENDING+" }}", String.valueOf(nextId));
+                    }
+                    //print the current command now that any rule number placeholders have been set to the next available vyos id.
+                    //System.out.println(curCommand);
                     commandsString=commandsString+" eval "+curCommand+";";
                 }
                 //Commit Changes
@@ -1589,8 +1583,6 @@ public class VyosRouterResource implements ServerResource{
             try {
                 //execute the script
                 responseBody=responseBody+executeVyosRouterCommand(vyosShellScript+commandsString+"\"");
-
-
             } catch (Exception e) {
                 throw new ExecutionException(e.getMessage());
             }
@@ -1599,8 +1591,6 @@ public class VyosRouterResource implements ServerResource{
             }
 
         }
-
-
         // a STUB method...
         // This cannot be implemented until the Vyos team releases a production version of VyConf
         if (method == VyosRouterMethod.HTTPSTUB) {
@@ -1609,24 +1599,19 @@ public class VyosRouterResource implements ServerResource{
 
         debug_msg = debug_msg + "\n" + responseBody.replace("\"", "\\\"") + "\n\n"; // test cases
         //s_logger.debug(debug_msg); // this can be commented if we don't want to show each request in the log.
-        if (commandType == VyosRouterCommandType.WRITE) {
-            //System.out.println("Finished call to VyosRouterResource.request(). Debug Messages: "+debug_msg);
-            s_logger.debug(debug_msg); // this can be commented if we don't want to show each request in the log.
-        }
         return responseBody;
     }
 
     private synchronized boolean requestWithCommit(ArrayList<IVyosRouterCommand> commandList) throws ExecutionException {
         // This loops through and executes all the commands in the commandList array.
         //If any commands fail then all commands are rolled back. Else, commands are saved to the vyos boot config
-        s_logger.debug("***************************************\nExecuting "+commandList.size()+" commands via requestWithCommit. numretries: "+_numRetries+" Commands:");
         for (IVyosRouterCommand commands : commandList) {
             int count=1;
             for (String curCommand : commands.getParams() ) {
                 s_logger.debug(count+":"+curCommand);
             }
             count++;
-            s_logger.debug("");
+            s_logger.debug("\n");
         }
 
         boolean result = true;
@@ -1634,8 +1619,13 @@ public class VyosRouterResource implements ServerResource{
         if (commandList.size() > 0) {
             try {
                 // RUN THE SEQUENCE OF COMMANDS
+                //System.out.println("Current List of Commands being sent to Vyos:");
+                //int i=1;
                 for (IVyosRouterCommand command : commandList) {
+                    //System.out.println("Command Set # "+i);
+                    //i++;
                     result = (result && command.execute()); // run commands and modify result boolean
+
                 }
                 //Save the current config
                 saving = true;
@@ -1669,12 +1659,11 @@ public class VyosRouterResource implements ServerResource{
                         throw new ExecutionException("Shell Execution Failed and the changes could not be reverted. Original Error:"+e.getMessage()+" Rollback error: "+f.getMessage());
                     }
                 } else {
-                    throw new ExecutionException("Failed to save the new config to disk. "+e.getMessage());
+                    throw new ExecutionException("Failed to save the new vyos config to disk. "+e.getMessage());
                 }
 
                 throw new ExecutionException(e.getMessage());
             }
-
         } else {
             return true; // nothing to do
         }
@@ -1703,13 +1692,10 @@ public class VyosRouterResource implements ServerResource{
         return false;
     }
 
-
     /* Command Interface */
     public interface IVyosRouterCommand {
         public boolean execute() throws ExecutionException;
         public ArrayList<String> getParams();
-
-
     }
 
     /* Command Abstract */
@@ -1734,8 +1720,6 @@ public class VyosRouterResource implements ServerResource{
         public ArrayList<String> getParams() {
             return this.params;
         }
-
-
     }
 
     /* Implement the default functionality */
@@ -1743,7 +1727,6 @@ public class VyosRouterResource implements ServerResource{
         public DefaultVyosRouterCommand(VyosRouterMethod method, VyosRouterCommandType commandType, ArrayList<String> params) {
             super(method, commandType, params);
         }
-
     }
 
     /*
@@ -1789,55 +1772,42 @@ public class VyosRouterResource implements ServerResource{
     }
 
     //Parses the vyos configuation to return the vyos rule number associated with the current cloudstack rule.
-
-    //If no cloudstackRuleId is passed in then this will pass in the next available vyos rule number
-    //commandIdentificationString is a String that is unique enough to identify all lines associated with the
-    //        type of Vyos command we are looking for (EG Source Nat, Destination Nat, Firewall...etc)
-    private int getVyosRuleNumber(String commandIdentificationString, String cloudstackRuleName) throws ExecutionException {
+    //  If no cloudstackRuleId is passed in then this will return the next available vyos rule number
+    //  commandIdentificationString is a String that is unique enough to identify all lines associated with the
+    //      type of Vyos command we are looking for (EG Source Nat, Destination Nat, Firewall...etc)
+    protected int getVyosRuleNumber(String commandIdentificationString, String cloudstackRuleName) throws ExecutionException {
         return getVyosRuleNumber(commandIdentificationString, cloudstackRuleName, false);
     }
-    private int getVyosRuleNumber(String commandIdentificationString, String cloudstackRuleName, boolean descendingOrder) throws ExecutionException {
+    protected int getVyosRuleNumber(String commandIdentificationString, String cloudstackRuleName, boolean descendingOrder) throws ExecutionException {
         try {
-
+            //Build Identification String add operations.
+            if (commandIdentificationString.contains("{{ "+VyosNextIdNumber.ASCENDING+" }}") || commandIdentificationString.contains("{{ "+VyosNextIdNumber.DESCENDING+" }}") ) {
+                commandIdentificationString=commandIdentificationString.split("rule")[0];
+            }
             ArrayList<String> params = new ArrayList<String>();
             params.add("run show configuration commands");
             String response = request(VyosRouterMethod.SHELL, VyosRouterCommandType.READ, params);
-            //System.out.println("Response:\n"+response);
             BufferedReader bufReader = new BufferedReader(new StringReader(response));
             String line=null;
             TreeMap<Integer, Integer> existingRuleNumbers = new TreeMap<Integer, Integer>();
             while( (line=bufReader.readLine()) != null ) {
                 //return the next highest rule number
-                if (cloudstackRuleName == "" || cloudstackRuleName == null){
-                    /*
-                    System.out.println("No ruleId passed in.  commandIndentificationString: **"+commandIdentificationString+"** curLine: "+line);
-                    if (line.contains(commandIdentificationString)) {
-                        System.out.println("RulesetName matched");
-                    }
-                    if (line.contains("rule")) {
-                        System.out.println("rule keyword matched");
-                    }
-                    */
+                if (cloudstackRuleName == null || cloudstackRuleName == ""){
                     if (line.contains(commandIdentificationString) && line.contains("rule") ){
-                        //System.out.println("In getVyosRuleNumber. curRuleNumber: "+line.split("rule")[1].trim().split(" ")[0]);
                         int curRule=Integer.parseInt(line.split("rule")[1].trim().split(" ")[0]);
                         existingRuleNumbers.put(curRule, curRule);
                     }
                 } else {
-                    //System.out.println("ruleId passed in: "+cloudstackRuleName+"  commandIndentificationString: "+commandIdentificationString);
-                    if (line.contains(commandIdentificationString) && line.contains("description") && line.contains(cloudstackRuleName)) {
+                    if (line.contains(commandIdentificationString) && line.contains("description") && cloudstackRuleName.equals(line.split("'")[1].trim())) {
                         String curRuleNumber=line.split("rule")[1].trim().split(" ")[0];
-                        //System.out.println("In getVyosRuleNumber. curRuleNumber: "+curRuleNumber);
                         return Integer.parseInt(curRuleNumber);
                     }
                 }
             }
 
-            if (cloudstackRuleName == "" || cloudstackRuleName == null){
+            if (cloudstackRuleName == null || cloudstackRuleName == ""){
                 return getNextAvailableVyosRuleNumber( existingRuleNumbers, descendingOrder);
             }
-
-            //System.out.println("Finished getVyosRuleNumber without finding a matching or valid rule number. returning: 0");
 
             return 0;
 
@@ -1848,8 +1818,12 @@ public class VyosRouterResource implements ServerResource{
 
     }
 
-    //To load last known good configuration without error we must temporarily disassociate each interface with its firewall rulests.
-    private Map<String,String> getVyosInterfacesWithFirewalls() throws ExecutionException{
+    //To delete firewalls we must first dissassociate the firewall from all interfaces that use it.
+    //  If no firewall name is passed in then return all interfaces that have firewalls associated with them.
+    private Map<String,String> getVyosInterfacesWithFirewalls() throws ExecutionException {
+        return getVyosInterfacesWithFirewalls("");
+    }
+    private Map<String,String> getVyosInterfacesWithFirewalls(String firewallName) throws ExecutionException {
         try {
             ArrayList<String> params = new ArrayList<String>();
             params.add("run show configuration commands");
@@ -1860,11 +1834,13 @@ public class VyosRouterResource implements ServerResource{
             String line=null;
             while( (line=bufReader.readLine()) != null ) {
                 if (line.trim().contains("set interfaces") && line.trim().contains("firewall") ) {
+                    String vyosFirewallName=line.trim().split("'")[1];
+                    String vyosInterfaceName=line.trim().split(" ")[3];
                     if (line.trim().contains("vif")) {
-                        String vlanInterface= line.trim().split(" ")[3]+" vif "+line.trim().split(" ")[5];
-                        interfacesWithFirewalls.put(vlanInterface, vlanInterface);
-                    } else {
-                        interfacesWithFirewalls.put(line.trim().split(" ")[3], line.trim().split(" ")[3]);
+                        vyosInterfaceName=line.trim().split(" ")[3]+" vif "+line.trim().split(" ")[5];
+                    }
+                    if (firewallName.isEmpty() || (!vyosInterfaceName.isEmpty() && firewallName.equals(vyosFirewallName) ) ) {
+                        interfacesWithFirewalls.put(vyosInterfaceName, vyosFirewallName);
                     }
                 }
             }
@@ -1874,8 +1850,6 @@ public class VyosRouterResource implements ServerResource{
         }
 
     }
-
-
 
     @Override
     public void setName(String name) {

@@ -5675,53 +5675,12 @@
                                         privateinterface: {
                                             label: 'label.private.interface',
                                             docID: 'helpVyosRouterPrivateInterface'
-                                        },
-                                        //usageinterface: {
-                                        //  label: 'Usage interface',
-                                        //  docID: 'helpVyosRouterUsageInterface'
-                                        //},
-                                        numretries: {
-                                            label: 'label.numretries',
-                                            defaultValue: '2',
-                                            docID: 'helpVyosRouterRetries'
-                                        },
+                                        },                                        
                                         timeout: {
                                             label: 'label.timeout',
                                             defaultValue: '300',
                                             docID: 'helpVyosRouterTimeout'
-                                        },
-                                        // inline: {
-                                        //   label: 'Mode',
-                                        //   docID: 'helpVyosRouterMode',
-                                        //   select: function(args) {
-                                        //     var items = [];
-                                        //     items.push({id: "false", description: "side by side"});
-                                        //     items.push({id: "true", description: "inline"});
-                                        //     args.response.success({data: items});
-                                        //   }
-                                        // },
-                                        //publicnetwork: {
-                                        //    label: 'label.public.network',
-                                        //    defaultValue: 'untrust',
-                                        //    docID: 'helpPaloAltoPublicNetwork'
-                                        //},
-                                        //privatenetwork: {
-                                        //    label: 'label.private.network',
-                                        //    defaultValue: 'trust',
-                                        //    docID: 'helpPaloAltoPrivateNetwork'
-                                        //},
-                                        //pavr: {
-                                        //    label: 'label.virtual.router',
-                                        //    docID: 'helpPaloAltoVirtualRouter'
-                                        //},
-                                        //patp: {
-                                        //    label: 'label.PA.threat.profile',
-                                        //    docID: 'helpPaloAltoThreatProfile'
-                                        //},
-                                        //palp: {
-                                        //    label: 'label.PA.log.profile',
-                                        //    docID: 'helpPaloAltoLogProfile'
-                                        //},
+                                        },                                        
                                         capacity: {
                                             label: 'label.capacity',
                                             validation: {
@@ -12980,44 +12939,11 @@
                                     },
                                     privateinterface: {
                                         label: 'label.private.interface'
-                                    },
-                                    //usageinterface: {
-                                    //  label: 'label.usage.interface'
-                                    //},
-                                    numretries: {
-                                        label: 'label.numretries',
-                                        defaultValue: '2'
-                                    },
+                                    },                                    
                                     timeout: {
                                         label: 'label.timeout',
                                         defaultValue: '300'
-                                    },
-                                    // inline: {
-                                    //   label: 'Mode',
-                                    //   select: function(args) {
-                                    //     var items = [];
-                                    //     items.push({id: "false", description: "side by side"});
-                                    //     items.push({id: "true", description: "inline"});
-                                    //     args.response.success({data: items});
-                                    //   }
-                                    // },
-                                    //publicnetwork: {
-                                    //    label: 'label.public.network',
-                                    //    defaultValue: 'untrust'
-                                    //},
-                                    //privatenetwork: {
-                                    //    label: 'label.private.network',
-                                    //    defaultValue: 'trust'
-                                    //},
-                                    //pavr: {
-                                    //    label: 'label.virtual.router'
-                                    //},
-                                    //patp: {
-                                    //    label: 'label.PA.threat.profile'
-                                    //},
-                                    //palp: {
-                                    //    label: 'label.PA.log.profile'
-                                    //},
+                                    },                                    
                                     capacity: {
                                         label: 'label.capacity',
                                         validation: {
