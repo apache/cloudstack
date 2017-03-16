@@ -1464,7 +1464,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String getBroadcastUriFromBridge(final String brName) {
         final String pif = matchPifFileInDirectory(brName);
-        final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)");
+        final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)(\\D*)(\\d*)");
         final Matcher matcher = pattern.matcher(pif);
         s_logger.debug("getting broadcast uri for pif " + pif + " and bridge " + brName);
         if(matcher.find()) {
@@ -1472,7 +1472,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
             }
             else{
-                if (!matcher.group(4).isEmpty()) {
+                if (!matcher.group(6).isEmpty()) {
+                    return BroadcastDomainType.Vlan.toUri(matcher.group(6)).toString();
+                } else if (!matcher.group(4).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
                 } else {
                     //untagged or not matching (eth|bond|team)#.#
