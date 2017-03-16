@@ -407,10 +407,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("File:// type urls are currently unsupported");
             }
             UriUtils.validateUrl(format, url);
-            // surround the following with a check for a global setting that people can set when their MS does not have internet access
-            if (!Boolean.FALSE.equals(VolumeUrlCheck.value())) {
-                // the condition seems strangely reversed and is to indicate that it is the default that has not been changed
-                // check URL existence
+            if (VolumeUrlCheck.value()) { // global setting that can be set when their MS does not have internet access
                 UriUtils.checkUrlExistence(url);
             }
             // Check that the resource limit for secondary storage won't be exceeded
