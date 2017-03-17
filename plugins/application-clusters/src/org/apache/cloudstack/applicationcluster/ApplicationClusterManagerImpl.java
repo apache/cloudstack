@@ -17,9 +17,6 @@ package org.apache.cloudstack.applicationcluster;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.CapacityManager;
-import org.apache.cloudstack.applicationcluster.dao.ApplicationClusterDao;
-import org.apache.cloudstack.applicationcluster.dao.ApplicationClusterDetailsDao;
-import org.apache.cloudstack.applicationcluster.dao.ApplicationClusterVmMapDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -39,6 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
@@ -51,7 +49,6 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.firewall.FirewallService;
-import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -118,6 +115,9 @@ import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.response.ApplicationClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.applicationcluster.dao.ApplicationClusterDao;
+import org.apache.cloudstack.applicationcluster.dao.ApplicationClusterDetailsDao;
+import org.apache.cloudstack.applicationcluster.dao.ApplicationClusterVmMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -132,13 +132,12 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
-import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-//SubjectKeyIdentifierStructure;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.FlywayException;
 import org.joda.time.DateTime;
@@ -161,9 +160,9 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.UnknownHostException;
 import java.net.Socket;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -194,6 +193,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+//SubjectKeyIdentifierStructure;
 
 @Local(value = {ApplicationClusterManager.class})
 public class ApplicationClusterManagerImpl extends ManagerBase implements ApplicationClusterManager, ApplicationClusterService {
@@ -1003,10 +1004,10 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
             }
             return new DeployDestination(_dcDao.findById(dcId), null, null, null);
         }
-        s_logger.warn(String.format("Cannot find enough capacity for container_cluster(requested cpu=%1$s memory=%2$s)",
-                cpu_requested*clusterSize, ram_requested*clusterSize));
-        throw new InsufficientServerCapacityException(String.format("Cannot find enough capacity for container_cluster(requested cpu=%1$s memory=%2$s)",
-                cpu_requested*clusterSize, ram_requested*clusterSize), DataCenter.class, dcId);
+        String msg = String.format("Cannot find enough capacity for container_cluster(requested cpu=%1$s memory=%2$s)",
+                cpu_requested*clusterSize, ram_requested*clusterSize);
+        s_logger.warn(msg);
+        throw new InsufficientServerCapacityException(msg, DataCenter.class, dcId);
     }
 
     public DeployDestination plan(final long containerClusterId, final long dcId) throws InsufficientServerCapacityException {
@@ -1681,7 +1682,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
 
     // Garbage collector periodically run through the container clusters marked for GC. For each container cluster
     // marked for GC, attempt is made to destroy cluster.
-    public class ContainerClusterGarbageCollector extends ManagedContextRunnable {
+    public class ApplicationClusterGarbageCollector extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
             GlobalLock gcLock = GlobalLock.getInternLock("ApplicationCluster.GC.Lock");
@@ -1700,47 +1701,48 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
 
         public void reallyRun() {
             try {
-                List<ApplicationClusterVO> containerClusters = _applicationClusterDao.findContainerClustersToGarbageCollect();
-                for (ApplicationCluster applicationCluster :containerClusters ) {
+                List<ApplicationClusterVO> clusters = _applicationClusterDao.findClustersToGarbageCollect();
+                for (ApplicationCluster cluster :clusters ) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Running container cluster garbage collector on container cluster name:" + applicationCluster.getName());
+                        s_logger.debug("Running application cluster garbage collector on container cluster name:" + cluster.getName());
                     }
                     try {
-                        if (cleanupContainerClusterResources(applicationCluster.getId())) {
+                        if (cleanupContainerClusterResources(cluster.getId())) {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Container cluster: " + applicationCluster.getName() + " is successfully garbage collected");
+                                s_logger.debug("Application cluster: " + cluster.getName() + " is successfully garbage collected");
                             }
                         } else {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Container cluster: " + applicationCluster.getName() + " failed to get" +
+                                s_logger.debug("Application cluster: " + cluster.getName() + " failed to get" +
                                         " garbage collected. Will be attempted to garbage collected in next run");
                             }
                         }
                     } catch (RuntimeException e) {
-                        s_logger.debug("Faied to destroy container cluster name:" + applicationCluster.getName() + " during GC due to " + e);
+                        s_logger.debug("Faied to destroy application cluster name:" + cluster.getName() + " during GC due to " + e);
                         // proceed furhter with rest of the container cluster garbage collection
                     } catch (Exception e) {
-                        s_logger.debug("Faied to destroy container cluster name:" + applicationCluster.getName() + " during GC due to " + e);
+                        s_logger.debug("Faied to destroy application cluster name:" + cluster.getName() + " during GC due to " + e);
                         // proceed furhter with rest of the container cluster garbage collection
                     }
                 }
             } catch (Exception e) {
-                s_logger.warn("Caught exception while running container cluster gc: ", e);
+                s_logger.warn("Caught exception while running application cluster gc: ", e);
             }
         }
     }
 
-    /* Container cluster scanner checks if the container cluster is in desired state. If it detects container cluster
-       is not in desired state, it will trigger an event and marks the container cluster to be 'Alert' state. For e.g a
-       container cluster in 'Running' state should mean all the cluster of node VM's in the custer should be running and
-       number of the node VM's should be of cluster size, and the master node VM's is running. It is possible due to
-       out of band changes by user or hosts going down, we may end up one or more VM's in stopped state. in which case
-       scanner detects these changes and marks the cluster in 'Alert' state. Similarly cluster in 'Stopped' state means
-       all the cluster VM's are in stopped state any mismatch in states should get picked up by container cluster and
-       mark the container cluster to be 'Alert' state. Through recovery API, or reconciliation clusters in 'Alert' will
-       be brought back to known good state or desired state.
+    /**
+     * The ApplicationClusterStatusScanner checks if the application cluster is in the desired state. If it detects this application cluster
+     * is not in the desired state, it will trigger an event and marks the application cluster to be 'Alert' state. For e.g an
+     * application cluster in 'Running' state this means all the cluster's VM's of type Node should be running and
+     * the number of node VM's should be the same as the cluster size, and the master node VM is running. It is possible due, to
+     * out of band changes by the user or the hosts going down, we may end up one or more VM's in stopped state. in which case
+     * the scanner detects these changes and marks the cluster in 'Alert' state. Similarly a cluster in 'Stopped' state means
+     * all the cluster VM's are in stopped state and any mismatch in states should get picked up by the scanner and it will then
+     * mark the application cluster to be in the 'Alert' state. Through recovery or reconciliation, clusters in 'Alert' will
+     * be brought back to a known good or desired state.
      */
-    public class ContainerClusterStatusScanner extends ManagedContextRunnable {
+    public class ApplicationClusterStatusScanner extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
             GlobalLock gcLock = GlobalLock.getInternLock("ApplicationCluster.State.Scanner.Lock");
@@ -1760,30 +1762,30 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
         public void reallyRun() {
             try {
 
-                // run through container clusters in 'Running' state and ensure all the VM's are Running in the cluster
-                List<ApplicationClusterVO> runningContainerClusters = _applicationClusterDao.findContainerClustersInState(ApplicationCluster.State.Running);
-                for (ApplicationCluster applicationCluster : runningContainerClusters ) {
+                // run through the list of application clusters in 'Running' state and ensure all the VM's are Running in the cluster
+                List<ApplicationClusterVO> runningClusters = _applicationClusterDao.findClustersInState(ApplicationCluster.State.Running);
+                for (ApplicationCluster cluster : runningClusters ) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Running container cluster state scanner on container cluster name:" + applicationCluster.getName());
+                        s_logger.debug("Running application cluster state scanner on cluster:" + cluster.getName() + " for state " + ApplicationCluster.State.Starting);
                     }
                     try {
-                        if (!isClusterInDesiredState(applicationCluster, VirtualMachine.State.Running)) {
-                            stateTransitTo(applicationCluster.getId(), ApplicationCluster.Event.FaultsDetected);
+                        if (!isClusterInDesiredState(cluster, VirtualMachine.State.Running)) {
+                            stateTransitTo(cluster.getId(), ApplicationCluster.Event.FaultsDetected);
                         }
                     } catch (Exception e) {
-                        s_logger.warn("Failed to run through VM states of container cluster due to " + e);
+                        s_logger.warn("Failed to run through VM states of application cluster due to " + e);
                     }
                 }
 
                 // run through container clusters in 'Stopped' state and ensure all the VM's are Stopped in the cluster
-                List<ApplicationClusterVO> stoppedContainerClusters = _applicationClusterDao.findContainerClustersInState(ApplicationCluster.State.Stopped);
-                for (ApplicationCluster applicationCluster : stoppedContainerClusters ) {
+                List<ApplicationClusterVO> stoppedClusters = _applicationClusterDao.findClustersInState(ApplicationCluster.State.Stopped);
+                for (ApplicationCluster cluster : stoppedClusters ) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Running container cluster state scanner on container cluster name:" + applicationCluster.getName());
+                        s_logger.debug("Running application cluster state scanner on cluster:" + cluster.getName() + " for state " + ApplicationCluster.State.Stopped);
                     }
                     try {
-                        if (!isClusterInDesiredState(applicationCluster, VirtualMachine.State.Stopped)) {
-                            stateTransitTo(applicationCluster.getId(), ApplicationCluster.Event.FaultsDetected);
+                        if (!isClusterInDesiredState(cluster, VirtualMachine.State.Stopped)) {
+                            stateTransitTo(cluster.getId(), ApplicationCluster.Event.FaultsDetected);
                         }
                     } catch (Exception e) {
                         s_logger.warn("Failed to run through VM states of container cluster due to " + e);
@@ -1791,26 +1793,26 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
                 }
 
                 // run through container clusters in 'Alert' state and reconcile state as 'Running' if the VM's are running
-                List<ApplicationClusterVO> alertContainerClusters = _applicationClusterDao.findContainerClustersInState(ApplicationCluster.State.Alert);
-                for (ApplicationCluster applicationCluster : alertContainerClusters ) {
+                List<ApplicationClusterVO> clustersInAlertState = _applicationClusterDao.findClustersInState(ApplicationCluster.State.Alert);
+                for (ApplicationCluster cluster : clustersInAlertState ) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Running container cluster state scanner on container cluster name:" + applicationCluster.getName());
+                        s_logger.debug("Running application cluster state scanner on cluster:" + cluster.getName() + " for state " + ApplicationCluster.State.Alert);
                     }
                     try {
-                        if (isClusterInDesiredState(applicationCluster, VirtualMachine.State.Running)) {
+                        if (isClusterInDesiredState(cluster, VirtualMachine.State.Running)) {
                             // mark the cluster to be running
-                            stateTransitTo(applicationCluster.getId(), ApplicationCluster.Event.RecoveryRequested);
-                            stateTransitTo(applicationCluster.getId(), ApplicationCluster.Event.OperationSucceeded);
+                            stateTransitTo(cluster.getId(), ApplicationCluster.Event.RecoveryRequested);
+                            stateTransitTo(cluster.getId(), ApplicationCluster.Event.OperationSucceeded);
                         }
                     } catch (Exception e) {
-                        s_logger.warn("Failed to run through VM states of container cluster status scanner due to " + e);
+                        s_logger.warn("Failed to run through VM states of application cluster status scanner due to " + e);
                     }
                 }
 
             } catch (RuntimeException e) {
-                s_logger.warn("Caught exception while running container cluster state scanner.", e);
+                s_logger.warn("Caught exception while running application cluster state scanner.", e);
             } catch (Exception e) {
-                s_logger.warn("Caught exception while running container cluster state scanner.", e);
+                s_logger.warn("Caught exception while running application cluster state scanner.", e);
             }
         }
     }
@@ -1824,7 +1826,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
             VMInstanceVO vm = _vmInstanceDao.findByIdIncludingRemoved(clusterVm.getVmId());
             if (vm.getState() != state) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Found VM in the container cluster: " + applicationCluster.getName() +
+                    s_logger.debug("Found VM in the application cluster: " + applicationCluster.getName() +
                             " in state: " + vm.getState().toString() + " while expected to be in state: " + state.toString() +
                             " So moving the cluster to Alert state for reconciliation.");
                 }
@@ -1833,6 +1835,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
         }
 
         // check cluster is running at desired capacity include master node as well, so count should be cluster size + 1
+        // TODO size + 1 is very topology specific and needs adressing This should be an accumulation of nodetype.count for each nodetype
         if (clusterVMs.size() != (applicationCluster.getNodeCount() + 1)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found only " + clusterVMs.size() + " VM's in the container cluster: " + applicationCluster.getName() +
@@ -1847,8 +1850,8 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
 
     @Override
     public boolean start() {
-        _gcExecutor.scheduleWithFixedDelay(new ContainerClusterGarbageCollector(), 300, 300, TimeUnit.SECONDS);
-        _stateScanner.scheduleWithFixedDelay(new ContainerClusterStatusScanner(), 300, 30, TimeUnit.SECONDS);
+        _gcExecutor.scheduleWithFixedDelay(new ApplicationClusterGarbageCollector(), 300, 300, TimeUnit.SECONDS);
+        _stateScanner.scheduleWithFixedDelay(new ApplicationClusterStatusScanner(), 300, 30, TimeUnit.SECONDS);
 
         // run the data base migration.
         Properties dbProps = DbProperties.getDbProperties();
@@ -1863,7 +1866,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
             flyway.setDataSource(dbUrl, cloudUsername, cloudPassword);
 
             // name the meta table as sb_ccs_schema_version
-            flyway.setTable("sb_ccs_schema_version");
+            flyway.setTable("application_cluster_service_version");
 
             // make the existing cloud DB schema and data as baseline
             flyway.setBaselineOnMigrate(true);
@@ -1872,7 +1875,7 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
             // apply CCS schema
             flyway.migrate();
         } catch (FlywayException fwe) {
-            s_logger.error("Failed to run migration on Cloudstack Container Service database due to " + fwe);
+            s_logger.error("Failed to run migration on Cloudstack Application Cluster Service database due to " + fwe);
             return false;
         }
 
@@ -1883,8 +1886,8 @@ public class ApplicationClusterManagerImpl extends ManagerBase implements Applic
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         _configParams = params;
-        _gcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Container-Cluster-Scavenger"));
-        _stateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Container-Cluster-State-Scanner"));
+        _gcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Application-Cluster-Scavenger"));
+        _stateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Application-Cluster-State-Scanner"));
 
         final KeystoreVO keyStoreVO = keystoreDao.findByName(CCS_ROOTCA_KEYPAIR);
         if (keyStoreVO == null) {
