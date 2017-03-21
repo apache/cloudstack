@@ -20,13 +20,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.utils.db.JoinBuilder;
 import org.springframework.stereotype.Component;
 
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -35,6 +36,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> implements LoadBalancerDao {
     private final SearchBuilder<LoadBalancerVO> ListByIp;
     protected final SearchBuilder<LoadBalancerVO> TransitionStateSearch;
+    protected final GenericSearchBuilder<LoadBalancerVO, Long> CountActive;
 
     @Inject
     protected FirewallRulesCidrsDao _portForwardingRulesCidrsDao;
@@ -53,6 +55,12 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         TransitionStateSearch.and("state", TransitionStateSearch.entity().getState(), Op.IN);
         TransitionStateSearch.and("scheme", TransitionStateSearch.entity().getScheme(), Op.EQ);
         TransitionStateSearch.done();
+
+        CountActive = createSearchBuilder(Long.class);
+        CountActive.select(null, SearchCriteria.Func.COUNT, CountActive.entity().getId());
+        CountActive.and("ipAddressId", CountActive.entity().getSourceIpAddressId(), Op.EQ);
+        CountActive.and("state", CountActive.entity().getState(), Op.IN);
+        CountActive.done();
     }
 
     @Override
@@ -60,6 +68,15 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         SearchCriteria<LoadBalancerVO> sc = ListByIp.create();
         sc.setParameters("ipAddressId", ipAddressId);
         return listBy(sc);
+    }
+
+    @Override
+    public long countActiveByIpAddress(long ipAddressId) {
+        SearchCriteria<Long> sc = CountActive.create();
+        sc.setParameters("sourceIp", ipAddressId);
+        sc.setParameters("state", State.Add.toString(), State.Active.toString());
+        List<Long> results = customSearch(sc, null);
+        return results.get(0);
     }
 
     @Override

@@ -43,7 +43,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import org.apache.cloudstack.api.InternalIdentity;
@@ -539,19 +538,19 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         List<VspStaticNat> vspStaticNatDetails = new ArrayList<VspStaticNat>();
         for (StaticNat staticNat : rules) {
-            IPAddressVO sourceNatIp = _ipAddressDao.findById(staticNat.getSourceIpAddressId());
-            VlanVO sourceNatVlan = _vlanDao.findById(sourceNatIp.getVlanId());
-            checkVlanUnderlayCompatibility(sourceNatVlan);
+            IPAddressVO staticNatIp = _ipAddressDao.findById(staticNat.getSourceIpAddressId());
+            VlanVO staticNatVlan = _vlanDao.findById(staticNatIp.getVlanId());
+            checkVlanUnderlayCompatibility(staticNatVlan);
 
             if (!staticNat.isForRevoke()) {
                 final List<FirewallRuleVO> firewallRules = _firewallRulesDao.listByIpAndNotRevoked(staticNat.getSourceIpAddressId());
                 for (FirewallRuleVO firewallRule : firewallRules) {
-                    _nuageVspEntityBuilder.buildVspAclRule(firewallRule, config, sourceNatIp);
+                    _nuageVspEntityBuilder.buildVspAclRule(firewallRule, config, staticNatIp);
                 }
             }
 
             NicVO nicVO = _nicDao.findByIp4AddressAndNetworkId(staticNat.getDestIpAddress(), staticNat.getNetworkId());
-            VspStaticNat vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(staticNat.isForRevoke(), sourceNatIp, sourceNatVlan, nicVO);
+            VspStaticNat vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(staticNat.isForRevoke(), staticNatIp, staticNatVlan, nicVO);
             vspStaticNatDetails.add(vspStaticNat);
 
 
@@ -663,16 +662,15 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Override
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         List<VpcOfferingServiceMapVO> vpcOfferingServices = _vpcOfferingSrvcDao.listByVpcOffId(vpc.getVpcOfferingId());
-        Multimap<Service, Provider> supportedVpcServices = NuageVspManagerImpl.NUAGE_VSP_VPC_SERVICE_MAP;
         for (VpcOfferingServiceMapVO vpcOfferingService : vpcOfferingServices) {
             Network.Service service = Network.Service.getService(vpcOfferingService.getService());
-            if (!supportedVpcServices.containsKey(service)) {
+            if (!NuageVspManagerImpl.SUPPORTED_NUAGE_VSP_VPC_SERVICE_MAP.containsKey(service)) {
                 s_logger.warn(String.format("NuageVsp doesn't support service %s for VPCs", service.getName()));
                 return false;
             }
 
             Network.Provider provider = Network.Provider.getProvider(vpcOfferingService.getProvider());
-            if (!supportedVpcServices.containsEntry(service, provider)) {
+            if (!NuageVspManagerImpl.SUPPORTED_NUAGE_VSP_VPC_SERVICE_MAP.containsEntry(service, provider)) {
                 s_logger.warn(String.format("NuageVsp doesn't support provider %s for service %s for VPCs", provider.getName(), service.getName()));
                 return false;
             }

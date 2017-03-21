@@ -103,6 +103,7 @@
     <module>storage/volume/sample</module>
     <module>alert-handlers/snmp-alerts</module>
     <module>alert-handlers/syslog-alerts</module>
+    <module>network-elements/vpc-inline-loadbalancer</module>
     <module>network-elements/internal-loadbalancer</module>
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>

@@ -460,3 +460,28 @@ CREATE TABLE `cloud`.`nic_extra_dhcp_options` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nic_extra_dhcp_options_nic_id` FOREIGN KEY (`nic_id`) REFERENCES `nics`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- CLOUDSTACK-9282: VpcInlineLb
+INSERT INTO `cloud`.`physical_network_service_providers`(`uuid`, `physical_network_id`, `provider_name`, `state`, `destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`, `firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`, `port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`, `networkacl_service_provided`)
+  SELECT UUID(), n.id, 'VpcInlineLbVm', 'Disabled', 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0
+  FROM `physical_network` n
+    JOIN `physical_network_isolation_methods` nim  ON (nim.physical_network_id = n.id)
+    LEFT JOIN `physical_network_service_providers` nsp ON (nsp.physical_network_id = n.id AND provider_name = 'VpcInlineLbVm' AND nsp.removed IS NULL)
+  WHERE n.removed IS NULL AND nim.isolation_method = 'VSP' AND nsp.id IS NULL;
+
+-- CLOUDSTACK-9282: VpcInlineLb
+CREATE TABLE IF NOT EXISTS `cloud`.`vpc_inline_load_balancer_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) DEFAULT NULL,
+  `ip_address_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `nic_id` bigint(20) unsigned NOT NULL,
+  `nic_secondary_ip_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`ip_address_id`),
+  UNIQUE KEY (`nic_secondary_ip_id`),
+  CONSTRAINT `fk_vpc_inline_lb_map__nic_id` FOREIGN KEY(`nic_id`) REFERENCES `nics`(`id`),
+  CONSTRAINT `fk_vpc_inline_lb_map__nic_secondary_ip_id` FOREIGN KEY(`nic_secondary_ip_id`) REFERENCES `nic_secondary_ips`(`id`),
+  CONSTRAINT `fk_vpc_inline_lb_map__vm_id` FOREIGN KEY(`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vpc_inline_lb_map__ip_address_id` FOREIGN KEY(`ip_address_id`) REFERENCES `user_ip_address`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7762 DEFAULT CHARSET=utf8;

@@ -211,7 +211,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
     };
 
     public enum Type {
-        User(false), DomainRouter(true), ConsoleProxy(true), SecondaryStorageVm(true), ElasticIpVm(true), ElasticLoadBalancerVm(true), InternalLoadBalancerVm(true),
+        User(false), DomainRouter(true), ConsoleProxy(true), SecondaryStorageVm(true), ElasticIpVm(true), ElasticLoadBalancerVm(true), InternalLoadBalancerVm(true), VpcInlineLoadBalancerVm(true),
         NetScalerVm(true),
 
         /*

@@ -1704,7 +1704,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
             for (final IpAddressTO ip : ips) {
-                ip.setNicDevId(broadcastUriToNicNum.get(ip.getBroadcastUri()));
+                if(ip.getNicDevId() == null) {
+                    ip.setNicDevId(broadcastUriToNicNum.get(ip.getBroadcastUri()));
+                }
             }
 
             return new ExecutionResult(true, null);

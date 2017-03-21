@@ -545,7 +545,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         policyList.add(new LbStickinessPolicy(cmd.getStickinessMethodName(), lbpolicy.getParams()));
         Ip sourceIp = getSourceIp(loadBalancer);
         LoadBalancingRule lbRule =
-            new LoadBalancingRule(loadBalancer, getExistingDestinations(lbpolicy.getId()), policyList, null, sourceIp, null, loadBalancer.getLbProtocol());
+            new LoadBalancingRule(loadBalancer, getExistingDestinations(loadBalancer.getId()), policyList, null, sourceIp, null, loadBalancer.getLbProtocol());
         if (!validateLbRule(lbRule)) {
             throw new InvalidParameterValueException("Failed to create Stickiness policy: Validation Failed " + cmd.getLbRuleId());
         }

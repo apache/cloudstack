@@ -2405,8 +2405,7 @@ class LoadBalancerRule:
         """Delete load balancing rule"""
         cmd = deleteLoadBalancerRule.deleteLoadBalancerRuleCmd()
         cmd.id = self.id
-        apiclient.deleteLoadBalancerRule(cmd)
-        return
+        return apiclient.deleteLoadBalancerRule(cmd)
 
     def assign(self, apiclient, vms=None, vmidipmap=None):
         """Assign virtual machines to load balancing rule"""
@@ -2416,8 +2415,7 @@ class LoadBalancerRule:
             cmd.vmidipmap = vmidipmap
         if vms:
             cmd.virtualmachineids = [str(vm.id) for vm in vms]
-        apiclient.assignToLoadBalancerRule(cmd)
-        return
+        return apiclient.assignToLoadBalancerRule(cmd)
 
     def remove(self, apiclient, vms=None, vmidipmap=None):
         """Remove virtual machines from load balancing rule"""
@@ -2427,8 +2425,7 @@ class LoadBalancerRule:
             cmd.virtualmachineids = [str(vm.id) for vm in vms]
         if vmidipmap:
             cmd.vmidipmap = vmidipmap
-        apiclient.removeFromLoadBalancerRule(cmd)
-        return
+        return apiclient.removeFromLoadBalancerRule(cmd)
 
     def update(self, apiclient, algorithm=None,
                description=None, name=None, **kwargs):

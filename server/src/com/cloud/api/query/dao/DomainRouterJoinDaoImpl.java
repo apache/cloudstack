@@ -179,6 +179,8 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
         if (router.getRole() == Role.INTERNAL_LB_VM) {
             routerResponse.setObjectName("internalloadbalancervm");
+        } else if (router.getRole() == Role.LB) {
+            routerResponse.setObjectName("loadbalancervm");
         } else {
             routerResponse.setObjectName("router");
         }

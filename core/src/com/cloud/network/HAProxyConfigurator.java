@@ -23,11 +23,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Optional;
+import com.google.common.collect.Iterables;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.log4j.Logger;
+
+import static com.cloud.agent.api.to.LoadBalancerTO.HealthCheckPolicyTO;
+import static com.google.common.base.Predicates.not;
 
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -299,7 +307,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     Example :
           appsession JSESSIONID len 52 timeout 3h
      */
-    private String getLbSubRuleForStickiness(final LoadBalancerTO lbTO) {
+    private String getLbSubRuleForStickiness(final LoadBalancerTO lbTO, MutableBoolean httpbasedStickiness) {
         int i = 0;
 
         if (lbTO.getStickinessPolicies() == null) {
@@ -377,6 +385,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 if (domainSb != null) {
                     sb.append(domainSb).append(" ");
                 }
+                httpbasedStickiness.setValue(true);
             } else if (StickinessMethodType.SourceBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                 /* Default Values */
                 String tablesize = "200k"; // optional
@@ -450,6 +459,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 if (mode != null) {
                     sb.append("mode ").append(mode).append(" ");
                 }
+                httpbasedStickiness.setValue(true);
             } else {
                 /*
                  * Error is silently swallowed.
@@ -466,6 +476,59 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return sb.toString();
     }
 
+    private String getLbSubRuleForHealthCheck(final LoadBalancerTO lbTO, List<String> result, MutableBoolean httpBasedHealthCheck) {
+        // Only support one policy, get the first non-revoked
+        Optional<HealthCheckPolicyTO> maybeHealthCheck = Optional.absent();
+
+        if (ArrayUtils.isNotEmpty(lbTO.getHealthCheckPolicies())) {
+            final List<HealthCheckPolicyTO> ts = Arrays.asList(lbTO.getHealthCheckPolicies());
+            maybeHealthCheck = Iterables.tryFind(ts, not(HealthCheckPolicyTO::isRevoked));
+        }
+
+        if (maybeHealthCheck.isPresent()) {
+
+            HealthCheckPolicyTO healthCheck = maybeHealthCheck.get();
+
+            StringBuilder sb = new StringBuilder();
+
+            final String healthCheckPath = healthCheck.getpingPath();
+
+            if (healthCheckPath != null) {
+                sb.append("\t").append("option httpchk");
+
+                // Enable http check
+                if (!healthCheckPath.isEmpty()) {
+                    httpBasedHealthCheck.setValue(true);
+                    sb.append(" ").append(healthCheckPath);
+                }
+
+                result.add(sb.toString());
+
+                sb = new StringBuilder("\tdefault-server");
+
+                if (healthCheck.getHealthcheckInterval() > 0) {
+                    sb.append(" inter ").append(healthCheck.getHealthcheckInterval()).append("s");
+                }
+                if (healthCheck.getHealthcheckThresshold() > 0) {
+                    sb.append(" rise ").append(healthCheck.getHealthcheckThresshold());
+                }
+                if (healthCheck.getUnhealthThresshold() > 0) {
+                    sb.append(" fall ").append(healthCheck.getUnhealthThresshold());
+                }
+
+                result.add(sb.toString());
+            }
+
+            if (healthCheck.getResponseTime() > 0) {
+                result.add("\ttimeout check " + healthCheck.getResponseTime() + "s");
+            }
+
+            return null;
+        } else {
+            return null;
+        }
+    }
+
     private List<String> getRulesForPool(final LoadBalancerTO lbTO, final boolean keepAliveEnabled) {
         StringBuilder sb = new StringBuilder();
         final String poolName = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
@@ -473,18 +536,25 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final String publicPort = Integer.toString(lbTO.getSrcPort());
         final String algorithm = lbTO.getAlgorithm();
 
-        final List<String> result = new ArrayList<String>();
+        final List<String> result = new LinkedList<String>();
         // add line like this: "listen  65_37_141_30-80 65.37.141.30:80"
         sb = new StringBuilder();
         sb.append("listen ").append(poolName).append(" ").append(publicIP).append(":").append(publicPort);
         result.add(sb.toString());
+
         sb = new StringBuilder();
         sb.append("\t").append("balance ").append(algorithm);
         result.add(sb.toString());
 
+        final MutableBoolean httpBasedHealthCheck = new MutableBoolean(false);
+        final String healthCheckSubRule = getLbSubRuleForHealthCheck(lbTO, result, httpBasedHealthCheck);
+
+        final MutableBoolean httpbasedStickiness = new MutableBoolean(false);
+        final String stickinessSubRule = getLbSubRuleForStickiness(lbTO, httpbasedStickiness);
+
         int i = 0;
         Boolean destsAvailable = false;
-        final String stickinessSubRule = getLbSubRuleForStickiness(lbTO);
+
         final List<String> dstSubRule = new ArrayList<String>();
         final List<String> dstWithCookieSubRule = new ArrayList<String>();
         for (final DestinationTO dest : lbTO.getDestinations()) {
@@ -506,6 +576,11 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             if(lbTO.getLbProtocol() != null && lbTO.getLbProtocol().equals("tcp-proxy")) {
                 sb.append(" send-proxy");
             }
+
+            if (healthCheckSubRule != null) {
+                sb.append(healthCheckSubRule);
+            }
+
             dstSubRule.add(sb.toString());
             if (stickinessSubRule != null) {
                 sb.append(" cookie ").append(dest.getDestIp().replace(".", "_")).append('-').append(dest.getDestPort()).toString();
@@ -514,19 +589,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             destsAvailable = true;
         }
 
-        Boolean httpbasedStickiness = false;
         /* attach stickiness sub rule only if the destinations are available */
-        if (stickinessSubRule != null && destsAvailable == true) {
-            for (final StickinessPolicyTO stickinessPolicy : lbTO.getStickinessPolicies()) {
-                if (stickinessPolicy == null) {
-                    continue;
-                }
-                if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()) ||
-                        StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-                    httpbasedStickiness = true;
-                }
-            }
-            if (httpbasedStickiness) {
+        if (stickinessSubRule != null && destsAvailable) {
+            if (httpbasedStickiness.isTrue()) {
                 result.addAll(dstWithCookieSubRule);
             } else {
                 result.addAll(dstSubRule);
@@ -535,10 +600,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         } else {
             result.addAll(dstSubRule);
         }
+
         if (stickinessSubRule != null && !destsAvailable) {
             s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() + ": Not Applied, cause:  backends are unavailable");
         }
-        if (publicPort.equals(NetUtils.HTTP_PORT) && !keepAliveEnabled || httpbasedStickiness) {
+
+        if (publicPort.equals(NetUtils.HTTP_PORT) && !keepAliveEnabled || httpbasedStickiness.isTrue() || httpBasedHealthCheck.isTrue()) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             result.add(sb.toString());
@@ -572,7 +639,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
     @Override
     public String[] generateConfiguration(final LoadBalancerConfigCommand lbCmd) {
-        final List<String> result = new ArrayList<String>();
+        final List<String> result = new LinkedList<String>();
         final List<String> gSection = Arrays.asList(globalSection);
         //        note that this is overwritten on the String in the static ArrayList<String>
         gSection.set(2, "\tmaxconn " + lbCmd.maxconn);

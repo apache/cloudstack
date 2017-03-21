@@ -411,6 +411,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.vpcName = vpcName;
     }
 
+    public Set<NicResponse> getNics() {
+        return this.nics;
+    }
+
     public void setNics(Set<NicResponse> nics) {
         this.nics = nics;
     }

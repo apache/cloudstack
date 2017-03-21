@@ -25,6 +25,8 @@ import com.cloud.utils.db.GenericDao;
 public interface VirtualRouterProviderDao extends GenericDao<VirtualRouterProviderVO, Long> {
     public VirtualRouterProviderVO findByNspIdAndType(long nspId, Type type);
 
+    public VirtualRouterProviderVO findByNspId(long nspId);
+
     public List<VirtualRouterProviderVO> listByEnabledAndType(boolean enabled, Type type);
 
     public VirtualRouterProviderVO findByIdAndEnabledAndType(long id, boolean enabled, Type type);

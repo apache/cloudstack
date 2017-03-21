@@ -46,7 +46,6 @@ public interface NuageVspManager extends PluggableService {
     String nuageVspSharedNetworkOfferingWithSGServiceName = "DefaultNuageVspSharedNetworkOfferingWithSGService";
 
     String nuageVPCOfferingName = "Nuage VSP VPC Offering";
-
     String nuageVPCOfferingDisplayText = "Nuage VSP VPC Offering";
 
     String nuageDomainTemplateDetailName = "domainTemplateName";

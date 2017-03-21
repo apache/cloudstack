@@ -3313,6 +3313,528 @@
                         }
                     },
 
+                    VpcInlineLbVm: {
+                        id: 'VpcInlineLbVm',
+                        label: 'VpcInlineLbVm',
+                        isMaximized: true,
+                        type: 'detailView',
+                        fields: {
+                            name: {
+                                label: 'label.name'
+                            },
+                            ipaddress: {
+                                label: 'label.ip.address'
+                            },
+                            state: {
+                                label: 'label.status',
+                                indicator: {
+                                    'Enabled': 'on'
+                                }
+                            }
+                        },
+                        tabs: {
+                            network: {
+                                title: 'label.network',
+                                fields: [{
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                }, {
+                                    id: {
+                                        label: 'label.id'
+                                    },
+                                    state: {
+                                        label: 'label.state'
+                                    },
+                                    physicalnetworkid: {
+                                        label: 'label.physical.network.ID'
+                                    },
+                                    destinationphysicalnetworkid: {
+                                        label: 'label.destination.physical.network.id'
+                                    },
+                                    supportedServices: {
+                                        label: 'label.supported.services'
+                                    }
+                                }],
+                                dataProvider: function(args) {
+                                    refreshNspData("VpcInlineLbVm");
+                                    args.response.success({
+                                        actionFilter: virtualRouterProviderActionFilter,
+                                        data: $.extend(nspMap["VpcInlineLbVm"], {
+                                            supportedServices: nspMap["VpcInlineLbVm"].servicelist.join(', ')
+                                        })
+                                    });
+                                }
+                            },
+
+                            instances: {
+                                title: 'label.instances',
+                                listView: {
+                                    label: 'label.virtual.appliances',
+                                    id: 'vpcinlinelbinstances',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        },
+                                        zonename: {
+                                            label: 'label.zone'
+                                        },
+                                        routerType: {
+                                            label: 'label.type'
+                                        },
+                                        state: {
+                                            converter: function(str) {
+                                                // For localization
+                                                return str;
+                                            },
+                                            label: 'label.status',
+                                            indicator: {
+                                                'Running': 'on',
+                                                'Stopped': 'off',
+                                                'Error': 'off'
+                                            }
+                                        }
+                                    },
+                                    dataProvider: function(args) {
+                                        var array1 = [];
+                                        if (args.filterBy != null) {
+                                            if (args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                                                switch (args.filterBy.search.by) {
+                                                    case "name":
+                                                        if (args.filterBy.search.value.length > 0)
+                                                            array1.push("&keyword=" + args.filterBy.search.value);
+                                                        break;
+                                                }
+                                            }
+                                        }
+
+                                        var routers = [];
+                                        $.ajax({
+                                            url: createURL("listVpcInlineLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                                            success: function(json) {
+                                                var items = json.listvpcinlinelbvmsresponse.loadbalancervm ?
+                                                    json.listvpcinlinelbvmsresponse.loadbalancervm : [];
+
+                                                $(items).map(function(index, item) {
+                                                    routers.push(item);
+                                                });
+
+                                                // Get project routers
+                                                $.ajax({
+                                                    url: createURL("listVpcInlineLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                                                    success: function(json) {
+                                                        var items = json.listvpcinlinelbvmsresponse.loadbalancervm ?
+                                                            json.listvpcinlinelbvmsresponse.loadbalancervm : [];
+
+                                                        $(items).map(function(index, item) {
+                                                            routers.push(item);
+                                                        });
+                                                        args.response.success({
+                                                            actionFilter: internallbinstanceActionfilter,
+                                                            data: $(routers).map(mapRouterType)
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    },
+                                    detailView: {
+                                        name: 'Virtual applicance details',
+                                        actions: {
+                                            start: {
+                                                label: 'Start LB VM',
+                                                messages: {
+                                                    confirm: function(args) {
+                                                        return 'Please confirm you want to start LB VM';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'Start LB VM';
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    $.ajax({
+                                                        url: createURL('startVpcInlineLoadBalancerVM&id=' + args.context.vpcinlinelbinstances[0].id),
+                                                        dataType: 'json',
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.startvpcinlinelbvmresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function(json) {
+                                                                        return json.queryasyncjobresultresponse.jobresult.loadbalancervm;
+                                                                    },
+                                                                    getActionFilter: function() {
+                                                                        return internallbinstanceActionfilter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            stop: {
+                                                label: 'Stop LB VM',
+                                                createForm: {
+                                                    title: 'Please confirm you want to stop LB VM',
+                                                    desc: 'Stop LB VM',
+                                                    fields: {
+                                                        forced: {
+                                                            label: 'force.stop',
+                                                            isBoolean: true,
+                                                            isChecked: false
+                                                        }
+                                                    }
+                                                },
+                                                messages: {
+                                                    notification: function(args) {
+                                                        return 'Stop LB VM';
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    var array1 = [];
+                                                    array1.push("&forced=" + (args.data.forced == "on"));
+                                                    $.ajax({
+                                                        url: createURL('stopVpcInlineLoadBalancerVM&id=' + args.context.vpcinlinelbinstances[0].id + array1.join("")),
+                                                        dataType: 'json',
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.stopvpcinlinelbvmresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function(json) {
+                                                                        return json.queryasyncjobresultresponse.jobresult.loadbalancervm;
+                                                                    },
+                                                                    getActionFilter: function() {
+                                                                        return internallbinstanceActionfilter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            migrate: {
+                                                label: 'Migrate LB VM',
+                                                createForm: {
+                                                    title: 'Migrate LB VM',
+                                                    fields: {
+                                                        hostId: {
+                                                            label: 'label.host',
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            select: function(args) {
+                                                                $.ajax({
+                                                                    url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.vpcinlinelbinstances[0].id),
+                                                                    dataType: "json",
+                                                                    async: true,
+                                                                    success: function(json) {
+                                                                        var hostObjs = json.findhostsformigrationresponse.host;
+                                                                        var items = [];
+                                                                        $(hostObjs).each(function() {
+                                                                            items.push({
+                                                                                id: this.id,
+                                                                                description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
+                                                                            });
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                });
+                                                            },
+                                                            error: function(XMLHttpResponse) {
+                                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                args.response.error(errorMsg);
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                messages: {
+                                                    notification: function(args) {
+                                                        return 'Migrate LB VM';
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    $.ajax({
+                                                        url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.vpcinlinelbinstances[0].id),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.migratesystemvmresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function(json) {
+                                                                        //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
+                                                                        $.ajax({
+                                                                            url: createURL("listVpcInlineLoadBalancerVMs&id=" + json.queryasyncjobresultresponse.jobresult.systemvm.id),
+                                                                            dataType: "json",
+                                                                            async: false,
+                                                                            success: function(json) {
+                                                                                var items = json.listvpcinlinelbvmsresponse.loadbalancervm;
+                                                                                if (items != null && items.length > 0) {
+                                                                                    return items[0];
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    },
+                                                                    getActionFilter: function() {
+                                                                        return internallbinstanceActionfilter;
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
+                                            viewConsole: {
+                                                label: 'label.view.console',
+                                                action: {
+                                                    externalLink: {
+                                                        url: function(args) {
+                                                            return clientConsoleUrl + '?cmd=access&vm=' + args.context.vpcinlinelbinstances[0].id;
+                                                        },
+                                                        title: function(args) {
+                                                            return args.context.vpcinlinelbinstances[0].id.substr(0, 8); //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+                                                        },
+                                                        width: 820,
+                                                        height: 640
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        tabs: {
+                                            details: {
+                                                title: 'label.details',
+                                                preFilter: function(args) {
+                                                    var hiddenFields = [];
+                                                    if (!args.context.vpcinlinelbinstances[0].project) {
+                                                        hiddenFields.push('project');
+                                                        hiddenFields.push('projectid');
+                                                    }
+                                                    if (selectedZoneObj.networktype == 'Basic') {
+                                                        hiddenFields.push('publicip'); //In Basic zone, guest IP is public IP. So, publicip is not returned by listRouters API. Only guestipaddress is returned by listRouters API.
+                                                    }
+                                                    return hiddenFields;
+                                                },
+                                                fields: [{
+                                                    name: {
+                                                        label: 'label.name'
+                                                    },
+                                                    project: {
+                                                        label: 'label.project'
+                                                    }
+                                                }, {
+                                                    id: {
+                                                        label: 'label.id'
+                                                    },
+                                                    projectid: {
+                                                        label: 'label.project.id'
+                                                    },
+                                                    state: {
+                                                        label: 'label.state'
+                                                    },
+                                                    guestnetworkid: {
+                                                        label: 'label.network.id'
+                                                    },
+                                                    publicip: {
+                                                        label: 'label.public.ip'
+                                                    },
+                                                    guestipaddress: {
+                                                        label: 'label.guest.ip'
+                                                    },
+                                                    linklocalip: {
+                                                        label: 'label.linklocal.ip'
+                                                    },
+                                                    hostname: {
+                                                        label: 'label.host'
+                                                    },
+                                                    serviceofferingname: {
+                                                        label: 'label.compute.offering'
+                                                    },
+                                                    networkdomain: {
+                                                        label: 'label.network.domain'
+                                                    },
+                                                    domain: {
+                                                        label: 'label.domain'
+                                                    },
+                                                    account: {
+                                                        label: 'label.account'
+                                                    },
+                                                    created: {
+                                                        label: 'label.created',
+                                                        converter: cloudStack.converters.toLocalDate
+                                                    },
+                                                    isredundantrouter: {
+                                                        label: 'label.redundant.router',
+                                                        converter: cloudStack.converters.toBooleanText
+                                                    },
+                                                    redundantRouterState: {
+                                                        label: 'label.redundant.state'
+                                                    }
+                                                }],
+                                                dataProvider: function(args) {
+                                                    $.ajax({
+                                                        url: createURL("listVpcInlineLoadBalancerVMs&id=" + args.context.vpcinlinelbinstances[0].id),
+                                                        dataType: 'json',
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jsonObj = json.listvpcinlinelbvmsresponse.loadbalancervm[0];
+                                                            addExtraPropertiesToRouterInstanceObject(jsonObj);
+                                                            args.response.success({
+                                                                actionFilter: internallbinstanceActionfilter,
+                                                                data: jsonObj
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            },
+                                            nics: {
+                                                title: 'label.nics',
+                                                multiple: true,
+                                                fields: [{
+                                                    name: {
+                                                        label: 'label.name',
+                                                        header: true
+                                                    },
+                                                    type: {
+                                                        label: 'label.type'
+                                                    },
+                                                    traffictype: {
+                                                        label: 'label.traffic.type'
+                                                    },
+                                                    networkname: {
+                                                        label: 'label.network.name'
+                                                    },
+                                                    netmask: {
+                                                        label: 'label.netmask'
+                                                    },
+                                                    ipaddress: {
+                                                        label: 'label.ip.address'
+                                                    },
+                                                    id: {
+                                                        label: 'label.id'
+                                                    },
+                                                    networkid: {
+                                                        label: 'label.network.id'
+                                                    },
+                                                    isolationuri: {
+                                                        label: 'label.isolation.uri'
+                                                    },
+                                                    broadcasturi: {
+                                                        label: 'label.broadcast.uri'
+                                                    }
+                                                }],
+                                                dataProvider: function(args) {
+                                                    $.ajax({
+                                                        url: createURL("listVpcInlineLoadBalancerVMs&id=" + args.context.vpcinlinelbinstances[0].id),
+                                                        dataType: 'json',
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jsonObj = json.listvpcinlinelbvmsresponse.loadbalancervm[0].nic;
+
+                                                            args.response.success({
+                                                                actionFilter: internallbinstanceActionfilter,
+                                                                data: $.map(jsonObj, function(nic, index) {
+                                                                    var name = 'NIC ' + (index + 1);
+                                                                    if (nic.isdefault) {
+                                                                        name += ' (' + _l('label.default') + ')';
+                                                                    }
+                                                                    return $.extend(nic, {
+                                                                        name: name
+                                                                    });
+                                                                })
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        actions: {
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["VpcInlineLbVm"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["VpcInlineLbVm"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    },
+
                     vpcVirtualRouter: {
                         id: 'vpcVirtualRouterProviders',
                         label: 'label.vpc.virtual.router',
@@ -21924,6 +22446,9 @@
                             case "InternalLbVm":
                             nspMap[ "InternalLbVm"] = items[i];
                             break;
+                            case "VpcInlineLbVm":
+                                nspMap["VpcInlineLbVm"] = items[i];
+                                break;
                             case "VpcVirtualRouter":
                             nspMap[ "vpcVirtualRouter"] = items[i];
                             break;
@@ -22042,6 +22567,12 @@
                 id: 'InternalLbVm',
                 name: 'Internal LB VM',
                 state: nspMap.InternalLbVm ? nspMap.InternalLbVm.state: 'Disabled'
+            });
+
+            nspHardcodingArray.push({
+                id: 'VpcInlineLbVm',
+                name: 'VPC Inline LB VM',
+                state: nspMap.VpcInlineLbVm ? nspMap.VpcInlineLbVm.state : 'Disabled'
             });
 
             nspHardcodingArray.push({

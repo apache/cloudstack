@@ -19,6 +19,9 @@
 
 package com.cloud.network.manager;
 
+import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
+
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
@@ -154,13 +157,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 
-import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
-
 public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager, Configurable, StateListener<Status, Status.Event, Host> {
 
     private static final Logger s_logger = Logger.getLogger(NuageVspManagerImpl.class);
 
-    public static final Multimap<Network.Service, Network.Provider> NUAGE_VSP_VPC_SERVICE_MAP;
+    public static final Multimap<Network.Service, Network.Provider> DEFAULT_NUAGE_VSP_VPC_SERVICE_MAP;
+    public static final Multimap<Network.Service, Network.Provider> SUPPORTED_NUAGE_VSP_VPC_SERVICE_MAP;
     private static final ConfigKey[] NUAGE_VSP_CONFIG_KEYS = new ConfigKey<?>[] { NuageVspConfigDns, NuageVspDnsExternal, NuageVspConfigGateway,
             NuageVspSharedNetworkDomainTemplateName, NuageVspVpcDomainTemplateName, NuageVspIsolatedNetworkDomainTemplateName };
 
@@ -215,8 +217,10 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     static {
         Set<Network.Provider> nuageVspProviders = ImmutableSet.of(Network.Provider.NuageVsp);
         Set<Network.Provider> vrProviders = ImmutableSet.of(Network.Provider.VPCVirtualRouter);
-        Set<Network.Provider> lbProviders = ImmutableSet.of(Network.Provider.InternalLbVm);
-        NUAGE_VSP_VPC_SERVICE_MAP = ImmutableMultimap.<Network.Service, Network.Provider>builder()
+        Set<Network.Provider> defaultLbProviders = ImmutableSet.of(Network.Provider.InternalLbVm);
+        Set<Network.Provider> supportedLbProviders = ImmutableSet.of(Network.Provider.InternalLbVm, Network.Provider.VpcInlineLbVm);
+
+        DEFAULT_NUAGE_VSP_VPC_SERVICE_MAP = ImmutableMultimap.<Network.Service, Network.Provider>builder()
                 .putAll(Network.Service.Connectivity, nuageVspProviders)
                 .putAll(Network.Service.Gateway, nuageVspProviders)
                 .putAll(Network.Service.Dhcp, nuageVspProviders)
@@ -224,9 +228,14 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                 .putAll(Network.Service.SourceNat, nuageVspProviders)
                 .putAll(Network.Service.NetworkACL, nuageVspProviders)
                 .putAll(Network.Service.UserData, vrProviders)
-                .putAll(Network.Service.Lb, lbProviders)
+                .putAll(Network.Service.Lb, defaultLbProviders)
                 .putAll(Network.Service.Dns, vrProviders)
                 .build();
+
+        Multimap<Network.Service, Network.Provider> builder = HashMultimap.create(DEFAULT_NUAGE_VSP_VPC_SERVICE_MAP);
+        builder.putAll(Network.Service.Lb, supportedLbProviders);
+
+        SUPPORTED_NUAGE_VSP_VPC_SERVICE_MAP = ImmutableMultimap.copyOf(builder);
     }
 
     private Listener _nuageVspResourceListener;
@@ -1183,9 +1192,9 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                         s_logger.debug("Creating default Nuage VPC offering " + nuageVPCOfferingName);
                     }
 
-                    createVpcOffering(nuageVPCOfferingName, nuageVPCOfferingDisplayText, NUAGE_VSP_VPC_SERVICE_MAP, true, VpcOffering.State.Enabled, null);
+                    createVpcOffering(nuageVPCOfferingName, nuageVPCOfferingDisplayText, DEFAULT_NUAGE_VSP_VPC_SERVICE_MAP, true, VpcOffering.State.Enabled, null);
                 } else {
-                    updateVpcOffering(offering, NUAGE_VSP_VPC_SERVICE_MAP);
+                    updateVpcOffering(offering, DEFAULT_NUAGE_VSP_VPC_SERVICE_MAP);
                 }
             }
         });

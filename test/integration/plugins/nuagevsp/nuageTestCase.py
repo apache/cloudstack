@@ -195,6 +195,13 @@ class nuageTestCase(cloudstackTestCase):
             raise unittest.SkipTest("Warning: Could not get configured "
                                     "Nuage VSP device details - %s" % e)
 
+        # Enabling VpcInlineLbVm network service provider
+        vpcInlineLbProvider = NetworkServiceProvider.list(
+            cls.api_client, name="VpcInlineLbVm",
+            physicalnetworkid=cls.vsp_physical_network.id)[0]
+        NetworkServiceProvider.update(
+            cls.api_client, vpcInlineLbProvider.id, state="Enabled")
+
         # Get data center Internet connectivity information from the Marvin
         # config file, which is required to perform Internet connectivity and
         # traffic tests from the guest VMs.
@@ -634,23 +641,24 @@ class nuageTestCase(cloudstackTestCase):
 
     # ssh_into_VM - Gets into the shell of the given VM using its public IP
     def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False):
-        self.debug("SSH into VM with ID - %s on public IP address - %s" %
-                   (vm.id, public_ip.ipaddress.ipaddress))
-        tries = 1 if negative_test else 3
-
-        @retry(tries=tries)
-        def retry_ssh():
-            ssh_client = vm.get_ssh_client(
-                ipaddress=public_ip.ipaddress.ipaddress,
-                reconnect=reconnect,
-                retries=3 if negative_test else 30
-            )
-            self.debug("Successful to SSH into VM with ID - %s on "
-                       "public IP address - %s" %
+        if not self.isSimulator:
+            self.debug("SSH into VM with ID - %s on public IP address - %s" %
                        (vm.id, public_ip.ipaddress.ipaddress))
-            return ssh_client
+            tries = 1 if negative_test else 3
 
-        return retry_ssh()
+            @retry(tries=tries)
+            def retry_ssh():
+                ssh_client = vm.get_ssh_client(
+                    ipaddress=public_ip.ipaddress.ipaddress,
+                    reconnect=reconnect,
+                    retries=3 if negative_test else 30
+                )
+                self.debug("Successful to SSH into VM with ID - %s on "
+                           "public IP address - %s" %
+                           (vm.id, public_ip.ipaddress.ipaddress))
+                return ssh_client
+
+            return retry_ssh()
 
     # execute_cmd - Executes the given command on the given ssh client
     def execute_cmd(self, ssh_client, cmd):
@@ -668,21 +676,21 @@ class nuageTestCase(cloudstackTestCase):
     # server listening on the given public IP address and port
     def wget_from_server(self, public_ip, port=80, file_name="index.html",
                          disable_system_proxies=True):
-        import urllib
-        if disable_system_proxies:
-            urllib.getproxies = lambda: {}
-        self.debug("wget file - %s from a http web server listening on "
-                   "public IP address - %s and port - %s" %
-                   (file_name, public_ip.ipaddress.ipaddress, port))
-        filename, headers = urllib.urlretrieve(
-            "http://%s:%s/%s" %
-            (public_ip.ipaddress.ipaddress, port, file_name),
-            filename=file_name
-        )
-        self.debug("Successful to wget file - %s from a http web server "
-                   "listening on public IP address - %s and port - %s" %
-                   (file_name, public_ip.ipaddress.ipaddress, port))
-        return filename, headers
+        if not self.isSimulator:
+            import urllib
+            if disable_system_proxies:
+                urllib.getproxies = lambda: {}
+            self.debug("wget file - %s from a http web server listening on "
+                       "public IP address - %s and port - %s" %
+                       (file_name, public_ip.ipaddress.ipaddress, port))
+            filename, headers = urllib.urlretrieve(
+                "http://%s:%s/%s" %
+                (public_ip.ipaddress.ipaddress, port, file_name)
+            )
+            self.debug("Successful to wget file - %s from a http web server "
+                       "listening on public IP address - %s and port - %s" %
+                       (file_name, public_ip.ipaddress.ipaddress, port))
+            return filename, headers
 
     # validate_NetworkServiceProvider - Validates the given Network Service
     # Provider in the Nuage VSP Physical Network, matches the given provider
@@ -1173,6 +1181,28 @@ class nuageTestCase(cloudstackTestCase):
             self.verify_vsd_object_status(vm, stopped)
         self.debug("Successfully verified the deployment and state of VM - %s "
                    "in VSD" % vm.name)
+
+    # verify_vsd_vm_vip - Verifies the given CloudStack VM NIC's secondary IP
+    # (virtual IP) creation in VSD
+    def verify_vsd_vm_vip(self, vm, network):
+        self.debug("Verifies the given CloudStack VM NIC's - %s, %s secondary "
+                   "IP (virtual IP) creation in VSD" % (vm.name, network.name))
+        vsd_subnet = self.vsd.get_subnet(
+            filter=self.get_externalID_filter(network.id))
+        for nic in vm.nic:
+            if nic.networkid == network.id:
+                vsd_vport = self.vsd.get_vport(
+                    subnet=vsd_subnet,
+                    filter=self.get_externalID_filter(nic.id))
+                for secondary_ip in nic.secondaryip:
+                    vsd_vip = self.vsd.get_virtualip(
+                        vport=vsd_vport,
+                        filter=self.get_externalID_filter(secondary_ip.id))
+                    self.assertEqual(vsd_vip.virtual_ip,
+                                     secondary_ip.ipaddress,
+                                     "VSD VIP and CloudStack secondary IP do "
+                                     "not match for the VM"
+                                     )
 
     # verify_vsd_router - Verifies the given CloudStack network router
     # deployment and status in VSD

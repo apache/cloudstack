@@ -25,6 +25,8 @@ public interface LoadBalancerDao extends GenericDao<LoadBalancerVO, Long> {
 
     List<LoadBalancerVO> listByIpAddress(long ipAddressId);
 
+    long countActiveByIpAddress(long ipAddressId);
+
     List<LoadBalancerVO> listByNetworkIdAndScheme(long networkId, Scheme scheme);
 
     List<LoadBalancerVO> listInTransitionStateByNetworkIdAndScheme(long networkId, Scheme scheme);

@@ -125,6 +125,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer", true);
         public static final Provider ExternalGateWay = new Provider("ExternalGateWay", true);
         public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
+        public static final Provider VpcInlineLbVm = new Provider("VpcInlineLbVm", false);
         public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
         public static final Provider VPCVirtualRouter = new Provider("VpcVirtualRouter", false);
         public static final Provider None = new Provider("None", false);

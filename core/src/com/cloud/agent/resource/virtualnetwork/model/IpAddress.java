@@ -133,4 +133,11 @@ public class IpAddress {
         this.newNic = newNic;
     }
 
+    public String getNwType() {
+        return nwType;
+    }
+
+    public void setNwType(String nwType) {
+        this.nwType = nwType;
+    }
 }

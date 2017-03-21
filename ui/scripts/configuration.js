@@ -1069,6 +1069,14 @@
                                                 id: 'secondarystoragevm',
                                                 description: _l('label.secondary.storage.vm')
                                             });
+                                            items.push({
+                                                id: 'internalloadbalancervm',
+                                                description: dictionary['label.internallbvm']
+                                            });
+                                            items.push({
+                                                id: 'vpcinlineloadbalancervm',
+                                                description: dictionary['label.vpcinlinelbvm']
+                                            });
                                             args.response.success({
                                                 data: items
                                             });
@@ -2416,7 +2424,7 @@
                                         //p.s. Netscaler is supported in both vpc and non-vpc
                                         if ($useVpc.is(':visible') && $useVpcCb.is(':checked')) { //*** vpc ***
                                             $optionsOfProviders.each(function(index) {
-                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler'  || $(this).val() == 'NuageVsp' || $(this).val() == 'NuageVspVpc' || $(this).val() == 'BigSwitchBcf') {
+                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcInlineLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler'  || $(this).val() == 'NuageVsp' || $(this).val() == 'NuageVspVpc' || $(this).val() == 'BigSwitchBcf') {
                                                     $(this).attr('disabled', false);
                                                 } else {
                                                     $(this).attr('disabled', true);
@@ -2424,7 +2432,7 @@
                                             });
                                         } else { //*** non-vpc ***
                                             $optionsOfProviders.each(function(index) {
-                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter') {
+                                                if ($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcInlineLbVm' || $(this).val() == 'VpcVirtualRouter') {
                                                     $(this).attr('disabled', true);
                                                 } else {
                                                     $(this).attr('disabled', false);
@@ -3877,7 +3885,8 @@
                                                 name: 'Lb',
                                                 provider: [
                                                        {name: 'VpcVirtualRouter'},
-                                                       {name: 'InternalLbVm'}
+                                                       {name: 'InternalLbVm'},
+                                                       {name: 'VpcInlineLbVm'}
                                                 ]
                                             });
                                             networkServiceObjs.push({

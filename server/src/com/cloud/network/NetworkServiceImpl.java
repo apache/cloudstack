@@ -2630,6 +2630,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             //Add Internal Load Balancer element as a default network service provider
             addDefaultInternalLbProviderToPhysicalNetwork(pNetwork.getId());
 
+            //Add VPC Inline Load Balancer element as a default network service provider
+            addVpcInlineLbProviderToPhysicalNetwork(pNetwork.getId());
+
             return pNetwork;
                 }
             });
@@ -3918,6 +3921,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         _internalLbElementSvc.addInternalLoadBalancerElement(nsp.getId());
+
+        return nsp;
+    }
+
+    protected PhysicalNetworkServiceProvider addVpcInlineLbProviderToPhysicalNetwork(long physicalNetworkId) {
+
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Provider.VpcInlineLbVm.getName(), null, null);
 
         return nsp;
     }

@@ -452,7 +452,7 @@ test_data = {
             "Dhcp": 'VpcVirtualRouter',
             "Dns": 'VpcVirtualRouter',
             "SourceNat": 'VpcVirtualRouter',
-            "Lb": ["InternalLbVm", "VpcVirtualRouter"],
+            "Lb": ["InternalLbVm", "VpcVirtualRouter", "VpcInlineLbVm"],
             "PortForwarding": 'VpcVirtualRouter',
             "UserData": 'VpcVirtualRouter',
             "StaticNat": 'VpcVirtualRouter',
@@ -751,13 +751,59 @@ test_data = {
     "startport": "1",
     "endport": "1"
     },
+    "vpc_network_offering": {
+        "name": "VPC Network offering",
+        "displaytext": "VPC Network offering",
+        "guestiptype": 'Isolated',
+        "traffictype": "Guest",
+        "supportedservices": "Vpn,Dhcp,Dns,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
+        "availability": 'Optional',
+        "useVpc": 'on',
+        "ispersistent": 'True',
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter",
+            "Vpn": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "PortForwarding": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter",
+        }
+    },
+    "network_offering_vpcinlinelbvm": {
+        "name": "Network offering for vpcinlinelbvm service",
+        "displaytext": "Network offering for vpcinlinelbvm service",
+        "guestiptype": 'Isolated',
+        "traffictype": "Guest",
+        "supportedservices": "Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
+        "availability": 'Optional',
+        "useVpc": 'on',
+        "ispersistent": 'True',
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter",
+            "Vpn": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "Lb": "VpcInlineLbVm",
+            "SourceNat": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "PortForwarding": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter",
+        },
+        "serviceCapabilityList": {
+            "Lb": {"lbSchemes": "public", "SupportedLbIsolation": "dedicated"}
+        }
+    },     
     "network_offering_internal_lb": {
         "name": "Network offering for internal lb service",
         "displaytext": "Network offering for internal lb service",
         "guestiptype": "Isolated",
         "traffictype": "Guest",
-        "supportedservices":
-            "Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
+        "supportedservices": "Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
+        "availability": 'Optional',
+        "useVpc": 'on',
+        "ispersistent": 'True',
         "serviceProviderList": {
             "Dhcp": "VpcVirtualRouter",
             "Dns": "VpcVirtualRouter",
@@ -770,7 +816,6 @@ test_data = {
             "NetworkACL": "VpcVirtualRouter",
         },
         "serviceCapabilityList": {
-            "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
             "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
         }
     },
@@ -808,6 +853,13 @@ test_data = {
         "alg": "roundrobin",
         "privateport": 22,
         "publicport": 22,
+        "protocol": 'TCP'
+    },
+    "vpclbrulehttp": {
+        "name": "HTTP",
+        "alg": "roundrobin",
+        "privateport": 80,
+        "publicport": 80,
         "protocol": 'TCP'
     },
     "internal_lbrule": {
@@ -1922,6 +1974,30 @@ test_data = {
                 "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
             }
         },
+        "vpc_network_offering_vpcinlinelbvm": {
+            "name": "nuage_vpc_marvin_vpcinlinelbvm",
+            "displaytext": "nuage_vpc_marvin_vpcinlinelbvm",
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "useVpc": 'on',
+            "ispersistent": 'True',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "Lb": "VpcInlineLbVm",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "VpcVirtualRouter",
+                "Dns": "VpcVirtualRouter"
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"},
+                "Lb": {"lbSchemes": "public", "SupportedLbIsolation": "dedicated"}
+            }
+        },        
         # Services supported by the Nuage VSP plugin for VPCs
         "vpc_offering": {
             "name": 'Nuage VSP VPC offering',
@@ -1943,7 +2019,7 @@ test_data = {
             "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
             "serviceProviderList": {
                 "Dhcp": "NuageVsp",
-                "Lb": "InternalLbVm",
+                "Lb": ["InternalLbVm", "VpcInlineLbVm"],
                 "StaticNat": "NuageVsp",
                 "SourceNat": "NuageVsp",
                 "NetworkACL": "NuageVsp",

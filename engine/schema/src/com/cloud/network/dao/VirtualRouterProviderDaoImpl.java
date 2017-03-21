@@ -53,6 +53,13 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
     }
 
     @Override
+    public VirtualRouterProviderVO findByNspId(long nspId) {
+        SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
+        sc.setParameters("nsp_id", nspId);
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<VirtualRouterProviderVO> listByEnabledAndType(boolean enabled, Type type) {
         SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
         sc.setParameters("enabled", enabled);

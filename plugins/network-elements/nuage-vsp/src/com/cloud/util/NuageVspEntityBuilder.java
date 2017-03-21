@@ -42,6 +42,7 @@ import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 import net.nuage.vsp.acs.client.api.model.VspVm;
 import net.nuage.vsp.acs.client.common.model.Pair;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -50,6 +51,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
@@ -87,8 +89,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
-import org.apache.commons.collections.MapUtils;
 
 public class NuageVspEntityBuilder {
     private static final Logger s_logger = Logger.getLogger(NuageVspEntityBuilder.class);
@@ -409,6 +409,7 @@ public class NuageVspEntityBuilder {
         Network network = _networkDao.findById(networkId);
         NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
+
         return vspNicBuilder.build();
     }
 
@@ -426,6 +427,14 @@ public class NuageVspEntityBuilder {
 
         if (staticNatIp.getVmIp() != null) {
             vspStaticNatBuilder.destinationIp(staticNatIp.getVmIp() + "/32");
+        }
+
+        if (vspNic == null && staticNatIp.getAssociatedWithVmId() != null && staticNatIp.getVmIp() != null) {
+            NicSecondaryIpVO nicSecondaryIp = _nicSecondaryIpDao.findByIp4AddressAndInstanceId(staticNatIp.getAssociatedWithVmId(), staticNatIp.getVmIp());
+            if (nicSecondaryIp != null) {
+                NicVO nic = _nicDao.findById(nicSecondaryIp.getNicId());
+                vspNic = buildVspNic(nic, nicSecondaryIp);
+            }
         }
 
         if (vspNic != null) {

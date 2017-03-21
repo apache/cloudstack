@@ -74,7 +74,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-
+import com.cloud.vm.dao.NicSecondaryIpVO;
 
 public class NuageVspEntityBuilderTest extends NuageTest {
 
@@ -123,6 +123,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private VirtualMachine _mockedUserVirtualMachine = mock(VirtualMachine.class);
     private VirtualMachine _mockedDomainRouterVirtualMachine = mock(VirtualMachine.class);
     private NicProfile _mockedNicProfile = mock(NicProfile.class);
+    private NicSecondaryIpVO _mockedSecondaryIp = mock(NicSecondaryIpVO.class);
     private NicVO _mockedNic = mock(NicVO.class);
     private IPAddressVO _mockedStaticNatIp = mock(IPAddressVO.class);
     private VlanVO _mockedStaticNatVlan = mock(VlanVO.class);
@@ -148,6 +149,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         setUpMockedVirtualMachine(_mockedUserVirtualMachine, false);
         setUpMockedVirtualMachine(_mockedDomainRouterVirtualMachine, true);
         setUpMockedNicProfile();
+        setUpMockedNicSecondaryIp();
         setUpMockedNic();
         setUpMockedStaticNatIp();
         setUpMockedStaticNatVlan();
@@ -359,6 +361,11 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_mockedNicProfile.getMacAddress()).thenReturn("macAddress");
         when(_mockedNicProfile.getIPv4Address()).thenReturn(VM_IP);
         when(_mockedNicProfile.getNetworkId()).thenReturn(NETWORK_ID);
+    }
+
+    private void setUpMockedNicSecondaryIp() {
+        when(_mockedSecondaryIp.getUuid()).thenReturn("secondaryIpUuid");
+        when(_mockedSecondaryIp.getIp4Address()).thenReturn("172.16.0.5");
     }
 
     private void setUpMockedNic() {
