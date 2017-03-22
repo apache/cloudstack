@@ -216,6 +216,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CommandResult result = new CommandResult();
         try {
             EndPoint ep = null;
+            s_logger.debug("IR24 deleteAsync DeleteCommand of type " + data.getType() );
             if (data.getType() == DataObjectType.VOLUME) {
                 ep = epSelector.select(data, StorageAction.DELETEVOLUME);
             } else {

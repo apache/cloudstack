@@ -232,3 +232,19 @@ WHERE (o.cpu is null AND o.speed IS NULL AND o.ram_size IS NULL) AND
 
 -- CLOUDSTACK-9827: Storage tags stored in multiple places
 DROP VIEW IF EXISTS `cloud`.`storage_tag_view`;
+
+-- Add table to track primary storage in use for snapshots
+DROP TABLE IF EXISTS `cloud_usage`.`usage_snapshot_on_primary`;
+CREATE TABLE `cloud_usage`.`usage_snapshot_on_primary` (
+  `id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `type` int(1) unsigned NOT NULL,
+  `size` bigint(20),
+  `created` datetime NOT NULL,
+  `processed` datetime,
+  INDEX `i_usage_snapshot_on_primary` (`account_id`,`id`,`vm_id`,`created`)
+) ENGINE=InnoDB CHARSET=utf8;
+

@@ -49,6 +49,8 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -195,7 +197,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createSnapshotAsyncCallback(null, null)).setContext(context);
             PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)snapshotOnPrimary.getDataStore().getDriver();
-            primaryStore.takeSnapshot(snapshot, caller);
+            primaryStore.takeSnapshot(snapshot, caller); // IR24 take snapshot on primary
         } catch (Exception e) {
             s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
             try {
@@ -211,6 +213,11 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         try {
             result = future.get();
+            s_logger.debug("IR24 creating snapshot on primary " + snap.getName() + " snapshotOnPrimary=" + snapshotOnPrimary.getSize() +
+                    " snapshotOnPrimary.getPhysicalSize()=" + snapshotOnPrimary.getPhysicalSize());
+            // IR24 generate the off primary event
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_ON_PRIMARY, snap.getAccountId(), snap.getDataCenterId(), snap.getId(),
+                    snap.getName(), null, null, snapshotOnPrimary.getSize(), snapshotOnPrimary.getSize(), snap.getClass().getName(), snap.getUuid());
             return result;
         } catch (InterruptedException e) {
             s_logger.debug("Failed to create snapshot", e);

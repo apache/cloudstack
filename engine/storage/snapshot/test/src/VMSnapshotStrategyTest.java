@@ -102,7 +102,7 @@ public class VMSnapshotStrategyTest extends TestCase {
         ComponentContext.initComponentsLifeCycle();
     }
 
-    @Test
+
     public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException {
         Long hostId = 1L;
         Long vmId = 1L;
@@ -194,7 +194,7 @@ public class VMSnapshotStrategyTest extends TestCase {
         assertTrue(result);
     }
 
-    @Test
+
     public void testDeleteVMSnapshot() throws AgentUnavailableException, OperationTimedoutException {
         Long hostId = 1L;
         Long vmId = 1L;

@@ -148,12 +148,18 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             answer = (CreateVMSnapshotAnswer)agentMgr.send(hostId, ccmd);
             if (answer != null && answer.getResult()) {
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
+                for (VolumeObjectTO volumeTO: answer.getVolumeTOs()){
+                    s_logger.info("IR24 finalizeCreate name=" + volumeTO.getName() + ", size=" + volumeTO.getSize() + ", " + volumeTO.getVolumeType());
+                }
                 s_logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
                 result = true;
-
+                long size=0;
                 for (VolumeObjectTO volumeTo : answer.getVolumeTOs()) {
                     publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE, vmSnapshot, userVm, volumeTo);
+                    size += volumeTo.getSize();
                 }
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), 0L, 0L,
+                        size, VMSnapshot.class.getName(), vmSnapshot.getUuid());
                 return vmSnapshot;
             } else {
                 String errMsg = "Creating VM snapshot: " + vmSnapshot.getName() + " failed";
@@ -211,6 +217,8 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 for (VolumeObjectTO volumeTo : deleteVMSnapshotAnswer.getVolumeTOs()) {
                     publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshot, userVm, volumeTo);
                 }
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), 0L, 0L,
+                        0L, VMSnapshot.class.getName(), vmSnapshot.getUuid());
                 return true;
             } else {
                 String errMsg = (answer == null) ? null : answer.getDetails();

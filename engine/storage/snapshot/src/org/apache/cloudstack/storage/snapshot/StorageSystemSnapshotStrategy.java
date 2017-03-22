@@ -19,6 +19,9 @@ package org.apache.cloudstack.storage.snapshot;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -147,7 +150,9 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
      * @return true if snapshot is removed, false otherwise
      */
 
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, eventDescription = "deleting snapshot", async = true)
     private boolean cleanupSnapshotOnPrimaryStore(long snapshotId) {
+        s_logger.info("IR24 cleanupSnapshotOnPrimaryStore snapshotId " + snapshotId);
 
         SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
 
@@ -176,6 +181,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             snapshotSvr.deleteSnapshot(snapshotObj);
 
             snapshotObj.processEvent(Snapshot.Event.OperationSucceeded);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, snapshotObj.getAccountId(), snapshotObj.getDataCenterId(), snapshotId,
+                    snapshotObj.getName(), null, null, 0L, snapshotObj.getClass().getName(), snapshotObj.getUuid());
         }
         catch (Exception e) {
             s_logger.debug("Failed to delete snapshot: ", e);
@@ -261,6 +268,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 if (snapshotOnPrimary != null && snapshotInfo.getLocationType() == Snapshot.LocationType.SECONDARY) {
                     // remove the snapshot on primary storage
                     try {
+                        s_logger.warn("IR24 takeSnapshot deleteSnapshot snapshotOnPrimary " + snapshotOnPrimary.getName());
                         snapshotSvr.deleteSnapshot(snapshotOnPrimary);
                     } catch (Exception e) {
                         s_logger.warn("Failed to clean up snapshot on primary Id:" + snapshotOnPrimary.getId() + " "

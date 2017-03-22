@@ -106,7 +106,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     }
 
     @Override
-    public DataObject create(DataObject obj, DataStore dataStore) {
+    public DataObject create(DataObject obj, DataStore dataStore) { // IR24
         if (dataStore.getRole() == DataStoreRole.Primary) {
             if (obj.getType() == DataObjectType.TEMPLATE) {
                 VMTemplateStoragePoolVO vo = new VMTemplateStoragePoolVO(dataStore.getId(), obj.getId());

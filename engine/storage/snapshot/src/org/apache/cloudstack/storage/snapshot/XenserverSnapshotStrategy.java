@@ -40,6 +40,8 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
 import com.cloud.configuration.Config;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -83,11 +85,11 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     private SnapshotDao _snapshotDao;
 
     @Override
-    public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
+    public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) { // IR24 backing up snapshot
         SnapshotInfo parentSnapshot = snapshot.getParent();
 
         if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
-            s_logger.debug("backup an empty snapshot");
+            s_logger.debug("IR24 backupSnapshot backup an empty snapshot " + snapshot.getName());
             // don't need to backup this snapshot
             SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
             if (parentSnapshotOnBackupStore != null && parentSnapshotOnBackupStore.getState() == State.Ready) {
@@ -154,6 +156,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     }
                 } else {
                     // if there is an snapshot entry for previousPool(primary storage) of migrated volume, delete it becasue CS created one more snapshot entry for current pool
+                    s_logger.debug("IR24 backupSnapshot backup an empty snapshot remove " + oldestSnapshotOnPrimary.getId());
                     snapshotStoreDao.remove(oldestSnapshotOnPrimary.getId());
                 }
             }
@@ -239,7 +242,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         if (snapshotVO.getState() == Snapshot.State.CreatedOnPrimary) {
-            s_logger.debug("delete snapshot on primary storage:");
+            s_logger.debug("IR 24: resource admin delete snapshot on primary storage:");
             snapshotVO.setState(Snapshot.State.Destroyed);
             snapshotDao.update(snapshotId, snapshotVO);
             return true;
@@ -411,6 +414,9 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                             SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), parentSnapshotId);
                             if (snapshotDataStoreVO != null) {
                                 parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
+                                s_logger.debug("IR24 takeSnapshot remove " + snapshotDataStoreVO.getId());
+                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, parent.getAccountId(), parent.getDataCenterId(), parent.getId(),
+                                        parent.getName(), null, null, 0L, 0L, parent.getClass().getName(), parent.getUuid());
                                 snapshotStoreDao.remove(snapshotDataStoreVO.getId());
                             } else {
                                 parentSnapshotId = null;
