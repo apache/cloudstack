@@ -27,8 +27,8 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = "usage_vmsnapshot")
-public class UsageVMSnapshotVO implements InternalIdentity {
+@Table(name = "usage_snapshot_on_primary")
+public class UsageSnapshotOnPrimaryVO implements InternalIdentity {
 
     @Column(name = "id")
     // volumeId
@@ -46,33 +46,41 @@ public class UsageVMSnapshotVO implements InternalIdentity {
     @Column(name = "vm_id")
     private long vmId;
 
-    @Column(name = "disk_offering_id")
-    private Long diskOfferingId;
+    @Column(name = "name")
+    private String name;
 
-    @Column(name = "size")
-    private long size;
+    @Column(name = "type")
+    private int snapshotType;
+
+    @Column(name = "physicalsize")
+    private long physicalSize;
 
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created = null;
 
-    @Column(name = "processed")
+    @Column(name = "deleted")
     @Temporal(value = TemporalType.TIMESTAMP)
-    private Date processed;
+    private Date deleted;
 
-    protected UsageVMSnapshotVO() {
+    @Column(name = "virtualsize")
+    private Long virtualSize;
+
+    protected UsageSnapshotOnPrimaryVO() {
     }
 
-    public UsageVMSnapshotVO(long id, long zoneId, long accountId, long domainId, long vmId, Long diskOfferingId, long size, Date created, Date processed) {
+    public UsageSnapshotOnPrimaryVO(long id, long zoneId, long accountId, long domainId, long vmId, String name, int type, long virtualSize, long physicalSize, Date created, Date deleted) {
+        this.id = id;
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.diskOfferingId = diskOfferingId;
-        this.id = id;
-        this.size = size;
+        this.snapshotType = type;
+        this.physicalSize = physicalSize;
+        this.virtualSize = virtualSize;
         this.created = created;
         this.vmId = vmId;
-        this.processed = processed;
+        this.name = name;
+        this.deleted = deleted;
     }
 
     public long getZoneId() {
@@ -87,20 +95,24 @@ public class UsageVMSnapshotVO implements InternalIdentity {
         return domainId;
     }
 
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
+    public int getSnapshotType() {
+        return snapshotType;
     }
 
-    public long getSize() {
-        return size;
+    public long getPhysicalSize() {
+        return physicalSize;
     }
 
-    public Date getProcessed() {
-        return processed;
+    public Long getVirtualSize() {
+        return virtualSize;
     }
 
-    public void setProcessed(Date processed) {
-        this.processed = processed;
+    public Date getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Date deleted) {
+        this.deleted = deleted;
     }
 
     public Date getCreated() {
@@ -115,6 +127,10 @@ public class UsageVMSnapshotVO implements InternalIdentity {
         return vmId;
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public long getId() {
         return this.id;
@@ -122,8 +138,8 @@ public class UsageVMSnapshotVO implements InternalIdentity {
 
     @Override
     public String toString() {
-        return "UsageVMSnapshotVO [id=" + id + ", zoneId=" + zoneId + ", accountId=" + accountId + ", domainId=" + domainId + ", vmId=" + vmId + ", diskOfferingId="
-                + diskOfferingId + ", size=" + size + ", created=" + created + ", processed=" + processed + "]";
+        return "UsageSnapshotOnPrimaryVO [id=" + id + ", zoneId=" + zoneId + ", accountId=" + accountId + ", domainId=" + domainId + ", vmId=" + vmId + ", name=" + name
+                + ", snapshotType=" + snapshotType + ", physicalSize=" + physicalSize + ", created=" + created + ", deleted=" + deleted + ", virtualSize=" + virtualSize + "]";
     }
 
 }

@@ -19,6 +19,9 @@ package org.apache.cloudstack.storage.snapshot;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -147,6 +150,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
      * @return true if snapshot is removed, false otherwise
      */
 
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, eventDescription = "deleting snapshot", async = true)
     private boolean cleanupSnapshotOnPrimaryStore(long snapshotId) {
 
         SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
@@ -176,6 +180,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             snapshotSvr.deleteSnapshot(snapshotObj);
 
             snapshotObj.processEvent(Snapshot.Event.OperationSucceeded);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, snapshotObj.getAccountId(), snapshotObj.getDataCenterId(), snapshotId,
+                    snapshotObj.getName(), null, null, 0L, snapshotObj.getClass().getName(), snapshotObj.getUuid());
         }
         catch (Exception e) {
             s_logger.debug("Failed to delete snapshot: ", e);

@@ -119,6 +119,14 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
 
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
 
+            long prev_chain_size = 0;
+            long virtual_size=0;
+            for (VolumeObjectTO volume : volumeTOs) {
+                virtual_size += volume.getSize();
+                VolumeVO volumeVO = volumeDao.findById(volume.getId());
+                prev_chain_size += volumeVO.getVmSnapshotChainSize() == null ? 0 : volumeVO.getVmSnapshotChainSize();
+            }
+
             VMSnapshotTO current = null;
             VMSnapshotVO currentSnapshot = vmSnapshotDao.findCurrentSnapshotByVmId(userVm.getId());
             if (currentSnapshot != null)
@@ -150,10 +158,12 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
                 s_logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
                 result = true;
-
+                long new_chain_size=0;
                 for (VolumeObjectTO volumeTo : answer.getVolumeTOs()) {
                     publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE, vmSnapshot, userVm, volumeTo);
+                    new_chain_size += volumeTo.getSize();
                 }
+                publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY, vmSnapshot, userVm, new_chain_size - prev_chain_size, virtual_size);
                 return vmSnapshot;
             } else {
                 String errMsg = "Creating VM snapshot: " + vmSnapshot.getName() + " failed";
@@ -208,9 +218,12 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             if (answer != null && answer.getResult()) {
                 DeleteVMSnapshotAnswer deleteVMSnapshotAnswer = (DeleteVMSnapshotAnswer)answer;
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
+                long full_chain_size=0;
                 for (VolumeObjectTO volumeTo : deleteVMSnapshotAnswer.getVolumeTOs()) {
                     publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshot, userVm, volumeTo);
+                    full_chain_size += volumeTo.getSize();
                 }
+                publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshot, userVm, full_chain_size, 0L);
                 return true;
             } else {
                 String errMsg = (answer == null) ? null : answer.getDetails();
@@ -325,7 +338,16 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             }
         }
         UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), offeringId, volume.getId(), // save volume's id into templateId field
-            volumeTo.getSize(), VMSnapshot.class.getName(), vmSnapshot.getUuid());
+                volumeTo.getSize(), VMSnapshot.class.getName(), vmSnapshot.getUuid());
+    }
+
+    private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, Long vmSnapSize, Long virtualSize) {
+        try {
+            UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), 0L, 0L, vmSnapSize, virtualSize,
+                    VMSnapshot.class.getName(), vmSnapshot.getUuid());
+        } catch (Exception e) {
+            s_logger.error("Failed to publis usage event " + type, e);
+        }
     }
 
     @Override
