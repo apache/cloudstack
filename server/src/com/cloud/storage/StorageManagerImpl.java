@@ -314,7 +314,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected SearchBuilder<StoragePoolVO> LocalStorageSearch;
 
     ScheduledExecutorService _executor = null;
-    boolean _templateCleanupEnabled = true;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     int _downloadUrlCleanupInterval;
     int _downloadUrlExpirationInterval;
@@ -477,11 +476,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _storagePoolDao, _dataStoreProviderMgr), true, false, true);
 
-        String value = _configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
-        _templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
-
         s_logger.info("Storage cleanup enabled: " + StorageCleanupEnabled.value() + ", interval: " + StorageCleanupInterval.value() + ", delay: " + StorageCleanupDelay.value()  +
-                ", template cleanup enabled: " + _templateCleanupEnabled);
+                ", template cleanup enabled: " + TemplateCleanupEnabled.value());
 
         String cleanupInterval = configs.get("extract.url.cleanup.interval");
         _downloadUrlCleanupInterval = NumbersUtil.parseInt(cleanupInterval, 7200);
@@ -1065,7 +1061,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (scanLock.lock(3)) {
                 try {
                     // Cleanup primary storage pools
-                    if (_templateCleanupEnabled) {
+                    if (TemplateCleanupEnabled.value()) {
                         List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
                         for (StoragePoolVO pool : storagePools) {
                             try {
@@ -2426,7 +2422,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {StorageCleanupInterval, StorageCleanupDelay, StorageCleanupEnabled};
+        return new ConfigKey<?>[] {StorageCleanupInterval, StorageCleanupDelay, StorageCleanupEnabled, TemplateCleanupEnabled};
     }
 
     @Override
