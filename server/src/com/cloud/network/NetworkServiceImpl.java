@@ -43,6 +43,7 @@ import com.cloud.network.router.VirtualRouter;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -51,6 +52,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -4193,6 +4195,29 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         _ipAddressDao.update(id, ipVO);
         return _ipAddressDao.findById(id);
+    }
+
+    @Override
+    public AcquirePodIpCmdResponse allocatePodIp(Account ipOwner, String zoneId, String podId) throws ResourceAllocationException {
+
+        Account caller = CallContext.current().getCallingAccount();
+        long callerUserId = CallContext.current().getCallingUserId();
+        DataCenter zone = _entityMgr.findByUuid(DataCenter.class, zoneId);
+
+        if (zone == null)
+            throw new InvalidParameterValueException("Invalid zone Id ");
+        if (_accountMgr.checkAccessAndSpecifyAuthority(caller, zone.getId()) != zone.getId())
+            throw new InvalidParameterValueException("Caller does not have permission for this Zone" + "(" + zoneId + ")");
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+        return _ipAddrMgr.allocatePodIp(zoneId, podId);
+
+    }
+
+    @Override
+    public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
+        _ipAddrMgr.releasePodIp(ip.getId());
+        return true;
     }
 
 }

@@ -2639,11 +2639,17 @@
                                             args.$form.find('.form-item[rel=\"egressdefaultpolicy\"]').css('display', 'none');
                                         }
 
-                                        //show LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler OR F5
-                                        if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler' || args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp')) {
-                                            args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').css('display', 'inline-block');
+                                        //show Netscaler service packages only when (1)LB Service is checked (2)Service Provider is Netscaler
+                                        if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler')) {
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages\"]').css('display', 'inline-block');
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').css('display', 'inline-block');
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").attr("disabled", "disabled");
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").text(args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages\"]').find('#label_netscaler_service_packages option:selected').data("json-obj").desc);
                                         } else {
-                                            args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').hide();
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages\"]').hide();
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').hide();
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").attr("disabled", "disabled");
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").text("");
                                         }
 
                                         //show Elastic LB checkbox only when (1)LB Service is checked (2)Service Provider is Netscaler (3)Guest IP Type is Shared
@@ -3014,22 +3020,7 @@
                                         isHidden: true,
                                         isBoolean: true
                                     },
-                                    "service.Lb.lbIsolationDropdown": {
-                                        label: 'label.LB.isolation',
-                                        docID: 'helpNetworkOfferingLBIsolation',
-                                        isHidden: true,
-                                        select: function(args) {
-                                            args.response.success({
-                                                data: [{
-                                                    id: 'dedicated',
-                                                    description: 'Dedicated'
-                                                }, {
-                                                    id: 'shared',
-                                                    description: 'Shared'
-                                                }]
-                                            })
-                                        }
-                                    },
+
                                     "service.Lb.inlineModeDropdown": {
                                         label: 'label.mode',
                                         docID: 'helpNetworkOfferingMode',
@@ -3046,6 +3037,62 @@
                                             args.response.success({
                                                 data: items
                                             });
+                                        }
+                                    },
+
+                                    "service.Lb.Netscaler.servicePackages": {
+                                        label: 'label.netscaler.service.packages',
+                                        docID: 'helpNetscalerServicePackages',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL('listRegisteredServicePackages'),
+                                                dataType: 'json',
+                                                async: true,
+                                                success: function(data) {
+                                                    var servicePackages = data.listregisteredservicepackage.registeredServicepackage;
+
+                                                    if (servicePackages == undefined || servicePackages == null || !servicePackages) {
+                                                        servicePackages = data.listregisteredservicepackage;
+                                                    }
+
+                                                    args.response.success({
+                                                        data:   $.map(servicePackages, function(elem) {
+                                                            return {
+                                                                id: elem.id,
+                                                                description: elem.name,
+                                                                desc: elem.description
+                                                            };
+                                                        })
+                                                    });
+                                                },
+                                                error: function(data) {
+                                                    args.response.error(parseXMLHttpResponse(data));
+                                                }
+                                            });
+                                        }
+                                    },
+
+                                    "service.Lb.Netscaler.servicePackages.description": {
+                                        label: 'label.netscaler.service.packages.description',
+                                        isHidden: true,
+                                        isTextarea: true
+                                    },
+
+                                    "service.Lb.lbIsolationDropdown": {
+                                        label: 'label.LB.isolation',
+                                        docID: 'helpNetworkOfferingLBIsolation',
+                                        isHidden: true,
+                                        select: function(args) {
+                                            args.response.success({
+                                                data: [{
+                                                    id: 'dedicated',
+                                                    description: 'Dedicated'
+                                                }, {
+                                                    id: 'shared',
+                                                    description: 'Shared'
+                                                }]
+                                            })
                                         }
                                     },
 
@@ -3128,6 +3175,12 @@
 
                                 $.each(formData, function(key, value) {
                                     var serviceData = key.split('.');
+
+                                    if (key == 'service.Lb.Netscaler.servicePackages' && value != "") {
+                                       inputData['details[' + 0 + '].servicepackageuuid'] = value;
+                                       inputData['details[' + 1 + '].servicepackagedescription'] = args.$form.find('#label_netscaler_service_packages option:selected').data().jsonObj.desc;
+                                    }
+
 
                                     if (serviceData.length > 1) {
                                         if (serviceData[0] == 'service' &&

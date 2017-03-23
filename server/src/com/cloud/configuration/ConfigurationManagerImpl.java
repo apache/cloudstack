@@ -3890,7 +3890,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
-
+        String servicePackageuuid = cmd.getServicePackageId();
         // Verify traffic type
         for (final TrafficType tType : TrafficType.values()) {
             if (tType.name().equalsIgnoreCase(trafficTypeString)) {
@@ -4266,6 +4266,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<NetworkOffering.Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive) {
 
+        String servicePackageUuid;
+        String spDescription = null;
+        if (details == null) {
+            servicePackageUuid = null;
+        } else {
+            servicePackageUuid = details.get(NetworkOffering.Detail.servicepackageuuid);
+            spDescription = details.get(NetworkOffering.Detail.servicepackagedescription);
+        }
+
+
         final String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         final int multicastRate = multicastRateStr == null ? 10 : Integer.parseInt(multicastRateStr);
         tags = StringUtils.cleanupTags(tags);
@@ -4424,9 +4434,35 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             offeringFinal.setServiceOfferingId(serviceOfferingId);
         }
 
+        //Set Service package id
+        offeringFinal.setServicePackage(servicePackageUuid);
         // validate the details
         if (details != null) {
             validateNtwkOffDetails(details, serviceProviderMap);
+        }
+
+        boolean vpcOff = false;
+        boolean nsOff = false;
+
+        if (serviceProviderMap != null && spDescription != null) {
+            for (final Network.Service service : serviceProviderMap.keySet()) {
+                final Set<Provider> providers = serviceProviderMap.get(service);
+                if (providers != null && !providers.isEmpty()) {
+                    for (final Network.Provider provider : providers) {
+                        if (provider == Provider.VPCVirtualRouter) {
+                            vpcOff = true;
+                        }
+                        if (provider == Provider.Netscaler) {
+                            nsOff = true;
+                        }
+                    }
+                }
+            }
+            if(vpcOff && nsOff) {
+                if(!(spDescription.equalsIgnoreCase("A NetScalerVPX is dedicated per network.") || spDescription.contains("dedicated NetScaler"))) {
+                    throw new InvalidParameterValueException("Only NetScaler Service Pacakge with Dedicated Device Mode is Supported in VPC Type Guest Network");
+                }
+            }
         }
 
         return Transaction.execute(new TransactionCallback<NetworkOfferingVO>() {
@@ -4751,6 +4787,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return vpcProvider || nuageVpcProvider;
     }
 
+    @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_DELETE, eventDescription = "deleting network offering")
     public boolean deleteNetworkOffering(final DeleteNetworkOfferingCmd cmd) {

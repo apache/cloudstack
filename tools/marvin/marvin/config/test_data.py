@@ -674,6 +674,54 @@ test_data = {
         "cidr": "0.0.0.0/0",
         "protocol": "TCP"
     },
+    "nw_off_ncc_SharedSP": {
+        "name": 'SharedSP',
+        "displaytext": 'SharedSP',
+        "guestiptype": 'Isolated',
+        "supportedservices":
+            'Dhcp,Dns,SourceNat,Lb,StaticNat',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "Lb": 'Netscaler',
+            "StaticNat": 'VirtualRouter'
+        }
+    },
+    "nw_off_ncc_DedicatedSP": {
+        "name": 'DedicatedSP',
+        "displaytext": 'DedicatedSP',
+        "guestiptype": 'Isolated',
+        "supportedservices":
+            'Dhcp,Dns,SourceNat,Lb,StaticNat',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "Lb": 'Netscaler',
+            "StaticNat": 'VirtualRouter'
+        }
+    },
+    "NCC": {
+        "NCCIP": '10.102.195.215',
+    },
+    "NSShared": {
+        "NSIP": '10.102.195.210',
+    },
+    "NSDedicated": {
+        "NSIP": '10.102.195.212'
+    },
+    "servicepackage_shared": {
+        "name": "SharedSP",
+    },
+    "servicepackage_dedicated": {
+        "name": "DedicatedSP",
+    },
+
     "nw_off_isolated_persistent_netscaler": {
         "name": 'Netscaler',
         "displaytext": 'Netscaler',

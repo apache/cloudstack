@@ -2197,6 +2197,12 @@ class NetworkOffering:
             cmd.ispersistent = services["ispersistent"]
         if "egress_policy" in services:
             cmd.egressdefaultpolicy = services["egress_policy"]
+        cmd.details = [{}]
+        if "servicepackageuuid" in services:
+            cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
+        if "servicepackagedescription" in services:
+            cmd.details[0]["servicepackagedescription"] = services["servicepackagedescription"]
+
 
         cmd.availability = 'Optional'
 
@@ -5154,3 +5160,18 @@ class StorageNetworkIpRange:
         cmd = listStorageNetworkIpRange.listStorageNetworkIpRangeCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listStorageNetworkIpRange(cmd))
+
+class RegisteredServicePackage:
+    """Manage ServicePackage registered with NCC"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists service packages published by NCC"""
+
+        cmd = listRegisteredServicePackages.listRegisteredServicePackagesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRegisteredServicePackages(cmd))
+

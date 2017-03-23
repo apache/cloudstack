@@ -21712,11 +21712,66 @@
             nspMap[id]: {
             };
 
+            if (id == "netscaler") {
+                var netscalerControlCenter = null;
+
+                $.ajax({
+                    url: createURL("listNetscalerControlCenter"),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                        var items = json.listNetscalerControlCenter.netscalercontrolcenter;
+                        if (items != null && items.length > 0) {
+                            netscalerControlCenter = items[0];
+                        }
+                    }
+                });
+            }
+
+            if (netscalerControlCenter != null) {
+              if (jsonObj.state == undefined) {
+                        $.ajax({
+                            url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                            dataType: "json",
+                            async: true,
+                            success: function (json) {
+                                var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                var addNetscalerProviderIntervalID = setInterval(function () {
+                                    $.ajax({
+                                        url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var result = json.queryasyncjobresultresponse;
+                                            if (result.jobstatus == 0) {
+                                                return; //Job has not completed
+                                            } else {
+                                                clearInterval(addNetscalerProviderIntervalID);
+                                                if (result.jobstatus == 1) {
+                                                    nspMap[ "netscaler"] = result.jobresult.networkserviceprovider;
+                                                    addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
+                                                } else if (result.jobstatus == 2) {
+                                                    alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + _s(result.jobresult.errortext));
+                                                }
+                                            }
+                                        },
+                                        error: function (XMLHttpResponse) {
+                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                            alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
+                                        }
+                                    });
+                                },
+                                g_queryAsyncJobResultInterval);
+                            }
+                        });
+                        jsonObj.state = "Disabled";
+                    }
+            }
+
             if (jsonObj.state) {
-                if (jsonObj.state == "Enabled")
-                allowedActions.push("disable"); else if (jsonObj.state == "Disabled")
-                allowedActions.push("enable");
-                allowedActions.push("destroy");
+               if (jsonObj.state == "Enabled")
+                 allowedActions.push("disable"); else if (jsonObj.state == "Disabled")
+                 allowedActions.push("enable");
+                 allowedActions.push("destroy");
             }
 
             allowedActions.push('add');

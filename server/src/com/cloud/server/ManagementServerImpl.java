@@ -48,8 +48,10 @@ import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.address.AcquirePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.AssociateIPAddrCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.ListPublicIpAddressesCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.affinitygroup.UpdateVMAffinityGroupCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.alert.GenerateAlertCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
@@ -3067,6 +3069,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ConfigureOutOfBandManagementCmd.class);
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
+
+        cmdList.add(AcquirePodIpCmdByAdmin.class);
+        cmdList.add(ReleasePodIpCmdByAdmin.class);
 
         return cmdList;
     }

@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -72,6 +74,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
@@ -899,6 +902,17 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public boolean configureNicSecondaryIp(NicSecondaryIp secIp, boolean isZoneSgEnabled) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
+        return true;
+    }
+
+    @Override
+    public AcquirePodIpCmdResponse allocatePodIp(Account account, String zoneId, String podId) throws ResourceAllocationException, ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

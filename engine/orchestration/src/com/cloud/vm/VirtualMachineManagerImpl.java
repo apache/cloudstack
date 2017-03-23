@@ -404,7 +404,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 try {
-                    _networkMgr.allocate(vmProfile, auxiliaryNetworks);
+                    if (!vmProfile.getBootArgs().contains("ExternalLoadBalancerVm"))
+                        _networkMgr.allocate(vmProfile, auxiliaryNetworks);
                 } catch (final ConcurrentOperationException e) {
                     throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
                 }

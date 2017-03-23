@@ -640,7 +640,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = UnmanagedApplianceSearch.create();
         sc.setParameters("lastPinged", lastPingSecondsAfter);
         sc.setParameters("types", Type.ExternalDhcp, Type.ExternalFirewall, Type.ExternalLoadBalancer, Type.BaremetalDhcp, Type.BaremetalPxe, Type.TrafficMonitor,
-            Type.L2Networking);
+            Type.L2Networking, Type.NetScalerControlCenter);
         List<HostVO> hosts = lockRows(sc, null, true);
 
         for (HostVO host : hosts) {
