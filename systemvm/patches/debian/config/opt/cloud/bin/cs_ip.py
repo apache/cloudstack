@@ -20,15 +20,14 @@ from netaddr import *
 
 def merge(dbag, ip):
     nic_dev_id = None
-    index = -1 # a non-valid array index
     for dev in dbag:
         if dev == "id":
             continue
-        for i, address in enumerate(dbag[dev]):
+        for address in dbag[dev]:
             if address['public_ip'] == ip['public_ip']:
                 if 'nic_dev_id' in address:
                     nic_dev_id = address['nic_dev_id']
-                index = i
+                dbag[dev].remove(address)
 
     ipo = IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
     if 'nic_dev_id' in ip:
@@ -45,8 +44,8 @@ def merge(dbag, ip):
     if ip['nw_type'] == 'control':
         dbag[ip['device']] = [ip]
     else:
-        if index != -1:
-            dbag[ip['device']][index] = ip
+        if 'source_nat' in ip and ip['source_nat'] and ip['device'] in dbag and len(dbag[ip['device']]) > 0:
+            dbag[ip['device']].insert(0, ip) # make sure the source_nat ip is first (primary) on the device
         else:
             dbag.setdefault(ip['device'], []).append(ip)
 
