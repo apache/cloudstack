@@ -500,11 +500,21 @@ public class MockableVyosRouterResource extends VyosRouterResource {
     }
 
     @Override
-    protected String getPrivateSubnet() throws ExecutionException {
+    protected String getPrivateSubnet(long firewallRuleId) throws ExecutionException {
         if (context.containsKey("privateSubnet")) {
             return context.get("privateSubnet");
         } else {
             throw new ExecutionException("Error calling mock getPrivateSubnet method. No private subnet set in the context hashmap.");
+        }
+
+    }
+
+    @Override
+    protected String getGuestVlanTag(long firewallRuleId) throws ExecutionException {
+        if (context.containsKey("guestVlanTag")) {
+            return context.get("guestVlanTag");
+        } else {
+            throw new ExecutionException("Error calling mock getGuestVlanTag method. No guestVlanTag set in the context hashmap.");
         }
 
     }

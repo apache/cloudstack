@@ -56,7 +56,7 @@ public class VyosRouterResourceTest {
     private String _testUsername = "vyos";
     private String _testPassword = "password";
     private String _testPublicInterface = "eth0";
-    private String _testPrivateInterface = "eth1";
+    private String _testPrivateInterface = "eth0";
 
     MockableVyosRouterResource _resource;
     Map<String, Object> _resourceParams;
@@ -93,7 +93,7 @@ public class VyosRouterResourceTest {
 
         // This will cause the tests to be run against an actual Vyos Router
         // instead of the mock router.
-        //_context.put("use_test_router", "true");
+        _context.put("use_test_router", "true");
         _resource.setMockContext(_context);
     }
 
@@ -131,7 +131,7 @@ public class VyosRouterResourceTest {
         assertTrue("VyosRouterTestDevice".equals(sc[0].getName()));
         assertTrue("TestZone".equals(sc[0].getDataCenter()));
     }
-/*
+
     @Test // implement a fully functional network including public ip, private ip, ingress firewall, egress firewall, source nat, destination nat, and static nat.
     public void implementEndToEnd() throws ConfigurationException, ExecutionException {
 
@@ -174,8 +174,8 @@ public class VyosRouterResourceTest {
 
 
     }
-*/
 
+/*
     @Test // tear down a fully functional network including public ip, private ip, ingress firewall, egress firewall, source nat, destination nat, and static nat.
     //This will only work if implementEndToEnd has been successfully run
     public void tearDownEndToEnd() throws ConfigurationException, ExecutionException {
@@ -219,7 +219,7 @@ public class VyosRouterResourceTest {
         }
 
     }
-
+*/
 
     @Test // implement public & private interfaces, source nat, guest network
     public void implementGuestNetwork() throws ConfigurationException, ExecutionException {
@@ -244,7 +244,7 @@ public class VyosRouterResourceTest {
         _resource.setMockContext(_context);
         _resource.configure("VyosRouterResource", _resourceParams);
 
-        IpAddressTO ip = new IpAddressTO(Long.valueOf("1"), "192.168.99.102", true, false, true, "untagged", null, null, null, 100, false);
+        IpAddressTO ip = new IpAddressTO(Long.valueOf("1"), "192.168.2.102", true, false, true, "2", null, null, null, 100, false);
         IpAddressTO[] ips = new IpAddressTO[1]; ips[0] = ip; IpAssocCommand cmd = new IpAssocCommand(ips);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY, "10.3.96.1");
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
@@ -284,7 +284,7 @@ public class VyosRouterResourceTest {
         _resource.setMockContext(_context);
         _resource.configure("VyosRouterResource", _resourceParams);
 
-        IpAddressTO ip = new IpAddressTO(Long.valueOf("1"), "192.168.99.102", false, false, true, "untagged", null, null, null, 100, false);
+        IpAddressTO ip = new IpAddressTO(Long.valueOf("1"), "192.168.2.102", false, false, true, "2", null, null, null, 100, false);
         IpAddressTO[] ips = new IpAddressTO[1]; ips[0] = ip; IpAssocCommand cmd = new IpAssocCommand(ips);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY, "10.3.96.1");
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
@@ -320,12 +320,18 @@ public class VyosRouterResourceTest {
         _resource.setMockContext(_context);
         _resource.configure("VyosRouterResource", _resourceParams);
 
+        String privateSubnet="10.3.96.0/24";
+        _context.put("privateSubnet", privateSubnet);
+
         long vlanId = 3954;
+        _context.put("guestVlanTag", String.valueOf(vlanId));
+        _resource.setMockContext(_context);
+
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
         //FirewallRuleTO active = new FirewallRuleTO(8, null, "192.168.99.103", "tcp", 80, 80, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
-        FirewallRuleTO active = new FirewallRuleTO(8, null, "192.168.99.102", "tcp", 22, 22, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
+        FirewallRuleTO active = new FirewallRuleTO(8, "2", "192.168.2.102", "tcp", 22, 22, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
         rules.add(active);
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
@@ -358,10 +364,17 @@ public class VyosRouterResourceTest {
         _context.put("vyosState", "withAllRules");
         _resource.setMockContext(_context);
         _resource.configure("VyosRouterResource", _resourceParams);
+        String privateSubnet="10.3.96.0/24";
+        _context.put("privateSubnet", privateSubnet);
 
-        long vlanId = 3954; List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
+
+        long vlanId = 3954;
+        _context.put("guestVlanTag", String.valueOf(vlanId));
+        _resource.setMockContext(_context);
+
+        List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         //FirewallRuleTO revoked = new FirewallRuleTO(8, null, "192.168.99.103", "tcp", 80, 80, true, false, FirewallRule.Purpose.Firewall, null, null, null);
-        FirewallRuleTO revoked = new FirewallRuleTO(8, null, "192.168.99.102", "tcp", 22, 22, true, false, FirewallRule.Purpose.Firewall, null, null, null);
+        FirewallRuleTO revoked = new FirewallRuleTO(8, null, "192.168.2.102", "tcp", 22, 22, true, false, FirewallRule.Purpose.Firewall, null, null, null);
         rules.add(revoked);
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
@@ -395,9 +408,14 @@ public class VyosRouterResourceTest {
         _context.put("vyosState", "withImplementedGuestNetwork");
         String privateSubnet="10.3.96.0/24";
         _context.put("privateSubnet", privateSubnet);
-        _resource.setMockContext(_context);
+
         _resource.configure("VyosRouterResource", _resourceParams);
-        long vlanId = 3954; List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
+
+        long vlanId = 3954;
+        _context.put("guestVlanTag", String.valueOf(vlanId));
+        _resource.setMockContext(_context);
+
+        List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
         FirewallRuleVO activeVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, cidrList, null, null, null, FirewallRule.TrafficType.Egress);
@@ -436,10 +454,14 @@ public class VyosRouterResourceTest {
         _context.put("vyosState", "withAllRules");
         String privateSubnet="10.3.96.0/24";
         _context.put("privateSubnet", privateSubnet);
-        _resource.setMockContext(_context);
+
         _resource.configure("VyosRouterResource", _resourceParams);
 
-        long vlanId = 3954; List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
+        long vlanId = 3954;
+        _context.put("guestVlanTag", String.valueOf(vlanId));
+        _resource.setMockContext(_context);
+
+        List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         FirewallRuleVO revokedVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, null, null, null, null, FirewallRule.TrafficType.Egress);
         revokedVO.setState(State.Revoke); FirewallRuleTO revoked = new FirewallRuleTO(revokedVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress); rules.add(revoked);
 
@@ -477,18 +499,18 @@ public class VyosRouterResourceTest {
         _resource.setMockContext(_context);
         _resource.configure("VyosRouterResource", _resourceParams);
 
-        System.out.println("Starting Execute");
+
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
         //StaticNatRuleTO active = new StaticNatRuleTO(9, "192.168.99.103", null, null, "10.3.97.158", null, null, null, false, false);
-        StaticNatRuleTO active = new StaticNatRuleTO(9, "192.168.99.103", null, null, "10.3.96.3", null, null, null, false, false); rules.add(active);
+        StaticNatRuleTO active = new StaticNatRuleTO(9, "2", "192.168.2.103", null, null, "10.3.96.3", null, null, null, false, false); rules.add(active);
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
 
         Answer answer = _resource.executeRequest(cmd);
-        System.out.println("Finished Execute");
+
         assertTrue(answer.getResult());
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nFINISHED TEST: addStaticNatRule");
@@ -522,7 +544,7 @@ public class VyosRouterResourceTest {
        long vlanId = 3954;
        List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
        //StaticNatRuleTO revoked = new StaticNatRuleTO(9, "192.168.99.103", null, null, "10.3.97.158", null, null, null, true, false);
-       StaticNatRuleTO revoked = new StaticNatRuleTO(9, "192.168.99.103", null, null, "10.3.96.3", null, null, null, true, false);
+       StaticNatRuleTO revoked = new StaticNatRuleTO(9, "192.168.2.103", null, null, "10.3.96.3", null, null, null, true, false);
        rules.add(revoked);
 
        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
@@ -562,7 +584,7 @@ public class VyosRouterResourceTest {
        long vlanId = 3954;
        List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
        // PortForwardingRuleTO active = new PortForwardingRuleTO(10, "192.168.99.103", 80, 80, "10.3.97.158", 8080, 8080, "tcp", false, false);
-       PortForwardingRuleTO active = new PortForwardingRuleTO(10, "192.168.99.102", 22, 22, "10.3.96.2", 22, 22, "tcp", false, false);
+       PortForwardingRuleTO active = new PortForwardingRuleTO(10, "192.168.2.102", 22, 22, "10.3.96.2", 22, 22, "tcp", false, false);
        rules.add(active);
 
        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
@@ -599,7 +621,7 @@ public class VyosRouterResourceTest {
        long vlanId = 3954;
        List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
        // PortForwardingRuleTO revoked = new PortForwardingRuleTO(10, "192.168.99.103", 80, 80, "10.3.97.158", 8080, 8080, "tcp", true, false);
-       PortForwardingRuleTO revoked = new PortForwardingRuleTO(10, "192.168.99.102", 22, 22, "10.3.96.2", 22, 22, "tcp", true, false);
+       PortForwardingRuleTO revoked = new PortForwardingRuleTO(10, "192.168.2.102", 22, 22, "10.3.96.2", 22, 22, "tcp", true, false);
        rules.add(revoked);
 
        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);

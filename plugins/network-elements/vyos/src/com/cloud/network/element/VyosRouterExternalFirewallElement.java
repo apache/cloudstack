@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddVyosRouterFirewallCmd;
@@ -61,6 +62,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.dao.ExternalFirewallDeviceVO.FirewallDeviceState;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.NetworkExternalFirewallVO;
@@ -81,6 +83,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
         PortForwardingServiceProvider, IpDeployer, VyosRouterFirewallElementService, StaticNatServiceProvider {
 
@@ -116,6 +119,8 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
     ConfigurationDao _configDao;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    FirewallRulesDao _firewallRules;
 
     private boolean canHandle(Network network, Service service) {
         DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
@@ -414,11 +419,11 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
         response.setDeviceState(fwDeviceVO.getDeviceState().name());
         response.setIpAddress(fwHost.getPrivateIpAddress());
         response.setPublicInterface(fwDetails.get("publicInterface"));
-        response.setUsageInterface(fwDetails.get("usageInterface"));
+        //response.setUsageInterface(fwDetails.get("usageInterface"));
         response.setPrivateInterface(fwDetails.get("privateInterface"));
-        response.setPublicZone(fwDetails.get("publicZone"));
-        response.setPrivateZone(fwDetails.get("privateZone"));
-        response.setNumRetries(fwDetails.get("numRetries"));
+        //response.setPublicZone(fwDetails.get("publicZone"));
+        //response.setPrivateZone(fwDetails.get("privateZone"));
+        //response.setNumRetries(fwDetails.get("numRetries"));
         response.setTimeout(fwDetails.get("timeout"));
         response.setObjectName("vyosrouterfirewall");
         return response;
@@ -451,4 +456,24 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
         }
         return applyStaticNatRules(config, rules);
     }
+
+ /*   //Given the ID of a firewall rule query cloudstack to find the guest network vlan associated with the rule.
+    public String getGuestVlanTag(long firewallRuleId) throws ExecutionException {
+        //FirewallRulesDao _fwRulesDao=this.getFirewallRulesDao();
+        if (_firewallRules == null ) {
+            throw new ExecutionException("_firewallRules is null.");
+        }
+        if (_networkDao == null ) {
+            throw new ExecutionException("_networkDao is null.");
+        }
+        FirewallRuleVO fwr = _firewallRules.findById(firewallRuleId);
+        long nwId = fwr.getNetworkId();
+        NetworkVO nw = _networkDao.findById(nwId);
+        String guestVlanTag = BroadcastDomainType.getValue(nw.getBroadcastUri());
+        s_logger.debug("\n******* In getGuestVlanTag. Returning guestVlanTag of: "+guestVlanTag+"*********************\n");
+        return guestVlanTag;
+
+    }
+*/
+
 }
