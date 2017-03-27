@@ -36,21 +36,21 @@ import java.util.List;
 
 public interface NuageVspManager extends PluggableService {
 
-    static final String nuageVspSharedNetworkOfferingWithSGServiceName = "DefaultNuageVspSharedNetworkOfferingWithSGService";
+    String nuageVspSharedNetworkOfferingWithSGServiceName = "DefaultNuageVspSharedNetworkOfferingWithSGService";
 
-    static final String nuageVPCOfferingName = "Nuage VSP VPC Offering";
+    String nuageVPCOfferingName = "Nuage VSP VPC Offering";
 
-    static final String nuageVPCOfferingDisplayText = "Nuage VSP VPC Offering";
+    String nuageVPCOfferingDisplayText = "Nuage VSP VPC Offering";
 
-    static final String nuageDomainTemplateDetailName = "domainTemplateName";
+    String nuageDomainTemplateDetailName = "domainTemplateName";
 
-    static final String nuageUnderlayVlanIpRangeDetailKey = "nuage.underlay";
+    String nuageUnderlayVlanIpRangeDetailKey = "nuage.underlay";
 
-    static final ConfigKey<Boolean> NuageVspConfigDns = new ConfigKey<Boolean>(Boolean.class, "nuagevsp.configure.dns", "Advanced", "true",
+    ConfigKey<Boolean> NuageVspConfigDns = new ConfigKey<Boolean>(Boolean.class, "nuagevsp.configure.dns", "Advanced", "true",
             "Defines if NuageVsp plugin needs to configure DNS setting for a VM or not. True will configure the DNS and false will not configure the DNS settings", true,
             Scope.Global, null);
 
-    static final ConfigKey<Boolean> NuageVspDnsExternal = new ConfigKey<Boolean>(
+    ConfigKey<Boolean> NuageVspDnsExternal = new ConfigKey<Boolean>(
             Boolean.class,
             "nuagevsp.dns.external",
             "Advanced",
@@ -61,17 +61,23 @@ public interface NuageVspManager extends PluggableService {
                     + "If nuagevsp.configure.dns is false, DNS server will not be configured in the VM. Default value for this flag is true",
             true, Scope.Global, null);
 
-    static final ConfigKey<String> NuageVspConfigGateway = new ConfigKey<String>(String.class, "nuagevsp.configure.gateway.systemid", "Advanced", "",
+    ConfigKey<String> NuageVspConfigGateway = new ConfigKey<String>(String.class, "nuagevsp.configure.gateway.systemid", "Advanced", "",
             "Defines the systemID of the gateway configured in VSP", true, Scope.Global, null);
 
-    static final ConfigKey<String> NuageVspSharedNetworkDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.sharedntwk.domaintemplate.name",
+    ConfigKey<String> NuageVspSharedNetworkDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.sharedntwk.domaintemplate.name",
             "Advanced", "", "Defines if NuageVsp plugin needs to use pre created Domain Template configured in VSP for shared networks", true, Scope.Global, null);
 
-    static final ConfigKey<String> NuageVspVpcDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.vpc.domaintemplate.name",
+    ConfigKey<String> NuageVspVpcDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.vpc.domaintemplate.name",
             "Advanced", "", "Defines if NuageVsp plugin needs to use pre created Domain Template configured in VSP for VPCs", true, Scope.Global, null);
 
-    static final ConfigKey<String> NuageVspIsolatedNetworkDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.isolatedntwk.domaintemplate.name",
+    ConfigKey<String> NuageVspIsolatedNetworkDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.isolatedntwk.domaintemplate.name",
             "Advanced", "", "Defines if NuageVsp plugin needs to use pre created Domain Template configured in VSP for isolated networks", true, Scope.Global, null);
+
+    String NETWORK_METADATA_VSD_DOMAIN_ID = "vsdDomainId";
+
+    String NETWORK_METADATA_VSD_ZONE_ID = "vsdZoneId";
+
+    String NETWORK_METADATA_VSD_SUBNET_ID = "vsdSubnetId";
 
     NuageVspDeviceVO addNuageVspDevice(AddNuageVspDeviceCmd cmd);
 

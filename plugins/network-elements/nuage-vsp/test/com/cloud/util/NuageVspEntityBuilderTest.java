@@ -19,16 +19,19 @@
 
 package com.cloud.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import net.nuage.vsp.acs.client.api.model.Protocol;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
 
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.Lists;
 
 import com.cloud.NuageTest;
 import com.cloud.dc.VlanDetailsVO;
@@ -57,15 +60,15 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
-import com.google.common.collect.Lists;
+import com.cloud.vm.dao.NicDao;
 
-import net.nuage.vsp.acs.client.api.model.Protocol;
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class NuageVspEntityBuilderTest extends NuageTest {
 
@@ -76,8 +79,12 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private static final long L2_NETWORK_OFFERING_ID = 3L;
     private static final long VPC_ID = 1L;
     private static final long SOURCE_IP_ADDRESS_ID = 1L;
+    private static final long VM_ID = 4L;
+    private static final long VLAN_ID = 5L;
+    public static final String VM_IP = "192.168.0.24";
 
     private VpcDao _vpcDao = mock(VpcDao.class);
+    private VpcDetailsDao _vpcDetailsDao = mock(VpcDetailsDao.class);
     private DomainDao _domainDao = mock(DomainDao.class);
     private AccountDao _accountDao = mock(AccountDao.class);
     private NetworkDao _networkDao = mock(NetworkDao.class);
@@ -87,6 +94,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private VlanDetailsDao _vlanDetailsDao = mock(VlanDetailsDao.class);
     private IPAddressDao _ipAddressDao = mock(IPAddressDao.class);
     private NetworkDetailsDao _networkDetailsDao = mock(NetworkDetailsDao.class);
+    private NicDao _nicDao = mock(NicDao.class);
     private NuageVspEntityBuilder _nuageVspEntityBuilder = new NuageVspEntityBuilder();
 
     private DomainVO _mockedDomain = mock(DomainVO.class);
@@ -115,6 +123,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         super.setUp();
 
         _nuageVspEntityBuilder._vpcDao = _vpcDao;
+        _nuageVspEntityBuilder._vpcDetailsDao = _vpcDetailsDao;
         _nuageVspEntityBuilder._domainDao = _domainDao;
         _nuageVspEntityBuilder._accountDao = _accountDao;
         _nuageVspEntityBuilder._networkDao = _networkDao;
@@ -126,6 +135,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         _nuageVspEntityBuilder._ipAddressDao = _ipAddressDao;
         _nuageVspEntityBuilder._networkModel = _networkModel;
         _nuageVspEntityBuilder._networkDetailsDao = _networkDetailsDao;
+        _nuageVspEntityBuilder._nicDao = _nicDao;
 
         setUpMockedDomain();
         setUpMockedAccount();
@@ -208,12 +218,15 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     }
 
     @Test
-    public void testBuildVspAclRule() {
+    public void testBuildVspAclRuleAcl() {
+        VspAclRule vspAclRule = _nuageVspEntityBuilder.buildVspAclRule(_mockedNetworkAclItem);
+        validateVspAclRule(vspAclRule, false);
+    }
+
+    @Test
+    public void testBuildVspAclRuleFirewall() {
         VspAclRule vspAclRule = _nuageVspEntityBuilder.buildVspAclRule(_mockedFirewallRule, _mockedNetwork);
         validateVspAclRule(vspAclRule, true);
-
-        vspAclRule = _nuageVspEntityBuilder.buildVspAclRule(_mockedNetworkAclItem);
-        validateVspAclRule(vspAclRule, false);
     }
 
     private void validateVspDomain(VspDomain vspDomain) {
@@ -229,6 +242,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         assertEquals("networkName", vspNetwork.getName());
         assertNotNull(vspNetwork.getVspDomain());
         validateVspDomain(vspNetwork.getVspDomain());
+
         assertEquals("accountName", vspNetwork.getAccountName());
         assertEquals("accountUuid", vspNetwork.getAccountUuid());
 
@@ -262,13 +276,14 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         assertEquals("nicUuid", vspNic.getUuid());
         assertEquals("macAddress", vspNic.getMacAddress());
         assertEquals(true, vspNic.getUseStaticIp());
-        assertEquals("10.10.10.2", vspNic.getIp());
+        assertEquals("192.168.0.24", vspNic.getIp());
     }
 
     private void validateVspStaticNat(VspStaticNat vspStaticNat, Boolean forRevoke) {
         assertEquals("staticNatIpUuid", vspStaticNat.getIpUuid());
         assertEquals("10.10.10.2", vspStaticNat.getIpAddress());
         assertEquals(forRevoke, vspStaticNat.getRevoke());
+        assertEquals(VspStaticNat.State.Allocated, vspStaticNat.getState());
         assertEquals(true, vspStaticNat.getOneToOneNat());
         assertEquals("staticNatVlanUuid", vspStaticNat.getVlanUuid());
         assertEquals("10.10.10.1", vspStaticNat.getVlanGateway());
@@ -286,10 +301,13 @@ public class NuageVspEntityBuilderTest extends NuageTest {
 
         if (isFirewall) {
             assertEquals(VspAclRule.ACLType.Firewall, vspAclRule.getType());
-            assertEquals("192.168.0.24/32", vspAclRule.getSourceIpAddress());
+            final VspStaticNat staticNat = vspAclRule.getStaticNat();
+            assertNotNull(staticNat);
+            assertEquals("192.168.0.24/32", staticNat.getDestinationIp());
             assertEquals(VspAclRule.ACLAction.Deny, vspAclRule.getAction());
         } else {
             assertEquals(VspAclRule.ACLType.NetworkACL, vspAclRule.getType());
+            assertNull(vspAclRule.getStaticNat());
             assertNull(vspAclRule.getSourceIpAddress());
             assertEquals(VspAclRule.ACLAction.Allow, vspAclRule.getAction());
         }
@@ -345,14 +363,14 @@ public class NuageVspEntityBuilderTest extends NuageTest {
 
     private void setUpMockedNicProfile() {
         when(_mockedNicProfile.getMacAddress()).thenReturn("macAddress");
-        when(_mockedNicProfile.getIPv4Address()).thenReturn("10.10.10.2");
+        when(_mockedNicProfile.getIPv4Address()).thenReturn(VM_IP);
         when(_mockedNicProfile.getNetworkId()).thenReturn(NETWORK_ID);
     }
 
     private void setUpMockedNic() {
         when(_mockedNic.getUuid()).thenReturn("nicUuid");
         when(_mockedNic.getMacAddress()).thenReturn("macAddress");
-        when(_mockedNic.getIPv4Address()).thenReturn("10.10.10.2");
+        when(_mockedNic.getIPv4Address()).thenReturn(VM_IP);
         when(_mockedNic.getNetworkId()).thenReturn(NETWORK_ID);
     }
 
@@ -360,8 +378,11 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_mockedStaticNatIp.getUuid()).thenReturn("staticNatIpUuid");
         when(_mockedStaticNatIp.getAddress()).thenReturn(new Ip("10.10.10.2"));
         when(_mockedStaticNatIp.isOneToOneNat()).thenReturn(true);
-        when(_mockedStaticNatIp.getVmIp()).thenReturn("192.168.0.24");
+        when(_mockedStaticNatIp.getVmIp()).thenReturn(VM_IP);
+        when(_mockedStaticNatIp.getAssociatedWithNetworkId()).thenReturn(NETWORK_ID);
+        when(_mockedStaticNatIp.getAssociatedWithVmId()).thenReturn(VM_ID);
         when(_mockedStaticNatIp.getState()).thenReturn(IpAddress.State.Allocated);
+        when(_mockedStaticNatIp.getVlanId()).thenReturn(VLAN_ID);
     }
 
     private void setUpMockedStaticNatVlan() {
@@ -410,8 +431,11 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_networkModel.areServicesSupportedByNetworkOffering(SHARED_NETWORK_OFFERING_ID, Network.Service.Firewall)).thenReturn(true);
         when(_networkModel.areServicesSupportedByNetworkOffering(L2_NETWORK_OFFERING_ID, Network.Service.Firewall)).thenReturn(true);
         when(_vlanDao.listVlansByNetworkId(NETWORK_ID)).thenReturn(Lists.newArrayList(_mockedVlan));
+        when(_vlanDao.findById(VLAN_ID)).thenReturn(_mockedVlan);
         when(_vlanDetailsDao.findDetail(anyLong(), anyString())).thenReturn(_mockedVlanDetail);
         when(_vpcDao.findById(VPC_ID)).thenReturn(_mockedVpc);
         when(_ipAddressDao.findById(SOURCE_IP_ADDRESS_ID)).thenReturn(_mockedStaticNatIp);
+        when(_vpcDetailsDao.listDetailsKeyPairs(VPC_ID)).thenReturn(null);
+        when(_nicDao.findByIp4AddressAndNetworkId("192.168.0.24", NETWORK_ID)).thenReturn(_mockedNic);
     }
 }

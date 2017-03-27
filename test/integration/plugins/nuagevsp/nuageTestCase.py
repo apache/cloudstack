@@ -51,6 +51,7 @@ import socket
 import sys
 import time
 from retry import retry
+from nuage_vsp_statistics import VsdDataCollector
 
 
 class needscleanup(object):

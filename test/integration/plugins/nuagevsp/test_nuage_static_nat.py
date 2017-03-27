@@ -165,27 +165,28 @@ class TestNuageStaticNat(nuageTestCase):
                 time.sleep(60)
                 tries += 1
 
-        if not filename and not headers:
-            if non_default_nic:
-                self.debug("Failed to wget from VM via this NIC as it is not "
-                           "the default NIC")
-            else:
-                self.fail("Failed to wget from VM")
+        try:
+            if not filename and not headers:
+                if non_default_nic:
+                    self.debug("Failed to wget from VM via this NIC as it "
+                               "is not the default NIC")
+                else:
+                    self.fail("Failed to wget from VM")
+        finally:
+            # Removing Ingress Firewall/Network ACL rule
+            self.debug("Removing the created Ingress Firewall/Network ACL "
+                       "rule in the network...")
+            public_http_rule.delete(self.api_client)
 
-        # Removing Ingress Firewall/Network ACL rule
-        self.debug("Removing the created Ingress Firewall/Network ACL "
-                   "rule in the network...")
-        public_http_rule.delete(self.api_client)
+            # VSD verification
+            with self.assertRaises(Exception):
+                self.verify_vsd_firewall_rule(public_http_rule)
+            self.debug("Ingress Firewall/Network ACL rule successfully "
+                       "deleted in VSD")
 
-        # VSD verification
-        with self.assertRaises(Exception):
-            self.verify_vsd_firewall_rule(public_http_rule)
-        self.debug("Ingress Firewall/Network ACL rule successfully "
-                   "deleted in VSD")
-
-        self.debug("Successfully verified Static NAT traffic by performing "
-                   "wget traffic test with the given Static NAT enabled "
-                   "public IP - %s" % public_ip)
+            self.debug("Successfully verified Static NAT traffic by "
+                       "performing wget traffic test with the given Static "
+                       "NAT enabled public IP - %s" % public_ip)
 
     # wget_from_internet - From within the given VM (ssh client),
     # fetches index.html file of an Internet web server, wget www.google.com
@@ -240,30 +241,31 @@ class TestNuageStaticNat(nuageTestCase):
 
         # SSH into VM
         ssh_client = None
-        if non_default_nic:
+        try:
+            if non_default_nic:
+                with self.assertRaises(Exception):
+                    self.ssh_into_VM(vm, public_ip, negative_test=True)
+                self.debug("Can not SSH into the VM via this NIC as it is "
+                           "not the default NIC")
+            else:
+                ssh_client = self.ssh_into_VM(vm, public_ip)
+
+            # wget from Internet
+            test_result = None
+            if ssh_client and self.isInternetConnectivityAvailable:
+                timeout = 100 if negative_test else 300
+                test_result = self.wget_from_Internet(ssh_client, timeout)
+        finally:
+            # Removing Ingress Firewall/Network ACL rule
+            self.debug("Removing the created Ingress Firewall/Network ACL "
+                       "rule in the network...")
+            public_ssh_rule.delete(self.api_client)
+
+            # VSD verification
             with self.assertRaises(Exception):
-                self.ssh_into_VM(vm, public_ip, negative_test=True)
-            self.debug("Can not SSH into the VM via this NIC as it is not the "
-                       "default NIC")
-        else:
-            ssh_client = self.ssh_into_VM(vm, public_ip)
-
-        # wget from Internet
-        test_result = None
-        if ssh_client and self.isInternetConnectivityAvailable:
-            timeout = 100 if negative_test else 300
-            test_result = self.wget_from_Internet(ssh_client, timeout)
-
-        # Removing Ingress Firewall/Network ACL rule
-        self.debug("Removing the created Ingress Firewall/Network ACL "
-                   "rule in the network...")
-        public_ssh_rule.delete(self.api_client)
-
-        # VSD verification
-        with self.assertRaises(Exception):
-            self.verify_vsd_firewall_rule(public_ssh_rule)
-        self.debug("Ingress Firewall/Network ACL rule successfully "
-                   "deleted in VSD")
+                self.verify_vsd_firewall_rule(public_ssh_rule)
+            self.debug("Ingress Firewall/Network ACL rule successfully "
+                       "deleted in VSD")
 
         # Removing Egress Network ACL rule
         if vpc and self.http_proxy:
@@ -1579,7 +1581,7 @@ class TestNuageStaticNat(nuageTestCase):
         self.verify_vsd_floating_ip(network_2, vm, public_ip_2.ipaddress)
 
         # Verifying Static NAT traffic
-        with self.assertRaises(Exception):
+        with self.assertRaises(AssertionError):
             self.verify_StaticNAT_traffic(network_1, public_ip_1)
         self.debug("Static NAT rule not enabled in this VM NIC")
         self.verify_StaticNAT_traffic(network_2, public_ip_2)
