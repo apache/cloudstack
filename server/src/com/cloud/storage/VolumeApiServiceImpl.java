@@ -1437,7 +1437,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // that supported by hypervisor
         if (deviceId == null || deviceId.longValue() != 0) {
             List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
-            int maxAttachableDataVolumesSupported = getMaxDataVolumesSupported(vm) - 2; //IDs: 0 (ROOT) and 3 (CD-ROM) are reserved
+            int maxAttachableDataVolumesSupported = getMaxDataVolumesSupported(vm);
             if (existingDataVolumes.size() >= maxAttachableDataVolumesSupported) {
                 throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxAttachableDataVolumesSupported + ") attached. Please specify another VM.");
             }
@@ -2569,11 +2569,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private Long getDeviceId(UserVmVO vm, Long deviceId) {
         // allocate deviceId
-        int maxDeviceId = getMaxDataVolumesSupported(vm) - 1;
+        int maxDevices = getMaxDataVolumesSupported(vm) + 2; // add 2 to consider devices root volume and cdrom
+        int maxDeviceId = maxDevices - 1;
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         if (deviceId != null) {
-            if (deviceId.longValue() <= 0 || deviceId.longValue() > maxDeviceId || deviceId.longValue() == 3) {
-                throw new RuntimeException("deviceId should be 1,2,4-" + maxDeviceId);
+            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId  || deviceId.longValue() == 3) {
+                throw new RuntimeException("deviceId should be 0,1,2,4-" + maxDeviceId);
             }
             for (VolumeVO vol : vols) {
                 if (vol.getDeviceId().equals(deviceId)) {
