@@ -306,7 +306,7 @@ class TestStorageTags(cloudstackTestCase):
                                          podid=cls.pod.id,
                                          tags=cls.services["storage_tags"]["a"]
             )
-            cls._cleanup.append(cls.storage_pool_1)
+            #PS not appended to _cleanup, it is removed on tearDownClass before cleaning up resources
             assert cls.storage_pool_1.state == 'Up'
             storage_pools_response = list_storage_pools(cls.apiclient,
                                                         id=cls.storage_pool_1.id)
@@ -369,7 +369,18 @@ class TestStorageTags(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             # First expunge vm, so PS can be cleaned up
-            cls.virtual_machine_1.delete(cls.apiclient, expunge=True)
+            cls.virtual_machine_1.delete(cls.apiclient)
+
+            # Force delete primary storage
+            cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+            cmd.id = cls.storage_pool_1.id
+            cls.apiclient.enableStorageMaintenance(cmd)
+            time.sleep(30)
+            cmd = deleteStoragePool.deleteStoragePoolCmd()
+            cmd.id = cls.storage_pool_1.id
+            cmd.forced = True
+            cls.apiclient.deleteStoragePool(cmd)
+            
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Cleanup failed with %s" % e)
@@ -539,6 +550,9 @@ class TestStorageTags(cloudstackTestCase):
         )
         vol = vm_1_volumes[0]
         
+        if self.hypervisor.lower() not in ["vmware", "xenserver"]:
+            self.virtual_machine_1.stop(self.apiclient)
+            
         # Check migration options for volume
         pools_response = StoragePool.listForMigration(
             self.apiclient,
