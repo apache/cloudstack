@@ -32,6 +32,10 @@ import org.apache.cloudstack.framework.config.ConfigKey;
  *
  */
 public interface SnapshotManager {
+    public static final int HOURLYMAX = 8;
+    public static final int DAILYMAX = 8;
+    public static final int WEEKLYMAX = 8;
+    public static final int MONTHLYMAX = 12;
     public static final int DELTAMAX = 16;
 
     static final ConfigKey<Integer> SnapshotHourlyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.hourly", "Snapshots", "8",
