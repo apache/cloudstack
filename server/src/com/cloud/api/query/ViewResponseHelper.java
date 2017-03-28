@@ -73,11 +73,11 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.api.query.vo.StorageTagVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.user.Account;
 
 /**
@@ -294,10 +294,10 @@ public class ViewResponseHelper {
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
-    public static List<StorageTagResponse> createStorageTagResponse(StorageTagVO... storageTags) {
+    public static List<StorageTagResponse> createStorageTagResponse(StoragePoolTagVO... storageTags) {
         ArrayList<StorageTagResponse> list = new ArrayList<StorageTagResponse>();
 
-        for (StorageTagVO vr : storageTags) {
+        for (StoragePoolTagVO vr : storageTags) {
             list.add(ApiDBUtils.newStorageTagResponse(vr));
         }
 
