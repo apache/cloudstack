@@ -182,12 +182,14 @@ public class TransactionLegacy implements Closeable {
     }
 
     public void checkConnection() {
-        try {
-            if (_conn != null && !_conn.isValid(3)) {
+        if ( _dbId != CONNECTED_DB) {
+            try {
+                if (_conn != null && !_conn.isValid(3)) {
+                    _conn = null;
+                }
+            } catch (SQLException e) {
                 _conn = null;
             }
-        } catch (SQLException e) {
-            _conn = null;
         }
     }
 
