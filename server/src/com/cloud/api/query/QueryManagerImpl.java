@@ -1715,6 +1715,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String type = cmd.getType();
         Map<String, String> tags = cmd.getTags();
         Long storageId = cmd.getStorageId();
+        Long clusterId = cmd.getClusterId();
         Long diskOffId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
 
@@ -1818,6 +1819,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("storageId", storageId);
         }
 
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
         // Don't return DomR and ConsoleProxy volumes
         sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
 

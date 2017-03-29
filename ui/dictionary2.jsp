@@ -1016,6 +1016,9 @@ $.extend(dictionary, {
 'label.na': '<fmt:message key="label.na" />',
 'label.added.network.offering': '<fmt:message key="label.added.network.offering" />',
 'label.no': '<fmt:message key="label.no" />',
-'label.local.storage.enabled.system.vms': '<fmt:message key="label.local.storage.enabled.system.vms" />'
+'label.local.storage.enabled.system.vms': '<fmt:message key="label.local.storage.enabled.system.vms" />',
+'label.disk.physicalsize': '<fmt:message key="label.disk.physicalsize" />',
+'label.disk.virtualsize': '<fmt:message key="label.disk.virtualsize" />',
+'label.disk.utilisation': '<fmt:message key="label.disk.utilisation" />'
 });
 </script>

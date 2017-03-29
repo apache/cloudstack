@@ -128,6 +128,8 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.GetVolumeStatsAnswer;
+import com.cloud.agent.api.GetVolumeStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
@@ -181,6 +183,7 @@ import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -1309,6 +1312,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((GetVmStatsCommand)cmd);
             } else if (cmd instanceof GetVmDiskStatsCommand) {
                 return execute((GetVmDiskStatsCommand)cmd);
+            } else if (cmd instanceof GetVolumeStatsCommand) {
+                return execute((GetVolumeStatsCommand)cmd);
             } else if (cmd instanceof RebootRouterCommand) {
                 return execute((RebootRouterCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
@@ -3469,6 +3474,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected GetVmDiskStatsAnswer execute(GetVmDiskStatsCommand cmd) {
         List<String> vmNames = cmd.getVmNames();
         try {
+            s_logger.info("GetVMDiskStats " + cmd.getString());
             HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsNameMap = new HashMap<String, List<VmDiskStatsEntry>>();
             Connect conn = LibvirtConnection.getConnection();
             for (String vmName : vmNames) {
@@ -4903,11 +4909,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
                 String path = disk.getDiskPath(); // for example, path = /mnt/pool_uuid/disk_path/
                 String diskPath = null;
+                s_logger.info("Disk Stat= diskPath " + diskPath);
                 if (path != null) {
                     String[] token = path.split("/");
                     if (token.length > 3) {
                         diskPath = token[3];
                         VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
+                        s_logger.info("Disk Stat=" + stat.toString());
                         stats.add(stat);
                     }
                 }
@@ -4919,6 +4927,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 dm.free();
             }
         }
+    }
+
+    protected GetVolumeStatsAnswer execute(GetVolumeStatsCommand cmd) {
+        try {
+            Connect conn = LibvirtConnection.getConnection();
+            String storeUuid = cmd.getPoolUuid();
+            StoragePoolType poolType = cmd.getPoolType();
+            HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
+            for (String volumeUuid : cmd.getVolumeUuids()) {
+                statEntry.put(volumeUuid, getVolumeStat(conn, volumeUuid, storeUuid, poolType));
+            }
+            return new GetVolumeStatsAnswer(cmd, "", statEntry);
+        } catch (LibvirtException e) {
+            return new GetVolumeStatsAnswer(cmd, "Can't get vm disk stats: " + e.getMessage(), null);
+        }
+    }
+
+    private VolumeStatsEntry getVolumeStat(Connect conn, String volumeUuid, String storeUuid, StoragePoolType poolType) throws LibvirtException {
+        KVMStoragePool sourceKVMPool = _storagePoolMgr.getStoragePool(poolType, storeUuid);
+        KVMPhysicalDisk sourceKVMVolume = sourceKVMPool.getPhysicalDisk(volumeUuid);
+        return new VolumeStatsEntry(volumeUuid, sourceKVMVolume.getSize(), sourceKVMVolume.getVirtualSize());
     }
 
     private class VmStats {

@@ -119,6 +119,7 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.GetVolumeStatsAnswer;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
@@ -184,6 +185,8 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.GetVolumeStatsCommand;
+import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -439,6 +442,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((GetVmStatsCommand)cmd);
         } else if (clazz == GetVmDiskStatsCommand.class) {
             return execute((GetVmDiskStatsCommand)cmd);
+        } else if (clazz == GetVolumeStatsCommand.class) {
+            return execute((GetVolumeStatsCommand)cmd);
         } else if (clazz == CheckHealthCommand.class) {
             return execute((CheckHealthCommand)cmd);
         } else if (clazz == StopCommand.class) {
@@ -2435,6 +2440,26 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new GetVmDiskStatsAnswer(cmd, null, null, null);
     }
 
+    protected GetVolumeStatsAnswer execute(GetVolumeStatsCommand cmd) {
+        Connection conn = getConnection();
+        HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
+        for (String volumeUuid : cmd.getVolumeUuids()) {
+            VDI vdi = getVDIbyUuid(conn, volumeUuid, false);
+            if (vdi != null) {
+                try {
+                    VolumeStatsEntry vse = new VolumeStatsEntry(volumeUuid, vdi.getPhysicalUtilisation(conn), vdi.getVirtualSize(conn));
+                    statEntry.put(volumeUuid, vse);
+                } catch (Exception e) {
+                    s_logger.warn("Unable to get volume stats", e);
+                    statEntry.put(volumeUuid, new VolumeStatsEntry(volumeUuid, -1, -1));
+                }
+            } else {
+                s_logger.warn("VDI not found for path " + volumeUuid);
+                statEntry.put(volumeUuid, new VolumeStatsEntry(volumeUuid, -1L, -1L));
+            }
+        }
+        return new GetVolumeStatsAnswer(cmd, "", statEntry);
+    }
 
     protected Document getStatsRawXML(Connection conn, boolean host) {
         Date currentDate = new Date();
