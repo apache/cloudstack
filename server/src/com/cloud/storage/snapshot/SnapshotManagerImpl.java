@@ -1114,8 +1114,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             } catch (Exception e) {
                 s_logger.debug("post process snapshot failed", e);
             }
+        } catch (CloudRuntimeException cre) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to create snapshot" + cre.getLocalizedMessage());
+            }
+            _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+            _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
+            throw cre;
         } catch (Exception e) {
-            s_logger.debug("Failed to create snapshot", e);
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to create snapshot", e);
+            }
             _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
             _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
             throw new CloudRuntimeException("Failed to create snapshot", e);

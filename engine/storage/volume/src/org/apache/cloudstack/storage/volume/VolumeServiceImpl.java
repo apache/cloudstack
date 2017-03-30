@@ -1993,8 +1993,14 @@ public class VolumeServiceImpl implements VolumeService {
         SnapshotInfo snapshot = null;
         try {
             snapshot = snapshotMgr.takeSnapshot(volume);
+        } catch (CloudRuntimeException cre) {
+            s_logger.error("Take snapshot: " + volume.getId() + " failed", cre);
+            // TODO deal with cleaning the mess
+            throw cre;
         } catch (Exception e) {
-            s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("unknown exception while taking snapshot for volume " + volume.getId() + " was caught", e);
+            }
             throw new CloudRuntimeException("Failed to take snapshot", e);
         }
 
