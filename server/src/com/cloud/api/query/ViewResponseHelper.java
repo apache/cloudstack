@@ -290,7 +290,7 @@ public class ViewResponseHelper {
                 if (vs != null){
                     long vsz = vs.getVirtualSize();
                     long psz = vs.getPhysicalSize() ;
-                    double util = (int)(psz/vsz);
+                    double util = (double)psz/vsz;
                     vrData.setVirtualsize(vsz);
                     vrData.setPhysicalsize(psz);
                     vrData.setUtilization(df.format(util));
