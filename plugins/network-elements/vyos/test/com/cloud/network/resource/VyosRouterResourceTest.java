@@ -337,6 +337,7 @@ public class VyosRouterResourceTest {
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
+        cmd.setAccessDetail("PUBLIC_VLAN_TAG", "2");
 
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
@@ -379,6 +380,7 @@ public class VyosRouterResourceTest {
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
+        cmd.setAccessDetail("PUBLIC_VLAN_TAG", "2");
 
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
@@ -424,7 +426,8 @@ public class VyosRouterResourceTest {
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
-        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, privateSubnet);
+        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
+        cmd.setAccessDetail("PUBLIC_VLAN_TAG", "2");
 
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
@@ -467,7 +470,8 @@ public class VyosRouterResourceTest {
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
-        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, privateSubnet);
+        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
+        cmd.setAccessDetail("PUBLIC_VLAN_TAG", "2");
 
         Answer answer = _resource.executeRequest(cmd);
         assertTrue(answer.getResult());
@@ -508,6 +512,7 @@ public class VyosRouterResourceTest {
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
+        cmd.setAccessDetail("PUBLIC_VLAN_TAG", "2");
 
         Answer answer = _resource.executeRequest(cmd);
 
@@ -550,6 +555,7 @@ public class VyosRouterResourceTest {
        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
        cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
+       cmd.setAccessDetail("PUBLIC_VLAN_TAG", "2");
 
        Answer answer = _resource.executeRequest(cmd);
        assertTrue(answer.getResult());
@@ -590,6 +596,7 @@ public class VyosRouterResourceTest {
        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
        cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
+       cmd.setAccessDetail("PUBLIC_VLAN_TAG", "2");
 
        Answer answer = _resource.executeRequest(cmd);
        assertTrue(answer.getResult());
@@ -625,8 +632,9 @@ public class VyosRouterResourceTest {
        rules.add(revoked);
 
        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
-       cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG,Long.toString(vlanId));
+       cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.0/24");
+       cmd.setAccessDetail("PUBLIC_VLAN_TAG", "2");
 
        Answer answer = _resource.executeRequest(cmd);
        assertTrue(answer.getResult());

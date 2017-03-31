@@ -499,6 +499,7 @@ public class MockableVyosRouterResource extends VyosRouterResource {
         return response;
     }
 
+/*
     @Override
     protected String getPrivateSubnet(long firewallRuleId) throws ExecutionException {
         if (context.containsKey("privateSubnet")) {
@@ -508,7 +509,9 @@ public class MockableVyosRouterResource extends VyosRouterResource {
         }
 
     }
+*/
 
+ /*
     @Override
     protected String getGuestVlanTag(long firewallRuleId) throws ExecutionException {
         if (context.containsKey("guestVlanTag")) {
@@ -516,9 +519,8 @@ public class MockableVyosRouterResource extends VyosRouterResource {
         } else {
             throw new ExecutionException("Error calling mock getGuestVlanTag method. No guestVlanTag set in the context hashmap.");
         }
-
     }
-
+*/
 
 
 
