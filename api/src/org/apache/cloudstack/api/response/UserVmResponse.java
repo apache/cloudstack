@@ -144,6 +144,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the ID of the service offering of the virtual machine")
     private String serviceOfferingId;
 
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "the ID of the VPC the virtual machine belongs to", since = "4.11")
+    private String vpcId;
+
     @SerializedName("serviceofferingname")
     @Param(description = "the name of the service offering of the virtual machine")
     private String serviceOfferingName;
@@ -708,6 +712,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public void setVgpu(String vgpu) {
         this.vgpu = vgpu;
     }
+
     public void setCpuUsed(String cpuUsed) {
         this.cpuUsed = cpuUsed;
     }
@@ -812,5 +817,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setOsTypeId(Long osTypeId) {
         this.osTypeId = osTypeId;
+    }
+
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 }

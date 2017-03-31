@@ -370,7 +370,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "dynamically_scalable")
     private boolean isDynamicallyScalable;
 
-
     public UserVmJoinVO() {
     }
 
@@ -826,7 +825,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
     }
-
 
     @Override
     public Class<?> getEntityType() {
