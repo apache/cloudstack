@@ -91,7 +91,7 @@ public class OutOfBandManagementResponse extends BaseResponse {
         this.setDriver(outOfBandManagementConfig.getDriver());
         this.setIpAddress(outOfBandManagementConfig.getAddress());
         if (outOfBandManagementConfig.getPort() != null) {
-            this.setPort(String.valueOf(outOfBandManagementConfig.getPort()));
+            this.setPort(outOfBandManagementConfig.getPort());
         }
         this.setUsername(outOfBandManagementConfig.getUsername());
         if (!Strings.isNullOrEmpty(outOfBandManagementConfig.getPassword())) {

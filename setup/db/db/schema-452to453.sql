@@ -385,5 +385,6 @@ CREATE VIEW `cloud`.`volume_view` AS
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
 
-
+-- Out-of-band management driver for nested-cloudstack
+ALTER TABLE `cloud`.`oobm` MODIFY COLUMN port VARCHAR(255);
 

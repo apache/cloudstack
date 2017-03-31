@@ -93,6 +93,7 @@
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
     <module>outofbandmanagement-drivers/ipmitool</module>
+    <module>outofbandmanagement-drivers/nested-cloudstack</module>
   </modules>
 
   <dependencies>
