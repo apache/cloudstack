@@ -31,7 +31,6 @@ import com.cloud.storage.Volume;
  *
  */
 public interface SnapshotManager {
-
     public static final int HOURLYMAX = 8;
     public static final int DAILYMAX = 8;
     public static final int WEEKLYMAX = 8;
