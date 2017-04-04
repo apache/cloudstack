@@ -183,7 +183,7 @@ public class Upgrade4920to41000 implements DbUpgrade {
                     // Change value of global configuration parameter
                     // minreq.sysvmtemplate.version for the ACS version
                     try (PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");) {
-                        update_pstmt.setString(1, getUpgradedVersion());
+                        update_pstmt.setString(1, "4.10.0");
                         update_pstmt.setString(2, "minreq.sysvmtemplate.version");
                         update_pstmt.executeUpdate();
                     } catch (final SQLException e) {
