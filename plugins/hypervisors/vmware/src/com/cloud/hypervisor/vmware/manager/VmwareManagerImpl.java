@@ -556,11 +556,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // "until we have found out a VMware API that can check if there are pending tasks on the subject VM"
         // but as we expire jobs and those stale worker VMs stay around untill an MS reboot we opt in to have them removed anyway
         Long hungWorkerTimeout = 2 * (AsyncJobManagerImpl.JobExpireMinutes.value() + AsyncJobManagerImpl.JobCancelThresholdMinutes.value()) * MILISECONDS_PER_MINUTE;
-        if(s_vmwareCleanOldWorderVMs.value() && System.currentTimeMillis() - startTick > hungWorkerTimeout) {
+        Long letsSayNow = System.currentTimeMillis();
+        if(s_vmwareCleanOldWorderVMs.value() && letsSayNow - startTick > hungWorkerTimeout) {
             if(s_logger.isInfoEnabled()) {
                 s_logger.info("Worker VM expired, seconds elapsed: " + (System.currentTimeMillis() - startTick) / 1000);
             }
             return true;
+        }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Worker VM with tag '" + workerTag + "' does not need recycling, yet." +
+                    "But in " + (startTick + hungWorkerTimeout - letsSayNow) + " milisecs, though");
         }
         return false;
     }
