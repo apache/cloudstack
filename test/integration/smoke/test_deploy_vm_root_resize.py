@@ -21,15 +21,18 @@
 from marvin.cloudstackTestCase import cloudstackTestCase
 #Import Integration Libraries
 #base - contains all resources as entities and defines create, delete, list operations on them
-from marvin.lib.base import Account, VirtualMachine, ServiceOffering, Configurations,StoragePool
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering,\
+    Configurations,StoragePool,Template
 #utils - utility classes for common cleanup, external library wrappers etc
 from marvin.lib.utils import cleanup_resources,validateList
 from marvin.lib.common import get_zone, get_domain, get_template,\
     list_volumes,list_storage_pools,list_configurations
 from marvin.codes import FAILED,INVALID_INPUT
 from nose.plugins.attrib import attr
+from marvin.sshClient import SshClient
+import time
 import re
-
+from marvin.cloudstackAPI import updateTemplate,registerTemplate
 
 class TestDeployVmRootSize(cloudstackTestCase):
     """Test deploy a VM into a user account
@@ -40,7 +43,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
                                      cls).getClsTestClient()
         cls.api_client = cls.cloudstacktestclient.getApiClient()
         cls.hypervisor = cls.cloudstacktestclient.getHypervisorInfo().lower()
-        #cls.hypervisor="vmware"
+        cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
+
         # Get Zone, Domain and Default Built-in template
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client,
@@ -49,6 +53,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
         cls.services["mode"] = cls.zone.networktype
         cls._cleanup = []
         cls.updateclone = False
+        cls.restartreq = False
+        cls.defaultdiskcontroller = "ide"
         cls.template = get_template(cls.api_client, cls.zone.id)
         if cls.template == FAILED:
             assert False, "get_template() failed to return template "
@@ -57,15 +63,55 @@ class TestDeployVmRootSize(cloudstackTestCase):
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
-            domainid=cls.domain.id
+            domainid=cls.domain.id,admin=True
         )
         cls._cleanup.append(cls.account)
         list_pool_resp = list_storage_pools(cls.api_client,
                                             account=cls.account.name,
                                             domainid=cls.domain.id)
-        #Identify the storage pool type  and set vmware fullclone to true if storage is VMFS
+        #Identify the storage pool type  and set vmware fullclone to
+        # true if storage is VMFS
         if cls.hypervisor == 'vmware':
-            for strpool in list_pool_resp:
+             # please make sure url of templateregister dictionary in
+             # test_data.config pointing to .ova file
+
+             list_config_storage_response = list_configurations(
+                        cls.api_client
+                        , name=
+                        "vmware.root.disk.controller")
+             cls.defaultdiskcontroller = list_config_storage_response[0].value
+             if list_config_storage_response[0].value == "ide" or \
+                             list_config_storage_response[0].value == \
+                             "osdefault":
+                        Configurations.update(cls.api_client,
+                                              "vmware.root.disk.controller",
+                                              value="scsi")
+
+                        cls.updateclone = True
+                        cls.restartreq = True
+
+             list_config_fullclone_global_response = list_configurations(
+                        cls.api_client
+                        , name=
+                        "vmware.create.full.clone")
+             if list_config_fullclone_global_response[0].value=="false":
+                        Configurations.update(cls.api_client,
+                                              "vmware.create.full.clone",
+                                              value="true")
+
+                        cls.updateclone = True
+                        cls.restartreq = True
+
+             cls.tempobj = Template.register(cls.api_client,
+                                    cls.services["templateregister"],
+                                    hypervisor=cls.hypervisor,
+                                    zoneid=cls.zone.id,
+                                         account=cls.account.name,
+                                         domainid=cls.domain.id
+                                        )
+             cls.tempobj.download(cls.api_client)
+
+             for strpool in list_pool_resp:
                 if strpool.type.lower() == "vmfs" or strpool.type.lower()== "networkfilesystem":
                     list_config_storage_response = list_configurations(
                         cls.api_client
@@ -74,17 +120,19 @@ class TestDeployVmRootSize(cloudstackTestCase):
                     res = validateList(list_config_storage_response)
                     if res[2]== INVALID_INPUT:
                         raise Exception("Failed to  list configurations ")
+
                     if list_config_storage_response[0].value == "false":
                         Configurations.update(cls.api_client,
                                               "vmware.create.full.clone",
-                                              value="true",storageid=strpool.id)
+                                              value="true",
+                                              storageid=strpool.id)
                         cls.updateclone = True
                         StoragePool.update(cls.api_client,id=strpool.id,
                                            tags="scsi")
                         cls.storageID = strpool.id
                         break
-
-
+             if cls.restartreq:
+                cls.restartServer()
         #create a service offering
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -104,6 +152,13 @@ class TestDeployVmRootSize(cloudstackTestCase):
                 Configurations.update(cls.api_client,
                                       "vmware.create.full.clone",
                                       value="false",storageid=cls.storageID)
+                Configurations.update(cls.api_client,
+                                              "vmware.create.full.clone",
+                                              value="false")
+                Configurations.update(cls.api_client,
+                                              "vmware.root.disk.controller",
+                                              value=cls.defaultdiskcontroller)
+
 
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
@@ -125,6 +180,28 @@ class TestDeployVmRootSize(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
+
+    @classmethod
+    def restartServer(cls):
+        """Restart management server"""
+
+        sshClient = SshClient(
+                    cls.mgtSvrDetails["mgtSvrIp"],
+            22,
+            cls.mgtSvrDetails["user"],
+            cls.mgtSvrDetails["password"]
+        )
+        command = "service cloudstack-management stop"
+        sshClient.execute(command)
+
+        command = "service cloudstack-management start"
+        sshClient.execute(command)
+
+        #time.sleep(cls.services["sleep"])
+        time.sleep(300)
+
+        return
+
     @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
     def test_00_deploy_vm_root_resize(self):
         """Test deploy virtual machine with root resize
@@ -147,7 +224,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         accountid=self.account.name,
                         domainid=self.domain.id,
                         serviceofferingid=self.services_offering_vmware.id,
-                        templateid=self.template.id
+                        templateid=self.tempobj.id,
+                        rootdisksize=newrootsize
                     )
 
             else:
@@ -225,7 +303,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                     zoneid=self.zone.id,
                     domainid=self.account.domainid,
                     serviceofferingid=self.service_offering.id,
-                    templateid=self.template.id,
+                    templateid=self.tempobj.id,
                     rootdisksize=newrootsize
                 )
             except Exception as ex:
@@ -254,7 +332,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         accountid=self.account.name,
                         domainid=self.domain.id,
                         serviceofferingid=self.services_offering_vmware.id,
-                        templateid=self.template.id
+                        templateid=self.tempobj.id,
+                        rootdisksize=newrootsize
                     )
 
                 else:
@@ -296,7 +375,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
                             accountid=self.account.name,
                             domainid=self.domain.id,
                             serviceofferingid=self.services_offering_vmware.id,
-                            templateid=self.template.id
+                            templateid=self.tempobj.id,
+                            rootdisksize=newrootsize
                         )
 
                 else:
@@ -317,10 +397,12 @@ class TestDeployVmRootSize(cloudstackTestCase):
 
             self.assertEqual(success, True, "Check if passing rootdisksize < templatesize fails appropriately")
         else:
-            self.debug("test 01 does not support hypervisor type " + self.hypervisor)
+            self.debug("test 02 does not support hypervisor type " +
+                       self.hypervisor)
 
     def tearDown(self):
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
+
