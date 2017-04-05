@@ -189,7 +189,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                     cls.mgtSvrDetails["mgtSvrIp"],
             22,
             cls.mgtSvrDetails["user"],
-            cls.mgtSvrDetails["password"]
+            cls.mgtSvrDetails["passwd"]
         )
         command = "service cloudstack-management stop"
         sshClient.execute(command)
