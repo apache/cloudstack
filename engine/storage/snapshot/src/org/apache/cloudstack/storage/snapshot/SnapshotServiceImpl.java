@@ -282,9 +282,6 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             SnapshotResult res = future.get();
             if (res.isFailed()) {
-                // TODO add cleanup actions in this case
-                // TODO think of whether a runtime exception is really what we want]
-
                 throw new CloudRuntimeException(res.getResult());
             }
             SnapshotInfo destSnapshot = res.getSnapshot();
