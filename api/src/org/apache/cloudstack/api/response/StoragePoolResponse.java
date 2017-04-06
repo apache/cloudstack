@@ -309,4 +309,12 @@ public class StoragePoolResponse extends BaseResponse {
     public void setOverProvisionFactor(String overProvisionFactor) {
         this.overProvisionFactor = overProvisionFactor;
     }
+
+    public String getOverProvisionFactor() {
+        return overProvisionFactor;
+    }
+
+    public Boolean getSuitableForMigration() {
+        return suitableForMigration;
+    }
 }

@@ -239,4 +239,92 @@ public class ZoneResponse extends BaseResponse {
         }
         this.resourceDetails = new HashMap<>(details);
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getDns1() {
+        return dns1;
+    }
+
+    public String getDns2() {
+        return dns2;
+    }
+
+    public String getInternalDns1() {
+        return internalDns1;
+    }
+
+    public String getInternalDns2() {
+        return internalDns2;
+    }
+
+    public String getGuestCidrAddress() {
+        return guestCidrAddress;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getNetworkType() {
+        return networkType;
+    }
+
+    public boolean isSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
+
+    public String getAllocationState() {
+        return allocationState;
+    }
+
+    public String getZoneToken() {
+        return zoneToken;
+    }
+
+    public String getDhcpProvider() {
+        return dhcpProvider;
+    }
+
+    public List<CapacityResponse> getCapacitites() {
+        return capacitites;
+    }
+
+    public boolean isLocalStorageEnabled() {
+        return localStorageEnabled;
+    }
+
+    public Set<ResourceTagResponse> getTags() {
+        return tags;
+    }
+
+    public Map<String, String> getResourceDetails() {
+        return resourceDetails;
+    }
 }

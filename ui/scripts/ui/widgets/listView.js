@@ -1245,12 +1245,11 @@
 
                 if (field.thresholdcolor && field.thresholds) {
                     if ((field.thresholds.disable in dataItem) && (field.thresholds.notification in dataItem)) {
-                        var disableThreshold = parseFloat(dataItem[field.thresholds.disable]);
-                        var notificationThreshold = parseFloat(dataItem[field.thresholds.notification]);
-                        var value = parseFloat(content);
-                        if (value >= disableThreshold) {
+                        var disableThreshold = dataItem[field.thresholds.disable];
+                        var notificationThreshold = dataItem[field.thresholds.notification];
+                        if (disableThreshold) {
                             $td.addClass('alert-disable-threshold');
-                        } else if (value >= notificationThreshold) {
+                        } else if (notificationThreshold) {
                             $td.addClass('alert-notification-threshold');
                         }
                     }
