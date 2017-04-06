@@ -16,18 +16,55 @@
 // under the License.
 (function($, cloudStack) {
     cloudStack.installWizard = {
+        changedFirstPassword: false,
         // Check if install wizard should be invoked
         check: function(args) {
-            $.ajax({
-                url: createURL('listZones'),
-                dataType: 'json',
-                async: true,
-                success: function(data) {
-                    args.response.success({
-                        doInstall: !data.listzonesresponse.zone
-                    });
-                }
-            });
+            if(isAdmin()) {
+                $.ajax({
+                    url: createURL('listDomains'),
+                    data: {
+                        listAll: true,
+                        level: '0'
+                    },
+                    dataType: 'json',
+                    async: false,
+                    success: function(json) {
+                        var rootDomain= json.listdomainsresponse.domain[0];
+                        $.ajax({
+                            url: createURL('listUsers'),
+                            data: {
+                                listAll: true,
+                                domainid: rootDomain.id,
+                                account: 'admin'
+                            },
+                            dataType: 'json',
+                            async: false,
+                            success: function(json) {
+                                var adminUsers = json.listusersresponse.user;
+                                var adminUser;
+                                for(var i=0; i<adminUsers.length; i++) {
+                                    if(adminUsers[i].username === 'admin') {
+                                        adminUser = adminUsers[i];
+                                        break;
+                                    }
+                                }
+                                if(adminUser != null && (adminUser.userdetails == null || adminUser.userdetails.isdefaultpassword == null)) {
+                                    cloudStack.installWizard.changedFirstPassword = true;
+                                }
+
+                                args.response.success({
+                                    doInstall: !cloudStack.installWizard.changedFirstPassword
+                                });
+                            }
+                        });
+
+                  }
+                });
+            } else {
+                args.response.success({
+                    doInstall: false
+                });
+            }
         },
 
         changeUser: function(args) {
@@ -37,7 +74,7 @@
                     id: cloudStack.context.users[0].userid,
                     password: md5Hashed ? $.md5(args.data.password) : args.data.password
                 },
-                type: 'POST',
+                type: "POST",
                 dataType: 'json',
                 async: true,
                 success: function(data) {
