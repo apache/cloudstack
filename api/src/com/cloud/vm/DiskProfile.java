@@ -139,6 +139,10 @@ public class DiskProfile {
         return templateId;
     }
 
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
+
     /**
      * @return disk offering id that the disk is based on.
      */

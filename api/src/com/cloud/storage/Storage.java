@@ -113,7 +113,8 @@ public class Storage {
         SYSTEM, /* routing, system vm template */
         BUILTIN, /* buildin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
-        USER /* User supplied template/iso */
+        USER, /* User supplied template/iso */
+        DATADISK /* Template corresponding to a datadisk(non root disk) present in an OVA */
     }
 
     public static enum StoragePoolType {

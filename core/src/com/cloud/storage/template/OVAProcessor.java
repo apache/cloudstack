@@ -28,10 +28,12 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
 
@@ -126,6 +128,52 @@ public class OVAProcessor extends AdapterBase implements Processor {
                 throw new InternalErrorException("Failed to read capacity and capacityAllocationUnits from the OVF file: " + ovfFileName);
             }
             return virtualSize;
+        } catch (Exception e) {
+            String msg = "Unable to parse OVF XML document to get the virtual disk size due to" + e;
+            s_logger.error(msg);
+            throw new InternalErrorException(msg);
+        }
+    }
+
+    public Pair<Long, Long> getDiskDetails(String ovfFilePath, String diskName) throws InternalErrorException {
+        long virtualSize = 0;
+        long fileSize = 0;
+        String fileId = null;
+        try {
+            Document ovfDoc = null;
+            ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFilePath));
+            NodeList disks = ovfDoc.getElementsByTagName("Disk");
+            NodeList files = ovfDoc.getElementsByTagName("File");
+            for (int j = 0; j < files.getLength(); j++) {
+                Element file = (Element)files.item(j);
+                if (file.getAttribute("ovf:href").equals(diskName)) {
+                    fileSize = Long.parseLong(file.getAttribute("ovf:size"));
+                    fileId = file.getAttribute("ovf:id");
+                    break;
+                }
+            }
+            for (int i = 0; i < disks.getLength(); i++) {
+                Element disk = (Element)disks.item(i);
+                if (disk.getAttribute("ovf:fileRef").equals(fileId)) {
+                    virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
+                    String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
+                    if ((virtualSize != 0) && (allocationUnits != null)) {
+                        long units = 1;
+                        if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
+                            units = 1024;
+                        } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
+                            units = 1024 * 1024;
+                        } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
+                            units = 1024 * 1024 * 1024;
+                        }
+                        virtualSize = virtualSize * units;
+                    } else {
+                        throw new InternalErrorException("Failed to read capacity and capacityAllocationUnits from the OVF file: " + ovfFilePath);
+                    }
+                    break;
+                }
+            }
+            return new Pair<Long, Long>(virtualSize, fileSize);
         } catch (Exception e) {
             String msg = "Unable to parse OVF XML document to get the virtual disk size due to" + e;
             s_logger.error(msg);
