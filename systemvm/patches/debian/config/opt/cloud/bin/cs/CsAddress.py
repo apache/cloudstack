@@ -380,7 +380,7 @@ class CsIP:
             self.fw.append(["mangle", "",
                             "-A FIREWALL_%s DROP" % self.address['public_ip']])
             self.fw.append(["mangle", "",
-                            "-A VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
+                            "-I VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
             self.fw.append(["nat", "",
