@@ -22,6 +22,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -129,7 +131,7 @@ import com.cloud.vm.DomainRouterVO;
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
 
-    private static final long MILISECONDS_PER_MINUTE = 60000;
+    private static final long SECONDS_PER_MINUTE = 60;
     private static final int STARTUP_DELAY = 60000;                 // 60 seconds
     private static final long DEFAULT_HOST_SCAN_INTERVAL = 600000;     // every 10 minutes
     private long _hostScanInterval = DEFAULT_HOST_SCAN_INTERVAL;
@@ -555,17 +557,18 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // this time-out check was disabled
         // "until we have found out a VMware API that can check if there are pending tasks on the subject VM"
         // but as we expire jobs and those stale worker VMs stay around untill an MS reboot we opt in to have them removed anyway
-        Long hungWorkerTimeout = 2 * (AsyncJobManagerImpl.JobExpireMinutes.value() + AsyncJobManagerImpl.JobCancelThresholdMinutes.value()) * MILISECONDS_PER_MINUTE;
-        Long letsSayNow = System.currentTimeMillis();
-        if(s_vmwareCleanOldWorderVMs.value() && letsSayNow - startTick > hungWorkerTimeout) {
+        Instant start = Instant.ofEpochMilli(startTick);
+        Instant end = start.plusSeconds(2 * (AsyncJobManagerImpl.JobExpireMinutes.value() + AsyncJobManagerImpl.JobCancelThresholdMinutes.value()) * SECONDS_PER_MINUTE);
+        Instant now = Instant.now();
+        if(s_vmwareCleanOldWorderVMs.value() && now.isAfter(end)) {
             if(s_logger.isInfoEnabled()) {
-                s_logger.info("Worker VM expired, seconds elapsed: " + (System.currentTimeMillis() - startTick) / 1000);
+                s_logger.info("Worker VM expired, seconds elapsed: " + Duration.between(start,now).getSeconds());
             }
             return true;
         }
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Worker VM with tag '" + workerTag + "' does not need recycling, yet." +
-                    "But in " + (startTick + hungWorkerTimeout - letsSayNow) + " milisecs, though");
+                    "But in " + Duration.between(now,end).getSeconds() + " seconds, though");
         }
         return false;
     }
