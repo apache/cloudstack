@@ -72,8 +72,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list templates by zoneId")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.SHOW_REMOVED, type=CommandType.BOOLEAN, description="show removed templates as well")
+    @Parameter(name = ApiConstants.SHOW_REMOVED, type = CommandType.BOOLEAN, description = "show removed templates as well")
     private Boolean showRemoved;
+
+    @Parameter(name = ApiConstants.PARENT_TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list datadisk templates by parent template id", since = "4.4")
+    private Long parentTemplateId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -101,6 +104,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     public Boolean getShowRemoved() {
         return (showRemoved != null ? showRemoved : false);
+    }
+
+    public Long getParentTemplateId() {
+        return parentTemplateId;
     }
 
     public boolean listInReadyState() {

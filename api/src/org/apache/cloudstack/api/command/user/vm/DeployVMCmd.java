@@ -58,6 +58,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.offering.DiskOffering;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
@@ -183,6 +185,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
+
+    @Parameter(name = ApiConstants.DATADISKTEMPLATE_TO_DISKOFFERING_LIST, type = CommandType.MAP, since = "4.4", description = "datadisk template to disk-offering mapping;" +
+            " an optional parameter used to create additional data disks from datadisk templates; can't be specified with diskOfferingId parameter")
+    private Map dataDiskTemplateToDiskOfferingList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -380,6 +386,38 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     public String getKeyboard() {
         // TODO Auto-generated method stub
         return keyboard;
+    }
+
+
+    public Map<Long, DiskOffering> getDataDiskTemplateToDiskOfferingMap() {
+        if (diskOfferingId != null && dataDiskTemplateToDiskOfferingList != null) {
+            throw new InvalidParameterValueException("diskofferingid paramter can't be specified along with datadisktemplatetodiskofferinglist parameter");
+        }
+        HashMap<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = new HashMap<Long, DiskOffering>();
+        if (dataDiskTemplateToDiskOfferingList != null && !dataDiskTemplateToDiskOfferingList.isEmpty()) {
+            Collection dataDiskTemplatesCollection = dataDiskTemplateToDiskOfferingList.values();
+            Iterator iter = dataDiskTemplatesCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> dataDiskTemplates = (HashMap<String, String>)iter.next();
+                Long dataDiskTemplateId;
+                DiskOffering dataDiskOffering = null;
+                VirtualMachineTemplate dataDiskTemplate= _entityMgr.findByUuid(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+                if (dataDiskTemplate == null) {
+                    dataDiskTemplate = _entityMgr.findById(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+                    if (dataDiskTemplate == null)
+                        throw new InvalidParameterValueException("Unable to translate and find entity with datadisktemplateid " + dataDiskTemplates.get("datadisktemplateid"));
+                }
+                dataDiskTemplateId = dataDiskTemplate.getId();
+                dataDiskOffering = _entityMgr.findByUuid(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+                if (dataDiskOffering == null) {
+                    dataDiskOffering = _entityMgr.findById(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+                    if (dataDiskOffering == null)
+                        throw new InvalidParameterValueException("Unable to translate and find entity with diskofferingId " + dataDiskTemplates.get("diskofferingid"));
+                }
+                dataDiskTemplateToDiskOfferingMap.put(dataDiskTemplateId, dataDiskOffering);
+            }
+        }
+        return dataDiskTemplateToDiskOfferingMap;
     }
 
     /////////////////////////////////////////////////////

@@ -202,8 +202,12 @@ import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateAnswer;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.GetDatadisksAnswer;
+import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
@@ -446,6 +450,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((GetStorageStatsCommand)cmd);
             } else if (clz == PrimaryStorageDownloadCommand.class) {
                 answer = execute((PrimaryStorageDownloadCommand)cmd);
+            } else if (clz == CreateDatadiskTemplateCommand.class) {
+                answer = execute((CreateDatadiskTemplateCommand)cmd);
+            } else if (clz == GetDatadisksCommand.class) {
+                answer = execute((GetDatadisksCommand)cmd);
             } else if (clz == GetVncPortCommand.class) {
                 answer = execute((GetVncPortCommand)cmd);
             } else if (clz == SetupCommand.class) {
@@ -4361,6 +4369,44 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String msg = "PrimaryStorageDownloadCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new PrimaryStorageDownloadAnswer(msg);
+        }
+    }
+
+    protected GetDatadisksAnswer execute(GetDatadisksCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource GetDatadisksCommand: " + _gson.toJson(cmd));
+        }
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            return (GetDatadisksAnswer)mgr.getStorageManager().execute(this, cmd);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
+            String msg = "GetDatadisksCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new GetDatadisksAnswer(msg);
+        }
+    }
+
+    protected CreateDatadiskTemplateAnswer execute(CreateDatadiskTemplateCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource CreateDatadiskTemplatesCommand: " + _gson.toJson(cmd));
+        }
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            return (CreateDatadiskTemplateAnswer)mgr.getStorageManager().execute(this, cmd);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
+            String msg = "CreateDatadiskTemplatesCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new CreateDatadiskTemplateAnswer(msg);
         }
     }
 

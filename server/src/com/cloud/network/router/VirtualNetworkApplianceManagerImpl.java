@@ -2062,6 +2062,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
         if (result) {
             final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
+            s_logger.warn("MDOVA finalizeStart Bypassing GetDomRVersionAnswer command " + versionAnswer.getDetails());
             router.setTemplateVersion(versionAnswer.getTemplateVersion());
             router.setScriptsVersion(versionAnswer.getScriptsVersion());
             _routerDao.persist(router, guestNetworks);

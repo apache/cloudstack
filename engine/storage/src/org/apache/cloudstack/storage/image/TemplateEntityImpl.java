@@ -307,4 +307,10 @@ public class TemplateEntityImpl implements TemplateEntity {
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public Long getParentTemplateId() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
