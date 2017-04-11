@@ -627,7 +627,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 // there is only one ip in this public vlan and removing it, so
                 // remove the nic
-                if (lastIp != null && !ip.isAdd()) {
+                if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
                     final VIF correctVif = getCorrectVif(conn, router, network);
                     // in isolated network eth2 is the default public interface. We don't want to delete it.
                     if (correctVif != null && !correctVif.getDevice(conn).equals("2")) {

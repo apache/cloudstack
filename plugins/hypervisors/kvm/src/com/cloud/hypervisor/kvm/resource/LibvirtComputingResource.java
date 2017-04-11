@@ -1771,7 +1771,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
 
-                if (lastIp != null && !ip.isAdd()) {
+                if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
                     // in isolated network eth2 is the default public interface. We don't want to delete it.
                     if (nicNum != 2) {
                         vifHotUnPlug(conn, routerName, ip.getVifMacAddress());

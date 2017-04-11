@@ -176,8 +176,6 @@ public class CommandSetupHelper {
     @Inject
     private IPAddressDao _ipAddressDao;
     @Inject
-    private FirewallRulesDao _firewallsDao;
-    @Inject
     private GuestOSDao _guestOSDao;
 
     @Inject
@@ -854,11 +852,12 @@ public class CommandSetupHelper {
             int ipsWithrules = 0;
             int ipsStaticNat = 0;
             for (IPAddressVO ip : userIps) {
-                if ( _firewallsDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active) > 0 ) {
+                if ( _rulesDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active) > 0){
                     ipsWithrules++;
                 }
 
-                // check onetoonenat and also check if the ip "add":false. If there are 2 PF remove 1 static nat add
+                // check onetoonenat and also check if the ip "add":false. If there are 2 PF rules remove and
+                // 1 static nat rule add
                 if (ip.isOneToOneNat() && ip.getRuleState() == null) {
                     ipsStaticNat++;
                 }
@@ -871,10 +870,12 @@ public class CommandSetupHelper {
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
-            // if there 1 static nat then it will be checked for remove at the resource
-            if (ipsWithrules == 0 && ipsStaticNat == 0 ) {
+            // if there is 1 static nat then it will be checked for remove at the resource
+            if (ipsWithrules == 0 && ipsStaticNat == 0) {
                 // there is only one ip address for the network.
                 cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
+            } else {
+                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "false");
             }
 
             cmds.addCommand(ipAssocCommand, cmd);

@@ -117,6 +117,7 @@ public class IPAddressVO implements IpAddress {
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
+    //static nat rule state
     @Enumerated(value = EnumType.STRING)
     @Column(name = "rule_state")
     State ruleState;
