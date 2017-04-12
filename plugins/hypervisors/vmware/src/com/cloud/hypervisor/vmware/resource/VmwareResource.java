@@ -867,7 +867,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // when we dynamically plug in a new NIC into virtual router, it may take time to show up in guest OS
         // we use a waiting loop here as a workaround to synchronize activities in systems
         long startTick = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTick < 15000) {
+        long waitTimeoutMillis = VmwareManager.s_vmwareNicHotplugWaitTimeout.value();
+        while (System.currentTimeMillis() - startTick < waitTimeoutMillis) {
 
             // TODO : this is a temporary very inefficient solution, will refactor it later
             Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "ls /proc/sys/net/ipv4/conf");

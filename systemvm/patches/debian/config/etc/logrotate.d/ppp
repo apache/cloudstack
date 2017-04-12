@@ -1,5 +1,5 @@
 /var/log/ppp-connect-errors {
-	size 10M
+	maxsize 10M
 	rotate 5
 	missingok
 	notifempty

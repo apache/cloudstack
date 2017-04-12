@@ -316,6 +316,11 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         VolumeVO vol = volDao.findById(volume.getId());
+        if (vol == null) {
+            s_logger.debug("Volume " + volume.getId() + " is not found");
+            future.complete(result);
+            return future;
+        }
 
         if (!volumeExistsOnPrimary(vol)) {
             // not created on primary store

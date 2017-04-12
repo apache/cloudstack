@@ -268,6 +268,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _rngRateBytes = 2048;
     private File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
+    private long _totalMemory;
 
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
@@ -1515,7 +1516,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String getBroadcastUriFromBridge(final String brName) {
         final String pif = matchPifFileInDirectory(brName);
-        final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)");
+        final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)(\\D*)(\\d*)");
         final Matcher matcher = pattern.matcher(pif);
         s_logger.debug("getting broadcast uri for pif " + pif + " and bridge " + brName);
         if(matcher.find()) {
@@ -1523,7 +1524,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
             }
             else{
-                if (!matcher.group(4).isEmpty()) {
+                if (!matcher.group(6).isEmpty()) {
+                    return BroadcastDomainType.Vlan.toUri(matcher.group(6)).toString();
+                } else if (!matcher.group(4).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
                 } else {
                     //untagged or not matching (eth|bond|team)#.#
@@ -2453,6 +2456,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public StartupCommand[] initialize() {
 
         final List<Object> info = getHostInfo();
+        _totalMemory = (Long)info.get(2);
 
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), _hypervisorType,
@@ -3585,5 +3589,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 continue;
             }
         }
+    }
+
+    public long getTotalMemory() {
+        return _totalMemory;
     }
 }

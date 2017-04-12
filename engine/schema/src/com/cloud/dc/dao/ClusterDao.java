@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import java.util.List;
-import java.util.Map;
-
 import com.cloud.dc.ClusterVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
+
+import java.util.List;
+import java.util.Map;
 
 public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<ClusterVO> listByPodId(long podId);
@@ -44,7 +44,7 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
 
     List<ClusterVO> listClustersByDcId(long zoneId);
 
-    List<Long> listAllCusters(long zoneId);
+    List<Long> listAllClusters(Long zoneId);
 
     boolean getSupportsResigning(long clusterId);
 }

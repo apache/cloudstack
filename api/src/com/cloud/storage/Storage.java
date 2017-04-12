@@ -143,6 +143,10 @@ public class Storage {
         public boolean isShared() {
             return shared;
         }
+
+        public boolean supportsOverProvisioning() {
+            return this == StoragePoolType.NetworkFilesystem || this == StoragePoolType.VMFS || this == StoragePoolType.PreSetup;
+        }
     }
 
     public static List<StoragePoolType> getNonSharedStoragePoolTypes() {

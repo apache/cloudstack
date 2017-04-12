@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,17 +15,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+//
 
-import java.util.List;
+package com.cloud.agent.api;
 
-import org.apache.cloudstack.api.response.StorageTagResponse;
+import java.util.Map;
 
-import com.cloud.api.query.vo.StorageTagVO;
-import com.cloud.utils.db.GenericDao;
+public class SetHostParamsCommand extends Command {
 
-public interface StorageTagDao extends GenericDao<StorageTagVO, Long> {
-    StorageTagResponse newStorageTagResponse(StorageTagVO storageTag);
+    Map<String, String> params;
 
-    List<StorageTagVO> searchByIds(Long... storageTagIds);
+    public SetHostParamsCommand(Map<String, String> params) {
+        this.params = params;
+    }
+
+    public Map<String, String> getParams() {
+        return params;
+    }
+
+    protected SetHostParamsCommand() {
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 }
