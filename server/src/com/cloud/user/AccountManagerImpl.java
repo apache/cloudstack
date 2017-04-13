@@ -172,12 +172,16 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
     @Inject
     private AccountDao _accountDao;
+    @Inject
+    private AccountManager _accountMgr;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -2076,7 +2080,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public UserAccount authenticateUser(String username, String password, Long domainId, InetAddress loginIpAddress, Map<String, Object[]> requestParameters) {
+    public UserAccount authenticateUser(final String username, final String password, final Long domainId, final InetAddress loginIpAddress, final Map<String, Object[]>
+            requestParameters) {
         UserAccount user = null;
         if (password != null && !password.isEmpty()) {
             user = getUserAccount(username, password, domainId, requestParameters);
@@ -2186,6 +2191,27 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return null;
             }
 
+            // We authenticated successfully by now, let's check if we are allowed to login from the ip address the reqest comes from
+            final Account account = _accountMgr.getAccount(user.getAccountId());
+            final DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
+
+            // Get the CIDRs from where this account is allowed to make calls
+            final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s","");
+            final Boolean ApiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
+
+            if (ApiSourceCidrChecksEnabled) {
+                s_logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
+
+                // Block when is not in the list of allowed IPs
+                if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
+                    s_logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replaceAll("/","")
+                            + " does not match " + accessAllowedCidrs);
+                    throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
+                            + loginIpAddress.toString().replaceAll("/","") + "; please provide valid credentials");
+                }
+            }
+
+            // Here all is fine!
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
