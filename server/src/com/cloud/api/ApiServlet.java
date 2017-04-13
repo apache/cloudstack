@@ -345,14 +345,14 @@ public class ApiServlet extends HttpServlet {
         if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             return null;
         }
-        if(NetUtils.isValidIp(ip) || NetUtils.isValidIpv6(ip)) {
+        if(NetUtils.isValidIp4(ip) || NetUtils.isValidIp6(ip)) {
             return ip;
         }
         //it could be possible to have multiple IPs in HTTP header, this happens if there are multiple proxy in between
         //the client and the servlet, so parse the client IP
         String[] ips = ip.split(",");
         for(String i : ips) {
-            if(NetUtils.isValidIp(i.trim()) || NetUtils.isValidIpv6(i.trim())) {
+            if(NetUtils.isValidIp4(i.trim()) || NetUtils.isValidIp6(i.trim())) {
                 return i.trim();
             }
         }

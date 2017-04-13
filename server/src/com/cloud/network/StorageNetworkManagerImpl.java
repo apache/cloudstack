@@ -84,7 +84,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
             final String[] existingPodIpRange = podIpRange.split("-");
 
             if (existingPodIpRange.length > 1) {
-                if (!NetUtils.isValidIp(existingPodIpRange[0]) || !NetUtils.isValidIp(existingPodIpRange[1])) {
+                if (!NetUtils.isValidIp4(existingPodIpRange[0]) || !NetUtils.isValidIp4(existingPodIpRange[1])) {
                     continue;
                 }
 
@@ -137,7 +137,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         String endIp = cmd.getEndIp();
         final String netmask = cmd.getNetmask();
 
-        if (netmask != null && !NetUtils.isValidNetmask(netmask)) {
+        if (netmask != null && !NetUtils.isValidIp4Netmask(netmask)) {
             throw new CloudRuntimeException("Invalid netmask:" + netmask);
         }
 
@@ -207,7 +207,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
             endIp = startIp;
         }
 
-        if (!NetUtils.isValidNetmask(netmask)) {
+        if (!NetUtils.isValidIp4Netmask(netmask)) {
             throw new CloudRuntimeException("Invalid netmask:" + netmask);
         }
 

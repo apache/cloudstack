@@ -221,11 +221,11 @@ public class PodZoneConfig {
         if (add) {
 
             // Make sure the gateway is valid
-            if (!NetUtils.isValidIp(vlanGateway))
+            if (!NetUtils.isValidIp4(vlanGateway))
                 return genReturnList("false", "Please specify a valid gateway.");
 
             // Make sure the netmask is valid
-            if (!NetUtils.isValidIp(vlanNetmask))
+            if (!NetUtils.isValidIp4(vlanNetmask))
                 return genReturnList("false", "Please specify a valid netmask.");
 
             // Check if a vlan with the same vlanId already exists in the specified zone

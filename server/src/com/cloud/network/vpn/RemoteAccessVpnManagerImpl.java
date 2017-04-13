@@ -194,7 +194,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (range.length != 2) {
             throw new InvalidParameterValueException("Invalid ip range");
         }
-        if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])) {
+        if (!NetUtils.isValidIp4(range[0]) || !NetUtils.isValidIp4(range[1])) {
             throw new InvalidParameterValueException("Invalid ip in range specification " + ipRange);
         }
         if (!NetUtils.validIpRange(range[0], range[1])) {
@@ -271,7 +271,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (range.length != 2) {
             throw new ConfigurationException("Remote Access VPN: Invalid ip range " + ipRange);
         }
-        if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])) {
+        if (!NetUtils.isValidIp4(range[0]) || !NetUtils.isValidIp4(range[1])) {
             throw new ConfigurationException("Remote Access VPN: Invalid ip in range specification " + ipRange);
         }
         if (!NetUtils.validIpRange(range[0], range[1])) {

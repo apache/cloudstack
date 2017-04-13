@@ -140,7 +140,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                 }
 
                 //check wether the given ip is valid ip or not
-                if (vmIp == null || !NetUtils.isValidIp(vmIp)) {
+                if (vmIp == null || !NetUtils.isValidIp4(vmIp)) {
                     throw new InvalidParameterValueException("Invalid ip address "+ vmIp +" passed in vmidipmap for " +
                             "vmid " + vmId);
                 }

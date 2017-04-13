@@ -2293,12 +2293,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.debug("addRouteToInternalIp: destIp is null");
             return;
         }
-        if (!NetUtils.isValidIp(destIpOrCidr) && !NetUtils.isValidCIDR(destIpOrCidr)) {
+        if (!NetUtils.isValidIp4(destIpOrCidr) && !NetUtils.isValidIp4Cidr(destIpOrCidr)) {
             s_logger.warn(" destIp is not a valid ip address or cidr destIp=" + destIpOrCidr);
             return;
         }
         boolean inSameSubnet = false;
-        if (NetUtils.isValidIp(destIpOrCidr)) {
+        if (NetUtils.isValidIp4(destIpOrCidr)) {
             if (eth1ip != null && eth1mask != null) {
                 inSameSubnet = NetUtils.sameSubnet(eth1ip, destIpOrCidr, eth1mask);
             } else {

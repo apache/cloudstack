@@ -704,7 +704,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
 
         sourceCidr.add(network.getCidr());
-        destCidr.add(NetUtils.ALL_CIDRS);
+        destCidr.add(NetUtils.ALL_IP4_CIDRS);
 
         FirewallRuleVO ruleVO =
             new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr, destCidr, null, null, null,
@@ -905,7 +905,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         List<String> oneCidr = new ArrayList<String>();
-        oneCidr.add(NetUtils.ALL_CIDRS);
+        oneCidr.add(NetUtils.ALL_IP4_CIDRS);
         return createFirewallRule(ipAddrId, caller, null, startPort, endPort, protocol, oneCidr, null, icmpCode, icmpType, relatedRuleId, FirewallRule.FirewallRuleType.User,
             networkId, FirewallRule.TrafficType.Ingress, true);
     }

@@ -2148,10 +2148,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
-        if (!NetUtils.isValidIpv6(startIPv6)) {
+        if (!NetUtils.isValidIp6(startIPv6)) {
             throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
         }
-        if (!NetUtils.isValidIpv6(endIPv6)) {
+        if (!NetUtils.isValidIp6(endIPv6)) {
             throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
         }
 
@@ -2159,7 +2159,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
         }
 
-        if (!NetUtils.isValidIpv6(ip6Gateway)) {
+        if (!NetUtils.isValidIp6(ip6Gateway)) {
             throw new InvalidParameterValueException("Invalid ip6Gateway");
         }
         if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
@@ -2188,13 +2188,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         String ip6 = ips.getIp6Address();
         String mac = ips.getMacAddress();
         if (ip4 != null) {
-            if (!NetUtils.isValidIp(ip4)) {
+            if (!NetUtils.isValidIp4(ip4)) {
                 throw new InvalidParameterValueException("Invalid specified IPv4 address " + ip4);
             }
             //Other checks for ipv4 are done in assignPublicIpAddress()
         }
         if (ip6 != null) {
-            if (!NetUtils.isValidIpv6(ip6)) {
+            if (!NetUtils.isValidIp6(ip6)) {
                 throw new InvalidParameterValueException("Invalid specified IPv6 address " + ip6);
             }
             if (_ipv6Dao.findByNetworkIdAndIp(networkId, ip6) != null) {

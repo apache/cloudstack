@@ -649,7 +649,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (answer.getResult()) {
                     String vmIp = answer.getDetails();
 
-                    if (NetUtils.isValidIp(vmIp)) {
+                    if (NetUtils.isValidIp4(vmIp)) {
                         // set this vm ip addr in vm nic.
                         if (nic != null) {
                             nic.setIPv4Address(vmIp);
@@ -1184,7 +1184,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         NicProfile profile = new NicProfile(ipAddress, null, macAddress);
         if (ipAddress != null) {
-            if (!(NetUtils.isValidIp(ipAddress) || NetUtils.isValidIpv6(ipAddress))) {
+            if (!(NetUtils.isValidIp4(ipAddress) || NetUtils.isValidIp6(ipAddress))) {
                 throw new InvalidParameterValueException("Invalid format for IP address parameter: " + ipAddress);
             }
         }
