@@ -53,6 +53,8 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
+import static com.cloud.storage.StorageManager.VmPoolAllocationAlgorithm;
+
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(AbstractStoragePoolAllocator.class);
     @Inject
@@ -100,8 +102,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
-        return reOrder(pools, vmProfile, plan);
+        return select(dskCh, vmProfile, plan, avoid, returnUpTo);
     }
 
     protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
@@ -176,12 +177,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             account = vmProfile.getOwner();
         }
 
-        if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
+        String poolAllocationAlgorithm = VmPoolAllocationAlgorithm.value();
+        if ((poolAllocationAlgorithm.equals("default") && (_allocationAlgorithm.equals("random")
+                || _allocationAlgorithm.equals("userconcentratedpod_random") || (account == null))) || poolAllocationAlgorithm.equals("random")) {
             // Shuffle this so that we don't check the pools in the same order.
             Collections.shuffle(pools);
-        } else if (_allocationAlgorithm.equals("userdispersing")) {
+        } else if ((poolAllocationAlgorithm.equals("default") && _allocationAlgorithm.equals("userdispersing")) ||
+                poolAllocationAlgorithm.equals("userdispersing")) {
             pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
-        } else if(_allocationAlgorithm.equals("firstfitleastconsumed")){
+        } else if((poolAllocationAlgorithm.equals("default") && _allocationAlgorithm.equals("firstfitleastconsumed")) ||
+                poolAllocationAlgorithm.equals("firstfitleastconsumed")){
             pools = reorderPoolsByCapacity(plan, pools);
         }
         return pools;

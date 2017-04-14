@@ -82,7 +82,8 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         // data disk and host identified from deploying vm (attach volume case)
         if (plan.getHostId() != null) {
             List<StoragePoolVO> hostTagsPools = _storagePoolDao.findLocalStoragePoolsByHostAndTags(plan.getHostId(), dskCh.getTags());
-            for (StoragePoolVO pool : hostTagsPools) {
+            List<StoragePool> orderedPools = reOrder((ArrayList<StoragePool>)(ArrayList)hostTagsPools, vmProfile, plan);
+            for (StoragePool pool : orderedPools) {
                 if (pool != null && pool.isLocal()) {
                     StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                     if (filter(avoid, storagePool, dskCh, plan)) {
@@ -104,7 +105,8 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
             List<StoragePoolVO> availablePools =
                 _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
-            for (StoragePoolVO pool : availablePools) {
+            List<StoragePool> orderedPools = reOrder((ArrayList<StoragePool>)(ArrayList)availablePools, vmProfile, plan);
+            for (StoragePool pool : orderedPools) {
                 if (suitablePools.size() == returnUpTo) {
                     break;
                 }

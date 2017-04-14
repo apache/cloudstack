@@ -83,6 +83,15 @@ public interface CapacityManager {
                     true,
                     ConfigKey.Scope.ImageStore,
                     null);
+    ConfigKey<Double> ImageStoreDisableThreshold = new ConfigKey<>(
+                    Double.class,
+                    "image.store.disable.threshold",
+                    "Advanced",
+                    "0.9",
+                    "Percentage (as a value between 0 and 1) of allocated storage utilization above which image store will be disabled for allocation due to low allocated storage available.",
+                    true,
+                    ConfigKey.Scope.ImageStore,
+                    null);
 
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 

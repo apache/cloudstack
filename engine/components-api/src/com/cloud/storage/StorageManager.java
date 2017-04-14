@@ -50,6 +50,11 @@ public interface StorageManager extends StorageService {
             "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.", false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Boolean> StorageCleanupEnabled = new ConfigKey<Boolean>(Boolean.class, "storage.cleanup.enabled", "Advanced", "true",
             "Enables/disables the storage cleanup thread.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<String> VmPoolAllocationAlgorithm = new ConfigKey(String.class, "vm.pool.allocation.algorithm", "Advanced", "default",
+            "'random', 'firstfit', 'userdispersing', 'firstfitleastconsumed' : Order in which suitable pools will be considered for volume allocation." +
+                    " default will be to infer from vm.allocation.algorithm", true, ConfigKey.Scope.Global, null);
+    static final ConfigKey<String> ImageStoreAllocationAlgorithm = new ConfigKey(String.class, "image.store.allocation.algorithm", "Advanced", "random",
+            "'random', 'firstfit', 'userdispersing', 'firstfitleastconsumed' : Order in which image stores will be considered for allocation..", true, ConfigKey.Scope.Global, null);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool

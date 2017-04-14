@@ -91,8 +91,8 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             avoid.addPool(pool.getId());
         }
 
-
-        for (StoragePoolVO storage : storagePools) {
+        List<StoragePool> orderedPools = reOrder((ArrayList<StoragePool>)(ArrayList)storagePools, vmProfile, plan);
+        for (StoragePool storage : orderedPools) {
             if (suitablePools.size() == returnUpTo) {
                 break;
             }

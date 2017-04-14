@@ -19,10 +19,8 @@ package org.apache.cloudstack.storage.allocator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -101,7 +99,8 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             return suitablePools;
         }
 
-        for (StoragePoolVO pool : pools) {
+        List<StoragePool> orderedPools = reOrder((ArrayList<StoragePool>)(ArrayList)pools, vmProfile, plan);
+        for (StoragePool pool : orderedPools) {
             if (suitablePools.size() == returnUpTo) {
                 break;
             }
@@ -118,19 +117,5 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
         }
 
         return suitablePools;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        super.configure(name, params);
-
-        if (_configDao != null) {
-            Map<String, String> configs = _configDao.getConfiguration(params);
-            String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null) {
-                _allocationAlgorithm = allocationAlgorithm;
-            }
-        }
-        return true;
     }
 }
