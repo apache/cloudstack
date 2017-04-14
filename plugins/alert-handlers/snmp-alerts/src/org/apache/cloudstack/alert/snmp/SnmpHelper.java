@@ -18,6 +18,7 @@
 package org.apache.cloudstack.alert.snmp;
 
 import java.io.IOException;
+import java.util.Date;
 
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
@@ -65,6 +66,7 @@ public class SnmpHelper {
 
         int alertType = snmpTrapInfo.getAlertType() + 1;
         if (alertType > 0) {
+            trap.add(new VariableBinding(SnmpConstants.sysUpTime, new OctetString(new Date().toString())));
             trap.add(new VariableBinding(SnmpConstants.snmpTrapOID, getOID(CsSnmpConstants.TRAPS_PREFIX + alertType)));
             if (snmpTrapInfo.getDataCenterId() != 0) {
                 trap.add(new VariableBinding(getOID(CsSnmpConstants.DATA_CENTER_ID), new UnsignedInteger32(snmpTrapInfo.getDataCenterId())));
