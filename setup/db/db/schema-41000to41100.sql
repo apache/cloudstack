@@ -121,3 +121,9 @@ CREATE VIEW `template_view` AS
          LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_template`.`id`)
              AND ((`resource_tags`.`resource_type` = 'Template')
              OR (`resource_tags`.`resource_type` = 'ISO')))));
+
+-- CLOUDSTACK-10006: DRS Implementation
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`, `default_value`) VALUES ('Advanced','DEFAULT','management-server','vmware.drs.interval','60','The interval (in seconds) when DRS is executed.', '60');
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`, `default_value`) VALUES ('Advanced','DEFAULT','management-server','vmware.drs.threshold','0.20','Threashold (as a value between 0 and 1) for DRS task.', '0.20');
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`, `default_value`, `scope`, `is_dynamic`) VALUES ('Advanced', 'DEFAULT', 'VmwareDrsInternal', 'vmware.drs.internal.enabled', 'false', 'Specify whether or not to enable DRS internal task on cluster.', 'false', 'Cluster', '1');
+

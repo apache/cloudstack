@@ -39,5 +39,7 @@
 
 
     <bean id="ciscoNexusVSMDeviceDaoImpl" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" />
+    
+    <bean id="VmwareDrsInternal" class="com.cloud.hypervisor.vmware.drs.VmwareDrsInternal" />
 
 </beans>

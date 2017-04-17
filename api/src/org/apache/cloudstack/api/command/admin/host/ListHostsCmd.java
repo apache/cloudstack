@@ -234,4 +234,12 @@ public class ListHostsCmd extends BaseListCmd {
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
+
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
 }

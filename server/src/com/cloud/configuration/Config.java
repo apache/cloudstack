@@ -1941,7 +1941,29 @@ public enum Config {
     // StatsCollector
     StatsOutPutGraphiteHost("Advanced", ManagementServer.class, String.class, "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", null),
 
-    SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null);
+    SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null),
+    /**
+     * The interval (in seconds) when DRS task is executed
+     */
+    VmwareDRSInterval(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "vmware.drs.interval",
+            "60",
+            "The interval (in seconds) when DRS is executed.",
+            null),
+    /**
+     * DRS Migration threshold. Value between 0 and 1
+     */
+    VmwareDRSThreshold(
+            "Advanced",
+            ManagementServer.class,
+            Float.class,
+            "vmware.drs.threshold",
+            "0.20",
+            "Threashold (as a value between 0 and 1) for DRS task.",
+            null),;
 
     private final String _category;
     private final Class<?> _componentClass;
