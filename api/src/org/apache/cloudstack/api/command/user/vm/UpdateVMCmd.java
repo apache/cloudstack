@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -149,6 +152,13 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction 
     }
 
     public String getUserData() {
+        if (userData != null) {
+            try {
+                userData = URLDecoder.decode(userData, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new InvalidParameterValueException("Url decoding of userdata failed.");
+            }
+        }
         return userData;
     }
 

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -281,6 +283,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public String getUserData() {
+        if (userData != null) {
+            try {
+                userData = URLDecoder.decode(userData, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new InvalidParameterValueException("Url decoding of userdata failed.");
+            }
+        }
         return userData;
     }
 

@@ -49,6 +49,27 @@ test_data = {
         "forvirtualnetwork": "true",
         "vlan": "300"
     },
+    "publiciprange1": {
+        "gateway": "10.200.100.1",
+        "netmask": "255.255.255.0",
+        "startip": "10.200.100.101",
+        "endip": "10.200.100.105",
+        "forvirtualnetwork": "false"
+    },
+    "publiciprange2": {
+        "gateway": "10.219.1.1",
+        "netmask": "255.255.255.0",
+        "startip": "10.219.1.2",
+        "endip": "10.219.1.5",
+        "forvirtualnetwork": "false"
+    },
+    "publiciprange3": {
+        "gateway": "10.200.100.1",
+        "netmask": "255.255.255.0",
+        "startip": "10.200.100.2",
+        "endip": "10.200.100.20",
+        "forvirtualnetwork": "false"
+    },
     "private_gateway": {
         "ipaddress": "172.16.1.2",
         "gateway": "172.16.1.1",
@@ -352,6 +373,23 @@ test_data = {
             "Dns": 'VirtualRouter'
         }
     },
+    "isolated_configdrive_network_offering": {
+        "name": 'isolated_configdrive_net_off_marvin',
+        "displaytext": 'isolated_configdrive_net_off_marvin',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,SourceNat,StaticNat,UserData,Firewall,Dns',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "tags": 'native',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "StaticNat": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "Firewall": 'VirtualRouter',
+            "UserData": 'ConfigDrive',
+            "Dns": 'VirtualRouter'
+        }
+    },
     "isolated_network": {
         "name": "Isolated Network",
         "displaytext": "Isolated Network"
@@ -473,6 +511,20 @@ test_data = {
             "SecurityGroup": "SecurityGroupProvider"
         }
     },
+    "shared_network_config_drive_offering": {
+        "name": 'shared_network_config_drive_offering',
+        "displaytext": 'shared_network_config_drive_offering',
+        "guestiptype": 'shared',
+        "supportedservices": 'Dhcp,UserData',
+        "traffictype": 'GUEST',
+        "specifyVlan": "True",
+        "specifyIpRanges": "True",
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": "VirtualRouter",
+            "UserData": 'ConfigDrive'
+        }
+    },
     "shared_network_sg": {
         "name": "Shared-Network-SG-Test",
         "displaytext": "Shared-Network_SG-Test",
@@ -511,6 +563,19 @@ test_data = {
             "UserData": 'VpcVirtualRouter',
             "StaticNat": 'VpcVirtualRouter',
             "NetworkACL": 'VpcVirtualRouter'
+        }
+    },
+    "vpc_offering_configdrive": {
+        "name": 'VPC offering ConfigDrive',
+        "displaytext": 'VPC offering ConfigDrive',
+        "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns',
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter",
+            "UserData": "ConfigDrive",
+            "Dns": "VpcVirtualRouter"
         }
     },
     "vpc": {
@@ -741,6 +806,24 @@ test_data = {
             "Lb": "VirtualRouter",
             "UserData": "VirtualRouter",
             "StaticNat": "VirtualRouter"
+        }
+    },
+    "vpc_network_offering_configdrive": {
+        "name": 'vpc_net_off_marvin_configdrive',
+        "displaytext": 'vpc_net_off_marvin_configdrive',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "useVpc": 'on',
+        "ispersistent": 'True',
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter",
+            "UserData": "ConfigDrive",
+            "Dns": "VpcVirtualRouter"
         }
     },
     "fwrule": {
@@ -1638,6 +1721,26 @@ test_data = {
             "endip": "10.223.1.100",
             "acltype": "Domain"
         },
+        "network_all_1": {
+            "name": "SharedNetwork-All-1",
+            "displaytext": "SharedNetwork-All-1",
+            "vlan": "3998",
+            "gateway": "10.200.100.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.200.100.21",
+            "endip": "10.200.100.100",
+            "acltype": "Domain"
+        },
+        "network_all_2": {
+            "name": "SharedNetwork2-All-2",
+            "displaytext": "SharedNetwork2-All-2",
+            "vlan": "3999",
+            "gateway": "10.200.200.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.200.200.21",
+            "endip": "10.200.200.100",
+            "acltype": "Domain"
+        },
         "network_domain_with_no_subdomain_access": {
             "name": "SharedNetwork-Domain-nosubdomain",
             "displaytext": "SharedNetwork-Domain-nosubdomain",
@@ -1744,8 +1847,8 @@ test_data = {
     },
     "test_34_DeployVM_in_SecondSGNetwork": {
         "zone": "advsg",
-        "config": "D:\ACS-Repo\setup\dev\\advancedsg.cfg",  #Absolute path to cfg file
-        #For sample configuration please refer to <ACS repo>/setup/dev/advancedsg.cfg
+        "config": "D:\ACS-Repo\setup\dev\\advancedsg.cfg",  # Absolute path to cfg file
+        # For sample configuration please refer to <ACS repo>/setup/dev/advancedsg.cfg
         "template": "CentOS 5.3(64-bit) no GUI (Simulator)",
         "dbSvr": {
             "dbSvr": "10.146.0.133",
@@ -2081,6 +2184,45 @@ test_data = {
                 "SourceNat": {"SupportedSourceNatTypes": "perzone"}
             }
         },
+        "isolated_configdrive_network_offering_withoutdns": {
+            "name": 'nuage_configdrive_withoutDns_marvin',
+            "displaytext": 'nuage_configdrive_withoutDns_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "serviceProviderList": {
+                "Dhcp": 'NuageVsp',
+                "StaticNat": 'NuageVsp',
+                "SourceNat": 'NuageVsp',
+                "Firewall": 'NuageVsp',
+                "Connectivity": 'NuageVsp',
+                "UserData": 'ConfigDrive'
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
+        "isolated_configdrive_network_offering": {
+            "name": 'nuage_configdrive_marvin',
+            "displaytext": 'nuage_configdrive_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall,Dns',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "serviceProviderList": {
+                "Dhcp": 'NuageVsp',
+                "StaticNat": 'NuageVsp',
+                "SourceNat": 'NuageVsp',
+                "Firewall": 'NuageVsp',
+                "Connectivity": 'NuageVsp',
+                "UserData": 'ConfigDrive',
+                "Dns": 'VirtualRouter'
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
         # Purely nuage network offering
         "isolated_network_offering_without_vr": {
             "name": 'nuage_marvin',
@@ -2146,6 +2288,49 @@ test_data = {
                 "SourceNat": {"SupportedSourceNatTypes": "perzone"}
             }
         },
+        "vpc_network_offering_configdrive_withoutdns": {
+            "name": 'nuage_vpc_marvin_configdrive_withoutdns',
+            "displaytext": 'nuage_vpc_marvin_configdrive_withoutdns',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "useVpc": 'on',
+            "ispersistent": 'True',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "ConfigDrive"
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
+        "vpc_network_offering_configdrive_withdns": {
+            "name": 'nuage_vpc_marvin_configdrive_withdns',
+            "displaytext": 'nuage_vpc_marvin_configdrive_withdns',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "useVpc": 'on',
+            "ispersistent": 'True',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "ConfigDrive",
+                "Dns": "VpcVirtualRouter"
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
         "vpc_network_offering_internal_lb": {
             "name": "nuage_vpc_marvin_internal_lb",
             "displaytext": "nuage_vpc_marvin_internal_lb",
@@ -2183,6 +2368,33 @@ test_data = {
                 "NetworkACL": "NuageVsp",
                 "Connectivity": "NuageVsp",
                 "UserData": "VpcVirtualRouter",
+                "Dns": "VpcVirtualRouter"
+            }
+        },
+        "vpc_offering_configdrive_withoutdns": {
+            "name": 'Nuage VSP VPC offering ConfigDrive',
+            "displaytext": 'Nuage VSP VPC offering ConfigDrive',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "ConfigDrive"
+            }
+        },
+        "vpc_offering_configdrive_withdns": {
+            "name": 'Nuage VSP VPC offering ConfigDrive withVR',
+            "displaytext": 'Nuage VSP VPC offering ConfigDrive withVR',
+            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "StaticNat": "NuageVsp",
+                "SourceNat": "NuageVsp",
+                "NetworkACL": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": "ConfigDrive",
                 "Dns": "VpcVirtualRouter"
             }
         },
@@ -2252,6 +2464,26 @@ test_data = {
                 "Connectivity": "NuageVsp"
             }
         },
+        "shared_nuage_network_config_drive_offering": {
+            "name": 'nuage_marvin',
+            "displaytext": 'nuage_marvin',
+            "guestiptype": 'shared',
+            "supportedservices": 'Dhcp,Connectivity,UserData',
+            "traffictype": 'GUEST',
+            "specifyVlan": "False",
+            "specifyIpRanges": "True",
+            "availability": 'Optional',
+            "serviceProviderList": {
+                "Dhcp": "NuageVsp",
+                "Connectivity": "NuageVsp",
+                "UserData": 'ConfigDrive'
+            },
+            "serviceCapabilityList": {
+                "Connectivity": {
+                    "PublicAccess": "true"
+                }
+            }
+        },
         "shared_nuage_public_network_offering": {
             "name": 'nuage_marvin',
             "displaytext": 'nuage_marvin',
@@ -2277,10 +2509,19 @@ test_data = {
         "network_all": {
             "name": "SharedNetwork-All-nuage",
             "displaytext": "SharedNetwork-All-nuage",
-            "gateway": "10.223.1.1",
+            "gateway": "10.200.100.1",
             "netmask": "255.255.255.0",
-            "startip": "10.223.1.21",
-            "endip": "10.223.1.100",
+            "startip": "10.200.100.21",
+            "endip": "10.200.100.100",
+            "acltype": "Domain"
+        },
+        "network_all2": {
+            "name": "SharedNetwork2-All-nuage",
+            "displaytext": "SharedNetwork2-All-nuage",
+            "gateway": "10.200.200.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.200.200.21",
+            "endip": "10.200.200.100",
             "acltype": "Domain"
         },
         "network_domain_with_no_subdomain_access": {
@@ -2313,10 +2554,10 @@ test_data = {
             "acltype": "Account"
         },
         "publiciprange1": {
-            "gateway": "10.223.1.1",
+            "gateway": "10.200.100.1",
             "netmask": "255.255.255.0",
-            "startip": "10.223.1.101",
-            "endip": "10.223.1.105",
+            "startip": "10.200.100.101",
+            "endip": "10.200.100.105",
             "forvirtualnetwork": "false"
         },
         "publiciprange2": {
@@ -2327,10 +2568,10 @@ test_data = {
             "forvirtualnetwork": "false"
         },
         "publiciprange3": {
-            "gateway": "10.223.1.1",
+            "gateway": "10.200.100.1",
             "netmask": "255.255.255.0",
-            "startip": "10.223.1.2",
-            "endip": "10.223.1.20",
+            "startip": "10.200.100.2",
+            "endip": "10.200.100.20",
             "forvirtualnetwork": "false"
         }
     }

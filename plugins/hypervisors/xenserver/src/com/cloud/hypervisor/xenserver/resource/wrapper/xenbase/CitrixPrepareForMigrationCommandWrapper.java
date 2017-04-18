@@ -47,7 +47,7 @@ public final class CitrixPrepareForMigrationCommandWrapper extends CommandWrappe
         String configDriveLabel = vm.getConfigDriveLabel();
 
         if (configDriveLabel == null)  {
-            configDriveLabel = "config";
+            configDriveLabel = "config-2";
         }
 
         if (s_logger.isDebugEnabled()) {

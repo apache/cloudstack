@@ -227,7 +227,6 @@ public class NuageVspEntityBuilder {
 
             if (networkOffering.getGuestType() == Network.GuestType.Shared) {
                 List<VlanVO> vlans = _vlanDao.listVlansByNetworkIdIncludingRemoved(network.getId());
-
                 List<VspAddressRange> vspAddressRanges =
                         vlans.stream()
                              .map(vlan -> new VspAddressRange.Builder().gateway(vlan.getVlanGateway()).netmask(vlan.getVlanNetmask()).build())
@@ -290,9 +289,11 @@ public class NuageVspEntityBuilder {
                                    .findFirst()
                                    .get();
 
+        boolean underlayEnabled = NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, matchingVlan);
         return new VspNetwork.Builder().fromObject(vspNetwork)
                 .gateway(matchingVlan.getVlanGateway())
                 .cidr(NetUtils.getCidrFromGatewayAndNetmask(matchingVlan.getVlanGateway(), matchingVlan.getVlanNetmask()))
+                .vlanUnderlay(underlayEnabled)
                 .build();
     }
 
