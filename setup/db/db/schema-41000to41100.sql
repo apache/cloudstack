@@ -449,3 +449,14 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`account` resource_tag_account ON resource_tag_account.id = resource_tags.account_id
             left join
         `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
+
+-- Extra Dhcp Options
+CREATE TABLE `cloud`.`nic_extra_dhcp_options` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `nic_id` bigint unsigned NOT NULL COMMENT ' nic id where dhcp options are applied',
+  `code` int(32),
+  `value` text,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_nic_extra_dhcp_options_nic_id` FOREIGN KEY (`nic_id`) REFERENCES `nics`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -59,6 +59,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 
@@ -186,6 +187,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
+
+    @Parameter(name = ApiConstants.DHCP_OPTIONS_NETWORK_LIST, type = CommandType.MAP, description = "DHCP options which are passed to the VM on start up"
+            + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
+    private Map dhcpOptionsNetworkList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -405,6 +410,37 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     public String getKeyboard() {
         // TODO Auto-generated method stub
         return keyboard;
+    }
+
+    public Map<String, Map<Integer, String>> getDhcpOptionsMap() {
+        Map<String, Map<Integer, String>> dhcpOptionsMap = new HashMap<>();
+        if (dhcpOptionsNetworkList != null && !dhcpOptionsNetworkList.isEmpty()) {
+
+            Collection<Map<String, String>> paramsCollection = this.dhcpOptionsNetworkList.values();
+            for(Map<String, String> dhcpNetworkOptions : paramsCollection) {
+                String networkId = dhcpNetworkOptions.get(ApiConstants.NETWORK_ID);
+
+                if(networkId == null) {
+                    throw new IllegalArgumentException("No networkid specified when providing extra dhcp options.");
+                }
+
+                Map<Integer, String> dhcpOptionsForNetwork = new HashMap<>();
+                dhcpOptionsMap.put(networkId, dhcpOptionsForNetwork);
+
+                for (String key : dhcpNetworkOptions.keySet()) {
+                    if (key.startsWith(ApiConstants.DHCP_PREFIX)) {
+                        int dhcpOptionValue = Integer.parseInt(key.replaceFirst(ApiConstants.DHCP_PREFIX, ""));
+                        dhcpOptionsForNetwork.put(dhcpOptionValue, dhcpNetworkOptions.get(key));
+                    } else if (!key.equals(ApiConstants.NETWORK_ID)){
+                            Dhcp.DhcpOptionCode dhcpOptionEnum = Dhcp.DhcpOptionCode.valueOfString(key);
+                            dhcpOptionsForNetwork.put(dhcpOptionEnum.getCode(), dhcpNetworkOptions.get(key));
+                    }
+                }
+
+            }
+        }
+
+        return dhcpOptionsMap;
     }
 
     /////////////////////////////////////////////////////

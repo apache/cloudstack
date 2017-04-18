@@ -523,9 +523,18 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkManager#allocate(com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks)
+    public void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final Map<String, Map<Integer, String>> extraDhcpOptions)
             throws InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void configureExtraDhcpOptions(Network network, long nicId, Map<Integer, String> extraDhcpOptions) {
+
+    }
+
+    @Override public void configureExtraDhcpOptions(Network network, long nicId) {
+
     }
 
     /* (non-Javadoc)
@@ -586,6 +595,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Map<Integer, String> getExtraDhcpOptions(long nicId) {
         return null;
     }
 
@@ -651,6 +665,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public boolean reallocate(VirtualMachineProfile vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public void saveExtraDhcpOptions(String networkUuid, Long nicId, Map<String, Map<Integer, String>> extraDhcpOptionMap) {
+
     }
 
     /* (non-Javadoc)

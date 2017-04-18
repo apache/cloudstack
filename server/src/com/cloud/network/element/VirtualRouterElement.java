@@ -931,6 +931,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     }
 
     @Override
+    public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
+        return false;
+    }
+
+    @Override
     public boolean removeDnsSupportForSubnet(Network network) throws ResourceUnavailableException {
         // Ignore if virtual router is already dhcp provider
         if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, getProvider())) {
