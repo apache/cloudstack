@@ -1284,7 +1284,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("checking to see if we should schedule a job to search for fully cloned templates to clean-up");
         }
-        if(StorageManager.StorageCleanupEnabled.value() && StorageManager.TemplateCleanupEnabled.value()) {
+        if(StorageManager.StorageCleanupEnabled.value() &&
+                StorageManager.TemplateCleanupEnabled.value() &&
+                templateCleanupInterval.value() > 0) {
             try {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("scheduling job to search for fully cloned templates to clean-up once per " + templateCleanupInterval.value() + " minutes.");
