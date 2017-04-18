@@ -1048,9 +1048,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } catch (final NoTransitionException e) {
             s_logger.error(e.getMessage());
             return null;
-        } catch (final CloudRuntimeException e) {
-            s_logger.error("Caught exception: " + e.getMessage());
-            return null;
         } finally {
             if (implemented.first() == null) {
                 s_logger.debug("Cleaning up because we're unable to implement the network " + network);
