@@ -19,6 +19,7 @@
 
 package com.cloud.network.guru;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,6 +43,7 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.resourcedetail.VpcDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 
@@ -131,6 +133,8 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     NetworkDetailsDao _networkDetailsDao;
     @Inject
     VpcDetailsDao _vpcDetailsDao;
+    @Inject
+    NetworkOrchestrationService _networkOrchestrationService;
 
     public NuageVspGuestNetworkGuru() {
         super();
@@ -225,7 +229,9 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             implemented.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
             implemented.setBroadcastDomainType(Networks.BroadcastDomainType.Vsp);
 
-            if (!implement(network.getVpcId(), physicalNetworkId, vspNetwork, _nuageVspEntityBuilder.buildNetworkDhcpOption(network, offering))) {
+            boolean implementSucceeded = implement(network.getVpcId(), physicalNetworkId, vspNetwork, _nuageVspEntityBuilder.buildNetworkDhcpOption(network, offering));
+
+            if (!implementSucceeded) {
                 return null;
             }
 
@@ -383,6 +389,8 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             // Determine if dhcp options of the other nics in the network need to be updated
             if (vm.getType() == VirtualMachine.Type.DomainRouter && network.getState() != State.Implementing) {
                 updateDhcpOptionsForExistingVms(network, nuageVspHost, vspNetwork, networkHasDns, networkHasDnsCache);
+                //update the extra DHCP options
+
             }
 
             nic.setBroadcastUri(network.getBroadcastUri());
@@ -427,6 +435,10 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
         }
     }
 
+    private void updateExtraDhcpOptionsForExistingVm(Network network, Nic nic) {
+        _networkOrchestrationService.configureExtraDhcpOptions(network, nic.getId());
+    }
+
     private void updateDhcpOptionsForExistingVms(Network network, HostVO nuageVspHost, VspNetwork vspNetwork, boolean networkHasDns, Map<Long, Boolean> networkHasDnsCache)
             throws InsufficientVirtualNetworkCapacityException {
         // Update dhcp options if a VR is added when we are not initiating the network
@@ -437,12 +449,14 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
         List<NicVO> userNics = _nicDao.listByNetworkId(network.getId());
         LinkedListMultimap<Long, VspDhcpVMOption> dhcpOptionsPerDomain = LinkedListMultimap.create();
 
-        for (NicVO userNic : userNics) {
-            if (userNic.getVmType() == VirtualMachine.Type.DomainRouter) {
+        for (Iterator<NicVO> iterator = userNics.iterator(); iterator.hasNext(); ) {
+            NicVO userNic = iterator.next();
+            if (userNic.getVmType() == VirtualMachine.Type.DomainRouter || userNic.getState() != Nic.State.Reserved) {
+                iterator.remove();
                 continue;
             }
 
-            VMInstanceVO userVm  = _vmInstanceDao.findById(userNic.getInstanceId());
+            VMInstanceVO userVm = _vmInstanceDao.findById(userNic.getInstanceId());
             boolean defaultHasDns = getDefaultHasDns(networkHasDnsCache, userNic);
             VspDhcpVMOption dhcpOption = _nuageVspEntityBuilder.buildVmDhcpOption(userNic, defaultHasDns, networkHasDns);
             dhcpOptionsPerDomain.put(userVm.getDomainId(), dhcpOption);
@@ -462,6 +476,10 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 }
                 throw new InsufficientVirtualNetworkCapacityException("Failed to reserve VM in Nuage VSP.", Network.class, network.getId());
             }
+        }
+
+        for (NicVO userNic : userNics) {
+            updateExtraDhcpOptionsForExistingVm(network, userNic);
         }
     }
 

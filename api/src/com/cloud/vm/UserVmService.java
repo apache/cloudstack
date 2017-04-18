@@ -194,6 +194,8 @@ public interface UserVmService {
      * @param memory
      * @param cpuNumber
      * @param customId
+     * @param dhcpOptionMap
+     *           - Maps the dhcp option code and the dhcp value to the network uuid
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -208,7 +210,7 @@ public interface UserVmService {
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList,
         Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
         String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
-        List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId) throws InsufficientCapacityException,
+        List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId, Map<String, Map<Integer, String>> dhcpOptionMap) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -267,6 +269,8 @@ public interface UserVmService {
      * @param memory
      * @param cpuNumber
      * @param customId
+     * @param dhcpOptionMap
+     *             - Maps the dhcp option code and the dhcp value to the network uuid
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -281,7 +285,7 @@ public interface UserVmService {
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
         List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
         HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
-        List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId) throws InsufficientCapacityException,
+        List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -338,6 +342,8 @@ public interface UserVmService {
      * @param memory
      * @param cpuNumber
      * @param customId
+     * @param dhcpOptionMap
+     *             - Map that maps the DhcpOption code and their value on the Network uuid
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -352,7 +358,7 @@ public interface UserVmService {
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner,
         String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
         String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
-        Map<String, String> customParameters, String customId)
+        Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap)
 
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 

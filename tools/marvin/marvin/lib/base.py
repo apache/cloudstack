@@ -539,6 +539,9 @@ class VirtualMachine:
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"])
 
+        if "dhcpoptionsnetworklist" in services:
+            cmd.dhcpoptionsnetworklist = services["dhcpoptionsnetworklist"]
+
         cmd.details = [{}]
 
         if customcpunumber:
@@ -780,7 +783,7 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
-    def add_nic(self, apiclient, networkId, ipaddress=None, macaddress=None):
+    def add_nic(self, apiclient, networkId, ipaddress=None, macaddress=None, dhcpoptions=None):
         """Add a NIC to a VM"""
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
         cmd.virtualmachineid = self.id
@@ -788,6 +791,8 @@ class VirtualMachine:
 
         if ipaddress:
             cmd.ipaddress = ipaddress
+        if dhcpoptions:
+            cmd.dhcpoptions = dhcpoptions
 
         if macaddress:
             cmd.macaddress = macaddress

@@ -47,7 +47,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         private static List<Service> supportedServices = new ArrayList<Service>();
 
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnProtocols, Capability.VpnTypes);
-        public static final Service Dhcp = new Service("Dhcp");
+        public static final Service Dhcp = new Service("Dhcp", Capability.ExtraDhcpOptions);
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
         public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.TrafficStatistics,
@@ -218,6 +218,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability RegionLevelVpc = new Capability("RegionLevelVpc");
         public static final Capability NoVlan = new Capability("NoVlan");
         public static final Capability PublicAccess = new Capability("PublicAccess");
+        public static final Capability ExtraDhcpOptions = new Capability("ExtraDhcpOptions");
 
         private final String name;
 

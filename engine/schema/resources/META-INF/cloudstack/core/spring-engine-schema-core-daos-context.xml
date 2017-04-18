@@ -215,6 +215,7 @@
   <bean id="networkServiceMapDaoImpl" class="com.cloud.network.dao.NetworkServiceMapDaoImpl" />
   <bean id="nicDaoImpl" class="com.cloud.vm.dao.NicDaoImpl" />
   <bean id="nicDetailsDaoImpl" class="com.cloud.vm.dao.NicDetailsDaoImpl" />
+  <bean id="nicExtraDhcpOptionDaoImpl" class="com.cloud.vm.dao.NicExtraDhcpOptionDaoImpl" />
   <bean id="nicSecondaryIpDaoImpl" class="com.cloud.vm.dao.NicSecondaryIpDaoImpl" />
   <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />

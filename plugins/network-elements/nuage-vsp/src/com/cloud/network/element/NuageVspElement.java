@@ -59,6 +59,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupVspCommand;
 import com.cloud.agent.api.element.ApplyAclRuleVspCommand;
 import com.cloud.agent.api.element.ApplyStaticNatVspCommand;
+import com.cloud.agent.api.element.ExtraDhcpOptionsVspCommand;
 import com.cloud.agent.api.element.ImplementVspCommand;
 import com.cloud.agent.api.element.ShutDownVpcVspCommand;
 import com.cloud.agent.api.element.ShutDownVspCommand;
@@ -252,7 +253,8 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                     Capability.MultipleIps, "true"
             ))
             .put(Service.Dhcp, ImmutableMap.of(
-                    Capability.DhcpAccrossMultipleSubnets, "true"
+                    Capability.DhcpAccrossMultipleSubnets, "true",
+                    Capability.ExtraDhcpOptions, "true"
             ))
             .put(Service.NetworkACL, ImmutableMap.of(
                     Capability.SupportedProtocols, "tcp,udp,icmp"
@@ -512,6 +514,23 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     @Override
     public boolean removeDhcpSupportForSubnet(Network network) throws ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
+        HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
+        NicVO nic = _nicDao.findById(nicId);
+
+        ExtraDhcpOptionsVspCommand extraDhcpOptionsVspCommand = new ExtraDhcpOptionsVspCommand(vspNetwork, nic.getUuid(), dhcpOptions);
+        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), extraDhcpOptionsVspCommand);
+
+        if (answer == null || !answer.getResult()) {
+            s_logger.error("[setExtraDhcpOptions] setting extra DHCP options for nic " + nic.getUuid() + " failed.");
+            return false;
+        }
+
         return true;
     }
 

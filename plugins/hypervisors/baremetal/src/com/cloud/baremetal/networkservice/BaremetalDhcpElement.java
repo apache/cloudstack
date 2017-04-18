@@ -180,4 +180,9 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
         return true;
     }
 
+    @Override
+    public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
+        return false;
+    }
+
 }

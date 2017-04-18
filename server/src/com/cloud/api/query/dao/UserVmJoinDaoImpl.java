@@ -24,12 +24,14 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -49,9 +51,11 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
@@ -67,6 +71,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private UserVmDetailsDao _userVmDetailsDao;
     @Inject
     private UserDao _userDao;
+    @Inject
+    private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -267,6 +273,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     nicResponse.setSecondaryIps(ipList);
                 }
                 nicResponse.setObjectName("nic");
+
+                List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = _nicExtraDhcpOptionDao.listByNicId(nic_id)
+                        .stream()
+                        .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
+                        .collect(Collectors.toList());
+                nicResponse.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
+
                 userVmResponse.addNic(nicResponse);
             }
         }
@@ -368,6 +381,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             }
 
             nicResponse.setObjectName("nic");
+            List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = _nicExtraDhcpOptionDao.listByNicId(nic_id)
+                    .stream()
+                    .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
+                    .collect(Collectors.toList());
+            nicResponse.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
             userVmData.addNic(nicResponse);
         }
 

@@ -301,10 +301,10 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
 
 
             if (StringUtils.isNotBlank(cmd.getApiVersion())){
-                if (!clientLoader.getNuageVspManagerClient().isSupportedApiVersion(cmd.getApiVersion())){
+                apiVersion = cmd.getApiVersion();
+                if (!clientLoader.getNuageVspManagerClient().isSupportedApiVersion(apiVersion)){
                     throw new CloudRuntimeException("Unsupported API version : " + cmd.getApiVersion());
                 }
-                apiVersion = cmd.getApiVersion();
             } else {
                 List<NuageVspApiVersion> supportedVsdVersions = clientLoader.getNuageVspManagerClient().getSupportedVersionList();
                 supportedVsdVersions.retainAll(Arrays.asList(NuageVspApiVersion.SUPPORTED_VERSIONS));

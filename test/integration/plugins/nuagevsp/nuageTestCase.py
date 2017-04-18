@@ -78,6 +78,35 @@ class needscleanup(object):
         return _wrapper
 
 
+class gherkin(object):
+    BLACK = "\033[0;30m"
+    BLUE = "\033[0;34m"
+    GREEN = "\033[0;32m"
+    CYAN = "\033[0;36m"
+    RED = "\033[0;31m"
+    BOLDBLUE = "\033[1;34m"
+    NORMAL = "\033[0m"
+
+    def __init__(self, method):
+        self.method = method
+
+    def __get__(self, obj=None, objtype=None):
+        @functools.wraps(self.method)
+        def _wrapper(*args, **kwargs):
+            gherkin_step = self.method.__name__.replace("_", " ").capitalize()
+            obj.info("=G= %s%s%s" % (self.BOLDBLUE, gherkin_step, self.NORMAL))
+            try:
+                result = self.method(obj, *args, **kwargs)
+                obj.info("=G= %s%s: [SUCCESS]%s" %
+                         (self.GREEN, gherkin_step, self.NORMAL))
+                return result
+            except Exception as e:
+                obj.info("=G= %s%s: [FAILED]%s%s" %
+                         (self.RED, gherkin_step, self.NORMAL, e))
+                raise
+        return _wrapper
+
+
 class nuageTestCase(cloudstackTestCase):
 
     @classmethod

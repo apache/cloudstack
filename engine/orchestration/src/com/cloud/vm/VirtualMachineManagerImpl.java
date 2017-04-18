@@ -387,7 +387,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @DB
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
             final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings,
-            final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType)
+            final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType, final Map<String, Map<Integer, String>> extraDhcpOptions)
                     throws InsufficientCapacityException {
 
         final VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
@@ -415,7 +415,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 try {
                     if (!vmProfile.getBootArgs().contains("ExternalLoadBalancerVm"))
-                        _networkMgr.allocate(vmProfile, auxiliaryNetworks);
+                        _networkMgr.allocate(vmProfile, auxiliaryNetworks, extraDhcpOptions);
                 } catch (final ConcurrentOperationException e) {
                     throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
                 }
@@ -451,7 +451,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
             final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final DeploymentPlan plan, final HypervisorType hyperType) throws InsufficientCapacityException {
-        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(serviceOffering), new ArrayList<DiskOfferingInfo>(), networks, plan, hyperType);
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(serviceOffering), new ArrayList<DiskOfferingInfo>(), networks, plan, hyperType, null);
     }
 
     private VirtualMachineGuru getVmGuru(final VirtualMachine vm) {

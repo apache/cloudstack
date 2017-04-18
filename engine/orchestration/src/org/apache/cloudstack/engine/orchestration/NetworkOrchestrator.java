@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,10 +33,12 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.NicExtraDhcpOptionVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
@@ -198,6 +201,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicIpAlias;
@@ -212,6 +216,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
@@ -268,6 +273,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     NetworkAccountDao _networkAccountDao;
     @Inject
     protected NicIpAliasDao _nicIpAliasDao;
+    @Inject
+    protected NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
     @Inject
     protected IPAddressDao _publicIpAddressDao;
     @Inject
@@ -728,7 +735,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
-    public void allocate(final VirtualMachineProfile vm, final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException,
+    public void allocate(final VirtualMachineProfile vm, final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final Map<String, Map<Integer, String>> extraDhcpOptions) throws InsufficientCapacityException,
     ConcurrentOperationException {
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
@@ -800,6 +807,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                         nics.add(vmNic);
                         vm.addNic(vmNic);
+                        saveExtraDhcpOptions(config.getUuid(), vmNic.getId(), extraDhcpOptions);
                     }
                 }
                 if (nics.size() != size) {
@@ -812,6 +820,24 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
             }
         });
+    }
+
+    @Override
+    public void saveExtraDhcpOptions(final String networkUuid, final Long nicId, final Map<String, Map<Integer, String>> extraDhcpOptionMap) {
+
+        if(extraDhcpOptionMap != null) {
+            Map<Integer, String> extraDhcpOption = extraDhcpOptionMap.get(networkUuid);
+            if(extraDhcpOption != null) {
+                List<NicExtraDhcpOptionVO> nicExtraDhcpOptionList = new LinkedList<>();
+
+                for (Integer code : extraDhcpOption.keySet()) {
+                    Dhcp.DhcpOptionCode.valueOfInt(code); //check if code is supported or not.
+                    NicExtraDhcpOptionVO nicExtraDhcpOptionVO = new NicExtraDhcpOptionVO(nicId, code, extraDhcpOption.get(code));
+                    nicExtraDhcpOptionList.add(nicExtraDhcpOptionVO);
+                }
+                _nicExtraDhcpOptionDao.saveExtraDhcpOptions(nicExtraDhcpOptionList);
+            }
+        }
     }
 
     @DB
@@ -1141,6 +1167,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+
+        //Reset the extra DHCP option that may have been cleared per nic.
+        List<NicVO> nicVOs = _nicDao.listByNetworkId(network.getId());
+        for(NicVO nicVO : nicVOs) {
+            if(nicVO.getState() == Nic.State.Reserved) {
+                configureExtraDhcpOptions(network, nicVO.getId());
+            }
+        }
+
         for (final NetworkElement element : networkElements) {
             if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                 ((AggregatedCommandExecutor)element).prepareAggregatedExecution(network, dest);
@@ -1458,6 +1493,22 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
     @Override
+    public void configureExtraDhcpOptions(Network network, long nicId, Map<Integer, String> extraDhcpOptions) {
+        if(_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
+            if (_networkModel.getNetworkServiceCapabilities(network.getId(), Service.Dhcp).containsKey(Capability.ExtraDhcpOptions)) {
+                DhcpServiceProvider sp = getDhcpServiceProvider(network);
+                sp.setExtraDhcpOptions(network, nicId, extraDhcpOptions);
+            }
+        }
+    }
+
+    @Override
+    public void configureExtraDhcpOptions(Network network, long nicId) {
+        Map<Integer, String> extraDhcpOptions = getExtraDhcpOptions(nicId);
+        configureExtraDhcpOptions(network, nicId, extraDhcpOptions);
+    }
+
+    @Override
     public void finalizeUpdateInSequence(Network network, boolean success) {
         List<Provider> providers = getNetworkProviders(network.getId());
         for (NetworkElement element : networkElements) {
@@ -1593,8 +1644,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
         guru.updateNicProfile(profile, network);
+
+        configureExtraDhcpOptions(network, nicId);
         return profile;
     }
+
+    @Override
+    public Map<Integer, String> getExtraDhcpOptions(long nicId) {
+        List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOList = _nicExtraDhcpOptionDao.listByNicId(nicId);
+        return nicExtraDhcpOptionVOList
+                .stream()
+                .collect(Collectors.toMap(NicExtraDhcpOptionVO::getCode, NicExtraDhcpOptionVO::getValue));
+    }
+
 
     @Override
     public void prepareNicForMigration(final VirtualMachineProfile vm, final DeployDestination dest) {
@@ -2949,7 +3011,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) throws InsufficientCapacityException {
                     cleanupNics(vm);
-                    allocate(vm, profiles);
+                    allocate(vm, profiles, null);
                 }
             });
         }
