@@ -19,7 +19,6 @@ package org.apache.cloudstack.alert.snmp;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.Date;
 
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
