@@ -2,6 +2,7 @@
 
 # chkconfig: 35 99 10
 # description: Cloud Agent
+# pidfile: /var/run/cloudstack-agent.pid
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
