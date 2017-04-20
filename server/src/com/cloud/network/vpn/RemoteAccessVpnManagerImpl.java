@@ -521,21 +521,26 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         boolean success = true;
 
-        boolean[] finals = new boolean[users.size()];
+        Boolean[] finals = new Boolean[users.size()];
         for (RemoteAccessVPNServiceProvider element : _vpnServiceProviders) {
             s_logger.debug("Applying vpn access to " + element.getName());
             for (RemoteAccessVpnVO vpn : vpns) {
                 try {
                     String[] results = element.applyVpnUsers(vpn, users);
                     if (results != null) {
+                        int indexUser = -1;
                         for (int i = 0; i < results.length; i++) {
-                            s_logger.debug("VPN User " + users.get(i) + (results[i] == null ? " is set on " : (" couldn't be set due to " + results[i]) + " on ") + vpn);
+                            indexUser ++;
+                            if (indexUser == users.size()) {
+                                indexUser = 0; // results on multiple VPC routers are combined in commit 13eb789, reset user index if one VR is done.
+                            }
+                            s_logger.debug("VPN User " + users.get(indexUser) + (results[i] == null ? " is set on " : (" couldn't be set due to " + results[i]) + " on ") + vpn.getUuid());
                             if (results[i] == null) {
-                                if (!finals[i]) {
-                                    finals[i] = true;
+                                if (finals[indexUser] == null) {
+                                    finals[indexUser] = true;
                                 }
                             } else {
-                                finals[i] = false;
+                                finals[indexUser] = false;
                                 success = false;
                             }
                         }
