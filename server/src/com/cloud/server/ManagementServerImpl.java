@@ -1112,7 +1112,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize) {
+    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>
+                            listHostsForMigrationOfVM(final Long vmId,
+                                                      final Long startIndex,
+                                                      final Long pageSize, final String keyword) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -1200,9 +1203,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<HostVO> allHosts = null;
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
-
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, null, null, null,
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword, null, null,
                     srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
@@ -1239,7 +1241,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Searching for all hosts in cluster " + cluster + " for migrating VM " + vm);
             }
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null, null, null, null);
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, keyword, null, null, null, null);
             // Filter out the current host.
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
