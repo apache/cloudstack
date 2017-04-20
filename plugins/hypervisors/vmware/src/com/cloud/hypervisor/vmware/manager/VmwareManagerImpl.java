@@ -79,6 +79,7 @@ import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -185,6 +186,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private VMInstanceDao vmInstanceDao;
     @Inject
     private UserVmCloneSettingDao cloneSettingDao;
+    @Inject
+    private TemplateManager templateManager;
 
     private String _mountParent;
     private StorageLayer _storage;
@@ -1328,6 +1331,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 templateDataStoreDao,
                 templateDao,
                 vmInstanceDao,
-                cloneSettingDao);
+                cloneSettingDao,
+                templateManager);
     }
 }

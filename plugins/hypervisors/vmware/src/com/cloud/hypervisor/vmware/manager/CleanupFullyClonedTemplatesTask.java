@@ -22,6 +22,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.vm.UserVmCloneSettingVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
@@ -46,6 +48,7 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
     private TemplateJoinDao templateDao;
     private VMInstanceDao vmInstanceDao;
     private UserVmCloneSettingDao cloneSettingDao;
+    private TemplateManager templateManager;
 
     private Thread mine;
 
@@ -53,12 +56,14 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
                                     VMTemplatePoolDao templateDataStoreDao,
                                     TemplateJoinDao templateDao,
                                     VMInstanceDao vmInstanceDao,
-                                    UserVmCloneSettingDao cloneSettingDao) {
+                                    UserVmCloneSettingDao cloneSettingDao,
+                                    TemplateManager templateManager) {
         this.primaryStorageDao = primaryStorageDao;
         this.templateDataStoreDao = templateDataStoreDao;
         this.templateDao = templateDao;
         this.vmInstanceDao = vmInstanceDao;
         this.cloneSettingDao = cloneSettingDao;
+        this.templateManager = templateManager;
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("new task created: " + this);
         }
@@ -97,7 +102,9 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
             }
             List<VMTemplateStoragePoolVO> templatePrimaryDataStoreVOS = templateDataStoreDao.listByPoolId(pool.getId());
             for (VMTemplateStoragePoolVO templateMapping : templatePrimaryDataStoreVOS) {
-                checkTemplateForRemoval(zoneId, templateMapping);
+                if (canRemoveTemplateFromZone(zoneId, templateMapping)) {
+                    templateManager.evictTemplateFromStoragePool(templateMapping);
+                }
             }
         } else {
             if(s_logger.isDebugEnabled()) {
@@ -106,22 +113,23 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
         }
     }
 
-    private void checkTemplateForRemoval(long zoneId, VMTemplateStoragePoolVO templateMapping) {
+    private boolean canRemoveTemplateFromZone(long zoneId, VMTemplateStoragePoolVO templateMapping) {
         if (!templateMapping.getMarkedForGC()) {
             if(s_logger.isDebugEnabled()) {
                 s_logger.debug(mine.getName() + " is checking template with id " + templateMapping.getTemplateId() + " for deletion from pool with id " + templateMapping.getPoolId());
             }
 
-            TemplateJoinVO templateJoinVO = templateDao.findByIdIncludingRemoved(templateMapping.getPoolId());
+            TemplateJoinVO templateJoinVO = templateDao.findByIdIncludingRemoved(templateMapping.getTemplateId());
             //  check if these are deleted (not removed is null)
-            if (templateJoinVO.getRemoved() != null) { // meaning it is removed!
+            if (VirtualMachineTemplate.State.Inactive.equals(templateJoinVO.getTemplateState())) { // meaning it is removed!
                 //  see if we can find vms using it with user_vm_clone_setting != full
-                markForGcAsNeeded(templateMapping, zoneId);
+                return markedForGc(templateMapping, zoneId);
             }
         }
+        return false;
     }
 
-    private void markForGcAsNeeded(VMTemplateStoragePoolVO templateMapping, long zoneId) {
+    private boolean markedForGc(VMTemplateStoragePoolVO templateMapping, long zoneId) {
         boolean used = false;
         List<VMInstanceVO> vms = vmInstanceDao.listNonExpungedByZoneAndTemplate(zoneId, templateMapping.getTemplateId());
         for (VMInstanceVO vm : vms) {
@@ -130,6 +138,7 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
                 // VolumeOrchestrator or UserVmManagerImpl depending on version
                 if (VolumeOrchestrator.UserVmCloneType.linked.equals(VolumeOrchestrator.UserVmCloneType.valueOf(cloneSetting.getCloneType()))) {
                     used = true;
+                    break;
                 }
             } catch (Exception e) {
                 s_logger.error("failed to retrieve vm clone setting for vm " + vm.toString());
@@ -139,13 +148,11 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
             }
         }
         if (!used) {
-            if(s_logger.isInfoEnabled()) {
-                s_logger.info(mine.getName() + " is marking template with id " + templateMapping.getTemplateId() + " for gc in pool with id " + templateMapping.getPoolId());
-            }
+            s_logger.info(mine.getName() + " is marking template with id " + templateMapping.getTemplateId() + " for gc in pool with id " + templateMapping.getPoolId());
             // else
             //  mark it for removal from primary store
             templateMapping.setMarkedForGC(true);
-            templateDataStoreDao.persist(templateMapping);
         }
+        return !used;
     }
 }

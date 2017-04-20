@@ -50,6 +50,7 @@ import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -453,21 +454,30 @@ public class VmwareDatacenterApiUnitTest {
         public VMTemplatePoolDao templateDataStoreDao() {
             return Mockito.mock(VMTemplatePoolDao.class);
         }
+
         @Bean
         public TemplateJoinDao templateDao() {
             return Mockito.mock(TemplateJoinDao.class);
         }
+
         @Bean
         public VMInstanceDao vmInstanceDao() {
             return Mockito.mock(VMInstanceDao.class);
         }
+
         @Bean
         public UserVmCloneSettingDao cloneSettingDao() {
             return Mockito.mock(UserVmCloneSettingDao.class);
         }
+
         @Bean
         public PrimaryDataStoreDao primaryStorageDao() {
             return Mockito.mock(PrimaryDataStoreDao.class);
+        }
+
+        @Bean
+        public TemplateManager templateManager() {
+            return Mockito.mock(TemplateManager.class);
         }
 
         public static class Library implements TypeFilter {
