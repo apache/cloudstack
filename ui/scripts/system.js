@@ -9472,6 +9472,16 @@
                                              domainid: args.context.routerGroupByAccount[0].domainid
                                         })
                                     }
+                                    if ("networks" in args.context) {
+                                       $.extend(data2, {
+                                             networkid: args.context.networks[0].id
+                                       })
+                                    }
+                                    if ("vpc" in args.context) {
+                                       $.extend(data2, {
+                                             vpcid: args.context.vpc[0].id
+                                       })
+                                    }
                                 }
 
                                 var routers =[];
