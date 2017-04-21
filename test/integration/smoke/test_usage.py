@@ -1821,3 +1821,13 @@ class TestVpnUsage(cloudstackTestCase):
             "Check VPN.USER.ADD in events table"
         )
         return
+
+    def test_duplicate_usage(self):
+        """
+            Create duplicate entries in usage_event Table
+            Run the Usage server
+            check the usage_job  table there should not be any duplicate entries
+        """
+
+        self.dbclient.execute("insert into cloud.usage_event (uuid, role_id, rule, permission, sort_order) values (UUID(), %d, '%s', '%s', %d)" % (roleId, rule, perm.upper(), sortOrder))
+        self.dbclient.execute("insert into cloud.usage_event (uuid, role_id, rule, permission, sort_order) values (UUID(), %d, '%s', '%s', %d)" % (roleId, rule, perm.upper(), sortOrder))
