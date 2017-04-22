@@ -2001,7 +2001,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     public boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId) {
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.LoadBalancing);
+
+        //Included revoked rules to remove the rules of ips which are in revoke state
+        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.LoadBalancing);
+
         if (rules != null) {
             s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
             for (FirewallRule rule : rules) {

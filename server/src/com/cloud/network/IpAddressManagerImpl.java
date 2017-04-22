@@ -282,6 +282,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
 
+    static Boolean rulesContinueOnErrFlag = true;
+
     @Override
     public boolean configure(String name, Map<String, Object> params) {
         // populate providers
@@ -403,7 +405,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         Network.State.getStateMachine().registerListener(new NetworkStateListener(_configDao));
 
-        s_logger.info("Network Manager is configured.");
+        if (RulesContinueOnError.value() != null) {
+            rulesContinueOnErrFlag = RulesContinueOnError.value();
+        }
+
+        s_logger.info("IPAddress Manager is configured.");
 
         return true;
     }
@@ -601,7 +607,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (ip.getAssociatedWithNetworkId() != null) {
             Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
             try {
-                if (!applyIpAssociations(network, true)) {
+                if (!applyIpAssociations(network, rulesContinueOnErrFlag)) {
                     s_logger.warn("Unable to apply ip address associations for " + network);
                     success = false;
                 }
@@ -2029,6 +2035,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSystemPublicIps};
+        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError};
     }
 }

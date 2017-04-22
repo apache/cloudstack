@@ -43,6 +43,9 @@ public interface IpAddressManager {
         "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been consumed ips will be acquired from the system pool",
         true, ConfigKey.Scope.Account);
 
+    static final ConfigKey<Boolean> RulesContinueOnError = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rule.delete.ignoreerror", "true",
+            "When true, ip address delete (ipassoc) failures are  ignored", true);
+
     /**
      * Assigns a new public ip address.
      *
