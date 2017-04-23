@@ -16,7 +16,7 @@ current VRouter. Vyos should be able to reach almost 100% feature parity with th
 VRouter without having to make any changes to Vyos itself. This has the significant
 advantage of providing end users with the option to use Vyos or the VRouter in
 production as they see fit. For Cloudstack, using Vyos means that there is a
-lively and dedicated community of developers focussed solely on the routing
+lively and dedicated community of developers focused solely on the routing
 functionality. This should help to ensure that issues on the router portion of the
 Cloudstack ecosystem are addressed promptly by developers who have years of experience
 contributing to networking projects.
@@ -51,19 +51,12 @@ added to the plugin in an iterative manner.
 ### Limitations and Design Liabilities
 
   * **SSH Access to the Vyos Router is not properly secured. It is open to all incoming
-    connections and must be limited to only allow connections from the management server
-    (I think). THIS IS A HUGE SECURITY CONCERN AND MUST BE ADDRESSED. It was left open
+    connections and must be limited to only allow connections from the management network
+    (I think). THIS IS A MAJOR SECURITY CONCERN AND MUST BE ADDRESSED. It was left open
     for now only because I did not know how to gather the required information from
     Cloudstack and decided to focus on getting a working POC out the door instead of
     digging into this at the current juncture.**
-
-  * Only supports one Guest Network per Vyos Router. The underlying code to support
-    multiple Guest Networks on one Vyos Router is in place but, due to the Vyos
-    Nat and Firewall order of operations (see below) additional info is needed
-    from Cloudstack duing Ingress Firewall rule operations for multiple network
-    functionality. It was decided that getting a basic functional POC was higher
-    priority at this juncture.
-
+  
   * Only supports ETHX devices on the Vyos Router. Support for bonded and pseudo
     ethernet devices can be added with no major structural changes to the code.
     It was decided that getting a basic functional POC out the door was higher
@@ -73,7 +66,7 @@ added to the plugin in an iterative manner.
     stable during all testing but an http based API would be better. Vyos is
     working on such an implementation through their [VyConf](https://wiki.vyos.net/wiki/Vyconf "Vyconf")
     initiative. The plugin will be refactored to use VyConf as soon as it that
-    API is ready for release.
+    API is ready for release though VyConf is a long term goal for Vyos and will not be available for some time. .
 
   * Currently, Egress Firewall rules must be manually created that allow the DNS provider
     for the Guest Network to communicate on port 53. I need to determine how to
@@ -86,6 +79,9 @@ added to the plugin in an iterative manner.
 
   * Support of CloudStack advanced network topology.
   * Support of multiple Vyos Routers.
+  * Support of multiple guest networks per Vyos Router.
+  * Support of multiple public networks per Vyos Router.
+  * Support for inter-vlan routing.
   * Configuration of connectivity with Vyos Router through CloudStack UI and persistence of this information.
   * Allow selection of Vyos Router when defining CloudStack network service offering for:
     * Firewall (Ingress & Egress)
@@ -121,7 +117,7 @@ added to the plugin in an iterative manner.
   * If VLANs are used on public ip ranges in Cloudstack make sure matching VLANs
     are configured in the Vyos Router.
   * Create an interface for the Guest Networks. No IP needs to be assigned to this
-    Interface.
+    Interface. This can be the same interface used for the public networks. 
   * Set the system default gateway. This is the upstream network device allowing
     access to the internet for the Router's subnet. This must be accessible from
     the Vyos Router public interface IP.
