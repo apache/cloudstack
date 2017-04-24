@@ -766,7 +766,7 @@ var dictionary = {
     "label.go.step.3": "Idź do punktu 3",
     "label.go.step.4": "Idź do punktu 4",
     "label.go.step.5": "Idź do punktu 5",
-    "label.gpu": "CPU",
+    "label.gpu": "GPU",
     "label.group": "Grupa",
     "label.group.by.account": "Group by account",
     "label.group.by.cluster": "Group by cluster",

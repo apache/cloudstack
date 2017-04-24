@@ -766,7 +766,7 @@ var dictionary = {
     "label.go.step.3": "단계 3으로",
     "label.go.step.4": "단계 4으로",
     "label.go.step.5": "단계 5으로",
-    "label.gpu": "CPU",
+    "label.gpu": "GPU",
     "label.group": "그룹",
     "label.group.by.account": "Group by account",
     "label.group.by.cluster": "Group by cluster",
