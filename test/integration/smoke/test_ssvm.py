@@ -480,7 +480,7 @@ class TestSSVMs(cloudstackTestCase):
                             credentials to check router services")
         res = str(result)
         self.debug("Cloud Process status: %s" % res)
-        # cloud.com service (type=secstorage) is running: process id: 2346
+        # Apache CloudStack service (type=secstorage) is running: process id: 2346
         self.assertEqual(
             res.count("is running"),
             1,

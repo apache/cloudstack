@@ -22,7 +22,7 @@ set -x
 function install_vhd_util() {
   [[ -f /bin/vhd-util ]] && return
 
-  wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
+  wget --no-check-certificate http://download.cloudstack.org/tools/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
 }
 

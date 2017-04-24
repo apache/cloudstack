@@ -1708,7 +1708,7 @@ test_data = {
             "upload_volume": {
                 "diskname": "UploadVol",
                 "format": "VHD",
-                "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
+                "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                 "checksum": "",
             },
             "bootableIso":
