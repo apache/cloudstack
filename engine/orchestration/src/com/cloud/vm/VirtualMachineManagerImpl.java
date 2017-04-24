@@ -1800,9 +1800,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void orchestrateStorageMigration(final String vmUuid, final StoragePool destPool) {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-        final Long srchostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-        final HostVO srcHost = _hostDao.findById(srchostId);
-        final Long srcClusterId = srcHost.getClusterId();
 
         if (destPool == null) {
             throw new CloudRuntimeException("Unable to migrate vm: missing destination storage pool");
@@ -1836,19 +1833,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 // If VM was cold migrated between clusters belonging to two different VMware DCs,
                 // unregister the VM from the source host and cleanup the associated VM files.
                 if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
+                    Long srcClusterId = null;
+                    Long srcHostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                    if (srcHostId != null) {
+                        HostVO srcHost = _hostDao.findById(srcHostId);
+                        srcClusterId = srcHost.getClusterId();
+                    }
+
                     final Long destClusterId = destPool.getClusterId();
                     if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId)) {
                         final String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
                         final String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
                         if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
                             s_logger.debug("Since VM's storage was successfully migrated across VMware Datacenters, unregistering VM: " + vm.getInstanceName() +
-                                    " from source host: " + srcHost.getId());
+                                    " from source host: " + srcHostId);
                             final UnregisterVMCommand uvc = new UnregisterVMCommand(vm.getInstanceName());
                             uvc.setCleanupVmFiles(true);
                             try {
-                                _agentMgr.send(srcHost.getId(), uvc);
-                            } catch (final Exception e) {
-                                throw new CloudRuntimeException("Failed to unregister VM: " + vm.getInstanceName() + " from source host: " + srcHost.getId() +
+                                _agentMgr.send(srcHostId, uvc);
+                            } catch (final AgentUnavailableException | OperationTimedoutException e) {
+                                throw new CloudRuntimeException("Failed to unregister VM: " + vm.getInstanceName() + " from source host: " + srcHostId +
                                         " after successfully migrating VM's storage across VMware Datacenters");
                             }
                         }
