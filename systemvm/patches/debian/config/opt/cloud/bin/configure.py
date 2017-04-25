@@ -629,7 +629,6 @@ class CsRemoteAccessVpn(CsDataBag):
                 self.remoteaccessvpn_iptables(public_ip, self.dbag[public_ip])
 
                 CsHelper.execute("ipsec auto --rereadall")
-                CsHelper.execute("service xl2tpd stop")
                 CsHelper.execute("service xl2tpd start")
                 CsHelper.execute("ipsec auto --rereadsecrets")
                 CsHelper.execute("ipsec auto --replace L2TP-PSK")
