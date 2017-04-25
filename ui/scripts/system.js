@@ -136,6 +136,9 @@
                                     }
                                 });
                             }
+                            title: 'label.add.accountordomain',
+                            desc: '(optional) Please specify an account/domain to be associated with this IP range.',
+                            fields: fields
                         },
                         after: function (args) {
                             var data = cloudStack.serializeForm(args.$form);
@@ -463,6 +466,7 @@
                                                 label: 'label.account',
                                                 custom: {
                                                     buttonLabel: 'label.set.reservation',
+                                                    buttonLabel: 'label.add.accountordomain',
                                                     action: cloudStack.publicIpRangeAccount.dialog()
                                                 }
                                             },
@@ -580,9 +584,9 @@
                                             },
 
                                             addAccount: {
-                                                label: 'label.add.account',
+                                                label: 'label.add.accountordomain',
                                                 createForm: {
-                                                    title: 'label.add.account',
+                                                    title: 'label.add.accountordomain',
                                                     fields: {
                                                         account: {
                                                             label: 'label.account'
@@ -628,7 +632,7 @@
                                                         success: function (json) {
                                                             args.response.success({
                                                                 notification: {
-                                                                    label: 'label.add.account',
+                                                                    label: 'label.add.accountordomain',
                                                                     poll: function (args) {
                                                                         args.complete();
                                                                     }
@@ -1974,6 +1978,10 @@
                                                                 id: 'project-specific',
                                                                 description: 'label.project'
                                                             });
+                                                            array1.push({
+                                                                id: 'domain-specific',
+                                                                description: 'label.domain'
+                                                            })
 
                                                             args.response.success({
                                                                 data: array1
@@ -1990,6 +1998,10 @@
                                                                     $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
                                                                     $form.find('.form-item[rel=account]').hide();
                                                                     $form.find('.form-item[rel=projectId]').css('display', 'inline-block');
+                                                                } else if ($(this).val() == "domain-specific") {
+                                                                    $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=account]').hide();
+                                                                    
                                                                 }
 
                                                                 if (args.context.projects != null && args.context.projects.length > 0) {
@@ -2033,9 +2045,6 @@
                                                     },
                                                     account: {
                                                         label: 'label.account',
-                                                        validation: {
-                                                            required: true
-                                                        },
                                                         dependsOn: 'domainId',
                                                         select: function (args) {
                                                             $.ajax({

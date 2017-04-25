@@ -309,6 +309,7 @@ var dictionary = {
     "label.add.VM.to.tier": "VM felvétele rétegbe",
     "label.add.VPN.gateway": "VPN átjáró felvétele",
     "label.add.account": "Számla felvétele",
+    "label.add.accountordomain": "Fiók / domain hozzáadása",
     "label.add.account.to.project": "Számla felvétele a projekthez",
     "label.add.accounts": "Számlák felvétele",
     "label.add.accounts.to": "Számla felvétele:",

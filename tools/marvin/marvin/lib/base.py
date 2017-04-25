@@ -3657,11 +3657,30 @@ class PhysicalNetwork:
         cmd.projectid = projectid
         return PhysicalNetwork(apiclient.dedicateGuestVlanRange(cmd).__dict__)
 
+    @classmethod
+    def domainDedicate(cls, apiclient, vlanrange, physicalnetworkid,
+                  domainid=None):
+        """Dedicate guest vlan range to a domain"""
+
+        cmd = dedicateGuestVlanRange.dedicateGuestVlanRangeCmd()
+        cmd.vlanrange = vlanrange
+        cmd.physicalnetworkid = physicalnetworkid
+        cmd.domainid = domainid
+        return PhysicalNetwork(apiclient.dedicateGuestVlanRange(cmd).__dict__)
+
     def release(self, apiclient):
         """Release guest vlan range"""
 
         cmd = releaseDedicatedGuestVlanRange.\
             releaseDedicatedGuestVlanRangeCmd()
+        cmd.id = self.id
+        return apiclient.releaseDedicatedGuestVlanRange(cmd)
+
+
+    def releaseFromDomain(self, apiclient):
+        """Release guest vlan range from domain"""
+
+        cmd = releaseDedicatedGuestVlanRange.releaseDomainDedicatedGuestVlanRangeCmd()
         cmd.id = self.id
         return apiclient.releaseDedicatedGuestVlanRange(cmd)
 
@@ -3671,7 +3690,7 @@ class PhysicalNetwork:
 
         cmd = listDedicatedGuestVlanRanges.listDedicatedGuestVlanRangesCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+        if  'domainid' in kwargs.keys():
             cmd.listall = True
         return apiclient.listDedicatedGuestVlanRanges(cmd)
 

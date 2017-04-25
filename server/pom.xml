@@ -79,6 +79,11 @@
       <artifactId>commons-codec</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${cs.guava.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>

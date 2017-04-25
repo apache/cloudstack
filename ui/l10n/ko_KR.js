@@ -309,6 +309,7 @@ var dictionary = {
     "label.add.VM.to.tier": "계층에 VM 추가",
     "label.add.VPN.gateway": "VPN 게이트웨이 추가",
     "label.add.account": "계정 정보 추가",
+    "label.add.accountordomain": "계정 / 도메인 추가",
     "label.add.account.to.project": "계정 정보 프로젝트에 추가",
     "label.add.accounts": "계정 정보 추가",
     "label.add.accounts.to": "계정 정보 추가:",

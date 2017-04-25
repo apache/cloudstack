@@ -122,6 +122,8 @@ public class EventTypes {
     public static final String EVENT_NET_IP_ASSIGN = "NET.IPASSIGN";
     public static final String EVENT_NET_IP_RELEASE = "NET.IPRELEASE";
     public static final String EVENT_NET_IP_UPDATE = "NET.IPUPDATE";
+    public static final String EVENT_NET_IP_ASSIGN_DOMAIN = "NET.IPASSIGN.DOMAIN";
+    public static final String EVENT_NET_IP_RELEASE_DOMAIN = "NET.IPRELEASE.DOMAIN";
     public static final String EVENT_PORTABLE_IP_ASSIGN = "PORTABLE.IPASSIGN";
     public static final String EVENT_PORTABLE_IP_RELEASE = "PORTABLE.IPRELEASE";
     public static final String EVENT_NET_RULE_ADD = "NET.RULEADD";
@@ -518,6 +520,8 @@ public class EventTypes {
     // Dedicated guest vlan range
     public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE = "GUESTVLANRANGE.DEDICATE";
     public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE = "GUESTVLANRANGE.RELEASE";
+    public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE_DOMAIN = "GUESTVLANRANGE.DEDICATE.DOMAIN";
+    public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE_DOMAIN = "GUESTVLANRANGE.RELEASE.DOMAIN";
 
     public static final String EVENT_PORTABLE_IP_RANGE_CREATE = "PORTABLE.IP.RANGE.CREATE";
     public static final String EVENT_PORTABLE_IP_RANGE_DELETE = "PORTABLE.IP.RANGE.DELETE";

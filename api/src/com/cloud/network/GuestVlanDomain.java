@@ -14,17 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.network;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface GuestVlan extends InternalIdentity, Identity {
+public interface GuestVlanDomain extends InternalIdentity, Identity {
 
     @Override
     long getId();
 
-    long getAccountId();
+    long getDomainId();
 
     String getGuestVlanRange();
 

@@ -23,6 +23,12 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DomainVlanMapVO;
+import com.cloud.dc.dao.DataCenterVnetDao;
+import com.cloud.dc.dao.DomainVlanMapDao;
+import com.cloud.network.IpAddressManager;
+import com.cloud.network.dao.DomainGuestVlanMapDao;
+import com.cloud.network.dao.DomainGuestVlanMapVO;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
@@ -109,7 +115,15 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Inject
     private NetworkDomainDao _networkDomainDao;
     @Inject
+    private DomainGuestVlanMapDao _domainGuestVlanMapDao;
+    @Inject
+    private DomainVlanMapDao _domainVlanMapDao;
+    @Inject
+    private DataCenterVnetDao _dataCenterVnetDao;
+    @Inject
     private ConfigurationManager _configMgr;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     @Inject
     MessageBus _messageBus;
@@ -311,14 +325,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
                 }
 
-                if (!_configMgr.releaseDomainSpecificVirtualRanges(domain.getId())) {
-                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because failed to release domain specific virtual ip ranges");
-                    e.addProxyObject(domain.getUuid(), "domainId");
-                    throw e;
-                } else {
-                    s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
-                }
-
+                releaseDedicatedIPRangesAndVlans(domain.getId());
                 cleanupDomainOfferings(domain.getId());
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
                 return true;
@@ -551,6 +558,26 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         return success && deleteDomainSuccess;
+    }
+
+    protected void releaseDedicatedIPRangesAndVlans(long domainId) {
+
+        CallContext ctx = CallContext.current();
+        //release domain specific public ip ranges
+        List<DomainVlanMapVO> vlanMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(domainId);
+        for(DomainVlanMapVO vmap: vlanMaps) {
+            _ipAddrMgr.disassociatePublicIpRange(vmap.getVlanDbId(), ctx.getCallingUserId(),  ctx.getCallingAccount());
+        }
+        int ipRangesReleased = _domainVlanMapDao.removeByDomainId(domainId);
+        s_logger.info("deleteDomain: Released " + ipRangesReleased + " dedicated public ip ranges from domain " + domainId);
+
+        // release domain specific guest vlans
+        List<DomainGuestVlanMapVO> maps = _domainGuestVlanMapDao.listDomainGuestVlanMapsByDomain(domainId);
+        for (DomainGuestVlanMapVO map : maps) {
+            _dataCenterVnetDao.releaseDomainDedicatedGuestVlans(map.getId());
+        }
+        int vlansReleased = _domainGuestVlanMapDao.removeByDomainId(domainId);
+        s_logger.info("deleteDomain: Released " + vlansReleased + " dedicated guest vlan ranges from domain " + domainId);
     }
 
     @Override

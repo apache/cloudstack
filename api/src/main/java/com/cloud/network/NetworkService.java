@@ -143,9 +143,15 @@ public interface NetworkService {
 
     GuestVlan dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd);
 
+    GuestVlanDomain dedicateGuestVlanRangeByDomain(DedicateGuestVlanRangeCmd cmd);
+
     Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd);
 
+    Pair<List<? extends GuestVlanDomain>, Integer> listDomainDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd);
+
     boolean releaseDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId);
+
+    boolean releaseDomainDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId);
 
     Pair<List<? extends PhysicalNetworkTrafficType>, Integer> listTrafficTypes(Long physicalNetworkId);
 

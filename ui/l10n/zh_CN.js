@@ -309,6 +309,7 @@ var dictionary = {
     "label.add.VM.to.tier": "向层中添加 VM",
     "label.add.VPN.gateway": "添加 VPN 网关",
     "label.add.account": "添加帐户",
+    "label.add.accountordomain": "添加帐户/域",
     "label.add.account.to.project": "向项目中添加帐户",
     "label.add.accounts": "添加帐户",
     "label.add.accounts.to": "添加帐户至",

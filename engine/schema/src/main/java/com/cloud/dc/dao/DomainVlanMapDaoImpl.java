@@ -53,6 +53,13 @@ public class DomainVlanMapDaoImpl extends GenericDaoBase<DomainVlanMapVO, Long> 
         return findOneIncludingRemovedBy(sc);
     }
 
+    @Override
+    public int removeByDomainId(long domainId) {
+        SearchCriteria<DomainVlanMapVO> sc = DomainSearch.create();
+        sc.setParameters("domainId", domainId);
+        return expunge(sc);
+    }
+
     public DomainVlanMapDaoImpl() {
         DomainSearch = createSearchBuilder();
         DomainSearch.and("domainId", DomainSearch.entity().getDomainId(), SearchCriteria.Op.EQ);

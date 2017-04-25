@@ -23,9 +23,10 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanDomain;
 import com.cloud.serializer.Param;
 
-@EntityReference(value = GuestVlan.class)
+@EntityReference(value = {GuestVlan.class, GuestVlanDomain.class})
 @SuppressWarnings("unused")
 public class GuestVlanRangeResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)

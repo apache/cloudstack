@@ -14,19 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+package com.cloud.network.dao;
 
-public interface GuestVlan extends InternalIdentity, Identity {
+import com.cloud.utils.db.GenericDao;
+import java.util.List;
 
-    @Override
-    long getId();
+public interface DomainGuestVlanMapDao extends GenericDao<DomainGuestVlanMapVO, Long> {
 
-    long getAccountId();
+    List<DomainGuestVlanMapVO> listDomainGuestVlanMapsByDomain(long domainId);
 
-    String getGuestVlanRange();
+    List<DomainGuestVlanMapVO> listDomainGuestVlanMapsByVlan(long guestVlanId);
 
-    long getPhysicalNetworkId();
+    List<DomainGuestVlanMapVO> listDomainGuestVlanMapsByPhysicalNetwork(long physicalNetworkId);
+
+    int removeByDomainId(long accountId);
+
 }

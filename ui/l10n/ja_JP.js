@@ -309,6 +309,7 @@ var dictionary = {
     "label.add.VM.to.tier": "階層への VM の追加",
     "label.add.VPN.gateway": "VPN ゲートウェイの追加",
     "label.add.account": "アカウントの追加",
+    "label.add.accountordomain": "アカウント/ドメインの追加",
     "label.add.account.to.project": "プロジェクトへのアカウントの追加",
     "label.add.accounts": "アカウントの追加",
     "label.add.accounts.to": "アカウントの追加先:",

@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.dc.DomainVlanMapVO;
+import com.cloud.network.dao.DomainGuestVlanMapVO;
+import com.cloud.dc.dao.DomainVlanMapDao;
+import com.cloud.network.dao.DomainGuestVlanMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -93,6 +97,11 @@ public class DomainManagerImplTest {
     MessageBus _messageBus;
     @Mock
     ConfigurationManager _configMgr;
+    @Mock
+    DomainVlanMapDao _domainVlanMapDao;
+    @Mock
+    DomainGuestVlanMapDao _domainGuestVlanMapDao;
+
 
     @Spy
     @InjectMocks
@@ -130,6 +139,7 @@ public class DomainManagerImplTest {
         Mockito.when(_accountDao.findCleanupsForRemovedAccounts(DOMAIN_ID)).thenReturn(domainAccountsForCleanup);
         Mockito.when(_networkDomainDao.listNetworkIdsByDomain(DOMAIN_ID)).thenReturn(domainNetworkIds);
         Mockito.when(_dedicatedDao.listByDomainId(DOMAIN_ID)).thenReturn(domainDedicatedResources);
+        Mockito.doNothing().when(domainManager).releaseDedicatedIPRangesAndVlans(DOMAIN_ID);
     }
 
     @Test
@@ -285,9 +295,11 @@ public class DomainManagerImplTest {
         Mockito.when(_domainDao.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(_resourceCountDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
         Mockito.when(_resourceLimitDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
-        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_domainVlanMapDao.listDomainVlanMapsByDomain(Mockito.eq(20l))).thenReturn(new ArrayList<DomainVlanMapVO>());
+        Mockito.when(_domainGuestVlanMapDao.listDomainGuestVlanMapsByDomain(Mockito.eq(20l))).thenReturn(new ArrayList<DomainGuestVlanMapVO>());
         Mockito.when(_diskOfferingDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DiskOfferingVO>());
         Mockito.when(_offeringsDao.findServiceOfferingByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<ServiceOfferingVO>());
+        Mockito.when(_domainGuestVlanMapDao.removeByDomainId(Mockito.anyLong())).thenReturn(1);
 
         try {
             Assert.assertTrue(domainManager.deleteDomain(20l, true));

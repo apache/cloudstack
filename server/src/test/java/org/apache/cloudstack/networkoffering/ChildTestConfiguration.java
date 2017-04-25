@@ -19,6 +19,35 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
+import com.cloud.network.dao.FirewallRulesDcidrsDaoImpl;
+import com.cloud.network.dao.DomainGuestVlanMapDaoImpl;
+import com.cloud.storage.StorageManager;
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.region.PortableIpDaoImpl;
+import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
+import org.apache.cloudstack.region.dao.RegionDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
@@ -52,7 +81,6 @@ import com.cloud.network.StorageNetworkManager;
 import com.cloud.network.dao.AccountGuestVlanMapDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
-import com.cloud.network.dao.FirewallRulesDcidrsDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.NetworkDao;
@@ -81,7 +109,6 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.service.dao.ServiceOfferingDetailsDaoImpl;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
@@ -98,33 +125,10 @@ import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.region.PortableIpDaoImpl;
-import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
-import org.apache.cloudstack.region.dao.RegionDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
-import org.mockito.Mockito;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
+
 
 @Configuration
-@ComponentScan(basePackageClasses = {AccountVlanMapDaoImpl.class, DomainVlanMapDaoImpl.class, VolumeDaoImpl.class, HostPodDaoImpl.class, DomainDaoImpl.class, ServiceOfferingDaoImpl.class,
+@ComponentScan(basePackageClasses = {AccountVlanMapDaoImpl.class, DomainVlanMapDaoImpl.class, DomainGuestVlanMapDaoImpl.class, VolumeDaoImpl.class, HostPodDaoImpl.class, DomainDaoImpl.class, ServiceOfferingDaoImpl.class,
     ServiceOfferingDetailsDaoImpl.class, VlanDaoImpl.class, IPAddressDaoImpl.class, ResourceTagsDaoImpl.class, AccountDaoImpl.class,
     InstanceGroupDaoImpl.class, UserAccountJoinDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class, HostDaoImpl.class, VMInstanceDaoImpl.class,
     HostTransferMapDaoImpl.class, PortForwardingRulesDaoImpl.class, PrivateIpDaoImpl.class, UsageEventDaoImpl.class, PodVlanMapDaoImpl.class,

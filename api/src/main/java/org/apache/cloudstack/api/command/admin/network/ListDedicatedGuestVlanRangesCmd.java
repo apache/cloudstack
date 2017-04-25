@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.network.GuestVlanDomain;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -125,15 +126,22 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<? extends GuestVlan>, Integer> vlans = _networkService.listDedicatedGuestVlanRanges(this);
-        ListResponse<GuestVlanRangeResponse> response = new ListResponse<GuestVlanRangeResponse>();
-        List<GuestVlanRangeResponse> guestVlanResponses = new ArrayList<GuestVlanRangeResponse>();
+        Pair<List<? extends GuestVlanDomain>, Integer> vlanDomains = _networkService.listDomainDedicatedGuestVlanRanges(this);
+        ListResponse<GuestVlanRangeResponse> response = new ListResponse<>();
+        List<GuestVlanRangeResponse> guestVlanResponses = new ArrayList<>();
         for (GuestVlan vlan : vlans.first()) {
             GuestVlanRangeResponse guestVlanResponse = _responseGenerator.createDedicatedGuestVlanRangeResponse(vlan);
             guestVlanResponse.setObjectName("dedicatedguestvlanrange");
             guestVlanResponses.add(guestVlanResponse);
         }
 
-        response.setResponses(guestVlanResponses, vlans.second());
+        for(GuestVlanDomain vlanDomain: vlanDomains.first()) {
+            GuestVlanRangeResponse guestVlanResponse = _responseGenerator.createDedicatedGuestVlanResponseForDomain(vlanDomain);
+            guestVlanResponse.setObjectName("dedicatedguestvlanrange");
+            guestVlanResponses.add(guestVlanResponse);
+        }
+
+        response.setResponses(guestVlanResponses, vlanDomains.second() + vlans.second() );
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

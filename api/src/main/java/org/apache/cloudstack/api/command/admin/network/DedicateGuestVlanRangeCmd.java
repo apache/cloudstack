@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.api.command.admin.network;
 
+import com.cloud.network.GuestVlanDomain;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -106,14 +107,27 @@ public class DedicateGuestVlanRangeCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException {
-        GuestVlan result = _networkService.dedicateGuestVlanRange(this);
-        if (result != null) {
-            GuestVlanRangeResponse response = _responseGenerator.createDedicatedGuestVlanRangeResponse(result);
-            response.setResponseName(getCommandName());
-            response.setObjectName("dedicatedguestvlanrange");
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to dedicate guest vlan range");
+        if (projectId == null && (accountName == null || accountName.isEmpty()) ) {
+            GuestVlanDomain result = _networkService.dedicateGuestVlanRangeByDomain(this);
+            if (result != null) {
+                GuestVlanRangeResponse response = _responseGenerator.createDedicatedGuestVlanResponseForDomain(result);
+                response.setResponseName(getCommandName());
+                response.setObjectName("dedicatedguestvlanrange");
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to dedicate guest vlan range for domain");
+            }
+        }
+        else {
+            GuestVlan result = _networkService.dedicateGuestVlanRange(this);
+            if (result != null) {
+                GuestVlanRangeResponse response = _responseGenerator.createDedicatedGuestVlanRangeResponse(result);
+                response.setResponseName(getCommandName());
+                response.setObjectName("dedicatedguestvlanrange");
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to dedicate guest vlan range for account");
+            }
         }
     }
 

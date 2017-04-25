@@ -188,5 +188,7 @@ public interface IpAddressManager {
     AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException, ResourceAllocationException;
 
     void releasePodIp(Long id) throws CloudRuntimeException;
+
+    List<IPAddressVO> disassociatePublicIpRange(long vlanDbId, final long userId, Account caller);
 }
 

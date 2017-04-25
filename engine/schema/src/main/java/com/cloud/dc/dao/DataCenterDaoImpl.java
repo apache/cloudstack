@@ -20,11 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.dao.DomainGuestVlanMapDao;
+import com.cloud.network.dao.DomainGuestVlanMapVO;
+import com.cloud.user.dao.AccountDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -76,6 +81,12 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected DataCenterDetailsDao _detailsDao = null;
     @Inject
     protected AccountGuestVlanMapDao _accountGuestVlanMapDao = null;
+    @Inject
+    protected DomainGuestVlanMapDao _domainGuestVlanMapDao = null;
+    @Inject
+    protected DomainDao _domainDao = null;
+    @Inject
+    protected AccountDao _accountDao = null;
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
@@ -197,19 +208,33 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Override
     public String allocateVnet(long dataCenterId, long physicalNetworkId, long accountId, String reservationId, boolean canUseSystemGuestVlans) {
         ArrayList<Long> dedicatedVlanDbIds = new ArrayList<Long>();
+        ArrayList<Long> dedicatedDomainVlanDbIds = new ArrayList<Long>();
         boolean useDedicatedGuestVlans = false;
         List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(accountId);
         for (AccountGuestVlanMapVO map : maps) {
             dedicatedVlanDbIds.add(map.getId());
         }
-        if (dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) {
+
+        Long domainId =_accountDao.getDomainIdForGivenAccountId(accountId);
+        Set<Long> domainIds = _domainDao.getDomainParentIds(domainId);
+
+        for (Long id: domainIds) {
+            List<DomainGuestVlanMapVO> dmaps = _domainGuestVlanMapDao.listDomainGuestVlanMapsByDomain(id);
+            for(DomainGuestVlanMapVO dmap : dmaps) {
+                dedicatedDomainVlanDbIds.add(dmap.getId());
+            }
+
+        }
+
+        if ((dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) || (dedicatedDomainVlanDbIds != null && !dedicatedDomainVlanDbIds.isEmpty()) ) {
             useDedicatedGuestVlans = true;
-            DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, dedicatedVlanDbIds);
+            DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, dedicatedVlanDbIds, dedicatedDomainVlanDbIds);
             if (vo != null)
                 return vo.getVnet();
         }
+
         if (!useDedicatedGuestVlans || (useDedicatedGuestVlans && canUseSystemGuestVlans)) {
-            DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, null);
+            DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, null, null);
             if (vo != null) {
                 return vo.getVnet();
             }

@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.network.GuestVlanDomain;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
@@ -311,6 +312,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public GuestVlanDomain dedicateGuestVlanRangeByDomain(DedicateGuestVlanRangeCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public Pair<List<? extends GuestVlanDomain>, Integer> listDomainDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd) {
+        return null;
+    }
+
+    @Override
     public Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd) {
         // TODO Auto-generated method stub
         return null;
@@ -321,6 +332,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         // TODO Auto-generated method stub
         return true;
 
+    }
+
+    @Override
+    public boolean releaseDomainDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId) {
+        // TODO Auto-generated method stub
+        return true;
     }
 
     /* (non-Javadoc)

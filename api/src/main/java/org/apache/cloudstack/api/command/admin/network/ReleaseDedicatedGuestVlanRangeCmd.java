@@ -38,6 +38,7 @@ import com.cloud.user.Account;
 public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedGuestVlanRangeCmd.class.getName());
     private static final String s_name = "releasededicatedguestvlanrangeresponse";
+    private static final String s_domaincontextkey = "interface com.cloud.network.GuestVlanDomain";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -90,7 +91,12 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Dedicated guest vlan range Id: " + id);
-        boolean result = _networkService.releaseDedicatedGuestVlanRange(getId());
+        boolean result;
+        if(CallContext.current().getContextParameters().containsKey(s_domaincontextkey)) {
+            result = _networkService.releaseDomainDedicatedGuestVlanRange(getId());
+        } else {
+            result = _networkService.releaseDedicatedGuestVlanRange(getId());
+        }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

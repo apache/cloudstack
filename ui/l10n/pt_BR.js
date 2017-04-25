@@ -309,6 +309,7 @@ var dictionary = {
     "label.add.VM.to.tier": "Adicionar máquina virtual à camada",
     "label.add.VPN.gateway": "Adicionar gateway de VPN",
     "label.add.account": "Adicionar Conta",
+    "label.add.accountordomain": "Adicionar conta / domínio",
     "label.add.account.to.project": "Adicionar conta ao projeto",
     "label.add.accounts": "Adicionar contas",
     "label.add.accounts.to": "Adicionar contas para",

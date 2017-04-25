@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.network.GuestVlanDomain;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -243,6 +244,8 @@ public interface ResponseGenerator {
     IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddress);
 
     GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
+
+    GuestVlanRangeResponse createDedicatedGuestVlanResponseForDomain(GuestVlanDomain result);
 
     GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 

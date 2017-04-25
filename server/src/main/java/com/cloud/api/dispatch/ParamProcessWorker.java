@@ -25,7 +25,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -35,6 +34,8 @@ import java.text.SimpleDateFormat;
 import javax.inject.Inject;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -145,7 +146,7 @@ public class ParamProcessWorker implements DispatchWorker {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void processParameters(final BaseCmd cmd, final Map params) {
-        final Map<Object, AccessType> entitiesToAccess = new HashMap<Object, AccessType>();
+        final Multimap<Object, AccessType> entitiesToAccess = ArrayListMultimap.create();
 
         final List<Field> cmdFields = cmd.getParamFields();
 
@@ -273,7 +274,7 @@ public class ParamProcessWorker implements DispatchWorker {
     }
 
 
-    private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
+    private void doAccessChecks(BaseCmd cmd, Multimap<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
         // due to deleteAccount design flaw CLOUDSTACK-6588, we should still include those removed account as well to clean up leftover resources from that account
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
@@ -286,7 +287,7 @@ public class ParamProcessWorker implements DispatchWorker {
         if (!entitiesToAccess.isEmpty()) {
             // check that caller can access the owner account.
             _accountMgr.checkAccess(caller, null, false, owner);
-            for (Map.Entry<Object,AccessType>entry : entitiesToAccess.entrySet()) {
+            for (Map.Entry<Object,AccessType> entry : entitiesToAccess.entries()) {
                 Object entity = entry.getKey();
                 if (entity instanceof ControlledEntity) {
                     _accountMgr.checkAccess(caller, entry.getValue(), true, (ControlledEntity) entity);

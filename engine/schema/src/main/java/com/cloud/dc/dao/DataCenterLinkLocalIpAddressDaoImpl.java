@@ -59,6 +59,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
 
         DataCenterLinkLocalIpAddressVO vo = lockOneRandomRow(sc, true);
         if (vo == null) {
+            txn.rollback();
             return null;
         }
 

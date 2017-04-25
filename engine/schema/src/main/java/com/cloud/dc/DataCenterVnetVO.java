@@ -60,6 +60,9 @@ public class DataCenterVnetVO implements InternalIdentity {
     @Column(name = "account_vnet_map_id")
     protected Long accountGuestVlanMapId;
 
+    @Column(name = "domain_vnet_map_id")
+    protected Long domainGuestVlanMapId;
+
     public Date getTakenAt() {
         return takenAt;
     }
@@ -112,9 +115,18 @@ public class DataCenterVnetVO implements InternalIdentity {
         this.accountGuestVlanMapId = accountGuestVlanMapId;
     }
 
+    public void setDomainGuestVlanMapId(Long domainGuestVlanMapId) {
+        this.domainGuestVlanMapId = domainGuestVlanMapId;
+    }
+
     public Long getAccountGuestVlanMapId() {
         return accountGuestVlanMapId;
     }
+
+    public Long getDomainGuestVlanMapId() {
+        return domainGuestVlanMapId;
+    }
+
 
     protected DataCenterVnetVO() {
     }

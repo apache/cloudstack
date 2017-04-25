@@ -3566,8 +3566,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
                 } else if (domain != null) {
                     // This VLAN is domain-wide, so create a DomainVlanMapVO entry
-                    //final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
-                    //_domainVlanMapDao.persist(domainVlanMapVO);
+
+                    final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
+                    _domainVlanMapDao.persist(domainVlanMapVO);
+
+                    // generate usage event for dedication of every ip address in the
+                    // range
+                    final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlan.getId());
+                    for (final IPAddressVO ip : ips) {
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN_DOMAIN, domain.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(),
+                                ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                    }
+
                 } else if (podId != null) {
                     // This VLAN is pod-wide, so create a PodVlanMapVO entry
                     final PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
@@ -3604,7 +3614,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if the VLAN has any allocated public IPs
         final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
-        if (isAccountSpecific) {
+        if (isAccountSpecific || isDomainSpecific) {
             int resourceCountToBeDecrement = 0;
             try {
                 vlanRange = _vlanDao.acquireInLockTable(vlanDbId, 30);
@@ -3640,14 +3650,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");
                     } else {
                         resourceCountToBeDecrement++;
+                        if (isAccountSpecific) {
                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(),
                                 ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                        } else {
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE_DOMAIN, domainVln.get(0).getDomainId(), ip.getDataCenterId(), ip.getId(),
+                                    ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                        }
                     }
                 }
             } finally {
                 _vlanDao.releaseFromLockTable(vlanDbId);
-                if (resourceCountToBeDecrement > 0) {  //Making sure to decrement the count of only success operations above. For any reaason if disassociation fails then this number will vary from original range length.
-                    _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(resourceCountToBeDecrement));
+                if(isAccountSpecific) {
+                    _accountVlanMapDao.remove(acctVln.get(0).getId());
+                    if (resourceCountToBeDecrement > 0) {  //Making sure to decrement the count of only success operations above. For any reaason if disassociation fails then this number will vary from original range length.
+                        _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(resourceCountToBeDecrement));
+                    }
+                } else if(isDomainSpecific) {
+                    _domainVlanMapDao.remove(domainVln.get(0).getId());
                 }
             }
         } else {   // !isAccountSpecific
