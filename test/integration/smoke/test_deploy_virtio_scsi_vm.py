@@ -67,7 +67,7 @@ class Templates:
                     "format": "qcow2",
                     "hypervisor": "kvm",
                     "ostype": "Other PV Virtio-SCSI (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/ubuntu/vanilla/16.04/x86_64/ubuntu-16.04-server-cloudimg-amd64-disk1-kvm.qcow2.bz2",
+                    "url": "http://dl.openvm.eu/cloudstack/ubuntu/x86_64/ubuntu-16.04-kvm.qcow2.bz2",
                     "requireshvm": True,
                     "ispublic": True,
                     "passwordenabled": True
@@ -100,10 +100,10 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
         if cls.hypervisor.lower() not in ['kvm']:
             cls.hypervisorNotSupported = True
             return
-        cls._cleanup = []
         kvmvirtioscsi = Templates().templates["kvmvirtioscsi"]
         cls.template = Template.register(
             cls.apiclient,
@@ -127,7 +127,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
+            cls.services["service_offerings"]["small"]
         )
 
 
@@ -284,7 +284,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
 
         # Validate virsh dumpxml
         if self.hypervisorNotSupported:
-            self.skipTest
+            self.skipTest("Hypervisor not supported")
 
         self.verifyVirshState(2)
 
@@ -294,7 +294,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         """
 
         if self.hypervisorNotSupported:
-            self.skipTest
+            self.skipTest("Hypervisor not supported")
 
         self.virtual_machine.stop(self.apiclient)
         self.virtual_machine.start(self.apiclient)
@@ -305,7 +305,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         """ Verify that libvirt settings are expected after a disk add
         """
         if self.hypervisorNotSupported:
-            self.skipTest
+            self.skipTest("Hypervisor not supported")
 
         self.volume = Volume.create(
             self.apiclient,
@@ -329,7 +329,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         """
 
         if self.hypervisorNotSupported:
-            self.skipTest
+            self.skipTest("Hypervisor not supported")
 
         self.verifyGuestState(3)
 
@@ -339,7 +339,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             explicitly to scsi.
         """
         if self.hypervisorNotSupported:
-            self.skipTest
+            self.skipTest("Hypervisor not supported")
 
         self.virtual_machine.stop(self.apiclient)
         ostypes = GuestOs.listMapping(self.apiclient, hypervisor="kvm")
@@ -367,7 +367,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         """ Verify that guest sees scsi controller and disks after switching ostype and rdc
         """
         if self.hypervisorNotSupported:
-            self.skipTest
+            self.skipTest("Hypervisor not supported")
 
         self.verifyGuestState(3)
 
