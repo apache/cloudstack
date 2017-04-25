@@ -46,9 +46,9 @@ from cs.CsStaticRoutes import CsStaticRoutes
 
 
 class CsPassword(CsDataBag):
-    
+
     TOKEN_FILE="/tmp/passwdsrvrtoken"
-    
+
     def process(self):
         for item in self.dbag:
             if item == "id":
@@ -99,7 +99,7 @@ class CsAcl(CsDataBag):
 
             self.rule['allowed'] = True
             self.rule['action'] = "ACCEPT"
-                
+
             if self.rule['type'] == 'all' and not obj['source_cidr_list']:
                 self.rule['cidr'] = ['0.0.0.0/0']
             else:
@@ -122,10 +122,10 @@ class CsAcl(CsDataBag):
             rnge = ''
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] == self.rule['last_port']:
-                    rnge = self.rule['first_port']
+                    rnge = " --dport %s " %self.rule['first_port']
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] != self.rule['last_port']:
-                    rnge = "%s:%s" % (rule['first_port'], rule['last_port'])
+                    rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
             if self.direction == 'ingress':
                 if rule['protocol'] == "icmp":
                     self.fw.append(["mangle", "front",
@@ -140,46 +140,45 @@ class CsAcl(CsDataBag):
                                     " -s %s " % cidr +
                                     " -p %s " % rule['protocol'] +
                                     " -m %s " % rule['protocol'] +
-                                    " --dport %s -j RETURN" % rnge])
+                                    "  %s -j RETURN" % rnge])
 
             logging.debug("Current ACL IP direction is ==> %s", self.direction)
             if self.direction == 'egress':
                 self.fw.append(["filter", "", " -A FW_OUTBOUND -j FW_EGRESS_RULES"])
-                if rule['protocol'] == "icmp":
-                    self.fw.append(["filter", "front",
-                                    " -A FW_EGRESS_RULES" +
-                                    " -s %s " % cidr +
-                                    " -p %s " % rule['protocol'] +
-                                    " -m %s " % rule['protocol'] +
-                                    " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
-                else:
-                    fwr = " -I FW_EGRESS_RULES"
-                    #In case we have a default rule (accept all or drop all), we have to evaluate the action again.
-                    if rule['type'] == 'all' and not rule['source_cidr_list']:
-                        fwr = " -A FW_EGRESS_RULES"
-                        # For default egress ALLOW or DENY, the logic is inverted.
-                        # Having default_egress_policy == True, means that the default rule should have ACCEPT,
-                        # otherwise DROP. The rule should be appended, not inserted.
-                        if self.rule['default_egress_policy']:
-                            self.rule['action'] = "ACCEPT"
-                        else:
-                            self.rule['action'] = "DROP"
+
+                fwr = " -I FW_EGRESS_RULES"
+                # In case we have a default rule (accept all or drop all), we have to evaluate the action again.
+                if rule['type'] == 'all' and not rule['source_cidr_list']:
+                    fwr = " -A FW_EGRESS_RULES"
+                    # For default egress ALLOW or DENY, the logic is inverted.
+                    # Having default_egress_policy == True, means that the default rule should have ACCEPT,
+                    # otherwise DROP. The rule should be appended, not inserted.
+                    if self.rule['default_egress_policy']:
+                        self.rule['action'] = "ACCEPT"
                     else:
-                        # For other rules added, if default_egress_policy == True, following rules should be DROP,
-                        # otherwise ACCEPT
-                        if self.rule['default_egress_policy']:
-                            self.rule['action'] = "DROP"
-                        else:
-                            self.rule['action'] = "ACCEPT"
+                        self.rule['action'] = "DROP"
+                else:
+                    # For other rules added, if default_egress_policy == True, following rules should be DROP,
+                    # otherwise ACCEPT
+                    if self.rule['default_egress_policy']:
+                        self.rule['action'] = "DROP"
+                    else:
+                        self.rule['action'] = "ACCEPT"
 
-                    if rule['protocol'] != "all":
-                        fwr += " -s %s " % cidr + \
-                               " -p %s " % rule['protocol'] + \
-                               " -m %s " % rule['protocol'] + \
-                               " --dport %s" % rnge
+                if rule['protocol'] == "icmp":
+                    fwr += " -s %s " % cidr + \
+                                    " -p %s " % rule['protocol'] + \
+                                    " -m %s " % rule['protocol'] + \
+                                    " --icmp-type %s" % icmp_type
+                elif rule['protocol'] != "all":
+                    fwr += " -s %s " % cidr + \
+                           " -p %s " % rule['protocol'] + \
+                           " -m %s " % rule['protocol'] + \
+                           "  %s" % rnge
+                elif rule['protocol'] == "all":
+                    fwr += " -s %s " % cidr
 
-                    self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
-
+                self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
                 logging.debug("EGRESS rule configured for protocol ==> %s, action ==> %s", rule['protocol'], rule['action'])
 
     class AclDevice():
@@ -472,13 +471,13 @@ class CsSite2SiteVpn(CsDataBag):
 
     def deletevpn(self, ip):
         logging.info("Removing VPN configuration for %s", ip)
-        CsHelper.execute("ipsec auto --down vpn-%s" % ip)
-        CsHelper.execute("ipsec auto --delete vpn-%s" % ip)
+        CsHelper.execute("ipsec down vpn-%s" % ip)
+        CsHelper.execute("ipsec down vpn-%s" % ip)
         vpnconffile = "%s/ipsec.vpn-%s.conf" % (self.VPNCONFDIR, ip)
         vpnsecretsfile = "%s/ipsec.vpn-%s.secrets" % (self.VPNCONFDIR, ip)
         os.remove(vpnconffile)
         os.remove(vpnsecretsfile)
-        CsHelper.execute("ipsec auto --rereadall")
+        CsHelper.execute("ipsec reload")
 
     def configure_iptables(self, dev, obj):
         self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
@@ -498,49 +497,56 @@ class CsSite2SiteVpn(CsDataBag):
     def configure_ipsec(self, obj):
         leftpeer = obj['local_public_ip']
         rightpeer = obj['peer_gateway_ip']
-        peerlist = obj['peer_guest_cidr_list'].lstrip().rstrip().replace(',', ' ')
+        peerlist = obj['peer_guest_cidr_list'].replace(' ', '')
         vpnconffile = "%s/ipsec.vpn-%s.conf" % (self.VPNCONFDIR, rightpeer)
         vpnsecretsfile = "%s/ipsec.vpn-%s.secrets" % (self.VPNCONFDIR, rightpeer)
+        ikepolicy=obj['ike_policy'].replace(';','-')
+        esppolicy=obj['esp_policy'].replace(';','-')
+
+        pfs='no'
+        if 'modp' in esppolicy:
+            pfs='yes'
+
         if rightpeer in self.confips:
             self.confips.remove(rightpeer)
         file = CsFile(vpnconffile)
+        file.add("#conn for vpn-%s" % rightpeer, 0)
         file.search("conn ", "conn vpn-%s" % rightpeer)
         file.addeq(" left=%s" % leftpeer)
         file.addeq(" leftsubnet=%s" % obj['local_guest_cidr'])
         file.addeq(" leftnexthop=%s" % obj['local_public_gateway'])
         file.addeq(" right=%s" % rightpeer)
-        file.addeq(" rightsubnets={%s}" % peerlist)
+        file.addeq(" rightsubnet=%s" % peerlist)
         file.addeq(" type=tunnel")
         file.addeq(" authby=secret")
         file.addeq(" keyexchange=ike")
-        file.addeq(" ike=%s" % obj['ike_policy'])
+        file.addeq(" ike=%s" % ikepolicy)
         file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
-        file.addeq(" esp=%s" % obj['esp_policy'])
-        file.addeq(" salifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
-        if "modp" in obj['esp_policy']:
-            file.addeq(" pfs=yes")
-        else:
-            file.addeq(" pfs=no")
+        file.addeq(" esp=%s" % esppolicy)
+        file.addeq(" lifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
+        file.addeq(" pfs=%s" % pfs)
         file.addeq(" keyingtries=2")
         file.addeq(" auto=start")
         if 'encap' not in obj:
             obj['encap']=False
         file.addeq(" forceencaps=%s" % CsHelper.bool_to_yn(obj['encap']))
         if obj['dpd']:
-            file.addeq("  dpddelay=30")
-            file.addeq("  dpdtimeout=120")
-            file.addeq("  dpdaction=restart")
+            file.addeq(" dpddelay=30")
+            file.addeq(" dpdtimeout=120")
+            file.addeq(" dpdaction=restart")
         secret = CsFile(vpnsecretsfile)
-        secret.search("%s " % leftpeer, "%s %s: PSK \"%s\"" % (leftpeer, rightpeer, obj['ipsec_psk']))
+        secret.search("%s " % leftpeer, "%s %s : PSK \"%s\"" % (leftpeer, rightpeer, obj['ipsec_psk']))
         if secret.is_changed() or file.is_changed():
             secret.commit()
             file.commit()
             logging.info("Configured vpn %s %s", leftpeer, rightpeer)
-            CsHelper.execute("ipsec auto --rereadall")
-            CsHelper.execute("ipsec auto --add vpn-%s" % rightpeer)
-            if not obj['passive']:
-                CsHelper.execute("ipsec auto --up vpn-%s" % rightpeer)
-        os.chmod(vpnsecretsfile, 0o400)
+            CsHelper.execute("ipsec rereadsecrets")
+
+        CsHelper.execute("ipsec reload")
+        if not obj['passive']:
+            CsHelper.execute("sudo nohup ipsec down vpn-%s" % rightpeer)
+            CsHelper.execute("sudo nohup ipsec up vpn-%s &" % rightpeer)
+        os.chmod(vpnsecretsfile, 0400)
 
     def convert_sec_to_h(self, val):
         hrs = int(val) / 3600
@@ -629,25 +635,25 @@ class CsRemoteAccessVpn(CsDataBag):
                 logging.debug("Remote accessvpn  data bag %s",  self.dbag)
                 self.remoteaccessvpn_iptables(public_ip, self.dbag[public_ip])
 
-                CsHelper.execute("ipsec auto --rereadall")
+                CsHelper.execute("ipsec down L2TP-PSK")
+                CsHelper.execute("ipsec update")
                 CsHelper.execute("service xl2tpd stop")
                 CsHelper.execute("service xl2tpd start")
-                CsHelper.execute("ipsec auto --rereadsecrets")
-                CsHelper.execute("ipsec auto --replace L2TP-PSK")
+                CsHelper.execute("ipsec rereadsecrets")
             else:
                 logging.debug("Disabling remote access vpn .....")
                 #disable remote access vpn
-                CsHelper.execute("ipsec auto --down L2TP-PSK")
+                CsHelper.execute("ipsec down L2TP-PSK")
                 CsHelper.execute("service xl2tpd stop")
 
 
     def configure_l2tpIpsec(self, left,  obj):
-        vpnconffile="%s/l2tp.conf" % (self.VPNCONFDIR)
+        l2tpconffile="%s/l2tp.conf" % (self.VPNCONFDIR)
         vpnsecretfilte="%s/ipsec.any.secrets" % (self.VPNCONFDIR)
         xl2tpdconffile="/etc/xl2tpd/xl2tpd.conf"
         xl2tpoptionsfile='/etc/ppp/options.xl2tpd'
 
-        file = CsFile(vpnconffile)
+        file = CsFile(l2tpconffile)
         localip=obj['local_ip']
         localcidr=obj['local_cidr']
         publicIface=obj['public_interface']
@@ -660,6 +666,7 @@ class CsRemoteAccessVpn(CsDataBag):
 
 
         secret = CsFile(vpnsecretfilte)
+        secret.empty()
         secret.addeq(": PSK \"%s\"" %psk)
         secret.commit()
 
@@ -884,6 +891,12 @@ class CsForwardingRules(CsDataBag):
         device = self.getDeviceByIp(rule["public_ip"])
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
+        self.fw.append(["mangle", "",
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark 0x%s/0xffffffff" % \
+                        (rule["internal_ip"], device[len("eth"):])])
+        self.fw.append(["mangle", "",
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
+                        rule["internal_ip"]])
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",

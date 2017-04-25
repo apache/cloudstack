@@ -238,6 +238,8 @@ public interface ResponseGenerator {
 
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
+    VlanIpRangeResponse createVlanIpRangeResponse(Class<? extends VlanIpRangeResponse> subClass, Vlan vlan);
+
     IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddress);
 
     GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);

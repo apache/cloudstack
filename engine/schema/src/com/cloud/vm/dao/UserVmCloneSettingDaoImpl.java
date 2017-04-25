@@ -45,7 +45,7 @@ public class UserVmCloneSettingDaoImpl extends GenericDaoBase<UserVmCloneSetting
     public void init() {
         // Initialize the search builders.
         vmIdSearch = createSearchBuilder();
-        vmIdSearch.and("vmId", vmIdSearch.entity().getCloneType(), Op.EQ);
+        vmIdSearch.and("vmId", vmIdSearch.entity().getVmId(), Op.EQ);
         vmIdSearch.done();
 
         cloneTypeSearch = createSearchBuilder();

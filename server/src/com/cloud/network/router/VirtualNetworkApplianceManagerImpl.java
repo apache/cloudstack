@@ -42,6 +42,11 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -61,10 +66,6 @@ import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -1208,10 +1209,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 if (!Boolean.parseBoolean(serviceMonitoringFlag) || router.getVpcId() != null) {
                     continue;
                 }
+                String controlIP = getRouterControlIP(router);
 
-                final String privateIP = router.getPrivateIpAddress();
-
-                if (privateIP != null) {
+                if (controlIP != null && !controlIP.equals("0.0.0.0")) {
                     OpRouterMonitorServiceVO opRouterMonitorServiceVO = _opRouterMonitorServiceDao.findById(router.getId());
 
                     GetRouterAlertsCommand command = null;
@@ -1225,7 +1225,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         command = new GetRouterAlertsCommand(opRouterMonitorServiceVO.getLastAlertTimestamp());
                     }
 
-                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
 
                     try {
                         final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
@@ -1278,6 +1278,29 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         } catch (final Exception e) {
             s_logger.warn("Error while collecting alerts from router", e);
         }
+    }
+
+    private String getRouterControlIP(DomainRouterVO router){
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+        String controlIP = null;
+
+        if(router.getHypervisorType() == HypervisorType.VMware  && dcVo.getNetworkType() == NetworkType.Basic ){
+
+            final List<NicVO> nics = _nicDao.listByVmId(router.getId());
+            for (final NicVO nic : nics) {
+                final NetworkVO nc = _networkDao.findById(nic.getNetworkId());
+                if (nc.getTrafficType() == TrafficType.Guest && nic.getIPv4Address() != null) {
+                    controlIP = nic.getIPv4Address();
+                    break;
+                }
+            }
+            s_logger.debug("Vmware with Basic network selected Guest NIC ip as control IP " + controlIP );
+        }else{
+            controlIP = _routerControlHelper.getRouterControlIp(router.getId());
+        }
+
+        s_logger.debug("IP of control NIC " + controlIP );
+        return controlIP;
     }
 
     @Override
@@ -1758,7 +1781,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     protected void finalizeUserDataAndDhcpOnStart(final Commands cmds, final DomainRouterVO router, final Provider provider, final Long guestNetworkId) {
-        if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
+        if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)
+                || _networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dns, provider)) {
             // Resend dhcp
             s_logger.debug("Reapplying dhcp entries as a part of domR " + router + " start...");
             _commandSetupHelper.createDhcpEntryCommandsForVMs(router, cmds, guestNetworkId);
@@ -1821,7 +1845,15 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
                     if (ip.isOneToOneNat()) {
-                        final StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), ip.getVmIp(), false);
+
+                        boolean revoke = false;
+                        if (ip.getState() == IpAddress.State.Releasing ) {
+                            // for ips got struck in releasing state we need to delete the rule not add.
+                            s_logger.debug("Rule revoke set to true for the ip " + ip.getAddress() +" becasue it is in releasing state");
+                            revoke = true;
+                        }
+                        final StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), ip.getVmIp(), revoke);
+
                         staticNats.add(staticNat);
                     }
                 }
@@ -2215,6 +2247,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
+        //clean up the update_state feild
+        if(router.getUpdateState()== VirtualRouter.UpdateState.UPDATE_FAILED){
+            router.setUpdateState(null);
+            _routerDao.update(router.getId(),router);
+        }
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
@@ -2589,25 +2626,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
         return false;
-    }
-
-    protected class RebootTask extends ManagedContextRunnable {
-
-        long _routerId;
-
-        public RebootTask(final long routerId) {
-            _routerId = routerId;
-        }
-
-        @Override
-        protected void runInContext() {
-            try {
-                s_logger.info("Reboot router " + _routerId + " to refresh network rules");
-                rebootRouter(_routerId, true);
-            } catch (final Exception e) {
-                s_logger.warn("Error while rebooting the router", e);
-            }
-        }
     }
 
     protected boolean aggregationExecution(final AggregationControlCommand.Action action, final Network network, final List<DomainRouterVO> routers)

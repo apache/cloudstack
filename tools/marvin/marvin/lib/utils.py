@@ -19,6 +19,7 @@
 
 import marvin
 import os
+import re
 import time
 import logging
 import string
@@ -292,7 +293,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     # snapshot extension to be appended to the snapshot path obtained from db
     snapshot_extensions = {"vmware": ".ovf",
                             "kvm": "",
-                            "xenserver": ".vhd",
+                            "xenserver": "",
                             "simulator":""}
 
     qresultset = dbconn.execute(
@@ -489,9 +490,11 @@ def checkVolumeSize(ssh_handle=None,
                 return FAILED
             for line in fdisk_output["stdout"]:
                 if volume_name in line:
-                    parts = line.strip().split()
-                    if str(parts[-2]) == str(size_to_verify):
-                        return [SUCCESS,str(parts[-2])]
+                    # Get the bytes from the output
+                    # Disk /dev/xvdb: 1 GiB, 1073741824 bytes, 2097152 sectors
+                    m = re.match('.*?(\d+) bytes.*', line)
+                    if m and str(m.group(1)) == str(size_to_verify):
+                        return [SUCCESS,str(m.group(1))]
             return [FAILED,"Volume Not Found"]
     except Exception, e:
         print "\n Exception Occurred under getDiskUsage: " \

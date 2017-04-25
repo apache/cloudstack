@@ -93,6 +93,7 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
         Account account = _accountDao.findByIdIncludingRemoved(proj.getProjectAccountId());
         AccountJoinVO accountJn = ApiDBUtils.newAccountView(account);
         _accountJoinDao.setResourceLimits(accountJn, false, response);
+        response.setProjectAccountName(accountJn.getAccountName());
 
         response.setObjectName("project");
         return response;

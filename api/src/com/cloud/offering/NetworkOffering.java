@@ -131,4 +131,6 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isKeepAliveEnabled();
 
     boolean getSupportsStrechedL2();
+
+    boolean getSupportsPublicAccess();
 }

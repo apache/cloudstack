@@ -296,8 +296,8 @@ public class StringUtils {
     public static <T> List<T> applyPagination(final List<T> originalList, final Long startIndex, final Long pageSizeVal) {
         // Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
         final boolean applyPagination = startIndex != null && pageSizeVal != null
-                && startIndex <= Integer.MAX_VALUE && startIndex >= Integer.MIN_VALUE && pageSizeVal <= Integer.MAX_VALUE
-                && pageSizeVal >= Integer.MIN_VALUE;
+                && startIndex <= Integer.MAX_VALUE && startIndex >= 0 && pageSizeVal <= Integer.MAX_VALUE
+                && pageSizeVal > 0;
                 List<T> listWPagination = null;
                 if (applyPagination) {
                     listWPagination = new ArrayList<>();

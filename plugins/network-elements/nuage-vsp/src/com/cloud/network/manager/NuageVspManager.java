@@ -23,8 +23,10 @@ import com.cloud.api.commands.AddNuageVspDeviceCmd;
 import com.cloud.api.commands.DeleteNuageVspDeviceCmd;
 import com.cloud.api.commands.ListNuageVspDevicesCmd;
 import com.cloud.api.commands.UpdateNuageVspDeviceCmd;
+import com.cloud.api.response.NuageVlanIpRangeResponse;
 import com.cloud.api.response.NuageVspDeviceResponse;
-import com.cloud.network.Network;
+import com.cloud.dc.Vlan;
+import com.cloud.host.HostVO;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -41,6 +43,8 @@ public interface NuageVspManager extends PluggableService {
     static final String nuageVPCOfferingDisplayText = "Nuage VSP VPC Offering";
 
     static final String nuageDomainTemplateDetailName = "domainTemplateName";
+
+    static final String nuageUnderlayVlanIpRangeDetailKey = "nuage.underlay";
 
     static final ConfigKey<Boolean> NuageVspConfigDns = new ConfigKey<Boolean>(Boolean.class, "nuagevsp.configure.dns", "Advanced", "true",
             "Defines if NuageVsp plugin needs to configure DNS setting for a VM or not. True will configure the DNS and false will not configure the DNS settings", true,
@@ -79,8 +83,14 @@ public interface NuageVspManager extends PluggableService {
 
     List<NuageVspDeviceVO> listNuageVspDevices(ListNuageVspDevicesCmd cmd);
 
-    List<String> getDnsDetails(Network network);
+    List<String> getDnsDetails(long dataCenterId);
 
     List<String> getGatewaySystemIds();
+
+    HostVO getNuageVspHost(long physicalNetworkId);
+
+    boolean updateNuageUnderlayVlanIpRange(long vlanIpRangeId, boolean enabled);
+
+    List<NuageVlanIpRangeResponse> filterNuageVlanIpRanges(List<? extends Vlan> vlanIpRanges, Boolean underlay);
 
 }

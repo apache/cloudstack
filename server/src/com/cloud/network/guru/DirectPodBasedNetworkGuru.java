@@ -30,6 +30,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -54,12 +55,14 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.googlecode.ipv6.IPv6Address;
 
 public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGuru.class);
@@ -166,54 +169,81 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     protected void getIp(final NicProfile nic, final Pod pod, final VirtualMachineProfile vm, final Network network) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
         final DataCenter dc = _dcDao.findById(pod.getDataCenterId());
-        if (nic.getIPv4Address() == null) {
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientAddressCapacityException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {
                     PublicIp ip = null;
                     List<PodVlanMapVO> podRefs = _podVlanDao.listPodVlanMapsByPod(pod.getId());
-                    String podRangeGateway = null;
-                    if (!podRefs.isEmpty()) {
-                        podRangeGateway = _vlanDao.findById(podRefs.get(0).getVlanDbId()).getVlanGateway();
-                    }
-                    //Get ip address from the placeholder and don't allocate a new one
-                    if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-                        Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
-                        if (placeholderNic != null) {
-                            IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIPv4Address());
-                            ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                            s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network +
-                                " and gateway " + podRangeGateway);
+                    VlanVO vlan = _vlanDao.findById(podRefs.get(0).getVlanDbId());
+
+                    if (nic.getIPv4Address() == null) {
+                        String podRangeGateway = null;
+                        if (!podRefs.isEmpty()) {
+                            podRangeGateway = vlan.getVlanGateway();
                         }
-                    }
-
-                    if (ip == null) {
-                        ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
-                    }
-
-                    nic.setIPv4Address(ip.getAddress().toString());
-                    nic.setFormat(AddressFormat.Ip4);
-                    nic.setIPv4Gateway(ip.getGateway());
-                    nic.setIPv4Netmask(ip.getNetmask());
-                    if (ip.getVlanTag() != null && ip.getVlanTag().equalsIgnoreCase(Vlan.UNTAGGED)) {
-                        nic.setIsolationUri(IsolationType.Ec2.toUri(Vlan.UNTAGGED));
-                        nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED));
-                        nic.setBroadcastType(BroadcastDomainType.Native);
-                    }
-                    nic.setReservationId(String.valueOf(ip.getVlanTag()));
-                    nic.setMacAddress(ip.getMacAddress());
-
-                    //save the placeholder nic if the vm is the Virtual router
-                    if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-                        Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
-                        if (placeholderNic == null) {
-                            s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " for the network " + network);
-                            _networkMgr.savePlaceholderNic(network, nic.getIPv4Address(), null, VirtualMachine.Type.DomainRouter);
+                        //Get ip address from the placeholder and don't allocate a new one
+                        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+                            Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
+                            if (placeholderNic != null) {
+                                IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIPv4Address());
+                                ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                                s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network +
+                                    " and gateway " + podRangeGateway);
+                            }
                         }
-                    }
+
+                        if (ip == null) {
+                            ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
+                        }
+
+                        nic.setIPv4Address(ip.getAddress().toString());
+                        nic.setFormat(AddressFormat.Ip4);
+                        nic.setIPv4Gateway(ip.getGateway());
+                        nic.setIPv4Netmask(ip.getNetmask());
+                        if (ip.getVlanTag() != null && ip.getVlanTag().equalsIgnoreCase(Vlan.UNTAGGED)) {
+                            nic.setIsolationUri(IsolationType.Ec2.toUri(Vlan.UNTAGGED));
+                            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED));
+                            nic.setBroadcastType(BroadcastDomainType.Native);
+                        }
+                        nic.setReservationId(String.valueOf(ip.getVlanTag()));
+                        nic.setMacAddress(ip.getMacAddress());
+
+                        //save the placeholder nic if the vm is the Virtual router
+                        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+                            Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
+                            if (placeholderNic == null) {
+                                s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " for the network " + network);
+                                _networkMgr.savePlaceholderNic(network, nic.getIPv4Address(), null, VirtualMachine.Type.DomainRouter);
+                            }
+                        }
                 }
-            });
-        }
+
+                /**
+                 * Calculate the IPv6 Address the Instance will obtain using SLAAC and IPv6 EUI-64
+                 *
+                 * Linux, FreeBSD and Windows all calculate the same IPv6 address when configured properly.
+                 *
+                 * Using Router Advertisements the routers in the network should announce the IPv6 CIDR which is configured
+                 * in in the vlan table in the database.
+                 *
+                 * This way the NIC will be populated with a IPv6 address on which the Instance is reachable.
+                 */
+                if (vlan.getIp6Cidr() != null) {
+                    if (nic.getIPv6Address() == null) {
+                        s_logger.debug("Found IPv6 CIDR " + vlan.getIp6Cidr() + " for VLAN " + vlan.getId());
+                        nic.setIPv6Cidr(vlan.getIp6Cidr());
+                        nic.setIPv6Gateway(vlan.getIp6Gateway());
+
+                        IPv6Address ipv6addr = NetUtils.EUI64Address(vlan.getIp6Cidr(), nic.getMacAddress());
+                        s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
+                        nic.setIPv6Address(ipv6addr.toString());
+                    }
+                } else {
+                    s_logger.debug("No IPv6 CIDR configured for VLAN " + vlan.getId());
+                }
+            }
+        });
+
         nic.setIPv4Dns1(dc.getDns1());
         nic.setIPv4Dns2(dc.getDns2());
     }

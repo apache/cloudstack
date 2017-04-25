@@ -19,6 +19,38 @@
 
 package com.cloud.network.element;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StartupCommand;
@@ -27,15 +59,19 @@ import com.cloud.agent.api.element.ApplyAclRuleVspCommand;
 import com.cloud.agent.api.element.ApplyStaticNatVspCommand;
 import com.cloud.agent.api.element.ImplementVspCommand;
 import com.cloud.agent.api.element.ShutDownVpcVspCommand;
+import com.cloud.agent.api.element.ShutDownVspCommand;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -45,7 +81,6 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
-import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
@@ -60,6 +95,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.network.manager.NuageVspManagerImpl;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -74,14 +110,18 @@ import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.util.NuageVspEntityBuilder;
+import com.cloud.util.NuageVspUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -89,28 +129,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import com.cloud.util.NuageVspEntityBuilder;
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-import org.apache.cloudstack.resourcedetail.VpcDetailVO;
-import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class NuageVspElement extends AdapterBase implements ConnectivityProvider, IpDeployer, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         DhcpServiceProvider, ResourceStateAdapter, VpcProvider, NetworkACLServiceProvider {
@@ -118,6 +136,26 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     private static final Logger s_logger = Logger.getLogger(NuageVspElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
+
+    private static final Set<Service> REQUIRED_SERVICES = ImmutableSet.of(
+            Service.Connectivity,
+            Service.Dhcp
+    );
+    private static final Set<Service> NUAGE_ONLY_SERVICES = ImmutableSet.of(
+            Service.SourceNat,
+            Service.StaticNat,
+            Service.Gateway
+    );
+    private static final Set<Service> UNSUPPORTED_SERVICES = ImmutableSet.of(
+            Service.Vpn,
+            Service.Dns,
+            Service.PortForwarding,
+            Service.SecurityGroup
+    );
+    private static final Set<Pair<Service, Service>> ANY_REQUIRED_SERVICES = ImmutableSet.of(
+            new Pair<>(Service.SourceNat, Service.StaticNat)
+    );
+
 
     public static final ExternalNetworkDeviceManager.NetworkDevice NuageVspDevice = new ExternalNetworkDeviceManager.NetworkDevice("NuageVsp", Provider.NuageVsp.getName());
 
@@ -141,6 +179,8 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     IPAddressDao _ipAddressDao;
     @Inject
     VlanDao _vlanDao;
+    @Inject
+    VlanDetailsDao _vlanDetailsDao;
     @Inject
     NicDao _nicDao;
     @Inject
@@ -169,8 +209,15 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     NuageVspEntityBuilder _nuageVspEntityBuilder;
     @Inject
     VpcDetailsDao _vpcDetailsDao;
+
+    @Inject
+    NetworkModel _networkMgr;
+    @Inject
+    NetworkTopologyContext networkTopologyContext;
     @Inject
     DomainRouterDao _routerDao;
+    @Inject
+    VpcVirtualNetworkApplianceManager _routerMgr;
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
@@ -183,45 +230,32 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     }
 
     private static Map<Service, Map<Capability, String>> setCapabilities() {
-        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
-
-        // L2 Support : SDN provisioning
-        capabilities.put(Service.Connectivity, null);
-
-        // L3 Support : Generic
-        capabilities.put(Service.Gateway, null);
-
-        // Security Group
-        capabilities.put(Service.SecurityGroup, null);
-
-        // L3 Support : SourceNat
-        Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
-        sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "perzone");
-        sourceNatCapabilities.put(Capability.RedundantRouter, "false");
-        capabilities.put(Service.SourceNat, sourceNatCapabilities);
-
-        // L3 support : StaticNat
-        capabilities.put(Service.StaticNat, null);
-
-        // Set capabilities for Firewall service
-        Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
-        firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
-        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
-        firewallCapabilities.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp, all");
-        firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress, egress");
-        firewallCapabilities.put(Capability.MultipleIps, "true");
-        capabilities.put(Service.Firewall, firewallCapabilities);
-
-        // L3 Support : DHCP
-        Map<Capability, String> dhcpCapabilities = new HashMap<Capability, String>();
-        capabilities.put(Service.Dhcp, dhcpCapabilities);
-
-        //add network ACL capability
-        Map<Network.Capability, String> networkACLCapabilities = new HashMap<Network.Capability, String>();
-        networkACLCapabilities.put(Network.Capability.SupportedProtocols, "tcp,udp,icmp");
-        capabilities.put(Network.Service.NetworkACL, networkACLCapabilities);
-
-        return capabilities;
+        return ImmutableMap.<Service, Map<Capability, String>>builder()
+            .put(Service.Connectivity, ImmutableMap.of(
+                    Capability.NoVlan, "",
+                    Capability.PublicAccess, ""
+            ))
+            .put(Service.Gateway, ImmutableMap.<Capability, String>of())
+            .put(Service.SourceNat, ImmutableMap.of(
+                    Capability.SupportedSourceNatTypes, "perzone",
+                    Capability.RedundantRouter, "false"
+            ))
+            .put(Service.StaticNat, ImmutableMap.<Capability, String>of())
+            .put(Service.SecurityGroup, ImmutableMap.<Capability, String>of())
+            .put(Service.Firewall, ImmutableMap.of(
+                    Capability.TrafficStatistics, "per public ip",
+                    Capability.SupportedProtocols, "tcp,udp,icmp",
+                    Capability.SupportedEgressProtocols, "tcp,udp,icmp, all",
+                    Capability.SupportedTrafficDirection, "ingress, egress",
+                    Capability.MultipleIps, "true"
+            ))
+            .put(Service.Dhcp, ImmutableMap.of(
+                    Capability.DhcpAccrossMultipleSubnets, "true"
+            ))
+            .put(Service.NetworkACL, ImmutableMap.of(
+                    Capability.SupportedProtocols, "tcp,udp,icmp"
+            ))
+            .build();
     }
 
     @Override
@@ -247,7 +281,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             return applyACLRulesForVpc(network, offering);
         }
 
-        if (!canHandle(network, Service.Connectivity)) {
+        if (!canHandle(network, offering, Service.Connectivity)) {
             return false;
         }
 
@@ -257,8 +291,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         }
 
 
-        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
-        List<String> dnsServers = _nuageVspManager.getDnsDetails(network);
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
         List<VspAclRule> ingressFirewallRules = getFirewallRulesToApply(network, FirewallRule.TrafficType.Ingress);
         List<VspAclRule> egressFirewallRules = getFirewallRulesToApply(network, FirewallRule.TrafficType.Egress);
 
@@ -267,9 +300,9 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         for (IPAddressVO ip : ips) {
             floatingIpUuids.add(ip.getUuid());
         }
-
-        HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
-        ImplementVspCommand cmd = new ImplementVspCommand(vspNetwork, dnsServers, ingressFirewallRules, egressFirewallRules, floatingIpUuids);
+        VspDhcpDomainOption vspDhcpOptions = _nuageVspEntityBuilder.buildNetworkDhcpOption(network, offering);
+        HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
+        ImplementVspCommand cmd = new ImplementVspCommand(vspNetwork, ingressFirewallRules, egressFirewallRules, floatingIpUuids, vspDhcpOptions);
         Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
         if (answer == null || !answer.getResult()) {
             s_logger.error("ImplementVspCommand for network " + network.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
@@ -277,7 +310,6 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                 throw new ResourceUnavailableException(answer.getDetails(), Network.class, network.getId());
             }
         }
-
         return true;
     }
 
@@ -335,7 +367,21 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
-
+        if (cleanup && isDnsSupportedByVR(network)) {
+            // The network is restarted, possibly the domain name is changed, update the dhcpOptions as soon as possible
+            NetworkOfferingVO networkOfferingVO = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
+            VspDhcpDomainOption vspDhcpOptions = _nuageVspEntityBuilder.buildNetworkDhcpOption(network, networkOfferingVO);
+            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
+            HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
+            ShutDownVspCommand cmd = new ShutDownVspCommand(vspNetwork, vspDhcpOptions);
+            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
+            if (answer == null || !answer.getResult()) {
+                s_logger.error("ShutDownVspCommand for network " + network.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
+                if ((null != answer) && (null != answer.getDetails())) {
+                    throw new ResourceUnavailableException(answer.getDetails(), Network.class, network.getId());
+                }
+            }
+        }
         return true;
     }
 
@@ -356,41 +402,40 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        if (!canHandle(network, Service.Connectivity)) {
-            return false;
-        }
-
-        return true;
+        return canHandle(network, Service.Connectivity);
     }
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
-        // This element can only function in a NuageVsp based
-        // SDN network, so Connectivity needs to be present here
-        if (!services.contains(Service.Connectivity)) {
-            s_logger.warn("Unable to support services combination without Connectivity service provided by Nuage VSP.");
+        Preconditions.checkNotNull(services);
+        final Sets.SetView<Service> missingServices = Sets.difference(REQUIRED_SERVICES, services);
+        final Sets.SetView<Service> unsupportedServices = Sets.intersection(UNSUPPORTED_SERVICES, services);
+        final Sets.SetView<Service> wantedServices = Sets.intersection(NUAGE_ONLY_SERVICES, new HashSet<>());
+
+        if (!missingServices.isEmpty()) {
+            throw new UnsupportedServiceException("Provider " + Provider.NuageVsp + " requires services: " + missingServices);
+        }
+
+        if (!unsupportedServices.isEmpty()) {
+            // NuageVsp doesn't implement any of these services.
+            // So if these services are requested, we can't handle it.
+            s_logger.debug("Unable to support services combination. The services " + unsupportedServices + " are not supported by Nuage VSP.");
             return false;
         }
 
-        if ((services.contains(Service.StaticNat)) && (!services.contains(Service.SourceNat))) {
-            s_logger.warn("Unable to provide StaticNat without the SourceNat service.");
-            return false;
-        }
-
-        if (services.contains(Service.Vpn) || services.contains(Service.Dns) || services.contains(Service.Lb) || services.contains(Service.PortForwarding)
-                || services.contains(Service.SecurityGroup)) {
-            // NuageVsp doesn't implement any of these services, and we don't
-            // want anyone else to do it for us. So if these services
-            // exist, we can't handle it.
-            s_logger.warn("Unable to support services combination. The services list contains service(s) not supported by Nuage VSP.");
-            return false;
+        if (!wantedServices.isEmpty()) {
+            throw new UnsupportedServiceException("Provider " + Provider.NuageVsp + " does not support services to be implemented by another provider: " + wantedServices);
         }
 
         return true;
     }
 
     protected boolean canHandle(Network network, Service service) {
+        NetworkOffering networkOffering = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
+        return canHandle(network, networkOffering, service);
+    }
 
+    protected boolean canHandle(Network network, NetworkOffering networkOffering, Service service) {
         if (network.getBroadcastDomainType() != Networks.BroadcastDomainType.Vsp) {
             return false;
         }
@@ -411,14 +456,35 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             }
         }
 
-        if (network.getVpcId() != null) {
-            NetworkOffering networkOffering = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
-            if (!networkOffering.getIsPersistent()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("NuageVsp can't handle VPC tiers which use a network offering which are not persistent");
-                }
-                return false;
+        if (service != Service.Connectivity
+                && !_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), Service.Connectivity, getProvider())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("NuageVsp can't handle networks which use a network offering without NuageVsp as Connectivity provider");
             }
+            return false;
+        }
+
+        if (service != Service.SourceNat
+                && networkOffering.getGuestType() == Network.GuestType.Isolated
+                && !_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("NuageVsp can't handle networks which use a network offering without NuageVsp as SourceNat provider");
+            }
+            return false;
+        }
+
+        if (networkOffering.getSpecifyVlan()) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("NuageVsp doesn't support VLAN values for networks");
+            }
+            return false;
+        }
+
+        if (network.getVpcId() != null && !networkOffering.getIsPersistent()) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("NuageVsp can't handle VPC tiers which use a network offering which are not persistent");
+            }
+            return false;
         }
 
         return true;
@@ -436,10 +502,17 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         return true;
     }
 
+    private boolean isDnsSupportedByVR(Network network) {
+        return (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns) &&
+                ( _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns,  Provider.VirtualRouter) ||
+                  _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns,  Provider.VPCVirtualRouter)));
+    }
+
     @Override
     public boolean removeDhcpSupportForSubnet(Network network) throws ResourceUnavailableException {
         return true;
     }
+
 
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
@@ -447,13 +520,15 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         for (StaticNat staticNat : rules) {
             IPAddressVO sourceNatIp = _ipAddressDao.findById(staticNat.getSourceIpAddressId());
             VlanVO sourceNatVlan = _vlanDao.findById(sourceNatIp.getVlanId());
+            checkVlanUnderlayCompatibility(sourceNatVlan);
+
             NicVO nicVO = _nicDao.findByIp4AddressAndNetworkId(staticNat.getDestIpAddress(), staticNat.getNetworkId());
             VspStaticNat vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(staticNat.isForRevoke(), sourceNatIp, sourceNatVlan, nicVO);
             vspStaticNatDetails.add(vspStaticNat);
         }
 
-        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(config, false);
-        HostVO nuageVspHost = getNuageVspHost(config.getPhysicalNetworkId());
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(config);
+        HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(config.getPhysicalNetworkId());
         ApplyStaticNatVspCommand cmd = new ApplyStaticNatVspCommand(vspNetwork, vspStaticNatDetails);
         Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
         if (answer == null || !answer.getResult()) {
@@ -464,6 +539,28 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         }
 
         return true;
+    }
+
+    private void checkVlanUnderlayCompatibility(VlanVO newVlan) throws ResourceUnavailableException {
+        List<VlanVO> vlans = _vlanDao.listByZone(newVlan.getDataCenterId());
+        if (CollectionUtils.isNotEmpty(vlans)) {
+            boolean newVlanUnderlay = NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, newVlan);
+            for (VlanVO vlan : vlans) {
+                if (vlan.getId() == newVlan.getId()) continue;
+
+                final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(newVlan.getVlanGateway(), newVlan.getVlanNetmask());
+                final String existingCidr = NetUtils.getCidrFromGatewayAndNetmask(vlan.getVlanGateway(), vlan.getVlanNetmask());
+
+                NetUtils.SupersetOrSubset supersetOrSubset = NetUtils.isNetowrkASubsetOrSupersetOfNetworkB(newCidr, existingCidr);
+                if (supersetOrSubset == NetUtils.SupersetOrSubset.sameSubnet) {
+                    boolean vlanUnderlay = NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, vlan);
+                    if (newVlanUnderlay != vlanUnderlay) {
+                        throw new ResourceUnavailableException("Mixed values for the underlay flag for IP ranges in the same subnet is not supported", Vlan.class, newVlan.getId());
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     @Override
@@ -490,7 +587,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     protected boolean applyACLRules(final Network network, List<? extends InternalIdentity> rules, boolean isNetworkAcl, boolean networkReset)
             throws ResourceUnavailableException {
-        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network, false);
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
         List<VspAclRule> vspAclRules = Lists.transform(rules, new Function<InternalIdentity, VspAclRule>() {
             @Nullable
             @Override
@@ -502,7 +599,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             }
         });
 
-        HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
+        HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
         VspAclRule.ACLType vspAclType = isNetworkAcl ? VspAclRule.ACLType.NetworkACL : VspAclRule.ACLType.Firewall;
         ApplyAclRuleVspCommand cmd = new ApplyAclRuleVspCommand(vspAclType, vspNetwork, vspAclRules, networkReset);
         Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
@@ -571,7 +668,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             });
 
             Domain vpcDomain = _domainDao.findById(vpc.getDomainId());
-            HostVO nuageVspHost = getNuageVspHost(getPhysicalNetworkId(vpc.getZoneId()));
+            HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(getPhysicalNetworkId(vpc.getZoneId()));
 
             String preConfiguredDomainTemplateName;
             VpcDetailVO domainTemplateNameDetail = _vpcDetailsDao.findDetail(vpc.getId(), NuageVspManager.nuageDomainTemplateDetailName);
@@ -645,18 +742,5 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             return null;
         }
         return new DeleteHostAnswer(true);
-    }
-
-    private HostVO getNuageVspHost(Long physicalNetworkId) {
-        HostVO nuageVspHost;
-        List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkId);
-        if (nuageVspDevices != null && (!nuageVspDevices.isEmpty())) {
-            NuageVspDeviceVO config = nuageVspDevices.iterator().next();
-            nuageVspHost = _hostDao.findById(config.getHostId());
-            _hostDao.loadDetails(nuageVspHost);
-        } else {
-            throw new CloudRuntimeException("There is no Nuage VSP device configured on physical network " + physicalNetworkId);
-        }
-        return nuageVspHost;
     }
 }

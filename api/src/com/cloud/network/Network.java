@@ -41,6 +41,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         Shared, Isolated
     }
 
+    public String updatingInSequence ="updatingInSequence";
+
     public static class Service {
         private static List<Service> supportedServices = new ArrayList<Service>();
 
@@ -58,7 +60,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
-        public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet);
+        public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet,
+                Capability.NoVlan, Capability.PublicAccess);
 
         private final String name;
         private final Capability[] caps;
@@ -213,6 +216,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability DistributedRouter = new Capability("DistributedRouter");
         public static final Capability StretchedL2Subnet = new Capability("StretchedL2Subnet");
         public static final Capability RegionLevelVpc = new Capability("RegionLevelVpc");
+        public static final Capability NoVlan = new Capability("NoVlan");
+        public static final Capability PublicAccess = new Capability("PublicAccess");
 
         private final String name;
 

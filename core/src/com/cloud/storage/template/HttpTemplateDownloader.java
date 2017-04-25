@@ -25,7 +25,6 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Date;
 
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
@@ -117,7 +116,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             request = new GetMethod(downloadUrl);
             request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
             completionCallback = callback;
-            //this.request.setFollowRedirects(false);
+            this.request.setFollowRedirects(true);
 
             File f = File.createTempFile("dnld", "tmp_", new File(toDir));
 
@@ -232,8 +231,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 remoteSize = maxTemplateSizeInBytes;
             }
 
-            URL url = new URL(getDownloadUrl());
-            InputStream in = url.openStream();
+            InputStream in = request.getResponseBodyAsStream();
 
             RandomAccessFile out = new RandomAccessFile(file, "rw");
             out.seek(localFileSize);

@@ -77,7 +77,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -169,6 +172,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMSnapshotTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -267,6 +271,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     private SnapshotDataFactory _snapshotFactory;
     @Inject
+    StorageStrategyFactory _storageStrategyFactory;
+    @Inject
     private TemplateService _tmpltSvr;
     @Inject
     private DataStoreManager _dataStoreMgr;
@@ -285,6 +291,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private ImageStoreDao _imgStoreDao;
     @Inject
     MessageBus _messageBus;
+    @Inject
+    private VMTemplateDetailsDao _tmpltDetailsDao;
 
     private boolean _disableExtraction = false;
     private List<TemplateAdapter> _adapters;
@@ -1636,6 +1644,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
 
                 if (dataStoreRole == DataStoreRole.Image) {
+                    if (snapInfo == null) {
+                        snapInfo = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+                        if(snapInfo == null) {
+                            throw new CloudRuntimeException("Cannot find snapshot "+snapshotId);
+                        }
+                        // We need to copy the snapshot onto secondary.
+                        SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
+                        snapshotStrategy.backupSnapshot(snapInfo);
+
+                        // Attempt to grab it again.
+                        snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+                        if(snapInfo == null) {
+                            throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + " on secondary and could not create backup");
+                        }
+                    }
                     DataStore snapStore = snapInfo.getDataStore();
 
                     if (snapStore != null) {
@@ -1880,6 +1903,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Increment the number of templates
         if (template != null) {
             Map<String, String> details = new HashMap<String, String>();
+
+            if (sourceTemplateId != null) {
+                VMTemplateVO sourceTemplate = _tmpltDao.findById(sourceTemplateId);
+                if (sourceTemplate != null && sourceTemplate.getDetails() != null) {
+                    details.putAll(sourceTemplate.getDetails());
+                }
+            }
+
             if (volume != null) {
                 Long vmId = volume.getInstanceId();
                 if (vmId != null) {
@@ -2015,6 +2046,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Integer sortKey = cmd.getSortKey();
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
+        boolean cleanupDetails = cmd.isCleanupDetails();
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);
@@ -2046,7 +2078,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   sortKey == null &&
                   isDynamicallyScalable == null &&
                   isRoutingTemplate == null &&
-                  details == null);
+                  (! cleanupDetails && details == null) //update details in every case except this one
+                  );
         if (!updateNeeded) {
             return template;
         }
@@ -2124,7 +2157,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        if (details != null && !details.isEmpty()) {
+        if (cleanupDetails) {
+            template.setDetails(null);
+            _tmpltDetailsDao.removeDetails(id);
+        }
+        else if (details != null && !details.isEmpty()) {
             template.setDetails(details);
             _tmpltDao.saveDetails(template);
         }

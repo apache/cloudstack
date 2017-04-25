@@ -690,7 +690,7 @@ public class UserVmManagerTest {
 
         when(_accountService.getActiveAccountById(anyLong())).thenReturn(oldAccount);
 
-        when(_accountService.getActiveAccountByName(anyString(), anyLong())).thenReturn(newAccount);
+        when(_accountMgr.finalizeOwner(any(Account.class), anyString(), anyLong(), anyLong())).thenReturn(newAccount);
 
         doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class),
             any(ControlledEntity.class));

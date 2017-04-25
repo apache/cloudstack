@@ -377,7 +377,7 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(hypervisor_type, hypervisor
 UPDATE  `cloud`.`volumes` v,  `cloud`.`storage_pool` s,  `cloud`.`cluster` c  set v.format='RAW' where v.pool_id=s.id and s.cluster_id=c.id and c.hypervisor_type='Ovm3';
 UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,Ovm3,LXC' WHERE name='hypervisor.list';
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id,featured, cross_zones, hypervisor_type, state)
-VALUES (12, UUID(), 'routing-12', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://cloudstack.apt-get.eu/systemvm/4.6/systemvm64template-4.6.0-ovm.raw.bz2', 'c8577d27b2daafb2d9a4ed307ce2f00f', 0, 'SystemVM Template (Ovm3)', 'RAW', 183, 0, 1, 'Ovm3', 'Active' );
+VALUES (12, UUID(), 'routing-12', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloudstack.org/systemvm/4.6/systemvm64template-4.6.0-ovm.raw.bz2', 'c8577d27b2daafb2d9a4ed307ce2f00f', 0, 'SystemVM Template (Ovm3)', 'RAW', 183, 0, 1, 'Ovm3', 'Active' );
 
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'ManagementServer', 'ovm3.heartbeat.timeout' , '180', '120', 'Timeout value to send to the checkheartbeat script for guarding the self fencing functionality on ovm3');
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'ManagementServer', 'ovm3.heartbeat.interval' , '10', '1', 'Interval value the checkheartbeat script uses before triggering the timeout for ovm3');
@@ -420,3 +420,5 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'KVM', 'default', 'CentOS 7', 246, utc_timestamp(), 0);
 
 UPDATE  `cloud`.`hypervisor_capabilities` SET  `max_data_volumes_limit` =  '32' WHERE  `hypervisor_capabilities`.`hypervisor_type` =  'KVM';
+
+

@@ -43,7 +43,7 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
-BuildRequires: java-1.7.0-openjdk-devel
+BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: tomcat6
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
@@ -60,7 +60,7 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: tomcat6
-Requires: java-1.7.0-openjdk
+Requires: java-1.8.0-openjdk
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -97,6 +97,7 @@ management, and intelligence in CloudStack.
 Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python-argparse
+Requires: python-netaddr
 Obsoletes: cloud-test < 4.1.0 
 Obsoletes: cloud-scripts < 4.1.0
 Obsoletes: cloud-utils < 4.1.0
@@ -113,7 +114,7 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java-1.7.0-openjdk
+Requires: java-1.8.0-openjdk
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -152,7 +153,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java-1.7.0-openjdk
+Requires: java-1.8.0-openjdk
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
@@ -439,12 +440,12 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 cloudstack-management on > /dev/null 2>&1 || true
 fi
 
-grep "db.cloud.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.cloud.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
-grep "db.usage.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.usage.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
-grep "db.simulator.driver=jdbc:mysql" /etc/cloudstack/management/db.properties > /dev/null|| echo "db.simulator.driver=jdbc:mysql" >> /etc/cloudstack/management/db.properties
+grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "db.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
-    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
+    echo Please download vhd-util from http://download.cloudstack.org/tools/vhd-util and put it in
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
 fi
 

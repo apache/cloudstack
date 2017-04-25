@@ -16,44 +16,6 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
-import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
-import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
-import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
@@ -128,6 +90,42 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 @Component
 public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements SnapshotManager, SnapshotApiService {
@@ -265,6 +263,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (vm.getState() != State.Stopped && vm.getState() != State.Shutdowned) {
                 throw new InvalidParameterValueException("The VM the specified disk is attached to is not in the shutdown state.");
             }
+            // If target VM has associated VM snapshots then don't allow to revert from snapshot
+            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(instanceId);
+            if (vmSnapshots.size() > 0) {
+                throw new InvalidParameterValueException("Unable to revert snapshot for VM, please remove VM snapshots before reverting VM from snapshot");
+            }
         }
 
         SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
@@ -367,6 +370,76 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
+    public Snapshot backupSnapshotFromVmSnapshot(Long snapshotId, Long vmId, Long volumeId, Long vmSnapshotId) {
+        VMInstanceVO vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to vm:" + vmId + " doesn't exist");
+        }
+        if (! HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            throw new InvalidParameterValueException("Unsupported hypervisor type " + vm.getHypervisorType() + ". This supports KVM only");
+        }
+
+        VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+        if (vmSnapshot == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to vmSnapshot:" + vmSnapshotId + " doesn't exist");
+        }
+        // check vmsnapshot permissions
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vmSnapshot);
+
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        if (snapshot == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to snapshot:" + snapshotId + " doesn't exist");
+        }
+
+        VolumeInfo volume = volFactory.getVolume(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
+        }
+
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
+        }
+
+        DataStore store = volume.getDataStore();
+        SnapshotDataStoreVO parentSnapshotDataStoreVO = _snapshotStoreDao.findParent(store.getRole(), store.getId(), volumeId);
+        if (parentSnapshotDataStoreVO != null) {
+            //Double check the snapshot is removed or not
+            SnapshotVO parentSnap = _snapshotDao.findById(parentSnapshotDataStoreVO.getSnapshotId());
+            if (parentSnap != null && parentSnapshotDataStoreVO.getInstallPath() != null && parentSnapshotDataStoreVO.getInstallPath().equals(vmSnapshot.getName())) {
+                throw new InvalidParameterValueException("Creating snapshot failed due to snapshot : " + parentSnap.getUuid() + " is created from the same vm snapshot");
+            }
+        }
+        SnapshotInfo snapshotInfo = this.snapshotFactory.getSnapshot(snapshotId, store);
+        snapshotInfo = (SnapshotInfo) store.create(snapshotInfo);
+        SnapshotDataStoreVO snapshotOnPrimaryStore = this._snapshotStoreDao.findBySnapshot(snapshot.getId(), store.getRole());
+        snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+        snapshotOnPrimaryStore.setInstallPath(vmSnapshot.getName());
+        _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
+        snapshot.setState(Snapshot.State.CreatedOnPrimary);
+        _snapshotDao.update(snapshot.getId(), snapshot);
+
+        snapshotInfo = this.snapshotFactory.getSnapshot(snapshotId, store);
+
+        Long snapshotOwnerId = vm.getAccountId();
+
+        try {
+            SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
+            if (snapshotStrategy == null) {
+                throw new CloudRuntimeException("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
+            }
+            snapshotInfo = snapshotStrategy.backupSnapshot(snapshotInfo);
+
+        } catch(Exception e) {
+            s_logger.debug("Failed to backup snapshot from vm snapshot", e);
+            _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.snapshot);
+            _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.secondary_storage, new Long(volume.getSize()));
+            throw new CloudRuntimeException("Failed to backup snapshot from vm snapshot", e);
+        }
+        return snapshotInfo;
+    }
+
+    @Override
     public SnapshotVO getParentSnapshot(VolumeInfo volume) {
         long preId = _snapshotDao.getLastSnapshot(volume.getId(), DataStoreRole.Primary);
 
@@ -391,9 +464,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (policyId != Snapshot.MANUAL_POLICY_ID) {
             SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, true);
-            assert snapshotSchedule != null;
-            snapshotSchedule.setSnapshotId(snapshotId);
-            _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
+            if (snapshotSchedule !=null) {
+                snapshotSchedule.setSnapshotId(snapshotId);
+                _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
+            }
         }
 
         if (snapshot != null && snapshot.isRecursive()) {
@@ -407,7 +481,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Type type = spstVO.getRecurringType();
         int maxSnaps = type.getMax();
 
-        List<SnapshotVO> snaps = listSnapsforVolumeType(volumeId, type);
+        List<SnapshotVO> snaps = listSnapsforVolumeTypeNotDestroyed(volumeId, type);
         SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         if (policy != null && policy.getMaxSnaps() < maxSnaps) {
             maxSnaps = policy.getMaxSnaps();
@@ -438,6 +512,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         if (snapshotCheck == null) {
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
+        }
+
+        if (snapshotCheck.getState() == Snapshot.State.Destroyed) {
+            throw new InvalidParameterValueException("Snapshot with id: " + snapshotId + " is already destroyed");
         }
 
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
@@ -824,8 +902,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return _snapshotDao.listByVolumeId(volumeId);
     }
 
-    private List<SnapshotVO> listSnapsforVolumeType(long volumeId, Type type) {
-        return _snapshotDao.listByVolumeIdType(volumeId, type);
+    private List<SnapshotVO> listSnapsforVolumeTypeNotDestroyed(long volumeId, Type type) {
+        return _snapshotDao.listByVolumeIdTypeNotDestroyed(volumeId, type);
     }
 
     @Override
@@ -999,6 +1077,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @DB
     public SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException {
         CreateSnapshotPayload payload = (CreateSnapshotPayload)volume.getpayload();
+
+        updateSnapshotPayload(volume.getPoolId(), payload);
+
         Long snapshotId = payload.getSnapshotId();
         Account snapshotOwner = payload.getAccount();
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, volume.getDataStore());
@@ -1018,7 +1099,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
 
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
-
+                if(snapshotStoreRef == null) {
+                    // The snapshot was not backed up to secondary.  Find the snap on primary
+                    snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
+                    if(snapshotStoreRef == null) {
+                        throw new CloudRuntimeException("Could not find snapshot");
+                    }
+                }
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
                     null, null, snapshotStoreRef.getPhysicalSize(), volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
 
@@ -1034,6 +1121,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
         return snapshot;
+    }
+
+    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload) {
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+
+        if (storagePoolVO.isManaged()) {
+            Snapshot.LocationType locationType = payload.getLocationType();
+
+            if (locationType == null) {
+                payload.setLocationType(Snapshot.LocationType.PRIMARY);
+            }
+        }
+        else {
+            payload.setLocationType(null);
+        }
     }
 
     private static DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao, DataStoreManager dataStoreMgr) {
@@ -1145,7 +1247,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
-    public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName) throws ResourceAllocationException {
+    public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
         supportedByHypervisor(volume);
@@ -1196,7 +1298,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         SnapshotVO snapshotVO =
             new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
-                (short)snapshotType.ordinal(), snapshotType.name(), volume.getSize(), volume.getMinIops(), volume.getMaxIops(), hypervisorType);
+                (short)snapshotType.ordinal(), snapshotType.name(), volume.getSize(), volume.getMinIops(), volume.getMaxIops(), hypervisorType, locationType);
 
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
         if (snapshot == null) {

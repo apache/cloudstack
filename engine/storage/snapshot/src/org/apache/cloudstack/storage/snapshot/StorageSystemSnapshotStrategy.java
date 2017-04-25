@@ -16,36 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
-import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
-import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import org.springframework.stereotype.Component;
-
-import com.google.common.base.Optional;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.dc.dao.ClusterDao;
@@ -57,6 +27,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementService;
+import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -72,6 +43,33 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 @Component
 public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
@@ -92,7 +90,32 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshotInfo) {
-        return snapshotInfo;
+        Preconditions.checkArgument(snapshotInfo != null, "backupSnapshot expects a valid snapshot");
+
+        if (snapshotInfo.getLocationType() != Snapshot.LocationType.SECONDARY) {
+            markAsBackedUp((SnapshotObject)snapshotInfo);
+
+            return snapshotInfo;
+        }
+
+        // At this point, the snapshot is either taken as a native
+        // snapshot on the storage or exists as a volume on the storage (clone).
+        // If archive flag is passed in, we should copy this snapshot to secondary
+        // storage and delete it from the primary storage.
+
+        HostVO host = getHost(snapshotInfo.getVolumeId());
+        boolean canStorageSystemCreateVolumeFromSnapshot = canStorageSystemCreateVolumeFromSnapshot(snapshotInfo.getBaseVolume().getPoolId());
+        boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(host.getClusterId());
+
+        if (!canStorageSystemCreateVolumeFromSnapshot || !computeClusterSupportsResign) {
+            String msg = "Cannot archive snapshot: canStorageSystemCreateVolumeFromSnapshot and/or computeClusterSupportsResign were false.";
+
+            s_logger.warn(msg);
+
+            throw new CloudRuntimeException(msg);
+        }
+
+        return snapshotSvr.backupSnapshot(snapshotInfo);
     }
 
     @Override
@@ -112,6 +135,19 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         if (!Snapshot.State.BackedUp.equals(snapshotVO.getState())) {
             throw new InvalidParameterValueException("Unable to delete snapshotshot " + snapshotId + " because it is in the following state: " + snapshotVO.getState());
         }
+
+        return cleanupSnapshotOnPrimaryStore(snapshotId);
+    }
+
+    /**
+     * Cleans up a snapshot which was taken on a primary store. This function
+     * removes
+     *
+     * @param snapshotId: ID of snapshot that needs to be removed
+     * @return true if snapshot is removed, false otherwise
+     */
+
+    private boolean cleanupSnapshotOnPrimaryStore(long snapshotId) {
 
         SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
 
@@ -153,7 +189,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
             return false;
         }
-
         return true;
     }
 
@@ -178,6 +213,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         SnapshotResult result = null;
+        SnapshotInfo snapshotOnPrimary = null;
+        SnapshotInfo backedUpSnapshot = null;
 
         try {
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
@@ -212,20 +249,46 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 performSnapshotAndCopyOnHostSide(volumeInfo, snapshotInfo);
             }
 
-            markAsBackedUp((SnapshotObject)result.getSnashot());
+            snapshotOnPrimary = result.getSnapshot();
+            backedUpSnapshot = backupSnapshot(snapshotOnPrimary);
+
+            updateLocationTypeInDb(backedUpSnapshot);
         }
         finally {
             if (result != null && result.isSuccess()) {
                 volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
-            }
-            else {
+
+                if (snapshotOnPrimary != null && snapshotInfo.getLocationType() == Snapshot.LocationType.SECONDARY) {
+                    // remove the snapshot on primary storage
+                    try {
+                        snapshotSvr.deleteSnapshot(snapshotOnPrimary);
+                    } catch (Exception e) {
+                        s_logger.warn("Failed to clean up snapshot on primary Id:" + snapshotOnPrimary.getId() + " "
+                                + e.getMessage());
+                    }
+                }
+            } else {
                 volumeInfo.stateTransit(Volume.Event.OperationFailed);
             }
-
-            snapshotDao.releaseFromLockTable(snapshotInfo.getId());
         }
 
-        return snapshotInfo;
+        snapshotDao.releaseFromLockTable(snapshotInfo.getId());
+
+        return backedUpSnapshot;
+    }
+
+    private void updateLocationTypeInDb(SnapshotInfo snapshotInfo) {
+        Object objPayload = snapshotInfo.getPayload();
+
+        if (objPayload instanceof CreateSnapshotPayload) {
+            CreateSnapshotPayload payload = (CreateSnapshotPayload)objPayload;
+
+            SnapshotVO snapshot = snapshotDao.findById(snapshotInfo.getId());
+
+            snapshot.setLocationType(payload.getLocationType());
+
+            snapshotDao.update(snapshotInfo.getId(), snapshot);
+        }
     }
 
     private boolean canStorageSystemCreateVolumeFromSnapshot(long storagePoolId) {
@@ -518,6 +581,13 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         long storagePoolId = volumeVO.getPoolId();
 
         DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Snapshot.LocationType locationType = snapshot.getLocationType();
+
+        // If the snapshot exists on Secondary Storage, we can't delete it.
+        if (SnapshotOperation.DELETE.equals(op) && Snapshot.LocationType.SECONDARY.equals(locationType)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
 
         if (dataStore != null) {
             Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();

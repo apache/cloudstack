@@ -1796,8 +1796,24 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             // entries will be rollbacked.
             lbs = Arrays.asList(lb);
         } else {
+            boolean onlyRulesInTransitionState = true;
+            for (LoadBalancingServiceProvider lbElement : _lbProviders) {
+                Provider provider = lbElement.getProvider();
+                boolean isLbProvider = _networkModel.isProviderSupportServiceInNetwork(lb.getNetworkId(), Service.Lb, provider);
+                if (!isLbProvider) {
+                    continue;
+                }
+                onlyRulesInTransitionState = lbElement.handlesOnlyRulesInTransitionState();
+                break;
+            }
+
             // get all rules in transition state
-            lbs = _lbDao.listInTransitionStateByNetworkIdAndScheme(lb.getNetworkId(), lb.getScheme());
+            if (onlyRulesInTransitionState) {
+                lbs = _lbDao.listInTransitionStateByNetworkIdAndScheme(lb.getNetworkId(), lb.getScheme());
+            } else {
+                lbs = _lbDao.listByNetworkIdAndScheme(lb.getNetworkId(), lb.getScheme());
+            }
+
         }
         return applyLoadBalancerRules(lbs, true);
     }
@@ -1985,7 +2001,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     public boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId) {
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.LoadBalancing);
+
+        //Included revoked rules to remove the rules of ips which are in revoke state
+        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.LoadBalancing);
+
         if (rules != null) {
             s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
             for (FirewallRule rule : rules) {

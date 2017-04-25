@@ -27,15 +27,16 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
 public interface VMSnapshotService {
 
-    List<? extends VMSnapshot> listVMSnapshots(ListVMSnapshotCmd cmd);
+    Pair<List<? extends VMSnapshot>, Integer> listVMSnapshots(ListVMSnapshotCmd cmd);
 
     VMSnapshot getVMSnapshotById(Long id);
 
-    VMSnapshot creatVMSnapshot(Long vmId, Long vmSnapshotId, Boolean quiescevm);
+    VMSnapshot createVMSnapshot(Long vmId, Long vmSnapshotId, Boolean quiescevm);
 
     VMSnapshot allocVMSnapshot(Long vmId, String vsDisplayName, String vsDescription, Boolean snapshotMemory) throws ResourceAllocationException;
 
@@ -45,4 +46,11 @@ public interface VMSnapshotService {
         ConcurrentOperationException;
 
     VirtualMachine getVMBySnapshotId(Long id);
+
+    /**
+     * Delete vm snapshots only from database. Introduced as a Vmware optimization in which vm snapshots are deleted when
+     * the vm gets deleted on hypervisor (no need to delete each vm snapshot before deleting vm, just mark them as deleted on DB)
+     * @param id vm id
+     */
+    boolean deleteVMSnapshotsFromDB(Long vmId);
 }

@@ -356,10 +356,21 @@ def allow_egress_traffic(session):
                 return 'false'
     return 'true'
 
+def getIpsetType():
+    try:
+        out = util.pread2(['/bin/bash', '-c', "ipset -v | awk '{print $5}'"])
+        out.replace(".","")
+        if int(out) < 6:
+            return 'iptreemap'
+        else:
+            return 'nethash'
+    except:
+        return 'iptreemap'
 
 def ipset(ipsetname, proto, start, end, cidrs):
+    type = getIpsetType()
     try:
-        util.pread2(['ipset', '-N', ipsetname, 'nethash'])
+        util.pread2(['ipset', '-N', ipsetname, type])
     except:
         logging.debug("ipset chain already exists: " + ipsetname)
 
@@ -367,7 +378,7 @@ def ipset(ipsetname, proto, start, end, cidrs):
     ipsettmp = ''.join(''.join(ipsetname.split('-')).split('_')) + str(int(time.time()) % 1000)
 
     try:
-        util.pread2(['ipset', '-N', ipsettmp, 'nethash'])
+        util.pread2(['ipset', '-N', ipsettmp, type])
     except:
         logging.debug("Failed to create temp ipset, reusing old name= " + ipsettmp)
         try:
@@ -396,7 +407,7 @@ def ipset(ipsetname, proto, start, end, cidrs):
         # the old ipset entry could be of iphash type, try to delete and recreate
         try:
             util.pread2(['ipset', '-X', ipsetname])
-            util.pread2(['ipset', '-N', ipsetname, 'nethash'])
+            util.pread2(['ipset', '-N', ipsetname, type])
             util.pread2(['ipset', '-W', ipsettmp, ipsetname])
         except:
             logging.debug("Failed to swap ipset " + ipsetname)
@@ -672,14 +683,15 @@ def default_network_rules_systemvm(session, args):
 @echo
 def create_ipset_forvm (ipsetname):
     result = True
+    type = getIpsetType()
     try:
         logging.debug("Creating ipset chain .... " + ipsetname)
         util.pread2(['ipset', '-F', ipsetname])
         util.pread2(['ipset', '-X', ipsetname])
-        util.pread2(['ipset', '-N', ipsetname, 'iphash'])
+        util.pread2(['ipset', '-N', ipsetname, type])
     except:
         logging.debug("ipset chain not exists creating.... " + ipsetname)
-        util.pread2(['ipset', '-N', ipsetname, 'iphash'])
+        util.pread2(['ipset', '-N', ipsetname, type])
 
     return result
 
@@ -1252,21 +1264,22 @@ def inflate_rules (zipped):
 
 @echo
 def cache_ipset_keyword():
+    type = getIpsetType()
     tmpname = 'ipsetqzvxtmp'
     try:
-        util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + ' iphash'])
+        util.pread2(['ipset', '-N', tmpname, type])
     except:
-        util.pread2(['/bin/bash', '-c', 'ipset -F ' + tmpname])
+        util.pread2(['ipset', '-F', tmpname])
 
     try:
-        util.pread2(['/bin/bash', '-c', 'iptables -A INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
-        util.pread2(['/bin/bash', '-c', 'iptables -D INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
+        util.pread2(['iptables -A INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
+        util.pread2(['iptables -D INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
         keyword = 'set'
     except:
         keyword = 'match-set'
 
     try:
-       util.pread2(['/bin/bash', '-c', 'ipset -X ' + tmpname])
+       util.pread2(['ipset', '-X', tmpname])
     except:
        pass
 

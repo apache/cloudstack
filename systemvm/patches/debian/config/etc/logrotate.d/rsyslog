@@ -1,10 +1,9 @@
 /var/log/syslog
 {
 	rotate 7
-	size 50M
+	maxsize 10M
 	missingok
 	notifempty
-	delaycompress
 	compress
 	postrotate
 		/usr/sbin/invoke-rc.d rsyslog rotate > /dev/null
@@ -25,11 +24,10 @@
 /var/log/messages
 {
 	rotate 10
-	size 50M
+	maxsize 10M
 	missingok
 	notifempty
 	compress
-	delaycompress
 	sharedscripts
 	postrotate
 		/usr/sbin/invoke-rc.d rsyslog rotate > /dev/null

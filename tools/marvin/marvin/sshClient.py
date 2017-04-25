@@ -118,7 +118,8 @@ class SshClient(object):
                                      port=self.port,
                                      username=self.user,
                                      password=self.passwd,
-                                     timeout=self.timeout)
+                                     timeout=self.timeout,
+                                     allow_agent=False)
                 else:
                     self.ssh.connect(hostname=self.host,
                                      port=self.port,

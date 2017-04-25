@@ -19,7 +19,10 @@
 
 package com.cloud.utils;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +42,13 @@ public class PasswordGenerator {
         'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '2', '3', '4', '5', '6', '7', '8', '9'};
 
     static private int minLength = 3;
+
+    static {
+        BouncyCastleProvider provider = new BouncyCastleProvider();
+        if (Security.getProvider(provider.getName()) == null) {
+            Security.addProvider(provider);
+        }
+    }
 
     public static String generateRandomPassword(int num) {
         Random r = new SecureRandom();

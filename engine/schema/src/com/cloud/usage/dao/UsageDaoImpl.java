@@ -32,6 +32,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -113,7 +114,14 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 pstmt.setLong(1, acct.getId());
                 pstmt.setString(2, acct.getAccountName());
                 pstmt.setShort(3, acct.getType());
-                pstmt.setLong(4, acct.getRoleId());
+
+                //prevent autoboxing NPE by defaulting to User role
+                if(acct.getRoleId() == null){
+                    pstmt.setLong(4, RoleType.User.getId());
+                }else{
+                    pstmt.setLong(4, acct.getRoleId());
+                }
+
                 pstmt.setLong(5, acct.getDomainId());
 
                 Date removed = acct.getRemoved();

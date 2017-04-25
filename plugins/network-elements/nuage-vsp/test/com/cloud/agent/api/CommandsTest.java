@@ -19,6 +19,22 @@
 
 package com.cloud.agent.api;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.Map;
+
+import net.nuage.vsp.acs.client.api.model.Protocol;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.google.common.collect.Maps;
+import com.google.common.testing.EqualsTester;
+import com.google.gson.Gson;
+
 import com.cloud.agent.api.element.ApplyAclRuleVspCommand;
 import com.cloud.agent.api.element.ApplyStaticNatVspCommand;
 import com.cloud.agent.api.element.ImplementVspCommand;
@@ -27,71 +43,110 @@ import com.cloud.agent.api.guru.DeallocateVmVspCommand;
 import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
 import com.cloud.agent.api.guru.ReserveVmInterfaceVspCommand;
 import com.cloud.agent.api.guru.TrashNetworkVspCommand;
+import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.agent.api.manager.SupportedApiVersionCommand;
 import com.cloud.agent.api.sync.SyncDomainCommand;
 import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
-import com.google.common.collect.Maps;
-import com.google.common.testing.EqualsTester;
-import org.junit.Test;
+import com.cloud.serializer.GsonHelper;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
+import static org.hamcrest.core.Is.is;
 
 public class CommandsTest {
+    private static final Gson s_gson = GsonHelper.getGson();
+
+    private EqualsTester tester = new EqualsTester();
 
     @Test
     public void testCommandEquals() throws IllegalAccessException, InvocationTargetException, InstantiationException {
-        ApplyAclRuleVspCommand applyAclRuleVspCommand = fillObject(ApplyAclRuleVspCommand.class);
-        ApplyAclRuleVspCommand otherApplyAclRuleVspCommand = fillObject(ApplyAclRuleVspCommand.class);
+        addCommandEqualityGroup(ApplyAclRuleVspCommand.class);
+        addCommandEqualityGroup(ImplementVspCommand.class);
+        addCommandEqualityGroup(ApplyStaticNatVspCommand.class);
+        addCommandEqualityGroup(ShutDownVpcVspCommand.class);
+        addCommandEqualityGroup(DeallocateVmVspCommand.class);
+        addCommandEqualityGroup(ImplementNetworkVspCommand.class);
+        addCommandEqualityGroup(ReserveVmInterfaceVspCommand.class);
+        addCommandEqualityGroup(TrashNetworkVspCommand.class);
+        addCommandEqualityGroup(SyncDomainCommand.class);
+        addCommandEqualityGroup(SyncNuageVspCmsIdCommand.class);
+        addCommandEqualityGroup(PingNuageVspCommand.class);
 
-        ApplyStaticNatVspCommand applyStaticNatVspCommand = fillObject(ApplyStaticNatVspCommand.class);
-        ApplyStaticNatVspCommand otherApplyStaticNatVspCommand = fillObject(ApplyStaticNatVspCommand.class);
+        SupportedApiVersionCommand supportedApiVersionCommandA = new SupportedApiVersionCommand("3.2");
+        SupportedApiVersionCommand supportedApiVersionCommandB = new SupportedApiVersionCommand("3.2");
 
-        ImplementVspCommand implementVspCommand = fillObject(ImplementVspCommand.class);
-        ImplementVspCommand otherImplementVspCommand = fillObject(ImplementVspCommand.class);
+        EntityExistsCommand entityExistsCommandA = new EntityExistsCommand(Command.class, "uuid");
+        EntityExistsCommand entityExistsCommandB = new EntityExistsCommand(Command.class, "uuid");
 
-        ShutDownVpcVspCommand shutDownVpcVspCommand = fillObject(ShutDownVpcVspCommand.class);
-        ShutDownVpcVspCommand otherShutDownVpcVspCommand = fillObject(ShutDownVpcVspCommand.class);
+        tester
+            .addEqualityGroup(supportedApiVersionCommandA, supportedApiVersionCommandB)
+            .addEqualityGroup(entityExistsCommandA, entityExistsCommandB)
+            .testEquals();
+    }
 
-        DeallocateVmVspCommand deallocateVmVspCommand = fillObject(DeallocateVmVspCommand.class);
-        DeallocateVmVspCommand otherDeallocateVmVspCommand = fillObject(DeallocateVmVspCommand.class);
+    @Test
+    public void testCommandGsonEquals() throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        addCommandGsonEqualityGroup(ApplyAclRuleVspCommand.class);
+        addCommandGsonEqualityGroup(ImplementVspCommand.class);
+        addCommandGsonEqualityGroup(ApplyStaticNatVspCommand.class);
+        addCommandGsonEqualityGroup(ShutDownVpcVspCommand.class);
+        addCommandGsonEqualityGroup(DeallocateVmVspCommand.class);
+        addCommandGsonEqualityGroup(ImplementNetworkVspCommand.class);
+        addCommandGsonEqualityGroup(ReserveVmInterfaceVspCommand.class);
+        addCommandGsonEqualityGroup(TrashNetworkVspCommand.class);
+        addCommandGsonEqualityGroup(new SupportedApiVersionCommand("3.2"));
+        addCommandGsonEqualityGroup(SyncDomainCommand.class);
+        addCommandGsonEqualityGroup(SyncNuageVspCmsIdCommand.class);
+        addCommandGsonEqualityGroup(PingNuageVspCommand.class);
+        addCommandGsonEqualityGroup(new EntityExistsCommand(Command.class, "uuid"));
 
-        ImplementNetworkVspCommand implementNetworkVspCommand = fillObject(ImplementNetworkVspCommand.class);
-        ImplementNetworkVspCommand otherImplementNetworkVspCommand = fillObject(ImplementNetworkVspCommand.class);
+        tester.testEquals();
+    }
 
-        ReserveVmInterfaceVspCommand reserveVmInterfaceVspCommand = fillObject(ReserveVmInterfaceVspCommand.class);
-        ReserveVmInterfaceVspCommand otherReserveVmInterfaceVspCommand = fillObject(ReserveVmInterfaceVspCommand.class);
+    @Test
+    public void testApplyAclRuleVspCommandGsonEquals() throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        VspNetwork vspNetwork = new VspNetwork.Builder()
+                .id(1)
+                .uuid("uuid")
+                .name("name")
+                .cidr("192.168.1.0/24")
+                .gateway("192.168.1.1")
+                .build();
 
-        TrashNetworkVspCommand trashNetworkVspCommand = fillObject(TrashNetworkVspCommand.class);
-        TrashNetworkVspCommand otherTrashNetworkVspCommand  = fillObject(TrashNetworkVspCommand.class);
+        VspAclRule aclRule = new VspAclRule.Builder()
+                .action(VspAclRule.ACLAction.Allow)
+                .uuid("uuid")
+                .trafficType(VspAclRule.ACLTrafficType.Egress)
+                .protocol(Protocol.TCP)
+                .startPort(80)
+                .endPort(80)
+                .priority(1)
+                .state(VspAclRule.ACLState.Active)
+                .build();
 
-        SupportedApiVersionCommand supportedApiVersionCommand = new SupportedApiVersionCommand("3.2");
-        SupportedApiVersionCommand otherSupportedApiVersionCommand = new SupportedApiVersionCommand("3.2");
+        ApplyAclRuleVspCommand before = new ApplyAclRuleVspCommand(VspAclRule.ACLType.NetworkACL, vspNetwork, Arrays.asList(aclRule), false);
+        ApplyAclRuleVspCommand after = serializeAndDeserialize(before);
 
-        SyncDomainCommand syncDomainCommand = fillObject(SyncDomainCommand.class);
-        SyncDomainCommand otherSyncDomainCommand = fillObject(SyncDomainCommand.class);
+        Assert.assertThat(after.getAclRules().get(0).getProtocol().hasPort(), is(Protocol.TCP.hasPort()));
+    }
 
-        SyncNuageVspCmsIdCommand syncNuageVspCmsIdCommand = fillObject(SyncNuageVspCmsIdCommand.class);
-        SyncNuageVspCmsIdCommand otherSyncNuageVspCmsIdCommand = fillObject(SyncNuageVspCmsIdCommand.class);
+    private <T extends Command> T serializeAndDeserialize(T command) {
+        Command[] forwardedCommands = s_gson.fromJson(s_gson.toJson(new Command[] { command }), Command[].class);
+        return (T) forwardedCommands[0];
+    }
 
-        PingNuageVspCommand pingNuageVspCommand = fillObject(PingNuageVspCommand.class);
-        PingNuageVspCommand otherPingNuageVspCommand = fillObject(PingNuageVspCommand.class);
+    private <T extends Command> void addCommandGsonEqualityGroup(Class<T> clazz) throws IllegalAccessException, InvocationTargetException, InstantiationException{
+        addCommandGsonEqualityGroup(fillObject(clazz));
+    }
 
-        new EqualsTester()
-                .addEqualityGroup(applyAclRuleVspCommand, otherApplyAclRuleVspCommand)
-                .addEqualityGroup(applyStaticNatVspCommand, otherApplyStaticNatVspCommand)
-                .addEqualityGroup(implementVspCommand, otherImplementVspCommand)
-                .addEqualityGroup(shutDownVpcVspCommand, otherShutDownVpcVspCommand)
-                .addEqualityGroup(deallocateVmVspCommand, otherDeallocateVmVspCommand)
-                .addEqualityGroup(implementNetworkVspCommand, otherImplementNetworkVspCommand)
-                .addEqualityGroup(reserveVmInterfaceVspCommand, otherReserveVmInterfaceVspCommand)
-                .addEqualityGroup(trashNetworkVspCommand, otherTrashNetworkVspCommand)
-                .addEqualityGroup(supportedApiVersionCommand, otherSupportedApiVersionCommand)
-                .addEqualityGroup(syncDomainCommand, otherSyncDomainCommand)
-                .addEqualityGroup(syncNuageVspCmsIdCommand, otherSyncNuageVspCmsIdCommand)
-                .addEqualityGroup(pingNuageVspCommand, otherPingNuageVspCommand)
-                .testEquals();
+    private <T extends Command> void addCommandGsonEqualityGroup(Command command) throws IllegalAccessException, InvocationTargetException, InstantiationException{
+        Command[] forwardedCommands = s_gson.fromJson(s_gson.toJson(new Command[] { command }), Command[].class);
+        Assert.assertEquals(command, forwardedCommands[0]);
+        tester.addEqualityGroup(command, forwardedCommands[0]);
+    }
+
+    private <T extends Command> void addCommandEqualityGroup(Class<T> clazz) throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        Command a = fillObject(clazz);
+        Command b = fillObject(clazz);
+        tester.addEqualityGroup(a, b);
     }
 
     private <T> T fillObject(Class<T> clazz) throws IllegalAccessException, InvocationTargetException, InstantiationException {

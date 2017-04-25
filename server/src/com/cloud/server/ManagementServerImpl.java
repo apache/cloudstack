@@ -410,6 +410,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCm
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotFromVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
@@ -1113,7 +1114,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize) {
+    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>
+                            listHostsForMigrationOfVM(final Long vmId,
+                                                      final Long startIndex,
+                                                      final Long pageSize, final String keyword) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -1201,18 +1205,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<HostVO> allHosts = null;
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
-
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, null, null, null,
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword, null, null,
                     srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
+
             for (final VolumeVO volume : volumes) {
-                final Long volClusterId = _poolDao.findById(volume.getPoolId()).getClusterId();
-                // only check for volume which are not in zone wide primary store, as only those may require storage motion
-                if (volClusterId != null) {
-                    for (final Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
-                        final Host host = iterator.next();
+                final StoragePool storagePool = _poolDao.findById(volume.getPoolId());
+                final Long volClusterId = storagePool.getClusterId();
+
+                for (final Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                    final Host host = iterator.next();
+
+                    if (volClusterId != null) {
                         if (!host.getClusterId().equals(volClusterId) || usesLocal) {
                             if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
                                 requiresStorageMotion.put(host, true);
@@ -1221,15 +1227,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                             }
                         }
                     }
+                    else {
+                        if (storagePool.isManaged()) {
+                            if (srcHost.getClusterId() != host.getClusterId()) {
+                                requiresStorageMotion.put(host, true);
+                            }
+                        }
+                    }
                 }
             }
+
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), null, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Searching for all hosts in cluster " + cluster + " for migrating VM " + vm);
             }
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null, null, null, null);
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, keyword, null, null, null, null);
             // Filter out the current host.
             allHosts = allHostsPair.first();
             allHosts.remove(srcHost);
@@ -1251,7 +1265,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         for (final HostAllocator allocator : hostAllocators) {
-            if  (canMigrateWithStorage) {
+            if (canMigrateWithStorage) {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
@@ -1663,6 +1677,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Long imageStoreId = cmd.getImageStoreId();
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -1685,6 +1700,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (storagepoolId != null) {
             scope = ConfigKey.Scope.StoragePool.toString();
             id = storagepoolId;
+            paramCountCheck++;
+        }
+        if (imageStoreId != null) {
+            scope = ConfigKey.Scope.ImageStore.toString();
+            id = imageStoreId;
             paramCountCheck++;
         }
 
@@ -2435,7 +2455,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        final List<SummedCapacity> summedCapacitiesForSecStorage = getSecStorageUsed(zoneId, capacityType);
+        List<SummedCapacity> summedCapacitiesForSecStorage = getStorageUsed(clusterId, podId, zoneId, capacityType);
         if (summedCapacitiesForSecStorage != null) {
             summedCapacities.addAll(summedCapacitiesForSecStorage);
         }
@@ -2473,7 +2493,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return capacities;
     }
 
-    List<SummedCapacity> getSecStorageUsed(final Long zoneId, final Integer capacityType) {
+    List<SummedCapacity> getStorageUsed(Long clusterId, Long podId, Long zoneId, Integer capacityType) {
         if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
             final List<SummedCapacity> list = new ArrayList<SummedCapacity>();
             if (zoneId != null) {
@@ -2481,19 +2501,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (zone == null || zone.getAllocationState() == AllocationState.Disabled) {
                     return null;
                 }
-                final CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
-                if (capacity.getTotalCapacity() != 0) {
-                    capacity.setUsedPercentage(capacity.getUsedCapacity() / capacity.getTotalCapacity());
-                } else {
-                    capacity.setUsedPercentage(0);
-                }
-                final SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(),
-                        capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
-                list.add(summedCapacity);
-            } else {
-                final List<DataCenterVO> dcList = _dcDao.listEnabledZones();
-                for (final DataCenterVO dc : dcList) {
-                    final CapacityVO capacity = _storageMgr.getSecondaryStorageUsedStats(null, dc.getId());
+                List<CapacityVO> capacities=new ArrayList<CapacityVO>();
+                capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zoneId));
+                capacities.add(_storageMgr.getStoragePoolUsedStats(null,clusterId, podId, zoneId));
+                for (CapacityVO capacity : capacities) {
                     if (capacity.getTotalCapacity() != 0) {
                         capacity.setUsedPercentage((float)capacity.getUsedCapacity() / capacity.getTotalCapacity());
                     } else {
@@ -2502,6 +2513,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     final SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(),
                             capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
                     list.add(summedCapacity);
+                }
+            } else {
+                List<DataCenterVO> dcList = _dcDao.listEnabledZones();
+                for (DataCenterVO dc : dcList) {
+                    List<CapacityVO> capacities=new ArrayList<CapacityVO>();
+                    capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, dc.getId()));
+                    capacities.add(_storageMgr.getStoragePoolUsedStats(null, null, null, dc.getId()));
+                    for (CapacityVO capacity : capacities) {
+                        if (capacity.getTotalCapacity() != 0) {
+                            capacity.setUsedPercentage((float)capacity.getUsedCapacity() / capacity.getTotalCapacity());
+                        } else {
+                            capacity.setUsedPercentage(0);
+                        }
+                        SummedCapacity summedCapacity = new SummedCapacity(capacity.getUsedCapacity(), capacity.getTotalCapacity(), capacity.getUsedPercentage(),
+                                capacity.getCapacityType(), capacity.getDataCenterId(), capacity.getPodId(), capacity.getClusterId());
+                        list.add(summedCapacity);
+                    }
                 }// End of for
             }
             return list;
@@ -2824,6 +2852,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RevokeSecurityGroupEgressCmd.class);
         cmdList.add(RevokeSecurityGroupIngressCmd.class);
         cmdList.add(CreateSnapshotCmd.class);
+        cmdList.add(CreateSnapshotFromVMSnapshotCmd.class);
         cmdList.add(DeleteSnapshotCmd.class);
         cmdList.add(CreateSnapshotPolicyCmd.class);
         cmdList.add(UpdateSnapshotPolicyCmd.class);

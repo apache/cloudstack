@@ -96,7 +96,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findByAccount(long accountId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
-        sc.setParameters("state", Volume.State.Ready);
         return listBy(sc);
     }
 
@@ -326,6 +325,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("deviceId", AllFieldsSearch.entity().getDeviceId(), Op.EQ);
         AllFieldsSearch.and("poolId", AllFieldsSearch.entity().getPoolId(), Op.EQ);
         AllFieldsSearch.and("vType", AllFieldsSearch.entity().getVolumeType(), Op.EQ);
+        AllFieldsSearch.and("notVolumeType", AllFieldsSearch.entity().getVolumeType(), Op.NEQ);
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("destroyed", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("notDestroyed", AllFieldsSearch.entity().getState(), Op.NEQ);
@@ -482,9 +482,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> listVolumesToBeDestroyed(Date date) {
+    public List<VolumeVO> listNonRootVolumesToBeDestroyed(Date date) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("state", Volume.State.Destroy);
+        sc.setParameters("notVolumeType", Volume.Type.ROOT.toString());
         sc.setParameters("updateTime", date);
 
         return listBy(sc);

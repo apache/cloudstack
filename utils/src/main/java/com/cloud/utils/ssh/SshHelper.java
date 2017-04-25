@@ -22,8 +22,13 @@ package com.cloud.utils.ssh;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
@@ -130,8 +135,12 @@ public class SshHelper {
         }
     }
 
-    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, int connectTimeoutInMs,
-            int kexTimeoutInMs,
+    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, Duration connectTimeout,
+            Duration kexTimeout, Duration waitTime) throws Exception {
+        return sshExecute(host, port, user, pemKeyFile, password, command, (int)connectTimeout.getMillis(), (int)kexTimeout.getMillis(), (int)waitTime.getMillis());
+    }
+
+    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, int connectTimeoutInMs, int kexTimeoutInMs,
             int waitResultTimeoutInMs) throws Exception {
 
         com.trilead.ssh2.Connection conn = null;
@@ -195,6 +204,16 @@ public class SshHelper {
             }
 
             String result = sbResult.toString();
+
+            if (StringUtils.isBlank(result)) {
+                try {
+                    result = IOUtils.toString(stdout, StandardCharsets.UTF_8);
+                }
+                catch (IOException e) {
+                    s_logger.error("Couldn't get content of input stream due to: " + e.getMessage());
+                    return new Pair<Boolean, String>(false, result);
+                }
+            }
 
             if (sess.getExitStatus() == null) {
                 //Exit status is NOT available. Returning failure result.

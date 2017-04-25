@@ -116,6 +116,12 @@ public interface VirtualMachineEntity extends CloudStackEntity {
     boolean stop(String caller) throws ResourceUnavailableException, CloudException;
 
     /**
+     * Stop the virtual machine, by force if necessary
+     *
+     */
+    boolean stopForced(String caller) throws ResourceUnavailableException, CloudException;
+
+    /**
      * Cleans up after any botched starts.  CloudStack Orchestration Platform
      * will attempt a best effort to actually shutdown any resource but
      * even if it cannot, it releases the resource from its database.
@@ -124,8 +130,9 @@ public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**
      * Destroys the VM.
+     * @param expunge indicates if vm should be expunged
      */
-    boolean destroy(String caller) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
+    boolean destroy(String caller, boolean expunge) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
 
     /**
      * Duplicate this VM in the database so that it will start new

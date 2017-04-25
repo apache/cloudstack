@@ -144,6 +144,26 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
+    public boolean isHAEnabled() throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        if (morParent.getType().equals("ClusterComputeResource")) {
+            ClusterMO clusterMo = new ClusterMO(_context, morParent);
+            return clusterMo.isHAEnabled();
+        }
+
+        return false;
+    }
+
+    @Override
+    public void setRestartPriorityForVM(VirtualMachineMO vmMo, String priority) throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        if (morParent.getType().equals("ClusterComputeResource")) {
+            ClusterMO clusterMo = new ClusterMO(_context, morParent);
+            clusterMo.setRestartPriorityForVM(vmMo, priority);
+        }
+    }
+
+    @Override
     public String getHyperHostDefaultGateway() throws Exception {
         List<HostIpRouteEntry> entries = getHostIpRouteEntries();
         for (HostIpRouteEntry entry : entries) {
@@ -1109,5 +1129,59 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             }
         }
         return networkName;
+    }
+
+    public void createPortGroup(HostVirtualSwitch vSwitch, String portGroupName, Integer vlanId,
+            HostNetworkSecurityPolicy secPolicy, HostNetworkTrafficShapingPolicy shapingPolicy, long timeOutMs)
+            throws Exception {
+        assert (portGroupName != null);
+
+        // Prepare lock to avoid simultaneous execution of the synchronized block for
+        // duplicate port groups on the ESXi host it's being created on.
+        String hostPortGroup = _mor.getValue() + "-" + portGroupName;
+        synchronized (hostPortGroup.intern()) {
+            // Check if port group exists already
+            if (hasPortGroup(vSwitch, portGroupName)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Found port group " + portGroupName + " in vSwitch " + vSwitch.getName()
+                        + ". Not attempting to create port group as it already exists.");
+                }
+                return;
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Port group " + portGroupName + " doesn't exist in vSwitch " + vSwitch.getName()
+                        + ". Attempting to create port group in this vSwitch.");
+                }
+            }
+            // Create port group if not exists already
+            createPortGroup(vSwitch, portGroupName, vlanId, secPolicy, shapingPolicy);
+
+            // Wait for port group to turn up ready on vCenter upto timeout of timeOutMs milli seconds
+            waitForPortGroup(portGroupName, timeOutMs);
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Successfully created port group " + portGroupName + " in vSwitch " + vSwitch.getName()
+                + " on host " + getHostName());
+        }
+    }
+
+    public ManagedObjectReference waitForPortGroup(String networkName, long timeOutMs) throws Exception {
+        ManagedObjectReference morNetwork = null;
+        // if portGroup is just created, getNetwork may fail to retrieve it, we
+        // need to retry
+        long startTick = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTick <= timeOutMs) {
+            morNetwork = getNetworkMor(networkName);
+            if (morNetwork != null) {
+                break;
+            }
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Waiting for network " + networkName + " to be ready");
+            }
+            Thread.sleep(1000);
+        }
+        return morNetwork;
     }
 }

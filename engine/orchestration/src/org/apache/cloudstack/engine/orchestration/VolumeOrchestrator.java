@@ -44,7 +44,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VmSnapshotObject;
@@ -70,6 +73,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.allocator.PodAllocator;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
@@ -122,6 +126,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmCloneSettingVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -131,6 +136,7 @@ import com.cloud.vm.VmWorkAttachVolume;
 import com.cloud.vm.VmWorkMigrateVolume;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
+import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
@@ -138,6 +144,11 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
+
+    public enum UserVmCloneType {
+        full, linked
+    }
+
     private static final Logger s_logger = Logger.getLogger(VolumeOrchestrator.class);
 
     @Inject
@@ -191,6 +202,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Inject
     VMSnapshotManager vmSnapshotMgr;
     @Inject
+    protected UserVmCloneSettingDao _vmCloneSettingDao;
+    @Inject
+    StorageStrategyFactory _storageStrategyFactory;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -396,6 +410,24 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
         SnapshotInfo snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), dataStoreRole);
 
+
+        if(snapInfo == null && dataStoreRole == DataStoreRole.Image) {
+            // snapshot is not backed up to secondary, let's do that now.
+            snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Primary);
+
+            if (snapInfo == null) {
+                throw new CloudRuntimeException("Cannot find snapshot " + snapshot.getId());
+            }
+            // We need to copy the snapshot onto secondary.
+            SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
+            snapshotStrategy.backupSnapshot(snapInfo);
+
+            // Attempt to grab it again.
+            snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), dataStoreRole);
+            if (snapInfo == null) {
+                throw new CloudRuntimeException("Cannot find snapshot " + snapshot.getId() + " on secondary and could not create backup");
+            }
+        }
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
         if (!DataStoreRole.Primary.equals(dataStoreRole)) {
             try {
@@ -1413,6 +1445,33 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             disk.setDetails(getDetails(volumeInfo, dataStore));
 
             vm.addDisk(disk);
+
+            // If hypervisor is vSphere, check for clone type setting.
+            if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
+                // retrieve clone flag.
+                UserVmCloneType cloneType = UserVmCloneType.linked;
+                Boolean value = CapacityManager.VmwareCreateCloneFull.valueIn(vol.getPoolId());
+                if (value != null && value) {
+                    cloneType = UserVmCloneType.full;
+                }
+                try {
+                    UserVmCloneSettingVO cloneSettingVO = _vmCloneSettingDao.findByVmId(vm.getId());
+                    if (cloneSettingVO != null){
+                        if (! cloneSettingVO.getCloneType().equals(cloneType.toString())){
+                            cloneSettingVO.setCloneType(cloneType.toString());
+                            _vmCloneSettingDao.update(cloneSettingVO.getVmId(), cloneSettingVO);
+                        }
+                    }
+                    else {
+                        UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(vm.getId(), cloneType.toString());
+                        _vmCloneSettingDao.persist(vmCloneSettingVO);
+                    }
+                }
+                catch (Throwable e){
+                    s_logger.debug("[NSX_PLUGIN_LOG] ERROR: " + e.getMessage());
+                }
+            }
+
         }
     }
 

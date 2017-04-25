@@ -39,6 +39,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
+import com.cloud.configuration.Config;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -218,6 +219,12 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     public boolean deleteSnapshot(Long snapshotId) {
         SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
+
+        if (snapshotVO.getState() == Snapshot.State.Allocated) {
+            snapshotDao.remove(snapshotId);
+            return true;
+        }
+
         if (snapshotVO.getState() == Snapshot.State.Destroyed) {
             return true;
         }
@@ -268,7 +275,9 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                 SnapshotDataStoreVO snapshotOnPrimary = snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
                 if (snapshotOnPrimary != null) {
                     SnapshotInfo snapshotOnPrimaryInfo = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-                    if (((PrimaryDataStoreImpl)snapshotOnPrimaryInfo.getDataStore()).getPoolType() == StoragePoolType.RBD) {
+                    long volumeId = snapshotOnPrimary.getVolumeId();
+                    VolumeVO volumeVO = volumeDao.findById(volumeId);
+                    if (((PrimaryDataStoreImpl)snapshotOnPrimaryInfo.getDataStore()).getPoolType() == StoragePoolType.RBD && volumeVO != null) {
                         snapshotSvr.deleteSnapshot(snapshotOnPrimaryInfo);
                     }
                     snapshotOnPrimary.setState(State.Destroyed);
@@ -290,7 +299,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
-        if (canHandle(snapshot,SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
+        if (canHandle(snapshot, SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
             throw new CloudRuntimeException("Reverting not supported. Create a template or volume based on the snapshot instead.");
         }
 
@@ -372,10 +381,26 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                 }
             }
 
-            snapshot = result.getSnashot();
+            snapshot = result.getSnapshot();
             DataStore primaryStore = snapshot.getDataStore();
+            boolean backupFlag = Boolean.parseBoolean(configDao.getValue(Config.BackupSnapshotAfterTakingSnapshot.toString()));
 
-            SnapshotInfo backupedSnapshot = backupSnapshot(snapshot);
+            SnapshotInfo backupedSnapshot;
+            if(backupFlag) {
+                backupedSnapshot = backupSnapshot(snapshot);
+            } else {
+                // Fake it to get the transitions to fire in the proper order
+                s_logger.debug("skipping backup of snapshot due to configuration "+Config.BackupSnapshotAfterTakingSnapshot.toString());
+
+                SnapshotObject snapObj = (SnapshotObject)snapshot;
+                try {
+                    snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Failed to change state: " + snapshot.getId() + ": " + e.toString());
+                    throw new CloudRuntimeException(e.toString());
+                }
+                backupedSnapshot = snapshot;
+            }
 
             try {
                 SnapshotInfo parent = snapshot.getParent();

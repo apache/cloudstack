@@ -16,39 +16,32 @@
 // under the License.
 package com.cloud.storage;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import junit.framework.Assert;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -61,22 +54,29 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.UserVO;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import javax.inject.Inject;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class VolumeApiServiceImplTest {
     @Inject
@@ -110,6 +110,8 @@ public class VolumeApiServiceImplTest {
     CreateVolumeCmd createVol;
     @Mock
     UserVmManager _userVmMgr;
+    @Mock
+    DataCenterDao _dcDao;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
@@ -128,6 +130,7 @@ public class VolumeApiServiceImplTest {
         _svc.volFactory = _volFactory;
         _svc.volService = volService;
         _svc._userVmMgr = _userVmMgr;
+        _svc._dcDao = _dcDao;
         _svc._gson = GsonHelper.getGsonLogger();
 
         // mock caller context
@@ -180,6 +183,7 @@ public class VolumeApiServiceImplTest {
             when(_svc._volsDao.findById(3L)).thenReturn(volumeOfStoppeHyperVVm);
 
             StoragePoolVO unmanagedPool = new StoragePoolVO();
+
             when(_svc._storagePoolDao.findById(1L)).thenReturn(unmanagedPool);
 
             // volume of managed pool id=4
@@ -203,6 +207,9 @@ public class VolumeApiServiceImplTest {
             when(correctRootVolume.getDataCenterId()).thenReturn(1L);
             when(correctRootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
             when(correctRootVolume.getInstanceId()).thenReturn(null);
+            when(correctRootVolume.getState()).thenReturn(Volume.State.Ready);
+            when(correctRootVolume.getTemplateId()).thenReturn(null);
+            when(correctRootVolume.getPoolId()).thenReturn(1L);
             when(_svc.volFactory.getVolume(6L)).thenReturn(correctRootVolume);
 
             VolumeVO correctRootVolumeVO = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
@@ -254,6 +261,11 @@ public class VolumeApiServiceImplTest {
             // helper dao methods mock
             when(_svc._vmSnapshotDao.findByVm(any(Long.class))).thenReturn(new ArrayList<VMSnapshotVO>());
             when(_svc._vmInstanceDao.findById(any(Long.class))).thenReturn(stoppedVm);
+
+            DataCenterVO enabledZone = Mockito.mock(DataCenterVO.class);
+            when(enabledZone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+
+            when(_svc._dcDao.findById(anyLong())).thenReturn(enabledZone);
 
         } finally {
             txn.close("runVolumeDaoImplTest");
@@ -358,7 +370,8 @@ public class VolumeApiServiceImplTest {
     public void testTakeSnapshotF1() throws ResourceAllocationException {
         when(_volFactory.getVolume(anyLong())).thenReturn(volumeInfoMock);
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Allocated);
-        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false);
+        when(volumeInfoMock.getPoolId()).thenReturn(1L);
+        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null);
     }
 
     @Test
@@ -366,8 +379,9 @@ public class VolumeApiServiceImplTest {
         when(_volFactory.getVolume(anyLong())).thenReturn(volumeInfoMock);
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Ready);
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
+        when(volumeInfoMock.getPoolId()).thenReturn(1L);
         when (volService.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
-        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false);
+        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null);
     }
 
     @Test
@@ -406,6 +420,23 @@ public class VolumeApiServiceImplTest {
         assert vm.getType() == VirtualMachine.Type.User;
         _svc.updateMissingRootDiskController(vm, "{\"diskDeviceBusName\":\"scsi0:0\",\"diskChain\":[\"[somedatastore] i-3-VM-somePath/ROOT-1.vmdk\"]}");
         verify(_svc._userVmMgr, times(1)).persistDeviceBusInfo(any(UserVmVO.class), eq("scsi"));
+    }
+
+    @Test
+    /**
+     * Setting locationType for a non-managed storage should give an error
+     */
+    public void testAllocSnapshotNonManagedStorageArchive() {
+        try {
+            _svc.allocSnapshot(6L, 1L, "test", Snapshot.LocationType.SECONDARY);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals(e.getMessage(), "VolumeId: 6 LocationType is supported only for managed storage");
+            return;
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Unexpected excepiton " + e.getMessage());
+        }
+
+        Assert.fail("Expected Exception for archive in non-managed storage");
     }
 
     @After

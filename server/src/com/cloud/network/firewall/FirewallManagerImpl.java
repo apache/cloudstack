@@ -143,12 +143,16 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     IpAddressManager _ipAddrMgr;
 
     private boolean _elbEnabled = false;
+    static Boolean rulesContinueOnErrFlag = true;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
         _elbEnabled = Boolean.parseBoolean(elbEnabledString);
+        if (_ipAddrMgr.RulesContinueOnError.value() != null) {
+            rulesContinueOnErrFlag = _ipAddrMgr.RulesContinueOnError.value();
+        }
         return true;
     }
 
@@ -429,7 +433,13 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 boolean allowStaticNat =
                     (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
 
-                if (!(allowPf || allowStaticNat || oneOfRulesIsFirewall)) {
+                boolean allowVpnPf =
+                        (rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.Vpn && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
+
+                boolean allowVpnLb =
+                        (rule.getPurpose() == Purpose.LoadBalancing && newRule.getPurpose() == Purpose.Vpn && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
+
+                if (!(allowPf || allowStaticNat || oneOfRulesIsFirewall || allowVpnPf || allowVpnLb)) {
                     throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" + newRule.getSourcePortEnd() +
                         ", conflicts with rule " + rule.getId() + " which has " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd());
                 }
@@ -845,8 +855,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         // now send everything to the backend
         List<FirewallRuleVO> rulesToApply = _firewallDao.listByIpAndPurpose(ipId, Purpose.Firewall);
-        applyFirewallRules(rulesToApply, true, caller);
-
+        //apply rules
+        if (!applyFirewallRules(rulesToApply, rulesContinueOnErrFlag, caller)) {
+            if (!rulesContinueOnErrFlag) {
+                return false;
+            }
+        }
         // Now we check again in case more rules have been inserted.
         rules.addAll(_firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.Firewall));
 

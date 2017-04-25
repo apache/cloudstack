@@ -46,4 +46,8 @@ public class UserVmCloneSettingVO {
     public String getCloneType() {
         return this.cloneType;
     }
+
+    public void setCloneType(String cloneType) {
+        this.cloneType = cloneType;
+    }
 }

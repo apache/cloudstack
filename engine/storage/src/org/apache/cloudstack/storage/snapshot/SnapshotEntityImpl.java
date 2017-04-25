@@ -185,6 +185,11 @@ public class SnapshotEntityImpl implements SnapshotEntity {
     }
 
     @Override
+    public LocationType getLocationType() {
+        return null;
+    }
+
+    @Override
     public Class<?> getEntityType() {
         return Snapshot.class;
     }

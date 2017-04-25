@@ -337,10 +337,13 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         VolumeVO vol = volDao.findById(volume.getId());
+        if (vol == null) {
+            s_logger.debug("Volume " + volume.getId() + " is not found");
+            future.complete(result);
+            return future;
+        }
 
-        String volumePath = vol.getPath();
-        Long poolId = vol.getPoolId();
-        if (poolId == null || volumePath == null || volumePath.trim().isEmpty()) {
+        if (!volumeExistsOnPrimary(vol)) {
             // not created on primary store
             if (volumeStore == null) {
                 // also not created on secondary store
@@ -367,6 +370,32 @@ public class VolumeServiceImpl implements VolumeService {
 
         volume.getDataStore().getDriver().deleteAsync(volume.getDataStore(), volume, caller);
         return future;
+    }
+
+    private boolean volumeExistsOnPrimary(VolumeVO vol) {
+        Long poolId = vol.getPoolId();
+
+        if (poolId == null) {
+            return false;
+        }
+
+        PrimaryDataStore primaryStore = dataStoreMgr.getPrimaryDataStore(poolId);
+
+        if (primaryStore == null) {
+            return false;
+        }
+
+        if (primaryStore.isManaged()) {
+            return true;
+        }
+
+        String volumePath = vol.getPath();
+
+        if (volumePath == null || volumePath.trim().isEmpty()) {
+            return false;
+        }
+
+        return true;
     }
 
     public Void deleteVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, DeleteVolumeContext<VolumeApiResult> context) {

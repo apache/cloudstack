@@ -16,22 +16,23 @@
 // under the License.
 package streamer.bco;
 
+import org.apache.log4j.Logger;
+import org.bouncycastle.crypto.tls.Certificate;
+import org.bouncycastle.crypto.tls.DefaultTlsClient;
+import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
+import org.bouncycastle.crypto.tls.TlsAuthentication;
+import org.bouncycastle.crypto.tls.TlsClientProtocol;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import streamer.Direction;
+import streamer.Event;
+import streamer.SocketWrapperImpl;
+import streamer.ssl.SSLState;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.security.Security;
-
-import org.apache.log4j.Logger;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
-import org.bouncycastle.crypto.tls.CertificateVerifyer;
-import org.bouncycastle.crypto.tls.TlsProtocolHandler;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import streamer.Direction;
-import streamer.Event;
-import streamer.SocketWrapperImpl;
-import streamer.ssl.SSLState;
 
 @SuppressWarnings("deprecation")
 public class BcoSocketWrapperImpl extends SocketWrapperImpl {
@@ -41,7 +42,7 @@ public class BcoSocketWrapperImpl extends SocketWrapperImpl {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private TlsProtocolHandler bcoSslSocket;
+    private TlsClientProtocol bcoSslSocket;
 
     public BcoSocketWrapperImpl(String id, SSLState sslState) {
         super(id, sslState);
@@ -60,25 +61,25 @@ public class BcoSocketWrapperImpl extends SocketWrapperImpl {
         try {
 
             SecureRandom secureRandom = new SecureRandom();
-            bcoSslSocket = new TlsProtocolHandler(socket.getInputStream(), socket.getOutputStream(), secureRandom);
+            bcoSslSocket = new TlsClientProtocol(socket.getInputStream(), socket.getOutputStream(), secureRandom);
 
-            CertificateVerifyer client = new CertificateVerifyer() {
-
+            bcoSslSocket.connect(new DefaultTlsClient() {
                 @Override
-                public boolean isValid(X509CertificateStructure[] chain) {
-
-                    try {
-                        if (sslState != null) {
-                            sslState.serverCertificateSubjectPublicKeyInfo = chain[0].getSubjectPublicKeyInfo().getEncoded();
+                public TlsAuthentication getAuthentication() throws IOException {
+                    return new ServerOnlyTlsAuthentication() {
+                        @Override
+                        public void notifyServerCertificate(final Certificate certificate) throws IOException {
+                            try {
+                                if (sslState != null) {
+                                    sslState.serverCertificateSubjectPublicKeyInfo = certificate.getCertificateAt(0).getSubjectPublicKeyInfo().getEncoded();
+                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException("Cannot get server public key.", e);
+                            }
                         }
-                    } catch (IOException e) {
-                        throw new RuntimeException("Cannot get server public key.", e);
-                    }
-
-                    return true;
+                    };
                 }
-            };
-            bcoSslSocket.connect(client);
+            });
 
             InputStream sis = bcoSslSocket.getInputStream();
             source.setInputStream(sis);

@@ -813,4 +813,28 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public void setOsTypeId(Long osTypeId) {
         this.osTypeId = osTypeId;
     }
+
+    public Set<Long> getTagIds() {
+        return tagIds;
+    }
+
+    public void setTagIds(Set<Long> tagIds) {
+        this.tagIds = tagIds;
+    }
+
+    public Map getDetails() {
+        return details;
+    }
+
+    public Boolean getDynamicallyScalable() {
+        return isDynamicallyScalable;
+    }
+
+    public void setDynamicallyScalable(Boolean dynamicallyScalable) {
+        isDynamicallyScalable = dynamicallyScalable;
+    }
+
+    public Long getOsTypeId() {
+        return osTypeId;
+    }
 }

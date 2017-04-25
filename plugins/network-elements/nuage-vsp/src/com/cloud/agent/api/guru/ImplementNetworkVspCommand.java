@@ -19,28 +19,33 @@
 
 package com.cloud.agent.api.guru;
 
-import com.cloud.agent.api.Command;
+import java.util.Objects;
+
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
 
-import java.util.List;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
+import com.cloud.agent.api.Command;
 
 public class ImplementNetworkVspCommand extends Command {
 
     private final VspNetwork _network;
-    private final List<String> _dnsServers;
+    private final VspDhcpDomainOption _dhcpOption;
 
-    public ImplementNetworkVspCommand(VspNetwork network, List<String> dnsServers) {
+    public ImplementNetworkVspCommand(VspNetwork network, VspDhcpDomainOption dhcpOption) {
         super();
         this._network = network;
-        this._dnsServers = dnsServers;
+        this._dhcpOption = dhcpOption;
     }
 
     public VspNetwork getNetwork() {
         return _network;
     }
 
-    public List<String> getDnsServers() {
-        return _dnsServers;
+    public VspDhcpDomainOption getDhcpOption() {
+        return _dhcpOption;
     }
 
     @Override
@@ -50,23 +55,34 @@ public class ImplementNetworkVspCommand extends Command {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ImplementNetworkVspCommand)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof ImplementNetworkVspCommand)) {
+            return false;
+        }
 
         ImplementNetworkVspCommand that = (ImplementNetworkVspCommand) o;
 
-        if (_dnsServers != null ? !_dnsServers.equals(that._dnsServers) : that._dnsServers != null) return false;
-        if (_network != null ? !_network.equals(that._network) : that._network != null) return false;
-
-        return true;
+        return super.equals(that)
+            && Objects.equals(_dhcpOption, that._dhcpOption)
+            && Objects.equals(_network, that._network);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_network != null ? _network.hashCode() : 0);
-        result = 31 * result + (_dnsServers != null ? _dnsServers.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_network)
+                .append(_dhcpOption)
+                .toHashCode();
+    }
+
+    public String toDetailString() {
+        return new ToStringBuilder(this)
+                .append("network", _network)
+                .append("dhcpOption", _dhcpOption)
+                .toString();
     }
 }

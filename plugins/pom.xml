@@ -69,6 +69,7 @@
     <module>hypervisors/ucs</module>
     <module>hypervisors/hyperv</module>
     <module>hypervisors/ovm3</module>
+    <module>metrics</module>
     <module>network-elements/elastic-loadbalancer</module>
     <module>network-elements/ovs</module>
     <module>network-elements/juniper-contrail</module>
@@ -78,7 +79,6 @@
     <module>network-elements/nuage-vsp</module>
     <module>network-elements/bigswitch</module>
     <module>network-elements/brocade-vcs</module>
-    <module>network-elements/midonet</module>
     <module>network-elements/stratosphere-ssp</module>
     <module>network-elements/opendaylight</module>
     <module>outofbandmanagement-drivers/ipmitool</module>
@@ -203,6 +203,12 @@
       </activation>
       <modules>
         <module>hypervisors/simulator</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>midonet</id>
+      <modules>
+        <module>network-elements/midonet</module>
       </modules>
     </profile>
   </profiles>

@@ -19,14 +19,30 @@
 
 package com.cloud.util;
 
+import net.nuage.vsp.acs.client.api.model.Protocol;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
+
 import com.cloud.NuageTest;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.Network;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.FirewallRule;
@@ -42,22 +58,12 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
-import com.google.common.collect.Lists;
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
-import net.nuage.vsp.acs.client.common.model.Pair;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -74,9 +80,11 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private VpcDao _vpcDao = mock(VpcDao.class);
     private DomainDao _domainDao = mock(DomainDao.class);
     private AccountDao _accountDao = mock(AccountDao.class);
+    private NetworkDao _networkDao = mock(NetworkDao.class);
     private NetworkOfferingDao _networkOfferingDao = mock(NetworkOfferingDao.class);
     private NetworkOfferingServiceMapDao _networkOfferingServiceMapDao = mock(NetworkOfferingServiceMapDao.class);
     private VlanDao _vlanDao = mock(VlanDao.class);
+    private VlanDetailsDao _vlanDetailsDao = mock(VlanDetailsDao.class);
     private IPAddressDao _ipAddressDao = mock(IPAddressDao.class);
     private NetworkDetailsDao _networkDetailsDao = mock(NetworkDetailsDao.class);
     private NuageVspEntityBuilder _nuageVspEntityBuilder = new NuageVspEntityBuilder();
@@ -87,6 +95,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private NetworkOfferingVO _mockedSharedNetworkOffering = mock(NetworkOfferingVO.class);
     private NetworkOfferingVO _mockedL2NetworkOffering = mock(NetworkOfferingVO.class);
     private VlanVO _mockedVlan = mock(VlanVO.class);
+    private VlanDetailsVO _mockedVlanDetail = mock(VlanDetailsVO.class);
     private VpcVO _mockedVpc = mock(VpcVO.class);
     private NetworkVO _mockedNetwork = mock(NetworkVO.class);
     private NetworkVO _mockedVpcNetwork = mock(NetworkVO.class);
@@ -108,9 +117,11 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         _nuageVspEntityBuilder._vpcDao = _vpcDao;
         _nuageVspEntityBuilder._domainDao = _domainDao;
         _nuageVspEntityBuilder._accountDao = _accountDao;
+        _nuageVspEntityBuilder._networkDao = _networkDao;
         _nuageVspEntityBuilder._networkOfferingDao = _networkOfferingDao;
         _nuageVspEntityBuilder._networkOfferingServiceMapDao = _networkOfferingServiceMapDao;
         _nuageVspEntityBuilder._vlanDao = _vlanDao;
+        _nuageVspEntityBuilder._vlanDetailsDao = _vlanDetailsDao;
         _nuageVspEntityBuilder._configurationDao = _configurationDao;
         _nuageVspEntityBuilder._ipAddressDao = _ipAddressDao;
         _nuageVspEntityBuilder._networkModel = _networkModel;
@@ -122,6 +133,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         setUpMockedNetworkOffering(_mockedSharedNetworkOffering, Network.GuestType.Shared);
         setUpMockedNetworkOffering(_mockedL2NetworkOffering, Network.GuestType.Isolated);
         setUpMockedVlan();
+        setUpMockedVlanDetail();
         setUpMockedVpc();
         setUpMockedNetwork(_mockedNetwork, NETWORK_OFFERING_ID, null);
         setUpMockedNetwork(_mockedVpcNetwork, NETWORK_OFFERING_ID, VPC_ID);
@@ -146,29 +158,29 @@ public class NuageVspEntityBuilderTest extends NuageTest {
 
     @Test
     public void testBuildVspNetwork() {
-        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedL2Network, true);
-        validateVspNetwork(vspNetwork, true, false, false, false, "IsolatedDomainTemplate", true);
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedL2Network);
+        validateVspNetwork(vspNetwork, true, false, false, false, "IsolatedDomainTemplate");
 
-        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedL2Network, false);
-        validateVspNetwork(vspNetwork, true, false, false, false, "IsolatedDomainTemplate", false);
+        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedL2Network);
+        validateVspNetwork(vspNetwork, true, false, false, false, "IsolatedDomainTemplate");
 
-        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedNetwork, true);
-        validateVspNetwork(vspNetwork, false, true, false, false, "IsolatedDomainTemplate", true);
+        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedNetwork);
+        validateVspNetwork(vspNetwork, false, true, false, false, "IsolatedDomainTemplate");
 
-        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedNetwork, false);
-        validateVspNetwork(vspNetwork, false, true, false, false, "IsolatedDomainTemplate", false);
+        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedNetwork);
+        validateVspNetwork(vspNetwork, false, true, false, false, "IsolatedDomainTemplate");
 
-        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedVpcNetwork, true);
-        validateVspNetwork(vspNetwork, false, false, true, false, "VpcDomainTemplate", true);
+        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedVpcNetwork);
+        validateVspNetwork(vspNetwork, false, false, true, false, "VpcDomainTemplate");
 
-        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedVpcNetwork, false);
-        validateVspNetwork(vspNetwork, false, false, true, false, "VpcDomainTemplate", false);
+        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedVpcNetwork);
+        validateVspNetwork(vspNetwork, false, false, true, false, "VpcDomainTemplate");
 
-        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedSharedNetwork, true);
-        validateVspNetwork(vspNetwork, false, false, false, true, "SharedDomainTemplate", true);
+        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedSharedNetwork);
+        validateVspNetwork(vspNetwork, false, false, false, true, "SharedDomainTemplate");
 
-        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedSharedNetwork, false);
-        validateVspNetwork(vspNetwork, false, false, false, true, "SharedDomainTemplate", false);
+        vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(_mockedSharedNetwork);
+        validateVspNetwork(vspNetwork, false, false, false, true, "SharedDomainTemplate");
     }
 
     @Test
@@ -211,7 +223,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     }
 
     private void validateVspNetwork(VspNetwork vspNetwork, boolean isL2, boolean isL3, boolean isVpc, boolean isShared,
-            String domainTemplateName, boolean hasAddressRanges) {
+            String domainTemplateName) {
         assertEquals(NETWORK_ID, vspNetwork.getId());
         assertEquals("networkUuid", vspNetwork.getUuid());
         assertEquals("networkName", vspNetwork.getName());
@@ -237,22 +249,6 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         assertEquals(domainTemplateName, vspNetwork.getDomainTemplateName());
         assertEquals("10.10.10.0/24", vspNetwork.getCidr());
         assertEquals("10.10.10.1", vspNetwork.getGateway());
-
-        if (hasAddressRanges) {
-            if (isShared) {
-                assertEquals("192.168.2.2", vspNetwork.getVirtualRouterIp());
-            } else {
-                assertEquals("10.10.10.2", vspNetwork.getVirtualRouterIp());
-            }
-
-            List<Pair<String, String>> ipAddressRanges;
-            if (isShared) {
-                ipAddressRanges = Lists.newArrayList(Pair.of("192.168.2.3", "192.168.2.200"));
-            } else {
-                ipAddressRanges = Lists.newArrayList(Pair.of("10.10.10.3", "10.10.10.254"));
-            }
-            assertEquals(ipAddressRanges, vspNetwork.getIpAddressRanges());
-        }
     }
 
     private void validateVspVm(VspVm vspVm, boolean isDomainRouter) {
@@ -281,7 +277,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
 
     private void validateVspAclRule(VspAclRule vspAclRule, boolean isFirewall) {
         assertEquals("aclUuid", vspAclRule.getUuid());
-        assertEquals("aclProtocol", vspAclRule.getProtocol());
+        assertEquals(Protocol.TCP, vspAclRule.getProtocol());
         assertEquals(new Integer(1), vspAclRule.getStartPort());
         assertEquals(new Integer(20), vspAclRule.getEndPort());
         assertEquals(Lists.newArrayList("10.10.0.0/16"), vspAclRule.getSourceCidrList());
@@ -319,6 +315,10 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_mockedVlan.getIpRange()).thenReturn("192.168.2.2-192.168.2.200");
     }
 
+    private void setUpMockedVlanDetail() {
+        when(_mockedVlanDetail.getValue()).thenReturn("true");
+    }
+
     private void setUpMockedVpc() {
         when(_mockedVpc.getUuid()).thenReturn("vpcUuid");
         when(_mockedVpc.getName()).thenReturn("vpcName");
@@ -346,12 +346,14 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private void setUpMockedNicProfile() {
         when(_mockedNicProfile.getMacAddress()).thenReturn("macAddress");
         when(_mockedNicProfile.getIPv4Address()).thenReturn("10.10.10.2");
+        when(_mockedNicProfile.getNetworkId()).thenReturn(NETWORK_ID);
     }
 
     private void setUpMockedNic() {
         when(_mockedNic.getUuid()).thenReturn("nicUuid");
         when(_mockedNic.getMacAddress()).thenReturn("macAddress");
         when(_mockedNic.getIPv4Address()).thenReturn("10.10.10.2");
+        when(_mockedNic.getNetworkId()).thenReturn(NETWORK_ID);
     }
 
     private void setUpMockedStaticNatIp() {
@@ -369,7 +371,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
 
     private void setUpMockedFirewallRule() {
         when(_mockedFirewallRule.getUuid()).thenReturn("aclUuid");
-        when(_mockedFirewallRule.getProtocol()).thenReturn("aclProtocol");
+        when(_mockedFirewallRule.getProtocol()).thenReturn("TCP");
         when(_mockedFirewallRule.getSourcePortStart()).thenReturn(1);
         when(_mockedFirewallRule.getSourcePortEnd()).thenReturn(20);
         when(_mockedFirewallRule.getSourceCidrList()).thenReturn(Lists.newArrayList("10.10.0.0/16"));
@@ -380,7 +382,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
 
     private void setUpMockedNetworkAclItem() {
         when(_mockedNetworkAclItem.getUuid()).thenReturn("aclUuid");
-        when(_mockedNetworkAclItem.getProtocol()).thenReturn("aclProtocol");
+        when(_mockedNetworkAclItem.getProtocol()).thenReturn("TCP");
         when(_mockedNetworkAclItem.getSourcePortStart()).thenReturn(1);
         when(_mockedNetworkAclItem.getSourcePortEnd()).thenReturn(20);
         when(_mockedNetworkAclItem.getSourceCidrList()).thenReturn(Lists.newArrayList("10.10.0.0/16"));
@@ -393,6 +395,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     private void setUpMockedDaoCalls() {
         when(_domainDao.findById(DOMAIN_ID)).thenReturn(_mockedDomain);
         when(_accountDao.findById(ACCOUNT_ID)).thenReturn(_mockedAccount);
+        when(_networkDao.findById(NETWORK_ID)).thenReturn(_mockedNetwork);
         when(_networkOfferingDao.findById(NETWORK_OFFERING_ID)).thenReturn(_mockedNetworkOffering);
         when(_networkOfferingDao.findById(SHARED_NETWORK_OFFERING_ID)).thenReturn(_mockedSharedNetworkOffering);
         when(_networkOfferingDao.findById(L2_NETWORK_OFFERING_ID)).thenReturn(_mockedL2NetworkOffering);
@@ -406,6 +409,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_networkModel.areServicesSupportedByNetworkOffering(SHARED_NETWORK_OFFERING_ID, Network.Service.Firewall)).thenReturn(true);
         when(_networkModel.areServicesSupportedByNetworkOffering(L2_NETWORK_OFFERING_ID, Network.Service.Firewall)).thenReturn(true);
         when(_vlanDao.listVlansByNetworkId(NETWORK_ID)).thenReturn(Lists.newArrayList(_mockedVlan));
+        when(_vlanDetailsDao.findDetail(anyLong(), anyString())).thenReturn(_mockedVlanDetail);
         when(_vpcDao.findById(VPC_ID)).thenReturn(_mockedVpc);
         when(_ipAddressDao.findById(SOURCE_IP_ADDRESS_ID)).thenReturn(_mockedStaticNatIp);
     }

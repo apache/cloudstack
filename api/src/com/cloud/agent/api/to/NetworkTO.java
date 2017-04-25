@@ -38,6 +38,8 @@ public class NetworkTO {
     protected URI isolationUri;
     protected boolean isSecurityGroupEnabled;
     protected String name;
+    protected String ip6address;
+    protected String ip6cidr;
 
     public NetworkTO() {
     }
@@ -60,6 +62,14 @@ public class NetworkTO {
 
     public void setIp(String ip) {
         this.ip = ip;
+    }
+
+    public void setIp6Address(String addr) {
+        this.ip6address = addr;
+    }
+
+    public void setIp6Cidr(String cidr) {
+        this.ip6cidr = cidr;
     }
 
     public void setNetmask(String netmask) {
@@ -114,6 +124,7 @@ public class NetworkTO {
      * the full information about what is needed.
      *
      * @param ip
+     * @param ip6address
      * @param vlan
      * @param netmask
      * @param mac
@@ -130,8 +141,28 @@ public class NetworkTO {
         this.dns2 = dns2;
     }
 
+    public NetworkTO(String ip, String netmask, String mac, String gateway, String dns1, String dns2, String ip6address,
+                     String ip6cidr) {
+        this.ip = ip;
+        this.netmask = netmask;
+        this.mac = mac;
+        this.gateway = gateway;
+        this.dns1 = dns1;
+        this.dns2 = dns2;
+        this.ip6address = ip6address;
+        this.ip6cidr = ip6cidr;
+    }
+
     public String getIp() {
         return ip;
+    }
+
+    public String getIp6Address() {
+        return ip6address;
+    }
+
+    public String getIp6Cidr() {
+        return ip6cidr;
     }
 
     public String getNetmask() {

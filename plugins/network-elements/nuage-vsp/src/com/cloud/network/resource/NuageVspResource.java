@@ -19,203 +19,96 @@
 
 package com.cloud.network.resource;
 
-import com.cloud.agent.IAgentControl;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.PingNuageVspCommand;
-import com.cloud.agent.api.ReadyAnswer;
-import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupVspCommand;
-import com.cloud.agent.api.element.ApplyAclRuleVspCommand;
-import com.cloud.agent.api.element.ApplyStaticNatVspCommand;
-import com.cloud.agent.api.element.ImplementVspCommand;
-import com.cloud.agent.api.element.ShutDownVpcVspCommand;
-import com.cloud.agent.api.guru.DeallocateVmVspCommand;
-import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
-import com.cloud.agent.api.guru.ReserveVmInterfaceVspCommand;
-import com.cloud.agent.api.guru.TrashNetworkVspCommand;
-import com.cloud.agent.api.manager.GetApiDefaultsAnswer;
-import com.cloud.agent.api.manager.GetApiDefaultsCommand;
-import com.cloud.agent.api.manager.SupportedApiVersionCommand;
-import com.cloud.agent.api.sync.SyncDomainAnswer;
-import com.cloud.agent.api.sync.SyncDomainCommand;
-import com.cloud.agent.api.sync.SyncNuageVspCmsIdAnswer;
-import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
-import com.cloud.host.Host;
-import com.cloud.resource.ServerResource;
-import com.cloud.util.NuageVspUtil;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
-import net.nuage.vsp.acs.NuageVspPluginClientLoader;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import javax.naming.ConfigurationException;
+
+import net.nuage.vsp.acs.client.api.NuageVspAclClient;
 import net.nuage.vsp.acs.client.api.NuageVspApiClient;
 import net.nuage.vsp.acs.client.api.NuageVspElementClient;
 import net.nuage.vsp.acs.client.api.NuageVspGuruClient;
 import net.nuage.vsp.acs.client.api.NuageVspManagerClient;
-import net.nuage.vsp.acs.client.common.model.Pair;
+import net.nuage.vsp.acs.client.api.NuageVspPluginClientLoader;
+import net.nuage.vsp.acs.client.api.model.VspHost;
+import net.nuage.vsp.acs.client.exception.NuageVspException;
+
 import org.apache.log4j.Logger;
 
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
+import com.google.common.base.Strings;
 
-import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
+import com.cloud.agent.IAgentControl;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.PingNuageVspCommand;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupVspCommand;
+import com.cloud.host.Host;
+import com.cloud.resource.ServerResource;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NuageVspResource extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(NuageVspResource.class);
 
-    private static final String NAME = "name";
-    private static final String GUID = "guid";
-    private static final String ZONE_ID = "zoneid";
-    private static final String HOST_NAME = "hostname";
-    private static final String CMS_USER = "cmsuser";
-    private static final String CMS_USER_PASSWORD = "cmsuserpass";
-    private static final String PORT = "port";
-    private static final String API_VERSION = "apiversion";
-    private static final String API_RELATIVE_PATH = "apirelativepath";
-    private static final String RETRY_COUNT = "retrycount";
-    private static final String RETRY_INTERVAL = "retryinterval";
-    private static final String NUAGE_VSP_CMS_ID = "nuagevspcmsid";
-
-    private String _name;
     private String _guid;
     private String _zoneId;
-    private String _cmsUserLogin;
-    private String _cmsUserPassword;
     private String _hostName;
-    private String _relativePath;
-    private int _numRetries;
-    private int _retryInterval;
-    private String _nuageVspCmsId;
     private boolean _shouldAudit = true;
 
-    protected NuageVspApiClient _nuageVspApiClient;
-    protected NuageVspGuruClient _nuageVspGuruClient;
-    protected NuageVspElementClient _nuageVspElementClient;
-    protected NuageVspManagerClient _nuageVspManagerClient;
-    protected boolean _isNuageVspClientLoaded;
+    private VspHost _vspHost;
 
-    private static final String CMS_USER_ENTEPRISE_NAME = "CSP";
     private static final String NUAGE_VSP_PLUGIN_ERROR_MESSAGE = "Nuage Vsp plugin client is not installed";
+    protected NuageVspPluginClientLoader _clientLoader;
 
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    public VspHost validate(Map<String, ?> params) throws ConfigurationException {
+        return validate(NuageVspResourceConfiguration.fromConfiguration(params));
+    }
 
-        _name = (String)params.get(NAME);
-        if (_name == null) {
-            throw new ConfigurationException("Unable to find name");
+    public VspHost validate(NuageVspResourceConfiguration configuration) throws ConfigurationException {
+        configuration.validate();
+
+        VspHost newVspHost = configuration.buildVspHost();
+
+
+        if (!newVspHost.getApiVersion().isSupported()) {
+            s_logger.warn(String.format("[UPGRADE] API version %s of Nuage Vsp Device %s should be updated.", _vspHost.getApiVersion(), configuration.hostName()));
         }
 
-        _guid = (String)params.get(GUID);
-        if (_guid == null) {
-            throw new ConfigurationException("Unable to find the guid");
-        }
-
-        _zoneId = (String)params.get(ZONE_ID);
-        if (_zoneId == null) {
-            throw new ConfigurationException("Unable to find zone");
-        }
-
-        _hostName = (String)params.get(HOST_NAME);
-        if (Strings.isNullOrEmpty(_hostName)) {
-            throw new ConfigurationException("Unable to find hostname");
-        }
-
-        String cmsUser = (String)params.get(CMS_USER);
-        if (Strings.isNullOrEmpty(cmsUser)) {
-            throw new ConfigurationException("Unable to find CMS username");
-        }
-
-        String cmsUserPassBase64 = (String)params.get(CMS_USER_PASSWORD);
-        if (Strings.isNullOrEmpty(cmsUserPassBase64)) {
-            throw new ConfigurationException("Unable to find CMS password");
-        }
-
-        String port = (String)params.get(PORT);
-        if (Strings.isNullOrEmpty(port)) {
-            throw new ConfigurationException("Unable to find port");
-        }
-
-        String apiVersion = (String)params.get(API_VERSION);
-        if (Strings.isNullOrEmpty(apiVersion)) {
-            throw new ConfigurationException("Unable to find API version");
-        } else if (!Pattern.matches("v\\d+_\\d+", apiVersion)) {
-            throw new ConfigurationException("Incorrect API version");
-        }
-
-        String apiRelativePath = (String)params.get(API_RELATIVE_PATH);
-        if (Strings.isNullOrEmpty(apiRelativePath) || !apiRelativePath.contains(apiVersion)) {
-            throw new ConfigurationException("Unable to find API version in relative path");
-        }
-
-        String retryCount = (String)params.get(RETRY_COUNT);
-        if (!Strings.isNullOrEmpty(retryCount)) {
-            try {
-                _numRetries = Integer.parseInt(retryCount);
-            } catch (NumberFormatException ex) {
-                throw new ConfigurationException("Number of retries has to be between 1 and 10");
-            }
-            if ((_numRetries < 1) || (_numRetries > 10)) {
-                throw new ConfigurationException("Number of retries has to be between 1 and 10");
-            }
-        } else {
-            throw new ConfigurationException("Unable to find number of retries");
-        }
-
-        String retryInterval = (String)params.get(RETRY_INTERVAL);
-        if (!Strings.isNullOrEmpty(retryInterval)) {
-            try {
-                _retryInterval = Integer.parseInt(retryInterval);
-            } catch (NumberFormatException ex) {
-                throw new ConfigurationException("Retry interval has to be between 0 and 10000 ms");
-            }
-            if ((_retryInterval < 0) || (_retryInterval > 10000)) {
-                throw new ConfigurationException("Retry interval has to be between 0 and 10000 ms");
-            }
-        } else {
-            throw new ConfigurationException("Unable to find retry interval");
-        }
-
-        _relativePath = new StringBuffer().append("https://").append(_hostName).append(":").append(port).append(apiRelativePath).toString();
-
-        String cmsUserPass = NuageVspUtil.decodePassword(cmsUserPassBase64);
-        _cmsUserLogin = cmsUser;
-        _cmsUserPassword = cmsUserPass;
-
-        _nuageVspCmsId = (String)params.get(NUAGE_VSP_CMS_ID);
-
-        loadNuageClient();
+        _guid = configuration.guid();
+        _zoneId = configuration.zoneId();
+        _hostName = configuration.hostName();
+        _name = configuration.name();
 
         try {
-            login();
-        } catch (ExecutionException | ConfigurationException e) {
+            final NuageVspPluginClientLoader clientLoader = getClientLoader(newVspHost);
+            clientLoader.getNuageVspApiClient().login();
+
+            _vspHost = newVspHost;
+            _clientLoader = clientLoader;
+        } catch (ExecutionException e) {
             s_logger.error(e.getMessage(), e);
             throw new CloudRuntimeException(e.getMessage(), e);
         }
 
+        return _vspHost;
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        if(super.configure(name, params)) {
+            validate(params);
+        }
         return true;
     }
 
-    protected void login() throws ConfigurationException, ExecutionException {
-        isNuageVspApiLoaded();
-        _nuageVspApiClient.login();
+    protected void login() throws ConfigurationException, NuageVspException {
+        getNuageVspApiClient().login();
     }
 
-    protected <A extends NuageVspApiClient, B extends NuageVspElementClient, C extends NuageVspGuruClient> void loadNuageClient() {
-        NuageVspPluginClientLoader clientLoader = NuageVspPluginClientLoader.getClientLoader(_relativePath, CMS_USER_ENTEPRISE_NAME,
-                _cmsUserLogin, _cmsUserPassword, _numRetries, _retryInterval, _nuageVspCmsId);
-        _nuageVspApiClient = clientLoader.getNuageVspApiClient();
-        _nuageVspGuruClient = clientLoader.getNuageVspGuruClient();
-        _nuageVspElementClient = clientLoader.getNuageVspElementClient();
-        _nuageVspManagerClient = clientLoader.getNuageVspManagerClient();
-        _isNuageVspClientLoaded = true;
+    protected NuageVspPluginClientLoader getClientLoader(VspHost vspHost) {
+        return NuageVspPluginClientLoader.getClientLoader(vspHost);
     }
 
     @Override
@@ -226,11 +119,6 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
@@ -253,20 +141,22 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        if (Strings.isNullOrEmpty(_relativePath)) {
+        if (Strings.isNullOrEmpty(_vspHost.getRestRelativePath())) {
             s_logger.error("Refusing to ping Nuage VSD because the resource configuration is missing the relative path information");
             _shouldAudit = true;
             return null;
         }
-        if (Strings.isNullOrEmpty(_cmsUserLogin) || Strings.isNullOrEmpty(_cmsUserPassword)) {
+
+        if (Strings.isNullOrEmpty(_vspHost.getCmsUserLogin()) || Strings.isNullOrEmpty(_vspHost.getCmsUserPassword())) {
             s_logger.error("Refusing to ping Nuage VSD because the resource configuration is missing the CMS user information");
             _shouldAudit = true;
             return null;
         }
+
         try {
             login();
         } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failed to ping to Nuage VSD on " + _name + " as user " + _cmsUserLogin, e);
+            s_logger.error("Failed to ping to Nuage VSD on " + _name + " as user " +_vspHost.getCmsUserLogin(), e);
             _shouldAudit = true;
             return null;
         }
@@ -276,48 +166,16 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     }
 
     @Override
-    public Answer executeRequest(Command cmd) {
-        if (cmd instanceof ReadyCommand) {
-            return executeRequest((ReadyCommand)cmd);
-        } else if (cmd instanceof MaintainCommand) {
-            return executeRequest((MaintainCommand)cmd);
+    public Answer executeRequest(final Command cmd) {
+        final NuageVspRequestWrapper wrapper = NuageVspRequestWrapper.getInstance();
+        try {
+            return wrapper.execute(cmd, this);
+        } catch (final Exception e) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Received unsupported command " + cmd.toString());
+            }
+            return Answer.createUnsupportedCommandAnswer(cmd);
         }
-        //Guru commands
-        else if (cmd instanceof ImplementNetworkVspCommand) {
-            return executeRequest((ImplementNetworkVspCommand)cmd);
-        } else if (cmd instanceof ReserveVmInterfaceVspCommand) {
-            return executeRequest((ReserveVmInterfaceVspCommand)cmd);
-        } else if (cmd instanceof DeallocateVmVspCommand) {
-            return executeRequest((DeallocateVmVspCommand)cmd);
-        } else if (cmd instanceof TrashNetworkVspCommand) {
-            return executeRequest((TrashNetworkVspCommand)cmd);
-        }
-        //Element commands
-        else if (cmd instanceof ImplementVspCommand) {
-            return executeRequest((ImplementVspCommand)cmd);
-        } else if (cmd instanceof ApplyAclRuleVspCommand) {
-            return executeRequest((ApplyAclRuleVspCommand)cmd);
-        } else if (cmd instanceof ApplyStaticNatVspCommand) {
-            return executeRequest((ApplyStaticNatVspCommand)cmd);
-        } else if (cmd instanceof ShutDownVpcVspCommand) {
-            return executeRequest((ShutDownVpcVspCommand)cmd);
-        }
-        //Sync Commands
-        else if (cmd instanceof SyncNuageVspCmsIdCommand) {
-            return executeRequest((SyncNuageVspCmsIdCommand)cmd);
-        } else if (cmd instanceof SyncDomainCommand) {
-            return executeRequest((SyncDomainCommand)cmd);
-        }
-        //Other commands
-        else if (cmd instanceof GetApiDefaultsCommand) {
-            return executeRequest((GetApiDefaultsCommand)cmd);
-        } else if (cmd instanceof SupportedApiVersionCommand) {
-            return executeRequest((SupportedApiVersionCommand)cmd);
-        }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Received unsupported command " + cmd.toString());
-        }
-        return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override
@@ -333,332 +191,36 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     public void setAgentControl(IAgentControl agentControl) {
     }
 
-    private Answer executeRequest(ReadyCommand cmd) {
-        return new ReadyAnswer(cmd);
-    }
-
-    private Answer executeRequest(MaintainCommand cmd) {
-        return new MaintainAnswer(cmd);
-    }
-
-    private Answer executeRequest(ImplementNetworkVspCommand cmd) {
-        try {
-            isNuageVspGuruLoaded();
-            _nuageVspGuruClient.implement(cmd.getNetwork(), cmd.getDnsServers());
-            return new Answer(cmd, true, "Created network mapping to " + cmd.getNetwork().getName() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(ReserveVmInterfaceVspCommand cmd) {
-        try {
-            isNuageVspGuruLoaded();
-            _nuageVspGuruClient.reserve(cmd.getNetwork(), cmd.getVm(), cmd.getNic(), cmd.getStaticNat());
-            return new Answer(cmd, true, "Created NIC that maps to nicUuid" + cmd.getNic().getUuid() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(DeallocateVmVspCommand cmd) {
-        try {
-            isNuageVspGuruLoaded();
-
-            _nuageVspGuruClient.deallocate(cmd.getNetwork(), cmd.getVm(), cmd.getNic());
-            return new Answer(cmd, true, "Deallocated VM " + cmd.getVm().getName() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(TrashNetworkVspCommand cmd) {
-        try {
-            isNuageVspGuruLoaded();
-            _nuageVspGuruClient.trash(cmd.getNetwork());
-            return new Answer(cmd, true, "Deleted network mapping to " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(ApplyStaticNatVspCommand cmd) {
-        try {
-            isNuageVspElementLoaded();
-            _nuageVspElementClient.applyStaticNats(cmd.getNetwork(), cmd.getStaticNatDetails());
-            return new Answer(cmd, true, "Applied Static NAT to network mapping " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(ImplementVspCommand cmd) {
-        try {
-            isNuageVspElementLoaded();
-            boolean success = _nuageVspElementClient.implement(cmd.getNetwork(), cmd.getDnsServers(), cmd.getIngressFirewallRules(),
-                    cmd.getEgressFirewallRules(), cmd.getFloatingIpUuids());
-            return new Answer(cmd, success, "Implemented network " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(ApplyAclRuleVspCommand cmd) {
-        try {
-            isNuageVspElementLoaded();
-            _nuageVspElementClient.applyAclRules(cmd.getAclType(), cmd.getNetwork(), cmd.getAclRules(), cmd.isNetworkReset());
-            return new Answer(cmd, true, "Applied ACL Rule to network mapping " + cmd.getNetwork().getUuid() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(ShutDownVpcVspCommand cmd) {
-        try {
-            isNuageVspElementLoaded();
-            _nuageVspElementClient.shutdownVpc(cmd.getDomainUuid(), cmd.getVpcUuid(), cmd.getDomainTemplateName(), cmd.getDomainRouterUuids());
-            return new Answer(cmd, true, "Shutdown VPC " + cmd.getVpcUuid() + " on Nuage VSD " + _hostName);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(SyncNuageVspCmsIdCommand cmd) {
-        try {
-            isNuageVspManagerLoaded();
-            if (cmd.getSyncType() == SyncType.AUDIT || cmd.getSyncType() == SyncType.AUDIT_ONLY) {
-                Pair<Boolean, String> answer = _nuageVspManagerClient.auditNuageVspCmsId(cmd.getNuageVspCmsId(), cmd.getSyncType() == SyncType.AUDIT_ONLY);
-                return new SyncNuageVspCmsIdAnswer(answer.getLeft(), answer.getRight(), cmd.getSyncType());
-            } else if (cmd.getSyncType() == SyncType.REGISTER) {
-                String registeredNuageVspCmsId = _nuageVspManagerClient.registerNuageVspCmsId();
-                return new SyncNuageVspCmsIdAnswer(StringUtils.isNotBlank(registeredNuageVspCmsId), registeredNuageVspCmsId, cmd.getSyncType());
-            } else {
-                boolean success = _nuageVspManagerClient.unregisterNuageVspCmsId(cmd.getNuageVspCmsId());
-                return new SyncNuageVspCmsIdAnswer(success, cmd.getNuageVspCmsId(), cmd.getSyncType());
-            }
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new SyncNuageVspCmsIdAnswer(false, null, cmd.getSyncType());
-        }
-    }
-
-    private Answer executeRequest(SyncDomainCommand cmd) {
-        try {
-            isNuageVspManagerLoaded();
-            boolean success = _nuageVspManagerClient.syncDomainWithNuageVsp(cmd.getDomain(), cmd.isToAdd(), cmd.isToRemove());
-            return new SyncDomainAnswer(success);
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new SyncDomainAnswer(false);
-        }
-    }
-
-    private Answer executeRequest(GetApiDefaultsCommand cmd) {
-        try {
-            isNuageVspManagerLoaded();
-            return new GetApiDefaultsAnswer(cmd, _nuageVspManagerClient.getApiDefaults());
-        } catch (ExecutionException | ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new GetApiDefaultsAnswer(cmd, e);
-        }
-    }
-
-    private Answer executeRequest(SupportedApiVersionCommand cmd) {
-        try {
-            isNuageVspManagerLoaded();
-            boolean supported = _nuageVspManagerClient.isSupportedApiVersion(cmd.getApiVersion());
-            return new Answer(cmd, supported, "Check if API version " + cmd.getApiVersion() + " is supported");
-        } catch (ConfigurationException e) {
-            s_logger.error("Failure during " + cmd + " on Nuage VSD " + _hostName, e);
-            return new Answer(cmd, e);
-        }
-    }
-
-    protected void isNuageVspApiLoaded() throws ConfigurationException {
-        if (!_isNuageVspClientLoaded || _nuageVspApiClient == null) {
+    protected void assertNuageVspClientsLoaded() throws ConfigurationException {
+        if (_clientLoader == null) {
             throw new ConfigurationException(NUAGE_VSP_PLUGIN_ERROR_MESSAGE);
         }
     }
 
-    protected void isNuageVspGuruLoaded() throws ConfigurationException {
-        if (!_isNuageVspClientLoaded || _nuageVspGuruClient == null) {
-            throw new ConfigurationException(NUAGE_VSP_PLUGIN_ERROR_MESSAGE);
-        }
+    public NuageVspApiClient getNuageVspApiClient() throws ConfigurationException {
+        assertNuageVspClientsLoaded();
+        return _clientLoader.getNuageVspApiClient();
+
     }
 
-    protected void isNuageVspElementLoaded() throws ConfigurationException {
-        if (!_isNuageVspClientLoaded || _nuageVspElementClient == null) {
-            throw new ConfigurationException(NUAGE_VSP_PLUGIN_ERROR_MESSAGE);
-        }
+    public NuageVspGuruClient getNuageVspGuruClient() throws ConfigurationException {
+        assertNuageVspClientsLoaded();
+        return _clientLoader.getNuageVspGuruClient();
     }
 
-    protected void isNuageVspManagerLoaded() throws ConfigurationException {
-        if (!_isNuageVspClientLoaded || _nuageVspManagerClient == null) {
-            throw new ConfigurationException(NUAGE_VSP_PLUGIN_ERROR_MESSAGE);
-        }
+    public NuageVspAclClient getNuageVspAclClient() throws ConfigurationException {
+        assertNuageVspClientsLoaded();
+        return _clientLoader.getNuageVspAclClient();
     }
 
-    public static class Configuration {
-        private String _name;
-        private String _guid;
-        private String _zoneId;
-        private String _hostName;
-        private String _cmsUser;
-        private String _cmsUserPassword;
-        private String _port;
-        private String _apiVersion;
-        private String _apiRelativePath;
-        private String _retryCount;
-        private String _retryInterval;
-        private String _nuageVspCmsId;
-
-        public String name() {
-            return this._name;
-        }
-
-        public Configuration name(String name) {
-            this._name = name;
-            return this;
-        }
-
-        public String guid() {
-            return this._guid;
-        }
-
-        public Configuration guid(String guid) {
-            this._guid = guid;
-            return this;
-        }
-
-        public String zoneId() {
-            return this._zoneId;
-        }
-
-        public Configuration zoneId(String zoneId) {
-            this._zoneId = zoneId;
-            return this;
-        }
-
-        public String hostName() {
-            return this._hostName;
-        }
-
-        public Configuration hostName(String hostName) {
-            this._hostName = hostName;
-            return this;
-        }
-
-        public String cmsUser() {
-            return this._cmsUser;
-        }
-
-        public Configuration cmsUser(String cmsUser) {
-            this._cmsUser = cmsUser;
-            return this;
-        }
-
-        public String cmsUserPassword() {
-            return this._cmsUserPassword;
-        }
-
-        public Configuration cmsUserPassword(String cmsUserPassword) {
-            this._cmsUserPassword = cmsUserPassword;
-            return this;
-        }
-
-        public String port() {
-            return this._port;
-        }
-
-        public Configuration port(String port) {
-            this._port = port;
-            return this;
-        }
-
-        public String apiVersion() {
-            return this._apiVersion;
-        }
-
-        public Configuration apiVersion(String apiVersion) {
-            this._apiVersion = apiVersion;
-            return this;
-        }
-
-        public String apiRelativePath() {
-            return this._apiRelativePath;
-        }
-
-        public Configuration apiRelativePath(String apiRelativePath) {
-            this._apiRelativePath = apiRelativePath;
-            return this;
-        }
-
-        public String retryCount() {
-            return this._retryCount;
-        }
-
-        public Configuration retryCount(String retryCount) {
-            this._retryCount = retryCount;
-            return this;
-        }
-
-        public String retryInterval() {
-            return this._retryInterval;
-        }
-
-        public Configuration retryInterval(String retryInterval) {
-            this._retryInterval = retryInterval;
-            return this;
-        }
-
-        public String nuageVspCmsId() {
-            return this._nuageVspCmsId;
-        }
-
-        public Configuration nuageVspCmsId(String nuageVspCmsId) {
-            this._nuageVspCmsId = nuageVspCmsId;
-            return this;
-        }
-
-        public Map<String, String> build() {
-            return new HashMap<String, String>() {{
-                if (_name != null) put(NAME, _name);
-                if (_guid != null) put(GUID, _guid);
-                if (_zoneId != null) put(ZONE_ID, _zoneId);
-                if (_hostName != null) put(HOST_NAME, _hostName);
-                if (_cmsUser != null) put(CMS_USER, _cmsUser);
-                if (_cmsUserPassword != null) put(CMS_USER_PASSWORD, _cmsUserPassword);
-                if (_port != null) put(PORT, _port);
-                if (_apiVersion != null) put(API_VERSION, _apiVersion);
-                if (_apiRelativePath != null) put(API_RELATIVE_PATH, _apiRelativePath);
-                if (_retryCount != null) put(RETRY_COUNT, _retryCount);
-                if (_retryInterval != null) put(RETRY_INTERVAL, _retryInterval);
-                if (_nuageVspCmsId != null) put(NUAGE_VSP_CMS_ID, _nuageVspCmsId);
-            }};
-        }
-
-        public static Configuration fromConfiguration(Map<String, String> configuration) {
-            return new Configuration()
-                    .name(configuration.get(NAME))
-                    .guid(configuration.get(GUID))
-                    .zoneId(configuration.get(ZONE_ID))
-                    .hostName(configuration.get(HOST_NAME))
-                    .cmsUser(configuration.get(CMS_USER))
-                    .cmsUserPassword(configuration.get(CMS_USER_PASSWORD))
-                    .port(configuration.get(PORT))
-                    .apiVersion(configuration.get(API_VERSION))
-                    .apiRelativePath(configuration.get(API_RELATIVE_PATH))
-                    .retryCount(configuration.get(RETRY_COUNT))
-                    .retryInterval(configuration.get(RETRY_INTERVAL))
-                    .nuageVspCmsId(configuration.get(NUAGE_VSP_CMS_ID));
-        }
+    public NuageVspElementClient getNuageVspElementClient() throws ConfigurationException {
+        assertNuageVspClientsLoaded();
+        return _clientLoader.getNuageVspElementClient();
     }
+
+    public NuageVspManagerClient getNuageVspManagerClient() throws ConfigurationException {
+        assertNuageVspClientsLoaded();
+        return _clientLoader.getNuageVspManagerClient();
+    }
+
 }

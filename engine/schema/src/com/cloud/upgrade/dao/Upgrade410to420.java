@@ -2399,7 +2399,6 @@ public class Upgrade410to420 implements DbUpgrade {
                 //implies iso_id1 is not present, so do nothing.
             }
         } catch (SQLException e) {
-          s_logger.error("migrateDatafromIsoIdInVolumesTable:Exception:"+e.getMessage(),e);
             //implies iso_id1 is not present, so do nothing.
         }
     }

@@ -154,6 +154,8 @@ public interface NetworkModel {
 
     boolean checkIpForService(IpAddress ip, Service service, Long networkId);
 
+    boolean providerSupportsCapability(Set<Provider> providers, Service service, Capability cap);
+
     void checkCapabilityForProvider(Set<Provider> providers, Service service, Capability cap, String capValue);
 
     Provider getDefaultUniqueProviderForService(String serviceName);

@@ -72,6 +72,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -164,6 +165,12 @@ public class TemplateManagerImplTest {
 
     @Inject
     SnapshotDao snapshotDao;
+
+    @Inject
+    VMTemplateDetailsDao tmpltDetailsDao;
+
+    @Inject
+    StorageStrategyFactory storageStrategyFactory;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -458,6 +465,11 @@ public class TemplateManagerImplTest {
         }
 
         @Bean
+        public StorageStrategyFactory storageStrategyFactory() {
+            return Mockito.mock(StorageStrategyFactory.class);
+        }
+
+        @Bean
         public VMTemplatePoolDao vmTemplatePoolDao() {
             return Mockito.mock(VMTemplatePoolDao.class);
         }
@@ -640,6 +652,11 @@ public class TemplateManagerImplTest {
         @Bean
         public TemplateAdapter templateAdapter() {
             return Mockito.mock(TemplateAdapter.class);
+        }
+
+        @Bean
+        public VMTemplateDetailsDao vmTemplateDetailsDao() {
+            return Mockito.mock(VMTemplateDetailsDao.class);
         }
 
         public static class Library implements TypeFilter {

@@ -52,15 +52,15 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'account.cleanup.interval', '60');
+            'account.cleanup.interval', '20');
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'expunge.delay', '60');
+            'expunge.delay', '20');
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'expunge.interval', '60');
+            'expunge.interval', '20');
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
@@ -84,15 +84,15 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'network.gc.wait', '60');
+            'network.gc.wait', '20');
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'network.gc.interval', '60');
+            'network.gc.interval', '20');
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'storage.cleanup.interval', '150');
+            'storage.cleanup.interval', '40');
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',

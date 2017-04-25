@@ -310,69 +310,67 @@
                 };
 
                 if(zoneType == 'Advanced') {
-                    if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {
-                        if(trafficData.vSwitchType == null) {
-                             var useDvs = false;
+                    if(trafficData.vSwitchType == null) {
+                         var useDvs = false;
+                         $.ajax({
+                             url: createURL('listConfigurations'),
+                             data: {
+                                 name: 'vmware.use.dvswitch'
+                             },
+                             async: false,
+                             success: function(json) {
+                                 if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                     useDvs = true;
+                                 }
+                             }
+                         });
+                         if (useDvs == true) {
+                             var useNexusDvs = false;
                              $.ajax({
                                  url: createURL('listConfigurations'),
                                  data: {
-                                     name: 'vmware.use.dvswitch'
+                                     name: 'vmware.use.nexus.vswitch'
                                  },
                                  async: false,
                                  success: function(json) {
                                      if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-                                         useDvs = true;
+                                         useNexusDvs = true;
                                      }
                                  }
                              });
-                             if (useDvs == true) {
-                                 var useNexusDvs = false;
-                                 $.ajax({
-                                     url: createURL('listConfigurations'),
-                                     data: {
-                                         name: 'vmware.use.nexus.vswitch'
-                                     },
-                                     async: false,
-                                     success: function(json) {
-                                         if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-                                             useNexusDvs = true;
-                                         }
-                                     }
-                                 });
-                                 if (useNexusDvs == true) {
-                                     trafficData.vSwitchType = 'nexusdvs';
-                                     fields.vSwitchName.defaultValue = 'epp0';
-                                 } else {
-                                     trafficData.vSwitchType = 'vmwaredvs';
-                                     fields.vSwitchName.defaultValue = 'dvSwitch0';
-                                 }
-                             } else { //useDvs == false
-                                 trafficData.vSwitchType = 'vmwaresvs';
-                                 fields.vSwitchName.defaultValue = 'vSwitch0';
+                             if (useNexusDvs == true) {
+                                 trafficData.vSwitchType = 'nexusdvs';
+                                 fields.vSwitchName.defaultValue = 'epp0';
+                             } else {
+                                 trafficData.vSwitchType = 'vmwaredvs';
+                                 fields.vSwitchName.defaultValue = 'dvSwitch0';
                              }
-                        }
-
-                        $.extend(fields, {
-                            vSwitchType: {
-                                    label: 'label.vSwitch.type',
-                                select: function (args) {
-                                    args.response.success({
-                                        data: [{
-                                            id: 'nexusdvs',
-                                            description: 'Cisco Nexus 1000v Distributed Virtual Switch'
-                                        }, {
-                                            id: 'vmwaresvs',
-                                            description: 'VMware vNetwork Standard Virtual Switch'
-                                        }, {
-                                            id: 'vmwaredvs',
-                                            description: 'VMware vNetwork Distributed Virtual Switch'
-                                        }]
-                                    });
-                                },
-                                defaultValue: trafficData.vSwitchType
-                            }
-                        });
+                         } else { //useDvs == false
+                             trafficData.vSwitchType = 'vmwaresvs';
+                             fields.vSwitchName.defaultValue = 'vSwitch0';
+                         }
                     }
+
+                    $.extend(fields, {
+                        vSwitchType: {
+                                label: 'label.vSwitch.type',
+                            select: function (args) {
+                                args.response.success({
+                                    data: [{
+                                        id: 'nexusdvs',
+                                        description: 'Cisco Nexus 1000v Distributed Virtual Switch'
+                                    }, {
+                                        id: 'vmwaresvs',
+                                        description: 'VMware vNetwork Standard Virtual Switch'
+                                    }, {
+                                        id: 'vmwaredvs',
+                                        description: 'VMware vNetwork Distributed Virtual Switch'
+                                    }]
+                                });
+                            },
+                            defaultValue: trafficData.vSwitchType
+                        }
+                    });
                 }
             } else {
                 fields = {
@@ -658,7 +656,7 @@
             var $physicalNetworkItem = $('<div>').addClass('select-container multi');
             var $deleteButton = $('<div>').addClass('button remove physical-network')
                 .attr({
-                    title: 'label.remove.this.physical.network'
+                    title: _l('label.remove.this.physical.network')
                 })
                 .append('<span>').addClass('icon').html('&nbsp;');
             var $icon = $('<div>').addClass('physical-network-icon');

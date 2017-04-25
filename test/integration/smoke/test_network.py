@@ -1039,6 +1039,7 @@ class TestRouterRules(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.hypervisor = testClient.getHypervisorInfo()
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         template = get_template(
             cls.apiclient,
             cls.zone.id,
@@ -1117,8 +1118,8 @@ class TestRouterRules(cloudstackTestCase):
                 "Check for list hosts response return valid data"
             )
             host = hosts[0]
-            host.user = self.services["configurableData"]["host"]["username"]
-            host.passwd = self.services["configurableData"]["host"]["password"]
+            host.user = self.hostConfig['username']
+            host.passwd = self.hostConfig['password']
 
             result = get_process_status(
                 host.ipaddress,

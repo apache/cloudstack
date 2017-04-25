@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -38,6 +29,14 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
 
 public enum Config {
 
@@ -440,14 +439,6 @@ public enum Config {
             null),
     ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
     ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName"),
-    ConsoleProxyLoadscanInterval(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.loadscan.interval",
-            "10000",
-            "The time interval(in milliseconds) to scan console proxy working-load info",
-            null),
     ConsoleProxySessionMax(
             "Console Proxy",
             AgentManager.class,
@@ -512,7 +503,7 @@ public enum Config {
             null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
     BackupSnapshotAfterTakingSnapshot(
-            "Hidden",
+            "Snapshots",
             SnapshotManager.class,
             Boolean.class,
             "snapshot.backup.rightafter",
@@ -1221,14 +1212,6 @@ public enum Config {
             "Specify whether or not to recycle hung worker VMs",
             null),
     VmwareHungWorkerTimeout("Advanced", ManagementServer.class, Long.class, "vmware.hung.wokervm.timeout", "7200", "Worker VM timeout in seconds", null),
-    VmwareEnableNestedVirtualization(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "vmware.nested.virtualization",
-            "false",
-            "When set to true this will enable nested virtualization when this is supported by the hypervisor",
-            null),
     VmwareVcenterSessionTimeout("Advanced", ManagementServer.class, Long.class, "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", null),
 
     // Midonet

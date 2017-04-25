@@ -53,8 +53,12 @@ setup(name="Marvin",
           "ddt >= 0.4.0",
           "pyvmomi >= 5.5.0",
           "netaddr >= 0.7.14",
+          "dnspython",
           "ipmisim >= 0.7"
       ],
+      extras_require={
+        "nuagevsp": ["libVSD", "PyYAML", "futures", "netaddr", "retries"]
+      },
       py_modules=['marvin.marvinPlugin'],
       zip_safe=False,
       entry_points={

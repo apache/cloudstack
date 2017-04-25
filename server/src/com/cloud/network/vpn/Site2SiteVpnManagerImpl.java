@@ -190,10 +190,10 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         String ipsecPsk = cmd.getIpsecPsk();
         String ikePolicy = cmd.getIkePolicy();
         String espPolicy = cmd.getEspPolicy();
-        if (!NetUtils.isValidS2SVpnPolicy(ikePolicy)) {
-            throw new InvalidParameterValueException("The customer gateway IKE policy " + ikePolicy + " is invalid!");
+        if (!NetUtils.isValidS2SVpnPolicy("ike", ikePolicy)) {
+            throw new InvalidParameterValueException("The customer gateway IKE policy " + ikePolicy + " is invalid!  Verify the required Diffie Hellman (DH) group is specified.");
         }
-        if (!NetUtils.isValidS2SVpnPolicy(espPolicy)) {
+        if (!NetUtils.isValidS2SVpnPolicy("esp", espPolicy)) {
             throw new InvalidParameterValueException("The customer gateway ESP policy " + espPolicy + " is invalid!");
         }
         Long ikeLifetime = cmd.getIkeLifetime();
@@ -444,10 +444,10 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         String ipsecPsk = cmd.getIpsecPsk();
         String ikePolicy = cmd.getIkePolicy();
         String espPolicy = cmd.getEspPolicy();
-        if (!NetUtils.isValidS2SVpnPolicy(ikePolicy)) {
-            throw new InvalidParameterValueException("The customer gateway IKE policy" + ikePolicy + " is invalid!");
+        if (!NetUtils.isValidS2SVpnPolicy("ike", ikePolicy)) {
+            throw new InvalidParameterValueException("The customer gateway IKE policy" + ikePolicy + " is invalid!  Verify the required Diffie Hellman (DH) group is specified.");
         }
-        if (!NetUtils.isValidS2SVpnPolicy(espPolicy)) {
+        if (!NetUtils.isValidS2SVpnPolicy("esp", espPolicy)) {
             throw new InvalidParameterValueException("The customer gateway ESP policy" + espPolicy + " is invalid!");
         }
         Long ikeLifetime = cmd.getIkeLifetime();
@@ -517,7 +517,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
         _accountMgr.checkAccess(caller, null, false, conn);
 
-        if (conn.getState() == State.Connected) {
+        if (conn.getState() != State.Pending) {
             stopVpnConnection(id);
         }
         _vpnConnectionDao.remove(id);
@@ -531,8 +531,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new CloudRuntimeException("Unable to acquire lock on " + conn);
         }
         try {
-            if (conn.getState() != State.Connected && conn.getState() != State.Error) {
-                throw new InvalidParameterValueException("Site to site VPN connection with specified id is not in correct state(connected) to process disconnect!");
+            if (conn.getState() == State.Pending) {
+                throw new InvalidParameterValueException("Site to site VPN connection with specified id is currently Pending, unable to Disconnect!");
             }
 
             conn.setState(State.Disconnected);

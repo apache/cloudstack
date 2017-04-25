@@ -79,4 +79,20 @@ public class VMTemplateDetailVO implements ResourceDetail {
     public boolean isDisplay() {
         return display;
     }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

@@ -20,9 +20,13 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
+
+import java.io.File;
 import java.util.List;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
 
@@ -37,6 +41,13 @@ public class LibvirtDomainXMLParserTest extends TestCase {
 
         InterfaceDef.NicModel ifModel = InterfaceDef.NicModel.VIRTIO;
         InterfaceDef.GuestNetType ifType = InterfaceDef.GuestNetType.BRIDGE;
+
+        ChannelDef.ChannelType channelType = ChannelDef.ChannelType.UNIX;
+        ChannelDef.ChannelState channelState = ChannelDef.ChannelState.DISCONNECTED;
+        String ssvmAgentPath =  "/var/lib/libvirt/qemu/s-2970-VM.agent";
+        String ssvmAgentName = "s-2970-VM.vport";
+        String guestAgentPath = "/var/lib/libvirt/qemu/guest-agent.org.qemu.guest_agent.0";
+        String guestAgentName = "org.qemu.guest_agent.0";
 
         String diskLabel ="vda";
         String diskPath = "/var/lib/libvirt/images/my-test-image.qcow2";
@@ -144,7 +155,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "</console>" +
                      "<channel type='unix'>" +
                      "<source mode='bind' path='/var/lib/libvirt/qemu/s-2970-VM.agent'/>" +
-                     "<target type='virtio' name='s-2970-VM.vport'/>" +
+                     "<target type='virtio' name='s-2970-VM.vport' state='disconnected'/>" +
                      "<alias name='channel0'/>" +
                      "<address type='virtio-serial' controller='0' bus='0' port='1'/>" +
                      "</channel>" +
@@ -164,6 +175,16 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<alias name='balloon0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>" +
                      "</memballoon>" +
+                     "<rng model='virtio'>" +
+                     "<rate period='5000' bytes='4096' />" +
+                     "<backend model='random'>/dev/random</backend>" +
+                     "</rng>" +
+                     "<channel type='unix'>" +
+                     "<source mode='bind' path='" + guestAgentPath + "'/>" +
+                     "<target type='virtio' name='" + guestAgentName + "'/>" +
+                     "<alias name='channel0'/>" +
+                     "<address type='virtio-serial' controller='0' bus='0' port='1'/>" +
+                     "</channel>" +
                      "</devices>" +
                      "<seclabel type='none'/>" +
                      "</domain>";
@@ -185,10 +206,31 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         assertEquals(deviceType, disks.get(diskId).getDeviceType());
         assertEquals(diskFormat, disks.get(diskId).getDiskFormatType());
 
+        List<ChannelDef> channels = parser.getChannels();
+        for (int i = 0; i < channels.size(); i++) {
+            assertEquals(channelType, channels.get(i).getChannelType());
+            assertEquals(channelType, channels.get(i).getChannelType());
+        }
+
+        /* SSVM provisioning port/channel */
+        assertEquals(channelState, channels.get(0).getChannelState());
+        assertEquals(new File(ssvmAgentPath), channels.get(0).getPath());
+        assertEquals(ssvmAgentName, channels.get(0).getName());
+
+        /* Qemu Guest Agent port/channel */
+        assertEquals(new File(guestAgentPath), channels.get(1).getPath());
+        assertEquals(guestAgentName, channels.get(1).getName());
+
         List<InterfaceDef> ifs = parser.getInterfaces();
         for (int i = 0; i < ifs.size(); i++) {
             assertEquals(ifModel, ifs.get(i).getModel());
             assertEquals(ifType, ifs.get(i).getNetType());
         }
+
+        List<RngDef> rngs = parser.getRngs();
+        assertEquals("/dev/random", rngs.get(0).getPath());
+        assertEquals(RngDef.RngBackendModel.RANDOM, rngs.get(0).getRngBackendModel());
+        assertEquals(4096, rngs.get(0).getRngRateBytes());
+        assertEquals(5000, rngs.get(0).getRngRatePeriod());
     }
 }

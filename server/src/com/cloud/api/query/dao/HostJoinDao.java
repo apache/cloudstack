@@ -41,4 +41,6 @@ public interface HostJoinDao extends GenericDao<HostJoinVO, Long> {
 
     List<HostJoinVO> searchByIds(Long... ids);
 
+    List<HostJoinVO> findByClusterId(Long clusterId, Host.Type type);
+
 }

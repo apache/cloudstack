@@ -662,7 +662,14 @@ public class VirtualMachineMO extends BaseMO {
     public boolean hasSnapshot() throws Exception {
         VirtualMachineSnapshotInfo info = getSnapshotInfo();
         if (info != null) {
-            return info.getCurrentSnapshot() != null;
+            ManagedObjectReference currentSnapshot = info.getCurrentSnapshot();
+            if (currentSnapshot != null) {
+                return true;
+            }
+            List<VirtualMachineSnapshotTree> rootSnapshotList = info.getRootSnapshotList();
+            if (rootSnapshotList != null && rootSnapshotList.size() > 0) {
+                return true;
+            }
         }
         return false;
     }

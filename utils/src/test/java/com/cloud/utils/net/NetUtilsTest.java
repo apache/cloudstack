@@ -105,18 +105,25 @@ public class NetUtilsTest {
 
     @Test
     public void testIsValidS2SVpnPolicy() {
-        assertTrue(NetUtils.isValidS2SVpnPolicy("aes128-sha1"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1,aes256-sha1"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-md5;modp1024"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1,aes128-sha1;modp1536"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy("des-md5;modp1024,aes128-sha1;modp1536"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy("des-sha1"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy("abc-123,ase-sha1"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy("de-sh,aes-sha1"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy(""));
-        assertFalse(NetUtils.isValidS2SVpnPolicy(";modp1536"));
-        assertFalse(NetUtils.isValidS2SVpnPolicy(",aes;modp1536,,,"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "aes128-sha1"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "3des-sha1"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "3des-sha1,aes256-sha1"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "3des-md5;modp1024"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("esp", "3des-sha256,aes128-sha512;modp1536"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1;modp3072,aes128-sha1;modp1536"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-md5;modp1024"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1;modp3072,aes128-sha1;modp1536"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha256;modp3072,aes128-sha512;modp1536"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "aes128-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1,aes256-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", "des-md5;modp1024,aes128-sha1;modp1536"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", "des-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", "abc-123,ase-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", "de-sh,aes-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", ""));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", ";modp1536"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("esp", ",aes;modp1536,,,"));
     }
 
     @Test
@@ -245,6 +252,10 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidCIDR(cidrFirst));
         assertTrue(NetUtils.isValidCIDR(cidrSecond));
         assertTrue(NetUtils.isValidCIDR(cidrThird));
+        assertTrue(NetUtils.isValidCIDR("2001:db8::/64"));
+        assertTrue(NetUtils.isValidCIDR("2001:db8::/48"));
+        assertTrue(NetUtils.isValidCIDR("2001:db8:fff::/56"));
+        assertFalse(NetUtils.isValidCIDR("2001:db8:gggg::/56"));
     }
 
     @Test
@@ -256,6 +267,8 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidCidrList(cidrFirst));
         assertTrue(NetUtils.isValidCidrList(cidrSecond));
         assertTrue(NetUtils.isValidCidrList(cidrThird));
+        assertTrue(NetUtils.isValidCidrList("2001:db8::/64,2001:db8:ffff::/48"));
+        assertTrue(NetUtils.isValidCidrList("2001:db8::/64,2001:db8:ffff::/48,192.168.0.0/24"));
     }
 
     @Test
@@ -526,4 +539,25 @@ public class NetUtilsTest {
         assertFalse(NetUtils.isNetworkorBroadcastIP("192.168.0.63","255.255.255.128"));
     }
 
+    @Test
+    public void testIPv6EUI64Address() {
+        assertEquals(IPv6Address.fromString("2001:db8:100::47a:88ff:fe00:8b"),
+                NetUtils.EUI64Address("2001:db8:100::/64", "06:7a:88:00:00:8b"));
+
+        assertEquals(IPv6Address.fromString("2a00:f10:121:b00:434:a0ff:fe00:1bc7"),
+                NetUtils.EUI64Address("2a00:f10:121:b00::/64", "06:34:a0:00:1b:c7"));
+
+        assertEquals(IPv6Address.fromString("2001:980:7936:0:ea2a:eaff:fe58:eb98"),
+                NetUtils.EUI64Address("2001:980:7936::/64", "e8:2a:ea:58:eb:98"));
+
+        assertEquals(IPv6Address.fromString("2001:980:7936:0:c23f:d5ff:fe68:2808"),
+                NetUtils.EUI64Address("2001:980:7936::/64", "c0:3f:d5:68:28:08"));
+    }
+
+    @Test
+    public void testIPv6LinkLocal() {
+        assertEquals(IPv6Address.fromString("fe80::fc54:ff:fe00:3e05"), NetUtils.ipv6LinkLocal("fe:54:00:00:3e:05"));
+        assertEquals(IPv6Address.fromString("fe80::42:e0ff:fee8:d6a3"), NetUtils.ipv6LinkLocal("02:42:e0:e8:d6:a3"));
+        assertEquals(IPv6Address.fromString("fe80::47a:88ff:fe00:8b"), NetUtils.ipv6LinkLocal("06:7a:88:00:00:8b"));
+    }
 }

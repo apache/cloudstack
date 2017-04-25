@@ -71,8 +71,6 @@ public interface VolumeApiService {
     /**
      * Uploads the volume to secondary storage
      *
-     * @param UploadVolumeCmdByAdmin cmd
-     *
      * @return Volume object
      */
     Volume uploadVolume(UploadVolumeCmd cmd)    throws ResourceAllocationException;
@@ -83,11 +81,11 @@ public interface VolumeApiService {
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
-    Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
+    Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
-    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm) throws ResourceAllocationException;
+    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType) throws ResourceAllocationException;
 
-    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName) throws ResourceAllocationException;
+    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException;
 
     Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long owner, String chainInfo);
 
@@ -107,4 +105,6 @@ public interface VolumeApiService {
     void updateDisplay(Volume volume, Boolean displayVolume);
 
     Volume createVolumeFromVmSnapshot(CreateVolumeFromVmSnapshotCmd createVolumeFromVmSnapshotCmd);
+
+    Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException;
 }
