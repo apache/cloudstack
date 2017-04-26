@@ -63,4 +63,18 @@ public class DirectVifDriver extends VifDriverBase {
         // not needed, libvirt will cleanup
     }
 
+    @Override
+    public void attach(LibvirtVMDef.InterfaceDef iface) {
+
+    }
+
+    @Override
+    public void detach(LibvirtVMDef.InterfaceDef iface) {
+
+    }
+
+    @Override
+    public void createControlNetwork(String privBrName) {
+    }
+
 }

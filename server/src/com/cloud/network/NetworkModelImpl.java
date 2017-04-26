@@ -34,13 +34,14 @@ import java.util.Collections;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -100,7 +101,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.dao.ProjectAccountDao;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -146,23 +146,18 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     AccountManager _accountMgr;
     @Inject
     ConfigurationDao _configDao;
-
     @Inject
     ConfigurationManager _configMgr;
-
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
     @Inject
     NicDao _nicDao = null;
-
     @Inject
     PodVlanMapDao _podVlanMapDao;
-    @Inject
-    ConfigurationServer _configServer;
 
-    List<NetworkElement> networkElements;
+    private List<NetworkElement> networkElements;
 
     public List<NetworkElement> getNetworkElements() {
         return networkElements;

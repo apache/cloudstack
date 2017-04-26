@@ -27,7 +27,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -36,7 +36,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.cloud.utils.StringUtils;
+import com.google.common.base.Strings;
+
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
@@ -161,6 +162,8 @@ public class LibvirtDomainXMLParser {
                 String mac = getAttrValue("mac", "address", nic);
                 String dev = getAttrValue("target", "dev", nic);
                 String model = getAttrValue("model", "type", nic);
+                String slot = StringUtils.removeStart(getAttrValue("address", "slot", nic), "0x");
+
                 InterfaceDef def = new InterfaceDef();
                 NodeList bandwidth = nic.getElementsByTagName("bandwidth");
                 Integer networkRateKBps = 0;
@@ -181,6 +184,11 @@ public class LibvirtDomainXMLParser {
                     String scriptPath = getAttrValue("script", "path", nic);
                     def.defEthernet(dev, mac, NicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
                 }
+
+                if (StringUtils.isNotBlank(slot)) {
+                    def.setSlot(Integer.parseInt(slot, 16));
+                }
+
                 interfaces.add(def);
             }
 

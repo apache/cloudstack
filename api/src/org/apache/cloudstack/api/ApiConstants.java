@@ -332,6 +332,7 @@ public class ApiConstants {
     public static final String COUNT = "count";
     public static final String TRAFFIC_TYPE = "traffictype";
     public static final String NETWORK_OFFERING_ID = "networkofferingid";
+    public static final String TIER_NETWORK_OFFERINGS = "tiernetworkofferings";
     public static final String NETWORK_IDS = "networkids";
     public static final String NETWORK_ID = "networkid";
     public static final String NIC_ID = "nicid";
@@ -375,6 +376,7 @@ public class ApiConstants {
     public static final String ZONE_TOKEN = "zonetoken";
     public static final String DHCP_PROVIDER = "dhcpprovider";
     public static final String RESULT = "success";
+    public static final String RESUME = "resume";
     public static final String LUN_ID = "lunId";
     public static final String IQN = "iqn";
     public static final String AGGREGATE_NAME = "aggregatename";

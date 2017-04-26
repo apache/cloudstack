@@ -42,6 +42,8 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), Op.EQ);
         AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);
         AllFieldsSearch.and("resourceType", AllFieldsSearch.entity().getResourceType(), Op.EQ);
+        AllFieldsSearch.and("key", AllFieldsSearch.entity().getKey(), Op.EQ);
+        AllFieldsSearch.and("resourceUuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -60,6 +62,15 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("resourceType", resourceType);
         return listBy(sc);
+    }
+
+    @Override
+    public ResourceTag findByKey(long resourceId, ResourceObjectType resourceType, String key) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
+        sc.setParameters("key", key);
+        return findOneBy(sc);
     }
 
     @Override public void updateResourceId(long srcId, long destId, ResourceObjectType resourceType) {
@@ -92,5 +103,21 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
             resourceTagMap.put(resourceKey, resourceTagSet);
         }
         return resourceTagMap;
+    }
+
+    @Override
+    public void removeByResourceIdAndKey(long resourceId, ResourceObjectType resourceType, String key) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
+        sc.setParameters("key", key);
+        remove(sc);
+    }
+
+    @Override
+    public List<? extends ResourceTag> listByResourceUuid(String resourceUuid) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceUuid", resourceUuid);
+        return listBy(sc);
     }
 }

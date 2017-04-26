@@ -318,6 +318,10 @@ public class NetworkVO implements Network {
         return related;
     }
 
+    public void setRelated(long related) {
+        this.related = related;
+    }
+
     @Override
     public long getId() {
         return id;

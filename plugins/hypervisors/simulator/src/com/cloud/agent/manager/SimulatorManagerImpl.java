@@ -26,6 +26,12 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -33,8 +39,6 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -71,6 +75,7 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
@@ -131,8 +136,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 
 @Component
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
@@ -392,6 +395,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockNetworkMgr.plugNic((PlugNicCommand)cmd);
                 } else if (cmd instanceof UnPlugNicCommand) {
                     answer = _mockNetworkMgr.unplugNic((UnPlugNicCommand)cmd);
+                } else if (cmd instanceof ReplugNicCommand) {
+                    answer = _mockNetworkMgr.replugNic((ReplugNicCommand)cmd);
                 } else if (cmd instanceof IpAssocVpcCommand) {
                     answer = _mockNetworkMgr.ipAssoc((IpAssocVpcCommand)cmd);
                 } else if (cmd instanceof SetSourceNatCommand) {

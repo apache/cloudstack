@@ -172,4 +172,15 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
         sc.setParameters("address", "%" + keyword + "%");
         return listBy(sc);
     }
+
+    @Override
+    public int moveSecondaryIps(long fromNicId, long toNicId) {
+        NicSecondaryIpVO update = createForUpdate();
+        update.setNicId(toNicId);
+
+        SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("nicId", fromNicId);
+
+        return update(update, sc);
+    }
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,31 +15,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+//
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+package com.cloud.agent.api;
 
-/**
- * Nic represents one nic on the VM.
- */
-public interface NicSecondaryIp extends ControlledEntity, Identity, InternalIdentity {
-    /**
-     * @return id in the CloudStack database
-     */
-    @Override
-    long getId();
+public class ReplugNicAnswer extends Answer {
+    public ReplugNicAnswer() {
+    }
 
-    long getNicId();
-
-    void setNicId(long nicId);
-
-    String getIp4Address();
-
-    String getIp6Address();
-
-    long getNetworkId();
-
-    long getVmId();
+    public ReplugNicAnswer(ReplugNicCommand cmd, boolean success, String result) {
+        super(cmd, success, result);
+    }
 }

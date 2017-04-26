@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import updateZone
 from marvin.lib.base import Account, Network
 # Import System Modules
 from nose.plugins.attrib import attr
+import time
 
 
 class TestNuageInternalDns(nuageTestCase):
@@ -293,6 +294,7 @@ class TestNuageInternalDns(nuageTestCase):
         except Exception as e:
             self.fail("SSH into VM failed with exception %s" % e)
 
+        time.sleep(30)
         cmd = 'ping -c 2 vm2'
         self.debug("ping vm2 by hostname with command: " + cmd)
         outputlist = ssh.execute(cmd)
