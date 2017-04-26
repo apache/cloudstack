@@ -284,8 +284,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private UserVmJoinDao _userVmJoinDao;
     @Inject
     private SnapshotDataStoreDao _snapshotStoreDao;
-    @Inject
-    private VMTemplateDetailsDao _vmTemplateDetailsDao;
 
     @Inject
     private ImageStoreDao _imgStoreDao;
