@@ -144,6 +144,26 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
+    public boolean isHAEnabled() throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        if (morParent.getType().equals("ClusterComputeResource")) {
+            ClusterMO clusterMo = new ClusterMO(_context, morParent);
+            return clusterMo.isHAEnabled();
+        }
+
+        return false;
+    }
+
+    @Override
+    public void setRestartPriorityForVM(VirtualMachineMO vmMo, String priority) throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        if (morParent.getType().equals("ClusterComputeResource")) {
+            ClusterMO clusterMo = new ClusterMO(_context, morParent);
+            clusterMo.setRestartPriorityForVM(vmMo, priority);
+        }
+    }
+
+    @Override
     public String getHyperHostDefaultGateway() throws Exception {
         List<HostIpRouteEntry> entries = getHostIpRouteEntries();
         for (HostIpRouteEntry entry : entries) {

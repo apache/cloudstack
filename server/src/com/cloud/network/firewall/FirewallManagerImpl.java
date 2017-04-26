@@ -143,12 +143,16 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     IpAddressManager _ipAddrMgr;
 
     private boolean _elbEnabled = false;
+    static Boolean rulesContinueOnErrFlag = true;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
         _elbEnabled = Boolean.parseBoolean(elbEnabledString);
+        if (_ipAddrMgr.RulesContinueOnError.value() != null) {
+            rulesContinueOnErrFlag = _ipAddrMgr.RulesContinueOnError.value();
+        }
         return true;
     }
 
@@ -851,8 +855,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         // now send everything to the backend
         List<FirewallRuleVO> rulesToApply = _firewallDao.listByIpAndPurpose(ipId, Purpose.Firewall);
-        applyFirewallRules(rulesToApply, true, caller);
-
+        //apply rules
+        if (!applyFirewallRules(rulesToApply, rulesContinueOnErrFlag, caller)) {
+            if (!rulesContinueOnErrFlag) {
+                return false;
+            }
+        }
         // Now we check again in case more rules have been inserted.
         rules.addAll(_firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.Firewall));
 

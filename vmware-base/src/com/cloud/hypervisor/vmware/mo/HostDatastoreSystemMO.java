@@ -49,7 +49,7 @@ public class HostDatastoreSystemMO extends BaseMO {
     }
 
     public ManagedObjectReference findDatastore(String name) throws Exception {
-        // added cloud.com specific name convention, we will use custom field "cloud.uuid" as datastore name as well
+        // added Apache CloudStack specific name convention, we will use custom field "cloud.uuid" as datastore name as well
         CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
         int key = cfmMo.getCustomFieldKey("Datastore", CustomFieldConstants.CLOUD_UUID);
         assert (key != 0);

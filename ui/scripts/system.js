@@ -225,322 +225,25 @@
         // System dashboard
         dashboard: {
             dataProvider: function (args) {
-                var dataFns = {
-                    zoneCount: function (data) {
-                        $.ajax({
-                            url: createURL('listZones'),
-                            data: {
-                                listAll: true,
-                                page: 1,
-                                pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                            },
-                            success: function (json) {
-                                args.response.success({
-                                    data: {
-                                        zoneCount: json.listzonesresponse.count ? json.listzonesresponse.count: 0,
-                                        zones: json.listzonesresponse.zone
-                                    }
-                                });
-                            }
+                $.ajax({
+                    url: createURL('listInfrastructure'),
+                    success: function (json) {
+                        var response = json.listinfrastructureresponse.infrastructure;
+                        var data = {};
+                        data.zoneCount = response.zones;
+                        data.podCount = response.pods;
+                        data.clusterCount = response.clusters;
+                        data.hostCount = response.hosts;
+                        data.primaryStorageCount = response.storagepools;
+                        data.secondaryStorageCount = response.imagestores;
+                        data.systemVmCount = response.systemvms;
+                        data.virtualRouterCount = response.routers;
+                        data.socketCount = response.cpusockets;
+                        args.response.success({
+                            data: data
                         });
-                        dataFns.podCount();
-                    },
-
-                    podCount: function (data) {
-                        $.ajax({
-                            url: createURL('listPods'),
-                            data: {
-                                listAll: true,
-                                page: 1,
-                                pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                            },
-                            success: function (json) {
-                                args.response.success({
-                                    data: {
-                                        podCount: json.listpodsresponse.count ? json.listpodsresponse.count: 0
-                                    }
-                                });
-                            }
-                        });
-                        dataFns.clusterCount();
-                    },
-
-                    clusterCount: function (data) {
-                        $.ajax({
-                            url: createURL('listClusters'),
-                            data: {
-                                listAll: true,
-                                page: 1,
-                                pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                            },
-                            success: function (json) {
-                                args.response.success({
-                                    data: {
-                                        clusterCount: json.listclustersresponse.count ? json.listclustersresponse.count: 0
-                                    }
-                                });
-                            }
-                        });
-                        dataFns.hostCount();
-                    },
-
-                    hostCount: function (data) {
-                        var data2 = {
-                            type: 'routing',
-                            listAll: true,
-                            page: 1,
-                            pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                        };
-                        $.ajax({
-                            url: createURL('listHosts'),
-                            data: data2,
-                            success: function (json) {
-                                args.response.success({
-                                    data: {
-                                        hostCount: json.listhostsresponse.count ? json.listhostsresponse.count: 0
-                                    }
-                                });
-                            }
-                        });
-                        dataFns.primaryStorageCount();
-                    },
-
-                    primaryStorageCount: function (data) {
-                        var data2 = {
-                            listAll: true,
-                            page: 1,
-                            pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                        };
-                        $.ajax({
-                            url: createURL('listStoragePools'),
-                            data: data2,
-                            success: function (json) {
-                                args.response.success({
-                                    data: {
-                                        primaryStorageCount: json.liststoragepoolsresponse.count ? json.liststoragepoolsresponse.count: 0
-                                    }
-                                });
-                            }
-                        });
-                        dataFns.secondaryStorageCount();
-                    },
-
-                    secondaryStorageCount: function (data) {
-                        var data2 = {
-                            type: 'SecondaryStorage',
-                            listAll: true,
-                            page: 1,
-                            pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                        };
-                        $.ajax({
-                            url: createURL('listImageStores'),
-                            data: data2,
-                            success: function (json) {
-                                args.response.success({
-                                    data: {
-                                        secondaryStorageCount: json.listimagestoresresponse.imagestore ? json.listimagestoresresponse.count: 0
-                                    }
-                                });
-                            }
-                        });
-                        dataFns.systemVmCount();
-                    },
-
-                    systemVmCount: function (data) {
-                        $.ajax({
-                            url: createURL('listSystemVms'),
-                            data: {
-                                listAll: true,
-                                page: 1,
-                                pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                            },
-                            success: function (json) {
-                                args.response.success({
-                                    data: {
-                                        systemVmCount: json.listsystemvmsresponse.count ? json.listsystemvmsresponse.count: 0
-                                    }
-                                });
-                            }
-                        });
-                        dataFns.virtualRouterCount();
-                    },
-
-                    virtualRouterCount: function (data) {
-                        var data2 = {
-                            listAll: true,
-                            page: 1,
-                            pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                        };
-                        $.ajax({
-                            url: createURL('listRouters'),
-                            data: data2,
-                            success: function (json) {
-                                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count: 0;
-                                var total2 = 0; //reset
-
-                                /*
-                                 * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
-                                 * because in project view, all API calls are appended with projectid=[projectID].
-                                 * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
-                                 */
-                                if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
-                                var data3 = {
-                                    listAll: true,
-                                        projectid: -1,
-                                    page: 1,
-                                    pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-                                };
-                                $.ajax({
-                                    url: createURL('listRouters'),
-                                    data: data3,
-                                        async: false,
-                                    success: function (json) {
-                                            total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;
-                                        }
-                                    });
-                                }
-
-                                        args.response.success({
-                                            data: {
-                                                virtualRouterCount: (total1 + total2)
-                                            }
-                                        });
-                                    }
-                                });
-                                dataFns.capacity();
-                    },
-
-                    capacity: function (data) {
-                        $.ajax({
-                            url: createURL('listCapacity'),
-                            success: function (json) {
-                                var capacities = json.listcapacityresponse.capacity;
-                                if(capacities) {
-                                    var capacityTotal = function (id, converter) {
-                                        var capacity = $.grep(capacities, function (capacity) {
-                                            return capacity.type == id;
-                                        })[0];
-
-                                        var total = capacity ? capacity.capacitytotal: 0;
-
-                                        if (converter) {
-                                            return converter(total);
-                                        }
-
-                                        return total;
-                                    };
-
-                                    args.response.success({
-                                        data: {
-                                           cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
-                                           memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
-                                           storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
-                                        }
-                                    });
-
-                                } else {
-
-                                    args.response.success({
-                                        data: {
-                                            cpuCapacityTotal: cloudStack.converters.convertHz(0),
-                                            memCapacityTotal: cloudStack.converters.convertBytes(0),
-                                            storageCapacityTotal: cloudStack.converters.convertBytes(0)
-                                        }
-                                    });
-
-                                }
-                            }
-                        });
-
-                       dataFns.socketInfo();
-                    },
-
-                    socketInfo: function (data) {
-                        var socketCount = 0;
-
-                        function listHostFunction(hypervisor, pageSizeValue) {
-                            var deferred = $.Deferred();
-                            var totalHostCount = 0;
-                            var returnedHostCount = 0;
-                            var returnedHostCpusocketsSum = 0;
-
-                            var callListHostsWithPage = function(page) {
-                                $.ajax({
-                                    url: createURL('listHosts'),
-                                    data: {
-                                        type: 'routing',
-                                        hypervisor: hypervisor,
-                                        page: page,
-                                        details: 'min',
-                                        pagesize: pageSizeValue
-                                    },
-                                    success: function (json) {
-                                        if (json.listhostsresponse.count == undefined) {
-                                            deferred.resolve();
-                                            return;
-                                        }
-
-                                        totalHostCount = json.listhostsresponse.count;
-                                        returnedHostCount += json.listhostsresponse.host.length;
-
-                                        var items = json.listhostsresponse.host;
-                                        for (var i = 0; i < items.length; i++) {
-                                            if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
-                                                returnedHostCpusocketsSum += items[i].cpusockets;
-                                            }
-                                        }
-
-                                        if (returnedHostCount < totalHostCount) {
-                                            callListHostsWithPage(++page);
-                                        } else {
-                                            socketCount += returnedHostCpusocketsSum;
-                                            deferred.resolve();
-                                        }
-                                    }
-                                });
-                            }
-
-                            callListHostsWithPage(1);
-
-                            return deferred;
-
-                        }
-
-                        $.ajax({
-                            url: createURL('listConfigurations'),
-                            data: {
-                                name : 'default.page.size'
-                            },
-                            success: function (json) {
-                                pageSizeValue = json.listconfigurationsresponse.configuration[0].value;
-                                if(!pageSizeValue) {
-                                    return;
-                                }
-                                $.ajax({
-                                    url: createURL('listHypervisors'),
-                                    success: function (json) {
-                                        var deferredArray = [];
-
-                                        $(json.listhypervisorsresponse.hypervisor).map(function (index, hypervisor) {
-                                             deferredArray.push(listHostFunction(hypervisor.name, pageSizeValue));
-                                        });
-
-                                        $.when.apply(null, deferredArray).then(function(){
-                                            args.response.success({
-                                                data: {
-                                                  socketCount: socketCount
-                                                }
-                                            });
-                                        });
-                                    }
-                                });
-                            }
-                        });
-
                     }
-                };
-
-                dataFns.zoneCount();
+                });
             }
         },
 
@@ -2090,27 +1793,57 @@
                                                 fields: {
                                                     vlanrange: {
                                                         label: 'label.vlan.vni.range',
-                                                        /*  select: function(args) {
-                                                        var items = [];
-                                                        if(args.context.physicalNetworks[0].vlan != null && args.context.physicalNetworks[0].vlan.length > 0) {
-                                                        var vlanranges = args.context.physicalNetworks[0].vlan.split(";");
-                                                        for(var i = 0; i < vlanranges.length ; i++) {
-                                                        items.push({id: vlanranges[i], description: vlanranges[i]});
-                                                        }
-                                                        }
-                                                        args.response.success({data: items});
-                                                        },*/
                                                         validation: {
                                                             required: true
                                                         }
                                                     },
-                                                    account: {
-                                                        label: 'label.account',
-                                                        validation: {
-                                                            required: true
+                                                    scope: {
+                                                        label: 'label.scope',
+                                                        docID: 'helpGuestNetworkZoneScope',
+                                                        select: function(args) {
+                                                            var array1 = [];
+
+                                                            array1.push({
+                                                                id: 'account-specific',
+                                                                description: 'label.account'
+                                                            });
+                                                            array1.push({
+                                                                id: 'project-specific',
+                                                                description: 'label.project'
+                                                            });
+
+                                                            args.response.success({
+                                                                data: array1
+                                                            });
+
+                                                            args.$select.change(function() {
+                                                                var $form = $(this).closest('form');
+
+                                                                if ($(this).val() == "account-specific") {
+                                                                    $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=projectId]').hide();
+                                                                } else if ($(this).val() == "project-specific") {
+                                                                    $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=account]').hide();
+                                                                    $form.find('.form-item[rel=projectId]').css('display', 'inline-block');
+                                                                }
+
+                                                                if (args.context.projects != null && args.context.projects.length > 0) {
+                                                                    $form.find('.form-item[rel=domainId]').hide();
+                                                                    $form.find('.form-item[rel=account]').hide();
+                                                                    $form.find('.form-item[rel=projectId]').hide();
+                                                                }
+                                                            });
+                                                        },
+                                                        isHidden: function(args) {
+                                                            if(args.context.projects != null && args.context.projects.length > 0)
+                                                                return true;
+                                                            else
+                                                                return false;
                                                         }
                                                     },
-                                                    domainid: {
+                                                    domainId: {
                                                         label: 'label.domain',
                                                         validation: {
                                                             required: true
@@ -2133,16 +1866,87 @@
                                                                 }
                                                             });
                                                         }
+                                                    },
+                                                    account: {
+                                                        label: 'label.account',
+                                                        validation: {
+                                                            required: true
+                                                        },
+                                                        dependsOn: 'domainId',
+                                                        select: function (args) {
+                                                            $.ajax({
+                                                                url: createURL('listAccounts&domainid=' + args.domainId),
+                                                                data: {
+                                                                    listAll: true
+                                                                },
+                                                                success: function (json) {
+                                                                    args.response.success({
+                                                                        data: $.map(json.listaccountsresponse.account, function (account) {
+                                                                            return {
+                                                                                id: account.name,
+                                                                                description: account.name
+                                                                            };
+                                                                        })
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
+                                                    },
+                                                    projectId: {
+                                                        label: 'label.project',
+                                                        validation: {
+                                                            required: true
+                                                        },
+                                                        dependsOn: 'domainId',
+                                                        select: function(args) {
+                                                            var items = [];
+                                                            $.ajax({
+                                                                url: createURL("listProjects&domainid=" + args.domainId),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function(json) {
+                                                                    projectObjs = json.listprojectsresponse.project;
+                                                                    $(projectObjs).each(function() {
+                                                                        items.push({
+                                                                            id: this.id,
+                                                                            description: this.name
+                                                                        });
+                                                                    });
+                                                                }
+                                                            });
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
                                                     }
                                                 }
                                             },
                                             action: function (args) {
                                                 var data = {
                                                     physicalnetworkid: args.context.physicalNetworks[0].id,
-                                                    vlanrange: args.data.vlanrange,
-                                                    domainid: args.data.domainid,
-                                                    account: args.data.account
+                                                    vlanrange: args.data.vlanrange
                                                 };
+
+                                                var $form = args.$form;
+
+                                                if (($form.find('.form-item[rel=domainId]').css("display") != "none") && (args.data.domainId != null && args.data.domainId.length > 0)) {
+                                                    $.extend(data, {
+                                                        domainid: args.data.domainId
+                                                    })
+                                                }
+
+                                                if (($form.find('.form-item[rel=account]').css("display") != "none") && (args.data.account != null && args.data.account.length > 0)) {
+                                                    $.extend(data, {
+                                                        account: args.data.account
+                                                    })
+                                                }
+
+                                                if (($form.find('.form-item[rel=projectId]').css("display") != "none") && (args.data.projectId != null && args.data.projectId.length > 0)) {
+                                                    $.extend(data, {
+                                                        projectid: args.data.projectId
+                                                    })
+                                                }
+
                                                 $.ajax({
                                                     url: createURL('dedicateGuestVlanRange'),
                                                     data: data,
@@ -9768,6 +9572,16 @@
                                              account: args.context.routerGroupByAccount[0].name,
                                              domainid: args.context.routerGroupByAccount[0].domainid
                                         })
+                                    }
+                                    if ("networks" in args.context) {
+                                       $.extend(data2, {
+                                             networkid: args.context.networks[0].id
+                                       })
+                                    }
+                                    if ("vpc" in args.context) {
+                                       $.extend(data2, {
+                                             vpcid: args.context.vpc[0].id
+                                       })
                                     }
                                 }
 
@@ -19015,60 +18829,6 @@
                                                         ucsmanagerid: args.context.ucsManagers[0].id
                                                     },
                                                     success: function (json) {
-                                                        //for testing only (begin)
-                                                        /*
-                                                        json = {
-                                                        "refreshucsbladesresponse": {
-                                                        "count": 7,
-                                                        "ucsblade": [
-                                                        {
-                                                        "id": "6c6a2d2c-575e-41ac-9782-eee51b0b80f8",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-5"
-                                                        },
-                                                        {
-                                                        "id": "d371d470-a51f-489c-aded-54a63dfd76c7",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-6"
-                                                        },
-                                                        {
-                                                        "id": "c0f64591-4a80-4083-bb7b-576220b436a2",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-7"
-                                                        },
-                                                        {
-                                                        "id": "74b9b69a-cb16-42f5-aad6-06391ebdd759",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-1"
-                                                        },
-                                                        {
-                                                        "id": "713a5adb-0136-484f-9acb-d9203af497be",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-2"
-                                                        },
-                                                        {
-                                                        "id": "da633578-21cb-4678-9eb4-981a53198b41",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-4"
-                                                        },
-                                                        {
-                                                        "id": "3d491c6e-f0b6-40b0-bf6e-f89efdd73c30",
-                                                        "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
-                                                        "bladedn": "sys/chassis-1/blade-3"
-                                                        }
-                                                        ]
-                                                        }
-                                                        };
-                                                         */
-                                                        //for testing only (end)
-
-                                                        /*
-                                                        var item = json.refreshucsbladesresponse.ucsblade[0];
-                                                        addExtraPropertiesToUcsBladeObject(item);
-                                                        args.response.success({
-                                                        data: item
-                                                        });
-                                                         */
                                                         $(window).trigger('cloudStack.fullRefresh');
                                                     }
                                                 });

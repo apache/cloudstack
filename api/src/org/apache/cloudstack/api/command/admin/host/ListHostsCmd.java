@@ -132,6 +132,10 @@ public class ListHostsCmd extends BaseListCmd {
         return state;
     }
 
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public String getType() {
         return type;
     }
@@ -198,19 +202,16 @@ public class ListHostsCmd extends BaseListCmd {
         return ApiCommandJobType.Host;
     }
 
-    @Override
-    public void execute() {
-        ListResponse<HostResponse> response = null;
+    protected ListResponse<HostResponse> getHostResponses() {
+        ListResponse<HostResponse> response = new ListResponse<>();
         if (getVirtualMachineId() == null) {
             response = _queryService.searchForServers(this);
         } else {
             Pair<List<? extends Host>, Integer> result;
             Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
-                _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
+                _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal(), null);
             result = hostsForMigration.first();
             List<? extends Host> hostsWithCapacity = hostsForMigration.second();
-
-            response = new ListResponse<HostResponse>();
             List<HostResponse> hostResponses = new ArrayList<HostResponse>();
             for (Host host : result.first()) {
                 HostResponse hostResponse = _responseGenerator.createHostResponse(host, getDetails());
@@ -222,9 +223,14 @@ public class ListHostsCmd extends BaseListCmd {
                 hostResponse.setObjectName("host");
                 hostResponses.add(hostResponse);
             }
-
             response.setResponses(hostResponses, result.second());
         }
+        return response;
+    }
+
+    @Override
+    public void execute() {
+        ListResponse<HostResponse> response = getHostResponses();
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

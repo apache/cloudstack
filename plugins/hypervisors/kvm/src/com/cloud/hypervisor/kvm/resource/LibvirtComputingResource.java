@@ -116,6 +116,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FeaturesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FilesystemDef;
@@ -125,6 +126,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
@@ -162,6 +164,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.cloud.vm.VmDetailConstants;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -268,6 +271,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _rngRateBytes = 2048;
     private File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
+    private long _totalMemory;
 
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
@@ -1515,7 +1519,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String getBroadcastUriFromBridge(final String brName) {
         final String pif = matchPifFileInDirectory(brName);
-        final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)");
+        final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)(\\D*)(\\d*)");
         final Matcher matcher = pattern.matcher(pif);
         s_logger.debug("getting broadcast uri for pif " + pif + " and bridge " + brName);
         if(matcher.find()) {
@@ -1523,7 +1527,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
             }
             else{
-                if (!matcher.group(4).isEmpty()) {
+                if (!matcher.group(6).isEmpty()) {
+                    return BroadcastDomainType.Vlan.toUri(matcher.group(6)).toString();
+                } else if (!matcher.group(4).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
                 } else {
                     //untagged or not matching (eth|bond|team)#.#
@@ -2059,6 +2065,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final InputDef input = new InputDef("tablet", "usb");
         devices.addDevice(input);
 
+
+        DiskDef.DiskBus busT = getDiskModelFromVMDetail(vmTO);
+
+        if (busT == null) {
+            busT = getGuestDiskModel(vmTO.getPlatformEmulator());
+        }
+
+        // If we're using virtio scsi, then we need to add a virtual scsi controller
+        if (busT == DiskDef.DiskBus.SCSI) {
+            final SCSIDef sd = new SCSIDef((short)0, 0, 0, 9, 0);
+            devices.addDevice(sd);
+        }
+
         vm.addComp(devices);
 
         return vm;
@@ -2142,23 +2161,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
-            DiskDef.DiskBus diskBusType = null;
-            final Map <String, String> params = vmSpec.getDetails();
-            if (params != null && params.get("rootDiskController") != null && !params.get("rootDiskController").isEmpty()) {
-                final String rootDiskController = params.get("rootDiskController");
-                s_logger.debug("Passed custom disk bus " + rootDiskController);
-                for (final DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
-                    if (bus.toString().equalsIgnoreCase(rootDiskController)) {
-                        s_logger.debug("Found matching enum for disk bus " + rootDiskController);
-                        diskBusType = bus;
-                        break;
-                    }
-                }
-            }
+            DiskDef.DiskBus diskBusType = getDiskModelFromVMDetail(vmSpec);
 
             if (diskBusType == null) {
                 diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
             }
+
+            // I'm not sure why previously certain DATADISKs were hard-coded VIRTIO and others not, however this
+            // maintains existing functionality with the exception that SCSI will override VIRTIO.
+            DiskDef.DiskBus diskBusTypeData = (diskBusType == DiskDef.DiskBus.SCSI) ? diskBusType : DiskDef.DiskBus.VIRTIO;
+
             final DiskDef disk = new DiskDef();
             if (volume.getType() == Volume.Type.ISO) {
                 if (volPath == null) {
@@ -2169,6 +2181,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             } else {
                 final int devId = volume.getDiskSeq().intValue();
+
+                if (diskBusType == DiskDef.DiskBus.SCSI ) {
+                    disk.setQemuDriver(true);
+                    disk.setDiscard(DiscardType.UNMAP);
+                }
 
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
@@ -2188,7 +2205,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                 } else {
                     if (volume.getType() == Volume.Type.DATADISK) {
-                        disk.defFileBasedDisk(physicalDisk.getPath(), devId, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+                        disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
                     } else {
                         disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.DiskFmtType.QCOW2);
                     }
@@ -2216,6 +2233,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
             }
+
             vm.getDevices().addDevice(disk);
         }
 
@@ -2334,13 +2352,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         DiskDef diskdef = null;
         final KVMStoragePool attachingPool = attachingDisk.getPool();
         try {
-            if (!attach) {
-                dm = conn.domainLookupByName(vmName);
-                final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-                final String xml = dm.getXMLDesc(0);
-                parser.parseDomainXML(xml);
-                disks = parser.getDisks();
+            dm = conn.domainLookupByName(vmName);
+            final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+            final String domXml = dm.getXMLDesc(0);
+            parser.parseDomainXML(domXml);
+            disks = parser.getDisks();
 
+            if (!attach) {
                 for (final DiskDef disk : disks) {
                     final String file = disk.getDiskPath();
                     if (file != null && file.equalsIgnoreCase(attachingDisk.getPath())) {
@@ -2352,17 +2370,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     throw new InternalErrorException("disk: " + attachingDisk.getPath() + " is not attached before");
                 }
             } else {
+                DiskDef.DiskBus busT = DiskDef.DiskBus.VIRTIO;
+                for (final DiskDef disk : disks) {
+                    if (disk.getDeviceType() == DeviceType.DISK) {
+                        if (disk.getBusType() == DiskDef.DiskBus.SCSI) {
+                            busT = DiskDef.DiskBus.SCSI;
+                        }
+                        break;
+                    }
+                }
+
                 diskdef = new DiskDef();
+                if (busT == DiskDef.DiskBus.SCSI) {
+                    diskdef.setQemuDriver(true);
+                    diskdef.setDiscard(DiscardType.UNMAP);
+                }
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
-                            attachingPool.getUuid(), devId, DiskDef.DiskBus.VIRTIO, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                            attachingPool.getUuid(), devId, busT, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
                 } else if (attachingPool.getType() == StoragePoolType.Gluster) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
-                            null, devId, DiskDef.DiskBus.VIRTIO, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
+                            null, devId, busT, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
-                    diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+                    diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, busT, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, DiskDef.DiskBus.VIRTIO);
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
                 }
                 if (bytesReadRate != null && bytesReadRate > 0) {
                     diskdef.setBytesReadRate(bytesReadRate);
@@ -2453,6 +2485,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public StartupCommand[] initialize() {
 
         final List<Object> info = getHostInfo();
+        _totalMemory = (Long)info.get(2);
 
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), _hypervisorType,
@@ -2961,19 +2994,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     boolean isGuestPVEnabled(final String guestOSName) {
-        if (guestOSName == null) {
-            return false;
-        }
-        if (guestOSName.startsWith("Ubuntu") || guestOSName.startsWith("Fedora 13") || guestOSName.startsWith("Fedora 12") || guestOSName.startsWith("Fedora 11") ||
-                guestOSName.startsWith("Fedora 10") || guestOSName.startsWith("Fedora 9") || guestOSName.startsWith("CentOS 5.3") || guestOSName.startsWith("CentOS 5.4") ||
-                guestOSName.startsWith("CentOS 5.5") || guestOSName.startsWith("CentOS") || guestOSName.startsWith("Fedora") ||
-                guestOSName.startsWith("Red Hat Enterprise Linux 5.3") || guestOSName.startsWith("Red Hat Enterprise Linux 5.4") ||
-                guestOSName.startsWith("Red Hat Enterprise Linux 5.5") || guestOSName.startsWith("Red Hat Enterprise Linux 6") || guestOSName.startsWith("Debian GNU/Linux") ||
-                guestOSName.startsWith("FreeBSD 10") || guestOSName.startsWith("Oracle") || guestOSName.startsWith("Other PV")) {
-            return true;
-        } else {
-            return false;
-        }
+        DiskDef.DiskBus db = getGuestDiskModel(guestOSName);
+        return db != DiskDef.DiskBus.IDE;
     }
 
     public boolean isCentosHost() {
@@ -2984,14 +3006,42 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    public DiskDef.DiskBus getDiskModelFromVMDetail(final VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        if (details == null) {
+            return null;
+        }
+
+        final String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+        if (StringUtils.isNotBlank(rootDiskController)) {
+            s_logger.debug("Passed custom disk bus " + rootDiskController);
+            for (final DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
+                if (bus.toString().equalsIgnoreCase(rootDiskController)) {
+                    s_logger.debug("Found matching enum for disk bus " + rootDiskController);
+                    return bus;
+                }
+            }
+        }
+        return null;
+    }
+
     private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator) {
-        if (isGuestPVEnabled(platformEmulator)) {
+        if (platformEmulator == null) {
+            return DiskDef.DiskBus.IDE;
+        } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
+            return DiskDef.DiskBus.SCSI;
+        } else if (platformEmulator.startsWith("Ubuntu") || platformEmulator.startsWith("Fedora 13") || platformEmulator.startsWith("Fedora 12") || platformEmulator.startsWith("Fedora 11") ||
+                platformEmulator.startsWith("Fedora 10") || platformEmulator.startsWith("Fedora 9") || platformEmulator.startsWith("CentOS 5.3") || platformEmulator.startsWith("CentOS 5.4") ||
+                platformEmulator.startsWith("CentOS 5.5") || platformEmulator.startsWith("CentOS") || platformEmulator.startsWith("Fedora") ||
+                platformEmulator.startsWith("Red Hat Enterprise Linux 5.3") || platformEmulator.startsWith("Red Hat Enterprise Linux 5.4") ||
+                platformEmulator.startsWith("Red Hat Enterprise Linux 5.5") || platformEmulator.startsWith("Red Hat Enterprise Linux 6") || platformEmulator.startsWith("Debian GNU/Linux") ||
+                platformEmulator.startsWith("FreeBSD 10") || platformEmulator.startsWith("Oracle") || platformEmulator.startsWith("Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else {
             return DiskDef.DiskBus.IDE;
         }
-    }
 
+    }
     private void cleanupVMNetworks(final Connect conn, final List<InterfaceDef> nics) {
         if (nics != null) {
             for (final InterfaceDef nic : nics) {
@@ -3585,5 +3635,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 continue;
             }
         }
+    }
+
+    public long getTotalMemory() {
+        return _totalMemory;
     }
 }

@@ -22,6 +22,8 @@ import java.util.Map;
 
 import com.vmware.vim25.ManagedObjectReference;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -29,6 +31,9 @@ import com.cloud.utils.Pair;
 
 public interface VmwareManager {
     public final String CONTEXT_STOCK_NAME = "vmwareMgr";
+
+    public static final ConfigKey<Long> s_vmwareNicHotplugWaitTimeout = new ConfigKey<Long>("Advanced", Long.class, "vmware.nic.hotplug.wait.timeout", "15000",
+        "Wait timeout (milli seconds) for hot plugged NIC of VM to be detected by guest OS.", false, ConfigKey.Scope.Global);
 
     String composeWorkerName();
 

@@ -88,7 +88,7 @@ class Services:
                 "name": 'Template',
                 "ostype": 'CentOS 5.3 (64-bit)',
                 "templatefilter": 'self',
-                "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
+                "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
             },
             "iso": {
                 "displaytext": "Test ISO",

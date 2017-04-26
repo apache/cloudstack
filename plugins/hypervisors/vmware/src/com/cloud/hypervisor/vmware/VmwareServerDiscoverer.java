@@ -29,7 +29,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -344,8 +343,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                     return null;
                 } else {
                     ClusterMO clusterMo = new ClusterMO(context, morCluster);
-                    ClusterDasConfigInfo dasConfig = clusterMo.getDasConfig();
-                    if (dasConfig != null && dasConfig.isEnabled() != null && dasConfig.isEnabled().booleanValue()) {
+                    if (clusterMo.isHAEnabled()) {
                         clusterDetails.put("NativeHA", "true");
                         _clusterDetailsDao.persist(clusterId, clusterDetails);
                     }

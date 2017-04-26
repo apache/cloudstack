@@ -84,6 +84,12 @@ public class Upgrade4920to41000 implements DbUpgrade {
                     case Hyperv:
                         hypervisorsListInUse.add(Hypervisor.HypervisorType.Hyperv);
                         break;
+                    case LXC:
+                        hypervisorsListInUse.add(Hypervisor.HypervisorType.LXC);
+                        break;
+                    case Ovm3:
+                        hypervisorsListInUse.add(Hypervisor.HypervisorType.Ovm3);
+                        break;
                     default: // no action on cases Any, BareMetal, None, Ovm,
                         // Parralels, Simulator and VirtualBox:
                         break;
@@ -100,6 +106,8 @@ public class Upgrade4920to41000 implements DbUpgrade {
                 put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-4.10");
                 put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-4.10");
                 put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-4.10");
+                put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-4.10");
+                put(Hypervisor.HypervisorType.Ovm3, "systemvm-ovm3-4.10");
             }
         };
 
@@ -109,6 +117,8 @@ public class Upgrade4920to41000 implements DbUpgrade {
                 put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
                 put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
                 put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
+                put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
+                put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
             }
         };
 
@@ -118,6 +128,8 @@ public class Upgrade4920to41000 implements DbUpgrade {
                 put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.10/systemvm64template-master-4.10.0-vmware.ova");
                 put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.10/systemvm64template-master-4.10.0-kvm.qcow2.bz2");
                 put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.10/systemvm64template-master-4.10.0-hyperv.vhd.zip");
+                put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.10/systemvm64template-master-4.10.0-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.10/systemvm64template-master-4.10.0-ovm.raw.bz2");
             }
         };
 
@@ -127,6 +139,8 @@ public class Upgrade4920to41000 implements DbUpgrade {
                 put(Hypervisor.HypervisorType.VMware, "970bfb070a80bd74820881d8149643c1");
                 put(Hypervisor.HypervisorType.KVM, "bc2eac46f16a2ece6c19d4b89db41de3");
                 put(Hypervisor.HypervisorType.Hyperv, "0adb35bd9f92e80d3fc63fcdd9bb55e5");
+                put(Hypervisor.HypervisorType.LXC, "bc2eac46f16a2ece6c19d4b89db41de3");
+                put(Hypervisor.HypervisorType.Ovm3, "94a41f0a5361933813bb34a51df56f56");
             }
         };
 
@@ -183,7 +197,7 @@ public class Upgrade4920to41000 implements DbUpgrade {
                     // Change value of global configuration parameter
                     // minreq.sysvmtemplate.version for the ACS version
                     try (PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");) {
-                        update_pstmt.setString(1, getUpgradedVersion());
+                        update_pstmt.setString(1, "4.10.0");
                         update_pstmt.setString(2, "minreq.sysvmtemplate.version");
                         update_pstmt.executeUpdate();
                     } catch (final SQLException e) {
