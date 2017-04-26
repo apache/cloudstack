@@ -19,13 +19,14 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import java.io.File;
+
 import junit.framework.TestCase;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.utils.Pair;
-
-import java.io.File;
 
 public class LibvirtVMDefTest extends TestCase {
 
@@ -34,8 +35,12 @@ public class LibvirtVMDefTest extends TestCase {
         ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
 
         String expected =
-            "<interface type='ethernet'>\n" + "<target dev='targetDeviceName'/>\n" + "<mac address='00:11:22:aa:bb:dd'/>\n" + "<model type='virtio'/>\n"
-                + "</interface>\n";
+            "<interface type='ethernet'>\n"
+                    + "<target dev='targetDeviceName'/>\n"
+                    + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                    + "<model type='virtio'/>\n"
+                    + "<link state='up'/>\n"
+                    + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
     }
@@ -45,8 +50,44 @@ public class LibvirtVMDefTest extends TestCase {
         ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private");
 
         String expected =
-            "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n" + "<source dev='targetDeviceName' mode='private'/>\n" +
-                "<mac address='00:11:22:aa:bb:dd'/>\n" + "<model type='virtio'/>\n" + "</interface>\n";
+            "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n"
+                    + "<source dev='targetDeviceName' mode='private'/>\n"
+                    + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                    + "<model type='virtio'/>\n"
+                    + "<link state='up'/>\n"
+                    + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+    }
+
+    public void testInterfaceBridgeSlot() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setSlot(16);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<link state='up'/>\n"
+                        + "<address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+
+        ifDef.setLinkStateUp(false);
+        ifDef.setDevName("vnet11");
+
+        expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<target dev='vnet11'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<link state='down'/>\n"
+                        + "<address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0'/>\n"
+                        + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
     }

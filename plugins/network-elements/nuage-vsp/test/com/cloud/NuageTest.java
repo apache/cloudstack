@@ -89,11 +89,18 @@ public class NuageTest {
         ConfigKey.init(configDepot);
 
         when(_nuageVspEntityBuilder.buildVspDomain(any(Domain.class))).thenReturn(buildVspDomain());
-        when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class))).thenReturn(buildVspNetwork());
-        when(_nuageVspEntityBuilder.buildVspNetwork(anyLong(), any(Network.class))).thenReturn(buildVspNetwork());
+
+        VspNetwork vspNetwork = buildVspNetwork();
+        when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class))).thenReturn(vspNetwork);
+        when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class), anyBoolean())).thenReturn(vspNetwork);
+        when(_nuageVspEntityBuilder.buildVspNetwork(anyLong(), any(Network.class))).thenReturn(vspNetwork);
+        when(_nuageVspEntityBuilder.buildVspNetwork(anyLong(), any(Network.class), anyBoolean())).thenReturn(vspNetwork);
+
         when(_nuageVspEntityBuilder.buildVspVm(any(VirtualMachine.class), any(Network.class))).thenReturn(buildVspVm());
+
         when(_nuageVspEntityBuilder.buildVspNic(anyString(), any(NicProfile.class))).thenReturn(buildVspNic());
         when(_nuageVspEntityBuilder.buildVspNic(any(NicVO.class))).thenReturn(buildVspNic());
+
         when(_nuageVspEntityBuilder.buildVspStaticNat(anyBoolean(), any(IPAddressVO.class), any(VlanVO.class), any(NicVO.class))).thenReturn(buildVspStaticNat());
         when(_nuageVspEntityBuilder.buildVspAclRule(any(FirewallRule.class), any(Network.class))).thenReturn(buildVspAclRule());
         when(_nuageVspEntityBuilder.buildVspAclRule(any(NetworkACLItem.class))).thenReturn(buildVspAclRule());

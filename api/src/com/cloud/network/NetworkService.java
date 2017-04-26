@@ -36,6 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -81,6 +82,24 @@ public interface NetworkService {
 
     Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId,
         Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String newUUID, boolean updateInSequence, boolean forced);
+
+    /**
+     * Migrate a network from one physical network to another physical network
+     * @param networkId of the network that needs to be migrated
+     * @param networkOfferingId new network offering id for the network
+     * @param resume if previous migration failed try to resume of just fail directly because anomaly is detected
+     * @return the migrated network
+     */
+    Network migrateGuestNetwork(long networkId, long networkOfferingId, Account callerAccount, User callerUser, boolean resume);
+
+    /**
+     * Migrate a vpc from on physical network to another physical network
+     * @param vpcId the id of the vpc that needs to be migrated
+     * @param vpcNetworkofferingId the new vpc offering id
+     * @param resume if previous migration failed try to resume of just fail directly because anomaly is detected
+     * @return the migrated vpc
+     */
+    Vpc migrateVpcNetwork(long vpcId, long vpcNetworkofferingId, Map<String, String> networkToOffering, Account account, User callerUser, boolean resume);
 
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId,
         List<String> tags, String name);

@@ -19,14 +19,15 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import junit.framework.TestCase;
-
 import java.io.File;
 import java.util.List;
+
+import junit.framework.TestCase;
+
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
@@ -227,6 +228,8 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         for (int i = 0; i < ifs.size(); i++) {
             assertEquals(ifModel, ifs.get(i).getModel());
             assertEquals(ifType, ifs.get(i).getNetType());
+            assertEquals(Integer.valueOf(i + 3), ifs.get(i).getSlot());
+            assertEquals("vnet" + i, ifs.get(i).getDevName());
         }
 
         List<RngDef> rngs = parser.getRngs();

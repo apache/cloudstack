@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
+import com.cloud.tags.dao.ResourceTagDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -107,6 +108,7 @@ public class NuageVspElementTest extends NuageTest {
     @Mock private VpcDetailsDao _vpcDetailsDao;
     @Mock private DomainRouterDao _domainRouterDao;
     @Mock private ResourceManager _resourceManager;
+    @Mock private ResourceTagDao _resourceTagDao;
 
     @Before
     public void setUp() throws Exception {

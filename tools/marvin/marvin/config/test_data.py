@@ -1,4 +1,4 @@
-#t	 Licensed to the Apache Software Foundation (ASF) under one
+# Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
@@ -241,6 +241,7 @@ test_data = {
         "traffictype": 'GUEST',
         "ispersistent": 'True',
         "availability": 'Optional',
+        "tags": 'native',
         "serviceProviderList": {
             "Dhcp": 'VirtualRouter',
             "Dns": 'VirtualRouter',
@@ -272,6 +273,7 @@ test_data = {
             "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
         "traffictype": "GUEST",
         "availability": "Optional'",
+        "tags": "native",
         "serviceProviderList": {
             "Dhcp": "VirtualRouter",
             "Dns": "VirtualRouter",
@@ -311,6 +313,24 @@ test_data = {
     "Dns": 'VirtualRouter',
     "UserData": 'VirtualRouter',
     },
+    },
+    "isolated_staticnat_network_offering": {
+        "name": 'isolated_staticnat_net_off_marvin',
+        "displaytext": 'isolated_staticnat_net_off_marvin',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,SourceNat,StaticNat,UserData,Firewall,Dns',
+        "traffictype": 'GUEST',
+        "ispersistent": 'True',
+        "availability": 'Optional',
+        "tags": 'native',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "StaticNat": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "Firewall": 'VirtualRouter',
+            "UserData": 'VirtualRouter',
+            "Dns": 'VirtualRouter'
+        }
     },
     "isolated_network": {
         "name": "Isolated Network",
@@ -387,9 +407,10 @@ test_data = {
         "displaytext": "MySharedOffering",
         "guestiptype": "Shared",
         "supportedservices": "Dhcp,Dns,UserData",
-        "specifyVlan": "False",
-        "specifyIpRanges": "False",
+        "specifyVlan": "True",
+        "specifyIpRanges": "True",
         "traffictype": "GUEST",
+        "tags": "native",
         "serviceProviderList": {
             "Dhcp": "VirtualRouter",
             "Dns": "VirtualRouter",
@@ -465,6 +486,12 @@ test_data = {
             "StaticNat": 'VpcVirtualRouter',
             "NetworkACL": 'VpcVirtualRouter'
         }
+    },
+    "vpc_offering_native": {
+        "name": "VPC native off",
+        "displaytext": "VPC native off",
+        "supportedservices":
+            "Dhcp,Dns,SourceNat,UserData,StaticNat,NetworkACL"
     },
     "vpc": {
         "name": "TestVPC",
@@ -602,6 +629,7 @@ test_data = {
         "availability": "Optional",
         "ispersistent": "False",
         "useVpc": "on",
+        "tags": 'native',
         "serviceProviderList": {
             "Dhcp": "VpcVirtualRouter",
             "Dns": "VpcVirtualRouter",
@@ -673,6 +701,25 @@ test_data = {
             "Lb": "VirtualRouter",
             "UserData": "VirtualRouter",
             "StaticNat": "VirtualRouter"
+        }
+    },
+    "vpc_network_offering_native": {
+        "name": 'vpc_net_off_marvin_native',
+        "displaytext": 'vpc_net_off_marvin_native',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "tags": "native",
+        "useVpc": 'on',
+        "ispersistent": 'True',
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter"
         }
     },
     "fwrule": {
@@ -1869,6 +1916,7 @@ test_data = {
             "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall,Dns',
             "traffictype": 'GUEST',
             "availability": 'Optional',
+            "tags": "nuage",
             "serviceProviderList": {
                 "Dhcp": 'NuageVsp',
                 "StaticNat": 'NuageVsp',
@@ -1882,6 +1930,70 @@ test_data = {
                     "SourceNat": {"SupportedSourceNatTypes": "perzone"}
             }
         },
+        # Persistent services supported by the Nuage VSP plugin for Isolated networks
+        "isolated_network_offering_persistent": {
+            "name": 'nuage_marvin',
+            "displaytext": 'nuage_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall,Dns',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "ispersistent": 'True',
+            "tags": "nuage",
+            "serviceProviderList": {
+                "Dhcp": 'NuageVsp',
+                "StaticNat": 'NuageVsp',
+                "SourceNat": 'NuageVsp',
+                "Firewall": 'NuageVsp',
+                "Connectivity": 'NuageVsp',
+                "UserData": 'VirtualRouter',
+                "Dns": 'VirtualRouter'
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
+        # Purely nuage network offering
+        "isolated_network_offering_without_vr": {
+            "name": 'nuage_marvin',
+            "displaytext": 'nuage_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,Firewall',
+            "traffictype": 'GUEST',
+            "availabiliy": 'Optional',
+            "tags": "nuage",
+            "serviceProviderList": {
+                "Dhcp": 'NuageVsp',
+                "StaticNat": 'NuageVsp',
+                "SourceNat": 'NuageVsp',
+                "Firewall": 'NuageVsp',
+                "Connectivity": 'NuageVsp'
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
+        # Purely persistent nuage network offering
+        "isolated_network_offering_without_vr_persistent": {
+            "name": 'nuage_marvin',
+            "displaytext": 'nuage_marvin',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,Firewall',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "tags": "nuage",
+            "ispersistent": 'True',
+            "serviceProviderList": {
+                "Dhcp": 'NuageVsp',
+                "StaticNat": 'NuageVsp',
+                "SourceNat": 'NuageVsp',
+                "Firewall": 'NuageVsp',
+                "Connectivity": 'NuageVsp'
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+            }
+        },
         # Services supported by the Nuage VSP plugin for VPC networks
         "vpc_network_offering": {
             "name": 'nuage_vpc_marvin',
@@ -1892,6 +2004,7 @@ test_data = {
             "availability": 'Optional',
             "useVpc": 'on',
             "ispersistent": 'True',
+            "tags": "nuage",
             "serviceProviderList": {
                 "Dhcp": "NuageVsp",
                 "StaticNat": "NuageVsp",
@@ -1912,6 +2025,7 @@ test_data = {
             "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
             "traffictype": 'GUEST',
             "availability": 'Optional',
+            "tags": "nuage",
             "useVpc": 'on',
             "ispersistent": 'True',
             "serviceProviderList": {
@@ -2004,6 +2118,7 @@ test_data = {
             "specifyVlan": "False",
             "specifyIpRanges": "True",
             "availability": 'Optional',
+            "tags": "nuage",
             "serviceProviderList": {
                 "Dhcp": "NuageVsp",
                 "Connectivity": "NuageVsp"
@@ -2018,6 +2133,7 @@ test_data = {
             "specifyVlan": "False",
             "specifyIpRanges": "True",
             "availability": 'Optional',
+            "tags": "nuage",
             "serviceProviderList": {
                 "Dhcp": "NuageVsp",
                 "Connectivity": "NuageVsp"

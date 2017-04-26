@@ -1241,7 +1241,8 @@ class TestNuageExtraDhcp(nuageTestCase):
 
         for number in options_to_verify:
             vm1 = self.when_i_create_a_vm(
-                isolated_network2, None, "vm1", dhcp_options=None, is_shared_network=False)
+                isolated_network2, None, "vm1", dhcp_options=None,
+                is_shared_network=False)
             result = self.when_i_add_an_extra_nic_to_a_vm(vm1, network, None)
             dhcp_options_network = self.get_extra_dhcp_options_starting_with(
                 number, network)

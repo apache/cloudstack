@@ -47,12 +47,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
-import org.apache.cloudstack.utils.linux.CPUStat;
-import org.apache.cloudstack.utils.linux.MemStat;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -75,6 +69,15 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import com.google.common.base.Strings;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
+import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -167,7 +170,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
-import com.google.common.base.Strings;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -968,6 +970,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+        final Map<String, String> bridges = new HashMap<String, String>();
+
+        params.put("libvirt.host.bridges", bridges);
+        params.put("libvirt.host.pifs", _pifs);
+
+        params.put("libvirt.computing.resource", this);
+        params.put("libvirtVersion", _hypervisorLibvirtVersion);
+
+
+        configureVifDrivers(params);
+
+        /*
         switch (_bridgeType) {
         case OPENVSWITCH:
             getOvsPifs();
@@ -977,6 +991,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             getPifs();
             break;
         }
+        */
 
         if (_pifs.get("private") == null) {
             s_logger.debug("Failed to get private nic name");
@@ -1027,19 +1042,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             params.put("vm.migrate.speed", String.valueOf(_migrateSpeed));
         }
 
-        final Map<String, String> bridges = new HashMap<String, String>();
         bridges.put("linklocal", _linkLocalBridgeName);
         bridges.put("public", _publicBridgeName);
         bridges.put("private", _privBridgeName);
         bridges.put("guest", _guestBridgeName);
 
-        params.put("libvirt.host.bridges", bridges);
-        params.put("libvirt.host.pifs", _pifs);
+        getVifDriver(TrafficType.Control).createControlNetwork(_linkLocalBridgeName);
 
-        params.put("libvirt.computing.resource", this);
-        params.put("libvirtVersion", _hypervisorLibvirtVersion);
-
-        configureVifDrivers(params);
         configureDiskActivityChecks(params);
 
         final KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
@@ -1132,6 +1141,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return vifDriver;
     }
 
+    public VifDriver getVifDriver(final TrafficType trafficType, final String bridgeName) {
+        VifDriver vifDriver = null;
+
+        for (VifDriver driver : getAllVifDrivers()) {
+            if (driver.isExistingBridge(bridgeName)) {
+                vifDriver = driver;
+                break;
+            }
+        }
+
+        if (vifDriver == null) {
+            vifDriver = getVifDriver(trafficType);
+        }
+
+        return vifDriver;
+    }
+
     public List<VifDriver> getAllVifDrivers() {
         final Set<VifDriver> vifDrivers = new HashSet<VifDriver>();
 
@@ -1160,10 +1186,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (final String bridge : bridges) {
             s_logger.debug("looking for pif for bridge " + bridge);
             final String pif = getPif(bridge);
-            if (_publicBridgeName != null && bridge.equals(_publicBridgeName)) {
+            if (isPublicBridge(bridge)) {
                 _pifs.put("public", pif);
             }
-            if (_guestBridgeName != null && bridge.equals(_guestBridgeName)) {
+            if (isGuestBridge(bridge)) {
                 _pifs.put("private", pif);
             }
             _pifs.put(bridge, pif);
@@ -1194,6 +1220,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_logger.debug("done looking for pifs, no more bridges");
     }
 
+    boolean isGuestBridge(String bridge) {
+        return _guestBridgeName != null && bridge.equals(_guestBridgeName);
+    }
+
     private void getOvsPifs() {
         final String cmdout = Script.runSimpleBashScript("ovs-vsctl list-br | sed '{:q;N;s/\\n/%/g;t q}'");
         s_logger.debug("cmdout was " + cmdout);
@@ -1204,15 +1234,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             // Not really interested in the pif name at this point for ovs
             // bridges
             final String pif = bridge;
-            if (_publicBridgeName != null && bridge.equals(_publicBridgeName)) {
+            if (isPublicBridge(bridge)) {
                 _pifs.put("public", pif);
             }
-            if (_guestBridgeName != null && bridge.equals(_guestBridgeName)) {
+            if (isGuestBridge(bridge)) {
                 _pifs.put("private", pif);
             }
             _pifs.put(bridge, pif);
         }
         s_logger.debug("done looking for pifs, no more bridges");
+    }
+
+    public boolean isPublicBridge(String bridge) {
+        return _publicBridgeName != null && bridge.equals(_publicBridgeName);
     }
 
     private String getPif(final String bridge) {
@@ -1281,12 +1315,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return false;
     }
 
-    public boolean checkNetwork(final String networkName) {
+    public boolean checkNetwork(final TrafficType trafficType, final String networkName) {
         if (networkName == null) {
             return true;
         }
 
-        if (_bridgeType == BridgeType.OPENVSWITCH) {
+        if (getVifDriver(trafficType, networkName) instanceof OvsVifDriver) {
             return checkOvsNetwork(networkName);
         } else {
             return checkBridgeNetwork(networkName);
@@ -1421,7 +1455,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public synchronized boolean findOrCreateTunnelNetwork(final String nwName) {
         try {
-            if (checkNetwork(nwName)) {
+            if (checkNetwork(TrafficType.Guest, nwName)) {
                 return true;
             }
             // if not found, create a new one
@@ -2324,7 +2358,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        vm.getDevices().addDevice(getVifDriver(nic.getType()).plug(nic, vm.getPlatformEmulator().toString(), nicAdapter).toString());
+        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
     }
 
     public boolean cleanupDisk(final DiskDef disk) {

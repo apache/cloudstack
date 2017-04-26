@@ -33,11 +33,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
-
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -58,7 +58,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -70,10 +69,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
@@ -82,8 +79,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.event.dao.EventDao;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -108,7 +103,6 @@ import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -128,7 +122,6 @@ import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
@@ -141,6 +134,7 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -148,11 +142,13 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
@@ -191,7 +187,6 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
@@ -227,18 +222,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Inject
     UserDao _userDao = null;
     @Inject
-    EventDao _eventDao = null;
-    @Inject
     ConfigurationDao _configDao;
     @Inject
     UserVmDao _userVmDao = null;
-
     @Inject
     AccountManager _accountMgr;
     @Inject
     ConfigurationManager _configMgr;
-    @Inject
-    AccountVlanMapDao _accountVlanMapDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
@@ -247,23 +237,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     NicDao _nicDao = null;
     @Inject
     RulesManager _rulesMgr;
-
-    @Inject
-    UsageEventDao _usageEventDao;
-
     List<NetworkGuru> _networkGurus;
-
     @Inject
     NetworkDomainDao _networkDomainDao;
     @Inject
     VMInstanceDao _vmDao;
-
     @Inject
     FirewallRulesDao _firewallDao;
-
     @Inject
     ResourceLimitService _resourceLimitMgr;
-
     @Inject
     DomainManager _domainMgr;
     @Inject
@@ -274,10 +256,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     PhysicalNetworkServiceProviderDao _pNSPDao;
-
     @Inject
     PhysicalNetworkTrafficTypeDao _pNTrafficTypeDao;
-
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -292,16 +272,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     NetworkOrchestrationService _networkMgr;
     @Inject
     NetworkModel _networkModel;
-
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
-
     @Inject
     PortForwardingRulesDao _portForwardingDao;
     @Inject
     HostDao _hostDao;
-    @Inject
-    HostPodDao _hostPodDao;
     @Inject
     InternalLoadBalancerElementService _internalLbElementSvc;
     @Inject
@@ -319,25 +295,19 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Inject
     EntityManager _entityMgr;
     @Inject
-    LoadBalancerVMMapDao _lbVmMapDao;
-
-    @Inject
-    LoadBalancingRulesService _lbService;
-
-    @Inject
     public SecurityGroupService _securityGroupService;
-
     @Inject
     MessageBus _messageBus;
-
-    @Inject
-    DomainRouterDao _routerDao;
-
     @Inject
     NetworkDetailsDao _networkDetailsDao;
-
     @Inject
     LoadBalancerDao _loadBalancerDao;
+    @Inject
+    NetworkMigrationManager _networkMigrationManager;
+    @Inject
+    VpcOfferingDao _vpcOfferingDao;
+    @Inject
+    AccountService _accountService;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -947,9 +917,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // don't allow releasing system ip address
         if (ipVO.getSystem()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Can't release system IP address with specified id");
-            ex.addProxyObject(ipVO.getUuid(), "systemIpAddrId");
-            throw ex;
+            throwInvalidIdException("Can't release system IP address with specified id", ipVO.getUuid(), "systemIpAddrId");
         }
 
         boolean success = _ipAddrMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
@@ -1319,9 +1287,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // Can add vlan range only to the network which allows it
         if (createVlan && !ntwkOff.getSpecifyIpRanges()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Network offering with specified id doesn't support adding multiple ip ranges");
-            ex.addProxyObject(ntwkOff.getUuid(), "networkOfferingId");
-            throw ex;
+            throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), "networkOfferingId");
         }
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId, domainId,
@@ -1521,9 +1487,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
                 if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
                     // getProject() returns type ProjectVO.
-                    InvalidParameterValueException ex = new InvalidParameterValueException("Account " + caller + " cannot access specified project id");
-                    ex.addProxyObject(project.getUuid(), "projectId");
-                    throw ex;
+                    throwInvalidIdException("Account " + caller + " cannot access specified project id", project.getUuid(), "projectId");
                 }
 
                 //add project account
@@ -1847,16 +1811,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (network == null) {
             // see NetworkVO.java
 
-            InvalidParameterValueException ex = new InvalidParameterValueException("unable to find network with specified id");
-            ex.addProxyObject(String.valueOf(networkId), "networkId");
-            throw ex;
+            throwInvalidIdException("unable to find network with specified id", String.valueOf(networkId), "networkId");
         }
 
         // don't allow to delete system network
         if (isNetworkSystem(network)) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Network with specified id is system and can't be removed");
-            ex.addProxyObject(network.getUuid(), "networkId");
-            throw ex;
+            throwInvalidIdException("Network with specified id is system and can't be removed", network.getUuid(), "networkId");
         }
 
         Account owner = _accountMgr.getAccount(network.getAccountId());
@@ -1891,9 +1851,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // Check if network exists
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Network with specified id doesn't exist");
-            ex.addProxyObject(networkId.toString(), "networkId");
-            throw ex;
+            throwInvalidIdException("Network with specified id doesn't exist", networkId.toString(), "networkId");
         }
 
         // Don't allow to restart network if it's not in Implemented/Setup state
@@ -2019,9 +1977,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         final NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             // see NetworkVO.java
-            InvalidParameterValueException ex = new InvalidParameterValueException("Specified network id doesn't exist in the system");
-            ex.addProxyObject(String.valueOf(networkId), "networkId");
-            throw ex;
+            throwInvalidIdException("Specified network id doesn't exist in the system", String.valueOf(networkId), "networkId");
         }
 
         //perform below validation if the network is vpc network
@@ -2083,17 +2039,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if (networkOfferingId != null) {
             if (networkOffering == null || networkOffering.isSystemOnly()) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering with specified id");
-                ex.addProxyObject(networkOfferingId.toString(), "networkOfferingId");
-                throw ex;
+                throwInvalidIdException("Unable to find network offering with specified id", networkOfferingId.toString(), "networkOfferingId");
             }
 
             // network offering should be in Enabled state
             if (networkOffering.getState() != NetworkOffering.State.Enabled) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Network offering with specified id is not in " + NetworkOffering.State.Enabled
-                        + " state, can't upgrade to it");
-                ex.addProxyObject(networkOffering.getUuid(), "networkOfferingId");
-                throw ex;
+                throwInvalidIdException("Network offering with specified id is not in " + NetworkOffering.State.Enabled
+                        + " state, can't upgrade to it", networkOffering.getUuid(), "networkOfferingId");
             }
             //can't update from vpc to non-vpc network offering
             boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
@@ -2112,9 +2064,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
                 if (changeCidr) {
                     if (!checkForNonStoppedVmInNetwork(network.getId())) {
-                        InvalidParameterValueException ex = new InvalidParameterValueException("All user vm of network of specified id should be stopped before changing CIDR!");
-                        ex.addProxyObject(network.getUuid(), "networkId");
-                        throw ex;
+                        throwInvalidIdException("All user vm of network of specified id should be stopped before changing CIDR!", network.getUuid(), "networkId");
                     }
                 }
                 // check if the network is upgradable
@@ -2171,7 +2121,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             if (network.getGuestType() != GuestType.Isolated) {
                 throw new InvalidParameterValueException("Can only allow IP Reservation in networks with guest type " + GuestType.Isolated);
             }
-            if (networkOfferingChanged == true) {
+            if (networkOfferingChanged) {
                 throw new InvalidParameterValueException("Cannot specify this nework offering change and guestVmCidr at same time. Specify only one.");
             }
             if (!(network.getState() == Network.State.Implemented)) {
@@ -2214,12 +2164,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 for (NicVO nic : nicsPresent) {
                     long nicIp = NetUtils.ip2Long(nic.getIPv4Address());
                     //check if nic IP is outside the guest vm cidr
-                    if (nicIp < startIp || nicIp > endIp) {
-                    if (!(nic.getState() == Nic.State.Deallocating)) {
+                    if ((nicIp < startIp || nicIp > endIp) && nic.getState() != Nic.State.Deallocating) {
                             throw new InvalidParameterValueException("Active IPs like " + nic.getIPv4Address() + " exist outside the Guest VM CIDR. Cannot apply reservation ");
-                            }
-                        }
                     }
+                }
 
                 // In some scenarios even though guesVmCidr and network CIDR do not appear similar but
                 // the IP ranges exactly matches, in these special cases make sure no Reservation gets applied
@@ -2259,7 +2207,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // 1) Shutdown all the elements and cleanup all the rules. Don't allow to shutdown network in intermediate
         // states - Shutdown and Implementing
         int resourceCount=1;
-        if(updateInSequence && restartNetwork && _networkOfferingDao.findById(network.getNetworkOfferingId()).getRedundantRouter()
+        if (updateInSequence && restartNetwork && _networkOfferingDao.findById(network.getNetworkOfferingId()).getRedundantRouter()
                 && (networkOfferingId==null || _networkOfferingDao.findById(networkOfferingId).getRedundantRouter()) && network.getVpcId()==null) {
             _networkMgr.canUpdateInSequence(network, forced);
             NetworkDetailVO networkDetail =new NetworkDetailVO(network.getId(),Network.updatingInSequence,"true",true);
@@ -2268,19 +2216,20 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             resourceCount=_networkMgr.getResourceCount(network);
         }
         List<String > servicesNotInNewOffering = null;
-        if(networkOfferingId != null)
-                 servicesNotInNewOffering = _networkMgr.getServicesNotSupportedInNewOffering(network,networkOfferingId);
-        if(!forced && servicesNotInNewOffering != null && !servicesNotInNewOffering.isEmpty()){
+        if (networkOfferingId != null) {
+            servicesNotInNewOffering = _networkMgr.getServicesNotSupportedInNewOffering(network, networkOfferingId);
+        }
+        if (!forced && servicesNotInNewOffering != null && !servicesNotInNewOffering.isEmpty()) {
             NetworkOfferingVO newOffering = _networkOfferingDao.findById(networkOfferingId);
             throw new CloudRuntimeException("The new offering:"+newOffering.getUniqueName()
                     +" will remove the following services "+servicesNotInNewOffering +"along with all the related configuration currently in use. will not proceed with the network update." +
                     "set forced parameter to true for forcing an update.");
         }
-        try{
-            if(servicesNotInNewOffering!=null && !servicesNotInNewOffering.isEmpty()){
+        try {
+            if (servicesNotInNewOffering!=null && !servicesNotInNewOffering.isEmpty()) {
                 _networkMgr.cleanupConfigForServicesInNetwork(servicesNotInNewOffering,network);
             }
-        }catch (Throwable e){
+        } catch (Throwable e) {
             s_logger.debug("failed to cleanup config related to unused services error:"+e.getMessage());
         }
 
@@ -2411,13 +2360,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     }
                 }
                 resourceCount--;
-            } while(updateInSequence && resourceCount>0);
-        }catch (Exception exception){
-             if(updateInSequence)
-                 _networkMgr.finalizeUpdateInSequence(network,false);
+            } while (updateInSequence && resourceCount>0);
+        } catch (Exception exception) {
+             if (updateInSequence) {
+                 _networkMgr.finalizeUpdateInSequence(network, false);
+             }
              throw new CloudRuntimeException("failed to update network "+network.getUuid()+" due to "+exception.getMessage());
-        }finally {
-            if(updateInSequence){
+        } finally {
+            if (updateInSequence) {
                 if( _networkDetailsDao.findDetail(networkId,Network.updatingInSequence)!=null){
                     _networkDetailsDao.removeDetail(networkId,Network.updatingInSequence);
                 }
@@ -2426,41 +2376,343 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return getNetwork(network.getId());
     }
 
-    protected Set<Long> getAvailableIps(Network network, String requestedIp) {
-        String[] cidr = network.getCidr().split("/");
-        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        Set<Long> usedIps = new TreeSet<Long>();
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_MIGRATE, eventDescription = "migrating network", async = true)
+    public Network migrateGuestNetwork(long networkId, long networkOfferingId, Account callerAccount, User callerUser, boolean resume) {
+        NetworkVO network = _networksDao.findById(networkId);
+        NetworkOffering newNtwkOff = _networkOfferingDao.findById(networkOfferingId);
 
-        for (String ip : ips) {
-            if (requestedIp != null && requestedIp.equals(ip)) {
-                s_logger.warn("Requested ip address " + requestedIp + " is already in use in network" + network);
-                return null;
-            }
-
-            usedIps.add(NetUtils.ip2Long(ip));
+        //perform below validation if the network is vpc network
+        if (network.getVpcId() != null) {
+            s_logger.warn("Failed to migrate network as the specified network is a vpc tier. Use migrateVpc.");
+            throw new InvalidParameterValueException("Failed to migrate network as the specified network is a vpc tier. Use migrateVpc.");
         }
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
 
-        String gateway = network.getGateway();
-        if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
-            allPossibleIps.remove(NetUtils.ip2Long(gateway));
+        if (_configMgr.isOfferingForVpc(newNtwkOff)) {
+            s_logger.warn("Failed to migrate network as the specified network offering is a VPC offering");
+            throw new InvalidParameterValueException("Failed to migrate network as the specified network offering is a VPC offering");
+        }
 
-        return allPossibleIps;
+        verifyNetworkCanBeMigrated(callerAccount, network);
+
+        //Retrieve new Physical NetworkId
+        long newPhysicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), newNtwkOff.getTags(), newNtwkOff.getTrafficType());
+
+        final long oldNetworkOfferingId = network.getNetworkOfferingId();
+        NetworkOffering oldNtwkOff = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
+
+        if (!resume && network.getRelated() != network.getId()) {
+            s_logger.warn("Related network is not equal to network id. You might want to re-run migration with resume = true command.");
+            throw new CloudRuntimeException("Failed to migrate network as previous migration left this network in transient condition. Specify resume as true.");
+        }
+
+        if (networkNeedsMigration(network, newPhysicalNetworkId, oldNtwkOff, newNtwkOff)) {
+            return migrateNetworkToPhysicalNetwork(network, oldNtwkOff, newNtwkOff, null, null, newPhysicalNetworkId, callerAccount, callerUser);
+        } else {
+            s_logger.info("Network does not need migration.");
+            return network;
+        }
     }
 
-    protected boolean canUpgrade(Network network, long oldNetworkOfferingId, long newNetworkOfferingId) {
+    private class NetworkCopy {
+        private Long networkIdInOldPhysicalNet;
+        private Network networkInNewPhysicalNet;
+
+        public NetworkCopy(Long networkIdInOldPhysicalNet, Network networkInNewPhysicalNet) {
+            this.networkIdInOldPhysicalNet = networkIdInOldPhysicalNet;
+            this.networkInNewPhysicalNet = networkInNewPhysicalNet;
+        }
+
+        public Long getNetworkIdInOldPhysicalNet() {
+            return networkIdInOldPhysicalNet;
+        }
+
+        public Network getNetworkInNewPhysicalNet() {
+            return networkInNewPhysicalNet;
+        }
+    }
+
+    private Network migrateNetworkToPhysicalNetwork(Network network, NetworkOffering oldNtwkOff, NetworkOffering newNtwkOff, Long oldVpcId, Long newVpcId, long newPhysicalNetworkId, Account callerAccount, User callerUser) {
+        boolean resume = network.getRelated() != network.getId();
+
+        NetworkCopy networkCopy;
+
+        // Resume is only true when there is already a copy of the network created
+        if (resume) {
+            Network networkInNewPhysicalNet = network;
+            networkCopy = new NetworkCopy(network.getRelated(), networkInNewPhysicalNet);
+
+            //the new network could already be implemented, check if the already partially upgrade networks has the same network offering as before or check if it still has the original network offering
+            //the old network offering uuid should be the one of the already created copy
+            if (networkInNewPhysicalNet.getNetworkOfferingId() != newNtwkOff.getId()) {
+                throw new InvalidParameterValueException("Failed to resume migrating network as network offering does not match previously specified network offering (" + newNtwkOff.getUuid() + ")");
+            }
+        } else {
+            networkCopy = Transaction.execute(
+                    (TransactionCallback<NetworkCopy>)
+                            (status) -> migrateNetworkInDb(network, oldNtwkOff, newNtwkOff, oldVpcId, newVpcId, newPhysicalNetworkId));
+        }
+
+        Long networkIdInOldPhysicalNet = networkCopy.getNetworkIdInOldPhysicalNet();
+        Network networkInNewPhysicalNet = networkCopy.getNetworkInNewPhysicalNet();
+
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
+        DataCenter zone = _dcDao.findById(network.getDataCenterId());
+        NetworkVO networkInOldPhysNet = _networksDao.findById(networkIdInOldPhysicalNet);
+
+        boolean shouldImplement = (newNtwkOff.getIsPersistent()
+                    || networkInOldPhysNet.getState() == Network.State.Implemented)
+                && networkInNewPhysicalNet.getState() != Network.State.Implemented;
+
+        if (shouldImplement) {
+            DeployDestination dest = new DeployDestination(zone, null, null, null);
+            s_logger.debug("Implementing the network " + network + " elements and resources as a part of network update");
+            try {
+                networkInNewPhysicalNet = _networkMgr.implementNetwork(networkInNewPhysicalNet.getId(), dest, context)
+                                                     .second();
+            } catch (Exception ex) {
+                s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network update due to ", ex);
+                CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id) elements and resources as a part of network update");
+                e.addProxyObject(network.getUuid(), "networkId");
+                throw e;
+            }
+        }
+
+        _networkMigrationManager.assignNicsToNewPhysicalNetwork(networkInOldPhysNet, networkInNewPhysicalNet);
+        //clean up the old copy of the network
+        _networkMigrationManager.deleteCopyOfNetwork(networkIdInOldPhysicalNet, networkInNewPhysicalNet.getId());
+
+        return getNetwork(network.getId());
+    }
+
+    private NetworkCopy migrateNetworkInDb(Network network, NetworkOffering oldNtwkOff, NetworkOffering newNtwkOff, Long oldVpcId, Long newVpcId, long newPhysicalNetworkId) {
+        //The copy will be the network in the old physical network
+        //And we will use it to store tmp data while we upgrade or original network to the new physical network
+        Long networkIdInOldPhysicalNet = _networkMigrationManager.makeCopyOfNetwork(network, oldNtwkOff, oldVpcId);
+        Network networkInNewPhysicalNet = _networkMigrationManager.upgradeNetworkToNewNetworkOffering(network.getId(), newPhysicalNetworkId,newNtwkOff.getId(), newVpcId);
+        return new NetworkCopy(networkIdInOldPhysicalNet, networkInNewPhysicalNet);
+    }
+
+    @Override
+    public Vpc migrateVpcNetwork(long vpcId, long vpcOfferingId, Map<String, String> networkToOffering, Account account, User callerUser, boolean resume) {
+        //Check if a previous migration run failed and try to resume if resume = true
+        ResourceTag relatedVpc = _resourceTagDao.findByKey(vpcId, ResourceObjectType.Vpc, NetworkMigrationManager.MIGRATION);
+        long vpcCopyId = 0;
+
+        /*
+         * In the vpc migration process the newly created Vpc will be used as the new VPC (opposed to network tier migration).
+         * In case the copy of the vpc was already created. The uuid where already swapped and the id we receive here is the id of the Copy!
+         * The id stored in the resource tag table under the key "migration" is the id of the ORIGINAL vpc!
+         */
+        if (relatedVpc != null) {
+            if (resume) {
+                vpcCopyId = vpcId;
+                vpcId = Long.parseLong(relatedVpc.getValue());
+                //let's check if the user did not change the vpcoffering opposed to the last failed run.
+                verifyAlreadyMigratedTiers(vpcCopyId, vpcOfferingId, networkToOffering);
+            } else {
+                s_logger.warn("This vpc has a migration row in the resource details table. You might want to re-run migration with resume = true command.");
+                throw new CloudRuntimeException("Failed to migrate VPC as previous migration left this VPC in transient condition. Specify resume as true.");
+            }
+        }
+
+        Vpc vpc = _vpcDao.findById(vpcId);
+        _accountMgr.checkAccess(account, null, true, vpc);
+
+        if (vpc.getVpcOfferingId() == vpcOfferingId) {
+            return vpc;
+        }
+        //Try to fail fast, check networks in the VPC and if we can migrate them before proceeding.
+        List<NetworkVO> tiersInVpc = _networksDao.listByVpc(vpcId);
+        vpcTiersCanBeMigrated(tiersInVpc, account, networkToOffering, resume);
+
+        //In case this is the first time we try to migrate this vpc
+        if (relatedVpc == null) {
+            final long vpcIdFinal = vpcId;
+            vpcCopyId = Transaction.execute((TransactionCallback<Long>)(status) -> _networkMigrationManager.makeCopyOfVpc(vpcIdFinal, vpcOfferingId));
+        }
+
+        Vpc copyOfVpc = _vpcDao.findById(vpcCopyId);
+        _networkMigrationManager.startVpc(copyOfVpc);
+
+        for (Network tier : tiersInVpc) {
+            String networkOfferingUuid = networkToOffering.get(tier.getUuid());
+            //UUID may be swapped already with a new uuid due to previous migration failure.
+            //So we check the related network also in case we don't find the network offering
+            Long networkId = null;
+            if (resume && networkOfferingUuid == null) {
+                tier = _networksDao.findById(tier.getRelated());
+                networkOfferingUuid = networkToOffering.get(tier.getUuid());
+                //In this case the tier already exists so we need to get the id of the tier so we can validate correctly
+                networkId = tier.getId();
+            }
+            NetworkOfferingVO newNtwkOff = _networkOfferingDao.findByUuid(networkOfferingUuid);
+
+            Account networkAccount = _accountService.getActiveAccountById(tier.getAccountId());
+            try {
+                _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, newNtwkOff.getId(), tier.getCidr(), tier.getNetworkDomain(), copyOfVpc, tier.getGateway(), networkAccount, tier.getNetworkACLId());
+            } catch (InvalidParameterValueException e) {
+                s_logger.error("Specified network offering can not be used in combination with specified vpc offering. Aborting migration. You can re-run with resume = true and the correct uuid.");
+                throw e;
+            }
+
+            long newPhysicalNetworkId = findPhysicalNetworkId(tier.getDataCenterId(), newNtwkOff.getTags(), newNtwkOff.getTrafficType());
+
+            final long oldNetworkOfferingId = tier.getNetworkOfferingId();
+            NetworkOffering oldNtwkOff = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
+
+            if (networkNeedsMigration(tier, newPhysicalNetworkId, oldNtwkOff, newNtwkOff) || (resume && tier.getRelated() != tier.getId())) {
+                migrateNetworkToPhysicalNetwork(tier, oldNtwkOff, newNtwkOff, vpcId, vpcCopyId, newPhysicalNetworkId, account, callerUser);
+            }
+        }
+        _networkMigrationManager.deleteCopyOfVpc(vpcId, vpcCopyId);
+        return _vpcDao.findById(vpcCopyId);
+    }
+
+    private void vpcTiersCanBeMigrated(List<? extends Network> tiersInVpc, Account account, Map<String, String> networkToOffering, boolean resume) {
+        for (Network network : tiersInVpc) {
+            String networkOfferingUuid = networkToOffering.get(network.getUuid());
+
+            //offering uuid can be a tier where the uuid is previously already swapped in a previous migration
+            if (resume && networkOfferingUuid == null) {
+                NetworkVO oldVPCtier = _networksDao.findById(network.getRelated());
+                networkOfferingUuid = networkToOffering.get(oldVPCtier.getUuid());
+            }
+
+            if (networkOfferingUuid == null) {
+                throwInvalidIdException("Failed to migrate VPC as the specified tierNetworkOfferings is not complete",
+                                        String.valueOf(network.getUuid()), "networkUuid");
+            }
+
+            NetworkOfferingVO newNtwkOff = _networkOfferingDao.findByUuid(networkOfferingUuid);
+
+            if (newNtwkOff == null) {
+                throwInvalidIdException("Failed to migrate VPC as at least one network offering in tierNetworkOfferings does not exist", networkOfferingUuid, "networkOfferingUuid");
+            }
+
+            if (!_configMgr.isOfferingForVpc(newNtwkOff)) {
+                throw new InvalidParameterValueException("Network offering " + newNtwkOff.getName() + " ("+ newNtwkOff.getUuid() +") can't be used for VPC networks for network " + network.getName() + "(" + network.getUuid() + ")");
+            }
+
+            verifyNetworkCanBeMigrated(account, network);
+            long newPhysicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), newNtwkOff.getTags(), newNtwkOff.getTrafficType());
+
+            final long oldNetworkOfferingId = network.getNetworkOfferingId();
+            NetworkOffering oldNtwkOff = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
+            networkNeedsMigration(network, newPhysicalNetworkId, oldNtwkOff, newNtwkOff);
+        }
+    }
+
+    private void verifyAlreadyMigratedTiers(long migratedVpcId, long vpcOfferingId, Map<String, String> networkToOffering) {
+        Vpc migratedVpc = _vpcDao.findById(migratedVpcId);
+        if (migratedVpc.getVpcOfferingId() != vpcOfferingId) {
+            s_logger.error("The vpc is already partially migrated in a previous run. The provided vpc offering is not the same as the one used during the first migration process.");
+            throw new InvalidParameterValueException("Failed to resume migrating VPC as VPC offering does not match previously specified VPC offering (" + migratedVpc.getVpcOfferingId() + ")");
+        }
+
+        List<NetworkVO> migratedTiers = _networksDao.listByVpc(migratedVpcId);
+        for (Network tier : migratedTiers) {
+            String tierNetworkOfferingUuid = networkToOffering.get(tier.getUuid());
+
+            if (!StringUtils.isNotBlank(tierNetworkOfferingUuid)) {
+                throwInvalidIdException("Failed to resume migrating VPC as the specified tierNetworkOfferings is not complete",
+                                        String.valueOf(tier.getUuid()), "networkUuid");
+            }
+
+            NetworkOfferingVO newNetworkOffering = _networkOfferingDao.findByUuid(tierNetworkOfferingUuid);
+            if (newNetworkOffering == null) {
+                throw new InvalidParameterValueException("Failed to migrate VPC as at least one tier offering in tierNetworkOfferings does not exist.");
+            }
+
+            if (newNetworkOffering.getId() != tier.getNetworkOfferingId()) {
+                NetworkOfferingVO tierNetworkOffering = _networkOfferingDao.findById(tier.getNetworkOfferingId());
+                throw new InvalidParameterValueException("Failed to resume migrating VPC as at least one network offering in tierNetworkOfferings does not match previously specified network offering (network uuid=" + tier.getUuid() + " was previously specified with offering uuid=" + tierNetworkOffering.getUuid() + ")");
+            }
+        }
+    }
+
+
+    private void throwInvalidIdException(String message, String uuid, String description) {
+        InvalidParameterValueException ex = new InvalidParameterValueException(message);
+        ex.addProxyObject(uuid, description);
+        throw ex;
+    }
+
+    private boolean networkNeedsMigration(Network network, long newPhysicalNetworkId, NetworkOffering oldNtwkOff, NetworkOffering newNtwkOff) {
+
+        if (newNtwkOff == null || newNtwkOff.isSystemOnly()) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering.");
+            if (newNtwkOff != null) {
+                ex.addProxyObject(String.valueOf(newNtwkOff.getId()), "networkOfferingId");
+            }
+            throw ex;
+        }
+
+        if (newNtwkOff.getId() != oldNtwkOff.getId() || network.getId() != network.getRelated()) {
+            Collection<String> newProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(newNtwkOff, newPhysicalNetworkId)
+                                                         .values();
+            Collection<String> oldProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(oldNtwkOff, network.getPhysicalNetworkId())
+                                                         .values();
+
+            if (providersConfiguredForExternalNetworking(newProviders) != providersConfiguredForExternalNetworking(oldProviders)) {
+                throw new InvalidParameterValueException("Updating network failed since guest CIDR needs to be changed!");
+            }
+
+            // check if the network is moveable
+            if (!canMoveToPhysicalNetwork(network, oldNtwkOff.getId(), newNtwkOff.getId())) {
+                throw new InvalidParameterValueException(
+                        "Can't upgrade from network offering " + oldNtwkOff.getUuid() + " to " + newNtwkOff.getUuid() + "; check logs for more information");
+            }
+
+            List<VMInstanceVO> vmInstances = _vmDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), null);
+            boolean vmStateIsNotTransitioning = vmInstances.stream()
+                                   .anyMatch(vm -> vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Running);
+            if (vmStateIsNotTransitioning) {
+                throw new CloudRuntimeException("Failed to migrate network as at least one VM is not in running or stopped state.");
+            }
+        } else {
+            return false;
+        }
+
+        // network offering should be in Enabled state
+        if (newNtwkOff.getState() != NetworkOffering.State.Enabled) {
+            throw new InvalidParameterValueException("Failed to migrate network as the specified network offering is not enabled.");
+        }
+        return true;
+    }
+
+    private void verifyNetworkCanBeMigrated(Account callerAccount, Network network) {
+        // Don't allow to update system network
+        NetworkOffering oldOffering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+        if (oldOffering.isSystemOnly()) {
+            throw new InvalidParameterValueException("Failed to migrate network as the specified network is a system network.");
+        }
+
+        // allow to upgrade only Guest networks
+        if (network.getTrafficType() != TrafficType.Guest) {
+            throw new InvalidParameterValueException("Can't allow networks which traffic type is not " + TrafficType.Guest);
+        }
+
+        _accountMgr.checkAccess(callerAccount, null, true, network);
+
+        boolean validateNetworkReadyToMigrate = (network.getState() == Network.State.Implemented
+                || network.getState() == Network.State.Setup
+                || network.getState() == Network.State.Allocated);
+        if (!validateNetworkReadyToMigrate) {
+            s_logger.error("Failed to migrate network as it is in invalid state.");
+            CloudRuntimeException ex = new CloudRuntimeException("Failed to migrate network as it is in invalid state.");
+            ex.addProxyObject(network.getUuid(), "networkId");
+            throw ex;
+        }
+    }
+
+    private boolean canMoveToPhysicalNetwork(Network network, long oldNetworkOfferingId, long newNetworkOfferingId) {
         NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
         NetworkOffering newNetworkOffering = _networkOfferingDao.findById(newNetworkOfferingId);
 
-        // can upgrade only Isolated networks
+        // can move only Isolated networks for now
         if (oldNetworkOffering.getGuestType() != GuestType.Isolated) {
             throw new InvalidParameterValueException("NetworkOfferingId can be upgraded only for the network of type " + GuestType.Isolated);
-        }
-
-        // security group service should be the same
-        if (areServicesSupportedByNetworkOffering(oldNetworkOfferingId, Service.SecurityGroup) != areServicesSupportedByNetworkOffering(newNetworkOfferingId, Service.SecurityGroup)) {
-            s_logger.debug("Offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different securityGroupProperty, can't upgrade");
-            return false;
         }
 
         // Type of the network should be the same
@@ -2469,28 +2721,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             return false;
         }
 
-        // tags should be the same
-        if (newNetworkOffering.getTags() != null) {
-            if (oldNetworkOffering.getTags() == null) {
-                s_logger.debug("New network offering id=" + newNetworkOfferingId + " has tags and old network offering id=" + oldNetworkOfferingId + " doesn't, can't upgrade");
-                return false;
-            }
-
-            if (!StringUtils.areTagsEqual(oldNetworkOffering.getTags(), newNetworkOffering.getTags())) {
-                s_logger.debug("Network offerings " + newNetworkOffering.getUuid() + " and " + oldNetworkOffering.getUuid() + " have different tags, can't upgrade");
-                return false;
-            }
-        }
-
         // Traffic types should be the same
         if (oldNetworkOffering.getTrafficType() != newNetworkOffering.getTrafficType()) {
             s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different traffic types, can't upgrade");
-            return false;
-        }
-
-        // specify vlan should be the same
-        if (oldNetworkOffering.getSpecifyVlan() != newNetworkOffering.getSpecifyVlan()) {
-            s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different values for specifyVlan, can't upgrade");
             return false;
         }
 
@@ -2523,6 +2756,38 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         return canIpsUseOffering(publicIps, newNetworkOfferingId);
+    }
+
+    protected boolean canUpgrade(Network network, long oldNetworkOfferingId, long newNetworkOfferingId) {
+        NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
+        NetworkOffering newNetworkOffering = _networkOfferingDao.findById(newNetworkOfferingId);
+
+        // security group service should be the same
+        if (areServicesSupportedByNetworkOffering(oldNetworkOfferingId, Service.SecurityGroup) != areServicesSupportedByNetworkOffering(newNetworkOfferingId, Service.SecurityGroup)) {
+            s_logger.debug("Offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different securityGroupProperty, can't upgrade");
+            return false;
+        }
+
+        // tags should be the same
+        if (newNetworkOffering.getTags() != null) {
+            if (oldNetworkOffering.getTags() == null) {
+                s_logger.debug("New network offering id=" + newNetworkOfferingId + " has tags and old network offering id=" + oldNetworkOfferingId + " doesn't, can't upgrade");
+                return false;
+            }
+
+            if (!StringUtils.areTagsEqual(oldNetworkOffering.getTags(), newNetworkOffering.getTags())) {
+                s_logger.debug("Network offerings " + newNetworkOffering.getUuid() + " and " + oldNetworkOffering.getUuid() + " have different tags, can't upgrade");
+                return false;
+            }
+        }
+
+        // specify vlan should be the same
+        if (oldNetworkOffering.getSpecifyVlan() != newNetworkOffering.getSpecifyVlan()) {
+            s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different values for specifyVlan, can't upgrade");
+            return false;
+        }
+
+        return  canMoveToPhysicalNetwork(network, oldNetworkOfferingId, newNetworkOfferingId);
     }
 
     @Override
@@ -2668,17 +2933,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(id);
         if (network == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Physical Network with specified id doesn't exist in the system");
-            ex.addProxyObject(id.toString(), "physicalNetworkId");
-            throw ex;
+            throwInvalidIdException("Physical Network with specified id doesn't exist in the system", id.toString(), "physicalNetworkId");
         }
 
         // if zone is of Basic type, don't allow to add vnet range
         DataCenter zone = _dcDao.findById(network.getDataCenterId());
         if (zone == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Zone with id=" + network.getDataCenterId() + " doesn't exist in the system");
-            ex.addProxyObject(String.valueOf(network.getDataCenterId()), "dataCenterId");
-            throw ex;
+            throwInvalidIdException("Zone with id=" + network.getDataCenterId() + " doesn't exist in the system", String.valueOf(network.getDataCenterId()), "dataCenterId");
         }
         if (newVnetRange != null) {
             if (zone.getNetworkType() == NetworkType.Basic || (zone.getNetworkType() == NetworkType.Advanced && zone.isSecurityGroupEnabled())) {
@@ -2948,9 +3209,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // verify input parameters
         PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (pNetwork == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Physical Network with specified id doesn't exist in the system");
-            ex.addProxyObject(physicalNetworkId.toString(), "physicalNetworkId");
-            throw ex;
+            throwInvalidIdException("Physical Network with specified id doesn't exist in the system", physicalNetworkId.toString(), "physicalNetworkId");
         }
 
         checkIfPhysicalNetworkIsDeletable(physicalNetworkId);
@@ -3277,9 +3536,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (projectId != null) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project by id " + projectId);
-                ex.addProxyObject(projectId.toString(), "projectId");
-                throw ex;
+                throwInvalidIdException("Unable to find project by id " + projectId, projectId.toString(), "projectId");
             }
             accountId = project.getProjectAccountId();
         }
@@ -3371,18 +3628,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
         if (network == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Physical Network with specified id doesn't exist in the system");
-            ex.addProxyObject(physicalNetworkId.toString(), "physicalNetworkId");
-            throw ex;
+            throwInvalidIdException("Physical Network with specified id doesn't exist in the system", physicalNetworkId.toString(), "physicalNetworkId");
         }
 
         // verify input parameters
         if (destinationPhysicalNetworkId != null) {
             PhysicalNetworkVO destNetwork = _physicalNetworkDao.findById(destinationPhysicalNetworkId);
             if (destNetwork == null) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Destination Physical Network with specified id doesn't exist in the system");
-                ex.addProxyObject(destinationPhysicalNetworkId.toString(), "destinationPhysicalNetworkId");
-                throw ex;
+                throwInvalidIdException("Destination Physical Network with specified id doesn't exist in the system", destinationPhysicalNetworkId.toString(),
+                                        "destinationPhysicalNetworkId");
             }
         }
 
@@ -3836,9 +4090,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     public Pair<List<? extends PhysicalNetworkTrafficType>, Integer> listTrafficTypes(Long physicalNetworkId) {
         PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
         if (network == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Physical Network with specified id doesn't exist in the system");
-            ex.addProxyObject(physicalNetworkId.toString(), "physicalNetworkId");
-            throw ex;
+            throwInvalidIdException("Physical Network with specified id doesn't exist in the system", physicalNetworkId.toString(), "physicalNetworkId");
         }
 
         Pair<List<PhysicalNetworkTrafficTypeVO>, Integer> result = _pNTrafficTypeDao.listAndCountBy(physicalNetworkId);
@@ -4038,9 +4290,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // Validate physical network
         final PhysicalNetwork pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
         if (pNtwk == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a physical network" + " having the given id");
-            ex.addProxyObject(String.valueOf(physicalNetworkId), "physicalNetworkId");
-            throw ex;
+            throwInvalidIdException("Unable to find a physical network" + " having the given id", String.valueOf(physicalNetworkId), "physicalNetworkId");
         }
 
         // VALIDATE IP INFO
@@ -4152,9 +4402,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         UserVmVO  userVm = _userVmDao.findById(vmId);
 
         if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Virtual mahine id does not exist");
-            ex.addProxyObject(Long.valueOf(vmId).toString(), "vmId");
-                throw ex;
+            throwInvalidIdException("Virtual machine id does not exist", Long.valueOf(vmId).toString(), "vmId");
             }
 
         _accountMgr.checkAccess(caller, null, true, userVm);
@@ -4171,9 +4419,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         UserVmVO  userVm = _userVmDao.findById(vmId);
 
         if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Virtual mahine id does not exist");
-            ex.addProxyObject(Long.valueOf(vmId).toString(), "vmId");
-            throw ex;
+            throwInvalidIdException("Virtual machine id does not exist", Long.valueOf(vmId).toString(), "vmId");
         }
 
         _accountMgr.checkAccess(caller, null, true, userVm);

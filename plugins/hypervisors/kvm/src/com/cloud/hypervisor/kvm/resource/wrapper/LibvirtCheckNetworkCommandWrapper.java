@@ -25,6 +25,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -38,13 +39,13 @@ public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<Chec
         String errMsg = null;
 
         for (final PhysicalNetworkSetupInfo nic : phyNics) {
-            if (!libvirtComputingResource.checkNetwork(nic.getGuestNetworkName())) {
+            if (!libvirtComputingResource.checkNetwork(Networks.TrafficType.Guest, nic.getGuestNetworkName())) {
                 errMsg = "Can not find network: " + nic.getGuestNetworkName();
                 break;
-            } else if (!libvirtComputingResource.checkNetwork(nic.getPrivateNetworkName())) {
+            } else if (!libvirtComputingResource.checkNetwork(Networks.TrafficType.Management, nic.getPrivateNetworkName())) {
                 errMsg = "Can not find network: " + nic.getPrivateNetworkName();
                 break;
-            } else if (!libvirtComputingResource.checkNetwork(nic.getPublicNetworkName())) {
+            } else if (!libvirtComputingResource.checkNetwork(Networks.TrafficType.Public, nic.getPublicNetworkName())) {
                 errMsg = "Can not find network: " + nic.getPublicNetworkName();
                 break;
             }

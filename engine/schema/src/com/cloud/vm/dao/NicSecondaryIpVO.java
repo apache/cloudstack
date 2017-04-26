@@ -98,6 +98,11 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     }
 
     @Override
+    public void setNicId(long nicId) {
+        this.nicId = nicId;
+    }
+
+    @Override
     public long getDomainId() {
         return domainId;
     }

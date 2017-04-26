@@ -5071,6 +5071,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Integer maxconn = cmd.getMaxconnections();
         Availability availability = null;
         final String state = cmd.getState();
+        final String tags = cmd.getTags();
         CallContext.current().setEventDetails(" Id: " + id);
 
         // Verify input parameters
@@ -5109,6 +5110,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (!validState) {
                 throw new InvalidParameterValueException("Incorrect state value: " + state);
             }
+        }
+
+        if (tags != null) {
+            List<DataCenterVO> dataCenters = _zoneDao.listAll();
+            TrafficType trafficType = offeringToUpdate.getTrafficType();
+            String oldTags = offeringToUpdate.getTags();
+
+            for (DataCenterVO dataCenter : dataCenters) {
+                long zoneId = dataCenter.getId();
+                long newPhysicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, tags, trafficType);
+                if (oldTags != null) {
+                    long oldPhysicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, oldTags, trafficType);
+                    if (newPhysicalNetworkId != oldPhysicalNetworkId) {
+                        throw new InvalidParameterValueException("New tags: selects different physical network for zone " + zoneId);
+                    }
+                }
+            }
+
+            offering.setTags(tags);
         }
 
         // Verify availability
