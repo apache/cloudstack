@@ -18,7 +18,6 @@
 
 from CsDatabag import CsCmdLine
 from CsAddress import CsAddress
-import logging
 
 
 class CsConfig(object):

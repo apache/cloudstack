@@ -130,7 +130,7 @@ def createfile(ip, folder, file, data):
 def htaccess(ip, folder, file):
     entry = "Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip
     htaccessFolder = "/var/www/html/" + folder + "/" + ip
-    htaccessFile = htaccessFolder+"/.htaccess"
+    htaccessFile = htaccessFolder + "/.htaccess"
 
     try:
         os.makedirs(htaccessFolder, 0755)
@@ -159,10 +159,11 @@ def exflock(file):
 def unflock(file):
     try:
         flock(file, LOCK_UN)
-    except IOError:
+    except IOError as e:
         print "failed to unlock file" + file.name + " due to : " + e.strerror
         sys.exit(1)
     return True
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

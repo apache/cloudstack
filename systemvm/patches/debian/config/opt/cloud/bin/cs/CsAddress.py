@@ -27,6 +27,7 @@ from CsRule import CsRule
 
 VRRP_TYPES = ['guest']
 
+
 class CsAddress(CsDataBag):
 
     def compare(self):
@@ -359,7 +360,6 @@ class CsIP:
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
-
     def fw_router(self):
         if self.config.is_vpc():
             return
@@ -441,7 +441,7 @@ class CsIP:
 
         if self.get_type() in ["guest"]:
             self.fw.append(["mangle", "front", "-A PREROUTING " +
-                            " -i %s -m state --state RELATED,ESTABLISHED "  % self.dev +
+                            " -i %s -m state --state RELATED,ESTABLISHED " % self.dev +
                             "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
             guestNetworkCidr = self.address['network']
             self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
@@ -573,7 +573,7 @@ class CsIP:
         cmdline = self.config.cmdline()
         # If redundant then this is dealt with by the master backup functions
         if self.get_type() in ["guest"] and not cmdline.is_redundant():
-            pwdsvc = CsPasswdSvc(self.address['public_ip']).start()
+            CsPasswdSvc(self.address['public_ip']).start()
 
         if self.get_type() == "public" and self.config.is_vpc() and method == "add":
             if self.address["source_nat"]:
@@ -723,4 +723,3 @@ class CsRpsrfs:
         if count < 2:
             logging.debug("Single CPU machine")
         return count
-

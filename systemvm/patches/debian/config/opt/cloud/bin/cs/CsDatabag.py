@@ -136,8 +136,8 @@ class CsCmdLine(CsDataBag):
         This is slightly difficult to happen, but if it does, destroy the router with the password generated with the
         code below and restart the VPC with out the clean up option.
         '''
-        if(self.get_type()=='router'):
-            passwd="%s-%s" % (self.get_eth2_ip(), self.get_router_id())
+        if self.get_type() == 'router':
+            passwd = "%s-%s" % (self.get_eth2_ip(), self.get_router_id())
         else:
             passwd = "%s-%s" % (self.get_vpccidr(), self.get_router_id())
         md5 = hashlib.md5()

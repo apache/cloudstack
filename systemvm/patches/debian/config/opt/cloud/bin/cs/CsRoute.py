@@ -37,11 +37,11 @@ class CsRoute:
         logging.info(
             "Adding route table: " + str + " to " + filename + " if not present ")
         if not CsHelper.definedinfile(filename, str):
-             CsHelper.execute("sudo echo " + str + " >> /etc/iproute2/rt_tables")
+            CsHelper.execute("sudo echo " + str + " >> /etc/iproute2/rt_tables")
         # remove "from all table tablename" if exists, else it will interfer with
         # routing of unintended traffic
         if self.findRule("from all lookup " + tablename):
-             CsHelper.execute("sudo ip rule delete from all table " + tablename)
+            CsHelper.execute("sudo ip rule delete from all table " + tablename)
 
     def flush_table(self, tablename):
         CsHelper.execute("ip route flush table %s" % (tablename))

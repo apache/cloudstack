@@ -24,13 +24,16 @@ import logging
 import os.path
 import re
 import shutil
-from netaddr import *
-from pprint import pprint
+import sys
+from netaddr import IPNetwork
 
-PUBLIC_INTERFACES = {"router" : "eth2", "vpcrouter" : "eth1"}
+PUBLIC_INTERFACES = {"router": "eth2", "vpcrouter": "eth1"}
 
-STATE_COMMANDS = {"router" : "ip addr | grep eth0 | grep inet | wc -l | xargs bash -c  'if [ $0 == 2 ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'",
-                  "vpcrouter" : "ip addr | grep eth1 | grep state | awk '{print $9;}' | xargs bash -c 'if [ $0 == \"UP\" ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'"}
+STATE_COMMANDS = {
+    "router": "ip addr | grep eth0 | grep inet | wc -l | xargs bash -c  'if [ $0 == 2 ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'",
+    "vpcrouter": "ip addr | grep eth1 | grep state | awk '{print $9;}' | xargs bash -c 'if [ $0 == \"UP\" ]; then echo \"MASTER\"; else echo \"BACKUP\"; fi'"
+}
+
 
 def reconfigure_interfaces(router_config, interfaces):
     for interface in interfaces:
@@ -51,6 +54,7 @@ def reconfigure_interfaces(router_config, interfaces):
                         execute(cmd)
                 else:
                     execute(cmd)
+
 
 def is_mounted(name):
     for i in execute("mount"):
@@ -238,6 +242,7 @@ def copy_if_needed(src, dest):
     if os.path.isfile(dest):
         return
     copy(src, dest)
+
 
 def copy(src, dest):
     """

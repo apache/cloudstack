@@ -19,8 +19,6 @@
 import sys
 from merge import QueueFile
 import logging
-import subprocess
-from subprocess import PIPE, STDOUT
 import os
 import os.path
 import configure
@@ -57,7 +55,6 @@ def process_file():
 def is_guestnet_configured(guestnet_dict, keys):
 
     existing_keys = []
-    new_eth_key = None
 
     for k1, v1 in guestnet_dict.iteritems():
         if k1 in keys and len(v1) > 0:
@@ -108,6 +105,7 @@ def is_guestnet_configured(guestnet_dict, keys):
             break
 
     return exists
+
 
 if not (os.path.isfile(jsonCmdConfigPath) and os.access(jsonCmdConfigPath, os.R_OK)):
     print "[ERROR] update_config.py :: You are telling me to process %s, but i can't access it" % jsonCmdConfigPath

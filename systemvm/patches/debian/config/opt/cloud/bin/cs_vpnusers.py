@@ -15,8 +15,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from pprint import pprint
-
 import copy
 
 
@@ -38,8 +36,8 @@ def merge(dbag, data):
             del(dbagc[user])
 
     for user in data['vpn_users']:
-        username=user['user']
-        add=user['add']
+        username = user['user']
+        add = user['add']
         if username not in dbagc.keys():
             dbagc[username] = user
         elif username in dbagc.keys() and not add:

@@ -15,8 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pprint import pprint
-
 keys = ['eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6', 'eth7', 'eth8', 'eth9']
 
 
@@ -29,7 +27,7 @@ def merge(dbag, gn):
             device_to_die = dbag[device][0]
             try:
                 dbag[device].remove(device_to_die)
-            except ValueError, e:
+            except ValueError:
                 print "[WARN] cs_guestnetwork.py :: Error occurred removing item from databag. => %s" % device_to_die
                 del(dbag[device])
         else:

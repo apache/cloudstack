@@ -49,7 +49,7 @@ class CsRule:
             logging.info("Added fwmark rule for %s" % (self.table))
 
     def delMark(self):
-        if  self.findMark():
+        if self.findMark():
             cmd = "ip rule delete fwmark %s table %s" % (self.tableNo, self.table)
             CsHelper.execute(cmd)
             logging.info("Deleting fwmark rule for %s" % (self.table))

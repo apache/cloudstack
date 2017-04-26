@@ -42,6 +42,7 @@ from CsStaticRoutes import CsStaticRoutes
 import socket
 from time import sleep
 
+
 class CsRedundant(object):
 
     CS_RAMDISK_DIR = "/ramdisk"
@@ -103,7 +104,7 @@ class CsRedundant(object):
                 if devUp:
                     logging.info("Device %s is present, let's start keepalive now." % dev)
                     isDeviceReady = True
-        
+
         if not isDeviceReady:
             logging.info("Guest network not configured yet, let's stop router redundancy for now.")
             CsHelper.service("conntrackd", "stop")
@@ -150,18 +151,19 @@ class CsRedundant(object):
         # conntrackd configuration
         conntrackd_template_conf = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ")
         conntrackd_temp_bkp = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ.bkp")
-        
+
         CsHelper.copy(conntrackd_template_conf, conntrackd_temp_bkp)
 
         conntrackd_tmpl = CsFile(conntrackd_template_conf)
         conntrackd_tmpl.section("Multicast {", "}", [
-                      "IPv4_address 225.0.0.50\n",
-                      "Group 3780\n",
-                      "IPv4_interface %s\n" % guest.get_ip(),
-                      "Interface %s\n" % guest.get_device(),
-                      "SndSocketBuffer 1249280\n",
-                      "RcvSocketBuffer 1249280\n",
-                      "Checksum on\n"])
+            "IPv4_address 225.0.0.50\n",
+            "Group 3780\n",
+            "IPv4_interface %s\n" % guest.get_ip(),
+            "Interface %s\n" % guest.get_device(),
+            "SndSocketBuffer 1249280\n",
+            "RcvSocketBuffer 1249280\n",
+            "Checksum on\n"
+        ])
         conntrackd_tmpl.section("Address Ignore {", "}", self._collect_ignore_ips())
         conntrackd_tmpl.commit()
 
@@ -371,10 +373,10 @@ class CsRedundant(object):
         lines = []
         for interface in self.address.get_interfaces():
             if interface.needs_vrrp():
-                cmdline=self.config.get_cmdline_instance()
+                cmdline = self.config.get_cmdline_instance()
                 if not interface.is_added():
                     continue
-                if(cmdline.get_type()=='router'):
+                if cmdline.get_type() == 'router':
                     str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), interface.get_broadcast(), interface.get_device())
                 else:
                     str = "        %s brd %s dev %s\n" % (interface.get_gateway_cidr(), interface.get_broadcast(), interface.get_device())

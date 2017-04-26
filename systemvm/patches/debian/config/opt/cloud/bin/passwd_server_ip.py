@@ -31,10 +31,9 @@ import os
 import sys
 import syslog
 import threading
-import urlparse
 
-from BaseHTTPServer   import BaseHTTPRequestHandler, HTTPServer
-from SocketServer     import ThreadingMixIn #, ForkingMixIn
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from SocketServer import ThreadingMixIn  # ForkingMixIn
 
 
 passMap = {}
@@ -42,11 +41,14 @@ secureToken = None
 listeningAddress = '127.0.0.1'
 lock = threading.RLock()
 
+
 def getTokenFile():
     return '/tmp/passwdsrvrtoken'
 
+
 def getPasswordFile():
     return '/var/cache/cloud/passwords-%s' % listeningAddress
+
 
 def initToken():
     global secureToken
@@ -58,18 +60,22 @@ def initToken():
         with open(getTokenFile(), 'w') as f:
             f.write(secureToken)
 
+
 def checkToken(token):
     return token == secureToken
+
 
 def loadPasswordFile():
     try:
         with file(getPasswordFile()) as f:
             for line in f:
-                if '=' not in line: continue
+                if '=' not in line:
+                    continue
                 key, value = line.strip().split('=', 1)
                 passMap[key] = value
     except IOError:
         pass
+
 
 def savePasswordFile():
     with lock:
@@ -81,14 +87,17 @@ def savePasswordFile():
         except IOError, e:
             syslog.syslog('serve_password: Unable to save to password file %s' % e)
 
+
 def getPassword(ip):
     return passMap.get(ip, None)
+
 
 def setPassword(ip, password):
     if not ip or not password:
         return
     with lock:
         passMap[ip] = password
+
 
 def removePassword(ip):
     with lock:
@@ -101,8 +110,10 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 class PasswordRequestHandler(BaseHTTPRequestHandler):
+
     server_version = 'CloudStack Password Server'
     sys_version = '4.x'
+
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
@@ -131,11 +142,12 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         form = cgi.FieldStorage(
-                    fp=self.rfile,
-                    headers=self.headers,
-                    environ={'REQUEST_METHOD':'POST',
-                             'CONTENT_TYPE':self.headers['Content-Type'],
-                    })
+            fp=self.rfile,
+            headers=self.headers,
+            environ={
+                'REQUEST_METHOD': 'POST',
+                'CONTENT_TYPE': self.headers['Content-Type'],
+            })
         self.send_response(200)
         self.end_headers()
         clientAddress = self.client_address[0]
@@ -166,8 +178,8 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
             return
 
 
-def serve(HandlerClass = PasswordRequestHandler,
-          ServerClass = ThreadedHTTPServer):
+def serve(HandlerClass=PasswordRequestHandler,
+          ServerClass=ThreadedHTTPServer):
 
     global listeningAddress
     if len(sys.argv) > 1:

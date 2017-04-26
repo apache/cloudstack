@@ -20,34 +20,28 @@ import sys
 import os
 import base64
 
-from merge import DataBag
-from pprint import pprint
-import subprocess
 import logging
 import re
-import time
-import shutil
 import os.path
 import os
 from fcntl import flock, LOCK_EX, LOCK_UN
 
-from cs.CsDatabag import CsDataBag, CsCmdLine
-import cs.CsHelper
+from cs.CsDatabag import CsDataBag
 from cs.CsNetfilter import CsNetfilters
 from cs.CsDhcp import CsDhcp
-from cs.CsRedundant import *
 from cs.CsFile import CsFile
-from cs.CsApp import CsApache, CsDnsmasq
 from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
 from cs.CsConfig import CsConfig
 from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
+from cs.CsHelper import CsHelper
+from cs.CsRedundant import CsRedundant
 
 
 class CsPassword(CsDataBag):
 
-    TOKEN_FILE="/tmp/passwdsrvrtoken"
+    TOKEN_FILE = "/tmp/passwdsrvrtoken"
 
     def process(self):
         for item in self.dbag:
@@ -70,7 +64,7 @@ class CsPassword(CsDataBag):
             proc = CsProcess(['/opt/cloud/bin/passwd_server_ip.py', server_ip])
             if proc.find():
                 update_command = 'curl --header "DomU_Request: save_password" "http://{SERVER_IP}:8080/" -F "ip={VM_IP}" -F "password={PASSWORD}" ' \
-                '-F "token={TOKEN}" >/dev/null 2>/dev/null &'.format(SERVER_IP=server_ip, VM_IP=vm_ip, PASSWORD=password, TOKEN=token)
+                    '-F "token={TOKEN}" >/dev/null 2>/dev/null &'.format(SERVER_IP=server_ip, VM_IP=vm_ip, PASSWORD=password, TOKEN=token)
                 result = CsHelper.execute(update_command)
                 logging.debug("Update password server result ==> %s" % result)
 
@@ -122,7 +116,7 @@ class CsAcl(CsDataBag):
             rnge = ''
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] == self.rule['last_port']:
-                    rnge = " --dport %s " %self.rule['first_port']
+                    rnge = " --dport %s " % self.rule['first_port']
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] != self.rule['last_port']:
                     rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
@@ -167,14 +161,14 @@ class CsAcl(CsDataBag):
 
                 if rule['protocol'] == "icmp":
                     fwr += " -s %s " % cidr + \
-                                    " -p %s " % rule['protocol'] + \
-                                    " -m %s " % rule['protocol'] + \
-                                    " --icmp-type %s" % icmp_type
+                        " -p %s " % rule['protocol'] + \
+                        " -m %s " % rule['protocol'] + \
+                        " --icmp-type %s" % icmp_type
                 elif rule['protocol'] != "all":
                     fwr += " -s %s " % cidr + \
-                           " -p %s " % rule['protocol'] + \
-                           " -m %s " % rule['protocol'] + \
-                           "  %s" % rnge
+                        " -p %s " % rule['protocol'] + \
+                        " -m %s " % rule['protocol'] + \
+                        "  %s" % rnge
                 elif rule['protocol'] == "all":
                     fwr += " -s %s " % cidr
 
@@ -320,7 +314,7 @@ class CsVmMetadata(CsDataBag):
             if data is not None:
                 # need to pad data if it is not valid base 64
                 if len(data) % 4 != 0:
-                    data  += (4-(len(data) % 4)) * "="
+                    data += (4 - (len(data) % 4)) * "="
                 data = base64.b64decode(data)
 
         fh = open(dest, "w")
@@ -382,7 +376,7 @@ class CsVmMetadata(CsDataBag):
 
         entry = "Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip
         htaccessFolder = "/var/www/html/" + folder + "/" + ip
-        htaccessFile = htaccessFolder+"/.htaccess"
+        htaccessFile = htaccessFolder + "/.htaccess"
 
         try:
             os.makedirs(htaccessFolder, 0755)
@@ -427,7 +421,7 @@ class CsVmMetadata(CsDataBag):
     def __unflock(self, file):
         try:
             flock(file, LOCK_UN)
-        except IOError:
+        except IOError as e:
             print "failed to unlock file" + file.name + " due to : " + e.strerror
             sys.exit(1)  # FIXME
         return True
@@ -500,12 +494,12 @@ class CsSite2SiteVpn(CsDataBag):
         peerlist = obj['peer_guest_cidr_list'].replace(' ', '')
         vpnconffile = "%s/ipsec.vpn-%s.conf" % (self.VPNCONFDIR, rightpeer)
         vpnsecretsfile = "%s/ipsec.vpn-%s.secrets" % (self.VPNCONFDIR, rightpeer)
-        ikepolicy=obj['ike_policy'].replace(';','-')
-        esppolicy=obj['esp_policy'].replace(';','-')
+        ikepolicy = obj['ike_policy'].replace(';', '-')
+        esppolicy = obj['esp_policy'].replace(';', '-')
 
-        pfs='no'
+        pfs = 'no'
         if 'modp' in esppolicy:
-            pfs='yes'
+            pfs = 'yes'
 
         if rightpeer in self.confips:
             self.confips.remove(rightpeer)
@@ -528,7 +522,7 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" keyingtries=2")
         file.addeq(" auto=start")
         if 'encap' not in obj:
-            obj['encap']=False
+            obj['encap'] = False
         file.addeq(" forceencaps=%s" % CsHelper.bool_to_yn(obj['encap']))
         if obj['dpd']:
             file.addeq(" dpddelay=30")
@@ -552,15 +546,16 @@ class CsSite2SiteVpn(CsDataBag):
         hrs = int(val) / 3600
         return "%sh" % hrs
 
+
 class CsVpnUser(CsDataBag):
-    PPP_CHAP='/etc/ppp/chap-secrets'
+    PPP_CHAP = '/etc/ppp/chap-secrets'
 
     def process(self):
         for user in self.dbag:
             if user == 'id':
                 continue
 
-            userconfig=self.dbag[user]
+            userconfig = self.dbag[user]
             if userconfig['add']:
                 self.add_l2tp_ipsec_user(user, userconfig)
             else:
@@ -570,9 +565,9 @@ class CsVpnUser(CsDataBag):
         userfound = False
         password = obj['password']
 
-        userSearchEntry = "%s \* %s \*"%(user,password)
-        userAddEntry = "%s * %s *" %(user,password)
-        logging.debug("Adding vpn user %s" %userSearchEntry)
+        userSearchEntry = "%s \* %s \*" % (user, password)
+        userAddEntry = "%s * %s *" % (user, password)
+        logging.debug("Adding vpn user %s" % userSearchEntry)
 
         file = CsFile(self.PPP_CHAP)
         userfound = file.searchString(userSearchEntry, '#')
@@ -582,11 +577,9 @@ class CsVpnUser(CsDataBag):
             file.add(userAddEntry)
         file.commit()
 
-
     def del_l2tp_ipsec_user(self, user, obj):
-        userfound = False
         password = obj['password']
-        userentry = "%s \* %s \*"%(user,password)
+        userentry = "%s \* %s \*" % (user, password)
 
         logging.debug("Deleting the user %s " % user)
         file = CsFile(self.PPP_CHAP)
@@ -605,14 +598,13 @@ class CsVpnUser(CsDataBag):
             if user in line:
                 contentlist = line.split(';')
                 for str in contentlist:
-                    print 'in del_l2tp str = '+ str
+                    print 'in del_l2tp str = ' + str
                     pppd = str.split('=')[0]
                     if pppd == 'PPPD_PID':
                         pid = str.split('=')[1]
                         if pid:
-                            logging.debug("killing process %s" %pid)
+                            logging.debug("killing process %s" % pid)
                             CsHelper.execute('kill -9 %s' % pid)
-
 
 
 class CsRemoteAccessVpn(CsDataBag):
@@ -625,14 +617,14 @@ class CsRemoteAccessVpn(CsDataBag):
         for public_ip in self.dbag:
             if public_ip == "id":
                 continue
-            vpnconfig=self.dbag[public_ip]
+            vpnconfig = self.dbag[public_ip]
 
-            #Enable remote access vpn
+            # Enable remote access vpn
             if vpnconfig['create']:
-                logging.debug("Enabling  remote access vpn  on "+ public_ip)
+                logging.debug("Enabling  remote access vpn  on " + public_ip)
                 CsHelper.start_if_stopped("ipsec")
                 self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
-                logging.debug("Remote accessvpn  data bag %s",  self.dbag)
+                logging.debug("Remote accessvpn  data bag %s" % self.dbag)
                 self.remoteaccessvpn_iptables(public_ip, self.dbag[public_ip])
 
                 CsHelper.execute("ipsec down L2TP-PSK")
@@ -642,48 +634,46 @@ class CsRemoteAccessVpn(CsDataBag):
                 CsHelper.execute("ipsec rereadsecrets")
             else:
                 logging.debug("Disabling remote access vpn .....")
-                #disable remote access vpn
+                # Disable remote access vpn
                 CsHelper.execute("ipsec down L2TP-PSK")
                 CsHelper.execute("service xl2tpd stop")
 
-
-    def configure_l2tpIpsec(self, left,  obj):
-        l2tpconffile="%s/l2tp.conf" % (self.VPNCONFDIR)
-        vpnsecretfilte="%s/ipsec.any.secrets" % (self.VPNCONFDIR)
-        xl2tpdconffile="/etc/xl2tpd/xl2tpd.conf"
-        xl2tpoptionsfile='/etc/ppp/options.xl2tpd'
+    def configure_l2tpIpsec(self, left, obj):
+        l2tpconffile = "%s/l2tp.conf" % (self.VPNCONFDIR)
+        vpnsecretfilte = "%s/ipsec.any.secrets" % (self.VPNCONFDIR)
+        xl2tpdconffile = "/etc/xl2tpd/xl2tpd.conf"
+        xl2tpoptionsfile = '/etc/ppp/options.xl2tpd'
 
         file = CsFile(l2tpconffile)
-        localip=obj['local_ip']
-        localcidr=obj['local_cidr']
-        publicIface=obj['public_interface']
-        iprange=obj['ip_range']
-        psk=obj['preshared_key']
+        localip = obj['local_ip']
+        # Unused vars
+        # localcidr = obj['local_cidr']
+        # publicIface = obj['public_interface']
+        iprange = obj['ip_range']
+        psk = obj['preshared_key']
 
-        #left
+        # left
         file.addeq(" left=%s" % left)
         file.commit()
 
-
         secret = CsFile(vpnsecretfilte)
         secret.empty()
-        secret.addeq(": PSK \"%s\"" %psk)
+        secret.addeq(": PSK \"%s\"" % psk)
         secret.commit()
 
         xl2tpdconf = CsFile(xl2tpdconffile)
-        xl2tpdconf.addeq("ip range = %s" %iprange)
-        xl2tpdconf.addeq("local ip = %s" %localip)
+        xl2tpdconf.addeq("ip range = %s" % iprange)
+        xl2tpdconf.addeq("local ip = %s" % localip)
         xl2tpdconf.commit()
 
-        xl2tpoptions=CsFile(xl2tpoptionsfile)
-        xl2tpoptions.search("ms-dns ", "ms-dns %s" %localip)
+        xl2tpoptions = CsFile(xl2tpoptionsfile)
+        xl2tpoptions.search("ms-dns ", "ms-dns %s" % localip)
         xl2tpoptions.commit()
 
     def remoteaccessvpn_iptables(self, publicip, obj):
-        publicdev=obj['public_interface']
-        localcidr=obj['local_cidr']
-        local_ip=obj['local_ip']
-
+        publicdev = obj['public_interface']
+        localcidr = obj['local_cidr']
+        local_ip = obj['local_ip']
 
         self.fw.append(["", "", "-A INPUT -i %s --dst %s -p udp -m udp --dport 500 -j ACCEPT" % (publicdev, publicip)])
         self.fw.append(["", "", "-A INPUT -i %s --dst %s -p udp -m udp --dport 4500 -j ACCEPT" % (publicdev, publicip)])
@@ -692,31 +682,30 @@ class CsRemoteAccessVpn(CsDataBag):
         self.fw.append(["", "", "-A INPUT -i %s -p esp -j ACCEPT" % publicdev])
 
         if self.config.is_vpc():
-            self.fw.append(["", ""," -N VPN_FORWARD"])
-            self.fw.append(["", "","-I FORWARD -i ppp+ -j VPN_FORWARD"])
-            self.fw.append(["", "","-I FORWARD -o ppp+ -j VPN_FORWARD"])
-            self.fw.append(["", "","-I FORWARD -o ppp+ -j VPN_FORWARD"])
-            self.fw.append(["", "","-A VPN_FORWARD -s  %s -j RETURN" %localcidr])
-            self.fw.append(["", "","-A VPN_FORWARD -i ppp+ -d %s -j RETURN" %localcidr])
-            self.fw.append(["", "","-A VPN_FORWARD -i ppp+  -o ppp+ -j RETURN"])
+            self.fw.append(["", "", " -N VPN_FORWARD"])
+            self.fw.append(["", "", "-I FORWARD -i ppp+ -j VPN_FORWARD"])
+            self.fw.append(["", "", "-I FORWARD -o ppp+ -j VPN_FORWARD"])
+            self.fw.append(["", "", "-I FORWARD -o ppp+ -j VPN_FORWARD"])
+            self.fw.append(["", "", "-A VPN_FORWARD -s  %s -j RETURN" % localcidr])
+            self.fw.append(["", "", "-A VPN_FORWARD -i ppp+ -d %s -j RETURN" % localcidr])
+            self.fw.append(["", "", "-A VPN_FORWARD -i ppp+  -o ppp+ -j RETURN"])
         else:
-            self.fw.append(["", "","-A FORWARD -i ppp+ -o  ppp+ -j ACCEPT"])
-            self.fw.append(["", "","-A FORWARD -s %s -o  ppp+ -j ACCEPT" % localcidr])
-            self.fw.append(["", "","-A FORWARD -i ppp+ -d %s  -j ACCEPT" % localcidr])
+            self.fw.append(["", "", "-A FORWARD -i ppp+ -o  ppp+ -j ACCEPT"])
+            self.fw.append(["", "", "-A FORWARD -s %s -o  ppp+ -j ACCEPT" % localcidr])
+            self.fw.append(["", "", "-A FORWARD -i ppp+ -d %s  -j ACCEPT" % localcidr])
 
-
-        self.fw.append(["", "","-A INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT"])
-        self.fw.append(["", "","-A INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT"])
-        self.fw.append(["nat", "","-I PREROUTING -i ppp+ -m tcp --dport 53 -j DNAT --to-destination %s" % local_ip])
+        self.fw.append(["", "", "-A INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT"])
+        self.fw.append(["", "", "-A INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT"])
+        self.fw.append(["nat", "", "-I PREROUTING -i ppp+ -m tcp --dport 53 -j DNAT --to-destination %s" % local_ip])
 
         if self.config.is_vpc():
             return
 
-        self.fw.append(["mangle", "","-N  VPN_%s " %publicip])
-        self.fw.append(["mangle", "","-A VPN_%s -j RETURN " % publicip])
-        self.fw.append(["mangle", "","-I VPN_%s -p ah  -j ACCEPT " % publicip])
-        self.fw.append(["mangle", "","-I VPN_%s -p esp  -j ACCEPT " % publicip])
-        self.fw.append(["mangle", "","-I PREROUTING  -d %s -j VPN_%s " % (publicip, publicip)])
+        self.fw.append(["mangle", "", "-N  VPN_%s " % publicip])
+        self.fw.append(["mangle", "", "-A VPN_%s -j RETURN " % publicip])
+        self.fw.append(["mangle", "", "-I VPN_%s -p ah  -j ACCEPT " % publicip])
+        self.fw.append(["mangle", "", "-I VPN_%s -p esp  -j ACCEPT " % publicip])
+        self.fw.append(["mangle", "", "-I PREROUTING  -d %s -j VPN_%s " % (publicip, publicip)])
 
 
 class CsForwardingRules(CsDataBag):
@@ -731,7 +720,7 @@ class CsForwardingRules(CsDataBag):
                 elif rule["type"] == "staticnat":
                     self.processStaticNatRule(rule)
 
-    #return the VR guest interface ip
+    # Return the VR guest interface ip
     def getGuestIp(self):
         interfaces = []
         ipAddr = None
@@ -777,13 +766,13 @@ class CsForwardingRules(CsDataBag):
             self.forward_vr(rule)
 
     def forward_vr(self, rule):
-        #prefetch iptables variables
+        # Prefetch iptables variables
         public_fwinterface = self.getDeviceByIp(rule['public_ip'])
         internal_fwinterface = self.getDeviceByIp(rule['internal_ip'])
         public_fwports = self.portsToString(rule['public_ports'], ':')
         internal_fwports = self.portsToString(rule['internal_ports'], '-')
         fw1 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
-              (
+            (
                 rule['public_ip'],
                 public_fwinterface,
                 rule['protocol'],
@@ -791,9 +780,9 @@ class CsForwardingRules(CsDataBag):
                 public_fwports,
                 rule['internal_ip'],
                 internal_fwports
-              )
+            )
         fw2 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
-              (
+            (
                 rule['public_ip'],
                 internal_fwinterface,
                 rule['protocol'],
@@ -801,18 +790,18 @@ class CsForwardingRules(CsDataBag):
                 public_fwports,
                 rule['internal_ip'],
                 internal_fwports
-              )
+            )
         fw3 = "-A OUTPUT -d %s/32 -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
-              (
+            (
                 rule['public_ip'],
                 rule['protocol'],
                 rule['protocol'],
                 public_fwports,
                 rule['internal_ip'],
                 internal_fwports
-              )
+            )
         fw4 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
-              (
+            (
                 self.getGuestIp(),
                 self.getNetworkByIp(rule['internal_ip']),
                 rule['internal_ip'],
@@ -820,32 +809,32 @@ class CsForwardingRules(CsDataBag):
                 rule['protocol'],
                 rule['protocol'],
                 self.portsToString(rule['internal_ports'], ':')
-              )
+            )
         fw5 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j MARK --set-xmark %s/0xffffffff" % \
-              (
+            (
                 rule['public_ip'],
                 public_fwinterface,
                 rule['protocol'],
                 rule['protocol'],
                 public_fwports,
                 hex(int(public_fwinterface[3:]))
-              )
+            )
         fw6 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
-              (
+            (
                 rule['public_ip'],
                 public_fwinterface,
                 rule['protocol'],
                 rule['protocol'],
                 public_fwports,
-              )
+            )
         fw7 = "-A FORWARD -i %s -o %s -p %s -m %s --dport %s -m state --state NEW,ESTABLISHED -j ACCEPT" % \
-              (
+            (
                 public_fwinterface,
                 internal_fwinterface,
                 rule['protocol'],
                 rule['protocol'],
                 self.portsToString(rule['internal_ports'], ':')
-              )
+            )
         self.fw.append(["nat", "", fw1])
         self.fw.append(["nat", "", fw2])
         self.fw.append(["nat", "", fw3])
@@ -892,11 +881,9 @@ class CsForwardingRules(CsDataBag):
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
         self.fw.append(["mangle", "",
-                        "-A PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark 0x%s/0xffffffff" % \
-                        (rule["internal_ip"], device[len("eth"):])])
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark 0x%s/0xffffffff" % (rule["internal_ip"], device[len("eth"):])])
         self.fw.append(["mangle", "",
-                        "-A PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
-                        rule["internal_ip"]])
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % rule["internal_ip"]])
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",
@@ -906,11 +893,13 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["filter", "",
                         "-A FORWARD -i %s -o eth0  -d %s  -m state  --state NEW -j ACCEPT " % (device, rule["internal_ip"])])
 
-        #configure the hairpin nat
+        # Configure the hairpin nat
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s -i eth0 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
 
-        self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o eth0 --to-source %s" % (self.getNetworkByIp(rule['internal_ip']),rule["internal_ip"], self.getGuestIp())])
+        self.fw.append(["nat", "front",
+                        "-A POSTROUTING -s %s -d %s -j SNAT -o eth0 --to-source %s" %
+                        (self.getNetworkByIp(rule['internal_ip']), rule["internal_ip"], self.getGuestIp())])
 
 
 def main(argv):
@@ -1031,6 +1020,7 @@ def main(argv):
             static_routes.process()
     except Exception:
         logging.exception("Exception while configuring router")
+
 
 if __name__ == "__main__":
     main(sys.argv)

@@ -15,8 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 import logging
-import os.path
-import re
 from cs.CsDatabag import CsDataBag
 from CsProcess import CsProcess
 from CsFile import CsFile

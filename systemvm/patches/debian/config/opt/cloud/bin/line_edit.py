@@ -193,6 +193,7 @@ class LineEditingFile(object):
                 os.unlink(changed_filename)
         return changes
 
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     import doctest

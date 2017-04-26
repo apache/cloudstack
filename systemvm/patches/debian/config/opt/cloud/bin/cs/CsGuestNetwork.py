@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 from merge import DataBag
-import CsHelper
 
 
 class CsGuestNetwork:
