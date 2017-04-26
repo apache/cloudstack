@@ -766,7 +766,7 @@ var dictionary = {
     "label.go.step.3": "3. lépésre",
     "label.go.step.4": "4. lépésre",
     "label.go.step.5": "5. lépsre",
-    "label.gpu": "CPU",
+    "label.gpu": "GPU",
     "label.group": "Csoport",
     "label.group.by.account": "Számlánként csoportosítva",
     "label.group.by.cluster": "Fürtönként csoportosítva",
