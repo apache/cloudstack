@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.network.ssl.SslCert;
+import com.cloud.network.tls.SslCert;
 import com.cloud.serializer.Param;
 
 //import org.apache.cloudstack.api.EntityReference;
