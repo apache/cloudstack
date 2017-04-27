@@ -23,7 +23,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.lb.SslCert;
+import com.cloud.network.ssl.SslCert;
 import com.cloud.utils.db.Encrypt;
 
 @Entity

@@ -271,6 +271,6 @@
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
         <property name="gslbServiceProviders" value="#{gslbServiceProvidersRegistry.registered}" />
     </bean>
-    <bean id="certServiceImpl" class="org.apache.cloudstack.network.lb.CertServiceImpl" />
+    <bean id="certServiceImpl" class="org.apache.cloudstack.network.ssl.CertServiceImpl" />
     <bean id="imageStoreUploadMonitorImpl" class="com.cloud.storage.ImageStoreUploadMonitorImpl" />
 </beans>
