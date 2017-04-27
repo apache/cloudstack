@@ -30,8 +30,8 @@ under the License.
       <param name="Append" value="true"/>
       <param name="Threshold" value="TRACE"/>
       <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="log/@AGENTLOG@.%d{yyyy-MM-dd}.gz"/>
-        <param name="ActiveFileName" value="log/@AGENTLOG@"/>
+        <param name="FileNamePattern" value="@AGENTLOG@.%d{yyyy-MM-dd}.gz"/>
+        <param name="ActiveFileName" value="@AGENTLOG@"/>
       </rollingPolicy>
       <layout class="org.apache.log4j.EnhancedPatternLayout">
          <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
