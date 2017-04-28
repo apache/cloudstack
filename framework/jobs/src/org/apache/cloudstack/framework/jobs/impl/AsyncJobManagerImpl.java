@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.dao.VolumeDetailsDao;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -119,6 +121,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private AsyncJobMonitor _jobMonitor;
     @Inject
     private VMInstanceDao _vmInstanceDao;
+    @Inject
+    private VolumeDetailsDao _volumeDetailsDao;
 
     private volatile long _executionRunNumber = 1;
 
@@ -1012,6 +1016,14 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());
                         }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
+                        if (job.getInstanceType().equals(ApiCommandJobType.Volume.toString())) {
+
+                            try {
+                                _volumeDetailsDao.removeDetail(job.getInstanceId(), "SNAPSHOT_ID");
+                            } catch (Exception e) {
+                                s_logger.error("Unexpected exception while removing concurrent request meta data :" + e.getLocalizedMessage());
+                            }
+                        }
                     }
                 }
             });

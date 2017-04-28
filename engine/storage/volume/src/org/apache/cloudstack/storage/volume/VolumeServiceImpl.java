@@ -114,6 +114,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.storage.dao.VolumeDetailsDao;
+
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -154,6 +156,10 @@ public class VolumeServiceImpl implements VolumeService {
     private ManagementService mgr;
     @Inject
     private ClusterDao clusterDao;
+    @Inject
+    private VolumeDetailsDao _volumeDetailsDao;
+
+    private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
     public VolumeServiceImpl() {
     }
@@ -1178,7 +1184,8 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             DataObject volumeOnStore = store.create(volume);
             volumeOnStore.processEvent(Event.CreateOnlyRequested);
-            snapshot.processEvent(Event.CopyingRequested);
+            _volumeDetailsDao.addDetail(volume.getId(), SNAPSHOT_ID, Long.toString(snapshot.getId()), false);
+
             CreateVolumeFromBaseImageContext<VolumeApiResult> context =
                     new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, volume, store, volumeOnStore, future, snapshot);
             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
@@ -1214,7 +1221,8 @@ public class VolumeServiceImpl implements VolumeService {
             } else {
                 volume.processEvent(event);
             }
-            snapshot.processEvent(event);
+            _volumeDetailsDao.removeDetail(volume.getId(), SNAPSHOT_ID);
+
         } catch (Exception e) {
             s_logger.debug("create volume from snapshot failed", e);
             apiResult.setResult(e.toString());
