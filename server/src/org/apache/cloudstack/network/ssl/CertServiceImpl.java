@@ -26,7 +26,7 @@ import com.cloud.network.dao.LoadBalancerCertMapVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.SslCertVO;
-import com.cloud.network.tls.CertService;
+import org.apache.cloudstack.network.tls.CertService;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
