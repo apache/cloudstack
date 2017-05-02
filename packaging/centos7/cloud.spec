@@ -264,6 +264,10 @@ install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUI
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
 
+install -D utils/conf/k8s-master.yml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+install -D utils/conf/k8s-node.yml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+cp deps/kubectl ${RPM_BUILD_ROOT}%{_bindir}/
+
 # Don't package the scripts in the management webapp
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
@@ -534,6 +538,8 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
 %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
+%{_sysconfdir}/%{name}/management/*.yml
+%attr(0755,root,root) %{_bindir}/kubectl
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
