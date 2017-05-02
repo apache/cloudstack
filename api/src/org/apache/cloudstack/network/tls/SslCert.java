@@ -14,20 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.lb;
+package org.apache.cloudstack.network.tls;
 
-import java.util.List;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
-import org.apache.cloudstack.api.response.SslCertResponse;
+public interface SslCert extends InternalIdentity, Identity, ControlledEntity {
 
-public interface CertService {
+    public String getCertificate();
 
-    public SslCertResponse uploadSslCert(UploadSslCertCmd certCmd);
+    public String getKey();
 
-    public void deleteSslCert(DeleteSslCertCmd deleteSslCertCmd);
+    public String getChain();
 
-    public List<SslCertResponse> listSslCerts(ListSslCertsCmd listSslCertCmd);
+    public String getPassword();
+
+    public String getFingerPrint();
+
 }

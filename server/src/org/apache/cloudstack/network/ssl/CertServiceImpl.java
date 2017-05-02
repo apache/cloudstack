@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.lb;
+package org.apache.cloudstack.network.ssl;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -26,7 +26,7 @@ import com.cloud.network.dao.LoadBalancerCertMapVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.SslCertVO;
-import com.cloud.network.lb.CertService;
+import org.apache.cloudstack.network.tls.CertService;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
