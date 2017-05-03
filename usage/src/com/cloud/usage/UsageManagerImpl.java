@@ -57,6 +57,7 @@ import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.usage.dao.UsageNetworkOfferingDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
+import com.cloud.usage.dao.UsageSnapshotOnPrimaryDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.usage.dao.UsageVMSnapshotDao;
@@ -144,6 +145,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     ConfigurationDao _configDao;
     @Inject
     private UsageVMSnapshotDao _usageVMSnapshotDao;
+    @Inject
+    private UsageSnapshotOnPrimaryDao _usageSnapshotOnPrimaryDao;
     @Inject
     private QuotaManager _quotaManager;
     @Inject
@@ -966,6 +969,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             createSecurityGroupEvent(event);
         } else if (isVmSnapshotEvent(eventType)) {
             createVMSnapshotEvent(event);
+        } else if (isSnapshotOnPrimaryEvent(eventType)) {
+            createSnapshotOnPrimaryEvent(event);
         }
     }
 
@@ -1039,6 +1044,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (eventType == null)
             return false;
         return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_CREATE) || eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_DELETE));
+    }
+
+    private boolean isSnapshotOnPrimaryEvent(String eventType) {
+        if (eventType == null)
+            return false;
+        return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY) || eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY)) ||
+                (eventType.equals(EventTypes.EVENT_SNAPSHOT_ON_PRIMARY) || eventType.equals(EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY));
     }
 
     private void createVMHelperEvent(UsageEventVO event) {
@@ -1757,6 +1769,21 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Long domainId = acct.getDomainId();
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
         _usageVMSnapshotDao.persist(vsVO);
+    }
+
+    private void createSnapshotOnPrimaryEvent(UsageEventVO event) {
+        Long vmId = event.getResourceId();
+        Long volumeId = event.getTemplateId();
+        Long zoneId = event.getZoneId();
+        Long accountId = event.getAccountId();
+        Long offeringId = event.getOfferingId();
+        //Size could be null for VM snapshot delete events
+        long size = (event.getSize() == null) ? 0 : event.getSize();
+        Date created = event.getCreateDate();
+        Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Long domainId = acct.getDomainId();
+        UsageSnapshotOnPrimaryVO vsVO = new UsageSnapshotOnPrimaryVO(volumeId, zoneId, accountId, domainId, vmId, offeringId > 0 ? 0 : 1, size, created, null); // TODO
+        _usageSnapshotOnPrimaryDao.persist(vsVO);
     }
 
     private class Heartbeat extends ManagedContextRunnable {

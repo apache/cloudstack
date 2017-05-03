@@ -1304,14 +1304,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             DataStoreTO store = volumeTO.getDataStore();
             ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, store);
             long size = getVMSnapshotChainSize(context, hyperHost, baseName + "*.vmdk", morDs, newPath);
+            s_logger.info("IR24 init newPath " + newPath +  "  , size=" + size + " vol type= " + volumeTO.getVolumeType());
 
             if (volumeTO.getVolumeType()== Volume.Type.ROOT) {
                 // add memory snapshot size
                 size += getVMSnapshotChainSize(context, hyperHost, vmName + "*.vmsn", morDs, null);
+                s_logger.info("IR24 newPath " + newPath +  "  , size=" + size);
             }
 
             volumeTO.setSize(size);
             volumeTO.setPath(newPath);
+            s_logger.info("IR24 volumeTO " +volumeTO);
         }
     }
 

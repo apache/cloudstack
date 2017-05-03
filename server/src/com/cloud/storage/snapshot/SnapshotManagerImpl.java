@@ -360,7 +360,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
-    public Snapshot backupSnapshot(Long snapshotId) {
+    public Snapshot backupSnapshot(Long snapshotId) { // IR24
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
         if (snapshot != null) {
             throw new CloudRuntimeException("Already in the backup snapshot:" + snapshotId);

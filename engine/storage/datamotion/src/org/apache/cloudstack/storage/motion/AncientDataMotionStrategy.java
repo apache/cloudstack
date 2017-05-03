@@ -548,6 +548,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 addFullCloneFlagOnVMwareDest(destData.getTO());
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setOptions(options);
+                s_logger.error("IR24 copySnapshot BACKUPSNAPSHOT " + srcData.getId() + " dest=" + destData.getId());
                 EndPoint ep = selector.select(srcData, destData, StorageAction.BACKUPSNAPSHOT);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
