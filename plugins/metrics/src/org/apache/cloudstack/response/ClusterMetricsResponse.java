@@ -128,10 +128,10 @@ public class ClusterMetricsResponse extends ClusterResponse {
         }
     }
 
-    public void setCpuMaxDeviation(final Double maxCpuDeviation, final Double totalCpuUsed, final Long totalHosts) {
-        if (maxCpuDeviation != null && totalCpuUsed != null && totalHosts != null && totalHosts != 0) {
-            final Double averageCpuUsage = totalCpuUsed / totalHosts;
-            this.cpuMaxDeviation = String.format("%.2f%%", (maxCpuDeviation - averageCpuUsage) * 100.0 / averageCpuUsage);
+    public void setCpuMaxDeviation(final Double maxCpuUsagePercentage, final Double totalCpuUsedPercentage, final Long totalHosts) {
+        if (maxCpuUsagePercentage != null && totalCpuUsedPercentage != null && totalHosts != null && totalHosts != 0) {
+            final Double averageCpuUsagePercentage = totalCpuUsedPercentage / totalHosts;
+            this.cpuMaxDeviation = String.format("%.2f%%", (maxCpuUsagePercentage - averageCpuUsagePercentage) / averageCpuUsagePercentage);
         }
     }
 
