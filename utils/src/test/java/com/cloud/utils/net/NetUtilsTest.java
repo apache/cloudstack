@@ -303,7 +303,7 @@ public class NetUtilsTest {
     public void testValidateGuestCidr() throws Exception {
         final String[] validCidrs = {"10.1.1.1/16", "172.16.1.0/16", "192.168.1.0/24", "100.64.1.0/24"};
         final String[] invalidCidrs = {"172.33.1.0/16", "100.128.1.0/10"};
- 
+
         for (String cidr: validCidrs) {
             assertTrue(NetUtils.validateGuestCidr(cidr));
         }
