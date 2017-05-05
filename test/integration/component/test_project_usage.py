@@ -350,7 +350,7 @@ class TestVmUsage(cloudstackTestCase):
 
         self.assertEqual(
                             qresult.count('VOLUME.DELETE'),
-                            2,
+                            1,
                             "Check VOLUME.DELETE in events table"
                         )
         return

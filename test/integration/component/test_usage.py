@@ -574,9 +574,8 @@ class TestVolumeUsage(cloudstackTestCase):
             "basic",
             "sg",
             "eip",
-            "advancedns",
-            "simulator"],
-        required_hardware="false")
+            "advancedns"],
+        required_hardware="true")
     def test_01_volume_usage(self):
         """Test Create/delete a volume and verify correct usage is recorded
         """
@@ -694,10 +693,6 @@ class TestVolumeUsage(cloudstackTestCase):
                 "url"] = self.testdata["coreos_volume"]["urlkvm"]
             self.testdata["coreos_volume"]["format"] = "QCOW2"
         elif self.hypervisor == "hyperv":
-            self.testdata["coreos_volume"][
-                "url"] = self.testdata["coreos_volume"]["urlxen"]
-            self.testdata["coreos_volume"]["format"] = "VHD"
-        elif self.hypervisor == "simulator":
             self.testdata["coreos_volume"][
                 "url"] = self.testdata["coreos_volume"]["urlxen"]
             self.testdata["coreos_volume"]["format"] = "VHD"
