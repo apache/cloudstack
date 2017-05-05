@@ -697,6 +697,10 @@ class TestVolumeUsage(cloudstackTestCase):
             self.testdata["coreos_volume"][
                 "url"] = self.testdata["coreos_volume"]["urlxen"]
             self.testdata["coreos_volume"]["format"] = "VHD"
+        elif self.hypervisor == "simulator":
+            self.testdata["coreos_volume"][
+                "url"] = self.testdata["coreos_volume"]["urlxen"]
+            self.testdata["coreos_volume"]["format"] = "VHD"
 
         volume_uploaded = Volume.upload(
             self.apiclient,
