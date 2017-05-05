@@ -118,10 +118,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         // determine full snapshot backup or not
 
         boolean fullBackup = true;
-        SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Image);
-        SnapshotDataStoreVO parentSnapshotOnPrimaryStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
+        SnapshotDataStoreVO latestSnapshotOnBackupStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Image);
+        SnapshotDataStoreVO latestSnapshotOnPrimaryStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
         HypervisorType hypervisorType = snapshot.getBaseVolume().getHypervisorType();
-        if (parentSnapshotOnPrimaryStore != null && parentSnapshotOnBackupStore != null && hypervisorType == Hypervisor.HypervisorType.XenServer) { // CS does incremental backup only for XenServer
+        if (latestSnapshotOnPrimaryStore != null && latestSnapshotOnBackupStore != null && hypervisorType == Hypervisor.HypervisorType.XenServer) { // CS does incremental backup only for XenServer
 
             // In case of volume migration from one pool to other pool, CS should take full snapshot to avoid any issues with delta chain,
             // to check if this is a migrated volume, compare the current pool id of volume and store_id of oldest snapshot on primary for this volume.
@@ -130,29 +130,34 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             SnapshotDataStoreVO oldestSnapshotOnPrimary = snapshotStoreDao.findOldestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
             VolumeVO volume = volumeDao.findById(snapshot.getVolumeId());
             if (oldestSnapshotOnPrimary != null) {
-                if (oldestSnapshotOnPrimary.getDataStoreId() == volume.getPoolId() && oldestSnapshotOnPrimary.getId() != parentSnapshotOnPrimaryStore.getId()) {
-                    int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
-                            SnapshotManager.DELTAMAX);
-                    int deltaSnap = _deltaSnapshotMax;
-                    int i;
-
-                    for (i = 1; i < deltaSnap; i++) {
-                        Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
-                        if (prevBackupId == 0) {
-                            break;
-                        }
-                        parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(prevBackupId, DataStoreRole.Image);
-                        if (parentSnapshotOnBackupStore == null) {
-                            break;
-                        }
-                    }
-
-                    if (i >= deltaSnap) {
+                if (oldestSnapshotOnPrimary.getDataStoreId() == volume.getPoolId() && oldestSnapshotOnPrimary.getId() != latestSnapshotOnPrimaryStore.getId()) {
+                    if (volume.getSize() != latestSnapshotOnBackupStore.getSize()) {
+                        //Volume resized, take full backup
                         fullBackup = true;
                     } else {
-                        fullBackup = false;
+                        int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
+                                SnapshotManager.DELTAMAX);
+                        int deltaSnap = _deltaSnapshotMax;
+                        int i;
+
+                        for (i = 1; i < deltaSnap; i++) {
+                            Long prevBackupId = latestSnapshotOnBackupStore.getParentSnapshotId();
+                            if (prevBackupId == 0) {
+                                break;
+                            }
+                            latestSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(prevBackupId, DataStoreRole.Image);
+                            if (latestSnapshotOnBackupStore == null) {
+                                break;
+                            }
+                        }
+
+                        if (i >= deltaSnap) {
+                            fullBackup = true;
+                        } else {
+                            fullBackup = false;
+                        }
                     }
-                } else if (oldestSnapshotOnPrimary.getId() != parentSnapshotOnPrimaryStore.getId()){
+                } else if (oldestSnapshotOnPrimary.getId() != latestSnapshotOnPrimaryStore.getId()) {
                     // if there is an snapshot entry for previousPool(primary storage) of migrated volume, delete it becasue CS created one more snapshot entry for current pool
                     snapshotStoreDao.remove(oldestSnapshotOnPrimary.getId());
                 }
