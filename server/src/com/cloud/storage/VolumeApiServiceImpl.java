@@ -408,6 +408,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
             UriUtils.validateUrl(format, url);
             if (VolumeUrlCheck.value()) { // global setting that can be set when their MS does not have internet access
+                s_logger.debug("Checking url: " + url);
                 UriUtils.checkUrlExistence(url);
             }
             // Check that the resource limit for secondary storage won't be exceeded
