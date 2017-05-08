@@ -93,7 +93,7 @@ public class VyosRouterResourceTest {
 
         // This will cause the tests to be run against an actual Vyos Router
         // instead of the mock router.
-        _context.put("use_test_router", "true");
+        //_context.put("use_test_router", "true");
         _resource.setMockContext(_context);
     }
 

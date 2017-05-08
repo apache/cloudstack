@@ -65,7 +65,7 @@ public class VyosRouterResource implements ServerResource{
 
     private static final String s_vyosShellScript = "#!/bin/vbash\nallParams=\"\\\"'$@'\\\"\"\nsource /opt/vyatta/etc/functions/script-template\n\"'$allParams'\"\n";
     private static final String s_vyosScriptPath="/home/vyos/";
-    private static final String s_vyosScriptName="testShellScript.sh";
+    private static final String s_vyosScriptName="cloudStackIntegration.sh";
 
     protected enum VyosNextIdNumber {
         ASCENDING, DESCENDING
@@ -450,12 +450,13 @@ public class VyosRouterResource implements ServerResource{
             String guestVlanGateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
             String cidr = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
             String defaultEgressPolicy = "allow";
+
             if (cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT) == "false" ) {
                 defaultEgressPolicy="deny";
             }
 
             long cidrSize = NetUtils.cidrToLong(cidr)[1];
-            String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);
+            //String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);
 
             Long publicVlanTag = null;
             if (ip.getBroadcastUri() != null) {
@@ -546,7 +547,20 @@ public class VyosRouterResource implements ServerResource{
             String guestCidr = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
 
             for (FirewallRuleTO rule : rules) {
-                if (!rule.revoked()) {
+                //Handle the default egress rule. This is only set on private egress firewall rulesets and is always vyos rule number 9999 so it is processed last.
+                if (rule.getId() == 0 && rule.getType() == FirewallRule.FirewallRuleType.System && rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                    String firewallRulesetName="private_"+rule.getSrcVlanTag()+"_"+rule.getTrafficType();
+                    String defaultEgressRuleAction="accept";
+                    if (!rule.isDefaultEgressPolicy()) { // default of deny && system rule, so deny
+                        defaultEgressRuleAction = "drop";
+                    }
+                    ArrayList<String> a_params = new ArrayList<String>();
+                    a_params.add("set firewall name "+firewallRulesetName+" rule 9999 action '"+defaultEgressRuleAction+"' ");
+                    a_params.add("set firewall name "+firewallRulesetName+" rule 9999 protocol 'all' ");
+                    a_params.add("set firewall name "+firewallRulesetName+" rule 9999 description 'defaultEgressRule' ");
+                    commandList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_params));
+
+                } else if (!rule.revoked()) {
                     manageFirewallRule(commandList, VyosRouterPrimative.ADD, rule, publicVlanTag, privateVlanTag, guestCidr);
                 } else {
                     manageFirewallRule(commandList, VyosRouterPrimative.DELETE, rule, publicVlanTag, privateVlanTag, guestCidr);
@@ -665,11 +679,11 @@ public class VyosRouterResource implements ServerResource{
         }
 
         String defaultFirewallAction="drop";
-        String defaultEgressRuleAction="accept";
-        if (firewallRulesetName.contains("Egress") && defaultEgressPolicy == "allow")
+        //String defaultEgressRuleAction="accept";
+        if (firewallRulesetName.contains("Egress"))
         {
             defaultFirewallAction="accept";
-            defaultEgressRuleAction="drop";
+            //defaultEgressRuleAction="drop";
         }
 
         //This is kind of confusing but in Vyos There are 3 firewalls per interface.
@@ -725,12 +739,22 @@ public class VyosRouterResource implements ServerResource{
                      a_params.add("set firewall name "+firewallRulesetName+" rule 2 protocol 'tcp' ");
                      a_params.add("set firewall name "+firewallRulesetName+" rule 2 description 'allowSSHToRouter' ");
                      a_params.add("set firewall name "+firewallRulesetName+" rule 2 state new 'enable' ");
+                 }
+
+               //allow port 53 through the firewall.
+                 // TODO This should be limited to the dns provider instead of allowing the whole subnet.
+                 if (firewallRulesetName.contains("Egress")) {
+                     a_params.add("set firewall name "+firewallRulesetName+" rule 3 action 'accept' ");
+                     a_params.add("set firewall name "+firewallRulesetName+" rule 3 destination port '53' ");
+                     a_params.add("set firewall name "+firewallRulesetName+" rule 3 protocol 'udp' ");
+                     a_params.add("set firewall name "+firewallRulesetName+" rule 3 description 'allowdns' ");
+                     a_params.add("set firewall name "+firewallRulesetName+" rule 3 state new 'enable' ");
 
                  }
 
-                 //Setup Default Egress Rule
-                 if (firewallRulesetName.contains("Egress")) {
-                     a_params.add("set firewall name "+firewallRulesetName+" rule 9999 action '"+defaultEgressRuleAction+"' ");
+                 //Setup Default Egress Rule for private egress firewall rulesets. Until told otherwise we set this to accept.
+                 if (firewallRulesetName.contains("Egress") && isPrivate == true ) {
+                     a_params.add("set firewall name "+firewallRulesetName+" rule 9999 action 'accept' ");
                      a_params.add("set firewall name "+firewallRulesetName+" rule 9999 protocol 'all' ");
                      a_params.add("set firewall name "+firewallRulesetName+" rule 9999 description 'defaultEgressRule' ");
 
@@ -938,7 +962,7 @@ public class VyosRouterResource implements ServerResource{
                 ArrayList<String> a_params = new ArrayList<String>();
                 a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} outbound-interface '"+publicInterfaceName+"'" );
                 a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} source address '"+privateGateway+"'" );
-                a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} translation address masquerade" );
+                a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} translation address masquerade");
                 a_params.add("set nat source rule {{ "+VyosNextIdNumber.DESCENDING+" }} description '"+cloudstackRuleName+"'");
                 cmdList.add(new DefaultVyosRouterCommand(VyosRouterMethod.SHELL, VyosRouterCommandType.WRITE, a_params));
 
@@ -1151,6 +1175,10 @@ public class VyosRouterResource implements ServerResource{
      */
 
     private String genFirewallRuleName(long id, String vlan) {
+        if (id == 0) { //This is the rule that sets the global firewall default.
+            id=9999;
+        }
+
         if (vlan == null || vlan.isEmpty()) {
             return Long.toString(id);
         }
@@ -1161,14 +1189,13 @@ public class VyosRouterResource implements ServerResource{
         //This will always interact with two firewall rulesets. One for the interface where packets enter the router and one for the interface where
         //packets exit the router.
 
+
         //publicVlanTag, privateVlanTag, and guestCidr must not be null for this to work properly.
         if (publicVlanTag == null || privateVlanTag == null || guestCidr == null || guestCidr.isEmpty() ) {
             throw new ExecutionException("One of the additional required variables for Vyos Router firewall rules is null or guestCidr is empty");
         }
 
         publicVlanTag=parsePublicVlanTag(publicVlanTag);
-        //s_logger.debug("\n*************************** manageFirewallRule called with publicVlanTag: "+publicVlanTag+" privateVlanTag: "+privateVlanTag+" guestCidr: "+guestCidr+" *************************************\n");
-
         String trafficType="";
         if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
             trafficType="Egress";
@@ -1732,7 +1759,8 @@ public class VyosRouterResource implements ServerResource{
             }
             return (previousRuleNumber.intValue()+1);
         } else {
-            Integer previousRuleNumber = new Integer(10000);
+            //9999 is the max rule number. Reserve it for the default egress firewall rule. So start descending order rule number searches at 9998
+            Integer previousRuleNumber = new Integer(9999);
             for (Integer curRuleNumber : existingRuleNumbers.descendingKeySet()) {
                 Integer nextRuleNumber = new Integer(previousRuleNumber.intValue()-1);
                 if (curRuleNumber.intValue() < nextRuleNumber.intValue()) {

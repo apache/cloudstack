@@ -481,10 +481,12 @@ public class VyosRouterExternalFirewallElement extends ExternalFirewallDeviceMan
 
             long firewallRuleId=firewallRules.get(0).getId();
 
-            //When setting up the default egress firewall rules this Id will be empty. Skip this since it has already been setup during network implementation.
+            //When setting up the default egress firewall rules this Id will be empty. Pass this call through the super class's sendFirewallRules method.
             if (firewallRuleId == 0) {
+                super.sendFirewallRules(firewallRules,zone,externalFirewallId);
                 return;
             }
+
             FirewallRuleVO fwr = _fwRulesDao.findById(firewallRuleId);
             long nwId = fwr.getNetworkId();
             NetworkVO network = _networkDao.findById(nwId);
