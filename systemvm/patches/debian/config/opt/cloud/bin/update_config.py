@@ -27,7 +27,7 @@ import configure
 import json
 from cs.CsVmPassword import *
 
-logging.basicConfig(filename='/var/log/cloud.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
+logging.basicConfig(filename='/var/log/cloud.log', level=logging.INFO, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
 # first commandline argument should be the file to process
 if (len(sys.argv) != 2):
