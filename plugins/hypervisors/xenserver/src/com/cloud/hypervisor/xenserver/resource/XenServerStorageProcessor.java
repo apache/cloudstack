@@ -970,6 +970,13 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             tmpltvdi = getVDIbyUuid(conn, srcData.getPath());
             vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
+            Long virtualSize  = vdi.getVirtualSize(conn);
+            if (volume.getSize() > virtualSize) {
+                s_logger.debug("Overriding provided template's size with new size " + volume.getSize() + " for volume: " + volume.getName());
+                vdi.resize(conn, volume.getSize());
+            } else {
+                s_logger.debug("Using templates disk size of " + virtualSize + " for volume: " + volume.getName() + " since size passed was " + volume.getSize());
+            }
             vdi.setNameLabel(conn, volume.getName());
 
             VDI.Record vdir;

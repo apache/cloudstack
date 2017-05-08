@@ -702,7 +702,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             "Please re-try when virtual disk is attached to a VM using SCSI controller.");
             }
 
+            if (vdisk.second() != null && !vdisk.second().toLowerCase().startsWith("scsi"))
+            {
+                s_logger.error("Unsupported disk device bus "+ vdisk.second());
+                throw new Exception("Unsupported disk device bus "+ vdisk.second());
+            }
             VirtualDisk disk = vdisk.first();
+            if ((VirtualDiskFlatVer2BackingInfo)disk.getBacking() != null && ((VirtualDiskFlatVer2BackingInfo)disk.getBacking()).getParent() != null)
+            {
+                s_logger.error("Resize is not supported because Disk device has Parent "+ ((VirtualDiskFlatVer2BackingInfo)disk.getBacking()).getParent().getUuid());
+                throw new Exception("Resize is not supported because Disk device has Parent "+ ((VirtualDiskFlatVer2BackingInfo)disk.getBacking()).getParent().getUuid());
+            }
             String vmdkAbsFile = getAbsoluteVmdkFile(disk);
             if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                 vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
@@ -1515,7 +1525,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String vmNameOnVcenter = names.second();
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
-
+        DiskTO rootDiskTO = null;
         // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
         // This helps avoid mix of different scsi subtype controllers in instance.
         if (DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
@@ -1888,6 +1898,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             volumeDsDetails.first(),
                             (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) ? ((ideUnitNumber++) % VmwareHelper.MAX_IDE_CONTROLLER_COUNT) : scsiUnitNumber++, i + 1);
 
+                    if (vol.getType() == Volume.Type.ROOT)
+                        rootDiskTO = vol;
                     deviceConfigSpecArray[i].setDevice(device);
                     deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
@@ -2022,6 +2034,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 hyperHost.setRestartPriorityForVM(vmMo, DasVmPriority.HIGH.value());
             }
 
+            //For resizing root disk.
+            if (rootDiskTO != null && !hasSnapshot) {
+                resizeRootDisk(vmMo, rootDiskTO, hyperHost, context);
+            }
+
             //
             // Post Configuration
             //
@@ -2080,6 +2097,43 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } finally {
         }
     }
+
+    private void resizeRootDisk(VirtualMachineMO vmMo, DiskTO rootDiskTO, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception
+    {
+        Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, rootDiskTO.getPath() + ".vmdk");
+        assert(vdisk != null);
+
+        Long reqSize=((VolumeObjectTO)rootDiskTO.getData()).getSize()/1024;
+        VirtualDisk disk = vdisk.first();
+        if (reqSize > disk.getCapacityInKB())
+        {
+            VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(vmMo.getDiskInfoBuilder(), rootDiskTO, hyperHost, context);
+            assert (diskInfo != null);
+            String[] diskChain = diskInfo.getDiskChain();
+
+            if (diskChain != null && diskChain.length>1)
+            {
+                s_logger.error("Unsupported Disk chain length "+ diskChain.length);
+                throw new Exception("Unsupported Disk chain length "+ diskChain.length);
+            }
+            if (diskInfo.getDiskDeviceBusName() == null || !diskInfo.getDiskDeviceBusName().toLowerCase().startsWith("scsi"))
+            {
+                s_logger.error("Unsupported root disk device bus "+ diskInfo.getDiskDeviceBusName() );
+                throw new Exception("Unsupported root disk device bus "+ diskInfo.getDiskDeviceBusName());
+            }
+
+            disk.setCapacityInKB(reqSize);
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+            deviceConfigSpec.setDevice(disk);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            if (!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Failed to configure VM for given root disk size. vmName: " + vmMo.getName());
+            }
+        }
+    }
+
 
     /**
      * Sets video card memory to the one provided in detail svga.vramSize (if provided) on {@code vmConfigSpec}.
