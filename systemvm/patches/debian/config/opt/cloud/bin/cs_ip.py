@@ -15,8 +15,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from netaddr import IPNetwork
 
-from netaddr import *
 
 def merge(dbag, ip):
     nic_dev_id = None
@@ -31,7 +31,7 @@ def merge(dbag, ip):
 
     ipo = IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
     if 'nic_dev_id' in ip:
-         nic_dev_id = ip['nic_dev_id']
+        nic_dev_id = ip['nic_dev_id']
     ip['device'] = 'eth' + str(nic_dev_id)
     ip['broadcast'] = str(ipo.broadcast)
     ip['cidr'] = str(ipo.ip) + '/' + str(ipo.prefixlen)
@@ -45,7 +45,7 @@ def merge(dbag, ip):
         dbag[ip['device']] = [ip]
     else:
         if 'source_nat' in ip and ip['source_nat'] and ip['device'] in dbag and len(dbag[ip['device']]) > 0:
-            dbag[ip['device']].insert(0, ip) # make sure the source_nat ip is first (primary) on the device
+            dbag[ip['device']].insert(0, ip)  # make sure the source_nat ip is first (primary) on the device
         else:
             dbag.setdefault(ip['device'], []).append(ip)
 

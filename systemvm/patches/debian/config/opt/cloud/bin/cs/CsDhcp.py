@@ -16,7 +16,7 @@
 # under the License.
 import CsHelper
 import logging
-from netaddr import *
+from netaddr import IPAddress
 from random import randint
 from CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
@@ -134,13 +134,13 @@ class CsDhcp(CsDataBag):
         # with a splay of 60 hours to prevent storms
         lease = randint(700, 760)
 
-        if entry['default_entry'] == True:
+        if entry['default_entry'] is True:
             self.cloud.add("%s,%s,%s,%sh" % (entry['mac_address'],
                                              entry['ipv4_adress'],
                                              entry['host_name'],
                                              lease))
         else:
-            tag = entry['ipv4_adress'].replace(".","_")
+            tag = entry['ipv4_adress'].replace(".", "_")
             self.cloud.add("%s,set:%s,%s,%s,%sh" % (entry['mac_address'],
                                                     tag,
                                                     entry['ipv4_adress'],
@@ -157,7 +157,6 @@ class CsDhcp(CsDataBag):
                 v['dnsmasq'] = True
                 # Virtual Router
                 v['gateway'] = entry['default_gateway']
-
 
     def add_host(self, ip, hosts):
         self.hosts[ip] = hosts

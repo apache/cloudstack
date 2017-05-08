@@ -19,7 +19,6 @@
 
 from cs.CsRedundant import CsRedundant
 from cs.CsDatabag import CsCmdLine
-from cs.CsAddress import CsAddress
 from cs.CsConfig import CsConfig
 import logging
 from optparse import OptionParser
@@ -42,7 +41,7 @@ logging.basicConfig(filename=config.get_logger(),
                     format=config.get_format())
 config.cmdline()
 cl = CsCmdLine("cmdline", config)
-#Update the configuration to set state as backup and let keepalived decide who the real Master is!
+# Update the configuration to set state as backup and let keepalived decide who the real Master is!
 cl.set_master_state(False)
 cl.save()
 

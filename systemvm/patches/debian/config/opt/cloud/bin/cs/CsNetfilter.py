@@ -16,8 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import CsHelper
-from pprint import pprint
-from CsDatabag import CsDataBag, CsCmdLine
+from CsDatabag import CsCmdLine
 import logging
 
 
@@ -144,7 +143,7 @@ class CsNetfilters(object):
         # PASS 2: Create rules
         for fw in list:
             tupledFw = tuple(fw)
-            if tupledFw in ruleSet :
+            if tupledFw in ruleSet:
                 logging.debug("Already processed : %s", tupledFw)
                 continue
 

@@ -1,19 +1,19 @@
-#Licensed to the Apache Software Foundation (ASF) under one
-#or more contributor license agreements.  See the NOTICE file
-#distributed with this work for additional information
-#regarding copyright ownership.  The ASF licenses this file
-#to you under the Apache License, Version 2.0 (the
-#"License"); you may not use this file except in compliance
-#with the License.  You may obtain a copy of the License at
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
 #  http://www.apache.org/licenses/LICENSE-2.0
 #
-#Unless required by applicable law or agreed to in writing,
-#software distributed under the License is distributed on an
-#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-#KIND, either express or implied.  See the License for the
-#specific language governing permissions and limitations
-#under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 
 __author__ = 'frank'
 
@@ -36,6 +36,7 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.WARNING)
 
+
 class ShellCmd(object):
     '''
     classdocs
@@ -46,7 +47,15 @@ class ShellCmd(object):
         '''
         self.cmd = cmd
         if pipe:
-            self.process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/sh', cwd=workdir)
+            self.process = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                executable='/bin/sh',
+                cwd=workdir
+            )
         else:
             self.process = subprocess.Popen(cmd, shell=True, executable='/bin/sh', cwd=workdir)
 
@@ -67,12 +76,15 @@ class ShellCmd(object):
         self.return_code = self.process.returncode
         return self.stdout
 
+
 def shell(cmd):
     return ShellCmd(cmd)()
 
 
 class Server(object):
+
     CMDLINE = '/var/cache/cloud/cmdline'
+
     def __init__(self):
         self.apikey = None
         self.secretkey = None
@@ -140,11 +152,19 @@ class Server(object):
 
     def notify_provisioning_done(self, mac):
         sig = self._make_sign(mac)
-        cmd = 'http://%s:%s/client/api?command=notifyBaremetalProvisionDone&mac=%s&apiKey=%s&signature=%s' % (self._get_mgmt_ip(), self._get_mgmt_port(), mac, self.apikey, sig)
+        cmd = 'http://%s:%s/client/api?command=notifyBaremetalProvisionDone&mac=%s&apiKey=%s&signature=%s' % (
+            self._get_mgmt_ip(),
+            self._get_mgmt_port(),
+            mac,
+            self.apikey,
+            sig
+        )
         shell("curl -X GET '%s'" % cmd)
         return ''
 
+
 server = None
+
 
 @app.route('/baremetal/provisiondone/<mac>', methods=['GET'])
 def notify_provisioning_done(mac):
@@ -157,5 +177,8 @@ def notify_provisioning_done(mac):
 
 if __name__ == '__main__':
     server = Server()
-    shell("iptables-save | grep -- '-A INPUT -i eth0 -p tcp -m tcp --dport 10086 -j ACCEPT' > /dev/null || iptables -I INPUT -i eth0 -p tcp -m tcp --dport 10086 -j ACCEPT")
+    shell(
+        "iptables-save | grep -- '-A INPUT -i eth0 -p tcp -m tcp --dport 10086 -j ACCEPT' > /dev/null || " +
+        "iptables -I INPUT -i eth0 -p tcp -m tcp --dport 10086 -j ACCEPT"
+    )
     app.run(host='0.0.0.0', port=10086, debug=True)

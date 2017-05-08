@@ -36,8 +36,6 @@ import cs_remoteaccessvpn
 import cs_vpnusers
 import cs_staticroutes
 
-from pprint import pprint
-
 
 class DataBag:
 
@@ -57,7 +55,7 @@ class DataBag:
             logging.debug("Creating data bag type %s", self.key)
             data.update({"id": self.key})
         else:
-            logging.debug("Loading data bag type %s",  self.key)
+            logging.debug("Loading data bag type %s", self.key)
             data = json.load(handle)
             handle.close()
         self.dbag = data
@@ -270,6 +268,7 @@ class updateDataBag:
             dbag = cs_ip.merge(dbag, ip)
         return dbag
 
+
 class QueueFile:
 
     fileName = ''
@@ -281,7 +280,7 @@ class QueueFile:
         if data is not None:
             self.data = data
             self.type = self.data["type"]
-            proc = updateDataBag(self)
+            updateDataBag(self)
             return
         fn = self.configCache + '/' + self.fileName
         try:
@@ -296,7 +295,7 @@ class QueueFile:
                 self.__moveFile(fn, self.configCache + "/processed")
             else:
                 os.remove(fn)
-            proc = updateDataBag(self)
+            updateDataBag(self)
 
     def setFile(self, name):
         self.fileName = name
@@ -319,7 +318,6 @@ class QueueFile:
 
 class PrivateGatewayHack:
 
-
     @classmethod
     def update_network_type_for_privategateway(cls, dbag, data):
         ip = data['router_guest_ip'] if 'router_guest_ip' in data.keys() else data['public_ip']
@@ -332,14 +330,15 @@ class PrivateGatewayHack:
             data['nw_type'] = "public"
             logging.debug("Updating nw_type for ip %s" % ip)
         else:
-            logging.debug("Not updating nw_type for ip %s because has_private_gw_ip = %s and private_gw_matches = %s " % (ip, has_private_gw_ip, private_gw_matches))
+            logging.debug(
+                "Not updating nw_type for ip %s because has_private_gw_ip = %s and private_gw_matches = %s " %
+                (ip, has_private_gw_ip, private_gw_matches)
+            )
         return data
-
 
     @classmethod
     def if_config_has_privategateway(cls, dbag):
         return 'privategateway' in dbag['config'].keys() and dbag['config']['privategateway'] != "None"
-
 
     @classmethod
     def ip_matches_private_gateway_ip(cls, ip, private_gateway_ip):
@@ -347,7 +346,6 @@ class PrivateGatewayHack:
         if ip == private_gateway_ip:
             new_ip_matches_private_gateway_ip = True
         return new_ip_matches_private_gateway_ip
-
 
     @classmethod
     def load_inital_data(cls):

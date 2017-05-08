@@ -18,7 +18,8 @@
 # under the License.
 
 from CsDatabag import CsDataBag
-from CsRedundant import *
+import logging
+import CsHelper
 
 
 class CsStaticRoutes(CsDataBag):
