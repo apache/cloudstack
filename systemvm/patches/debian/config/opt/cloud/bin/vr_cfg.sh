@@ -27,39 +27,28 @@ log_it() {
     echo "$(date) : $*" >> $log
 }
 
-while getopts 'c:' OPTION
-do
-  case $OPTION in
-      c) cfg="$OPTARG"
-          ;;
-  esac
-done
+while getopts 'c:' OPTION; do
+    case $OPTION in
+        c) cfg="$OPTARG" ;;
+esac; done
 
-while read line
-do
+while read line; do
     #comment
-    if [[ $line == \#* ]]
-    then
-	    continue
-    fi
+    if [[ $line == \#* ]]; then
+        continue
 
-    if [ "$line" == "<version>" ]
-    then
+    elif [ "$line" == "<version>" ]; then
         read line
         version=$line
         log_it "VR config: configuation format version $version"
         #skip </version>
         read line
-        continue
-    fi
 
-    if [ "$line" == "<script>" ]
-    then
+    elif [ "$line" == "<script>" ]; then
         read line
         log_it "VR config: executing: $line"
         eval $line >> $log 2>&1
-        if [ $? -ne 0 ]
-        then
+        if [ $? -ne 0 ]; then
             log_it "VR config: executing failed: $line"
             # expose error info to mgmt server
             echo "VR config: execution failed: \"$line\", check $log in VR for details " 1>&2
@@ -68,26 +57,22 @@ do
         #skip </script>
         read line
         log_it "VR config: execution success "
-        continue
-    fi
 
-    if [ "$line" == "<file>" ]
-    then
+    elif [ "$line" == "<file>" ]; then
         read line
         file=$line
         log_it "VR config: creating file: $file"
         rm -f $file
-        while read -r line
-        do
-            if [ "$line" == "</file>" ]
-            then
+        while read -r line; do
+            if [ "$line" == "</file>" ]; then
                 break
             fi
             echo $line >> $file
         done
         log_it "VR config: create file success"
-        continue
+
     fi
+
 done < $cfg
 
 # archive the configuration file
