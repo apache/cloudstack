@@ -76,10 +76,10 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
             // FIXME zoneResponse.setVlan(dataCenter.get.getVnet());
             zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
-        }
 
-        if (showCapacities != null && showCapacities) {
-            zoneResponse.setCapacitites(ApiResponseHelper.getDataCenterCapacityResponse(dataCenter.getId()));
+            if (showCapacities != null && showCapacities) {
+                zoneResponse.setCapacitites(ApiResponseHelper.getDataCenterCapacityResponse(dataCenter.getId()));
+            }
         }
 
         // set network domain info
