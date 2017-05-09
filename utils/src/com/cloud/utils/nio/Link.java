@@ -99,48 +99,6 @@ public class Link {
         _sslEngine = sslEngine;
     }
 
-    /**
-     * No user, so comment it out.
-     *
-     * Static methods for reading from a channel in case
-     * you need to add a client that doesn't require nio.
-     * @param ch channel to read from.
-     * @param bytebuffer to use.
-     * @return bytes read
-     * @throws IOException if not read to completion.
-    public static byte[] read(SocketChannel ch, ByteBuffer buff) throws IOException {
-        synchronized(buff) {
-            buff.clear();
-            buff.limit(4);
-
-            while (buff.hasRemaining()) {
-                if (ch.read(buff) == -1) {
-                    throw new IOException("Connection closed with -1 on reading size.");
-                }
-            }
-
-            buff.flip();
-
-            int length = buff.getInt();
-            ByteArrayOutputStream output = new ByteArrayOutputStream(length);
-            WritableByteChannel outCh = Channels.newChannel(output);
-
-            int count = 0;
-            while (count < length) {
-                buff.clear();
-                int read = ch.read(buff);
-                if (read < 0) {
-                    throw new IOException("Connection closed with -1 on reading data.");
-                }
-                count += read;
-                buff.flip();
-                outCh.write(buff);
-            }
-
-            return output.toByteArray();
-        }
-    }
-     */
 
     private static void doWrite(SocketChannel ch, ByteBuffer[] buffers, SSLEngine sslEngine) throws IOException {
         SSLSession sslSession = sslEngine.getSession();
@@ -161,7 +119,11 @@ public class Link {
             engResult = sslEngine.wrap(buffers, pkgBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
                     engResult.getStatus() != SSLEngineResult.Status.OK) {
-                throw new IOException("SSL: SSLEngine return bad result! " + engResult);
+                String msg = "SSL: SSLEngine returns a bad result on writing! " + engResult;
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg);
+                }
+                throw new IOException(msg);
             }
 
             processedLen = 0;
@@ -222,7 +184,11 @@ public class Link {
             }
 
             if (ch.read(_readBuffer) == -1) {
-                throw new IOException("Connection closed with -1 on reading size.");
+                String msg = "Connection closed with -1 on reading header.";
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + ch.toString());
+                }
+                throw new IOException(msg);
             }
 
             if (_readBuffer.hasRemaining()) {
@@ -237,7 +203,11 @@ public class Link {
             }
 
             if (readSize > MAX_SIZE_PER_PACKET) {
-                throw new IOException("Wrong packet size: " + readSize);
+                String msg = "Wrong packet size: " + readSize;
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + ": " + ch.toString());
+                }
+                throw new IOException(msg);
             }
 
             if (!_gotFollowingPacket) {
@@ -263,7 +233,11 @@ public class Link {
         }
 
         if (ch.read(_readBuffer) == -1) {
-            throw new IOException("Connection closed with -1 on read.");
+            String msg = "Connection closed with -1 on reading data.";
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug(msg + ch.toString());
+            }
+            throw new IOException(msg);
         }
 
         if (_readBuffer.hasRemaining()) {   // We're not done yet.
@@ -287,10 +261,18 @@ public class Link {
             engResult = _sslEngine.unwrap(_readBuffer, appBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
                     engResult.getStatus() != SSLEngineResult.Status.OK) {
-                throw new IOException("SSL: SSLEngine return bad result! " + engResult);
+                String msg = "SSL: SSLEngine returns a bad result on reading! " + engResult;
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + ch.toString());
+                }
+                throw new IOException(msg);
             }
             if (remaining == _readBuffer.remaining()) {
-                throw new IOException("SSL: Unable to unwrap received data! still remaining " + remaining + "bytes!");
+                String msg = "SSL: Unable to unwrap received data! still remaining " + remaining + "bytes!";
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + ch.toString());
+                }
+                throw new IOException(msg);
             }
 
             appBuf.flip();
@@ -485,10 +467,14 @@ public class Link {
             if (sslEngine.isInboundDone() && sslEngine.isOutboundDone()) {
                 return false;
             }
+            s_logger.warn("This SSL engine was forced to close inbound due to end of stream.");
             try {
                 sslEngine.closeInbound();
             } catch (SSLException e) {
-                s_logger.warn("This SSL engine was forced to close inbound due to end of stream.");
+                // we still need to clean as much as possible but let's report this issue
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("This SSL engine failed to close inbound : " + e.getLocalizedMessage(),e);
+                }
             }
             sslEngine.closeOutbound();
             // After closeOutbound the engine will be set to WRAP state,
@@ -525,7 +511,11 @@ public class Link {
                     break;
                 }
             default:
-                throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+                String msg = "Invalid SSL status: " + result.getStatus();
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + ": " + socketChannel.toString());
+                }
+                throw new IllegalStateException(msg);
         }
         return true;
     }
@@ -561,7 +551,11 @@ public class Link {
                 myNetData = enlargeBuffer(myNetData, netBufferSize);
                 break;
             case BUFFER_UNDERFLOW:
-                throw new SSLException("Buffer underflow occurred after a wrap. We should not reach here.");
+                String msg = "Buffer underflow occurred after a wrap. We should not reach here.";
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + socketChannel.toString());
+                }
+                throw new SSLException(msg);
             case CLOSED:
                 try {
                     myNetData.flip();
@@ -625,7 +619,11 @@ public class Link {
                 case NOT_HANDSHAKING:
                     break;
                 default:
-                    throw new IllegalStateException("Invalid SSL status: " + handshakeStatus);
+                    String msg = "Invalid SSL status: " + handshakeStatus;
+                    if(s_logger.isDebugEnabled()) {
+                        s_logger.debug(msg + ": " + socketChannel.toString());
+                    }
+                    throw new IllegalStateException(msg);
             }
             handshakeStatus = sslEngine.getHandshakeStatus();
         }

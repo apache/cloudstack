@@ -81,6 +81,7 @@ public class NioClient extends NioConnection {
             // remaining task done
             task = _factory.create(Task.Type.CONNECT, link, null);
         } catch (GeneralSecurityException e) {
+            s_logger.error("Failed to initialize security, connecting to host: " + _host + " port: " + _port);
             _selector.close();
             throw new IOException("Failed to initialise security", e);
         } catch (IOException e) {
@@ -108,7 +109,5 @@ public class NioClient extends NioConnection {
             _clientConnection.close();
         }
         s_logger.info("NioClient connection closed");
-
     }
-
 }

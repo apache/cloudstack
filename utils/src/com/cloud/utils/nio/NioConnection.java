@@ -53,7 +53,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  * provides that.
  */
 public abstract class NioConnection implements Runnable {
-    private static final Logger s_logger = Logger.getLogger(NioConnection.class);;
+    private static final Logger s_logger = Logger.getLogger(NioConnection.class);
 
     protected Selector _selector;
     protected Thread _thread;
@@ -207,7 +207,11 @@ public abstract class NioConnection implements Runnable {
                     try {
                         sslEngine.beginHandshake();
                         if (!Link.doHandshake(socketChannel, sslEngine, false)) {
-                            throw new IOException("SSL handshake timed out with " + socketChannel.getRemoteAddress());
+                            String msg = "SSL handshake timed out with " + socketChannel.getRemoteAddress();
+                            if(s_logger.isDebugEnabled()) {
+                                s_logger.debug(msg + ": " + socketChannel.toString());
+                            }
+                            throw new IOException(msg);
                         }
                         if (s_logger.isTraceEnabled()) {
                             s_logger.trace("SSL: Handshake done");
@@ -226,7 +230,10 @@ public abstract class NioConnection implements Runnable {
                         try {
                             socketChannel.close();
                             socket.close();
-                        } catch (IOException ignore) {
+                        } catch (IOException toBeLogged) {
+                            if(s_logger.isDebugEnabled()) {
+                                s_logger.debug("closing a channel failed during ssl handshake task " + socketChannel,toBeLogged);
+                            }
                         }
                     } finally {
                         _selector.wakeup();
@@ -241,8 +248,10 @@ public abstract class NioConnection implements Runnable {
                 socketChannel.close();
                 socket.close();
             } catch (IOException ignore) {
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("closing a channel failed due to handshake " + socketChannel,e);
+                }
             }
-            return;
         } finally {
             _selector.wakeup();
         }
