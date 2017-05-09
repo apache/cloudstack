@@ -184,8 +184,6 @@ public class CommandSetupHelper {
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
 
-    private final String _dnsBasicZoneUpdates = "all";
-
     public void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
         final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
         final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
@@ -620,18 +618,17 @@ public class CommandSetupHelper {
     public void createDhcpEntryCommandsForVMs(final DomainRouterVO router, final Commands cmds, final long guestNetworkId) {
         final List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(guestNetworkId, VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
+        String dnsBasicZoneUpdates = _configDao.getValue(Config.DnsBasicZoneUpdates.key());
         for (final UserVmVO vm : vms) {
-            boolean createDhcp = true;
             if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()
-                    && _dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
-                createDhcp = false;
+                    && dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
+                continue;
             }
-            if (createDhcp) {
-                final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
-                if (nic != null) {
-                    s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
-                    createDhcpEntryCommand(router, vm, nic, cmds);
-                }
+
+            final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
+            if (nic != null) {
+                s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
+                createDhcpEntryCommand(router, vm, nic, cmds);
             }
         }
     }
