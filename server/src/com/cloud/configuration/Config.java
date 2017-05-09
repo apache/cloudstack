@@ -1458,15 +1458,6 @@ public enum Config {
             "The default maximum secondary storage space (in GiB) that can be used for an account",
             null),
 
-    ResourceCountCheckInterval(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "resourcecount.check.interval",
-            "0",
-            "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task",
-            "Seconds"),
-
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
             "Advanced",
