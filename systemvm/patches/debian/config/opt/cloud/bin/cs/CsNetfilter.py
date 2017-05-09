@@ -16,8 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import CsHelper
-from pprint import pprint
-from CsDatabag import CsDataBag, CsCmdLine
+from CsDatabag import CsCmdLine
 import logging
 
 
@@ -173,7 +172,15 @@ class CsNetfilters(object):
                         cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), rule_count))
                     else:
                         cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), fw[1]))
-                CsHelper.execute("iptables -t %s %s" % (new_rule.get_table(), cpy))
+                ret = CsHelper.execute2("iptables -t %s %s" % (new_rule.get_table(), cpy))
+                #There are some issues in this framework causing failures  .. like adding a chain without checking it is present causing
+                # the failures. Also some of the rule like removeFromLoadBalancerRule is deleting rule and deleteLoadBalancerRule
+                #trying to delete which causes the failure.
+                #For now raising the log.
+                #TODO: Need to fix in the framework.
+                if ret.returncode != 0 :
+                    error = ret.communicate()[0]
+                    logging.debug("iptables command got failed ... continuing")
                 ruleSet.add(tupledFw)
                 self.chain.add_rule(rule_chain)
         self.del_standard()

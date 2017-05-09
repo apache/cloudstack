@@ -168,12 +168,10 @@ class CsAcl(CsDataBag):
                 if rule['protocol'] == "icmp":
                     fwr += " -s %s " % cidr + \
                                     " -p %s " % rule['protocol'] + \
-                                    " -m %s " % rule['protocol'] + \
                                     " --icmp-type %s" % icmp_type
                 elif rule['protocol'] != "all":
                     fwr += " -s %s " % cidr + \
                            " -p %s " % rule['protocol'] + \
-                           " -m %s " % rule['protocol'] + \
                            "  %s" % rnge
                 elif rule['protocol'] == "all":
                     fwr += " -s %s " % cidr
@@ -1022,6 +1020,7 @@ def main(argv):
             static_routes.process()
     except Exception:
         logging.exception("Exception while configuring router")
+        return 1
 
 if __name__ == "__main__":
     main(sys.argv)
