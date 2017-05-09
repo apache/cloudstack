@@ -1721,8 +1721,22 @@ test_data = {
                 "username": "",
                 "password": "",
             },
+            "link_ldap_details": {
+                "domain_name" : "",
+                "accounttype" : "",
+                "name" : "",
+                "type" : "",
+                "admin" : "",
+                "linkLdapUsername" : "",
+                "linkLdapPassword" : "",
+                "linkLdapNestedUser" : "",
+                "linkLdapNestedPassword" : ""
+
+            },
             "ldap_configuration": {
                 "basedn": "",
+                "bindpassword": "",
+                "principal": "",
                 "emailAttribute": "",
                 "userObject": "",
                 "usernameAttribute": "",

@@ -26,8 +26,10 @@ from marvin.cloudstackAPI import (updateConfiguration,
                                   deleteAccount,
                                   addLdapConfiguration,
                                   deleteLdapConfiguration)
+
+
 from marvin.cloudstackAPI import login
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import (cleanup_resources)
 from nose.plugins.attrib import attr
 import telnetlib
 from ddt import ddt, data
@@ -131,8 +133,8 @@ class TestLdap(cloudstackTestCase):
             self.debug("Ldap Configuration was successful")
 
             loginRes = self._checklogin(
-                self.services["configurableData"]["ldap_configuration"]["ldapUsername"],
-                self.services["configurableData"]["ldap_configuration"]["ldapPassword"])
+                self.services["configurableData"]["ldap_account"]["username"],
+                self.services["configurableData"]["ldap_account"]["password"], method="POST")
             self.debug(loginRes)
             self.assertEquals(loginRes, 1, self.reason)
 
@@ -151,13 +153,18 @@ class TestLdap(cloudstackTestCase):
             self.services["configurableData"]["ldap_configuration"])
         self.assertEqual(self.ldapconfRes, 1, "Ldap Configuration failed")
         loginRes = self._checklogin(
-            self.services["configurableData"]["ldap_configuration"]["ldapUsername"], "")
+            self.services["configurableData"]["ldap_configuration"]["ldapUsername"], "","")
         self.assertNotEqual(loginRes, 1, "login API Successful with empty password")
 
     @data("basedn", "ldapPassword")
     def test_03_validateldapbindnobasedn(self, value):
         """
         This test is to verify ldapbind functionality without passing required bind parameters.
+
+        Since ldapbind functionality is moved to Global Settings, Configuring ldap
+        no longer checks  the bind  functionality. But there are plans to revert them from global settings to
+        LDAP CONFIGURATION SETTINGS. Hence, for now, making this test case a success if ldap configuration is successful
+
         """
         bindvalue = self.services["configurableData"]["ldap_configuration"][value]
 
@@ -167,7 +174,7 @@ class TestLdap(cloudstackTestCase):
             if self.reason.__contains__("addLdapConfiguration failed"):
                 self.assertEqual(self.ldapconfRes, 1, "Ldap Configuration not successful")
             else:
-                self.assertNotEqual(self.ldapconfRes, 1, "Ldap Configuration successful with invalid values-i.e."
+                self.assertEqual(self.ldapconfRes, 1, "Ldap Configuration successful with invalid values-i.e."
                                                          " allowing anonymous bind")
         self.services["configurableData"]["ldap_configuration"][value] = value
 
@@ -183,9 +190,29 @@ class TestLdap(cloudstackTestCase):
 
         # Setup Global settings
 
+        updateConfigurationCmd1 = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd1.name = "ldap.basedn"
+        updateConfigurationCmd1.value = ldapConfiguration['basedn']
+        updateConfigurationResponse = self.apiClient.updateConfiguration(
+            updateConfigurationCmd1)
+        self.debug(
+            "updated the parameter %s with value %s" %
+            (updateConfigurationResponse.name,
+             updateConfigurationResponse.value))
+
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
-        updateConfigurationCmd.name = "ldap.basedn"
-        updateConfigurationCmd.value = ldapConfiguration['basedn']
+        updateConfigurationCmd.name = "ldap.bind.password"
+        updateConfigurationCmd.value = ldapConfiguration['bindpassword']
+        updateConfigurationResponse = self.apiClient.updateConfiguration(
+            updateConfigurationCmd)
+        self.debug(
+            "updated the parameter %s with value %s" %
+            (updateConfigurationResponse.name,
+             updateConfigurationResponse.value))
+
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "ldap.bind.principal"
+        updateConfigurationCmd.value = ldapConfiguration['principal']
         updateConfigurationResponse = self.apiClient.updateConfiguration(
             updateConfigurationCmd)
         self.debug(
@@ -279,7 +306,7 @@ class TestLdap(cloudstackTestCase):
             self.debug("deleteLdapConfiguration failed %s" % e)
             return 0
 
-    def _checklogin(self, username, password):
+    def _checklogin(self, username, password, method):
         """
 
         :param username:
@@ -292,7 +319,7 @@ class TestLdap(cloudstackTestCase):
             loginParams = login.loginCmd()
             loginParams.username = username
             loginParams.password = password
-            loginRes = self.apiClient.login(loginParams)
+            loginRes = self.apiClient.login(loginParams, method)
             self.debug("login response %s" % loginRes)
             if loginRes is None:
                 self.debug("login not successful")
