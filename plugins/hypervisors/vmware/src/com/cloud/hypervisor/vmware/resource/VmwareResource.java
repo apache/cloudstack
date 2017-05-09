@@ -1528,6 +1528,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String existingVmName = null;
         VirtualMachineFileInfo existingVmFileInfo = null;
         VirtualMachineFileLayoutEx existingVmFileLayout = null;
+        List<DatastoreMO> existingDatastores = new ArrayList<DatastoreMO>();
 
         Pair<String, String> names = composeVmNames(vmSpec);
         String vmInternalCSName = names.first();
@@ -1650,6 +1651,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         existingVmName = existingVmInDc.getName();
                         existingVmFileInfo = existingVmInDc.getFileInfo();
                         existingVmFileLayout = existingVmInDc.getFileLayout();
+                        existingDatastores = existingVmInDc.getAllDatastores();
                         existingVmInDc.unregisterVm();
                     }
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
@@ -2072,7 +2074,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             // Since VM was successfully powered-on, if there was an existing VM in a different cluster that was unregistered, delete all the files associated with it.
             if (existingVmName != null && existingVmFileLayout != null) {
-                deleteUnregisteredVmFiles(existingVmFileLayout, dcMo, true);
+                List<String> vmDatastoreNames = new ArrayList<String>();
+                for (DatastoreMO vmDatastore : vmMo.getAllDatastores()) {
+                    vmDatastoreNames.add(vmDatastore.getName());
+                }
+                // Don't delete files that are in a datastore that is being used by the new VM as well (zone-wide datastore).
+                List<String> skipDatastores = new ArrayList<String>();
+                for (DatastoreMO existingDatastore : existingDatastores) {
+                    if (vmDatastoreNames.contains(existingDatastore.getName())) {
+                        skipDatastores.add(existingDatastore.getName());
+                    }
+                }
+                deleteUnregisteredVmFiles(existingVmFileLayout, dcMo, true, skipDatastores);
             }
 
             return startAnswer;
@@ -2701,7 +2714,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private void deleteUnregisteredVmFiles(VirtualMachineFileLayoutEx vmFileLayout, DatacenterMO dcMo, boolean deleteDisks) throws Exception {
+    private void deleteUnregisteredVmFiles(VirtualMachineFileLayoutEx vmFileLayout, DatacenterMO dcMo, boolean deleteDisks, List<String> skipDatastores) throws Exception {
         s_logger.debug("Deleting files associated with an existing VM that was unregistered");
         DatastoreFile vmFolder = null;
         try {
@@ -2714,8 +2727,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 else if (file.getType().equals("config"))
                     vmFolder = new DatastoreFile(fileInDatastore.getDatastoreName(), fileInDatastore.getDir());
                 DatastoreMO dsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
-                s_logger.debug("Deleting file: " + file.getName());
-                dsMo.deleteFile(file.getName(), dcMo.getMor(), true);
+                if (skipDatastores == null || !skipDatastores.contains(dsMo.getName())) {
+                    s_logger.debug("Deleting file: " + file.getName());
+                    dsMo.deleteFile(file.getName(), dcMo.getMor(), true);
+                }
             }
             // Delete files that are present in the VM folder - this will take care of the VM disks as well.
             DatastoreMO vmFolderDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(vmFolder.getDatastoreName()));
@@ -2723,14 +2738,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (deleteDisks) {
                 for (String file : files) {
                     String vmDiskFileFullPath = String.format("%s/%s", vmFolder.getPath(), file);
-                    s_logger.debug("Deleting file: " + vmDiskFileFullPath);
-                    vmFolderDsMo.deleteFile(vmDiskFileFullPath, dcMo.getMor(), true);
+                    if (skipDatastores == null || !skipDatastores.contains(vmFolderDsMo.getName())) {
+                        s_logger.debug("Deleting file: " + vmDiskFileFullPath);
+                        vmFolderDsMo.deleteFile(vmDiskFileFullPath, dcMo.getMor(), true);
+                    }
                 }
             }
             // Delete VM folder
             if (deleteDisks || files.length == 0) {
-                s_logger.debug("Deleting folder: " + vmFolder.getPath());
-                vmFolderDsMo.deleteFolder(vmFolder.getPath(), dcMo.getMor());
+                if (skipDatastores == null || !skipDatastores.contains(vmFolderDsMo.getName())) {
+                    s_logger.debug("Deleting folder: " + vmFolder.getPath());
+                    vmFolderDsMo.deleteFolder(vmFolder.getPath(), dcMo.getMor());
+                }
             }
         } catch (Exception e) {
             String message = "Failed to delete files associated with an existing VM that was unregistered due to " + VmwareHelper.getExceptionMessage(e);
@@ -4556,7 +4575,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     VirtualMachineFileLayoutEx vmFileLayout = vmMo.getFileLayout();
                     context.getService().unregisterVM(vmMo.getMor());
                     if (cmd.getCleanupVmFiles()) {
-                        deleteUnregisteredVmFiles(vmFileLayout, dataCenterMo, false);
+                        deleteUnregisteredVmFiles(vmFileLayout, dataCenterMo, false, null);
                     }
                     return new Answer(cmd, true, "unregister succeeded");
                 } catch (Exception e) {
