@@ -104,7 +104,10 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.DeleteSnapshotsDirCommand;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.manager.Commands;
@@ -1131,17 +1134,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     }
 
                     // remove snapshots in Error state
-                    List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Error);
+                    List<SnapshotVO> snapshots = _snapshotDao.listAllByStatusIncludingRemoved(Snapshot.State.Error);
                     for (SnapshotVO snapshotVO : snapshots) {
-                        try {
-                            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotId(snapshotVO.getId());
-                            for (SnapshotDataStoreVO ref : storeRefs) {
-                                _snapshotStoreDao.expunge(ref.getId());
-                            }
-                            _snapshotDao.expunge(snapshotVO.getId());
-                        } catch (Exception e) {
-                            s_logger.warn("Unable to destroy snapshot " + snapshotVO.getUuid(), e);
-                        }
+                        removeSnapshot(snapshotVO);
                     }
 
                     // destroy uploaded volumes in abandoned/error state
@@ -1239,6 +1234,64 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         } finally {
             scanLock.releaseRef();
+        }
+    }
+
+    private void removeSnapshot(SnapshotVO snapshotVO) {
+        try {
+            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotId(snapshotVO.getId());
+            boolean removeSnapshot = true;
+            for (SnapshotDataStoreVO ref : storeRefs) {
+                // Cleanup corresponding items (if any) from secondary storage.
+                if (snapshotVO.getHypervisorType().equals(HypervisorType.VMware)) {
+                    if (ref.getRole().isImageStore()) { // Delete items from secondary storage
+                        DataStore snapshotDataStore = _dataStoreMgr.getDataStore(ref.getDataStoreId(), DataStoreRole.Image);
+                        DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(snapshotDataStore.getTO(), ref.getInstallPath());
+                        EndPoint ep = _epSelector.select(snapshotDataStore);
+                        if (ep == null) {
+                            s_logger.warn(
+                                    "There is no secondary storage VM for image store: " + snapshotDataStore.getName() + ", cannot cleanup snapshot: " + snapshotVO.getUuid());
+                            removeSnapshot = false;
+                            continue;
+                        }
+                        Answer deleteSnapshotsDirAnswer = ep.sendMessage(cmd);
+                        if ((deleteSnapshotsDirAnswer != null) && deleteSnapshotsDirAnswer.getResult()) {
+                            s_logger.debug("Deleted snapshot: " + snapshotVO.getUuid() + " from secondary storage: " + snapshotDataStore.getName());
+                            _snapshotStoreDao.expunge(ref.getId());
+                        } else {
+                            s_logger.warn("Failed to delete snapshot: " + snapshotVO.getUuid() + " from secondary storage: " + snapshotDataStore.getName());
+                            removeSnapshot = false;
+                        }
+                    } else if (ref.getRole() == DataStoreRole.Primary) { // Delete worker VM snapshot
+                        VolumeVO volume = _volumeDao.findByIdIncludingRemoved(snapshotVO.getVolumeId());
+                        if (volume.getInstanceId() == null)
+                            continue;
+                        VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
+                        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                        if (hostId != null) {
+                            VMSnapshotTO vmSnapshotTO = new VMSnapshotTO();
+                            vmSnapshotTO.setSnapshotName(ref.getInstallPath());
+                            vmSnapshotTO.setDescription(snapshotVO.getName());
+                            DeleteVMSnapshotCommand deleteSnapshotCommand = new DeleteVMSnapshotCommand(vm.getInstanceName(), vmSnapshotTO, null, null);
+                            Answer deleteSnapshotAnswer = _agentMgr.send(hostId, deleteSnapshotCommand);
+                            if ((deleteSnapshotAnswer != null) && deleteSnapshotAnswer.getResult()) {
+                                s_logger.debug("Deleted worker VM snapshot: " + snapshotVO.getName());
+                                _snapshotStoreDao.expunge(ref.getId());
+                            } else {
+                                s_logger.warn("Failed to delete worker VM snapshot: " + snapshotVO.getName());
+                                removeSnapshot = false;
+                            }
+                        }
+                    }
+                } else {
+                    _snapshotStoreDao.expunge(ref.getId());
+                }
+            }
+            if (removeSnapshot) {
+                _snapshotDao.expunge(snapshotVO.getId());
+            }
+        } catch (Exception e) {
+            s_logger.warn("Unable to destroy snapshot " + snapshotVO.getUuid(), e);
         }
     }
 

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore;
 
+import java.util.UUID;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -44,6 +46,7 @@ import org.apache.cloudstack.storage.db.ObjectInDataStoreDao;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -173,7 +176,11 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     if (snapshotDataStoreVO != null) {
                         ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
                     }
-                    ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + snapshot.getVolumeId());
+                    String snapshotInstallPath = TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + snapshot.getVolumeId();
+                    if (snapshot.getHypervisorType().equals(HypervisorType.VMware)) {
+                        snapshotInstallPath += "/" + UUID.randomUUID().toString();
+                    }
+                    ss.setInstallPath(snapshotInstallPath);
                     ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
                     ss = snapshotDataStoreDao.persist(ss);
                     break;
@@ -266,7 +273,8 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     return true;
                 case SNAPSHOT:
                     SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
-                    if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                    if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready &&
+                            destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Allocated) {
                         return snapshotDataStoreDao.remove(destSnapshotStore.getId());
                     } else {
                         s_logger.warn("Snapshot " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");

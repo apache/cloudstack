@@ -1370,9 +1370,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 // after removed snapshot, the volumes' paths have been changed for the VM, needs to report new paths to manager
 
-                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
-
-                setVolumeToPathAndSize(listVolumeTo, mapNewDisk, context, hyperHost, cmd.getVmName());
+                if (listVolumeTo != null) {
+                    Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
+                    setVolumeToPathAndSize(listVolumeTo, mapNewDisk, context, hyperHost, cmd.getVmName());
+                }
 
                 return new DeleteVMSnapshotAnswer(cmd, listVolumeTo);
             }

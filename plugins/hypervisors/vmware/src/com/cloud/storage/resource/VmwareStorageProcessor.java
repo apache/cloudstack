@@ -1134,7 +1134,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private Ternary<String, String, String[]> backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, String installPath, String volumePath, String snapshotUuid,
             String secStorageUrl, String prevSnapshotUuid, String prevBackupUuid, String workerVmName, Integer nfsVersion) throws Exception {
 
-        String backupUuid = UUID.randomUUID().toString();
+        String backupUuid = installPath.substring(installPath.lastIndexOf("/") + 1);
+        installPath = installPath.substring(0, installPath.lastIndexOf("/"));
         Pair<String, String[]> snapshotInfo = exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, installPath, backupUuid, workerVmName, nfsVersion);
         return new Ternary<String, String, String[]>(backupUuid, snapshotInfo.first(), snapshotInfo.second());
     }
@@ -1223,7 +1224,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     // Get snapshot physical size
                     long physicalSize = 0l;
                     String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, _nfsVersion);
-                    String snapshotDir =  destSnapshot.getPath() + "/" + snapshotBackupUuid;
+                    String snapshotDir =  destSnapshot.getPath();
                     File[] files = new File(secondaryMountPoint + "/" + snapshotDir).listFiles();
                     if(files != null) {
                         for(File file : files) {
