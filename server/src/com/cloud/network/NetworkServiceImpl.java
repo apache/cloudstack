@@ -197,6 +197,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.network.dao.LoadBalancerDao;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -334,6 +335,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Inject
     NetworkDetailsDao _networkDetailsDao;
+
+    @Inject
+    LoadBalancerDao _loadBalancerDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -846,13 +850,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
             }
             //check if the secondary ip associated with any static nat rule
-            IPAddressVO publicIpVO = _ipAddressDao.findByVmIp(secondaryIp);
+            IPAddressVO publicIpVO = _ipAddressDao.findByIpAndNetworkId(secIpVO.getNetworkId(), secondaryIp);
             if (publicIpVO != null) {
                 s_logger.debug("VM nic IP " + secondaryIp + " is associated with the static NAT rule public IP address id " + publicIpVO.getId());
                 throw new InvalidParameterValueException("Can' remove the ip " + secondaryIp + "is associate with static NAT rule public IP address id " + publicIpVO.getId());
             }
 
-            if (_lbService.isLbRuleMappedToVmGuestIp(secondaryIp)) {
+            if (_loadBalancerDao.isLoadBalancerRulesMappedToVmGuestIp(vm.getId(), secondaryIp, network.getId())) {
                 s_logger.debug("VM nic IP " + secondaryIp + " is mapped to load balancing rule");
                 throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is mapped to load balancing rule");
             }
@@ -2018,7 +2022,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {
             Vpc vpc = _entityMgr.findById(Vpc.class, network.getVpcId());
-            _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()), null);
+            _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()), network.getNetworkACLId());
         }
 
         // don't allow to update network in Destroy state

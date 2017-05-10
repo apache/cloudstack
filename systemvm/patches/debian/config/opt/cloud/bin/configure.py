@@ -542,15 +542,14 @@ class CsSite2SiteVpn(CsDataBag):
             logging.info("Configured vpn %s %s", leftpeer, rightpeer)
             CsHelper.execute("ipsec rereadsecrets")
 
+        # This will load the new config and start the connection when needed since auto=start in the config
         CsHelper.execute("ipsec reload")
-        if not obj['passive']:
-            CsHelper.execute("sudo nohup ipsec down vpn-%s" % rightpeer)
-            CsHelper.execute("sudo nohup ipsec up vpn-%s &" % rightpeer)
         os.chmod(vpnsecretsfile, 0400)
 
     def convert_sec_to_h(self, val):
         hrs = int(val) / 3600
         return "%sh" % hrs
+
 
 class CsVpnUser(CsDataBag):
     PPP_CHAP='/etc/ppp/chap-secrets'
@@ -570,25 +569,23 @@ class CsVpnUser(CsDataBag):
         userfound = False
         password = obj['password']
 
-        userSearchEntry = "%s \* %s \*"%(user,password)
         userAddEntry = "%s * %s *" %(user,password)
-        logging.debug("Adding vpn user %s" %userSearchEntry)
+        logging.debug("Adding vpn user '%s'" % user)
 
         file = CsFile(self.PPP_CHAP)
-        userfound = file.searchString(userSearchEntry, '#')
+        userfound = file.searchString(userAddEntry, '#')
         if not userfound:
-            logging.debug("User is not there already, so adding user ")
+            logging.debug("User is not there already, so adding user")
             self.del_l2tp_ipsec_user(user, obj)
             file.add(userAddEntry)
         file.commit()
 
-
     def del_l2tp_ipsec_user(self, user, obj):
         userfound = False
         password = obj['password']
-        userentry = "%s \* %s \*"%(user,password)
+        userentry = "%s * %s *" % (user,password)
 
-        logging.debug("Deleting the user %s " % user)
+        logging.debug("Deleting the user '%s'" % user)
         file = CsFile(self.PPP_CHAP)
         file.deleteLine(userentry)
         file.commit()
@@ -596,23 +593,19 @@ class CsVpnUser(CsDataBag):
         if not os.path.exists('/var/run/pppd2.tdb'):
             return
 
-        logging.debug("kiing the PPPD process for the user %s " % user)
+        logging.debug("killing the PPPD process for the user '%s'" % user)
 
         fileContents = CsHelper.execute("tdbdump /var/run/pppd2.tdb")
-        print fileContents
-
         for line in fileContents:
             if user in line:
                 contentlist = line.split(';')
                 for str in contentlist:
-                    print 'in del_l2tp str = '+ str
                     pppd = str.split('=')[0]
                     if pppd == 'PPPD_PID':
                         pid = str.split('=')[1]
                         if pid:
                             logging.debug("killing process %s" %pid)
                             CsHelper.execute('kill -9 %s' % pid)
-
 
 
 class CsRemoteAccessVpn(CsDataBag):
@@ -635,9 +628,7 @@ class CsRemoteAccessVpn(CsDataBag):
                 logging.debug("Remote accessvpn  data bag %s",  self.dbag)
                 self.remoteaccessvpn_iptables(public_ip, self.dbag[public_ip])
 
-                CsHelper.execute("ipsec down L2TP-PSK")
                 CsHelper.execute("ipsec update")
-                CsHelper.execute("service xl2tpd stop")
                 CsHelper.execute("service xl2tpd start")
                 CsHelper.execute("ipsec rereadsecrets")
             else:

@@ -538,6 +538,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         long storagePoolId = snapshotStore.getDataStoreId();
         DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        if (dataStore == null) {
+            return DataStoreRole.Image;
+        }
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
 
@@ -3476,6 +3479,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
+        UserVmJoinVO userVm = _entityMgr.findById(UserVmJoinVO.class, result.getInstanceId());
 
         response.setId(result.getUuid());
         response.setNetworkid(network.getUuid());
@@ -3484,6 +3488,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVmId(vm.getUuid());
         }
 
+        if (userVm != null){
+            if (userVm.getTrafficType() != null) {
+                response.setTrafficType(userVm.getTrafficType().toString());
+            }
+            if (userVm.getGuestType() != null) {
+                response.setType(userVm.getGuestType().toString());
+            }
+        }
         response.setIpaddress(result.getIPv4Address());
 
         if (result.getSecondaryIp()) {
@@ -3506,6 +3518,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (result.getIPv6Address() != null) {
             response.setIp6Address(result.getIPv6Address());
+        }
+
+        if (result.getIPv6Cidr() != null) {
+            response.setIp6Cidr(result.getIPv6Cidr());
         }
 
         response.setDeviceId(String.valueOf(result.getDeviceId()));

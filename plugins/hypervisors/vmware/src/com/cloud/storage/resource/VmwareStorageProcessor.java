@@ -182,7 +182,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return null;
     }
 
-    private VirtualMachineMO copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
+    private Pair<VirtualMachineMO, Long> copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
             String templatePathAtSecondaryStorage, String templateName, String templateUuid, boolean createSnapshot, Integer nfsVersion) throws Exception {
 
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
@@ -229,6 +229,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception(msg);
         }
 
+        OVAProcessor processor = new OVAProcessor();
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put(StorageLayer.InstanceConfigKey, _storage);
+        processor.configure("OVA Processor", params);
+        long virtualSize = processor.getTemplateVirtualSize(secondaryMountPoint + "/" + templatePathAtSecondaryStorage, templateName);
+
         if (createSnapshot) {
             if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
                 // the same template may be deployed with multiple copies at per-datastore per-host basis,
@@ -246,7 +252,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
         }
 
-        return vmMo;
+        return new Pair<VirtualMachineMO, Long>(vmMo, new Long(virtualSize));
     }
 
     @Override
@@ -322,6 +328,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
             VirtualMachineMO templateMo = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templateUuidName), true);
             DatastoreMO dsMo = null;
+            Pair<VirtualMachineMO, Long> vmInfo = null;
 
             if (templateMo == null) {
                 if (s_logger.isInfoEnabled()) {
@@ -343,9 +350,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 dsMo = new DatastoreMO(context, morDs);
 
                 if (managed) {
-                    VirtualMachineMO vmMo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
+                    vmInfo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
                             managedStoragePoolRootVolumeName, false, _nfsVersion);
 
+                    VirtualMachineMO vmMo = vmInfo.first();
                     vmMo.unregisterVm();
 
                     String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, managedStoragePoolRootVolumeName,
@@ -360,7 +368,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     dsMo.deleteFolder(folderToDelete, dcMo.getMor());
                 }
                 else {
-                    copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
+                    vmInfo = copyTemplateFromSecondaryToPrimary(hyperHost, dsMo, secondaryStorageUrl, templateInfo.first(), templateInfo.second(),
                             templateUuidName, true, _nfsVersion);
                 }
             } else {
@@ -378,7 +386,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             else {
                 newTemplate.setPath(templateUuidName);
             }
-            newTemplate.setSize(new Long(0)); // TODO: replace 0 with correct template physical_size.
+            newTemplate.setSize((vmInfo != null)? vmInfo.second() : new Long(0));
 
             return new CopyCmdAnswer(newTemplate);
         } catch (Throwable e) {
@@ -1577,11 +1585,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
 
                 synchronized (this) {
-                    // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                    VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
-
-                    vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
-                    vmMo.detachDisk(volumeDatastorePath, false);
+                    try {
+                        vmMo.createDisk(volumeDatastorePath, (int)(volume.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
+                        vmMo.detachDisk(volumeDatastorePath, false);
+                    }
+                    catch (Exception e) {
+                        s_logger.error("Deleting file " + volumeDatastorePath + " due to error: " + e.getMessage());
+                        VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
+                        throw new CloudRuntimeException("Unable to create volume due to: " + e.getMessage());
+                    }
                 }
 
                 VolumeObjectTO newVol = new VolumeObjectTO();

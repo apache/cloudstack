@@ -36,7 +36,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.lb.CertService;
+import org.apache.cloudstack.network.tls.CertService;
 
 @APICommand(name = "uploadSslCert", description = "Upload a certificate to CloudStack", responseObject = SslCertResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)

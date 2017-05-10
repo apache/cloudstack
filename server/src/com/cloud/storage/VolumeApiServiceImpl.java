@@ -868,8 +868,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
 
         if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer &&
-                hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any && hypervisorType != HypervisorType.None) {
-            throw new InvalidParameterValueException("CloudStack currently supports volume resize only on KVM, VMware, or XenServer.");
+                hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any && hypervisorType != HypervisorType.None ) {
+            throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support  rootdisksize override");
         }
 
         if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {
@@ -1026,6 +1026,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
 
         if (userVm != null) {
+            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState()!= VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware){
+                s_logger.error(" For ROOT volume resize VM should be in Power Off state.");
+                throw new InvalidParameterValueException("VM current state is : "+userVm.getPowerState()+ ". But VM should be in "+VirtualMachine.PowerState.PowerOff+" state.");
+            }
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
 
@@ -1433,9 +1437,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // that supported by hypervisor
         if (deviceId == null || deviceId.longValue() != 0) {
             List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
-            int maxDataVolumesSupported = getMaxDataVolumesSupported(vm);
-            if (existingDataVolumes.size() >= maxDataVolumesSupported) {
-                throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxDataVolumesSupported + "). Please specify another VM.");
+            int maxAttachableDataVolumesSupported = getMaxDataVolumesSupported(vm);
+            if (existingDataVolumes.size() >= maxAttachableDataVolumesSupported) {
+                throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxAttachableDataVolumesSupported + ") attached. Please specify another VM.");
             }
         }
 
@@ -1917,6 +1921,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
         if (destPool == null) {
             throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
+        } else if (destPool.isInMaintenance()) {
+            throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() +
+                    " as the storage pool is in maintenance mode.");
         }
 
         if (_volumeMgr.volumeOnSharedStoragePool(vol)) {
@@ -2150,13 +2157,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         DataCenter zone = _dcDao.findById(volume.getDataCenterId());
         if (zone == null) {
             throw new InvalidParameterValueException("Can't find zone by id " + volume.getDataCenterId());
-        }
-
-        if (volume.getInstanceId() != null) {
-            // Check that Vm to which this volume is attached does not have VM Snapshots
-            if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                throw new InvalidParameterValueException("Volume snapshot is not allowed, please detach it from VM with VM Snapshots");
-            }
         }
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
@@ -2531,7 +2531,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
 
-            deviceId = getDeviceId(vm.getId(), deviceId);
+            deviceId = getDeviceId(vm, deviceId);
 
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, volumeToAttach.getVolumeType(), deviceId, volumeToAttach.getPath(),
                     vm.getServiceOfferingId(), volumeToAttach.getDiskOfferingId());
@@ -2589,7 +2589,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                 }
             } else {
-                deviceId = getDeviceId(vm.getId(), deviceId);
+                deviceId = getDeviceId(vm, deviceId);
 
                 _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);
             }
@@ -2627,7 +2627,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _hostDao.loadDetails(host);
             maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(host.getHypervisorType(), host.getDetail("product_version"));
         }
-        if (maxDataVolumesSupported == null) {
+        if (maxDataVolumesSupported == null || maxDataVolumesSupported.intValue() <= 0) {
             maxDataVolumesSupported = 6; // 6 data disks by default if nothing
             // is specified in
             // 'hypervisor_capabilities' table
@@ -2636,27 +2636,32 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return maxDataVolumesSupported.intValue();
     }
 
-    private Long getDeviceId(long vmId, Long deviceId) {
+    private Long getDeviceId(UserVmVO vm, Long deviceId) {
         // allocate deviceId
-        List<VolumeVO> vols = _volsDao.findByInstance(vmId);
+        int maxDevices = getMaxDataVolumesSupported(vm) + 2; // add 2 to consider devices root volume and cdrom
+        int maxDeviceId = maxDevices - 1;
+        List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         if (deviceId != null) {
-            if (deviceId.longValue() > 15 || deviceId.longValue() == 3) {
-                throw new RuntimeException("deviceId should be 1,2,4-15");
+            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId  || deviceId.longValue() == 3) {
+                throw new RuntimeException("deviceId should be 0,1,2,4-" + maxDeviceId);
             }
             for (VolumeVO vol : vols) {
                 if (vol.getDeviceId().equals(deviceId)) {
-                    throw new RuntimeException("deviceId " + deviceId + " is used by vm" + vmId);
+                    throw new RuntimeException("deviceId " + deviceId + " is used by vm " + vm.getId());
                 }
             }
         } else {
             // allocate deviceId here
             List<String> devIds = new ArrayList<String>();
-            for (int i = 1; i < 15; i++) {
+            for (int i = 1; i <= maxDeviceId; i++) {
                 devIds.add(String.valueOf(i));
             }
             devIds.remove("3");
             for (VolumeVO vol : vols) {
                 devIds.remove(vol.getDeviceId().toString().trim());
+            }
+            if (devIds.isEmpty()) {
+                throw new RuntimeException("All device Ids are used by vm " + vm.getId());
             }
             deviceId = Long.parseLong(devIds.iterator().next());
         }

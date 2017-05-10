@@ -22,16 +22,20 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.ArrayOfHostIpRouteEntry;
+import com.vmware.vim25.ArrayUpdateOperation;
 import com.vmware.vim25.ClusterComputeResourceSummary;
 import com.vmware.vim25.ClusterConfigInfoEx;
 import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ClusterDasVmSettingsRestartPriority;
 import com.vmware.vim25.ClusterHostRecommendation;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.CustomFieldStringValue;
+import com.vmware.vim25.DasVmPriority;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestOsDescriptor;
@@ -49,6 +53,10 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.ClusterDasVmConfigInfo;
+import com.vmware.vim25.ClusterDasVmConfigSpec;
+import com.vmware.vim25.ClusterDasVmSettings;
+import com.vmware.vim25.ClusterConfigSpecEx;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -77,9 +85,118 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
     @Override
     public ClusterDasConfigInfo getDasConfig() throws Exception {
-        // Note getDynamicProperty() with "configurationEx.dasConfig" does not work here because of that dasConfig is a property in subclass
+        ClusterConfigInfoEx configInfo = getClusterConfigInfo();
+        if (configInfo != null) {
+            // Note getDynamicProperty() with "configurationEx.dasConfig" does not work here because of that dasConfig is a property in subclass
+            return configInfo.getDasConfig();
+        }
+
+        return null;
+    }
+
+    private ClusterConfigInfoEx getClusterConfigInfo() throws Exception {
         ClusterConfigInfoEx configInfo = (ClusterConfigInfoEx)_context.getVimClient().getDynamicProperty(_mor, "configurationEx");
-        return configInfo.getDasConfig();
+        return configInfo;
+    }
+
+    @Override
+    public boolean isHAEnabled() throws Exception {
+        ClusterDasConfigInfo dasConfig = getDasConfig();
+        if (dasConfig != null && dasConfig.isEnabled() != null && dasConfig.isEnabled().booleanValue()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private String getRestartPriorityForVM(VirtualMachineMO vmMo) throws Exception {
+        if (vmMo == null) {
+            s_logger.debug("Failed to get restart priority for VM, invalid VM object reference");
+            return null;
+        }
+
+        ManagedObjectReference vmMor = vmMo.getMor();
+        if (vmMor == null || !vmMor.getType().equals("VirtualMachine")) {
+            s_logger.debug("Failed to get restart priority for VM: " + vmMo.getName() + ", invalid VM object reference");
+            return null;
+        }
+
+        ClusterConfigInfoEx configInfo = getClusterConfigInfo();
+        if (configInfo == null) {
+            s_logger.debug("Failed to get restart priority for VM: " + vmMo.getName() + ", no cluster config information");
+            return null;
+        }
+
+        List<ClusterDasVmConfigInfo> dasVmConfig = configInfo.getDasVmConfig();
+        for (int dasVmConfigIndex = 0; dasVmConfigIndex < dasVmConfig.size(); dasVmConfigIndex++) {
+            ClusterDasVmConfigInfo dasVmConfigInfo = dasVmConfig.get(dasVmConfigIndex);
+            if (dasVmConfigInfo != null && dasVmConfigInfo.getKey().getValue().equals(vmMor.getValue())) {
+                DasVmPriority dasVmPriority = dasVmConfigInfo.getRestartPriority();
+                if (dasVmPriority != null) {
+                    return dasVmPriority.value();
+                } else {
+                    //VM uses cluster restart priority when DasVmPriority for the VM is null.
+                    return ClusterDasVmSettingsRestartPriority.CLUSTER_RESTART_PRIORITY.value();
+                }
+            }
+        }
+
+        s_logger.debug("VM: " + vmMo.getName() + " uses default restart priority in the cluster: " + getName());
+        return null;
+    }
+
+    @Override
+    public void setRestartPriorityForVM(VirtualMachineMO vmMo, String priority) throws Exception {
+        if (vmMo == null || StringUtils.isBlank(priority)) {
+            return;
+        }
+
+        if (!isHAEnabled()) {
+            s_logger.debug("Couldn't set restart priority for VM: " + vmMo.getName() + ", HA disabled in the cluster");
+            return;
+        }
+
+        ManagedObjectReference vmMor = vmMo.getMor();
+        if (vmMor == null || !vmMor.getType().equals("VirtualMachine")) {
+            s_logger.debug("Failed to set restart priority for VM: " + vmMo.getName() + ", invalid VM object reference");
+            return;
+        }
+
+        String currentVmRestartPriority = getRestartPriorityForVM(vmMo);
+        if (StringUtils.isNotBlank(currentVmRestartPriority) && currentVmRestartPriority.equalsIgnoreCase(priority)) {
+            return;
+        }
+
+        ClusterDasVmSettings clusterDasVmSettings = new ClusterDasVmSettings();
+        clusterDasVmSettings.setRestartPriority(priority);
+
+        ClusterDasVmConfigInfo clusterDasVmConfigInfo = new ClusterDasVmConfigInfo();
+        clusterDasVmConfigInfo.setKey(vmMor);
+        clusterDasVmConfigInfo.setDasSettings(clusterDasVmSettings);
+
+        ClusterDasVmConfigSpec clusterDasVmConfigSpec = new ClusterDasVmConfigSpec();
+        clusterDasVmConfigSpec.setOperation((StringUtils.isNotBlank(currentVmRestartPriority)) ? ArrayUpdateOperation.EDIT : ArrayUpdateOperation.ADD);
+        clusterDasVmConfigSpec.setInfo(clusterDasVmConfigInfo);
+
+        ClusterConfigSpecEx clusterConfigSpecEx = new ClusterConfigSpecEx();
+        ClusterDasConfigInfo clusterDasConfigInfo = new ClusterDasConfigInfo();
+        clusterConfigSpecEx.setDasConfig(clusterDasConfigInfo);
+        clusterConfigSpecEx.getDasVmConfigSpec().add(clusterDasVmConfigSpec);
+
+        ManagedObjectReference morTask = _context.getService().reconfigureComputeResourceTask(_mor, clusterConfigSpecEx, true);
+
+        boolean result = _context.getVimClient().waitForTask(morTask);
+
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("vCenter API trace - setRestartPriority done(successfully)");
+        } else {
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("vCenter API trace - setRestartPriority done(failed)");
+            s_logger.error("Set restart priority failed for VM: " + vmMo.getName() + " due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
     }
 
     @Override

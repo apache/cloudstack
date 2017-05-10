@@ -481,7 +481,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Type type = spstVO.getRecurringType();
         int maxSnaps = type.getMax();
 
-        List<SnapshotVO> snaps = listSnapsforVolumeType(volumeId, type);
+        List<SnapshotVO> snaps = listSnapsforVolumeTypeNotDestroyed(volumeId, type);
         SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         if (policy != null && policy.getMaxSnaps() < maxSnaps) {
             maxSnaps = policy.getMaxSnaps();
@@ -512,6 +512,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         if (snapshotCheck == null) {
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
+        }
+
+        if (snapshotCheck.getState() == Snapshot.State.Destroyed) {
+            throw new InvalidParameterValueException("Snapshot with id: " + snapshotId + " is already destroyed");
         }
 
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
@@ -898,8 +902,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return _snapshotDao.listByVolumeId(volumeId);
     }
 
-    private List<SnapshotVO> listSnapsforVolumeType(long volumeId, Type type) {
-        return _snapshotDao.listByVolumeIdType(volumeId, type);
+    private List<SnapshotVO> listSnapsforVolumeTypeNotDestroyed(long volumeId, Type type) {
+        return _snapshotDao.listByVolumeIdTypeNotDestroyed(volumeId, type);
     }
 
     @Override
@@ -1110,8 +1114,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             } catch (Exception e) {
                 s_logger.debug("post process snapshot failed", e);
             }
+        } catch (CloudRuntimeException cre) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to create snapshot" + cre.getLocalizedMessage());
+            }
+            _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+            _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
+            throw cre;
         } catch (Exception e) {
-            s_logger.debug("Failed to create snapshot", e);
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to create snapshot", e);
+            }
             _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
             _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
             throw new CloudRuntimeException("Failed to create snapshot", e);

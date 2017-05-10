@@ -970,6 +970,13 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             tmpltvdi = getVDIbyUuid(conn, srcData.getPath());
             vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
+            Long virtualSize  = vdi.getVirtualSize(conn);
+            if (volume.getSize() > virtualSize) {
+                s_logger.debug("Overriding provided template's size with new size " + volume.getSize() + " for volume: " + volume.getName());
+                vdi.resize(conn, volume.getSize());
+            } else {
+                s_logger.debug("Using templates disk size of " + virtualSize + " for volume: " + volume.getName() + " since size passed was " + volume.getSize());
+            }
             vdi.setNameLabel(conn, volume.getName());
 
             VDI.Record vdir;
@@ -1198,7 +1205,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             final Set<VDI> snapshots = volume.getSnapshots(conn);
             for (final VDI snapshot : snapshots) {
                 try {
-                    if (!snapshot.getUuid(conn).equals(avoidSnapshotUuid) && snapshot.getSnapshotTime(conn).before(avoidSnapshot.getSnapshotTime(conn))) {
+                    if (!snapshot.getUuid(conn).equals(avoidSnapshotUuid) && snapshot.getSnapshotTime(conn).before(avoidSnapshot.getSnapshotTime(conn)) && snapshot.getVBDs(conn).isEmpty()) {
                         snapshot.destroy(conn);
                     }
                 } catch (final Exception e) {

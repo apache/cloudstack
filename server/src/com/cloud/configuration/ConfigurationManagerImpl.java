@@ -184,7 +184,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -381,7 +380,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("account.cleanup.interval");
         configValuesForValidation.add("alert.wait");
         configValuesForValidation.add("consoleproxy.capacityscan.interval");
-        configValuesForValidation.add("consoleproxy.loadscan.interval");
         configValuesForValidation.add("expunge.interval");
         configValuesForValidation.add("host.stats.interval");
         configValuesForValidation.add("investigate.retry.interval");
@@ -508,7 +506,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
                 }
                 if(name.equals(CapacityManager.StorageOverprovisioningFactor.key())) {
-                    if(pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.VMFS) {
+                    if(!pool.getPoolType().supportsOverProvisioning() ) {
                         throw new InvalidParameterValueException("Unable to update  storage pool with id " + resourceId + ". Overprovision not supported for " + pool.getPoolType());
                     }
                 }
@@ -2919,7 +2917,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         ipv6, ip6Gateway, ip6Cidr, startIPv6, endIPv6, network);
                 if (sameSubnet) break;
             }
-        } else {
+        } else if(network.getGateway() != null && network.getCidr() != null) {
             vlanGateway = network.getGateway();
             vlanNetmask = NetUtils.getCidrNetmask(network.getCidr());
             sameSubnet = hasSameSubnet(ipv4, vlanGateway, vlanNetmask, newVlanGateway, newVlanNetmask, startIP, endIP,

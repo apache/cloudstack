@@ -1523,6 +1523,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             nic.setIPv4Address(profile.getIPv4Address());
             nic.setAddressFormat(profile.getFormat());
             nic.setIPv6Address(profile.getIPv6Address());
+            nic.setIPv6Cidr(profile.getIPv6Cidr());
+            nic.setIPv6Gateway(profile.getIPv6Gateway());
             nic.setMacAddress(profile.getMacAddress());
             nic.setIsolationUri(profile.getIsolationUri());
             nic.setBroadcastUri(profile.getBroadCastUri());
@@ -2211,7 +2213,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // Check if cidr is RFC1918 compliant if the network is Guest Isolated for IPv4
         if (cidr != null && ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) {
             if (!NetUtils.validateGuestCidr(cidr)) {
-                throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC1918 compliant");
+                throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC 1918 or 6598 compliant");
             }
         }
 

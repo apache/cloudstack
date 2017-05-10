@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.utils.db.JoinBuilder;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.rules.FirewallRule.State;
@@ -36,6 +38,8 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
 
     @Inject
     protected FirewallRulesCidrsDao _portForwardingRulesCidrsDao;
+    @Inject
+    LoadBalancerVMMapDao _loadBalancerVMMapDao;
 
     protected LoadBalancerDaoImpl() {
         ListByIp = createSearchBuilder();
@@ -74,5 +78,41 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         sc.setParameters("scheme", scheme);
         return listBy(sc);
     }
+
+    @Override
+    public boolean isLoadBalancerRulesMappedToVmGuestIp(long instanceId, String instanceIp, long networkId)
+    {
+        SearchBuilder<LoadBalancerVMMapVO> lbVmMapSearch = _loadBalancerVMMapDao.createSearchBuilder();
+        lbVmMapSearch.and("instanceIp", lbVmMapSearch.entity().getInstanceIp(),SearchCriteria.Op.EQ);
+        lbVmMapSearch.and("instanceId", lbVmMapSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<LoadBalancerVO> firewallRuleIdSearch = createSearchBuilder();
+        firewallRuleIdSearch.selectFields(firewallRuleIdSearch.entity().getId());
+        firewallRuleIdSearch.and("networkId",firewallRuleIdSearch.entity().getNetworkId(),Op.EQ);
+        firewallRuleIdSearch.and("purpose",firewallRuleIdSearch.entity().getPurpose(),Op.EQ);
+        firewallRuleIdSearch.and("state",firewallRuleIdSearch.entity().getState(),Op.NEQ);
+        firewallRuleIdSearch.join("LoadBalancerRuleList", lbVmMapSearch, lbVmMapSearch.entity().getLoadBalancerId(), firewallRuleIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        firewallRuleIdSearch.done();
+        lbVmMapSearch.done();
+
+        SearchCriteria<LoadBalancerVO> sc = firewallRuleIdSearch.create();
+        sc.setParameters("state", State.Revoke);
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("purpose", FirewallRule.Purpose.LoadBalancing);
+
+        sc.setJoinParameters("LoadBalancerRuleList", "instanceIp", instanceIp);
+        sc.setJoinParameters("LoadBalancerRuleList", "instanceId", instanceId);
+
+        List<LoadBalancerVO> lbRuleList = customSearch(sc, null);
+
+        if(lbRuleList == null || lbRuleList.size() > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+
 
 }

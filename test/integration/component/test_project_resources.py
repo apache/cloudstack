@@ -45,7 +45,7 @@ from marvin.lib.common import (get_zone,
 
 from marvin.lib.utils import cleanup_resources
 import random
-
+import time
 
 class Services:
     """Test Resource creation Services
@@ -626,13 +626,15 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
-    def test_04_public_template_use_in_project(self):
+    def test_04_public_private_template_use_in_project(self):
         """Test Templates creation in projects
         """
         # 1. Create a project
         # 2. Verify Public templates can be used without any restriction
-        # 3. Verify that template created in project can be used in project
-        #    without any restrictions
+        # 3. Verify that private template created in project belongs to this project
+        # Verify that list template api wth project id list this template
+
+
 
         try:
             self.debug("Deploying VM for with public template: %s" %
@@ -682,6 +684,11 @@ class TestTemplates(cloudstackTestCase):
                             True,
                             "Check Template is in ready state or not"
                         )
+            # Verify list template with project id is listing this template
+            templatelist = Template.list(self.apiclient,projectid=self.project.id,id=template_1.id,templatefilter="all")
+            self.assertEqual(templatelist[0].id,template_1.id,"template created does not belong to the project")
+
+
         except Exception as e:
             self.fail("Exception occured: %s" % e)
         return

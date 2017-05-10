@@ -154,7 +154,7 @@ All the rpm packages will be created in `dist/rpmbuild/RPMS/x86_64` directory.
 
 ## Notes
 
-If you will be using Xen as your hypervisor, please download [vhd-util](http://download.cloud.com.s3.amazonaws.com/tools/vhd-util)
+If you will be using Xen as your hypervisor, please download [vhd-util](http://download.cloudstack.org/tools/vhd-util)
 
 If management server is installed on RHEL/CentOS, then copy vhd-util into:
 

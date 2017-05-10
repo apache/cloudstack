@@ -1599,19 +1599,28 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                         String line = null;
                         String uniqName = null;
                         Long size = null;
+                        Long physicalSize = null;
                         String name = null;
                         while ((line = brf.readLine()) != null) {
                             if (line.startsWith("uniquename=")) {
                                 uniqName = line.split("=")[1];
                             } else if (line.startsWith("size=")) {
+                                physicalSize = Long.parseLong(line.split("=")[1]);
+                            } else if (line.startsWith("virtualsize=")){
                                 size = Long.parseLong(line.split("=")[1]);
                             } else if (line.startsWith("filename=")) {
                                 name = line.split("=")[1];
                             }
                         }
+
+                        //fallback
+                        if (size == null) {
+                            size = physicalSize;
+                        }
+
                         tempFile.delete();
                         if (uniqName != null) {
-                            TemplateProp prop = new TemplateProp(uniqName, container + File.separator + name, size, size, true, false);
+                            TemplateProp prop = new TemplateProp(uniqName, container + File.separator + name, size, physicalSize, true, false);
                             tmpltInfos.put(uniqName, prop);
                         }
                     } catch (IOException ex)
@@ -1629,7 +1638,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
         }
         return tmpltInfos;
-
     }
 
     Map<String, TemplateProp> s3ListTemplate(S3TO s3) {

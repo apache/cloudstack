@@ -747,14 +747,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected <T extends VMInstanceVO> boolean changeState(final T vm, final Event event, final Long hostId, final ItWorkVO work, final Step step) throws NoTransitionException {
         // FIXME: We should do this better.
-        final Step previousStep = work.getStep();
-        _workDao.updateStep(work, step);
+        Step previousStep = null;
+        if (work != null) {
+            previousStep = work.getStep();
+            _workDao.updateStep(work, step);
+        }
         boolean result = false;
         try {
             result = stateTransitTo(vm, event, hostId);
             return result;
         } finally {
-            if (!result) {
+            if (!result && work != null) {
                 _workDao.updateStep(work, previousStep);
             }
         }
@@ -1280,7 +1283,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachine vm = profile.getVirtualMachine();
         final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
         try {
-            final Answer answer = _agentMgr.send(vm.getHostId(), stop);
+            Answer answer = null;
+            if(vm.getHostId() != null) {
+                answer = _agentMgr.send(vm.getHostId(), stop);
+            }
             if (answer != null && answer instanceof StopAnswer) {
                 final StopAnswer stopAns = (StopAnswer)answer;
                 if (vm.getType() == VirtualMachine.Type.User) {
@@ -1517,12 +1523,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (doCleanup) {
                 if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, cleanUpEvenIfUnableToStop)) {
                     try {
-                        if (s_logger.isDebugEnabled()) {
+                        if (s_logger.isDebugEnabled() && work != null) {
                             s_logger.debug("Updating work item to Done, id:" + work.getId());
                         }
                         if (!changeState(vm, Event.AgentReportStopped, null, work, Step.Done)) {
                             throw new CloudRuntimeException("Unable to stop " + vm);
                         }
+
                     } catch (final NoTransitionException e) {
                         s_logger.warn("Unable to cleanup " + vm);
                         throw new CloudRuntimeException("Unable to stop " + vm, e);
@@ -1796,9 +1803,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void orchestrateStorageMigration(final String vmUuid, final StoragePool destPool) {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-        final Long srchostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-        final HostVO srcHost = _hostDao.findById(srchostId);
-        final Long srcClusterId = srcHost.getClusterId();
 
         if (destPool == null) {
             throw new CloudRuntimeException("Unable to migrate vm: missing destination storage pool");
@@ -1832,19 +1836,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 // If VM was cold migrated between clusters belonging to two different VMware DCs,
                 // unregister the VM from the source host and cleanup the associated VM files.
                 if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
+                    Long srcClusterId = null;
+                    Long srcHostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                    if (srcHostId != null) {
+                        HostVO srcHost = _hostDao.findById(srcHostId);
+                        srcClusterId = srcHost.getClusterId();
+                    }
+
                     final Long destClusterId = destPool.getClusterId();
                     if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId)) {
                         final String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
                         final String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
                         if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
                             s_logger.debug("Since VM's storage was successfully migrated across VMware Datacenters, unregistering VM: " + vm.getInstanceName() +
-                                    " from source host: " + srcHost.getId());
+                                    " from source host: " + srcHostId);
                             final UnregisterVMCommand uvc = new UnregisterVMCommand(vm.getInstanceName());
                             uvc.setCleanupVmFiles(true);
                             try {
-                                _agentMgr.send(srcHost.getId(), uvc);
-                            } catch (final Exception e) {
-                                throw new CloudRuntimeException("Failed to unregister VM: " + vm.getInstanceName() + " from source host: " + srcHost.getId() +
+                                _agentMgr.send(srcHostId, uvc);
+                            } catch (final AgentUnavailableException | OperationTimedoutException e) {
+                                throw new CloudRuntimeException("Failed to unregister VM: " + vm.getInstanceName() + " from source host: " + srcHostId +
                                         " after successfully migrating VM's storage across VMware Datacenters");
                             }
                         }

@@ -316,6 +316,11 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         VolumeVO vol = volDao.findById(volume.getId());
+        if (vol == null) {
+            s_logger.debug("Volume " + volume.getId() + " is not found");
+            future.complete(result);
+            return future;
+        }
 
         if (!volumeExistsOnPrimary(vol)) {
             // not created on primary store
@@ -1423,6 +1428,7 @@ public class VolumeServiceImpl implements VolumeService {
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
             volDao.updateUuid(srcVolume.getId(), destVolume.getId());
+            _volumeStoreDao.updateVolumeId(srcVolume.getId(), destVolume.getId());
             try {
                 destroyVolume(srcVolume.getId());
                 srcVolume = volFactory.getVolume(srcVolume.getId());
@@ -1988,8 +1994,13 @@ public class VolumeServiceImpl implements VolumeService {
         SnapshotInfo snapshot = null;
         try {
             snapshot = snapshotMgr.takeSnapshot(volume);
+        } catch (CloudRuntimeException cre) {
+            s_logger.error("Take snapshot: " + volume.getId() + " failed", cre);
+            throw cre;
         } catch (Exception e) {
-            s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("unknown exception while taking snapshot for volume " + volume.getId() + " was caught", e);
+            }
             throw new CloudRuntimeException("Failed to take snapshot", e);
         }
 

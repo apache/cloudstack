@@ -49,7 +49,9 @@
     <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />
     <bean id="usageEventDetailsDaoImpl" class="com.cloud.event.dao.UsageEventDetailsDaoImpl" />
     <bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
+    <bean id="storagePoolTagsDaoImpl" class="com.cloud.storage.dao.StoragePoolTagsDaoImpl" />
     <bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
     <bean id="userIpAddressDetailsDao" class="org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDaoImpl" />
+    <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
     
 </beans>

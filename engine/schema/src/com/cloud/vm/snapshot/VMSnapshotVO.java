@@ -72,6 +72,9 @@ public class VMSnapshotVO implements VMSnapshot {
     @Column(name = "domain_id")
     long domainId;
 
+    @Column(name = "service_offering_id")
+    private long serviceOfferingId;
+
     @Column(name = "vm_snapshot_type")
     @Enumerated(EnumType.STRING)
     VMSnapshot.Type type;
@@ -139,6 +142,7 @@ public class VMSnapshotVO implements VMSnapshot {
         displayName = vsDisplayName;
         this.type = type;
         this.current = current;
+        this.serviceOfferingId = serviceOfferingId;
     }
 
     @Override
@@ -247,5 +251,10 @@ public class VMSnapshotVO implements VMSnapshot {
     @Override
     public Class<?> getEntityType() {
         return VMSnapshot.class;
+    }
+
+    @Override
+    public long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 }

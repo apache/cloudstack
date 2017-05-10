@@ -89,7 +89,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     private Long domainId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
-            description = "create site-to-site VPN customer gateway for the project")
+            description = "create site-to-site VPN customer gateway for the project", since = "4.6")
     private Long projectId;
 
     /////////////////////////////////////////////////////

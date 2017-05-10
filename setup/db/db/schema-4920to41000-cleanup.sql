@@ -18,3 +18,5 @@
 --;
 -- Schema upgrade cleanup from 4.9.2.0 to 4.10.0.0;
 --;
+
+DELETE FROM `cloud`.`configuration` WHERE name='consoleproxy.loadscan.interval';

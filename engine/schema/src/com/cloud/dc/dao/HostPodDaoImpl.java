@@ -130,9 +130,11 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
     }
 
     @Override
-    public List<Long> listAllPods(long zoneId) {
+    public List<Long> listAllPods(Long zoneId) {
         SearchCriteria<Long> sc = PodIdSearch.create();
-        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        if (zoneId != null) {
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        }
         return customSearch(sc, null);
     }
 }

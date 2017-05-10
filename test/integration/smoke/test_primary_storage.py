@@ -24,6 +24,8 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
+import logging
+from marvin.lib.decoratorGenerators import skipTestIf
 
 #Import System modules
 import time
@@ -245,4 +247,334 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
             self.cleanup = []
 
+        return
+
+class StorageTagsServices:
+    """Test Storage Tags Data Class.
+    """
+    def __init__(self):
+        self.storage_tags = {
+            "a" : "NFS-A",
+            "b" : "NFS-B"
+        }
+    
+class TestStorageTags(cloudstackTestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        cls.logger = logging.getLogger('TestStorageTags')
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+        
+        test_case = super(TestStorageTags, cls)
+        testClient = test_case.getClsTestClient()
+        cls.config = test_case.getClsConfig()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.pod = get_pod(cls.apiclient, cls.zone.id)
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls.domain = get_domain(cls.apiclient)
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+        cls.services["storage_tags"] = StorageTagsServices().storage_tags
+        
+        cls.hypervisorNotSupported = False
+        if cls.hypervisor.lower() in ["hyperv"]:
+            cls.hypervisorNotSupported = True
+        cls._cleanup = []
+        
+        if not cls.hypervisorNotSupported:
+            
+            cls.clusters = list_clusters(
+                cls.apiclient,
+                zoneid=cls.zone.id
+            )
+            assert isinstance(cls.clusters, list) and len(cls.clusters) > 0
+    
+            # Create PS with Storage Tag
+            cls.storage_pool_1 = StoragePool.create(cls.apiclient,
+                                         cls.services["nfs"],
+                                         clusterid=cls.clusters[0].id,
+                                         zoneid=cls.zone.id,
+                                         podid=cls.pod.id,
+                                         tags=cls.services["storage_tags"]["a"]
+            )
+            #PS not appended to _cleanup, it is removed on tearDownClass before cleaning up resources
+            assert cls.storage_pool_1.state == 'Up'
+            storage_pools_response = list_storage_pools(cls.apiclient,
+                                                        id=cls.storage_pool_1.id)
+            assert isinstance(storage_pools_response, list) and len(storage_pools_response) > 0
+            storage_response = storage_pools_response[0]
+            assert storage_response.id == cls.storage_pool_1.id and storage_response.type == cls.storage_pool_1.type
+            
+            # Create Service Offerings with different Storage Tags
+            cls.service_offering_1 = ServiceOffering.create(
+                cls.apiclient,
+                cls.services["service_offerings"]["tiny"],
+                tags=cls.services["storage_tags"]["a"]
+            )
+            cls._cleanup.append(cls.service_offering_1)
+            cls.service_offering_2 = ServiceOffering.create(
+                cls.apiclient,
+                cls.services["service_offerings"]["tiny"],
+                tags=cls.services["storage_tags"]["b"]
+            )
+            cls._cleanup.append(cls.service_offering_2)
+            
+            # Create Disk Offerings with different Storage Tags
+            cls.disk_offering_1 = DiskOffering.create(
+                cls.apiclient,
+                cls.services["disk_offering"],
+                tags=cls.services["storage_tags"]["a"]
+            )
+            cls._cleanup.append(cls.disk_offering_1)
+            cls.disk_offering_2 = DiskOffering.create(
+                cls.apiclient,
+                cls.services["disk_offering"],
+                tags=cls.services["storage_tags"]["b"]
+            )
+            cls._cleanup.append(cls.disk_offering_2)
+            
+            # Create Account
+            cls.account = Account.create(
+                cls.apiclient,
+                cls.services["account"],
+                domainid=cls.domain.id
+            )
+            cls._cleanup.append(cls.account)
+            
+            # Create VM-1 with using Service Offering 1
+            cls.virtual_machine_1 = VirtualMachine.create(
+                cls.apiclient,
+                cls.services["virtual_machine"],
+                accountid=cls.account.name,
+                domainid=cls.account.domainid,
+                templateid=cls.template.id,
+                serviceofferingid=cls.service_offering_1.id,
+                hypervisor=cls.hypervisor,
+                mode=cls.zone.networktype
+            )
+            # VM-1 not appended to _cleanup, it is expunged on tearDownClass before cleaning up resources
+            
+        return
+    
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # First expunge vm, so PS can be cleaned up
+            cls.virtual_machine_1.delete(cls.apiclient)
+
+            # Force delete primary storage
+            cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+            cmd.id = cls.storage_pool_1.id
+            cls.apiclient.enableStorageMaintenance(cmd)
+            time.sleep(30)
+            cmd = deleteStoragePool.deleteStoragePoolCmd()
+            cmd.id = cls.storage_pool_1.id
+            cmd.forced = True
+            cls.apiclient.deleteStoragePool(cmd)
+            
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Cleanup failed with %s" % e)
+    
+    def setUp(self):
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+    
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @skipTestIf("hypervisorNotSupported")
+    def test_01_deploy_vms_storage_tags(self):
+        """Test Deploy VMS using different Service Offerings with Storage Tags
+        """
+        
+        # Save cleanup size before trying to deploy VM-2
+        cleanup_size = len(self.cleanup)
+        
+        # Try deploying VM-2 using CO-2 -> Should fail to find storage and fail deployment
+        try:
+            self.virtual_machine_2 = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                templateid=self.template.id,
+                serviceofferingid=self.service_offering_2.id,
+                hypervisor=self.hypervisor
+            )
+            self.cleanup.append(self.virtual_machine_2)
+        except Exception as e:
+            self.debug("Expected exception %s: " % e)
+        
+        self.debug("Asssert that vm2 was not deployed, so it couldn't be appended to cleanup")
+        self.assertEquals(cleanup_size, len(self.cleanup))
+        
+        # Create V-1 using DO-1
+        self.volume_1 = Volume.create(
+           self.apiclient,
+           self.services,
+           zoneid=self.zone.id,
+           account=self.account.name,
+           domainid=self.account.domainid,
+           diskofferingid=self.disk_offering_1.id
+        )
+        self.cleanup.append(self.volume_1)
+        
+        # Create V-2 using DO-2
+        self.volume_2 = Volume.create(
+           self.apiclient,
+           self.services,
+           zoneid=self.zone.id,
+           account=self.account.name,
+           domainid=self.account.domainid,
+           diskofferingid=self.disk_offering_2.id
+        )
+        self.cleanup.append(self.volume_2)
+        
+        # Try attaching V-2 to VM-1 -> Should fail finding storage and fail attachment
+        try:
+            self.virtual_machine_1.attach_volume(
+                self.apiclient,
+                self.volume_2
+            )
+        except Exception as e:
+            self.debug("Expected exception %s: " % e)
+        
+        vm_1_volumes = Volume.list(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine_1.id,
+            type='DATADISK',
+            listall=True
+        )
+        self.debug("VM-1 Volumes: %s" % vm_1_volumes)
+        self.assertEquals(None, vm_1_volumes, "Check that volume V-2 has not been attached to VM-1")
+        
+        # Attach V_1 to VM_1
+        self.virtual_machine_1.attach_volume(self.apiclient,self.volume_1)
+        vm_1_volumes = Volume.list(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine_1.id,
+            type='DATADISK',
+            listall=True
+        )
+        self.debug("VM-1 Volumes: %s" % vm_1_volumes)
+        self.assertEquals(vm_1_volumes[0].id, self.volume_1.id, "Check that volume V-1 has been attached to VM-1")
+        self.virtual_machine_1.detach_volume(self.apiclient, self.volume_1)
+        
+        return
+    
+    def check_storage_pool_tag(self, poolid, tag):
+        cmd = listStorageTags.listStorageTagsCmd()
+        storage_tags_response = self.apiclient.listStorageTags(cmd)
+        pool_tags = filter(lambda x: x.poolid == poolid, storage_tags_response)
+        self.assertEquals(1, len(pool_tags), "Check storage tags size")
+        self.assertEquals(tag, pool_tags[0].name, "Check storage tag on storage pool")
+    
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @skipTestIf("hypervisorNotSupported")
+    def test_02_edit_primary_storage_tags(self):
+        """ Test Edit Storage Tags
+        """
+        
+        qresultset = self.dbclient.execute(
+            "select id from storage_pool where uuid = '%s';"
+            % str(self.storage_pool_1.id)
+        )
+        self.assertEquals(1, len(qresultset), "Check DB Query result set")
+        qresult = qresultset[0]
+        storage_pool_db_id = qresult[0]
+        
+        self.check_storage_pool_tag(storage_pool_db_id, self.services["storage_tags"]["a"])
+        
+        # Update Storage Tag
+        StoragePool.update(
+            self.apiclient,
+            id=self.storage_pool_1.id,
+            tags=self.services["storage_tags"]["b"]
+        )
+        
+        self.check_storage_pool_tag(storage_pool_db_id, self.services["storage_tags"]["b"])
+        
+        # Revert Storage Tag
+        StoragePool.update(
+            self.apiclient,
+            id=self.storage_pool_1.id,
+            tags=self.services["storage_tags"]["a"]
+        )
+        
+        self.check_storage_pool_tag(storage_pool_db_id, self.services["storage_tags"]["a"])
+        
+        return
+    
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @skipTestIf("hypervisorNotSupported")
+    def test_03_migration_options_storage_tags(self):
+        """ Test Volume migration options for Storage Pools with different Storage Tags
+        """
+        
+        # Create PS-2 using Storage Tag
+        storage_pool_2 = StoragePool.create(self.apiclient,
+                                             self.services["nfs2"],
+                                             clusterid=self.clusters[0].id,
+                                             zoneid=self.zone.id,
+                                             podid=self.pod.id,
+                                             tags=self.services["storage_tags"]["a"]
+        )
+        self.cleanup.append(storage_pool_2)
+        assert storage_pool_2.state == 'Up'
+        storage_pools_response = list_storage_pools(self.apiclient,
+                                                    id=storage_pool_2.id)
+        assert isinstance(storage_pools_response, list) and len(storage_pools_response) > 0
+        storage_response = storage_pools_response[0]
+        assert storage_response.id == storage_pool_2.id and storage_response.type == storage_pool_2.type
+        
+        vm_1_volumes = Volume.list(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine_1.id,
+            type='ROOT',
+            listall=True
+        )
+        vol = vm_1_volumes[0]
+        
+        if self.hypervisor.lower() not in ["vmware", "xenserver"]:
+            self.virtual_machine_1.stop(self.apiclient)
+            
+        # Check migration options for volume
+        pools_response = StoragePool.listForMigration(
+            self.apiclient,
+            id=vol.id
+        )
+        pools_suitable = filter(lambda p : p.suitableformigration, pools_response)
+        self.assertEquals(1, len(pools_suitable), "Check that there is only one item on the list")
+        self.assertEquals(pools_suitable[0].id, storage_pool_2.id, "Check that PS-2 is the migration option for volume")
+        
+        # Update PS-2 Storage Tags
+        StoragePool.update(
+            self.apiclient,
+            id=storage_pool_2.id,
+            tags=self.services["storage_tags"]["b"]
+        )
+        
+        # Check migration options for volume after updating PS-2 Storage Tags
+        pools_response = StoragePool.listForMigration(
+            self.apiclient,
+            id=vol.id
+        )
+        pools_suitable = filter(lambda p : p.suitableformigration, pools_response)
+        self.assertEquals(0, len(pools_suitable), "Check that there is no migration option for volume")
+        
         return

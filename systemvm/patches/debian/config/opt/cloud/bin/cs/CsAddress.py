@@ -106,6 +106,10 @@ class CsAddress(CsDataBag):
                 ip.setAddress(address)
                 logging.info("Address found in DataBag ==> %s" % address)
 
+                if not address['add'] and not ip.configured():
+                    logging.info("Skipping %s as the add flag is set to %s " % (address['public_ip'], address['add']))
+                    continue
+
                 if ip.configured():
                     logging.info(
                         "Address %s on device %s already configured", ip.ip(), dev)
@@ -145,7 +149,7 @@ class CsInterface:
     def ip_in_subnet(self, ip):
         ipo = IPAddress(ip)
         net = IPNetwork("%s/%s" % (self.get_ip(), self.get_size()))
-        return ipo in list(net)
+        return ipo in net
 
     def get_gateway_cidr(self):
         return "%s/%s" % (self.get_gateway(), self.get_size())
@@ -571,7 +575,7 @@ class CsIP:
         if self.get_type() in ["guest"] and not cmdline.is_redundant():
             pwdsvc = CsPasswdSvc(self.address['public_ip']).start()
 
-        if self.get_type() == "public" and self.config.is_vpc():
+        if self.get_type() == "public" and self.config.is_vpc() and method == "add":
             if self.address["source_nat"]:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(

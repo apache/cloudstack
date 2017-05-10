@@ -110,6 +110,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-metrics</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-nvp</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -146,11 +151,6 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-bigswitch</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-network-midonet</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -1003,6 +1003,21 @@
         <dependency>
           <groupId>org.apache.cloudstack</groupId>
           <artifactId>cloud-plugin-network-f5</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>midonet</id>
+      <activation>
+        <property>
+          <name>midonet</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.cloudstack</groupId>
+          <artifactId>cloud-plugin-network-midonet</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>

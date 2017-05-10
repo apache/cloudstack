@@ -1548,17 +1548,20 @@
                                 createForm: {
                                     title: 'label.action.resize.volume',
                                     preFilter: function(args) {
-                                        if (args.context.volumes != null && args.context.volumes[0].type == 'ROOT') {
+                                        var vol;
+                                        if (args.context.volumes != null) vol = args.context.volumes[0];
+                                        if (vol.type == "ROOT" && (vol.hypervisor == "XenServer" || vol.hypervisor == "KVM" || vol.hypervisor == "VMware")) {
                                             args.$form.find('.form-item[rel=newdiskoffering]').hide();
-
-                                            selectedDiskOfferingObj = null;
+                                            args.$form.find('.form-item[rel=newsize]').css('display', 'inline-block');
                                         } else {
+                                            args.$form.find('.form-item[rel=newdiskoffering]').css('display', 'inline-block');
                                             args.$form.find('.form-item[rel=newsize]').hide();
                                         }
                                     },
                                     fields: {
                                         newdiskoffering: {
                                             label: 'label.resize.new.offering.id',
+                                            isHidden: true,
                                             select: function(args) {
                                                 if (args.context.volumes != null && args.context.volumes[0].type == 'ROOT') {
                                                     args.response.success({
@@ -1586,6 +1589,11 @@
                                                 });
 
                                                 args.$select.change(function() {
+                                                    if(args.context.volumes[0].type == "ROOT") {
+                                                        selectedDiskOfferingObj = null;
+                                                        return;
+                                                    }
+
                                                     var diskOfferingId = $(this).val();
                                                     $(diskofferingObjs).each(function() {
                                                         if (this.id == diskOfferingId) {
@@ -1636,7 +1644,8 @@
                                         shrinkok: {
                                             label: 'label.resize.shrink.ok',
                                             isBoolean: true,
-                                            isChecked: false
+                                            isChecked: false,
+                                            isHidden: true
                                         },
                                         minIops: {
                                             label: 'label.disk.iops.min',
@@ -1658,38 +1667,47 @@
                                 },
                                 action: function(args) {
                                     var array1 = [];
-
-                                    if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {
-                                        array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
-                                    }
-
-                                    var newDiskOffering = args.data.newdiskoffering;
                                     var newSize;
                                     if (selectedDiskOfferingObj == null || selectedDiskOfferingObj.iscustomized == true) {
                                         newSize = args.data.newsize;
-                                    }
-                                    if (newDiskOffering != null && newDiskOffering.length > 0) {
-                                        array1.push("&diskofferingid=" + todb(newDiskOffering));
-                                    }
-                                    if (newSize != null && newSize.length > 0) {
-                                        array1.push("&size=" + todb(newSize));
+                                        if (newSize != null && newSize.length > 0) {
+                                            array1.push("&size=" + todb(newSize));
+                                        }
+                                    } else {
+
+                                        if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {
+                                            array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
+                                        }
+
+                                        var newDiskOffering = args.data.newdiskoffering;
+
+                                        if (selectedDiskOfferingObj.iscustomized == true) {
+                                            newSize = args.data.newsize;
+                                        }
+                                        if (newDiskOffering != null && newDiskOffering.length > 0) {
+                                            array1.push("&diskofferingid=" + todb(newDiskOffering));
+                                        }
+                                        if (newSize != null && newSize.length > 0) {
+                                            array1.push("&size=" + todb(newSize));
+                                        }
+
+                                        var minIops;
+                                        var maxIops
+
+                                        if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                            minIops = args.data.minIops;
+                                            maxIops = args.data.maxIops;
+                                        }
+
+                                        if (minIops != null && minIops.length > 0) {
+                                            array1.push("&miniops=" + todb(minIops));
+                                        }
+
+                                        if (maxIops != null && maxIops.length > 0) {
+                                            array1.push("&maxiops=" + todb(maxIops));
+                                        }
                                     }
 
-                                    var minIops;
-                                    var maxIops;
-
-                                    if (selectedDiskOfferingObj != null && selectedDiskOfferingObj.iscustomizediops == true) {
-                                        minIops = args.data.minIops;
-                                        maxIops = args.data.maxIops;
-                                    }
-
-                                    if (minIops != null && minIops.length > 0) {
-                                        array1.push("&miniops=" + todb(minIops));
-                                    }
-
-                                    if (maxIops != null && maxIops.length > 0) {
-                                        array1.push("&maxiops=" + todb(maxIops));
-                                    }
 
                                     $.ajax({
                                         url: createURL("resizeVolume&id=" + args.context.volumes[0].id + array1.join("")),
@@ -2708,7 +2726,7 @@
             }
         }
 
-        if (jsonObj.state == "Ready" || jsonObj.state == "Allocated") {
+        if ((jsonObj.type == "DATADISK"  || jsonObj.type == "ROOT") && (jsonObj.state == "Ready" || jsonObj.state == "Allocated")) {
             allowedActions.push("resize");
         }
 
@@ -2717,6 +2735,8 @@
                 allowedActions.push("downloadVolume");
             }
         }
+
+
 
         if (jsonObj.type == "ROOT" || jsonObj.type == "DATADISK") {
             if (jsonObj.state == "Ready" && isAdmin() && jsonObj.virtualmachineid != null) {

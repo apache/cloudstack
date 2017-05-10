@@ -950,12 +950,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     + "; make sure the virtual machine is stopped");
         }
 
-        // If target VM has associated VM snapshots then don't allow upgrading of VM
-        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-        if (vmSnapshots.size() > 0) {
-            throw new InvalidParameterValueException("Unable to change service offering for VM, please remove VM snapshots before changing service offering of VM");
-        }
-
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         // Check resource limits for CPU and Memory.
@@ -1616,11 +1610,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
 
         if (vmInstance != null) {
-            // If target VM has associated VM snapshots then don't allow upgrading of VM
-            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-            if (vmSnapshots.size() > 0) {
-                throw new InvalidParameterValueException("Unable to scale VM, please remove VM snapshots before scaling VM");
-            }
             if (vmInstance.getState().equals(State.Stopped)) {
                 upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
                 return true;
@@ -3522,27 +3511,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                     rootDiskSize = Long.parseLong(customParameters.get("rootdisksize"));
 
-                    // only KVM supports rootdisksize override
-                    if (hypervisorType != HypervisorType.KVM) {
-                        throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
+                    // only KVM, XenServer and VMware  supports rootdisksize override
+                    if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware)) {
+                        throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support  rootdisksize override");
                     }
 
-                    // rotdisksize must be larger than template
                     VMTemplateVO templateVO = _templateDao.findById(template.getId());
                     if (templateVO == null) {
                         throw new InvalidParameterValueException("Unable to look up template by id " + template.getId());
                     }
 
-                    if ((rootDiskSize << 30) < templateVO.getSize()) {
-                        Long templateVOSizeGB = templateVO.getSize() / 1024 / 1024 / 1024;
-                        throw new InvalidParameterValueException("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize()
-                            + "B (" + templateVOSizeGB + "GB)");
-                    } else {
-                        s_logger.debug("rootdisksize of " + (rootDiskSize << 30) + " was larger than template size of " + templateVO.getSize());
-                    }
-
-                    s_logger.debug("found root disk size of " + rootDiskSize);
-                    customParameters.remove("rootdisksize");
+                    validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
                 }
 
                 if (isDisplayVm != null) {
@@ -3624,6 +3603,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         });
     }
+
+    public void validateRootDiskResize(final HypervisorType hypervisorType, Long rootDiskSize, VMTemplateVO templateVO, UserVmVO vm, final Map<String, String> customParameters) throws InvalidParameterValueException
+    {
+        // rootdisksize must be larger than template.
+        if ((rootDiskSize << 30) < templateVO.getSize()) {
+            Long templateVOSizeGB = templateVO.getSize() / 1024 / 1024 / 1024;
+            s_logger.error("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)");
+            throw new InvalidParameterValueException("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)");
+        } else if ((rootDiskSize << 30) > templateVO.getSize()) {
+             if (hypervisorType == HypervisorType.VMware && (vm.getDetails() == null || vm.getDetails().get("rootDiskController") == null)) {
+                s_logger.warn("If Root disk controller parameter is not overridden, then Root disk resize may fail because current Root disk controller value is NULL.");
+             } else if (hypervisorType == HypervisorType.VMware && !vm.getDetails().get("rootDiskController").toLowerCase().contains("scsi")) {
+                s_logger.error("Found unsupported root disk controller : " + vm.getDetails().get("rootDiskController"));
+                throw new InvalidParameterValueException("Found unsupported root disk controller :" + vm.getDetails().get("rootDiskController"));
+             } else {
+                s_logger.debug("Rootdisksize override validation successful. Template root disk size "+(templateVO.getSize() / 1024 / 1024 / 1024)+ " GB" + " Root disk size specified "+ rootDiskSize+" GB");
+             }
+        } else {
+            s_logger.debug("Root disk size specified is " + (rootDiskSize << 30) + " and Template root disk size is " + templateVO.getSize()+" . Both are equal so no need to override");
+            customParameters.remove("rootdisksize");
+        }
+    }
+
 
     @Override
     public void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType){
@@ -4957,8 +4959,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Check if the source and destination hosts are of the same type and support storage motion.
-        if (!(srcHost.getHypervisorType().equals(destinationHost.getHypervisorType()) && srcHost.getHypervisorVersion().equals(destinationHost.getHypervisorVersion()))) {
-            throw new CloudRuntimeException("The source and destination hosts are not of the same type and version. " + "Source hypervisor type and version: "
+        if (!(srcHost.getHypervisorType().equals(destinationHost.getHypervisorType()))) {
+            throw new CloudRuntimeException("The source and destination hosts are not of the same type. " + "Source hypervisor type and version: "
                     + srcHost.getHypervisorType().toString() + " " + srcHost.getHypervisorVersion() + ", Destination hypervisor type and version: "
                     + destinationHost.getHypervisorType().toString() + " " + destinationHost.getHypervisorVersion());
         }
@@ -4999,6 +5001,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("There is no volume present with the given id " + entry.getKey());
                 } else if (pool == null) {
                     throw new InvalidParameterValueException("There is no storage pool present with the given id " + entry.getValue());
+                } else if (pool.isInMaintenance()) {
+                    throw new InvalidParameterValueException("Cannot migrate volume " + volume + "to the destination storage pool " + pool.getName() +
+                            " as the storage pool is in maintenance mode.");
                 } else {
                     // Verify the volume given belongs to the vm.
                     if (!vmVolumes.contains(volume)) {

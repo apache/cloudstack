@@ -121,7 +121,7 @@ test_data = {
             "name": "LargeInstance",
             "displaytext": "LargeInstance",
             "cpunumber": 1,
-            "cpuspeed": 500,
+            "cpuspeed": 1024,
             "memory": 2048,
         },
         "hasmall": {
@@ -833,12 +833,39 @@ test_data = {
         "ostype": "CentOS 5.6 (64-bit)"
 
     },
+    "coreos_volume": {
+        "diskname": "Volume_core",
+        "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
+        "urlxen":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
+        "urlkvm": "http://dl.openvm.eu/cloudstack/coreos/x86_64/" \
+                         "coreos_production_cloudstack_image-kvm.qcow2.bz2",
+        "urlhyperv":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-hyperv.vhd.zip"
+        },
     "CentOS6.3template": {
         "displaytext": "Centos",
         "name": "Centos",
         "passwordenabled": False,
         "ostype": "CentOS 6.3 (64-bit)",
         "url": "http://people.apache.org/~sanjeev/centos63.ova",
+        "format": "OVA",
+        "ispublic": "true"
+    },
+    "CentOS7template": {
+        "displaytext": "Centos",
+        "name": "Centos",
+        "passwordenabled": False,
+        "isdynamicallyscalable":True,
+        "ostype": "CentOS 7",
+        "url": "http://dl.openvm.eu/cloudstack/centos/vanilla/7/x86_64/CentOS-7-x86_64-vanilla-xen.vhd.bz2",
+        "format": "VHD",
+        "ispublic": "true",
+        "hypervisor":"Xenserver"
+    },
+    "Rhel7template": {
+        "displaytext": "Rhel",
+        "name": "Rhel",
+        "passwordenabled": False,
+        "ostype": "Red Hat Enterprise Linux 7",
         "format": "OVA",
         "ispublic": "true"
     },
@@ -862,6 +889,15 @@ test_data = {
         "ispublic": "true",
         "hypervisor": "XenServer"
     },
+    "Windows Server 2012": {
+            "displaytext": "Windows Server 2012",
+            "name": "Windows Server 2012",
+            "passwordenabled": False,
+            "format": "OVA",
+            "ostype": "Windows Server 2012 (64-bit)",
+            "ispublic": "true",
+            "hypervisor": "Vmware"
+     },
     "privatetemplate": {
         "displaytext": "Public Template",
         "name": "Public template",
@@ -961,6 +997,10 @@ test_data = {
     "nfs": {
         "url": "nfs://nfs/export/automation/1/testprimary",
         "name": "Primary XEN"
+    },
+    "nfs2": {
+        "url": "nfs://nfs/export/automation/1/testprimary2",
+        "name": "Primary XEN 2"
     },
     "iscsi": {
         "url":
@@ -1704,7 +1744,7 @@ test_data = {
             "upload_volume": {
                 "diskname": "UploadVol",
                 "format": "VHD",
-                "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
+                "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                 "checksum": "",
             },
             "bootableIso":

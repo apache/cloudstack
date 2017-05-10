@@ -88,6 +88,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
@@ -972,13 +974,12 @@ public class KVMStorageProcessor implements StorageProcessor {
         DiskDef diskdef = null;
         final KVMStoragePool attachingPool = attachingDisk.getPool();
         try {
+            dm = conn.domainLookupByName(vmName);
+            final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+            final String domXml = dm.getXMLDesc(0);
+            parser.parseDomainXML(domXml);
+            disks = parser.getDisks();
             if (!attach) {
-                dm = conn.domainLookupByName(vmName);
-                final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-                final String xml = dm.getXMLDesc(0);
-                parser.parseDomainXML(xml);
-                disks = parser.getDisks();
-
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
                         final String device = resource.mapRbdDevice(attachingDisk);
@@ -1000,7 +1001,20 @@ public class KVMStorageProcessor implements StorageProcessor {
                     throw new InternalErrorException("disk: " + attachingDisk.getPath() + " is not attached before");
                 }
             } else {
+                DiskDef.DiskBus busT = DiskDef.DiskBus.VIRTIO;
+                for (final DiskDef disk : disks) {
+                    if (disk.getDeviceType() == DeviceType.DISK) {
+                        if (disk.getBusType() == DiskDef.DiskBus.SCSI) {
+                            busT = DiskDef.DiskBus.SCSI;
+                        }
+                        break;
+                    }
+                }
                 diskdef = new DiskDef();
+                if (busT == DiskDef.DiskBus.SCSI) {
+                    diskdef.setQemuDriver(true);
+                    diskdef.setDiscard(DiscardType.UNMAP);
+                }
                 diskdef.setSerial(serial);
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     if(resource.getHypervisorType() == Hypervisor.HypervisorType.LXC){
@@ -1008,24 +1022,24 @@ public class KVMStorageProcessor implements StorageProcessor {
                         final String device = resource.mapRbdDevice(attachingDisk);
                         if (device != null) {
                             s_logger.debug("RBD device on host is: "+device);
-                            diskdef.defBlockBasedDisk(device, devId, DiskDef.DiskBus.VIRTIO);
+                            diskdef.defBlockBasedDisk(device, devId, busT);
                         } else {
                             throw new InternalErrorException("Error while mapping disk "+attachingDisk.getPath()+" on host");
                         }
                     } else {
                         diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
-                                attachingPool.getUuid(), devId, DiskDef.DiskBus.VIRTIO, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                                attachingPool.getUuid(), devId, busT, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
                     }
                 } else if (attachingPool.getType() == StoragePoolType.Gluster) {
                     final String mountpoint = attachingPool.getLocalPath();
                     final String path = attachingDisk.getPath();
                     final String glusterVolume = attachingPool.getSourceDir().replace("/", "");
                     diskdef.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
-                            null, devId, DiskDef.DiskBus.VIRTIO, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
+                            null, devId, busT, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
-                    diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+                    diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, busT, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, DiskDef.DiskBus.VIRTIO);
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
                 }
 
                 if ((bytesReadRate != null) && (bytesReadRate > 0)) {

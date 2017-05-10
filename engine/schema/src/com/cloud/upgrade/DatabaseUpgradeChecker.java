@@ -88,16 +88,12 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Lists.newArrayList;
@@ -406,6 +402,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
 
         for (DbUpgrade upgrade : upgrades) {
+            VersionVO version;
             s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" +
                     upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
             TransactionLegacy txn = TransactionLegacy.open("Upgrade");
@@ -427,27 +424,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 }
 
                 upgrade.performDataMigration(conn);
-                boolean upgradeVersion = true;
 
-                if (upgrade.getUpgradedVersion().equals("2.1.8")) {
-                    // we don't have VersionDao in 2.1.x
-                    upgradeVersion = false;
-                } else if (upgrade.getUpgradedVersion().equals("2.2.4")) {
-                    try(PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM version WHERE version='2.2.4'");
-                            ResultSet rs = pstmt.executeQuery();) {
-                        // specifically for domain vlan update from 2.1.8 to 2.2.4
-                        if (rs.next()) {
-                            upgradeVersion = false;
-                        }
-                    } catch (SQLException e) {
-                        throw new CloudRuntimeException("Unable to update the version table", e);
-                    }
-                }
-
-                if (upgradeVersion) {
-                    VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
-                    _dao.persist(version);
-                }
+                version = new VersionVO(upgrade.getUpgradedVersion());
+                version = _dao.persist(version);
 
                 txn.commit();
             } catch (CloudRuntimeException e) {
@@ -457,69 +436,42 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             } finally {
                 txn.close();
             }
-        }
 
-        if (true) { // FIXME Needs to detect if management servers are running
-            // !ClusterManagerImpl.arePeersRunning(trimmedCurrentVersion)) {
-            s_logger.info("Cleaning upgrades because all management server are now at the same version");
-            TreeMap<String, List<DbUpgrade>> upgradedVersions = new TreeMap<String, List<DbUpgrade>>();
+            // Run the corresponding '-cleanup.sql' script
+            txn = TransactionLegacy.open("Cleanup");
+            try {
+                s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" +
+                        upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
 
-            for (DbUpgrade upgrade : upgrades) {
-                String upgradedVerson = upgrade.getUpgradedVersion();
-                List<DbUpgrade> upgradeList = upgradedVersions.get(upgradedVerson);
-                if (upgradeList == null) {
-                    upgradeList = new ArrayList<DbUpgrade>();
-                }
-                upgradeList.add(upgrade);
-                upgradedVersions.put(upgradedVerson, upgradeList);
-            }
+                txn.start();
 
-            for (String upgradedVersion : upgradedVersions.keySet()) {
-                List<DbUpgrade> versionUpgrades = upgradedVersions.get(upgradedVersion);
-                VersionVO version = _dao.findByVersion(upgradedVersion, Step.Upgrade);
-                s_logger.debug("Upgrading to version " + upgradedVersion + "...");
-
-                TransactionLegacy txn = TransactionLegacy.open("Cleanup");
+                Connection conn;
                 try {
-                    if (version != null) {
-                        for (DbUpgrade upgrade : versionUpgrades) {
-                            s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" +
-                                    upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
-
-                            txn.start();
-
-                            Connection conn;
-                            try {
-                                conn = txn.getConnection();
-                            } catch (SQLException e) {
-                                String errorMessage = "Unable to cleanup the database";
-                                s_logger.error(errorMessage, e);
-                                throw new CloudRuntimeException(errorMessage, e);
-                            }
-
-                            File[] scripts = upgrade.getCleanupScripts();
-                            if (scripts != null) {
-                                for (File script : scripts) {
-                                    runScript(conn, script);
-                                    s_logger.debug("Cleanup script " + script.getAbsolutePath() + " is executed successfully");
-                                }
-                            }
-                            txn.commit();
-                        }
-
-                        txn.start();
-                        version.setStep(Step.Complete);
-                        s_logger.debug("Upgrade completed for version " + upgradedVersion);
-                        version.setUpdated(new Date());
-                        _dao.update(version.getId(), version);
-                        txn.commit();
-                    }
-                } finally {
-                    txn.close();
+                    conn = txn.getConnection();
+                } catch (SQLException e) {
+                    s_logger.error("Unable to cleanup the database", e);
+                    throw new CloudRuntimeException("Unable to cleanup the database", e);
                 }
+
+                File[] scripts = upgrade.getCleanupScripts();
+                if (scripts != null) {
+                    for (File script : scripts) {
+                        runScript(conn, script);
+                        s_logger.debug("Cleanup script " + script.getAbsolutePath() + " is executed successfully");
+                    }
+                }
+                txn.commit();
+
+                txn.start();
+                version.setStep(Step.Complete);
+                version.setUpdated(new Date());
+                _dao.update(version.getId(), version);
+                txn.commit();
+                s_logger.debug("Upgrade completed for version " + version.getVersion());
+            } finally {
+                txn.close();
             }
         }
-
     }
 
     @Override

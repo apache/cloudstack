@@ -524,7 +524,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolDetails(poolId, "true"));
+        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
     }
 
     @Override
@@ -938,7 +938,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         long totalOverProvCapacity;
-        if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.VMFS) {
+        if (storagePool.getPoolType().supportsOverProvisioning()) {
             // All this is for the inaccuracy of floats for big number multiplication.
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getId());
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();
@@ -1080,8 +1080,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                     cleanupSecondaryStorage(recurring);
 
-                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long) StorageCleanupDelay.value() << 10)));
-
+                    // ROOT volumes will be destroyed as part of VM cleanup
+                    List<VolumeVO> vols = _volsDao.listNonRootVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long) StorageCleanupDelay.value() << 10)));
                     for (VolumeVO vol : vols) {
                         try {
                             // If this fails, just log a warning. It's ideal if we clean up the host-side clustered file
@@ -1092,7 +1092,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
 
                         try {
-                            volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
+                            VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+                            if (volumeInfo != null) {
+                                volService.expungeVolumeAsync(volumeInfo);
+                            } else {
+                                s_logger.debug("Volume " + vol.getUuid() + " is already destroyed");
+                            }
                         } catch (Exception e) {
                             s_logger.warn("Unable to destroy volume " + vol.getUuid(), e);
                         }
@@ -1791,7 +1796,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         long totalOverProvCapacity;
-        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.VMFS || pool.getPoolType() == StoragePoolType.Filesystem) {
+        if (pool.getPoolType().supportsOverProvisioning()) {
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(pool.getId());
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
             s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor "

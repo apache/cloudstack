@@ -701,7 +701,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = false;
 
         if (apply) {
-            success = applyPortForwardingRules(rule.getSourceIpAddressId(), true, caller);
+            success = applyPortForwardingRules(rule.getSourceIpAddressId(), _ipAddrMgr.RulesContinueOnError.value(), caller);
         } else {
             success = true;
         }
@@ -736,7 +736,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = false;
 
         if (apply) {
-            success = applyStaticNatRulesForIp(rule.getSourceIpAddressId(), true, caller, true);
+            success = applyStaticNatRulesForIp(rule.getSourceIpAddressId(),  _ipAddrMgr.RulesContinueOnError.value(), caller, true);
         } else {
             success = true;
         }
@@ -769,7 +769,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         // apply rules for all ip addresses
         for (Long ipId : ipsToReprogram) {
             s_logger.debug("Applying port forwarding rules for ip address id=" + ipId + " as a part of vm expunge");
-            if (!applyPortForwardingRules(ipId, true, _accountMgr.getSystemAccount())) {
+            if (!applyPortForwardingRules(ipId,  _ipAddrMgr.RulesContinueOnError.value(), _accountMgr.getSystemAccount())) {
                 s_logger.warn("Failed to apply port forwarding rules for ip id=" + ipId);
                 success = false;
             }
@@ -1098,10 +1098,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = true;
 
         // revoke all port forwarding rules
-        success = success && applyPortForwardingRules(ipId, true, caller);
+        success = success && applyPortForwardingRules(ipId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 
         // revoke all all static nat rules
-        success = success && applyStaticNatRulesForIp(ipId, true, caller, true);
+        success = success && applyStaticNatRulesForIp(ipId,  _ipAddrMgr.RulesContinueOnError.value(), caller, true);
 
         // revoke static nat for the ip address
         success = success && applyStaticNatForIp(ipId, false, caller, true);
@@ -1144,9 +1144,11 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = true;
         // revoke all PF rules for the network
         success = success && applyPortForwardingRulesForNetwork(networkId, true, caller);
+        success = success && applyPortForwardingRulesForNetwork(networkId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 
         // revoke all all static nat rules for the network
         success = success && applyStaticNatRulesForNetwork(networkId, true, caller);
+        success = success && applyStaticNatRulesForNetwork(networkId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_portForwardingDao.listByNetworkAndNotRevoked(networkId));

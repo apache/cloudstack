@@ -458,4 +458,163 @@ public class HostResponse extends BaseResponse {
 
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public Status getState() {
+        return state;
+    }
+
+    public Date getDisconnectedOn() {
+        return disconnectedOn;
+    }
+
+    public Host.Type getHostType() {
+        return hostType;
+    }
+
+    public String getOsCategoryId() {
+        return osCategoryId;
+    }
+
+    public String getOsCategoryName() {
+        return osCategoryName;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public String getPodId() {
+        return podId;
+    }
+
+    public String getPodName() {
+        return podName;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public HypervisorType getHypervisor() {
+        return hypervisor;
+    }
+
+    public Integer getCpuSockets() {
+        return cpuSockets;
+    }
+
+    public Integer getCpuNumber() {
+        return cpuNumber;
+    }
+
+    public Long getCpuSpeed() {
+        return cpuSpeed;
+    }
+
+    public String getCpuUsed() {
+        return cpuUsed;
+    }
+
+    public Long getAverageLoad() {
+        return averageLoad;
+    }
+
+    public Long getNetworkKbsRead() {
+        return networkKbsRead;
+    }
+
+    public Long getNetworkKbsWrite() {
+        return networkKbsWrite;
+    }
+
+    public Long getMemoryTotal() {
+        return memoryTotal;
+    }
+
+    public Long getMemoryAllocated() {
+        return memoryAllocated;
+    }
+
+    public Long getMemoryUsed() {
+        return memoryUsed;
+    }
+
+    public List<GpuResponse> getGpuGroup() {
+        return gpuGroup;
+    }
+
+    public Long getDiskSizeTotal() {
+        return diskSizeTotal;
+    }
+
+    public Long getDiskSizeAllocated() {
+        return diskSizeAllocated;
+    }
+
+    public String getCapabilities() {
+        return capabilities;
+    }
+
+    public Date getLastPinged() {
+        return lastPinged;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
+    }
+
+    public String getClusterId() {
+        return clusterId;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getClusterType() {
+        return clusterType;
+    }
+
+    public Boolean getLocalStorageActive() {
+        return localStorageActive;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public String getEvents() {
+        return events;
+    }
+
+    public Boolean getHasEnoughCapacity() {
+        return hasEnoughCapacity;
+    }
+
+    public Boolean getSuitableForMigration() {
+        return suitableForMigration;
+    }
+
+    public String getHypervisorVersion() {
+        return hypervisorVersion;
+    }
+
+    public Boolean getHaHost() {
+        return haHost;
+    }
 }
