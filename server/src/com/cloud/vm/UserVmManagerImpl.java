@@ -3572,7 +3572,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
 
                     // rotdisksize must be larger than template
-                    VMTemplateVO templateVO = _templateDao.findById(templateId);
+                    VMTemplateVO templateVO = _templateDao.findById(template.getId());
                     if (templateVO == null) {
                         throw new InvalidParameterValueException("Unable to look up template by id " + templateId);
                     }
