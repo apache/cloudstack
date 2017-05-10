@@ -430,6 +430,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     @Override
+    public List<String> getDestinationCidrList(){
+        return null;
+    }
+
+    @Override
     public boolean isDisplay() {
         if (display != null) {
             return display;

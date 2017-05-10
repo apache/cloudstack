@@ -8223,6 +8223,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 
 .multi-edit th.add-rule,
 .multi-edit td.add-rule {
+  border-right: 1px solid #cdcccc;
 }
 
 .multi-edit .data-table td.add-vm:hover {

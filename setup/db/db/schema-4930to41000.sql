@@ -246,3 +246,12 @@ CREATE TABLE `cloud`.`guest_os_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `user_ip_address` ADD COLUMN `rule_state` VARCHAR(32) COMMENT 'static  rule state while removing';
+CREATE TABLE `cloud`.`firewall_rules_dcidrs`(
+  `id` BIGINT(20) unsigned NOT NULL AUTO_INCREMENT,
+  `firewall_rule_id` BIGINT(20) unsigned NOT NULL,
+  `destination_cidr` VARCHAR(18) DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY `unique_rule_dcidrs` (`firewall_rule_id`, `destination_cidr`),
+  KEY `fk_firewall_dcidrs_firewall_rules` (`firewall_rule_id`),
+  CONSTRAINT `fk_firewall_dcidrs_firewall_rules` FOREIGN KEY (`firewall_rule_id`) REFERENCES `firewall_rules` (`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;

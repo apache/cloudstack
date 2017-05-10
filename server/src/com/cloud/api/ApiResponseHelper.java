@@ -2216,6 +2216,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
 
+        if(fwRule.getTrafficType() == FirewallRule.TrafficType.Egress){
+            List<String> destCidrs = ApiDBUtils.findFirewallDestCidrs(fwRule.getId());
+            response.setDestCidr(StringUtils.join(destCidrs,","));
+        }
+
         if (fwRule.getTrafficType() == FirewallRule.TrafficType.Ingress) {
             IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
             response.setPublicIpAddressId(ip.getUuid());

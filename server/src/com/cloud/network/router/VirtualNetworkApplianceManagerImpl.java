@@ -1948,10 +1948,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // The default on the router is set to Deny all. So, if the default configuration in the offering is set to true (Allow), we change the Egress here
         if (defaultEgressPolicy) {
             final List<String> sourceCidr = new ArrayList<String>();
+            final List<String> destCidr = new ArrayList<String>();
 
-            sourceCidr.add(NetUtils.ALL_CIDRS);
+            sourceCidr.add(network.getCidr());
+            destCidr.add(NetUtils.ALL_CIDRS);
+
             final FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
-                    null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
+                    destCidr, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
 
             rules.add(rule);
         } else {

@@ -100,18 +100,26 @@ class CsAcl(CsDataBag):
             self.rule['allowed'] = True
             self.rule['action'] = "ACCEPT"
 
-            if self.rule['type'] == 'all' and not obj['source_cidr_list']:
-                self.rule['cidr'] = ['0.0.0.0/0']
+            if self.rule['type'] == 'all' and  obj['source_cidr_list']:
+                self.rule['cidr'] = []
             else:
                 self.rule['cidr'] = obj['source_cidr_list']
+
+            if self.direction == 'egress':
+                try:
+                    if not obj['dest_cidr_list']:
+                        self.rule['dcidr'] = []
+                    else:
+                        self.rule['dcidr'] = obj['dest_cidr_list']
+                except Exception:
+                    self.rule['dcidr'] = []
 
             logging.debug("AclIP created for rule ==> %s", self.rule)
 
         def create(self):
-            for cidr in self.rule['cidr']:
-                self.add_rule(cidr)
+            self.add_rule()
 
-        def add_rule(self, cidr):
+        def add_rule(self):
             icmp_type = ''
             rule = self.rule
             icmp_type = "any"
@@ -126,24 +134,48 @@ class CsAcl(CsDataBag):
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] != self.rule['last_port']:
                     rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
-            if self.direction == 'ingress':
-                if rule['protocol'] == "icmp":
-                    self.fw.append(["mangle", "front",
-                                    " -A FIREWALL_%s" % self.ip +
-                                    " -s %s " % cidr +
-                                    " -p %s " % rule['protocol'] +
-                                    " -m %s " % rule['protocol'] +
-                                    " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
-                else:
-                    self.fw.append(["mangle", "front",
-                                    " -A FIREWALL_%s" % self.ip +
-                                    " -s %s " % cidr +
-                                    " -p %s " % rule['protocol'] +
-                                    " -m %s " % rule['protocol'] +
-                                    "  %s -j RETURN" % rnge])
 
             logging.debug("Current ACL IP direction is ==> %s", self.direction)
+
+            if self.direction == 'ingress':
+                for cidr in self.rule['cidr']:
+                    if rule['protocol'] == "icmp":
+                        self.fw.append(["mangle", "front",
+                                        " -A FIREWALL_%s" % self.ip +
+                                        " -s %s " % cidr +
+                                        " -p %s " % rule['protocol'] +
+                                        " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
+                    else:
+                        self.fw.append(["mangle", "front",
+                                        " -A FIREWALL_%s" % self.ip +
+                                        " -s %s " % cidr +
+                                        " -p %s " % rule['protocol'] +
+                                        "  %s -j RETURN" % rnge])
+
+            sflag=False
+            dflag=False
             if self.direction == 'egress':
+                ruleId = self.rule['id']
+                sourceIpsetName = 'sourceCidrIpset-%d' %ruleId
+                destIpsetName = 'destCidrIpset-%d' %ruleId
+
+                #create source cidr ipset
+                srcIpset = 'ipset create '+sourceIpsetName + ' hash:net '
+                dstIpset = 'ipset create '+destIpsetName + ' hash:net '
+
+                CsHelper.execute(srcIpset)
+                CsHelper.execute(dstIpset)
+                for cidr in self.rule['cidr']:
+                    ipsetAddCmd = 'ipset add '+ sourceIpsetName + ' '+cidr
+                    CsHelper.execute(ipsetAddCmd)
+                    sflag = True
+
+                logging.debug("egress   rule  ####==> %s", self.rule)
+                for cidr in self.rule['dcidr']:
+                    ipsetAddCmd = 'ipset add '+ destIpsetName + ' '+cidr
+                    CsHelper.execute(ipsetAddCmd)
+                    dflag = True
+
                 self.fw.append(["filter", "", " -A FW_OUTBOUND -j FW_EGRESS_RULES"])
 
                 fwr = " -I FW_EGRESS_RULES"
@@ -165,16 +197,23 @@ class CsAcl(CsDataBag):
                     else:
                         self.rule['action'] = "ACCEPT"
 
+                egressIpsetStr=''
+                if sflag == True and dflag == True:
+                    egressIpsetStr = " -m set --match-set %s src " % sourceIpsetName + \
+                                " -m set --match-set %s dst " % destIpsetName
+                elif sflag == True:
+                    egressIpsetStr = " -m set --match-set %s src " % sourceIpsetName
+                elif dflag == True:
+                    egressIpsetStr = " -m set --match-set %s dst " % destIpsetName
+
                 if rule['protocol'] == "icmp":
-                    fwr += " -s %s " % cidr + \
-                                    " -p %s " % rule['protocol'] + \
+                    fwr += egressIpsetStr + " -p %s " % rule['protocol'] + " -m %s " % rule['protocol'] + \
                                     " --icmp-type %s" % icmp_type
                 elif rule['protocol'] != "all":
-                    fwr += " -s %s " % cidr + \
-                           " -p %s " % rule['protocol'] + \
-                           "  %s" % rnge
+                    fwr += egressIpsetStr + " -p %s " % rule['protocol'] + " -m %s " % rule['protocol'] + \
+                           " %s" % rnge
                 elif rule['protocol'] == "all":
-                    fwr += " -s %s " % cidr
+                    fwr += egressIpsetStr
 
                 self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
                 logging.debug("EGRESS rule configured for protocol ==> %s, action ==> %s", rule['protocol'], rule['action'])
@@ -265,6 +304,9 @@ class CsAcl(CsDataBag):
         # Ensure that FW_EGRESS_RULES chain exists
         CsHelper.execute("iptables-save | grep '^:FW_EGRESS_RULES' || iptables -t filter -N FW_EGRESS_RULES")
         CsHelper.execute("iptables-save | grep '^-A FW_EGRESS_RULES -j ACCEPT$' | sed 's/^-A/iptables -t filter -D/g' | bash")
+        CsHelper.execute("iptables -F FW_EGRESS_RULES")
+        CsHelper.execute("ipset -L | grep Name:  | awk {'print $2'} | ipset flush")
+        CsHelper.execute("ipset -L | grep Name:  | awk {'print $2'} | ipset destroy")
 
     def process(self):
         for item in self.dbag:

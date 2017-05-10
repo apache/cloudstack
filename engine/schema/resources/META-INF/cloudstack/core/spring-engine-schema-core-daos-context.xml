@@ -158,8 +158,9 @@
   <bean id="externalFirewallDeviceDaoImpl" class="com.cloud.network.dao.ExternalFirewallDeviceDaoImpl" />
   <bean id="externalLoadBalancerDeviceDaoImpl" class="com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl" />
   <bean id="externalPublicIpStatisticsDaoImpl" class="com.cloud.usage.dao.ExternalPublicIpStatisticsDaoImpl" />
-  <bean id="firewallRulesCidrsDaoImpl" class="com.cloud.network.dao.FirewallRulesCidrsDaoImpl" />
   <bean id="firewallRulesDaoImpl" class="com.cloud.network.dao.FirewallRulesDaoImpl" />
+  <bean id="firewallRulesCidrsDaoImpl" class="com.cloud.network.dao.FirewallRulesCidrsDaoImpl" />
+  <bean id="firewallRulesDcidrsDaoImpl" class="com.cloud.network.dao.FirewallRulesDcidrsDaoImpl" />
   <bean id="MonitoringServiceDaoImpl" class="com.cloud.network.dao.MonitoringServiceDaoImpl" />
   <bean id="OpRouterMonitorServiceDaoImpl" class="com.cloud.network.dao.OpRouterMonitorServiceDaoImpl" />
   <bean id="globalLoadBalancerDaoImpl" class="org.apache.cloudstack.region.gslb.GlobalLoadBalancerDaoImpl" />
