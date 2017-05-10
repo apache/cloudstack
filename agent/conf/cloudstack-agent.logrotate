@@ -16,6 +16,7 @@
 # under the License.
 
 @AGENTLOG@
+/var/log/cloudstack/agent/security_group.log
 {
     copytruncate
     daily
