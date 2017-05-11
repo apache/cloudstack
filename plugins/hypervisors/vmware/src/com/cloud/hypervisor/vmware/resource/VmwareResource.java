@@ -328,7 +328,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected int _portsPerDvPortGroup;
     protected boolean _fullCloneFlag = false;
     protected boolean _instanceNameFlag = false;
-
+    protected int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
     protected boolean _recycleHungWorker = false;
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
@@ -5571,6 +5571,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 _instanceNameFlag = false;
             }
 
+            Integer sessionTimeout = (Integer)params.get("vmware.vcenter.session.timeout");
+            if (sessionTimeout != null)
+                _vCenterSessionTimeout = sessionTimeout.intValue();
+
             value = (String)params.get("scripts.timeout");
             int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
 
@@ -5625,9 +5629,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public VmwareContext getServiceContext(Command cmd) {
         VmwareContext context = null;
+        int vCenterSessionTimeout;
+        if (cmd != null && cmd.getContextParam("vCenterSessionTimeout") != null) {
+            vCenterSessionTimeout = NumbersUtil.parseInt(cmd.getContextParam("vCenterSessionTimeout"), 1200000);
+        } else {
+            vCenterSessionTimeout = _vCenterSessionTimeout;
+        }
+
         if(s_serviceContext.get() != null) {
             context = s_serviceContext.get();
-            String poolKey = VmwareContextPool.composePoolKey(_vCenterAddress, _username);
+            String poolKey = VmwareContextPool.composePoolKey(_vCenterAddress, _username, vCenterSessionTimeout);
             // Before re-using the thread local context, ensure it corresponds to the right vCenter API session and that it is valid to make calls.
             if(context.getPoolKey().equals(poolKey)) {
                 if (context.validate()) {
@@ -5641,11 +5652,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             } else {
                 // Exisitng ThreadLocal context corresponds to a different vCenter API session. Why has it not been recycled?
-                s_logger.warn("ThreadLocal VMware context: " + poolKey + " doesn't correspond to the right vCenter. Expected VMware context: " + context.getPoolKey());
+                s_logger.warn("ThreadLocal VMware context: " + poolKey + ". Expected VMware context: " + context.getPoolKey());
             }
         }
         try {
-            context = VmwareContextFactory.getContext(_vCenterAddress, _username, _password);
+            context = VmwareContextFactory.getContext(_vCenterAddress, _username, _password, vCenterSessionTimeout);
             s_serviceContext.set(context);
         } catch (Exception e) {
             s_logger.error("Unable to connect to vSphere server: " + _vCenterAddress, e);

@@ -56,8 +56,8 @@ public class VmwareContextPool {
         _timer.scheduleAtFixedRate(getTimerTask(), _idleCheckInterval.getMillis(), _idleCheckInterval.getMillis());
     }
 
-    public VmwareContext getContext(final String vCenterAddress, final String vCenterUserName) {
-        final String poolKey = composePoolKey(vCenterAddress, vCenterUserName).intern();
+    public VmwareContext getContext(final String vCenterAddress, final String vCenterUserName, int vCenterSessionTimeout) {
+        final String poolKey = composePoolKey(vCenterAddress, vCenterUserName, vCenterSessionTimeout).intern();
         if (Strings.isNullOrEmpty(poolKey)) {
             return null;
         }
@@ -158,9 +158,10 @@ public class VmwareContextPool {
         }
     }
 
-    public static String composePoolKey(final String vCenterAddress, final String vCenterUserName) {
+    public static String composePoolKey(final String vCenterAddress, final String vCenterUserName, int vCenterSessionTimeout) {
         assert (vCenterUserName != null);
         assert (vCenterAddress != null);
-        return vCenterUserName + "@" + vCenterAddress;
+        int sessionTimeoutInSeconds = vCenterSessionTimeout/1000;
+        return vCenterUserName + "@" + vCenterAddress + ";" + String.valueOf(sessionTimeoutInSeconds);
     }
 }

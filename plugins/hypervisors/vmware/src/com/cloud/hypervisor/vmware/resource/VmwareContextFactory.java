@@ -55,7 +55,7 @@ public class VmwareContextFactory {
         s_clusterMgr = _clusterMgr;
     }
 
-    public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+    public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword, int sessionTimeout) throws Exception {
         assert (vCenterAddress != null);
         assert (vCenterUserName != null);
         assert (vCenterPassword != null);
@@ -66,7 +66,7 @@ public class VmwareContextFactory {
                 StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
         VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
-        vimClient.setVcenterSessionTimeout(s_vmwareMgr.getVcenterSessionTimeout());
+        vimClient.setVcenterSessionTimeout(sessionTimeout);
         vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
 
         VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
@@ -76,21 +76,21 @@ public class VmwareContextFactory {
         context.registerStockObject("manageportgroup", s_vmwareMgr.getManagementPortGroupName());
         context.registerStockObject("noderuninfo", String.format("%d-%d", s_clusterMgr.getManagementNodeId(), s_clusterMgr.getCurrentRunId()));
 
-        context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+        context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName, sessionTimeout));
 
         return context;
     }
 
-    public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
-        VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
+    public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword, int sessionTimeout) throws Exception {
+        VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName, sessionTimeout);
         if (context == null) {
-            context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+            context = create(vCenterAddress, vCenterUserName, vCenterPassword, sessionTimeout);
         } else {
             // Validate current context and verify if vCenter session timeout value of the context matches the timeout value set by Admin
-            if (!context.validate() || (context.getVimClient().getVcenterSessionTimeout() != s_vmwareMgr.getVcenterSessionTimeout())) {
+            if (!context.validate()) {
                 s_logger.info("Validation of the context failed, dispose and create a new one");
                 context.close();
-                context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+                context = create(vCenterAddress, vCenterUserName, vCenterPassword, sessionTimeout);
             }
         }
 

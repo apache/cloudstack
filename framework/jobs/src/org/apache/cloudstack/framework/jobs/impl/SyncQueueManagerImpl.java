@@ -238,8 +238,8 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
     }
 
     @Override
-    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
-        return _syncQueueItemDao.getBlockedQueueItems(thresholdMs, exclusive);
+    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, long snapshotThresholdMs, String jobCmd, boolean exclusive) {
+        return _syncQueueItemDao.getBlockedQueueItems(thresholdMs, snapshotThresholdMs, jobCmd, exclusive);
     }
 
     private boolean queueReadyToProcess(SyncQueueVO queueVO) {

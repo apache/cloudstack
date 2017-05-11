@@ -49,7 +49,7 @@ public class VmwareContextPoolTest {
 
         @Override
         public void run() {
-            final String poolKey = pool.composePoolKey(vmwareAddress, vmwareUsername);
+            final String poolKey = pool.composePoolKey(vmwareAddress, vmwareUsername, vCenterSessionTimeout);
             while (canRun) {
                 pool.registerContext(createDummyContext(pool, poolKey));
                 counter++;
@@ -61,6 +61,7 @@ public class VmwareContextPoolTest {
     private VmwareContext vmwareContext;
     private String vmwareAddress = "address";
     private String vmwareUsername = "username";
+    private int vCenterSessionTimeout = 1200000;
 
     private int contextLength = 10;
     private Duration idleCheckInterval = Duration.millis(1000L);
@@ -74,7 +75,7 @@ public class VmwareContextPoolTest {
 
     @Before
     public void setUp() throws Exception {
-        final String poolKey = vmwareContextPool.composePoolKey(vmwareAddress, vmwareUsername);
+        final String poolKey = vmwareContextPool.composePoolKey(vmwareAddress, vmwareUsername, vCenterSessionTimeout);
         vmwareContextPool = new VmwareContextPool(contextLength, idleCheckInterval);
         vmwareContext = createDummyContext(vmwareContextPool, poolKey);
     }
@@ -82,18 +83,18 @@ public class VmwareContextPoolTest {
     @Test
     public void testRegisterContext() throws Exception {
         vmwareContextPool.registerContext(vmwareContext);
-        Assert.assertEquals(vmwareContextPool.getContext(vmwareAddress, vmwareUsername), vmwareContext);
+        Assert.assertEquals(vmwareContextPool.getContext(vmwareAddress, vmwareUsername, vCenterSessionTimeout), vmwareContext);
     }
 
     @Test
     public void testUnregisterContext() throws Exception {
         vmwareContextPool.unregisterContext(vmwareContext);
-        Assert.assertNull(vmwareContextPool.getContext(vmwareAddress, vmwareUsername));
+        Assert.assertNull(vmwareContextPool.getContext(vmwareAddress, vmwareUsername, vCenterSessionTimeout));
     }
 
     @Test
     public void testComposePoolKey() throws Exception {
-        Assert.assertEquals(vmwareContextPool.composePoolKey(vmwareAddress, vmwareUsername), vmwareUsername + "@" + vmwareAddress);
+        Assert.assertEquals(vmwareContextPool.composePoolKey(vmwareAddress, vmwareUsername, vCenterSessionTimeout), vmwareUsername + "@" + vmwareAddress + ";" + String.valueOf(vCenterSessionTimeout/1000));
     }
 
     @Test
