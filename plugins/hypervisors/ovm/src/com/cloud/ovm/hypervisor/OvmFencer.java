@@ -105,9 +105,9 @@ public class OvmFencer extends AdapterBase implements FenceBuilder {
                 continue;
             } catch (OperationCancelledException e) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable (Operation Cancelled)");
+                    s_logger.debug("Cancelling because " + h.toString() + " is unavailable (Operation Cancelled)");
                 }
-                continue;
+                break;
             }
 
             if (answer != null && answer.getResult()) {

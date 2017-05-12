@@ -94,7 +94,13 @@ public class SimulatorFencer extends AdapterBase implements FenceBuilder {
                         s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
                     }
                     continue;
-                } catch (OperationTimedoutException | OperationCancelledException e) {
+                } catch (OperationCancelledException e) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("cancelling because " + h.toString() + " is unavailable(operation cancelled)");
+                    }
+                    break;
+                }
+                catch (OperationTimedoutException e) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
                     }

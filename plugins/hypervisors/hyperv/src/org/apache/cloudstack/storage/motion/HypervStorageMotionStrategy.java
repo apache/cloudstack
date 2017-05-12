@@ -139,7 +139,7 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
             return answer;
         } catch (OperationTimedoutException | OperationCancelledException e) {
             s_logger.error("Error while migrating vm " + vm + " to host " + destHost, e);
-            throw new AgentUnavailableException("Operation timed out on storage motion for " + vm, destHost.getId());
+            throw new AgentUnavailableException("Operation timed out or Operation Cancelled on storage motion for " + vm, destHost.getId());
         }
     }
 

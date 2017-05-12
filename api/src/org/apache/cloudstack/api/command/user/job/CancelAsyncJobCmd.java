@@ -37,7 +37,7 @@ import javax.inject.Inject;
 
 @APICommand(name = "cancelAsyncJob", description = "Cancel asynchronous job.",
         responseObject = AsyncJobResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.7.1", authorized = {RoleType.Admin})
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.10.0.0", authorized = {RoleType.Admin})
 public class CancelAsyncJobCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 

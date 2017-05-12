@@ -1866,7 +1866,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             uvc.setCleanupVmFiles(true);
                             try {
                                 _agentMgr.send(srcHostId, uvc);
-                            } catch (final AgentUnavailableException | OperationTimedoutException e) {
+                            } catch (final AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
                                 throw new CloudRuntimeException("Failed to unregister VM: " + vm.getInstanceName() + " from source host: " + srcHostId +
                                         " after successfully migrating VM's storage across VMware Datacenters");
                             }

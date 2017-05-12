@@ -94,7 +94,12 @@ public class Ovm3FenceBuilder extends AdapterBase implements FenceBuilder {
                 FenceAnswer answer;
                 try {
                     answer = (FenceAnswer) agentMgr.send(h.getId(), fence);
-                } catch (AgentUnavailableException | OperationTimedoutException |OperationCancelledException e) {
+                } catch (OperationCancelledException e) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Cancelling because " + h.toString() + " is unavailable(operation cancelled)", e);
+                    }
+                    break;
+                } catch (AgentUnavailableException | OperationTimedoutException e) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Moving on to the next host because " + h.toString() + " is unavailable", e);
                     }

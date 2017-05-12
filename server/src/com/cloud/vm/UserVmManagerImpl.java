@@ -3816,10 +3816,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             answer = _agentMgr.send(hostId, cmd);
         } catch (OperationTimedoutException e) {
             s_logger.warn("Timed Out", e);
-            return false;
         } catch (AgentUnavailableException e) {
             s_logger.warn("Agent Unavailable ", e);
-            return false;
         } catch (OperationCancelledException e) {
             s_logger.warn("Operation Cancelled ", e);
         }

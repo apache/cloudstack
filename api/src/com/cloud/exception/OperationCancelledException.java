@@ -17,6 +17,7 @@
 package com.cloud.exception;
 
 import com.cloud.agent.api.Command;
+import com.cloud.utils.SerialVersionUID;
 
 import java.util.Arrays;
 
@@ -25,7 +26,7 @@ import java.util.Arrays;
  */
 public class OperationCancelledException extends CloudException {
 
-
+    private static final long serialVersionUID = SerialVersionUID.OperationCancelledException;
     long _agentId;
     long _seqId;
     int _time;
@@ -33,7 +34,6 @@ public class OperationCancelledException extends CloudException {
 
     transient Command[] _cmds;
     boolean _isActive;
-    boolean _isCancelled = false;
 
     public OperationCancelledException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
         super("Commands: " + Arrays.toString(cmds) + " to Host " + agentId + " with seqId " + seqId + " cancelled " +
@@ -43,7 +43,6 @@ public class OperationCancelledException extends CloudException {
         _time = time;
         _cmds = cmds;
         _isActive = isActive;
-        _isCancelled = true;
     }
 
     public long getAgentId() {
@@ -64,10 +63,6 @@ public class OperationCancelledException extends CloudException {
 
     public boolean isActive() {
         return _isActive;
-    }
-
-    public boolean isCancelled() {
-        return _isCancelled;
     }
 
 }

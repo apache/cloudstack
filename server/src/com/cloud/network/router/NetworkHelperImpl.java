@@ -176,6 +176,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         } catch (final OperationCancelledException e) {
             s_logger.warn("Operation cancelled", e);
+            throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         }
 
         if (answers == null || answers.length != cmds.size()) {

@@ -772,9 +772,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             protected void reallyRun() {
                 try {
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
-                    boolean isPurged = false;
                     if (l != null && l.size() > 0) {
                         for (SyncQueueItemVO item : l) {
+                            boolean isPurged = false;
                             if (item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
                                 AsyncJob job = _jobDao.findById(item.getContentId());
                                 if (job != null && StringUtils.isNotBlank(job.getRelated())) {
@@ -1106,7 +1106,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         List<SyncQueueItemVO> jobs = _syncQueueItemDao.getActiveQueueItems(getMsid(), false);
         for (SyncQueueItemVO job : jobs) {
             AsyncJobVO childjob = _jobDao.findById(job.getContentId());
-            if (childjob != null) {
+            if (childjob != null && StringUtils.isNotBlank(childjob.getRelated())) {
                 Long parentjobid = Long.parseLong(childjob.getRelated());
                 try {
                     if (s_logger.isDebugEnabled()) {

@@ -43,15 +43,11 @@ public class AgentUnavailableException extends ResourceUnavailableException {
 
     public AgentUnavailableException(String msg, long agentId, boolean isCancelled) {
         this(msg, agentId, null);
-        setIsCancelled(isCancelled);
+        this.isCancelled = isCancelled;
     }
 
     public boolean isCancelled() {
         return isCancelled;
-    }
-
-    public void setIsCancelled(boolean isCancelled) {
-        this.isCancelled = isCancelled;
     }
 
 }

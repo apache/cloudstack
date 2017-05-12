@@ -420,10 +420,6 @@ public abstract class AgentAttache {
                 }
                 try {
                     answers = sl.waitFor(wait);
-                    job = _agentMgr._asyncJobDao.findById(jobId);
-                    if (job != null && job.getStatus() == JobInfo.Status.CANCELLED) {
-                        throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
-                    }
                 } catch (final InterruptedException e) {
                     s_logger.debug(log(seq, "Interrupted"));
                     job = _agentMgr._asyncJobDao.findById(jobId);

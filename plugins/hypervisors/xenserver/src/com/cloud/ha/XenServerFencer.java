@@ -76,7 +76,12 @@ public class XenServerFencer extends AdapterBase implements FenceBuilder {
                         continue;
                     }
                     answer = (FenceAnswer)ans;
-                } catch (AgentUnavailableException | OperationCancelledException | OperationTimedoutException e) {
+                }  catch (OperationCancelledException e) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("cancelling because " + h.toString() + " is unavailable(operation cancelled)");
+                    }
+                    break;
+                } catch (AgentUnavailableException | OperationTimedoutException e) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
                     }

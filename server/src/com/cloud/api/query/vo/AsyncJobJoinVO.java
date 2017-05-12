@@ -205,10 +205,6 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
         return instanceUuid;
     }
 
-    public void setRelated(String related) {
-        this.related = related;
-    }
-
     public String getRelated() {
         return related;
     }
