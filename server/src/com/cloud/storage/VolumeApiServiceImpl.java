@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+    // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -2082,7 +2082,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
 
             } else {
-                s_logger.debug("Scheduling snapshot thru job queues");
                 Outcome<Snapshot> outcome = takeVolumeSnapshotThroughJobQueue(vm.getId(), volumeId, policyId, snapshotId, account.getId(), quiescevm, locationType);
 
                 try {
