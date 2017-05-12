@@ -1003,7 +1003,7 @@ public class VyosRouterResource implements ServerResource{
         if (publicVlanTag != null ) {
             publicInterfaceName=publicInterfaceName+"."+publicVlanTag.toString();
         }
-        long privateVlanTag = 0;
+        //long privateVlanTag = 0;
 
         switch (prim) {
             case CHECK_IF_EXISTS:
@@ -1045,9 +1045,9 @@ public class VyosRouterResource implements ServerResource{
                 }
 
                 // Make sure the public IP referenced in this rule exists.
-                if (managePublicInterface(cmdList, VyosRouterPrimative.ADD, publicVlanTag, publicIp+"/32", privateVlanTag, null) == false ) {
-                    throw new ExecutionException("Could not add the public Ip");
-                }
+                //if (managePublicInterface(cmdList, VyosRouterPrimative.ADD, publicVlanTag, publicIp+"/32", privateVlanTag, null) == false ) {
+                //    throw new ExecutionException("Could not add the public Ip");
+                //}
                 ArrayList<String> a_params = new ArrayList<String>();
                 a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} translation port '"+dstPortRangeString+"'" );
                 a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} inbound-interface '"+publicInterfaceName+"'" );

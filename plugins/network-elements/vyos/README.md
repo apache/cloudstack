@@ -68,10 +68,11 @@ added to the plugin in an iterative manner.
     initiative. The plugin will be refactored to use VyConf as soon as it that
     API is ready for release though VyConf is a long term goal for Vyos and will not be available for some time. .
 
-  * Currently, Egress Firewall rules must be manually created that allow the DNS provider
-    for the Guest Network to communicate on port 53. I need to determine how to
-    identify the IP for the DNS provider and add firewall rules for it during Guest
-    Network setup.
+  * Currently, UDP port 53 Egress is allowed for the entire guest network. This is required because the plugin relies
+    on the VRouter to provide DNS services but we do not know what IP the VRouter is given during network implementation.
+    In order to allow the VRouter to query upstream DNS servers we have a rule that opens DNS for the entire IP subnet.
+    This should be changed to only allow it from the VRouter. Though the next iteration of the plugin will include internal support
+    for DNS instead of using the VRouter which will make this issue moot.
 
 ## Feature Specifcations
 
@@ -89,7 +90,7 @@ added to the plugin in an iterative manner.
     * Static NAT
     * Port forwarding
   * Support of virtual Vyos Routers.
-  * Support of parallel deployment with hardware load-balancer.
+  * Support of parallel deployment with hardware load-balancer (Not Tested).
   * Communication layer with Vyos Router's custom bash shell.
   * Mapping of CloudStack APIs to corresponding Vyos Router commands.
   * Proper display of Vyos Router connectivity status in CloudStack UI.
@@ -100,7 +101,8 @@ added to the plugin in an iterative manner.
 
 ### Out-of-scope
 
-  * Support of inline deployment with hardware load-balancer (e.g.: Netscaler).
+  * Support of inline deployment with hardware load-balancer (e.g.: Netscaler). I assume since Palo Alto does not support it. 
+   This has Not tested though.
   * Exposing any Vyos Router features having no equivalent UI/API in CloudStack.
   * All other VRouter funconalities (EG DHCP, DNS, User Data...etc).
 
@@ -117,7 +119,7 @@ added to the plugin in an iterative manner.
   * If VLANs are used on public ip ranges in Cloudstack make sure matching VLANs
     are configured in the Vyos Router.
   * Create an interface for the Guest Networks. No IP needs to be assigned to this
-    Interface. This can be the same interface used for the public networks. 
+    Interface. **This can be the same interface used for the public networks as long as the public networks use vlans**. 
   * Set the system default gateway. This is the upstream network device allowing
     access to the internet for the Router's subnet. This must be accessible from
     the Vyos Router public interface IP.

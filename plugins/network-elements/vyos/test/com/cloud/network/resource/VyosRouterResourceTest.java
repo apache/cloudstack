@@ -91,9 +91,10 @@ public class VyosRouterResourceTest {
                                                        // ENABLE CONSOLE LOGGING
                                                        // OF TESTS
 
-        // This will cause the tests to be run against an actual Vyos Router
+        // Set this to true to run the tests against an actual Vyos Router
         // instead of the mock router.
-        //_context.put("use_test_router", "true");
+        _context.put("use_test_router", "false");
+
         _resource.setMockContext(_context);
     }
 
@@ -175,7 +176,7 @@ public class VyosRouterResourceTest {
 
     }
 
-/*
+
     @Test // tear down a fully functional network including public ip, private ip, ingress firewall, egress firewall, source nat, destination nat, and static nat.
     //This will only work if implementEndToEnd has been successfully run
     public void tearDownEndToEnd() throws ConfigurationException, ExecutionException {
@@ -189,7 +190,7 @@ public class VyosRouterResourceTest {
       //This method only works as a test against an actual Vyos Router. Skip it if we are running in sim mode.
         if (_context.containsKey("use_test_router") && _context.get("use_test_router").equals("true")) {
             //Run implementEndToEnd to setup the initial state of the vyos Router. This should be idempotent so if implement has already been called it should be ok to run it again.
-            //implementEndToEnd();
+            implementEndToEnd();
 
             //removePortForwardingRule
             removePortForwardingRule(true);
@@ -219,7 +220,7 @@ public class VyosRouterResourceTest {
         }
 
     }
-*/
+
 
     @Test // implement public & private interfaces, source nat, guest network
     public void implementGuestNetwork() throws ConfigurationException, ExecutionException {
