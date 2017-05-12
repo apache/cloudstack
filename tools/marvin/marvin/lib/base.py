@@ -894,6 +894,25 @@ class VirtualMachine:
             cmd.details[0]["memory"] = custommemory
         return apiclient.scaleVirtualMachine(cmd)
 
+class AsyncJob:
+
+    @classmethod
+    def cancel(cls, apiclient, jobid):
+        cmd = cancelAsyncJob.cancelAsyncJobCmd()
+        cmd.id = jobid
+        return (apiclient.cancelAsyncJob(cmd))
+
+    @classmethod
+    def list_long_running(cls, apiclient, duration, **kwargs):
+        cmd = listLongRunningAsyncJobs.listLongRunningAsyncJobsCmd()
+        cmd.duration = duration
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.listLongRunningAsyncJobs(cmd))
+
+    @classmethod
+    def list_queued_jobs(cls, apiclient, jobid):
+        return
+
 
 class Volume:
     """Manage Volume Life cycle
