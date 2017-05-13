@@ -130,79 +130,7 @@ public class MockableVyosRouterResource extends VyosRouterResource {
                 + "'$6$nJEIsPOST9$BcvgGh7GkjVsne0BDRrD8JI4TYMiBla7mvgbTGh2Bq7w9xdHFVuDBxxtZn6ijkveVk1Mp6qQYCqnsZg1sRulI1'\n set system login user vyos authentication plaintext-password ''\n set "
                 + "system login user vyos level 'admin'\n set system name-server '192.168.2.1'\n set system ntp server '0.pool.ntp.org'\n set system ntp server '1.pool.ntp.org'\n set system ntp "
                 + "server '2.pool.ntp.org'\n set system syslog global facility all level 'notice'\n set system syslog global facility protocols level 'debug'\n set system time-zone 'UTC'\n ");
-        /*
-        mockVyosConfigs.put("initial", "set firewall 'group'\nset firewall name eth0_Egress default-action 'accept'\nset firewall name eth0_Egress rule 1 action 'accept'\nset firewall name "
-                + "eth0_Egress rule 1 description 'defaultFirewallRule'\nset firewall name eth0_Egress rule 1 state established 'enable'\nset firewall name eth0_Egress rule 1 state related "
-                + "'enable'\nset firewall name eth0_Ingress default-action 'drop'\nset firewall name eth0_Ingress rule 1 action 'accept'\nset firewall name eth0_Ingress rule 1 description "
-                + "'defaultFirewallRule'\nset firewall name eth0_Ingress rule 1 state established 'enable'\nset firewall name eth0_Ingress rule 1 state related 'enable'\nset firewall name "
-                + "eth0_local default-action 'drop'\nset firewall name eth0_local rule 1 action 'accept'\nset firewall name eth0_local rule 1 description 'defaultFirewallRule'\nset firewall "
-                + "name eth0_local rule 1 state established 'enable'\nset firewall name eth0_local rule 1 state related 'enable'\nset firewall name eth0_local rule 2 action 'accept'\nset "
-                + "firewall name eth0_local rule 2 description 'allowSSHToRouter'\nset firewall name eth0_local rule 2 destination port '22'\nset firewall name eth0_local rule 2 protocol 'tcp'\n"
-                + "set firewall name eth0_local rule 2 state new 'enable'\nset interfaces ethernet eth0 address '192.168.2.91/24'\nset interfaces ethernet eth0 duplex 'auto'\nset interfaces "
-                + "ethernet eth0 firewall in name 'eth0_Ingress'\nset interfaces ethernet eth0 firewall local name 'eth0_local'\nset interfaces ethernet eth0 firewall out name 'eth0_Egress'\nset "
-                + "interfaces ethernet eth0 smp-affinity 'auto'\nset interfaces ethernet eth0 speed 'auto'\nset interfaces ethernet 'eth1'\nset interfaces loopback 'lo'\nset nat 'destination'\nset "
-                + "nat 'source'\nset service ssh port '22'\nset system config-management commit-revisions '20'\nset system gateway-address '192.168.2.1'\nset system host-name 'vyos'\nset system "
-                + "login user vyos authentication encrypted-password '$6$nJEIsPOST9$BcvgGh7GkjVsne0BDRrD8JI4TYMiBla7mvgbTGh2Bq7w9xdHFVuDBxxtZn6ijkveVk1Mp6qQYCqnsZg1sRulI1'\nset system login "
-                + "user vyos authentication plaintext-password ''\nset system login user vyos level 'admin'\nset system name-server '192.168.2.1'\nset system ntp server '0.pool.ntp.org'\nset "
-                + "system ntp server '1.pool.ntp.org'\nset system ntp server '2.pool.ntp.org'\nset system syslog global facility all level 'notice'\nset system syslog global facility protocols "
-                + "level 'debug'\nset system time-zone 'UTC'\n");
 
-        mockVyosConfigs.put("withImplementedGuestNetwork", "set firewall 'group'\nset firewall name eth0_Egress default-action 'accept'\nset firewall name eth0_Egress rule 1 action 'accept'\nset "
-                + "firewall name eth0_Egress rule 1 description 'defaultFirewallRule'\nset firewall name eth0_Egress rule 1 state established 'enable'\nset firewall name eth0_Egress rule 1 state "
-                + "related 'enable'\nset firewall name eth0_Ingress default-action 'drop'\nset firewall name eth0_Ingress rule 1 action 'accept'\nset firewall name eth0_Ingress rule 1 description "
-                + "'defaultFirewallRule'\nset firewall name eth0_Ingress rule 1 state established 'enable'\nset firewall name eth0_Ingress rule 1 state related 'enable'\nset firewall name "
-                + "eth0_local default-action 'drop'\nset firewall name eth0_local rule 1 action 'accept'\nset firewall name eth0_local rule 1 description 'defaultFirewallRule'\nset firewall name "
-                + "eth0_local rule 1 state established 'enable'\nset firewall name eth0_local rule 1 state related 'enable'\nset firewall name eth0_local rule 2 action 'accept'\nset firewall name "
-                + "eth0_local rule 2 description 'allowSSHToRouter'\nset firewall name eth0_local rule 2 destination port '22'\nset firewall name eth0_local rule 2 protocol 'tcp'\nset firewall name "
-                + "eth0_local rule 2 state new 'enable'\nset firewall name eth1_Egress default-action 'accept'\nset firewall name eth1_Egress rule 1 action 'accept'\nset firewall name eth1_Egress "
-                + "rule 1 description '192.168.99.102'\nset firewall name eth1_Egress rule 1 state established 'enable'\nset firewall name eth1_Egress rule 1 state related 'enable'\nset firewall name "
-                + "eth1_Ingress default-action 'drop'\nset firewall name eth1_Ingress rule 1 action 'accept'\nset firewall name eth1_Ingress rule 1 description '192.168.99.102'\nset firewall name "
-                + "eth1_Ingress rule 1 state established 'enable'\nset firewall name eth1_Ingress rule 1 state related 'enable'\nset interfaces ethernet eth0 address '192.168.2.91/24'\nset interfaces "
-                + "ethernet eth0 address '192.168.99.102/32'\nset interfaces ethernet eth0 duplex 'auto'\nset interfaces ethernet eth0 firewall in name 'eth0_Ingress'\nset interfaces ethernet eth0 "
-                + "firewall local name 'eth0_local'\nset interfaces ethernet eth0 firewall out name 'eth0_Egress'\nset interfaces ethernet eth0 smp-affinity 'auto'\nset interfaces ethernet eth0 "
-                + "speed 'auto'\nset interfaces ethernet eth1 vif 3954 address '10.3.96.1/24'\nset interfaces ethernet eth1 vif 3954 firewall in name 'eth1_Egress'\nset interfaces ethernet eth1 "
-                + "vif 3954 firewall out name 'eth1_Ingress'\nset interfaces loopback 'lo'\nset nat 'destination'\nset nat source rule 9999 description '3954'\nset nat source rule 9999 "
-                + "outbound-interface 'eth0'\nset nat source rule 9999 source address '10.3.96.1/24'\nset nat source rule 9999 translation address 'masquerade'\nset service ssh port '22'\nset "
-                + "system config-management commit-revisions '20'\nset system gateway-address '192.168.2.1'\nset system host-name 'vyos'\nset system login user vyos authentication encrypted-password "
-                + "'$6$nJEIsPOST9$BcvgGh7GkjVsne0BDRrD8JI4TYMiBla7mvgbTGh2Bq7w9xdHFVuDBxxtZn6ijkveVk1Mp6qQYCqnsZg1sRulI1'\nset system login user vyos authentication plaintext-password ''\nset system "
-                + "login user vyos level 'admin'\nset system name-server '192.168.2.1'\nset system ntp server '0.pool.ntp.org'\nset system ntp server '1.pool.ntp.org'\nset system ntp server "
-                + "'2.pool.ntp.org'\nset system syslog global facility all level 'notice'\nset system syslog global facility protocols level 'debug'\nset system time-zone 'UTC'\n");
-
-        mockVyosConfigs.put("withAllRules", "set firewall group network-group eth0_Egress-2 network '10.3.96.0/24'\nset firewall group network-group 'eth0_Ingress-2'\nset firewall group network-group "
-                + "eth1_Egress-2 network '10.3.96.0/24'\nset firewall group network-group 'eth1_Ingress-2'\nset firewall name eth0_Egress default-action 'accept'\nset firewall name eth0_Egress rule 1 "
-                + "action 'accept'\nset firewall name eth0_Egress rule 1 description 'defaultFirewallRule'\nset firewall name eth0_Egress rule 1 state established 'enable'\nset firewall name "
-                + "eth0_Egress rule 1 state related 'enable'\nset firewall name eth0_Egress rule 2 action 'accept'\nset firewall name eth0_Egress rule 2 description '0_3954'\nset firewall name "
-                + "eth0_Egress rule 2 destination port '80'\nset firewall name eth0_Egress rule 2 protocol 'tcp'\nset firewall name eth0_Egress rule 2 source group network-group 'eth0_Egress-2'\nset "
-                + "firewall name eth0_Egress rule 2 state new 'enable'\nset firewall name eth0_Ingress default-action 'drop'\nset firewall name eth0_Ingress rule 1 action 'accept'\nset firewall name "
-                + "eth0_Ingress rule 1 description 'defaultFirewallRule'\nset firewall name eth0_Ingress rule 1 state established 'enable'\nset firewall name eth0_Ingress rule 1 state related "
-                + "'enable'\nset firewall name eth0_Ingress rule 2 action 'accept'\nset firewall name eth0_Ingress rule 2 description '8'\nset firewall name eth0_Ingress rule 2 destination address "
-                + "'10.3.96.0/24'\nset firewall name eth0_Ingress rule 2 destination port '22'\nset firewall name eth0_Ingress rule 2 protocol 'tcp'\nset firewall name eth0_Ingress rule 2 state new "
-                + "'enable'\nset firewall name eth0_local default-action 'drop'\nset firewall name eth0_local rule 1 action 'accept'\nset firewall name eth0_local rule 1 description "
-                + "'defaultFirewallRule'\nset firewall name eth0_local rule 1 state established 'enable'\nset firewall name eth0_local rule 1 state related 'enable'\nset firewall name eth0_local rule 2 "
-                + "action 'accept'\nset firewall name eth0_local rule 2 description 'allowSSHToRouter'\nset firewall name eth0_local rule 2 destination port '22'\nset firewall name eth0_local rule 2 "
-                + "protocol 'tcp'\nset firewall name eth0_local rule 2 state new 'enable'\nset firewall name eth1_Egress default-action 'accept'\nset firewall name eth1_Egress rule 1 action 'accept'\n"
-                + "set firewall name eth1_Egress rule 1 description '192.168.99.102'\nset firewall name eth1_Egress rule 1 state established 'enable'\nset firewall name eth1_Egress rule 1 state "
-                + "related 'enable'\nset firewall name eth1_Egress rule 2 action 'accept'\nset firewall name eth1_Egress rule 2 description '0_3954'\nset firewall name eth1_Egress rule 2 destination "
-                + "port '80'\nset firewall name eth1_Egress rule 2 protocol 'tcp'\nset firewall name eth1_Egress rule 2 source group network-group 'eth1_Egress-2'\nset firewall name eth1_Egress rule 2 "
-                + "state new 'enable'\nset firewall name eth1_Ingress default-action 'drop'\nset firewall name eth1_Ingress rule 1 action 'accept'\nset firewall name eth1_Ingress rule 1 description "
-                + "'192.168.99.102'\nset firewall name eth1_Ingress rule 1 state established 'enable'\nset firewall name eth1_Ingress rule 1 state related 'enable'\nset firewall name eth1_Ingress "
-                + "rule 2 action 'accept'\nset firewall name eth1_Ingress rule 2 description '8'\nset firewall name eth1_Ingress rule 2 destination address '10.3.96.0/24'\nset firewall name eth1_Ingress "
-                + "rule 2 destination port '22'\nset firewall name eth1_Ingress rule 2 protocol 'tcp'\nset firewall name eth1_Ingress rule 2 state new 'enable'\nset interfaces ethernet eth0 address "
-                + "'192.168.2.91/24'\nset interfaces ethernet eth0 address '192.168.99.102/32'\nset interfaces ethernet eth0 address '192.168.99.103/32'\nset interfaces ethernet eth0 duplex 'auto'\nset "
-                + "interfaces ethernet eth0 firewall in name 'eth0_Ingress'\nset interfaces ethernet eth0 firewall local name 'eth0_local'\nset interfaces ethernet eth0 firewall out name "
-                + "'eth0_Egress'\nset interfaces ethernet eth0 smp-affinity 'auto'\nset interfaces ethernet eth0 speed 'auto'\nset interfaces ethernet eth1 vif 3954 address '10.3.96.1/24'\nset "
-                + "interfaces ethernet eth1 vif 3954 firewall in name 'eth1_Egress'\nset interfaces ethernet eth1 vif 3954 firewall out name 'eth1_Ingress'\nset interfaces loopback 'lo'\nset nat "
-                + "destination rule 1 description '9'\nset nat destination rule 1 destination address '192.168.99.103'\nset nat destination rule 1 inbound-interface 'eth0'\nset nat destination rule 1 "
-                + "translation address '10.3.96.3'\nset nat destination rule 2 description '10'\nset nat destination rule 2 destination address '192.168.99.102'\nset nat destination rule 2 destination "
-                + "port '22'\nset nat destination rule 2 inbound-interface 'eth0'\nset nat destination rule 2 protocol 'tcp'\nset nat destination rule 2 translation address '10.3.96.2'\nset nat "
-                + "destination rule 2 translation port '22'\nset nat source rule 1 description '9'\nset nat source rule 1 outbound-interface 'eth0'\nset nat source rule 1 source address '10.3.96.3'\nset "
-                + "nat source rule 1 translation address '192.168.99.103'\nset nat source rule 9999 description '3954'\nset nat source rule 9999 outbound-interface 'eth0'\nset nat source rule 9999 source "
-                + "address '10.3.96.1/24'\nset nat source rule 9999 translation address 'masquerade'\nset service ssh port '22'\nset system config-management commit-revisions '20'\nset system "
-                + "gateway-address '192.168.2.1'\nset system host-name 'vyos'\nset system login user vyos authentication encrypted-password "
-                + "'$6$nJEIsPOST9$BcvgGh7GkjVsne0BDRrD8JI4TYMiBla7mvgbTGh2Bq7w9xdHFVuDBxxtZn6ijkveVk1Mp6qQYCqnsZg1sRulI1'\nset system login user vyos authentication plaintext-password ''\nset system "
-                + "login user vyos level 'admin'\nset system name-server '192.168.2.1'\nset system ntp server '0.pool.ntp.org'\nset system ntp server '1.pool.ntp.org'\nset system ntp server "
-                + "'2.pool.ntp.org'\nset system syslog global facility all level 'notice'\nset system syslog global facility protocols level 'debug'\nset system time-zone 'UTC'\n");
-         */
     }
 
     //For each Unit test type build a multidimensional arraylist of the expected commands in the expected order that we should send them to the vyos router
@@ -652,39 +580,9 @@ public class MockableVyosRouterResource extends VyosRouterResource {
                     throw new ExecutionException("ERROR command type not supported. Type: "+ commandType);
 
             }
-           // System.out.println("Commands in current Request: ");
-           // for (String curCommand : commands) {
-           //     System.out.println(curCommand);
-           // }
 
         }
 
         return response;
     }
-
-/*
-    @Override
-    protected String getPrivateSubnet(long firewallRuleId) throws ExecutionException {
-        if (context.containsKey("privateSubnet")) {
-            return context.get("privateSubnet");
-        } else {
-            throw new ExecutionException("Error calling mock getPrivateSubnet method. No private subnet set in the context hashmap.");
-        }
-
-    }
-*/
-
- /*
-    @Override
-    protected String getGuestVlanTag(long firewallRuleId) throws ExecutionException {
-        if (context.containsKey("guestVlanTag")) {
-            return context.get("guestVlanTag");
-        } else {
-            throw new ExecutionException("Error calling mock getGuestVlanTag method. No guestVlanTag set in the context hashmap.");
-        }
-    }
-*/
-
-
-
 }

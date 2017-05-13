@@ -314,7 +314,7 @@ public class VyosRouterResourceTest {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nTEST: addIngressFirewallRule");
             System.out.println("---------------------------------------------------");
-        } //_context.put("use_test_router", "true");
+        }
 
         _context.put("currentTest", "addIngressFirewallRule");
         _context.put("vyosState", "withImplementedGuestNetwork");
@@ -331,7 +331,6 @@ public class VyosRouterResourceTest {
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
-        //FirewallRuleTO active = new FirewallRuleTO(8, null, "192.168.99.103", "tcp", 80, 80, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
         FirewallRuleTO active = new FirewallRuleTO(8, "2", "192.168.2.102", "tcp", 22, 22, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
         rules.add(active);
 
@@ -375,7 +374,6 @@ public class VyosRouterResourceTest {
         _resource.setMockContext(_context);
 
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
-        //FirewallRuleTO revoked = new FirewallRuleTO(8, null, "192.168.99.103", "tcp", 80, 80, true, false, FirewallRule.Purpose.Firewall, null, null, null);
         FirewallRuleTO revoked = new FirewallRuleTO(8, null, "192.168.2.102", "tcp", 22, 22, true, false, FirewallRule.Purpose.Firewall, null, null, null);
         rules.add(revoked);
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
@@ -507,7 +505,6 @@ public class VyosRouterResourceTest {
 
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-        //StaticNatRuleTO active = new StaticNatRuleTO(9, "192.168.99.103", null, null, "10.3.97.158", null, null, null, false, false);
         StaticNatRuleTO active = new StaticNatRuleTO(9, "2", "192.168.2.103", null, null, "10.3.96.3", null, null, null, false, false); rules.add(active);
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
@@ -549,7 +546,6 @@ public class VyosRouterResourceTest {
 
        long vlanId = 3954;
        List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-       //StaticNatRuleTO revoked = new StaticNatRuleTO(9, "192.168.99.103", null, null, "10.3.97.158", null, null, null, true, false);
        StaticNatRuleTO revoked = new StaticNatRuleTO(9, "192.168.2.103", null, null, "10.3.96.3", null, null, null, true, false);
        rules.add(revoked);
 
@@ -590,7 +586,6 @@ public class VyosRouterResourceTest {
 
        long vlanId = 3954;
        List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
-       // PortForwardingRuleTO active = new PortForwardingRuleTO(10, "192.168.99.103", 80, 80, "10.3.97.158", 8080, 8080, "tcp", false, false);
        PortForwardingRuleTO active = new PortForwardingRuleTO(10, "192.168.2.102", 22, 22, "10.3.96.2", 22, 22, "tcp", false, false);
        rules.add(active);
 
@@ -628,7 +623,6 @@ public class VyosRouterResourceTest {
 
        long vlanId = 3954;
        List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
-       // PortForwardingRuleTO revoked = new PortForwardingRuleTO(10, "192.168.99.103", 80, 80, "10.3.97.158", 8080, 8080, "tcp", true, false);
        PortForwardingRuleTO revoked = new PortForwardingRuleTO(10, "192.168.2.102", 22, 22, "10.3.96.2", 22, 22, "tcp", true, false);
        rules.add(revoked);
 

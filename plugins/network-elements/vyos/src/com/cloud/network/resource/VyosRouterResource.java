@@ -679,11 +679,10 @@ public class VyosRouterResource implements ServerResource{
         }
 
         String defaultFirewallAction="drop";
-        //String defaultEgressRuleAction="accept";
+
         if (firewallRulesetName.contains("Egress"))
         {
             defaultFirewallAction="accept";
-            //defaultEgressRuleAction="drop";
         }
 
         //This is kind of confusing but in Vyos There are 3 firewalls per interface.
@@ -741,7 +740,7 @@ public class VyosRouterResource implements ServerResource{
                      a_params.add("set firewall name "+firewallRulesetName+" rule 2 state new 'enable' ");
                  }
 
-               //allow port 53 through the firewall.
+                 //allow port 53 through the firewall.
                  // TODO This should be limited to the dns provider instead of allowing the whole subnet.
                  if (firewallRulesetName.contains("Egress")) {
                      a_params.add("set firewall name "+firewallRulesetName+" rule 3 action 'accept' ");
@@ -1003,7 +1002,6 @@ public class VyosRouterResource implements ServerResource{
         if (publicVlanTag != null ) {
             publicInterfaceName=publicInterfaceName+"."+publicVlanTag.toString();
         }
-        //long privateVlanTag = 0;
 
         switch (prim) {
             case CHECK_IF_EXISTS:
@@ -1044,10 +1042,6 @@ public class VyosRouterResource implements ServerResource{
                     }
                 }
 
-                // Make sure the public IP referenced in this rule exists.
-                //if (managePublicInterface(cmdList, VyosRouterPrimative.ADD, publicVlanTag, publicIp+"/32", privateVlanTag, null) == false ) {
-                //    throw new ExecutionException("Could not add the public Ip");
-                //}
                 ArrayList<String> a_params = new ArrayList<String>();
                 a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} translation port '"+dstPortRangeString+"'" );
                 a_params.add("set nat destination rule {{ "+VyosNextIdNumber.ASCENDING+" }} inbound-interface '"+publicInterfaceName+"'" );
@@ -1621,15 +1615,7 @@ public class VyosRouterResource implements ServerResource{
     private synchronized boolean requestWithCommit(ArrayList<IVyosRouterCommand> commandList) throws ExecutionException {
         // This loops through and executes all the commands in the commandList array.
         //If any commands fail then all commands are rolled back. Else, commands are saved to the vyos boot config
-/*        for (IVyosRouterCommand commands : commandList) {
-            int count=1;
-            for (String curCommand : commands.getParams() ) {
-                s_logger.debug(count+":"+curCommand);
-            }
-            count++;
-            s_logger.debug("\n");
-        }
-*/
+
         boolean result = true;
         boolean saving = false;
         if (commandList.size() > 0) {
