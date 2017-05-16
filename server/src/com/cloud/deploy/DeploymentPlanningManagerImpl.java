@@ -249,50 +249,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     public DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner)
             throws InsufficientServerCapacityException, AffinityConflictException {
 
-        // call affinitygroup chain
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        int cpu_requested = offering.getCpu() * offering.getSpeed();
+        long ram_requested = offering.getRamSize() * 1024L * 1024L;
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
         DataCenter dc = _dcDao.findById(vm.getDataCenterId());
 
-        if (vmGroupCount > 0) {
-            for (AffinityGroupProcessor processor : _affinityProcessors) {
-                processor.process(vmProfile, plan, avoids);
-            }
-        }
 
         if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
             checkForNonDedicatedResources(vmProfile, dc, avoids);
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
-        }
-
-        // call planners
-        //DataCenter dc = _dcDao.findById(vm.getDataCenterId());
-        // check if datacenter is in avoid set
-        if (avoids.shouldAvoid(dc)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
-            }
-            return null;
-        }
-
-        ServiceOffering offering = vmProfile.getServiceOffering();
-        if(planner == null){
-            String plannerName = offering.getDeploymentPlanner();
-            if (plannerName == null) {
-                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                    plannerName = "BareMetalPlanner";
-                } else {
-                    plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
-                }
-            }
-            planner = getDeploymentPlannerByName(plannerName);
-        }
-
-        int cpu_requested = offering.getCpu() * offering.getSpeed();
-        long ram_requested = offering.getRamSize() * 1024L * 1024L;
-
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("DeploymentPlanner allocation algorithm: " + planner);
 
@@ -362,6 +328,44 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
             s_logger.debug("Cannot deploy to specified host, returning.");
             return null;
+        }
+
+        // call affinitygroup chain
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+
+        if (vmGroupCount > 0) {
+            for (AffinityGroupProcessor processor : _affinityProcessors) {
+                processor.process(vmProfile, plan, avoids);
+            }
+        }
+
+        if (vm.getType() == VirtualMachine.Type.User) {
+            checkForNonDedicatedResources(vmProfile, dc, avoids);
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
+        }
+
+        // call planners
+        // DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        // check if datacenter is in avoid set
+        if (avoids.shouldAvoid(dc)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
+            }
+            return null;
+        }
+
+        if (planner == null) {
+            String plannerName = offering.getDeploymentPlanner();
+            if (plannerName == null) {
+                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                    plannerName = "BareMetalPlanner";
+                } else {
+                    plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+                }
+            }
+            planner = getDeploymentPlannerByName(plannerName);
         }
 
         if (vm.getLastHostId() != null && haVmTag == null) {
