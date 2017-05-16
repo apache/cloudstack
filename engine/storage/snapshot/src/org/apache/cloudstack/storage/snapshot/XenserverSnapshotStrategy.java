@@ -130,7 +130,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             SnapshotDataStoreVO oldestSnapshotOnPrimary = snapshotStoreDao.findOldestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
             VolumeVO volume = volumeDao.findById(snapshot.getVolumeId());
             if (oldestSnapshotOnPrimary != null) {
-                if (oldestSnapshotOnPrimary.getDataStoreId() == volume.getPoolId()) {
+                if (oldestSnapshotOnPrimary.getDataStoreId() == volume.getPoolId() && oldestSnapshotOnPrimary.getId() != parentSnapshotOnPrimaryStore.getId()) {
                     int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
                             SnapshotManager.DELTAMAX);
                     int deltaSnap = _deltaSnapshotMax;
@@ -152,7 +152,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     } else {
                         fullBackup = false;
                     }
-                } else {
+                } else if (oldestSnapshotOnPrimary.getId() != parentSnapshotOnPrimaryStore.getId()){
                     // if there is an snapshot entry for previousPool(primary storage) of migrated volume, delete it becasue CS created one more snapshot entry for current pool
                     snapshotStoreDao.remove(oldestSnapshotOnPrimary.getId());
                 }
