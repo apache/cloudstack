@@ -2091,6 +2091,12 @@ class ServiceOffering:
             cmd.listall = True
         return(apiclient.listServiceOfferings(cmd))
 
+    def update(self, apiclient, **kwargs):
+        """Update Service Offering"""
+        cmd = updateServiceOffering.updateServiceOfferingCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateServiceOffering(cmd)
+
 
 class DiskOffering:
     """Manage disk offerings cycle"""
