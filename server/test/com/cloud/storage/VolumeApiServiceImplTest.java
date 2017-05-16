@@ -38,7 +38,10 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import junit.framework.Assert;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.configuration.Resource;
+import com.cloud.host.dao.HostDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -59,6 +62,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.Assert;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -74,6 +78,7 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -112,6 +117,12 @@ public class VolumeApiServiceImplTest {
     UserVmManager _userVmMgr;
     @Mock
     DataCenterDao _dcDao;
+    @Mock
+    ResourceLimitService _resourceLimitMgr;
+    @Mock
+    AccountDao _accountDao;
+    @Mock
+    HostDao _hostDao;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
@@ -131,10 +142,14 @@ public class VolumeApiServiceImplTest {
         _svc.volService = volService;
         _svc._userVmMgr = _userVmMgr;
         _svc._dcDao = _dcDao;
+        _svc._resourceLimitMgr = _resourceLimitMgr;
+        _svc._accountDao = _accountDao;
+        _svc._hostDao = _hostDao;
         _svc._gson = GsonHelper.getGsonLogger();
 
         // mock caller context
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
+        AccountVO account2 = new AccountVO("Account2", 2L, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         // mock async context
@@ -438,6 +453,39 @@ public class VolumeApiServiceImplTest {
 
         Assert.fail("Expected Exception for archive in non-managed storage");
     }
+
+    /**
+     * The resource limit check for primary storage should not be skipped for Volume in 'Uploaded' state.
+     * @throws NoSuchFieldException
+     * @throws IllegalAccessException
+     * @throws ResourceAllocationException
+     */
+    @Test
+    public void testResourceLimitCheckForUploadedVolume() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
+        doThrow(new ResourceAllocationException("primary storage resource limit check failed", Resource.ResourceType.primary_storage)).when(_svc._resourceLimitMgr).checkResourceLimit(any(AccountVO.class), any(Resource.ResourceType.class), any(Long.class));
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+        when(volumeToAttach.getId()).thenReturn(9L);
+        when(volumeToAttach.getDataCenterId()).thenReturn(34L);
+        when(volumeToAttach.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        when(volumeToAttach.getInstanceId()).thenReturn(null);
+        when(_userVmDao.findById(anyLong())).thenReturn(vm);
+        when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        when(vm.getState()).thenReturn(State.Running);
+        when(vm.getDataCenterId()).thenReturn(34L);
+        when(_svc._volsDao.findByInstanceAndType(anyLong(), any(Volume.Type.class))).thenReturn(new ArrayList(10));
+        when(_svc.volFactory.getVolume(9L)).thenReturn(volumeToAttach);
+        when(volumeToAttach.getState()).thenReturn(Volume.State.Uploaded);
+        DataCenterVO zoneWithDisabledLocalStorage = Mockito.mock(DataCenterVO.class);
+        when(_svc._dcDao.findById(anyLong())).thenReturn(zoneWithDisabledLocalStorage);
+        when(zoneWithDisabledLocalStorage.isLocalStorageEnabled()).thenReturn(true);
+        try {
+            _svc.attachVolumeToVM(2L, 9L, null);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals(e.getMessage(), ("primary storage resource limit check failed"));
+        }
+    }
+
 
     @After
     public void tearDown() {
