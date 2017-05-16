@@ -57,6 +57,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         #cls.acldata = Services().services
 	cls.testdata = cls.testClient.getParsedTestDataConfig()
 	cls.acldata = cls.testdata["acl"]
+        cls.acldata["network"]["vlan"] = None
         cls.domain_1 = None
         cls.domain_2 = None
         cls.cleanup = []
