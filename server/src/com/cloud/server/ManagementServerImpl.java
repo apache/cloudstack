@@ -519,6 +519,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -795,6 +796,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ServiceOfferingDao _offeringDao;
     @Inject
     private DeploymentPlanningManager _dpMgr;
+    @Inject
+    private GuestOsDetailsDao _guestOsDetailsDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -2098,12 +2101,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("The specified Guest OS name : " + displayName + " already exists. Please specify a unique name");
         }
 
+        s_logger.debug("GuestOSDetails");
         final GuestOSVO guestOsVo = new GuestOSVO();
         guestOsVo.setCategoryId(categoryId.longValue());
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
         guestOsVo.setIsUserDefined(true);
-        return _guestOSDao.persist(guestOsVo);
+        final GuestOS guestOsPersisted = _guestOSDao.persist(guestOsVo);
+
+        if(cmd.getDetails() != null && !cmd.getDetails().isEmpty()){
+            Map<String, String> detailsMap = cmd.getDetails();
+            for(Object key: detailsMap.keySet()){
+                _guestOsDetailsDao.addDetail(guestOsPersisted.getId(),(String) key,detailsMap.get((String) key), false);
+            }
+        }
+
+        return guestOsPersisted;
     }
 
     @Override
@@ -2127,6 +2140,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (!guestOsHandle.getIsUserDefined()) {
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
+        }
+
+        if(cmd.getDetails() != null && !cmd.getDetails().isEmpty()){
+            Map<String, String> detailsMap = cmd.getDetails();
+            for(Object key: detailsMap.keySet()){
+                _guestOsDetailsDao.addDetail(id,(String) key,detailsMap.get((String) key), false);
+            }
         }
 
         //Check if update is needed

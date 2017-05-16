@@ -33,6 +33,11 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.GuestOS;
 import com.cloud.user.Account;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 @APICommand(name = "addGuestOs", description = "Add a new guest OS type", responseObject = GuestOSResponse.class,
         since = "4.4.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddGuestOsCmd extends BaseAsyncCreateCmd {
@@ -53,8 +58,11 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "Optional name for Guest OS")
     private String osName;
 
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
+    private Map details;
 
-/////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -69,6 +77,22 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     public String getOsName() {
         return osName;
     }
+
+    public Map getDetails() {
+        Map<String, String> detailsMap = new HashMap<String, String>();
+        if (!details.isEmpty()) {
+            Collection<?> servicesCollection = details.values();
+            Iterator<?> iter = servicesCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> services = (HashMap<String, String>)iter.next();
+                String key = services.get("key");
+                String value = services.get("value");
+                detailsMap.put(key, value);
+            }
+        }
+        return detailsMap;
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

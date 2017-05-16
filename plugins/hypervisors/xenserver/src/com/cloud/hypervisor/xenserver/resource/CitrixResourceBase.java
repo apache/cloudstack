@@ -1265,10 +1265,28 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // be the minumum of
         // recommended value for that template and capacity remaining on host
 
+        long recommendedMemoryMin = 0l;
+        long recommendedMemoryMax = 0l;
+
+        Map<String,String> guestOsDetails = vmSpec.getGuestOsDetails();
+
+        if(guestOsDetails != null){
+            if(guestOsDetails.containsKey("xenserver.dynamicMin")){
+                recommendedMemoryMin = Long.valueOf(guestOsDetails.get("xenserver.dynamicMin")).longValue();
+            }
+
+            if(guestOsDetails.containsKey("xenserver.dynamicMax")){
+                recommendedMemoryMax = Long.valueOf(guestOsDetails.get("xenserver.dynamicMax")).longValue();
+            }
+
+        }
+
+
+
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             // scaling is allowed
-            vmr.memoryStaticMin = getStaticMin(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
-            vmr.memoryStaticMax = getStaticMax(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
+            vmr.memoryStaticMin = getStaticMin(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam(),recommendedMemoryMin);
+            vmr.memoryStaticMax = getStaticMax(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam(),recommendedMemoryMax);
             vmr.memoryDynamicMin = vmSpec.getMinRam();
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
             if (guestOsTypeName.toLowerCase().contains("windows")) {
@@ -3087,8 +3105,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return ressr;
     }
 
-    private long getStaticMax(final String os, final boolean b, final long dynamicMinRam, final long dynamicMaxRam) {
-        final long recommendedValue = CitrixHelper.getXenServerStaticMax(os, b);
+    private long getStaticMax(final String os, final boolean b, final long dynamicMinRam, final long dynamicMaxRam, final long recommendedValue) {
         if (recommendedValue == 0) {
             s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
             return dynamicMaxRam;
@@ -3106,8 +3123,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return staticMax;
     }
 
-    private long getStaticMin(final String os, final boolean b, final long dynamicMinRam, final long dynamicMaxRam) {
-        final long recommendedValue = CitrixHelper.getXenServerStaticMin(os, b);
+    private long getStaticMin(final String os, final boolean b, final long dynamicMinRam, final long dynamicMaxRam, final long recommendedValue) {
         if (recommendedValue == 0) {
             s_logger.warn("No recommended value found for dynamic min");
             return dynamicMinRam;

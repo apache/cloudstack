@@ -349,5 +349,5 @@
   <bean id="LBStickinessPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.LBStickinessPolicyDetailsDaoImpl" />
   <bean id="LBHealthCheckPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.LBHealthCheckPolicyDetailsDaoImpl" />
   <bean id="outOfBandManagementDaoImpl" class="org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDaoImpl" />
-
+  <bean id="GuestOsDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDaoImpl" />
 </beans>
