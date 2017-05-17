@@ -50,6 +50,17 @@ public class HttpUtils {
         else {
             resp.addHeader("X-XSS-Protection", "1;mode=block");
         }
+
+        if (resp.containsHeader("content-security-policy")) {
+            resp.setIntHeader("content-security-policy", 1);
+        }else {
+            resp.addIntHeader("content-security-policy", 1);
+        }
+        resp.addHeader("content-security-policy","default-src=none");
+        resp.addHeader("content-security-policy","script-src=self");
+        resp.addHeader("content-security-policy","connect-src=self");
+        resp.addHeader("content-security-policy","img-src=self");
+        resp.addHeader("content-security-policy","style-src=self");
     }
 
     public static void writeHttpResponse(final HttpServletResponse resp, final String response,
