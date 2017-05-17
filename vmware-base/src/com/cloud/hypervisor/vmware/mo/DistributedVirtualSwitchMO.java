@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
@@ -36,24 +37,67 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 public class DistributedVirtualSwitchMO extends BaseMO {
     @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(DistributedVirtualSwitchMO.class);
+    private static ConcurrentHashMap<String, List<String>> s_dvPortGroupCacheMap = null;
 
     public DistributedVirtualSwitchMO(VmwareContext context, ManagedObjectReference morDvs) {
         super(context, morDvs);
+        s_dvPortGroupCacheMap = new ConcurrentHashMap<String, List<String>>();
     }
 
     public DistributedVirtualSwitchMO(VmwareContext context, String morType, String morValue) {
         super(context, morType, morValue);
+        s_dvPortGroupCacheMap = new ConcurrentHashMap<String, List<String>>();
     }
 
     public void createDVPortGroup(DVPortgroupConfigSpec dvPortGroupSpec) throws Exception {
         List<DVPortgroupConfigSpec> dvPortGroupSpecArray = new ArrayList<DVPortgroupConfigSpec>();
         dvPortGroupSpecArray.add(dvPortGroupSpec);
-        _context.getService().addDVPortgroupTask(_mor, dvPortGroupSpecArray);
+        boolean dvPortGroupExists = false;
+        String dvSwitchInstance = _mor.getValue();
+        String dvPortGroupName = dvPortGroupSpec.getName();
+        String uniquedvPortGroupPerDvs = dvSwitchInstance + dvPortGroupName;
+        List<String> dvPortGroupList = null;
+        synchronized (uniquedvPortGroupPerDvs.intern()) {
+            // Looking up local cache rather than firing another API call to see if dvPortGroup exists already.
+            if (s_dvPortGroupCacheMap.containsKey(dvSwitchInstance)) {
+                dvPortGroupList = s_dvPortGroupCacheMap.get(dvSwitchInstance);
+                if (dvPortGroupList != null && dvPortGroupList.contains(dvPortGroupName)) {
+                    dvPortGroupExists = true;
+                }
+            }
+            if (!dvPortGroupExists) {
+                ManagedObjectReference task = _context.getService().addDVPortgroupTask(_mor, dvPortGroupSpecArray);
+                if (!_context.getVimClient().waitForTask(task)) {
+                    throw new Exception("Failed to create dvPortGroup " + dvPortGroupSpec.getName());
+                } else {
+                    if (s_dvPortGroupCacheMap.containsKey(dvSwitchInstance)) {
+                        dvPortGroupList = s_dvPortGroupCacheMap.get(dvSwitchInstance);
+                        if (dvPortGroupList == null) {
+                            dvPortGroupList = new ArrayList<String>();
+                        }
+                        dvPortGroupList.add(dvPortGroupName); //does this update map?
+                    } else {
+                        dvPortGroupList = new ArrayList<String>();
+                        dvPortGroupList.add(dvPortGroupName);
+                        s_dvPortGroupCacheMap.put(dvSwitchInstance, dvPortGroupList);
+                    }
+                }
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Created dvPortGroup. dvPortGroup cache is :" + s_dvPortGroupCacheMap);
+                }
+            } else if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Detected dvPortGroup [" + dvPortGroupName + "] already present. Not attempting to create again.");
+            }
+        }
     }
 
     public void updateDvPortGroup(ManagedObjectReference dvPortGroupMor, DVPortgroupConfigSpec dvPortGroupSpec) throws Exception {
-        // TODO(sateesh): Update numPorts
-        _context.getService().reconfigureDVPortgroupTask(dvPortGroupMor, dvPortGroupSpec);
+        synchronized (dvPortGroupMor.getValue().intern()) {
+            ManagedObjectReference task = _context.getService().reconfigureDVPortgroupTask(dvPortGroupMor, dvPortGroupSpec);
+            if (!_context.getVimClient().waitForTask(task)) {
+                throw new Exception("Failed to update dvPortGroup " + dvPortGroupMor.getValue());
+            }
+        }
     }
 
     public void updateVMWareDVSwitch(ManagedObjectReference dvSwitchMor, VMwareDVSConfigSpec dvsSpec) throws Exception {

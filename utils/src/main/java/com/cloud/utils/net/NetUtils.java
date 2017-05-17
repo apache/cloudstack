@@ -891,7 +891,7 @@ public class NetUtils {
         Long[] cidrBLong = cidrToLong(cidrB);
 
         long shift = MAX_CIDR - cidrBLong[1];
-        return cidrALong[0] >> shift == cidrBLong[0] >> shift;
+        return (cidrALong[0] >> shift == cidrBLong[0] >> shift) && (cidrALong[1] >= cidrBLong[1]);
     }
 
     static boolean areCidrsNotEmpty(String cidrA, String cidrB) {

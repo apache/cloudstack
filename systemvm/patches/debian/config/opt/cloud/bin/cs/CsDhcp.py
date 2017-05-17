@@ -89,9 +89,10 @@ class CsDhcp(CsDataBag):
                 gateway = gn.get_gateway()
             else:
                 gateway = i['gateway']
-            sline = "dhcp-option=tag:interface-%s-%s,3," % (device, idx)
-            line = "dhcp-option=tag:interface-%s-%s,3,%s" % (device, idx, gateway)
-            self.conf.search(sline, line)
+            if gateway != '0.0.0.0':
+                sline = "dhcp-option=tag:interface-%s-%s,3," % (device, idx)
+                line = "dhcp-option=tag:interface-%s-%s,3,%s" % (device, idx, gateway)
+                self.conf.search(sline, line)
             # Netmask
             netmask = ''
             if self.config.is_vpc():
