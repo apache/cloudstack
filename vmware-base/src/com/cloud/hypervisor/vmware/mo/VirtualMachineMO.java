@@ -751,6 +751,13 @@ public class VirtualMachineMO extends BaseMO {
         return (VirtualMachineConfigInfo)_context.getVimClient().getDynamicProperty(_mor, "config");
     }
 
+    public boolean isToolsInstallerMounted() throws Exception {
+        return _context.getVimClient().getDynamicProperty(_mor, "runtime.toolsInstallerMounted");
+    }
+    public GuestInfo getGuestInfo() throws Exception {
+        return (GuestInfo)_context.getVimClient().getDynamicProperty(_mor, "guest");
+    }
+
     public VirtualMachineConfigSummary getConfigSummary() throws Exception {
         return (VirtualMachineConfigSummary)_context.getVimClient().getDynamicProperty(_mor, "summary.config");
     }
