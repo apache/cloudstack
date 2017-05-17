@@ -40,8 +40,6 @@ import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.RedundantResource;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -1300,22 +1298,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean canUpdateInSequence(Network network, boolean forced){
+    public boolean canUpdateInSequence(Network network){
         List<Provider> providers = getNetworkProviders(network.getId());
 
         //check if the there are no service provider other than virtualrouter.
         for(Provider provider :providers){
             if(provider!=Provider.VirtualRouter)
                 throw new UnsupportedOperationException("Cannot update the network resources in sequence when providers other than virtualrouter are used");
-        }
-        //check if routers are in correct state before proceeding with the update
-        List<DomainRouterVO> routers=_rotuerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
-        for(DomainRouterVO router :routers){
-            if(router.getRedundantState()== VirtualRouter.RedundantState.UNKNOWN){
-                if(!forced){
-                    throw new CloudRuntimeException("Domain router: "+router.getInstanceName()+" is in unknown state, Cannot update network. set parameter forced to true for forcing an update");
-                }
-            }
         }
         return true;
     }
@@ -1452,20 +1441,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         return resourceCount;
         }
-
-    @Override
-    public void finalizeUpdateInSequence(Network network, boolean success) {
-        List<Provider> providers = getNetworkProviders(network.getId());
-        for (NetworkElement element : networkElements) {
-            if (providers.contains(element.getProvider())) {
-                //currently only one element implements the redundant resource interface
-                if (element instanceof RedundantResource) {
-                    ((RedundantResource) element).finalize(network,success);
-                    break;
-                }
-            }
-        }
-    }
 
 
     @DB
@@ -2894,12 +2869,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<? extends Nic> listVmNics(final long vmId, final Long nicId, final Long networkId) {
+    public List<? extends Nic> listVmNics(final long vmId, final Long nicId, final Long networkId, String keyword) {
         List<NicVO> result = null;
-        if (nicId == null && networkId == null) {
-            result = _nicDao.listByVmId(vmId);
+
+        if (keyword == null || keyword.isEmpty()) {
+            if (nicId == null && networkId == null) {
+                result = _nicDao.listByVmId(vmId);
+            } else {
+                result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
+            }
         } else {
-            result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
+            result = _nicDao.listByVmIdAndKeyword(vmId, keyword);
         }
 
         for (final NicVO nic : result) {

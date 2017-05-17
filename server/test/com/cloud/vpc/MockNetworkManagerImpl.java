@@ -800,7 +800,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId) {
+    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId, String keyword) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -808,6 +808,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public List<? extends Nic> listNics(ListNicsCmd listNicsCmd) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends NicSecondaryIp> listSecondaryNics(ListNicsCmd listNicsCmd) {
         return null;
     }
 
@@ -848,7 +853,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public boolean canUpdateInSequence(Network network, boolean forced) {
+    public boolean canUpdateInSequence(Network network) {
         return false;
     }
 
@@ -870,11 +875,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public int getResourceCount(Network network) {
         return 0;
-    }
-
-    @Override
-    public void finalizeUpdateInSequence(Network network, boolean success) {
-        return;
     }
 
     @Override

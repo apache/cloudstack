@@ -489,10 +489,7 @@ public enum Config {
             null),
 
     // Snapshots
-    SnapshotHourlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.hourly", "8", "Maximum hourly snapshots for a volume", null),
-    SnapshotDailyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.daily", "8", "Maximum daily snapshots for a volume", null),
-    SnapshotWeeklyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.weekly", "8", "Maximum weekly snapshots for a volume", null),
-    SnapshotMonthlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.monthly", "8", "Maximum monthly snapshots for a volume", null),
+
     SnapshotPollInterval(
             "Snapshots",
             SnapshotManager.class,
@@ -1498,24 +1495,6 @@ public enum Config {
             "agent.load.threshold",
             "0.7",
             "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening",
-            null),
-
-    JSONDefaultContentType(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "json.content.type",
-            "application/json; charset=UTF-8",
-            "Http response content type for JSON",
-            null),
-
-    EnableSecureSessionCookie(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "enable.secure.session.cookie",
-            "false",
-            "Session cookie's secure flag is enabled if true. Use this only when using HTTPS",
             null),
 
     DefaultMaxDomainUserVms("Domain Defaults", ManagementServer.class, Long.class, "max.domain.user.vms", "40", "The default maximum number of user VMs that can be deployed for a domain", null),

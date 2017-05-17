@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.vm.NicSecondaryIp;
 
+import java.util.List;
+
 @EntityReference(value = NicSecondaryIp.class)
 @SuppressWarnings("unused")
 public class NicSecondaryIpResponse extends BaseResponse {
@@ -32,6 +34,10 @@ public class NicSecondaryIpResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the secondary private IP addr")
     private String id;
+
+    @SerializedName("secondaryip")
+    @Param(description = "the Secondary ipv4 addr of nic")
+    private List<NicSecondaryIpResponse> secondaryIpsList;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "Secondary IP address")
@@ -64,6 +70,14 @@ public class NicSecondaryIpResponse extends BaseResponse {
 
     public void setIpAddr(String ipAddr) {
         this.ipAddr = ipAddr;
+    }
+
+    public List<NicSecondaryIpResponse> getSecondaryIpsList() {
+        return secondaryIpsList;
+    }
+
+    public void setSecondaryIpsList(List<NicSecondaryIpResponse> secondaryIpsList) {
+        this.secondaryIpsList = secondaryIpsList;
     }
 
     public String getNicId() {

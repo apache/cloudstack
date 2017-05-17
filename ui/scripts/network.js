@@ -1710,11 +1710,16 @@
                     dataProvider: function(args) {
                         var data = {};
 
+                        if (args.filterBy.search.value != null) {
+                            data.keyword = args.filterBy.search.value;
+                        }
+
                         $.ajax({
                             url: createURL('listNics'),
                             data: {
                                 nicId: args.context.nics[0].id,
-                                virtualmachineid: args.context.instances[0].id
+                                virtualmachineid: args.context.instances[0].id,
+                                keyword: args.filterBy.search.value
                             },
                             success: function(json) {
                                 var ips = json.listnicsresponse.nic ? json.listnicsresponse.nic[0].secondaryip : [];

@@ -213,7 +213,7 @@ public interface NetworkOrchestrationService {
 
     boolean isSecondaryIpSetForNic(long nicId);
 
-    List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId);
+    List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId, String keyword);
 
     Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
 
@@ -227,7 +227,7 @@ public interface NetworkOrchestrationService {
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
 
-    boolean canUpdateInSequence(Network network, boolean forced);
+    boolean canUpdateInSequence(Network network);
 
     List<String> getServicesNotSupportedInNewOffering(Network network, long newNetworkOfferingId);
 
@@ -236,6 +236,4 @@ public interface NetworkOrchestrationService {
     void configureUpdateInSequence(Network network);
 
     int getResourceCount(Network network);
-
-    void finalizeUpdateInSequence(Network network, boolean success);
 }

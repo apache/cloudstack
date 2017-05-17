@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.List;
 
+
+import com.cloud.vm.NicSecondaryIp;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -31,6 +33,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
@@ -122,21 +125,44 @@ public class ListNicsCmd extends BaseListCmd {
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
         try {
-            List<? extends Nic> results = _networkService.listNics(this);
-            ListResponse<NicResponse> response = new ListResponse<NicResponse>();
-            List<NicResponse> resList = null;
-            if (results != null) {
-                resList = new ArrayList<NicResponse>(results.size());
-                for (Nic r : results) {
-                    NicResponse resp = _responseGenerator.createNicResponse(r);
-                    resp.setObjectName("nic");
-                    resList.add(resp);
+            if (this.getKeyword() != null && !this.getKeyword().isEmpty() && this.getNicId() != null) {
+                List<? extends NicSecondaryIp> results = _networkService.listSecondaryNics(this);
+                ListResponse<NicSecondaryIpResponse> response = new ListResponse<NicSecondaryIpResponse>();
+                List<NicSecondaryIpResponse> resList = new ArrayList<NicSecondaryIpResponse>();
+                NicSecondaryIpResponse res = new NicSecondaryIpResponse();
+                List<NicSecondaryIpResponse> res_List = new ArrayList<NicSecondaryIpResponse>();
+                if (results != null) {
+                    for (NicSecondaryIp r : results) {
+                        NicSecondaryIpResponse ipRes = _responseGenerator.createSecondaryIPToNicResponse(r);
+                        resList.add(ipRes);
+                        res.setSecondaryIpsList(resList);
+                        res.setObjectName("nic");
+                    }
+
+                    res_List.add(res);
+                    response.setResponses(res_List);
+                }
+                response.setResponses(res_List);
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
+
+            } else {
+                List<? extends Nic> results = _networkService.listNics(this);
+                ListResponse<NicResponse> response = new ListResponse<NicResponse>();
+                List<NicResponse> resList = null;
+                if (results != null) {
+                    resList = new ArrayList<NicResponse>(results.size());
+                    for (Nic r : results) {
+                        NicResponse resp = _responseGenerator.createNicResponse(r);
+                        resp.setObjectName("nic");
+                        resList.add(resp);
+                    }
+                    response.setResponses(resList);
                 }
                 response.setResponses(resList);
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
             }
-            response.setResponses(resList);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
 
         } catch (Exception e) {
             s_logger.warn("Failed to list secondary ip address per nic ");

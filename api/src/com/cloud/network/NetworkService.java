@@ -175,6 +175,8 @@ public interface NetworkService {
     /* lists the nic informaton */
     List<? extends Nic> listNics(ListNicsCmd listNicsCmd);
 
+    List<? extends NicSecondaryIp> listSecondaryNics(ListNicsCmd listNicsCmd);
+
     Map<Network.Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
 
     IpAddress updateIP(Long id, String customId, Boolean displayIp);
