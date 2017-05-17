@@ -61,4 +61,6 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snap
 
     void updateVolumeIds(long oldVolId, long newVolId);
 
+    List<SnapshotVO> listByStatusNotIn(long volumeId, Snapshot.State... status);
+
 }
