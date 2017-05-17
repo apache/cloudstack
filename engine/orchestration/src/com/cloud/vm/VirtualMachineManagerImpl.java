@@ -2298,8 +2298,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         work.setResourceId(destHostId);
         work = _workDao.persist(work);
 
+
         // Put the vm in migrating state.
         vm.setLastHostId(srcHostId);
+        vm.setPodIdToDeployIn(destHost.getPodId());
         moveVmToMigratingState(vm, destHostId, work);
 
         boolean migrated = false;
@@ -2376,6 +2378,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         "Migrate Command failed.  Please check logs.");
                 try {
                     _agentMgr.send(destHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                    vm.setPodIdToDeployIn(srcHost.getPodId());
                     stateTransitTo(vm, Event.OperationFailed, srcHostId);
                 } catch (final AgentUnavailableException e) {
                     s_logger.warn("Looks like the destination Host is unavailable for cleanup.", e);
