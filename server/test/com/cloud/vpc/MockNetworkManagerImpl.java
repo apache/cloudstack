@@ -848,7 +848,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public boolean canUpdateInSequence(Network network) {
+    public boolean canUpdateInSequence(Network network, boolean forced) {
         return false;
     }
 
@@ -870,6 +870,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public int getResourceCount(Network network) {
         return 0;
+    }
+
+    @Override
+    public void finalizeUpdateInSequence(Network network, boolean success) {
+        return;
     }
 
     @Override

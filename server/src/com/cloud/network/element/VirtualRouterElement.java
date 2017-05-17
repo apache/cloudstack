@@ -226,7 +226,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             routerCounts = 2;
         }
         if (routers == null || routers.size() < routerCounts) {
-            throw new ResourceUnavailableException("Can't find all necessary running routers!", DataCenter.class, network.getDataCenterId());
+            //we might have a router which is already deployed and running.
+            //so check the no of routers in network currently.
+            List<DomainRouterVO> current_routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+            if (current_routers.size() < 2) {
+                updateToFailedState(network);
+                throw new ResourceUnavailableException("Can't find all necessary running routers!", DataCenter.class, network.getDataCenterId());
+            }
         }
 
         return true;
@@ -724,7 +730,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Override
     public boolean shutdown(final Network network, final ReservationContext context, final boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-        final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        final List<DomainRouterVO> routers = getRouters(network);
         if (routers == null || routers.isEmpty()) {
             return true;
         }
@@ -1339,11 +1345,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         } finally {
             if(!result && updateInSequence) {
                 //fail the network update. even if one router fails we fail the network update.
-                List<DomainRouterVO> routerList = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
-                for (DomainRouterVO router : routerList) {
-                    router.setUpdateState(VirtualRouter.UpdateState.UPDATE_FAILED);
-                    _routerDao.persist(router);
-                }
+                updateToFailedState(network);
             }
         }
         return result;
@@ -1371,6 +1373,22 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Override
     public int getResourceCount(Network network) {
         return _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER).size();
+    }
+
+    @Override
+    public void finalize(Network network, boolean success) {
+        if(!success){
+            updateToFailedState(network);
+        }
+    }
+
+    private void updateToFailedState(Network network){
+        //fail the network update. even if one router fails we fail the network update.
+        List<DomainRouterVO> routerList = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+        for (DomainRouterVO router : routerList) {
+            router.setUpdateState(VirtualRouter.UpdateState.UPDATE_FAILED);
+            _routerDao.persist(router);
+        }
     }
 
 }
