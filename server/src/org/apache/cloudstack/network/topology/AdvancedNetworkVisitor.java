@@ -61,13 +61,17 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
     @Override
     public boolean visit(final UserdataPwdRules userdata) throws ResourceUnavailableException {
         final VirtualRouter router = userdata.getRouter();
-
         final Commands commands = new Commands(Command.OnError.Stop);
         final VirtualMachineProfile profile = userdata.getProfile();
         final NicVO nicVo = userdata.getNicVo();
         final UserVmVO userVM = userdata.getUserVM();
 
-        _commandSetupHelper.createPasswordCommand(router, profile, nicVo, commands);
+        if (router.getIsRedundantRouter() && router.getVpcId() == null && router.getRedundantState() == VirtualRouter.RedundantState.MASTER) {
+            _commandSetupHelper.createPasswordCommand(router, profile, nicVo, commands);
+        }else if (!router.getIsRedundantRouter() || router.getVpcId()!= null){
+            _commandSetupHelper.createPasswordCommand(router, profile, nicVo, commands);
+        }
+
         _commandSetupHelper.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);

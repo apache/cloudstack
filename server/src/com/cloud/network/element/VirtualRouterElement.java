@@ -775,43 +775,33 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
 
         final VirtualMachineProfile uservm = vm;
-
         final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-        // If any router is not running then save the password in DB
-        List<VirtualRouter> routerList = new ArrayList<VirtualRouter>();
-        //applied true implies we have applied the password successfully on at
-        //least one router. save true implies we have to save the password to send
-        //it to the remaining routers.
-        Boolean applied = true, save = false;
+        if (!network.isRedundant()) {
+            return networkTopology.savePasswordToRouter(network, nic, uservm, routers.get(0));
+        }
+
         for (final VirtualRouter router : routers) {
-            if (router.getState() == State.Running) {
-                routerList.add(router);
-            } else {
-                save = true;
-            }
+                if (router.getState() == State.Running && router.getRedundantState() == VirtualRouter.RedundantState.MASTER) {
+                    return networkTopology.savePasswordToRouter(network, nic, uservm, router);
+                }
         }
-        for (VirtualRouter router : routerList) {
-            applied = networkTopology.savePasswordToRouter(network, nic, uservm, router);
-            if (!applied)
-                 break;
-        }
-        if (save && applied) {
-            final String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
-            final String password_encrypted = DBEncryptionUtil.encrypt(password);
-            final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+       return savePassword(uservm);
+    }
 
-            _userVmDao.loadDetails(userVmVO);
-            userVmVO.setDetail("password", password_encrypted);
-            _userVmDao.saveDetails(userVmVO);
+    private boolean savePassword(VirtualMachineProfile uservm) {
+        //save password
+        final String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
+        final String password_encrypted = DBEncryptionUtil.encrypt(password);
+        final UserVmVO userVmVO = _userVmDao.findById(uservm.getId());
 
-            userVmVO.setUpdateParameters(true);
-            _userVmDao.update(userVmVO.getId(), userVmVO);
-        }
-        if (!applied) {
-            return false;
-        }
+        _userVmDao.loadDetails(userVmVO);
+        userVmVO.setDetail("password", password_encrypted);
+        _userVmDao.saveDetails(userVmVO);
+
+        userVmVO.setUpdateParameters(true);
+        _userVmDao.update(userVmVO.getId(), userVmVO);
         return true;
     }
 
