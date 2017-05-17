@@ -87,14 +87,14 @@ public class NicProfileHelperImpl implements NicProfileHelper {
                                     router.getHypervisorType(), privateNetwork));
 
             if (router.getIsRedundantRouter()) {
-              String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
+              String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), NetworkModel.MACIdentifier.value()));
               privateNicProfile.setMacAddress(newMacAddress);
             }
         } else {
             final String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
             final PrivateIpAddress ip =
                     new PrivateIpAddress(ipVO, privateNetwork.getBroadcastUri().toString(), privateNetwork.getGateway(), netmask,
-                            NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
+                            NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), NetworkModel.MACIdentifier.value())));
 
             final URI netUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
             privateNicProfile.setIPv4Address(ip.getIpAddress());

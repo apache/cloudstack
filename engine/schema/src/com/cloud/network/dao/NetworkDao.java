@@ -54,9 +54,10 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
      *
      * @param networkConfigId
      *            id
+     * @param zoneMacIdentifier
      * @return mac address if there is one. null if not.
      */
-    String getNextAvailableMacAddress(long networkConfigId);
+    String getNextAvailableMacAddress(long networkConfigId, Integer zoneMacIdentifier);
 
     List<NetworkVO> listBy(long accountId, long networkId);
 

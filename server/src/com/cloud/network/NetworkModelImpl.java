@@ -34,6 +34,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.commons.codec.binary.Base64;
@@ -124,7 +126,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class NetworkModelImpl extends ManagerBase implements NetworkModel {
+public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
     @Inject
     EntityManager _entityMgr;
@@ -561,7 +563,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public String getNextAvailableMacAddressInNetwork(long networkId) throws InsufficientAddressCapacityException {
-        String mac = _networksDao.getNextAvailableMacAddress(networkId);
+        NetworkVO network = _networksDao.findById(networkId);
+        String mac = _networksDao.getNextAvailableMacAddress(networkId, MACIdentifier.value());
         if (mac == null) {
             throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
         }
@@ -2363,5 +2366,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
 
         return vmData;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return NetworkModel.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {MACIdentifier};
     }
 }

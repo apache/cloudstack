@@ -83,9 +83,19 @@ public class NetUtils {
     public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
     public final static int DEFAULT_AUTOSCALE_POLICY_QUIET_TIME = 5 * 60;
     private final static Random s_rand = new Random(System.currentTimeMillis());
+    private final static long prefix = 0x1e;
 
-    public static long createSequenceBasedMacAddress(final long macAddress) {
-        return macAddress | 0x060000000000l | (long)s_rand.nextInt(32768) << 25 & 0x00fffe000000l;
+    public static long createSequenceBasedMacAddress(final long macAddress, long globalConfig) {
+        /*
+            Logic for generating MAC address:
+            Mac = B1:B2:B3:B4:B5:B6 (Bx is a byte).
+            B1 -> Presently controlled by prefix variable. The value should be such that the MAC is local and unicast.
+            B2 -> This will be configurable for each deployment/installation. Controlled by the global config MACIdentifier
+            B3 -> A randomly generated number between 0 - 255
+            B4,5,6 -> These bytes are based on the unique DB identifier associated with the IP address for which MAC is generated (refer to mac_address field in user_ip_address table).
+         */
+
+        return macAddress | prefix<<40 | globalConfig << 32 & 0x00ff00000000l | (long)s_rand.nextInt(255) << 24;
     }
 
     public static String getHostName() {
