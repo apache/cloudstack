@@ -2107,9 +2107,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private String appendFileType(String path, String fileType) {
+        if (path.toLowerCase().endsWith(fileType.toLowerCase())) {
+            return path;
+        }
+
+        return path + fileType;
+    }
+
     private void resizeRootDisk(VirtualMachineMO vmMo, DiskTO rootDiskTO, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception
     {
-        Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, rootDiskTO.getPath() + ".vmdk");
+        Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), ".vmdk"));
         assert(vdisk != null);
 
         Long reqSize=((VolumeObjectTO)rootDiskTO.getData()).getSize()/1024;
@@ -3606,7 +3614,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morDsAtSource);
-                Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, volume.getPath() + ".vmdk");
+                Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volume.getPath(), ".vmdk"));
                 String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
                 if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                     vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
@@ -3779,7 +3787,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             DatastoreMO targetDsMo = new DatastoreMO(srcHyperHost.getContext(), morDs);
             String fullVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(targetDsMo, vmName, volumePath + ".vmdk");
-            Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, volumePath + ".vmdk");
+            Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volumePath, ".vmdk"));
             String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
             if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                 vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
