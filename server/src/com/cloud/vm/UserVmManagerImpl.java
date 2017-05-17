@@ -1648,7 +1648,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
-        ServiceOffering currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         int newCpu = newServiceOffering.getCpu();
         int newMemory = newServiceOffering.getRamSize();
         int newSpeed = newServiceOffering.getSpeed();
@@ -1663,6 +1663,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering(speed=" + newSpeed + ",cpu=" + newCpu + ",memory=," + newMemory
                     + ")" + " should have at least one value(cpu/ram) greater than old value and no resource value less than older(speed=" + currentSpeed + ",cpu=" + currentCpu
                     + ",memory=," + currentMemory + ")");
+        }
+
+        _offeringDao.loadDetails(currentServiceOffering);
+        _offeringDao.loadDetails(newServiceOffering);
+
+        Map<String, String> currentDetails = currentServiceOffering.getDetails();
+        Map<String, String> newDetails = newServiceOffering.getDetails();
+        String currentVgpuType = currentDetails.get("vgpuType");
+        String newVgpuType = newDetails.get("vgpuType");
+        if(currentVgpuType != null) {
+            if(newVgpuType == null || !newVgpuType.equalsIgnoreCase(currentVgpuType)) {
+                throw new InvalidParameterValueException("Dynamic scaling of vGPU type is not supported. VM has vGPU Type: " + currentVgpuType);
+            }
         }
 
         // Check resource limits
@@ -1870,54 +1883,54 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
+            @Override public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
 
                 Account account = _accountDao.lockRow(vm.getAccountId(), true);
 
-        // if the account is deleted, throw error
-        if (account.getRemoved() != null) {
+                // if the account is deleted, throw error
+                if (account.getRemoved() != null) {
                     throw new CloudRuntimeException("Unable to recover VM as the account is deleted");
-        }
+                }
 
-        // Get serviceOffering for Virtual Machine
+                // Get serviceOffering for Virtual Machine
                 ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
-        // First check that the maximum number of UserVMs, CPU and Memory limit for the given
-        // accountId will not be exceeded
+                // First check that the maximum number of UserVMs, CPU and Memory limit for the given
+                // accountId will not be exceeded
                 resourceLimitCheck(account, vm.isDisplayVm(), new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
 
-        _haMgr.cancelDestroy(vm, vm.getHostId());
+                _haMgr.cancelDestroy(vm, vm.getHostId());
 
-        try {
+                try {
                     if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
                         s_logger.debug("Unable to recover the vm because it is not in the correct state: " + vmId);
                         throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
-            }
-        } catch (NoTransitionException e) {
+                    }
+                } catch (NoTransitionException e) {
                     throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
-        }
+                }
 
-        // Recover the VM's disks
-        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
-        for (VolumeVO volume : volumes) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                // Create an event
-                Long templateId = volume.getTemplateId();
-                Long diskOfferingId = volume.getDiskOfferingId();
-                Long offeringId = null;
-                if (diskOfferingId != null) {
+                // Recover the VM's disks
+                List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+                for (VolumeVO volume : volumes) {
+                    if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                        // Create an event
+                        Long templateId = volume.getTemplateId();
+                        Long diskOfferingId = volume.getDiskOfferingId();
+                        Long offeringId = null;
+                        if (diskOfferingId != null) {
                             DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
                             if (offering != null && (offering.getType() == DiskOfferingVO.Type.Disk)) {
-                        offeringId = offering.getId();
+                                offeringId = offering.getId();
+                            }
+                        }
+                        UsageEventUtils
+                                .publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId,
+                                        templateId, volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
                     }
                 }
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                        offeringId, templateId, volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
-            }
-        }
 
-        //Update Resource Count for the given account
+                //Update Resource Count for the given account
                 resourceCountIncrement(account.getId(), vm.isDisplayVm(), new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
             }
         });
