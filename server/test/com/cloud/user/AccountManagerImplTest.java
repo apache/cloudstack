@@ -20,9 +20,14 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import com.cloud.acl.DomainChecker;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.utils.Pair;
 
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -170,5 +175,38 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", "", 1L, null);
     }
 
+    @Mock
+    AccountVO callingAccount;
+    @Mock
+    DomainChecker domainChecker;
+    @Mock
+    AccountService accountService;
+    @Mock
+    private GetUserKeysCmd _listkeyscmd;
+    @Mock
+    private Account _account;
+    @Mock
+    private User _user;
+    @Mock
+    private UserAccountVO userAccountVO;
 
+
+    @Test (expected = PermissionDeniedException.class)
+    public void testgetUserCmd(){
+        CallContext.register(callingUser, callingAccount); // Calling account is user account i.e normal account
+        Mockito.when(_listkeyscmd.getID()).thenReturn(1L);
+        Mockito.when(accountManager.getActiveUser(1L)).thenReturn(_user);
+        Mockito.when(accountManager.getUserAccountById(1L)).thenReturn(userAccountVO);
+        Mockito.when(userAccountVO.getAccountId()).thenReturn(1L);
+        Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(_account); // Queried account - admin account
+
+        Mockito.when(callingUser.getAccountId()).thenReturn(1L);
+        Mockito.when(_accountDao.findById(1L)).thenReturn(callingAccount);
+
+        Mockito.when(accountService.isNormalUser(Mockito.anyLong())).thenReturn(Boolean.TRUE);
+        Mockito.when(_account.getAccountId()).thenReturn(2L);
+
+        accountManager.getKeys(_listkeyscmd);
+
+        }
 }

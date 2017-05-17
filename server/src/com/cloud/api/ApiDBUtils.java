@@ -311,6 +311,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.user.AccountManager;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -1707,6 +1708,9 @@ public class ApiDBUtils {
 
     public static UserResponse newUserResponse(UserAccountJoinVO usr, Long domainId) {
         UserResponse response = s_userAccountJoinDao.newUserResponse(usr);
+        if(!AccountManager.UseSecretKeyInResponse.value()){
+            response.setSecretKey(null);
+        }
         // Populate user account role information
         if (usr.getAccountRoleId() != null) {
             Role role = s_roleService.findRole( usr.getAccountRoleId());
