@@ -133,7 +133,7 @@ public class VyosRouterResourceTest {
         assertTrue("TestZone".equals(sc[0].getDataCenter()));
     }
 
-    @Test // implement a fully functional network including public ip, private ip, ingress firewall, egress firewall, source nat, destination nat, and static nat.
+    // implement a fully functional network including public ip, private ip, ingress firewall, egress firewall, source nat, destination nat, and static nat.
     public void implementEndToEnd() throws ConfigurationException, ExecutionException {
 
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
@@ -177,9 +177,8 @@ public class VyosRouterResourceTest {
     }
 
 
-    @Test // tear down a fully functional network including public ip, private ip, ingress firewall, egress firewall, source nat, destination nat, and static nat.
-    //This will only work if implementEndToEnd has been successfully run
-    public void tearDownEndToEnd() throws ConfigurationException, ExecutionException {
+    @Test // setup and tear down a fully functional network including public ip, private ip, ingress firewall, egress firewall, source nat, destination nat, and static nat.
+    public void testEndToEnd() throws ConfigurationException, ExecutionException {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nTEST: TearDownEndToEnd");
             System.out.println("---------------------------------------------------");
@@ -419,7 +418,7 @@ public class VyosRouterResourceTest {
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
-        FirewallRuleVO activeVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, cidrList, null, null, null, FirewallRule.TrafficType.Egress);
+        FirewallRuleVO activeVO = new FirewallRuleVO("333", null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, cidrList, null, null, null, FirewallRule.TrafficType.Egress);
         FirewallRuleTO active = new FirewallRuleTO(activeVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress);
         rules.add(active);
 
@@ -464,7 +463,7 @@ public class VyosRouterResourceTest {
         _resource.setMockContext(_context);
 
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
-        FirewallRuleVO revokedVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, null, null, null, null, FirewallRule.TrafficType.Egress);
+        FirewallRuleVO revokedVO = new FirewallRuleVO("333", null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, null, null, null, null, FirewallRule.TrafficType.Egress);
         revokedVO.setState(State.Revoke); FirewallRuleTO revoked = new FirewallRuleTO(revokedVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress); rules.add(revoked);
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
@@ -505,7 +504,8 @@ public class VyosRouterResourceTest {
 
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-        StaticNatRuleTO active = new StaticNatRuleTO(9, "2", "192.168.2.103", null, null, "10.3.96.3", null, null, null, false, false); rules.add(active);
+        StaticNatRuleTO active = new StaticNatRuleTO(9, "2", "192.168.2.103", null, null, "10.3.96.3", null, null, null, false, false);
+        rules.add(active);
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
@@ -546,7 +546,8 @@ public class VyosRouterResourceTest {
 
        long vlanId = 3954;
        List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-       StaticNatRuleTO revoked = new StaticNatRuleTO(9, "192.168.2.103", null, null, "10.3.96.3", null, null, null, true, false);
+       //StaticNatRuleTO revoked = new StaticNatRuleTO(9, "192.168.2.103", null, null, "10.3.96.3", null, null, null, true, false);
+       StaticNatRuleTO revoked = new StaticNatRuleTO(9, "2", "192.168.2.103", null, null, "10.3.96.3", null, null, null, true, false);
        rules.add(revoked);
 
        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);

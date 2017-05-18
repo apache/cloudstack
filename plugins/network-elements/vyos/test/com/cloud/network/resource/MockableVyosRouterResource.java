@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.resource;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -339,6 +340,12 @@ public class MockableVyosRouterResource extends VyosRouterResource {
         curCommands=new ArrayList<String>();
         curCommands.add("delete nat destination rule 1");
         curCommands.add("delete nat source rule 1");
+        //curCommands.add("delete interfaces ethernet eth0 vif 2 address 192.168.2.103/32");
+        removeStaticNatCommands.add(curCommands);
+
+        //Command list #2
+        curCommands=new ArrayList<String>();
+        curCommands.add("delete interfaces ethernet eth0 vif 2 address 192.168.2.103/32");
         removeStaticNatCommands.add(curCommands);
 
         expectedVyosCommands.put("removeStaticNatRule", removeStaticNatCommands);
@@ -481,12 +488,20 @@ public class MockableVyosRouterResource extends VyosRouterResource {
     }
 
     private boolean validateCorrectVyosCommands(ArrayList<String> vyosCommands) {
+
+        //Make sure that the commandSetCount integer does not overflow the expectedCommands array.
+        if (this.expectedVyosCommands.get(context.get("currentTest")).size() <= this.commandSetCount) {
+            System.out.println("Incorrect number of commands in the expectedVyosCommands array. Number of expected command sets: "+this.expectedVyosCommands.get(context.get("currentTest")).size()+" current command count: "+this.commandSetCount);
+            return false;
+        }
+
         //get the list of expected commands for the current unit test.
         ArrayList<String> expectedCommands=this.expectedVyosCommands.get(context.get("currentTest")).get(this.commandSetCount);
         if (expectedCommands.size() != vyosCommands.size() ) {
-            System.out.println("Incorrect number of commands in current set. Expected: "+expectedCommands.size()+" actual: "+vyosCommands.size());
+            System.out.println("Incorrect number of commands sent in from Vyos. Expected: "+expectedCommands.size()+" actual: "+vyosCommands.size());
             return false;
         }
+
 
         for (int i=0; i<expectedCommands.size(); i++) {
             if (!expectedCommands.get(i).trim().equals(vyosCommands.get(i).trim())) {
@@ -504,6 +519,17 @@ public class MockableVyosRouterResource extends VyosRouterResource {
             System.out.println(curCommand);
         }
 
+    }
+
+    // fake vyos shell connection
+    @Override
+    public void initializeVyosIntegration() throws IOException {
+        if (context.containsKey("use_test_router")
+                && context.get("use_test_router").equals("true")) {
+                super.initializeVyosIntegration();
+
+        }
+        return;
     }
 
     /* Fake the calls to the Vyos Router */
@@ -560,11 +586,12 @@ public class MockableVyosRouterResource extends VyosRouterResource {
                         vyosCommands.add(curCommand);
 
                     }
+
                     if (!validateCorrectVyosCommands(vyosCommands)) {
                         if (context.containsKey("enable_console_output") && context.get("enable_console_output").equals("true")) {
-                            System.out.println("Expected Vyos Commands: ");
-                            printVyosCommandList(this.expectedVyosCommands.get(context.get("currentTest")).get(this.commandSetCount));
-                            System.out.println("Commands returned by the unit test: ");
+                            //System.out.println("\nExpected Vyos Commands: ");
+                            //printVyosCommandList(this.expectedVyosCommands.get(context.get("currentTest")).get(this.commandSetCount));
+                            System.out.println("\nCommands returned by the unit test: ");
                             printVyosCommandList(vyosCommands);
                         }
                         throw new ExecutionException("The current list of commands to execute do not match the expected commands. Current Unit Test: "+context.get("currentTest")+" Current Command Set: "+commandSetCount);

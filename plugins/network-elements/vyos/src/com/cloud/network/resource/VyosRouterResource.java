@@ -20,7 +20,9 @@ package com.cloud.network.resource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -402,6 +404,8 @@ public class VyosRouterResource implements ServerResource{
             {
                 //Uncomment this to see the full shell command being sent to the vyos router.
                 //s_logger.debug(tmpOutput);
+
+
             }
         }
     }
@@ -1172,7 +1176,7 @@ public class VyosRouterResource implements ServerResource{
 
                 // Make sure the public IP referenced in this rule is removed.
                 if (managePublicInterface(cmdList, VyosRouterPrimative.DELETE, publicVlanTag, publicIp+"/32", privateVlanTag, null) == false ) {
-                    throw new ExecutionException("Could not add the public Ip");
+                    throw new ExecutionException("Could not delete the public Ip");
                 }
                 return true;
             default:
@@ -1650,6 +1654,11 @@ public class VyosRouterResource implements ServerResource{
 
                 return result;
             } catch (Exception e) {
+                StringWriter writer = new StringWriter();
+                PrintWriter printWriter = new PrintWriter( writer );
+                e.printStackTrace( printWriter );
+                printWriter.flush();
+                String eStackTrace = writer.toString();
                 //Handle revert on configuration failure by reloading the current config.boot (last known good config)
                 if (!saving){
                     try {
@@ -1670,10 +1679,16 @@ public class VyosRouterResource implements ServerResource{
                         result = (result && revertCommand.execute());
 
                     }catch (Exception f) {
-                        throw new ExecutionException("Shell Execution Failed and the changes could not be reverted. Original Error:"+e.getMessage()+" Rollback error: "+f.getMessage());
+                        writer = new StringWriter();
+                        printWriter = new PrintWriter( writer );
+                        f.printStackTrace( printWriter );
+                        printWriter.flush();
+
+                        String fStackTrace = writer.toString();
+                        throw new ExecutionException("Shell Execution Failed and the changes could not be reverted. Original Error: "+e.getMessage()+" Original stack trace:\n********************"+eStackTrace+"\n***************************** Rollback error: "+f.getMessage()+" Rolback stack trace:\n********************\n"+fStackTrace+"\n*****************************");
                     }
                 } else {
-                    throw new ExecutionException("Failed to save the new vyos config to disk. "+e.getMessage());
+                    throw new ExecutionException("Failed to save the new vyos config to disk. "+e.getMessage()+" stack trace:\n"+eStackTrace);
                 }
 
                 throw new ExecutionException(e.getMessage());
