@@ -1259,6 +1259,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw ex;
         }
 
+        ipAddress.setRuleState(IpAddress.State.Releasing);
+        _ipAddressDao.update(ipAddress.getId(), ipAddress);
+        ipAddress = _ipAddressDao.findById(ipId);
+
         // Revoke all firewall rules for the ip
         try {
             s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of disabling static nat for public IP id=" + ipId);
@@ -1280,6 +1284,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             boolean isIpSystem = ipAddress.getSystem();
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
+            ipAddress.setRuleState(null);
             ipAddress.setVmIp(null);
             if (isIpSystem && !releaseIpIfElastic) {
                 ipAddress.setSystem(false);
@@ -1295,6 +1300,9 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             return true;
         } else {
             s_logger.warn("Failed to disable one to one nat for the ip address id" + ipId);
+            ipAddress = _ipAddressDao.findById(ipId);
+            ipAddress.setRuleState(null);
+            _ipAddressDao.update(ipAddress.getId(), ipAddress);
             return false;
         }
     }
