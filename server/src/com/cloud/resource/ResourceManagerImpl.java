@@ -679,6 +679,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
+        if ((hypervisorType.equalsIgnoreCase(HypervisorType.BareMetal.toString()))) {
+            if (hostTags.isEmpty()) {
+                throw new InvalidParameterValueException("hosttag is mandatory while adding host of type Baremetal");
+            }
+        }
+
         if (clusterName != null) {
             final HostPodVO pod = _podDao.findById(podId);
             if (pod == null) {
