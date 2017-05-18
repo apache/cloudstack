@@ -1328,5 +1328,5 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax}; }
+        return new ConfigKey<?>[] { SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection}; }
 }
