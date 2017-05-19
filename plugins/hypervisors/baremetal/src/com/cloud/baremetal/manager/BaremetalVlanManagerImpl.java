@@ -126,7 +126,7 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     }
 
     @Override
-    public void prepareVlan(Network nw, DeployDestination destHost) {
+    public void prepareVlan(Network nw, DeployDestination destHost, String nicMac) {
         List<BaremetalRctVO> vos = rctDao.listAll();
         if (vos.isEmpty()) {
             throw new CloudRuntimeException("no rack configuration found, please call addBaremetalRct to add one");
@@ -135,7 +135,6 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         BaremetalRctVO vo = vos.get(0);
         BaremetalRct rct = gson.fromJson(vo.getRct(), BaremetalRct.class);
 
-        String mac = destHost.getHost().getPrivateMacAddress();
         RackPair rp = null;
         List<RackPair> configuredRackPairs = new ArrayList<RackPair>();
         int vlan = Integer.parseInt(Networks.BroadcastDomainType.getValue(nw.getBroadcastUri()));
@@ -143,7 +142,8 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         try {
             for (BaremetalRct.Rack rack : rct.getRacks()) {
                 for (BaremetalRct.HostEntry host : rack.getHosts()) {
-                    if (mac.toLowerCase().equals(host.getMac().toLowerCase())) {
+                    if (nicMac.toLowerCase().equals(host.getMac().toLowerCase())) {
+                        logger.debug("Prepare vlan in BaremetalVlanManager for mac : " + nicMac);
                         rp = new RackPair();
                         rp.host = host;
                         rp.rack = rack;
@@ -164,8 +164,9 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
                 }
             }
         } catch (Exception e) {
+            logger.debug("Exception in prepare vlan on switch: "+ e.getMessage());
             if (!configuredRackPairs.isEmpty()) {
-                logger.debug("Failed to prepare vlan on switch ", e);
+                logger.debug("Failed to prepare vlan on switch: "+ e.getMessage() + " "+ e);
                 for(RackPair rackPair : configuredRackPairs) {
                     removeVlanOnSwitchPort(rackPair, vlan);
                 }
@@ -182,7 +183,7 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     }
 
     @Override
-    public void releaseVlan(Network nw, VirtualMachineProfile vm) {
+    public void releaseVlan(Network nw, VirtualMachineProfile vm, String nicMac) {
         List<BaremetalRctVO> vos = rctDao.listAll();
         if (vos.isEmpty()) {
             throw new CloudRuntimeException("no rack configuration found, please call addBaremetalRct to add one");
@@ -199,7 +200,7 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         boolean isException = false;
         for (BaremetalRct.Rack rack : rct.getRacks()) {
             for (BaremetalRct.HostEntry baremetalHost : rack.getHosts()) {
-                if (mac.toLowerCase().equals(baremetalHost.getMac().toLowerCase())) {
+                if (nicMac.toLowerCase().equals(baremetalHost.getMac().toLowerCase())) {
                     rp = new RackPair();
                     rp.host = baremetalHost;
                     rp.rack = rack;

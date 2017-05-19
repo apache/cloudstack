@@ -1260,6 +1260,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     protected boolean prepareElement(final NetworkElement element, final Network network, final NicProfile profile, final VirtualMachineProfile vmProfile, final DeployDestination dest,
             final ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+
+        if (isNetworkImplemented(_networksDao.findById(network.getId()))) {
+
+            if (vmProfile.getHypervisorType() == HypervisorType.BareMetal && element.getProvider() == Provider.BAREMETAL_PXE_SERVICE_PROVIDER ) {
+                s_logger.debug(" Vm " + vmProfile.getInstanceName() + " is baremetal vm. So bringup the router if it is not there ");
+                for (NetworkElement netElement : networkElements) {
+                    if (netElement.getProvider() == Provider.VirtualRouter) {
+                        netElement.prepare(network, profile, vmProfile, dest, context);
+                    }
+                }
+            }
+        }
         element.prepare(network, profile, vmProfile, dest, context);
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
@@ -1296,6 +1308,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
             }
         }
+
+        if (vmProfile.getHypervisorType() == HypervisorType.BareMetal && element.getProvider() != Provider.BAREMETAL_PXE_SERVICE_PROVIDER ) {
+            s_logger.debug(" Vm " + vmProfile.getInstanceName() + " is baremetal vm with network nic into non baremetal network. So configuring baremetal switch ");
+            for (NetworkElement netElement : networkElements) {
+                if (netElement.getProvider() == Provider.BAREMETAL_PXE_SERVICE_PROVIDER) {
+                    netElement.prepare(network, profile, vmProfile, dest, context);
+                }
+            }
+        }
+
         return true;
     }
 
@@ -1516,6 +1538,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             final NetworkVO network = implemented.second();
             final NicProfile profile = prepareNic(vmProfile, dest, context, nic.getId(), network);
+            s_logger.debug("Preparing nic for vm " + vmProfile.getInstanceName() + " in network " + network.getId());
             vmProfile.addNic(profile);
         }
     }
@@ -1859,6 +1882,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     //NOTE: Context appear to never be used in release method
                     //implementations. Consider removing it from interface Element
                     element.release(network, profile, vmProfile, null);
+
+                    if (vmProfile.getHypervisorType() == HypervisorType.BareMetal && element.getProvider() != Provider.BAREMETAL_PXE_SERVICE_PROVIDER ) {
+                        s_logger.debug(" Vm " + vmProfile.getInstanceName() + " is baremetal vm with nic into non baremetal network. So releasing nic on baremetal switch ");
+                        for (NetworkElement netElement : networkElements) {
+                            if (netElement.getProvider() == Provider.BAREMETAL_PXE_SERVICE_PROVIDER) {
+                                netElement.release(network, profile, vmProfile, null);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1912,6 +1944,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
                     try {
                         element.release(network, profile, vm, null);
+
+                        if (vm.getHypervisorType() == HypervisorType.BareMetal && element.getProvider() != Provider.BAREMETAL_PXE_SERVICE_PROVIDER ) {
+                            s_logger.debug(" Vm " + vm.getInstanceName() + " is baremetal vm with nic into non baremetal network. So releasing nic on baremetal switch ");
+                            for (NetworkElement netElement : networkElements) {
+                                if (netElement.getProvider() == Provider.BAREMETAL_PXE_SERVICE_PROVIDER) {
+                                    netElement.release(network, profile, vm, null);
+                                }
+                            }
+                        }
                     } catch (final ConcurrentOperationException ex) {
                         s_logger.warn("release failed during the nic " + nic.toString() + " removeNic due to ", ex);
                     } catch (final ResourceUnavailableException ex) {

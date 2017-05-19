@@ -45,7 +45,7 @@ public class BaremetalRctVO implements InternalIdentity, Identity  {
     @Column(name = "url")
     private String url;
 
-    @Column(name = "rct")
+    @Column(name = "rct", length = 65535)
     private String rct;
 
     public long getId() {

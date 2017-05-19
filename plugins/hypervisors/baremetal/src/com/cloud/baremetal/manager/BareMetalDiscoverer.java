@@ -185,6 +185,11 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             if (hostTags != null && hostTags.size() != 0) {
                 details.put("hostTag", hostTags.get(0));
             }
+
+            String macs = (String)params.get(ApiConstants.ADDITIONAL_MACS);
+            if (macs != null) {
+                details.put(ApiConstants.ADDITIONAL_MACS, macs);
+            }
             details.put(ApiConstants.MEMORY, memCapacity);
             details.put(ApiConstants.CPU_SPEED, cpuCapacity);
             details.put(ApiConstants.CPU_NUMBER, cpuNum);

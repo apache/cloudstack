@@ -109,6 +109,13 @@ public class NicProfile implements InternalIdentity, Serializable {
         }
     }
 
+    public NicProfile(Nic nic) {
+        this.id = nic.getId();
+        this.networkId = nic.getNetworkId();
+        this.vmId = nic.getInstanceId();
+        this.defaultNic = nic.isDefaultNic();
+    }
+
     public NicProfile(String requestedIPv4, String requestedIPv6) {
         this.requestedIPv4 = requestedIPv4;
         this.requestedIPv6 = requestedIPv6;

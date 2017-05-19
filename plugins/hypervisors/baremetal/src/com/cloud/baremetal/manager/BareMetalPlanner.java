@@ -36,14 +36,19 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -64,6 +69,8 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
     protected CapacityManager _capacityMgr;
     @Inject
     protected ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    protected NicDao _nicDao;
 
     private boolean markHostAsUsed(HostVO host, VirtualMachineProfile vm) {
         // Note: if vm fails to start, the cleanup code is in
@@ -86,6 +93,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
     public DeployDestination plan(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
+        List<Nic> vmNics = vmProfile.getBareVmNics();
 
         if (vm.getLastHostId() != null) {
             HostVO h = _hostDao.findById(vm.getLastHostId());
@@ -117,12 +125,47 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                     continue;
                 }
 
+                List <String> macsList = new ArrayList<String>();
+
+                String macs = h.getDetail("additionalmacs");
+                if (macs != null) {
+                    macsList.addAll(Arrays.asList(macs.split(",")));
+                }
+
+                int nicsCount = vmNics.size();
+                // host nics should be less than or equal to the vm nics
+                s_logger.debug(" ======== macs = " + macsList + " vm nics count: " + nicsCount);
+
+
+                if (nicsCount > 1) {
+                    if (!(nicsCount - 1 <= macsList.size())) {
+                        s_logger.debug(String.format("skip baremetal host[id:%s] as it has only nics:%d than required ", macsList.size(),
+                                nicsCount - 1));
+                        continue;
+                    }
+                }
+
                 s_logger.debug("Found host " + h.getId() + " has enough capacity");
                 DataCenter dc = _dcDao.findById(h.getDataCenterId());
                 Pod pod = _podDao.findById(h.getPodId());
                 if (!markHostAsUsed(h, vmProfile)) {
                     s_logger.debug(String.format("failed to take host[id:%s], someone else took it; let's find another one", h.getId()));
                     continue;
+                } //add the nic details here
+                List<NicVO> nicLIst = _nicDao.listByVmId(vmProfile.getId());
+
+                int i = 0;
+                for (NicVO nic: nicLIst) {
+
+                    if (nic.isDefaultNic()) {
+                        //set the hostmac to nic
+                        nic.setMacAddress(h.getPrivateMacAddress());
+                    } else {
+                        //set the mac from the additional macs;
+                        nic.setMacAddress(macsList.get(i));
+                        i++;
+                    }
+                    _nicDao.update(nic.getId(), nic);
                 }
                 return new DeployDestination(dc, pod, cluster, h);
             }

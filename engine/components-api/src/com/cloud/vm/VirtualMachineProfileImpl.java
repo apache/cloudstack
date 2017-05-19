@@ -52,6 +52,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     VirtualMachine.Type _type;
 
     List<String[]> vmData = null;
+    List<Nic> bareVmNics = new ArrayList<Nic>();
 
     String configDriveLabel = null;
     String configDriveIsoBaseLocation = "/tmp/";
@@ -87,6 +88,11 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     @Override
     public VirtualMachine getVirtualMachine() {
         return _vm;
+    }
+
+    @Override
+    public List<Nic> getBareVmNics() {
+        return bareVmNics;
     }
 
     @Override
@@ -271,6 +277,10 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     @Override
     public void setVmData(List<String[]> vmData) {
         this.vmData = vmData;
+    }
+
+    public void setBareVmNics(List<Nic> bareVmNics) {
+        this.bareVmNics = bareVmNics;
     }
 
     @Override

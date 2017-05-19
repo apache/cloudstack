@@ -259,6 +259,7 @@ public class Force10BaremetalSwitchBackend implements BaremetalSwitchBackend {
             } else if (ps.length == 2) {
                 interfaceType = ps[0];
                 if (!interfaceType.equals(G_IFACE) && !interfaceType.equals(TEN_G_IFACE) && !interfaceType.equals(FOURTY_G_IFACE)) {
+                    logger.debug(String.format("wrong port definition[%s]. The prefix must be one of [%s,%s,%s]", struct.getPort(), G_IFACE, TEN_G_IFACE, FOURTY_G_IFACE));
                     throw new CloudRuntimeException(String.format("wrong port definition[%s]. The prefix must be one of [%s,%s,%s]", struct.getPort(), G_IFACE, TEN_G_IFACE, FOURTY_G_IFACE));
                 }
                 port = ps[1];

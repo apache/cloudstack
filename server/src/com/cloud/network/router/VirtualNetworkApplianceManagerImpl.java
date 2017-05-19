@@ -871,7 +871,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             } else if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
                 /* Only cover hosts managed by this management server */
                 continue;
-            } else if (privateIP != null) {
+            } else if (privateIP != null && !ipList.isEmpty()) {
                 final CheckS2SVpnConnectionsCommand command = new CheckS2SVpnConnectionsCommand(ipList);
                 command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
                 command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

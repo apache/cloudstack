@@ -291,7 +291,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                 if (vm.getHypervisorType() == HypervisorType.BareMetal) {
                     DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>());
-                    s_logger.debug("Returning Deployment Destination: " + dest);
+                    s_logger.debug("Returning Deployment Destination for the baremetal: " + dest);
                     return dest;
                 }
 

@@ -36,9 +36,9 @@ public interface BaremetalVlanManager extends Manager, PluggableService {
 
     BaremetalRctResponse addRct(AddBaremetalRctCmd cmd);
 
-    void prepareVlan(Network nw, DeployDestination destHost);
+    void prepareVlan(Network nw, DeployDestination destHost, String mac);
 
-    void releaseVlan(Network nw, VirtualMachineProfile vm);
+    void releaseVlan(Network nw, VirtualMachineProfile vm, String mac);
 
     void registerSwitchBackend(BaremetalSwitchBackend backend);
 

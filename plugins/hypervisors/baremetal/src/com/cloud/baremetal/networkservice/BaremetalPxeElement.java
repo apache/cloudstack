@@ -52,7 +52,6 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.Type;
@@ -129,27 +128,29 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
 
         VMInstanceVO vo = _vmDao.findById(vm.getId());
         assert vo != null : "Where ths nic " + nic.getId() + " going???";
-        if (vo.getLastHostId() == null) {
-            nic.setMacAddress(dest.getHost().getPrivateMacAddress());
-            NicVO nicVo = _nicDao.findById(nic.getId());
-            nicVo.setMacAddress(nic.getMacAddress());
-            _nicDao.update(nicVo.getId(), nicVo);
+        if (vo.getLastHostId() == null) { //update setting mac
+            //nic.setMacAddress(dest.getHost().getPrivateMacAddress());
+            //NicVO nicVo = _nicDao.findById(nic.getId());
+            //nicVo.setMacAddress(nic.getMacAddress());
+            //_nicDao.update(nicVo.getId(), nicVo);
 
             /*This vm is just being created */
-            if (!_pxeMgr.prepare(vm, nic, network, dest, context)) {
+            if (nic.isDefaultNic() && !_pxeMgr.prepare(vm, nic, network, dest, context)) {
                 throw new CloudRuntimeException("Cannot prepare pxe server");
             }
         }
 
+        //pass the nic mac here
         if (dest.getDataCenter().getNetworkType() == DataCenter.NetworkType.Advanced){
-            prepareVlan(network, dest);
+            prepareVlan(network, dest, nic.getMacAddress());
         }
 
         return true;
     }
 
-    private void prepareVlan(Network network, DeployDestination dest) {
-        vlanMgr.prepareVlan(network, dest);
+    private void prepareVlan(Network network, DeployDestination dest, String mac) {
+        s_logger.debug("Preparing vlan for the network vlan " + network.getBroadcastUri());
+        vlanMgr.prepareVlan(network, dest, mac);
     }
 
     @Override
@@ -161,13 +162,14 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
 
         DataCenterVO dc = zoneDao.findById(vm.getVirtualMachine().getDataCenterId());
         if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
-            releaseVlan(network, vm);
+            releaseVlan(network, vm, nic.getMacAddress());
         }
         return true;
     }
 
-    private void releaseVlan(Network network, VirtualMachineProfile vm) {
-        vlanMgr.releaseVlan(network, vm);
+    private void releaseVlan(Network network, VirtualMachineProfile vm, String mac) {
+        s_logger.debug("Releasing vlan for the network vlan " + network.getBroadcastUri());
+        vlanMgr.releaseVlan(network, vm, mac);
     }
 
     @Override

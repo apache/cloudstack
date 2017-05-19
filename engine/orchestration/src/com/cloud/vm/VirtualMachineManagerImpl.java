@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
+import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -1017,6 +1018,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
                     cmds = new Commands(Command.OnError.Stop);
+
+                    // send the boot dev one more time before starting because boot dev set and power on there is delay. Due to
+                    //this pxe boot dev is not honoured and it is booting from the local.
+                    if (vm.getHypervisorType() == HypervisorType.BareMetal && _uservmDetailsDao.findDetail(vm.getId(), "deployvm") != null) {
+                        IpmISetBootDevCommand bootCmd = new IpmISetBootDevCommand(IpmISetBootDevCommand.BootDev.pxe);
+                        cmds.addCommand(bootCmd);
+                    }
 
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 

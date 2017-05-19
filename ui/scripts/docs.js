@@ -527,6 +527,10 @@ cloudStack.docs = {
         desc: 'The password for the user named in Username. The password was set during hypervisor installation on the host.',
         externalLink: ''
     },
+    helpAdditionalMacs: {
+        desc: 'Add multiple comma separated MAC addresses for adding host into multiple networks.',
+        externalLink: ''
+    },
     helpHostTags: {
         desc: 'Any labels that you use to categorize hosts for ease of maintenance or to enable HA.',
         externalLink: ''

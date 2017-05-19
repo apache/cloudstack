@@ -33,7 +33,6 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -49,7 +48,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
@@ -108,16 +106,10 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     @DB
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        Host host = dest.getHost();
         if (vm.getType() != Type.User || vm.getHypervisorType() != HypervisorType.BareMetal) {
             return false;
         }
 
-        nic.setMacAddress(host.getPrivateMacAddress());
-        NicVO vo = _nicDao.findById(nic.getId());
-        assert vo != null : "Where ths nic " + nic.getId() + " going???";
-        vo.setMacAddress(nic.getMacAddress());
-        _nicDao.update(vo.getId(), vo);
         return true;
     }
 

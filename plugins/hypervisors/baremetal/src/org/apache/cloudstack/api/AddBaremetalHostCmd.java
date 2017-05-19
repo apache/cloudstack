@@ -30,6 +30,10 @@ public class AddBaremetalHostCmd extends AddHostCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "ip address intentionally allocated to this host after provisioning")
     private String vmIpAddress;
 
+    @Parameter(name = ApiConstants.ADDITIONAL_MACS, type = CommandType.STRING, description = "Additional mac address in case of multiple networks")
+    private String additionalMacs;
+
+
     public AddBaremetalHostCmd() {
     }
 
@@ -46,4 +50,9 @@ public class AddBaremetalHostCmd extends AddHostCmd {
     public void setVmIpAddress(String vmIpAddress) {
         this.vmIpAddress = vmIpAddress;
     }
+
+    public String getAdditionalMacs() {return additionalMacs;}
+    public void setAdditionalMacs (String macs) {this.additionalMacs = macs;}
+
+
 }

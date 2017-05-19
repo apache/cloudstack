@@ -173,4 +173,5 @@ public interface VirtualMachineProfile {
 
     Float getMemoryOvercommitRatio();
 
+    List<Nic> getBareVmNics();
 }

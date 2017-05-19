@@ -3275,6 +3275,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        // for baremetal validate the additional mac
+
         if (template.getTemplateType().equals(TemplateType.SYSTEM)) {
             throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
         }
