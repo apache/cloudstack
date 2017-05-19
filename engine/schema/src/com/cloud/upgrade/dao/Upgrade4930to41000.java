@@ -32,8 +32,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Upgrade4920to41000 implements DbUpgrade {
-    final static Logger LOG = Logger.getLogger(Upgrade4920to41000.class);
+public class Upgrade4930to41000 implements DbUpgrade {
+    final static Logger LOG = Logger.getLogger(Upgrade4930to41000.class);
 
     public static class MemoryValues {
         long max;
@@ -55,7 +55,7 @@ public class Upgrade4920to41000 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.9.2.0", "4.10.0.0"};
+        return new String[] {"4.9.3.0", "4.10.0.0"};
     }
 
     @Override
@@ -70,9 +70,9 @@ public class Upgrade4920to41000 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-4920to41000.sql");
+        String script = Script.findScript("", "db/schema-4930to41000.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-4920to41000.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-4930to41000.sql");
         }
         return new File[] {new File(script)};
     }
@@ -256,9 +256,9 @@ public class Upgrade4920to41000 implements DbUpgrade {
 
     @Override
     public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-4920to41000-cleanup.sql");
+        String script = Script.findScript("", "db/schema-4930to41000-cleanup.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-4920to41000-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-4930to41000-cleanup.sql");
         }
         return new File[] {new File(script)};
     }

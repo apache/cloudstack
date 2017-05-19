@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.9.2.0 to 4.10.0.0;
+-- Schema upgrade from 4.9.3.0 to 4.10.0.0;
 --;
 
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN  update_state varchar(64) DEFAULT NULL;
@@ -246,3 +246,6 @@ CREATE TABLE `cloud`.`guest_os_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `user_ip_address` ADD COLUMN `rule_state` VARCHAR(32) COMMENT 'static  rule state while removing';
+
+-- CLOUDSTACK-9914: Alter quota_tariff to support currency values up to 5 decimal places
+ALTER TABLE `cloud_usage`.`quota_tariff` MODIFY `currency_value` DECIMAL(15,5) not null
