@@ -154,8 +154,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
                 Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
 
+                hostResponse.setMemoryTotal(mem);
+                Float totalMemorywithOverprovisioning=new Float((host.getTotalMemory()*ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId())));
+                hostResponse.setMemWithOverprovisioning(totalMemorywithOverprovisioning.toString());
                 hostResponse.setMemoryAllocated(mem);
-                hostResponse.setMemoryTotal(host.getTotalMemory());
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(host.getTag());
@@ -173,10 +175,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
-                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
+                Float cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId()));
+                String cpuAlloc = decimalFormat.format(((float)cpu / cpuWithOverprovisioning * 100f)) + "%";
                 hostResponse.setCpuAllocated(cpuAlloc);
-                String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
-                hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
+                hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning.toString());
             }
 
             if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {
@@ -297,8 +299,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
                 Long cpu = host.getCpuReservedCapacity() + host.getCpuReservedCapacity();
 
-                hostResponse.setMemoryAllocated(mem);
-                hostResponse.setMemoryTotal(host.getTotalMemory());
+                hostResponse.setMemoryTotal(mem);
+                Float memWithOverprovisioning =new Float((host.getTotalMemory()*ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId())));
+                hostResponse.setMemWithOverprovisioning(memWithOverprovisioning.toString());
+                hostResponse.setMemoryAllocated(decimalFormat.format((float)mem/ memWithOverprovisioning*100f).toString()+"%");
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(host.getTag());
@@ -316,10 +320,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
-                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
+                Float cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId()));
+                String cpuAlloc = decimalFormat.format(((float)cpu / cpuWithOverprovisioning * 100f)).toString() + "%";
                 hostResponse.setCpuAllocated(cpuAlloc);
-                String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
-                hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
+                hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning.toString());
             }
 
             if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {

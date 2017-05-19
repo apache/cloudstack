@@ -125,13 +125,18 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the outgoing network traffic on the host")
     private Long networkKbsWrite;
 
+    @Deprecated
     @SerializedName("memorytotal")
-    @Param(description = "the memory total of the host")
+    @Param(description = "the memory total of the host, this parameter is deprecated use memorywithoverprovisioning")
     private Long memoryTotal;
+
+    @SerializedName("memorywithoverprovisioning")
+    @Param(description = "the amount of the host's memory after applying the mem.overprovisioning.factor")
+    private String memWithOverprovisioning;
 
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
-    private Long memoryAllocated;
+    private long memoryAllocated;
 
     @SerializedName("memoryused")
     @Param(description = "the amount of the host's memory currently used")
@@ -328,11 +333,11 @@ public class HostResponse extends BaseResponse {
         this.networkKbsWrite = networkKbsWrite;
     }
 
-    public void setMemoryTotal(Long memoryTotal) {
-        this.memoryTotal = memoryTotal;
+    public void setMemWithOverprovisioning(String memWithOverprovisioning){
+        this.memWithOverprovisioning=memWithOverprovisioning;
     }
 
-    public void setMemoryAllocated(Long memoryAllocated) {
+    public void setMemoryAllocated(long memoryAllocated) {
         this.memoryAllocated = memoryAllocated;
     }
 
@@ -458,6 +463,9 @@ public class HostResponse extends BaseResponse {
 
     }
 
+    public void setMemoryTotal(Long memoryTotal) {
+        this.memoryTotal = memoryTotal;
+    }
     public String getName() {
         return name;
     }
@@ -542,7 +550,7 @@ public class HostResponse extends BaseResponse {
         return memoryTotal;
     }
 
-    public Long getMemoryAllocated() {
+    public long getMemoryAllocated() {
         return memoryAllocated;
     }
 
