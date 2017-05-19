@@ -134,12 +134,12 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 
                 int nicsCount = vmNics.size();
                 // host nics should be less than or equal to the vm nics
-                s_logger.debug(" ======== macs = " + macsList + " vm nics count: " + nicsCount);
+                s_logger.debug(String.format("Baremetal host[id:%s] has %d additional macs and vm nics count %d excluding default nic", h.getId(), macsList.size(), nicsCount -1));
 
 
                 if (nicsCount > 1) {
                     if (!(nicsCount - 1 <= macsList.size())) {
-                        s_logger.debug(String.format("skip baremetal host[id:%s] as it has only nics:%d than required ", macsList.size(),
+                        s_logger.debug(String.format("skip baremetal host[id:%s] as it has only %d additional nics but the required vm nics are %d excluding default nic", h.getId(), macsList.size(),
                                 nicsCount - 1));
                         continue;
                     }

@@ -86,7 +86,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         publicVlans.add(vpcRouterDeploymentDefinition.getSourceNatIP().getVlanTag());
 
         //1) allocate nic for control and source nat public ip
-        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(vpcRouterDeploymentDefinition);
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(vpcRouterDeploymentDefinition, null);
 
         final Long vpcId = vpcRouterDeploymentDefinition.getVpc().getId();
         //2) allocate nic for private gateways if needed
@@ -156,7 +156,9 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
     }
 
     @Override
-    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {        final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
+    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition, HypervisorType htype)
+            throws ConcurrentOperationException, InsufficientAddressCapacityException {
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         // 1) Control network
         final LinkedHashMap<Network, List<? extends NicProfile>> controlNic = configureControlNic(routerDeploymentDefinition);

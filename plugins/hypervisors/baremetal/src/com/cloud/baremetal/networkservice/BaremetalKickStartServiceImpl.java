@@ -21,7 +21,10 @@ package com.cloud.baremetal.networkservice;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
+import com.cloud.agent.api.routing.ConfigureBaremetalPxeCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.baremetal.database.BaremetalPxeDao;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager.BaremetalPxeType;
@@ -41,6 +44,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.guru.ControlNetworkGuru;
+import com.cloud.network.guru.PodBasedNetworkGuru;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -52,14 +56,13 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.ssh.SshHelper;
+import com.cloud.utils.net.MacAddress;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -118,6 +121,9 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
     @Inject
     NetworkOfferingDao _ntwkOffDao;
 
+    private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
+
+
     private DomainRouterVO getVirtualRouter(Network network) {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
 
@@ -129,21 +135,17 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         if ( ntwkOffering != null && ntwkOffering.getRedundantRouter() ) {
             for (DomainRouterVO vr : routers) {
                 if (vr.getRedundantState() == VirtualRouter.RedundantState.MASTER) {
-                    if (!Hypervisor.HypervisorType.VMware.equals(vr.getHypervisorType())) {
-                        throw new CloudRuntimeException(String.format("baremetal only support vmware virtual router, but get %s", vr.getHypervisorType()));
-                    }
                     return vr;
                 }
             }
         } else {
             DomainRouterVO vr = routers.get(0);
-            if (!Hypervisor.HypervisorType.VMware.equals(vr.getHypervisorType())) {
-                throw new CloudRuntimeException(String.format("baremetal only support vmware virtual router, but get %s", vr.getHypervisorType()));
-            }
             return vr;
         }
 
-        return null;
+        DomainRouterVO vr = routers.get(0);
+
+        return vr;
     }
 
     private List<String> parseKickstartUrl(VirtualMachineProfile profile) {
@@ -234,43 +236,84 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         List<NicVO> nics = _nicDao.listByVmId(vr.getId());
         NicVO mgmtNic = null;
         for (NicVO nicvo : nics) {
-            if (ControlNetworkGuru.class.getSimpleName().equals(nicvo.getReserver())) {
+            if ((vr.getHypervisorType() == Hypervisor.HypervisorType.VMware || vr.getHypervisorType() == Hypervisor.HypervisorType.Hyperv) && ControlNetworkGuru.class.getSimpleName().equals(nicvo.getReserver())) {
+                mgmtNic = nicvo;
+                break;
+            }
+            if (vr.getHypervisorType() != Hypervisor.HypervisorType.VMware && PodBasedNetworkGuru.class.getSimpleName().equals(nicvo.getReserver())) {
                 mgmtNic = nicvo;
                 break;
             }
         }
+        DomainRouterVO router = getVirtualRouter(network);
+        try {
+            //get network offering details
+            NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+            String interalStorageServerIp = _ntwkOffDetailsDao.getDetail(off.getId(), NetworkOffering.Detail.BaremetalInternalStorageServerIP);
 
-        if (mgmtNic == null) {
-            throw new CloudRuntimeException(String.format("cannot find management nic on virtual router[id:%s]", vr.getId()));
-        }
-
-        //get network offering details
-        NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-        String interalStorageServerIp = _ntwkOffDetailsDao.getDetail(off.getId(), NetworkOffering.Detail.BaremetalInternalStorageServerIP);
-
-        if (interalStorageServerIp == null) {
-            // If storage server IP is not mentioned in network offering read it from global configuration parameter
-            interalStorageServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());
             if (interalStorageServerIp == null) {
-                throw new CloudRuntimeException(String.format("please specify 'baremetal.internal.storage.server.ip', which is the http server/nfs server storing kickstart files and ISO files, in global setting"));
+                // If storage server IP is not mentioned in network offering read it from global configuration parameter
+                interalStorageServerIp = _configDao.getValue(Config.BaremetalInternalStorageServer.key());
+                if (interalStorageServerIp == null) {
+                    throw new CloudRuntimeException(String.format("please specify 'baremetal.internal.storage.server.ip', " +
+                            "which is the http server/nfs server storing kickstart files and ISO files, in global setting"));
+                }
             }
-        }
 
-        List<String> tuple =  parseKickstartUrl(profile);
-        String cmd =  String.format("/opt/cloud/bin/prepare_pxe.sh %s %s %s %s %s %s", tuple.get(1), tuple.get(2), profile.getTemplate().getUuid(),
-                String.format("01-%s", nic.getMacAddress().replaceAll(":", "-")).toLowerCase(), tuple.get(0), nic.getMacAddress().toLowerCase());
-        s_logger.debug(String.format("prepare pxe on virtual router[ip:%s], cmd: %s", mgmtNic.getIPv4Address(), cmd));
-        Pair<Boolean, String> ret = SshHelper.sshExecute(mgmtNic.getIPv4Address(), 3922, "root", getSystemVMKeyFile(), null, cmd);
-        if (!ret.first()) {
-            throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), ret.second()));
-        }
+            List<String> tuple =  parseKickstartUrl(profile);
+            StringBuilder pxe_arguments = new StringBuilder();
+            pxe_arguments.append(tuple.get(1) + " ");
+            pxe_arguments.append(tuple.get(2) + " ");
+            pxe_arguments.append(profile.getTemplate().getUuid() + " ");
+            pxe_arguments.append(String.format("01-%s", nic.getMacAddress().replaceAll(":", "-")).toLowerCase() + " ");
+            pxe_arguments.append(tuple.get(0) + " ");
+            pxe_arguments.append(nic.getMacAddress().toLowerCase() + " ");
 
-        //String internalServerIp = "10.223.110.231";
-        cmd = String.format("/opt/cloud/bin/baremetal_snat.sh %s %s %s", mgmtNic.getIPv4Address(), interalStorageServerIp, mgmtNic.getIPv4Gateway());
-        s_logger.debug(String.format("prepare SNAT on virtual router[ip:%s], cmd: %s", mgmtNic.getIPv4Address(), cmd));
-        ret = SshHelper.sshExecute(mgmtNic.getIPv4Address(), 3922, "root", getSystemVMKeyFile(), null, cmd);
-        if (!ret.first()) {
-            throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), ret.second()));
+            String cmd =  String.format("prepare_pxe.sh %s %s %s %s %s %s", tuple.get(1), tuple.get(2), profile.getTemplate().getUuid(),
+                    String.format("01-%s", nic.getMacAddress().replaceAll(":", "-")).toLowerCase(), tuple.get(0), nic.getMacAddress().toLowerCase());
+            s_logger.debug(String.format("prepare pxe on virtual router[%s], cmd: %s", router.getInstanceName(), cmd));
+
+            ConfigureBaremetalPxeCommand command = new ConfigureBaremetalPxeCommand(VRScripts.PREPARE_PXE, pxe_arguments.toString());
+            command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+
+            try {
+                final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
+                if (origAnswer == null) {
+                    throw new CloudRuntimeException("Failure while preparing PXE server in virtual router");
+                }
+
+                if (!origAnswer.getResult()) {
+                    throw new CloudRuntimeException(origAnswer.getDetails());
+                }
+            } catch (final Exception e) {
+                throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s] while executing script prepare_pxe.sh, because %s", router.getId(), e));
+            }
+
+            StringBuilder snat_arguments = new StringBuilder();
+            snat_arguments.append(mgmtNic.getIPv4Address() + " ");
+            snat_arguments.append(interalStorageServerIp + " ");
+            snat_arguments.append(mgmtNic.getIPv4Gateway() + " ");
+            snat_arguments.append(vr.getHypervisorType() + " ");
+
+            cmd = String.format("/opt/cloud/bin/baremetal_snat.sh %s %s %s %s", mgmtNic.getIPv4Address(), interalStorageServerIp, mgmtNic.getIPv4Gateway(), vr.getHypervisorType());
+            s_logger.debug(String.format("prepare SNAT on virtual router[ip:%s], cmd: %s", mgmtNic.getIPv4Address(), cmd));
+
+            command = new ConfigureBaremetalPxeCommand(VRScripts.BAREMETAL_SNAT, snat_arguments.toString());
+            command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            try {
+                final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
+                if (origAnswer == null) {
+                    throw new CloudRuntimeException("Failure while configuring SNAT rules in virtual router");
+                }
+
+                if (!origAnswer.getResult()) {
+                    throw new CloudRuntimeException(origAnswer.getDetails());
+                }
+            } catch (final Exception e) {
+                throw new CloudRuntimeException(String.format("failed configuring SNAT rules in virtual router[id:%s] while executing script barmetal_snat.sh, because %s", router.getId(), e));
+            }
+        } catch (final Exception e) {
+            throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", router.getId(), e));
         }
 
         return true;

@@ -425,19 +425,13 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     protected String retrieveTemplateName(final HypervisorType hType, final long datacenterId) {
         String templateName = null;
+        // Returning NULL is fine because the simulator will need it when
+        // being used instead of a real hypervisor.
+        // The hypervisorsMap contains only real hypervisors.
+        final ConfigKey<String> hypervisorConfigKey = hypervisorsMap.get(hType);
 
-        if (hType == HypervisorType.BareMetal) {
-            final ConfigKey<String> hypervisorConfigKey = hypervisorsMap.get(HypervisorType.VMware);
+        if (hypervisorConfigKey != null) {
             templateName = hypervisorConfigKey.valueIn(datacenterId);
-        } else {
-            // Returning NULL is fine because the simulator will need it when
-            // being used instead of a real hypervisor.
-            // The hypervisorsMap contains only real hypervisors.
-            final ConfigKey<String> hypervisorConfigKey = hypervisorsMap.get(hType);
-
-            if (hypervisorConfigKey != null) {
-                templateName = hypervisorConfigKey.valueIn(datacenterId);
-            }
         }
 
         return templateName;
@@ -450,15 +444,10 @@ public class NetworkHelperImpl implements NetworkHelper {
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
         final Account owner = routerDeploymentDefinition.getOwner();
 
-        boolean isPxeProviderForNetworkOffering = false;
-        if (routerDeploymentDefinition.getGuestNetwork() != null && _ntwkOffServiceMapDao.isProviderForNetworkOffering(routerDeploymentDefinition.getGuestNetwork().getNetworkOfferingId(), Network.Provider.BAREMETAL_PXE_SERVICE_PROVIDER)){
-            isPxeProviderForNetworkOffering = true;
-        }
-
         // Router is the network element, we don't know the hypervisor type yet.
         // Try to allocate the domR twice using diff hypervisors, and when
         // failed both times, throw the exception up
-        final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition, isPxeProviderForNetworkOffering);
+        final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition);
 
         int allocateRetry = 0;
         int startRetry = 0;
@@ -549,25 +538,22 @@ public class NetworkHelperImpl implements NetworkHelper {
         return "";
     }
 
-    protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean isPxeProviderForNetworkOffering) throws InsufficientServerCapacityException {        final DeployDestination dest = routerDeploymentDefinition.getDest();
+    protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientServerCapacityException {
+        final DeployDestination dest = routerDeploymentDefinition.getDest();
         List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-        if (isPxeProviderForNetworkOffering) {
-            hypervisors.add(HypervisorType.VMware);
-        } else {
-            if (dest.getCluster() != null) {
-                if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
-                    hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
-                } else {
-                    hypervisors.add(dest.getCluster().getHypervisorType());
-                }
+        if (dest.getCluster() != null) {
+            if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm || dest.getCluster().getHypervisorType() == HypervisorType.BareMetal) {
+                hypervisors.add(getClusterToStartDomainRouterForOvmOrBaremetal(dest.getCluster().getPodId()));
             } else {
-                final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
-                if (defaults != HypervisorType.None) {
-                    hypervisors.add(defaults);
-                } else {
-                    // if there is no default hypervisor, get it from the cluster
-                    hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPlan().getPodId());
-                }
+                hypervisors.add(dest.getCluster().getHypervisorType());
+            }
+        } else {
+            final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
+            if (defaults != HypervisorType.None) {
+                hypervisors.add(defaults);
+            } else {
+                // if there is no default hypervisor, get it from the cluster
+                hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPlan().getPodId());
             }
         }
 
@@ -588,7 +574,7 @@ public class NetworkHelperImpl implements NetworkHelper {
      * Ovm or Baremetal won't support any system. So we have to choose a partner cluster in
      * the same pod to start domain router for us
      */
-    protected HypervisorType getClusterToStartDomainRouterForOvm(final long podId) {
+    protected HypervisorType getClusterToStartDomainRouterForOvmOrBaremetal(final long podId) {
         final List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
         for (final ClusterVO cv : clusters) {
             if (cv.getHypervisorType() == HypervisorType.Ovm || cv.getHypervisorType() == HypervisorType.BareMetal) {
@@ -602,16 +588,16 @@ public class NetworkHelperImpl implements NetworkHelper {
 
             for (final HostVO h : hosts) {
                 if (h.getState() == Status.Up) {
-                    s_logger.debug("Pick up host that has hypervisor type " + h.getHypervisorType() + " in cluster " + cv.getId() + " to start domain router for OVM");
+                    s_logger.debug("Pick up host that has hypervisor type " + h.getHypervisorType() + " in cluster " + cv.getId() + " to start domain router for OVM or BAREMETAL");
                     return h.getHypervisorType();
                 }
             }
         }
 
         final String errMsg = new StringBuilder("Cannot find an available cluster in Pod ").append(podId)
-                .append(" to start domain router for Ovm. \n Ovm won't support any system vm including domain router, ")
+                .append(" to start domain router for Ovm or Baremetal. \n Ovm or Baremetal won't support any system vm including domain router, ")
                 .append("please make sure you have a cluster with hypervisor type of any of xenserver/KVM/Vmware in the same pod")
-                .append(" with Ovm cluster. And there is at least one host in UP status in that cluster.").toString();
+                .append(" with Ovm or Baremetal cluster. And there is at least one host in UP status in that cluster.").toString();
         throw new CloudRuntimeException(errMsg);
     }
 
@@ -626,6 +612,19 @@ public class NetworkHelperImpl implements NetworkHelper {
         controlConfig.put(controlNic, new ArrayList<NicProfile>());
 
         return controlConfig;
+    }
+
+    protected LinkedHashMap<Network, List<? extends NicProfile>> configureManagementlNic(final RouterDeploymentDefinition routerDeploymentDefinition) {
+        final LinkedHashMap<Network, List<? extends NicProfile>> managementConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
+
+        s_logger.debug("Adding nic for Virtual Router in management network ");
+        final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemManagementNetwork);
+        final NetworkOffering managementOffering = offerings.get(0);
+        final Network controlNic = _networkMgr.setupNetwork(s_systemAccount, managementOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
+
+        managementConfig.put(controlNic, new ArrayList<NicProfile>());
+
+        return managementConfig;
     }
 
     protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic) {
@@ -676,7 +675,9 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     @Override
-    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition, HypervisorType htype)
+            throws ConcurrentOperationException, InsufficientAddressCapacityException {
+
         final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         // 1) Guest Network
@@ -690,6 +691,15 @@ public class NetworkHelperImpl implements NetworkHelper {
         // 3) Public network
         final LinkedHashMap<Network, List<? extends NicProfile>> publicNic = configurePublicNic(routerDeploymentDefinition, networks.size() > 1);
         networks.putAll(publicNic);
+
+        // 4) Management network
+        if ( routerDeploymentDefinition.getGuestNetwork() != null && _ntwkOffServiceMapDao.isProviderForNetworkOffering(routerDeploymentDefinition.getGuestNetwork().getNetworkOfferingId(), Network.Provider.BAREMETAL_PXE_SERVICE_PROVIDER)) {
+            // In case of Xenserver/kvm and network offering has baremetal pxe enabled, add management nic
+            if ((htype == HypervisorType.XenServer || htype == HypervisorType.KVM )) {
+                final LinkedHashMap<Network, List<? extends NicProfile>> managementNic = configureManagementlNic(routerDeploymentDefinition);
+                networks.putAll(managementNic);
+            }
+        }
 
         return networks;
     }
@@ -769,7 +779,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             throws ConcurrentOperationException, InsufficientCapacityException {
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
 
-        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(routerDeploymentDefinition);
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(routerDeploymentDefinition, router.getHypervisorType());
 
         _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), hType);
     }

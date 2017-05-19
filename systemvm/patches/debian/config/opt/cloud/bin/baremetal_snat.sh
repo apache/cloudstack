@@ -22,6 +22,12 @@ set +u
 mgmt_nic_ip=$1
 internal_server_ip=$2
 gateway_ip=$3
+hypervisor_type=$4
+management_interface="eth3"
+
+if [ "$hypervisor_type" == "VMware"  ]; then
+    management_interface="eth1"
+fi
 
 ip route | grep "$internal_server_ip" > /dev/null
 
@@ -41,14 +47,14 @@ if [ $? -ne 0 ]; then
     iptables -I INPUT -i eth0 -p udp -m udp --dport 69 -j ACCEPT
 fi
 
-iptables-save | grep -- "-A FORWARD -i eth1 -o eth0 -j ACCEPT" > /dev/null
+iptables-save | grep -- "-A FORWARD -i $management_interface -o eth0 -j ACCEPT" > /dev/null
 if [ $? -ne 0 ]; then
-    iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
+    iptables -A FORWARD -i $management_interface -o eth0 -j ACCEPT
 fi
 
-rule="-A FORWARD -d $internal_server_ip/32 -i eth0 -o $interface -j ACCEPT"
+rule="-A FORWARD -d $internal_server_ip/32 -i eth0 -o $management_interface -j ACCEPT"
 iptables-save | grep -- "$rule" > /dev/null
 if [ $? -ne 0 ]; then
-    iptables -I FORWARD -d $internal_server_ip/32 -i eth0 -o eth1 -j ACCEPT
+    iptables -I FORWARD -d $internal_server_ip/32 -i eth0 -o $management_interface -j ACCEPT
 fi
 

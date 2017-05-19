@@ -596,6 +596,7 @@ setup_common() {
   if [ -n "$ETH3_IP" ]
   then
     setup_interface "3" $ETH3_IP $ETH3_MASK $GW
+    sed -i '/-A INPUT -i eth2 -m state --state RELATED,ESTABLISHED -j ACCEPT/a -A INPUT -i eth3 -m state --state RELATED,ESTABLISHED -j ACCEPT' /etc/iptables/iptables-router
   fi
    
   echo $NAME > /etc/hostname
@@ -1394,6 +1395,9 @@ for i in $CMDLINE
       eth2ip)
           ETH2_IP=$VALUE
           ;;
+      eth3ip)
+          ETH3_IP=$VALUE
+          ;;
       host)
           MGMT_HOST=$VALUE
           ;;
@@ -1411,6 +1415,9 @@ for i in $CMDLINE
           ;;
       eth2mask)
           ETH2_MASK=$VALUE
+          ;;
+      eth3mask)
+          ETH3_MASK=$VALUE
           ;;
       eth0ip6)
           ETH0_IP6=$VALUE

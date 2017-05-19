@@ -48,6 +48,7 @@ import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.routing.AggregationControlCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand.Action;
+import com.cloud.agent.api.routing.ConfigureBaremetalPxeCommand;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -148,7 +149,9 @@ public class VirtualRoutingResource {
         } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
             return execute((CheckS2SVpnConnectionsCommand) cmd);
         } else if (cmd instanceof GetRouterAlertsCommand) {
-            return execute((GetRouterAlertsCommand)cmd);
+            return execute((GetRouterAlertsCommand) cmd);
+        } else if (cmd instanceof ConfigureBaremetalPxeCommand) {
+            return execute((ConfigureBaremetalPxeCommand) cmd);
         } else {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -238,6 +241,20 @@ public class VirtualRoutingResource {
             return new GetRouterAlertsAnswer(cmd, alerts, lastAlertTimestamp);
         } else {
             return new GetRouterAlertsAnswer(cmd, result.getDetails());
+        }
+    }
+
+    private Answer execute(ConfigureBaremetalPxeCommand cmd) {
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = cmd.getArguments();
+
+        ExecutionResult result = _vrDeployer.executeInVR(routerIp, cmd.getScript(), args);
+
+        if (!result.isSuccess()) {
+            return new Answer(cmd, false, String.format("failed preparing PXE in virtual router[id:%s], because %s", NetworkElementCommand.ROUTER_IP, result.getDetails()));
+        } else {
+            return new Answer(cmd, true, result.getDetails());
         }
     }
 
