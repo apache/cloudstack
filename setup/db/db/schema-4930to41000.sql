@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.9.2.0 to 4.10.0.0;
+-- Schema upgrade from 4.9.3.0 to 4.10.0.0;
 --;
 
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN  update_state varchar(64) DEFAULT NULL;
