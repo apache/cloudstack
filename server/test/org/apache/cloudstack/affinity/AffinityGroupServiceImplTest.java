@@ -32,12 +32,14 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.db.EntityManager;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.user.User;
-
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -57,33 +59,32 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
-import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
 
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.projects.dao.ProjectDao;
+
+import org.junit.Assert;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -189,6 +190,26 @@ public class AffinityGroupServiceImplTest {
         AffinityGroup group = _affinityService.createAffinityGroup(ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME, "mock", "affinity group one");
         assertNotNull("Affinity group 'group1' of type 'mock' failed to create ", group);
 
+    }
+
+    private AccountVO mockOwnerForTestGetDomainIdBasedOnDomainLevel() {
+        AccountVO mockOwner = Mockito.mock(AccountVO.class);
+        when(mockOwner.getDomainId()).thenReturn(0l);
+        return mockOwner;
+    }
+
+    @Test
+    public void getDomainIdBasedOnDomainLevelTestDomainLevelTrue() {
+        AccountVO owner = mockOwnerForTestGetDomainIdBasedOnDomainLevel();
+        Long domainIdBasedOnDomainLevel = _affinityService.getDomainIdBasedOnDomainLevel(owner, true, 1l);
+        Assert.assertEquals(new Long(1), domainIdBasedOnDomainLevel);
+    }
+
+    @Test
+    public void getDomainIdBasedOnDomainLevelTestDomainLevelFalse() {
+        AccountVO owner = mockOwnerForTestGetDomainIdBasedOnDomainLevel();
+        Long domainIdBasedOnDomainLevel = _affinityService.getDomainIdBasedOnDomainLevel(owner, false, 1l);
+        Assert.assertEquals(new Long(0), domainIdBasedOnDomainLevel);
     }
 
     @Test

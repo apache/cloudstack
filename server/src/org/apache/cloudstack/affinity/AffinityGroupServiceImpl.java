@@ -117,7 +117,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @DB
     @Override
     public AffinityGroup createAffinityGroup(final String accountName, final Long projectId, final Long domainId, final String affinityGroupName, final String affinityGroupType,
-        final String description) {
+            final String description) {
 
         // validate the affinityGroupType
         Map<String, AffinityGroupProcessor> typeProcessorMap = getAffinityTypeToProcessorMap();
@@ -158,7 +158,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         verifyAffinityGroupNameInUse(owner.getAccountId(), owner.getDomainId(), affinityGroupName);
         verifyDomainLevelAffinityGroupName(domainLevel, owner.getDomainId(), affinityGroupName);
 
-        AffinityGroupVO group = createAffinityGroup(processor, owner, aclType, affinityGroupName, affinityGroupType, description);
+        AffinityGroupVO group = createAffinityGroup(processor, owner, aclType, affinityGroupName, affinityGroupType, description, domainLevel, domainId);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Created affinity group =" + affinityGroupName);
@@ -176,25 +176,27 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         }
     }
 
-    private AffinityGroupVO createAffinityGroup(final AffinityGroupProcessor processor, final Account owner, final ACLType aclType, final String affinityGroupName, final String affinityGroupType, final String description) {
+    private AffinityGroupVO createAffinityGroup(final AffinityGroupProcessor processor, final Account owner, final ACLType aclType, final String affinityGroupName, final String affinityGroupType, final String description, boolean domainLevel, Long domainId) {
+
+        final Long affinityGroupDomainId = getDomainIdBasedOnDomainLevel(owner, domainLevel, domainId);
+
         return Transaction.execute(new TransactionCallback<AffinityGroupVO>() {
             @Override
             public AffinityGroupVO doInTransaction(TransactionStatus status) {
-                AffinityGroupVO group =
-                    new AffinityGroupVO(affinityGroupName, affinityGroupType, description, owner.getDomainId(), owner.getId(), aclType);
+                AffinityGroupVO group = new AffinityGroupVO(affinityGroupName, affinityGroupType, description, affinityGroupDomainId, owner.getId(), aclType);
                 _affinityGroupDao.persist(group);
 
                 if (aclType == ACLType.Domain) {
                     boolean subDomainAccess = false;
                     subDomainAccess = processor.subDomainAccess();
-                    AffinityGroupDomainMapVO domainMap = new AffinityGroupDomainMapVO(group.getId(), owner.getDomainId(),
+                    AffinityGroupDomainMapVO domainMap = new AffinityGroupDomainMapVO(group.getId(), affinityGroupDomainId,
                             subDomainAccess);
                     _affinityGroupDomainMapDao.persist(domainMap);
                     //send event for storing the domain wide resource access
                     Map<String, Object> params = new HashMap<String, Object>();
                     params.put(ApiConstants.ENTITY_TYPE, AffinityGroup.class);
                     params.put(ApiConstants.ENTITY_ID, group.getId());
-                    params.put(ApiConstants.DOMAIN_ID, owner.getDomainId());
+                    params.put(ApiConstants.DOMAIN_ID, affinityGroupDomainId);
                     params.put(ApiConstants.SUBDOMAIN_ACCESS, subDomainAccess);
                     _messageBus.publish(_name, EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT, PublishScope.LOCAL,
                             params);
@@ -203,6 +205,20 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 return group;
             }
         });
+    }
+
+    /**
+     * If the account is null (domainLevel is true), then returns the domain id passed as a
+     * parameter; otherwise (domainLevel is false) it returns the domain id from the owner account.
+     *
+     * @note: this method fixes a critical bug. More details in JIRA ticket CLOUDSTACK-9432.
+     */
+    protected Long getDomainIdBasedOnDomainLevel(final Account owner, boolean domainLevel, Long domainId) {
+        Long domainIdBasedOnDomainLevel = owner.getDomainId();
+        if (domainLevel) {
+            domainIdBasedOnDomainLevel = domainId;
+        }
+        return domainIdBasedOnDomainLevel;
     }
 
     private DomainVO getDomain(Long domainId) {
@@ -225,6 +241,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         }
     }
 
+    @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_DELETE, eventDescription = "Deleting affinity group")
     public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long projectId, Long domainId, String affinityGroupName) {
@@ -258,7 +275,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             throw new InvalidParameterValueException("Either the affinity group Id or group name must be specified to delete the group");
         }
         if (group == null) {
-                throw new InvalidParameterValueException("Unable to find affinity group " + (affinityGroupId == null ? affinityGroupName : affinityGroupId));
+            throw new InvalidParameterValueException("Unable to find affinity group " + (affinityGroupId == null ? affinityGroupName : affinityGroupId));
         }
         return group;
     }
@@ -292,10 +309,10 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 List<AffinityGroupVMMapVO> affinityGroupVmMap = _affinityGroupVMMapDao.listByAffinityGroup(affinityGroupId);
                 if (!affinityGroupVmMap.isEmpty()) {
                     SearchBuilder<AffinityGroupVMMapVO> listByAffinityGroup = _affinityGroupVMMapDao.createSearchBuilder();
-                            listByAffinityGroup.and("affinityGroupId", listByAffinityGroup.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
+                    listByAffinityGroup.and("affinityGroupId", listByAffinityGroup.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
                     listByAffinityGroup.done();
                     SearchCriteria<AffinityGroupVMMapVO> sc = listByAffinityGroup.create();
-                            sc.setParameters("affinityGroupId", affinityGroupId);
+                    sc.setParameters("affinityGroupId", affinityGroupId);
 
                     _affinityGroupVMMapDao.lockRows(sc, null, true);
                     _affinityGroupVMMapDao.remove(sc);
@@ -323,12 +340,12 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         List<String> types = new ArrayList<String>();
 
         for (AffinityGroupProcessor processor : _affinityProcessors) {
-                if (processor.isAdminControlledGroup()) {
-                    continue; // we dont list the type if this group can be
-                              // created only as an admin/system operation.
-                }
-                types.add(processor.getType());
+            if (processor.isAdminControlledGroup()) {
+                continue; // we dont list the type if this group can be
+                // created only as an admin/system operation.
             }
+            types.add(processor.getType());
+        }
 
         return types;
     }
@@ -394,20 +411,20 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     @Override
     public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vo, boolean status, Object opaque) {
-      if (!status) {
-        return false;
-      }
-      State newState = transition.getToState();
-      if ((newState == State.Expunging) || (newState == State.Error)) {
-        // cleanup all affinity groups associations of the Expunged VM
-        SearchCriteria<AffinityGroupVMMapVO> sc = _affinityGroupVMMapDao.createSearchCriteria();
-        sc.addAnd("instanceId", SearchCriteria.Op.EQ, vo.getId());
-        _affinityGroupVMMapDao.expunge(sc);
-      }
-      return true;
+        if (!status) {
+            return false;
+        }
+        State newState = transition.getToState();
+        if ((newState == State.Expunging) || (newState == State.Error)) {
+            // cleanup all affinity groups associations of the Expunged VM
+            SearchCriteria<AffinityGroupVMMapVO> sc = _affinityGroupVMMapDao.createSearchCriteria();
+            sc.addAnd("instanceId", SearchCriteria.Op.EQ, vo.getId());
+            _affinityGroupVMMapDao.expunge(sc);
+        }
+        return true;
     }
 
-  @Override
+    @Override
     public UserVm updateVMAffinityGroups(Long vmId, List<Long> affinityGroupIds) {
         // Verify input parameters
         UserVmVO vmInstance = _userVmDao.findById(vmId);
@@ -419,7 +436,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         if (!vmInstance.getState().equals(State.Stopped)) {
             s_logger.warn("Unable to update affinity groups of the virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
             throw new InvalidParameterValueException("Unable update affinity groups of the virtual machine " + vmInstance.toString() + " " + "in state " +
-                vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before updating.");
+                    vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before updating.");
         }
 
         Account caller = CallContext.current().getCallingAccount();
