@@ -28,6 +28,7 @@ public class StopCommand extends RebootCommand {
     private String publicConsoleProxyIpAddress = null;
     private GPUDeviceTO gpuDevice;
     boolean checkBeforeCleanup = false;
+    String controlIp = null;
 
     protected StopCommand() {
     }
@@ -81,5 +82,13 @@ public class StopCommand extends RebootCommand {
 
     public boolean checkBeforeCleanup() {
         return this.checkBeforeCleanup;
+    }
+
+    public String getControlIp(){
+        return controlIp;
+    }
+
+    public void setControlIp(String controlIp){
+        this.controlIp =controlIp;
     }
 }
