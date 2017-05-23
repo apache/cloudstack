@@ -800,7 +800,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId) {
+    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId, String keyword) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -904,6 +904,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public boolean configureNicSecondaryIp(NicSecondaryIp secIp, boolean isZoneSgEnabled) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd listNicsCmd) {
+        return null;
     }
 
 }
