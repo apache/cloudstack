@@ -1965,6 +1965,10 @@ public class ApiDBUtils {
         return s_accountService.isAdmin(account.getId());
     }
 
+    public static List<NicSecondaryIpVO> findNicSecondaryIpsUsingKeyword(long nicId, String keyword) {
+        return s_nicSecondaryIpDao.listSecondaryIpUsingKeyword(nicId, keyword);
+    }
+
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
     }
