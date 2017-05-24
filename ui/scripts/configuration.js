@@ -3296,9 +3296,11 @@
                                             serviceCapabilityIndex++;
                                         }
                                     } else if (value != '') { // normal data (serviceData.length ==1), e.g. "name", "displayText", "networkRate", "guestIpType", "lbType" (unwanted), "availability" (unwated when value is "Optional"), "egressdefaultpolicy", "state" (unwanted), "status" (unwanted), "allocationstate" (unwanted)
-                                        if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" )) {
-                                        inputData[key] = value;
-                                    }
+                                        if (key == "useVpc") {
+                                            inputData['forvpc'] = value;
+                                        } else if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" )) {
+                                            inputData[key] = value;
+                                        }
                                     }
                                 });
 
@@ -3370,6 +3372,11 @@
                                     }
                                 }
 
+                                if (inputData['forvpc'] == 'on') {
+                                    inputData['forvpc'] = true;
+                                   } else {
+                                    delete inputData.forvpc; //if forVpc checkbox is unchecked, do not pass forVpc parameter to API call since we need to keep API call's size as small as possible (p.s. forVpc is defaulted as false at server-side)
+                                }
 
                                 if (inputData['conservemode'] == 'on') {
                                     delete inputData.conservemode; //if ConserveMode checkbox is checked, do not pass conservemode parameter to API call since we need to keep API call's size as small as possible (p.s. conservemode is defaulted as true at server-side)

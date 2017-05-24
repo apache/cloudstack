@@ -490,20 +490,10 @@ public class ConfigurationManagerTest {
 
     @Test
     public void searchForNetworkOfferingsTest() {
-
-        final NetworkOfferingVO off1 = new NetworkOfferingVO("off1", "off1", Networks.TrafficType.Guest, false, false, null, null, false,
-                                                                          NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false,
-                                                                          false);
-        final NetworkOfferingVO off2 = new NetworkOfferingVO("off2", "off2", Networks.TrafficType.Guest, false, false, null, null, false,
-                                                                          NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false,
-                                                                          false);
-        final NetworkOfferingVO off3 = new NetworkOfferingVO("off3", "off3", Networks.TrafficType.Guest, false, false, null, null, false,
-                                                                          NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false,
-                                                                          false);
         List<NetworkOfferingVO> offerings = Arrays.asList(
-                off1,
-                off2,
-                off3
+                new NetworkOfferingVO("off1", "off1", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, false),
+                new NetworkOfferingVO("off2", "off2", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, false),
+                new NetworkOfferingVO("off3", "off3", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, true)
         );
 
         Mockito.when(_networkOfferingDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
@@ -514,12 +504,8 @@ public class ConfigurationManagerTest {
 
         assertThat(configurationMgr.searchForNetworkOfferings(cmd).second(), is(3));
 
-        ConfigurationManagerImpl spy = Mockito.spy(configurationMgr);
-        Mockito.doReturn(false).when(spy).isOfferingForVpc(off1);
-        Mockito.doReturn(false).when(spy).isOfferingForVpc(off2);
-        Mockito.doReturn(true).when(spy).isOfferingForVpc(off3);
         Mockito.when(cmd.getForVpc()).thenReturn(Boolean.FALSE);
-        assertThat(spy.searchForNetworkOfferings(cmd).second(), is(2));
+        assertThat(configurationMgr.searchForNetworkOfferings(cmd).second(), is(2));
     }
 
     @Test

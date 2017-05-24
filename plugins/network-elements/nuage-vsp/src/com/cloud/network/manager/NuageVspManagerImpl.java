@@ -976,7 +976,8 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                 if (sharedNetworkOfferingWithSG == null) {
                     NetworkOfferingVO defaultNuageVspSharedSGNetworkOffering =
                             new NetworkOfferingVO(nuageVspSharedNetworkOfferingWithSGServiceName, "Offering for NuageVsp Shared Security group enabled networks",
-                                    Networks.TrafficType.Guest, false, false, null, null, true, NetworkOffering.Availability.Optional, null, Network.GuestType.Shared, true, true, false, false, false);
+                                    Networks.TrafficType.Guest, false, false, null, null, true, NetworkOffering.Availability.Optional, null, Network.GuestType.Shared, true, true, false, false, false,
+                                    false);
 
                     defaultNuageVspSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
                     defaultNuageVspSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNuageVspSharedSGNetworkOffering);

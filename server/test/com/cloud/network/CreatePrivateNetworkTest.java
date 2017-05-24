@@ -17,18 +17,11 @@
 
 package com.cloud.network;
 
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
+import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -63,6 +56,13 @@ import com.cloud.user.AccountVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 
 //@Ignore("Requires database to be set up")
 public class CreatePrivateNetworkTest {
@@ -103,7 +103,7 @@ public class CreatePrivateNetworkTest {
 
         NetworkOfferingVO ntwkOff =
             new NetworkOfferingVO("offer", "fakeOffer", TrafficType.Guest, true, true, null, null, false, null, null, GuestType.Isolated, false, false, false, false,
-                false, false, false, false, false, false, false, false, false, false, false);
+                false, false, false, false, false, false, false, false, false, false, false, false);
         when(networkService._networkOfferingDao.findById(anyLong())).thenReturn(ntwkOff);
         List<NetworkOfferingVO> netofferlist = new ArrayList<NetworkOfferingVO>();
         netofferlist.add(ntwkOff);

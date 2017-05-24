@@ -2209,7 +2209,7 @@ class NetworkOffering:
         cmd.traffictype = services["traffictype"]
 
         if "useVpc" in services:
-            cmd.useVpc = services["useVpc"]
+            cmd.forvpc = (services["useVpc"] == "on")
         cmd.serviceproviderlist = []
         if "serviceProviderList" in services:
             for service, provider in services["serviceProviderList"].items():
