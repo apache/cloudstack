@@ -434,10 +434,8 @@ if [ "$1" == "2" ] ; then
 fi
 
 %post management
-if [ "$1" == "1" ] ; then
-    /sbin/chkconfig --add cloudstack-management > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 cloudstack-management on > /dev/null 2>&1 || true
-fi
+/sbin/chkconfig --add cloudstack-management > /dev/null 2>&1 || true
+/sbin/chkconfig --level 345 cloudstack-management on > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
@@ -522,17 +520,18 @@ if [ -d "%{_sysconfdir}/cloud" ] ; then
 fi
 
 %post agent
-if [ "$1" == "1" ] ; then
+if [ "$1" == "2" ] ; then
     echo "Running %{_bindir}/%{name}-agent-upgrade to update bridge name for upgrade from CloudStack 4.0.x (and before) to CloudStack 4.1 (and later)"
     %{_bindir}/%{name}-agent-upgrade
-    if [ ! -d %{_sysconfdir}/libvirt/hooks ] ; then
-        mkdir %{_sysconfdir}/libvirt/hooks
-    fi
-    cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfdir}/libvirt/hooks/qemu
-    /sbin/service libvirtd restart
-    /sbin/chkconfig --add cloudstack-agent > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 cloudstack-agent on > /dev/null 2>&1 || true
 fi
+
+if [ ! -d %{_sysconfdir}/libvirt/hooks ] ; then
+    mkdir %{_sysconfdir}/libvirt/hooks
+fi
+cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfdir}/libvirt/hooks/qemu
+/sbin/service libvirtd restart
+/sbin/chkconfig --add cloudstack-agent > /dev/null 2>&1 || true
+/sbin/chkconfig --level 345 cloudstack-agent on > /dev/null 2>&1 || true
 
 # if saved configs from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
