@@ -2089,7 +2089,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         // this method supports only guest network creation
-        if (ntwkOff.getTrafficType() != TrafficType.Guest) {
+        if (!(ntwkOff.getTrafficType() == TrafficType.Guest || ntwkOff.getTrafficType() == TrafficType.PrivateGw)) {
             s_logger.warn("Only guest networks can be created using this method");
             return null;
         }

@@ -2816,7 +2816,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return getNetworkByName(conn, name);
         }
 
-        if (type == TrafficType.Guest) {
+        if (type == TrafficType.Guest || type == TrafficType.PrivateGw) {
             return new XsLocalNetwork(this, Network.getByUuid(conn, _host.getGuestNetwork()), null, PIF.getByUuid(conn, _host.getGuestPif()), null);
         } else if (type == TrafficType.Control) {
             setupLinkLocalNetwork(conn);

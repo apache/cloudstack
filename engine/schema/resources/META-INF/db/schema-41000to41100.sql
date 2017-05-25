@@ -543,3 +543,6 @@ ALTER TABLE cloud.ldap_trust_map ADD COLUMN account_id BIGINT(20) DEFAULT 0;
 ALTER TABLE cloud.ldap_trust_map DROP FOREIGN KEY fk_ldap_trust_map__domain_id;
 DROP INDEX uk_ldap_trust_map__domain_id ON cloud.ldap_trust_map;
 CREATE UNIQUE INDEX uk_ldap_trust_map__bind_location ON ldap_trust_map (domain_id, account_id);
+
+-- CLOUDSTACK-9885: VPCVR updated to the private the traffic_type
+UPDATE `cloud`.`network_offerings` set traffic_type='PrivateGw' where id=5;

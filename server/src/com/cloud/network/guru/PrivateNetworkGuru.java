@@ -64,7 +64,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     EntityManager _entityMgr;
 
-    private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
+    private static final TrafficType[] TrafficTypes = {TrafficType.PrivateGw};
 
     protected PrivateNetworkGuru() {
         super();
