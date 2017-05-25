@@ -16,19 +16,20 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import java.util.Date;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
+import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.util.Date;
 
 @Entity
 @Table(name = "user_view")
@@ -122,6 +123,10 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name = "default")
     boolean isDefault;
+
+    @Column(name = "source")
+    @Enumerated(value = EnumType.STRING)
+    private User.Source source;
 
     public UserAccountJoinVO() {
     }
@@ -257,5 +262,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     @Override
     public String getProjectName() {
         return null;
+    }
+
+    public User.Source getSource() {
+        return source;
     }
 }

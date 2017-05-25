@@ -95,14 +95,13 @@ class Services:
                          "template": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostype": 'CentOS 5.3 (64-bit)',
+                                "ostype": 'CentOS 5.3',
                                 "url": "",
                                 "hypervisor": '',
                                 "format": '',
-                                "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
-                                "templatefilter": "self"
+                                "templatefilter": "all"
                         },
                         "natrule": {
                                     "publicport": 22,
@@ -125,20 +124,7 @@ class TestAccounts(cloudstackTestCase):
 
         cls.services = Services().services
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        cls._cleanup = [cls.service_offering]
+        cls._cleanup = []
         return
 
     @classmethod
@@ -241,6 +227,11 @@ class TestAccounts(cloudstackTestCase):
                             user_response.state,
                             "Check state of created user"
                             )
+        self.assertEqual(
+                            "native",
+                            user_response.usersource,
+                            "Check state of created user"
+                            )
         return
 
 
@@ -257,7 +248,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.services["ostype"],
+                            template_filter="all"
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -1655,7 +1647,8 @@ class TestDomainForceRemove(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.services["ostype"],
+                            template_filter="all"
                             )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

@@ -207,3 +207,49 @@ CREATE VIEW `cloud`.`user_view` AS
         `cloud`.`async_job` ON async_job.instance_id = user.id
             and async_job.instance_type = 'User'
             and async_job.job_status = 0;
+
+-- Changes for FR20
+DROP VIEW IF EXISTS `cloud`.`user_view`;
+CREATE VIEW `cloud`.`user_view` AS
+    select
+        user.id,
+        user.uuid,
+        user.username,
+        user.password,
+        user.firstname,
+        user.lastname,
+        user.email,
+        user.state,
+        user.api_key,
+        user.secret_key,
+        user.created,
+        user.removed,
+        user.timezone,
+        user.registration_token,
+        user.is_registered,
+        user.incorrect_login_attempts,
+        user.default,
+        user.source,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        account.role_id account_role_id,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id
+    from
+        `cloud`.`user`
+            inner join
+        `cloud`.`account` ON user.account_id = account.id
+            inner join
+        `cloud`.`domain` ON account.domain_id = domain.id
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = user.id
+            and async_job.instance_type = 'User'
+            and async_job.job_status = 0;
