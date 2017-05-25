@@ -96,7 +96,7 @@ class Services:
             "template": {
                 "displaytext": "Public Template",
                 "name": "Public template",
-                "ostype": 'CentOS 5.3 (64-bit)',
+                "ostype": 'CentOS 5.6 (64-bit)',
                 "url": "",
                 "hypervisor": '',
                 "format": '',
@@ -110,8 +110,7 @@ class Services:
                 "privateport": 22,
                 "protocol": 'TCP',
             },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # Cent OS 5.3 (64 bit)
+            "ostype": 'CentOS 5.6 (64-bit)',
             "sleep": 60,
             "timeout": 10,
         }
@@ -248,6 +247,11 @@ class TestAccounts(cloudstackTestCase):
             user.state,
             user_response.state,
             "Check state of created user"
+        )
+        self.assertEqual(
+            "native",
+            user_response.usersource,
+            "Check user source of created user"
         )
         return
 

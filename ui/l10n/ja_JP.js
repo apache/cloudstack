@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "項目のプロパティの変更",
     "confirm.enable.s3": "S3 ベースのセカンダリ ストレージのサポートを有効にするには、次の情報を入力してください。",
     "confirm.enable.swift": "Swift のサポートを有効にするには、次の情報を入力してください。",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "エラー。LDAP が有効なためパスワードを変更できません。",
+    "error.could.not.change.your.password.because.non.native.user": "エラー。LDAP が有効なためパスワードを変更できません。",
     "error.could.not.enable.zone": "ゾーンを有効にできませんでした",
     "error.installWizard.message": "問題が発生しました。戻ってエラーを修正できます。",
     "error.invalid.username.password": "無効なユーザー名またはパスワードです。",
