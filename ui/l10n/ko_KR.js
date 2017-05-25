@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "항목 속성 변경",
     "confirm.enable.s3": "S3 기반 2차 저장소 지원을 하려면 아래 정보를 입력해 주십시오.",
     "confirm.enable.swift": "Swift 기술 지원를 사용 하려면 다음 정보를 입력해 주십시오.",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "LDAP 기능이 활성화 되어 있기 때문에 패스워드 변경을 실패하였습니다.",
+    "error.could.not.change.your.password.because.non.native.user": "LDAP 기능이 활성화 되어 있기 때문에 패스워드 변경을 실패하였습니다.",
     "error.could.not.enable.zone": "Zone을 사용 할 수 없습니다.",
     "error.installWizard.message": "문제가 발생했습니다. 다시 오류를 수정할 수 있습니다.",
     "error.invalid.username.password": "유효하지 않은 사용자명 또는 암호",

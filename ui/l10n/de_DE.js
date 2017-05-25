@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "Geänderte Eintragseigenschaften",
     "confirm.enable.s3": "Bitte fügen Sie die folgenden Informationen hinzu, um die Unterstützung für \"S3-backed Secondary Storage\" hinzuzufügen",
     "confirm.enable.swift": "Bitte fügen Sie die folgenden Informationen hinzu, um die Unterstützung für Swift zu ermöglichen.",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Fehler! Ihr Passwort konnte nicht geändert werden, weil LDAP konfiguriert wurde.",
+    "error.could.not.change.your.password.because.non.native.user": "Fehler! Ihr Passwort konnte nicht geändert werden, weil LDAP konfiguriert wurde.",
     "error.could.not.enable.zone": "Zone konnte nicht aktiviert werden",
     "error.installWizard.message": "Etwas ging schief; Sie können zurückgehen um mögliche Fehler zu beheben",
     "error.invalid.username.password": "Ungültiger Benutzername oder ungültiges Passwort",

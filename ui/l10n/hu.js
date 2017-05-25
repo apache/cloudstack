@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "Az elem tulajdonságai megváltoztak",
     "confirm.enable.s3": "Töltsd ki a következő információkat az S3 másodlagos tár bekapcsolásához!",
     "confirm.enable.swift": "Töltsd ki a következő információkat a Swift támogatás bekapcsolásához!",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Nem sikerült megváltoztatni a jelszavadat, mert az LDAP be van kapcsolva.",
+    "error.could.not.change.your.password.because.non.native.user": "Nem sikerült megváltoztatni a jelszavadat, mert az LDAP be van kapcsolva.",
     "error.could.not.enable.zone": "A zóna engedélyezése sikertelen",
     "error.installWizard.message": "Valami nem sikerült, visszamehetsz kijavítani a hibákat.",
     "error.invalid.username.password": "Érvénytelen felhasználónév vagy jelszó",

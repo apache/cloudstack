@@ -1267,9 +1267,8 @@
                                         var complete = args.complete;
                                         var context = args.context;
 
-                                        if (isLdapEnabled()) {
-                                            cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.ldap.is.enabled') });
-                                        } else {
+                                        var userSource = context.users[0].usersource;
+                                        if (userSource == "native") {
                                             cloudStack.dialog.createForm({
                                                 form: {
                                                     title: 'label.action.change.password',
@@ -1316,6 +1315,8 @@
                                                     });
                                                 }
                                             });
+                                        } else {
+                                            cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.non.native.user') });
                                         }
                                     }
                                 }
