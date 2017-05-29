@@ -256,7 +256,7 @@ CREATE VIEW `cloud`.`host_view` AS
             and ha_config.resource_type='Host';
 
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'volume.stats.interval', '60000', 'Interval (in seconds) to report volume statistics', '60000', now(), NULL, NULL);
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'volume.stats.interval', '600000', 'Interval (in milliseconds) to report volume statistics', '600000', now(), NULL, NULL);
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
