@@ -39,6 +39,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -119,7 +121,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  *
  */
 @Component
-public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable {
+public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable {
 
     public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
 
@@ -198,6 +200,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private boolean _dailyOrHourly = false;
 
+    public static final ConfigKey<Integer> StatsTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "stats.timeout", "60000",
+            "The timeout for stats call in milli seconds.", true, ConfigKey.Scope.Cluster);
     //private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
 
     public static StatsCollector getInstance() {
@@ -225,7 +229,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), 60000L);
         hostAndVmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), 60000L);
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), 60000L);
-        volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), 60000L);
+        volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), 600000L);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), 60000L);
         vmDiskStatsInterval = NumbersUtil.parseLong(configs.get("vm.disk.stats.interval"), 60000L);
 
@@ -623,7 +627,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         }
                     }
                     try {
-                        HashMap<String, VolumeStatsEntry> volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators);
+                        HashMap<String, VolumeStatsEntry> volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators, StatsTimeout.value());
                         if (volumeStatsByUuid != null){
                             _volumeStats.putAll(volumeStatsByUuid);
                         }
@@ -998,5 +1002,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     public StorageStats getStoragePoolStats(long id) {
         return _storagePoolStats.get(id);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return StatsCollector.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {
+            StatsCollector.StatsTimeout
+        };
     }
 }
