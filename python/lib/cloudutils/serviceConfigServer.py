@@ -89,6 +89,10 @@ class cloudManagementConfig(serviceCfgBase):
                 if os.path.exists("/etc/cloudstack/management/server.xml"):
                     bash("rm -f /etc/cloudstack/management/server.xml")
                 bash("ln -s /etc/cloudstack/management/server7-ssl.xml /etc/cloudstack/management/server.xml")
+                bash("rm -f /usr/share/cloudstack-management/bin")
+                bash("rm -f /usr/share/cloudstack-management/lib")
+                bash("ln -s /usr/share/tomcat7/bin /usr/share/cloudstack-management/bin")
+                bash("ln -s /usr/share/tomcat7/lib /usr/share/cloudstack-management/lib")
             else:
                 if not os.path.exists("/etc/cloudstack/management/server-ssl.xml") or not os.path.exists("/etc/cloudstack/management/tomcat6-ssl.conf"):
                     raise CloudRuntimeException("Cannot find /etc/cloudstack/management/server-ssl.xml or /etc/cloudstack/management/tomcat6-ssl.conf, https enable failed")
@@ -98,6 +102,10 @@ class cloudManagementConfig(serviceCfgBase):
                     bash("rm -f /etc/cloudstack/management/tomcat6.conf")
                 bash("ln -s /etc/cloudstack/management/server-ssl.xml /etc/cloudstack/management/server.xml")
                 bash("ln -s /etc/cloudstack/management/tomcat6-ssl.conf /etc/cloudstack/management/tomcat6.conf")
+                bash("rm -f /usr/share/cloudstack-management/bin")
+                bash("rm -f /usr/share/cloudstack-management/lib")
+                bash("ln -s /usr/share/tomcat6/bin /usr/share/cloudstack-management/bin")
+                bash("ln -s /usr/share/tomcat6/lib /usr/share/cloudstack-management/lib")
             if not bash("iptables-save |grep PREROUTING | grep 6443").isSuccess():
                 bash("iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 6443")
         else:
@@ -107,6 +115,10 @@ class cloudManagementConfig(serviceCfgBase):
                 if os.path.exists("/etc/cloudstack/management/server.xml"):
                     bash("rm -f /etc/cloudstack/management/server.xml")
                 bash("ln -s /etc/cloudstack/management/server7-nonssl.xml /etc/cloudstack/management/server.xml")
+                bash("rm -f /usr/share/cloudstack-management/bin")
+                bash("rm -f /usr/share/cloudstack-management/lib")
+                bash("ln -s /usr/share/tomcat7/bin /usr/share/cloudstack-management/bin")
+                bash("ln -s /usr/share/tomcat7/lib /usr/share/cloudstack-management/lib")
             else:
                 if not os.path.exists("/etc/cloudstack/management/server-nonssl.xml") or not os.path.exists("/etc/cloudstack/management/tomcat6-nonssl.conf"):
                     raise CloudRuntimeException("Cannot find /etc/cloudstack/management/server-nonssl.xml or /etc/cloudstack/management/tomcat6-nonssl.conf, https enable failed")
@@ -116,6 +128,10 @@ class cloudManagementConfig(serviceCfgBase):
                     bash("rm -f /etc/cloudstack/management/tomcat6.conf")
                 bash("ln -s /etc/cloudstack/management/server-nonssl.xml /etc/cloudstack/management/server.xml")
                 bash("ln -s /etc/cloudstack/management/tomcat6-nonssl.conf /etc/cloudstack/management/tomcat6.conf")
+                bash("rm -f /usr/share/cloudstack-management/bin")
+                bash("rm -f /usr/share/cloudstack-management/lib")
+                bash("ln -s /usr/share/tomcat6/bin /usr/share/cloudstack-management/bin")
+                bash("ln -s /usr/share/tomcat6/lib /usr/share/cloudstack-management/lib")
         bash("touch /var/run/cloudstack-management.pid")
         bash("chown cloud.cloud /var/run/cloudstack-management.pid")
         #distro like sl 6.1 needs this folder, or tomcat6 failed to start
