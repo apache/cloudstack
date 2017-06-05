@@ -438,9 +438,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             name = "VPN-" + gatewayIp;
         }
         String guestCidrList = cmd.getGuestCidrList();
-        if (!NetUtils.validateGuestCidrList(guestCidrList)) {
-            throw new InvalidParameterValueException("The customer gateway guest cidr list " + guestCidrList + " contains invalid guest cidr!");
-        }
         String ipsecPsk = cmd.getIpsecPsk();
         String ikePolicy = cmd.getIkePolicy();
         String espPolicy = cmd.getEspPolicy();

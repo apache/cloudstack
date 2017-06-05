@@ -1311,7 +1311,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
                 (short)snapshotType.ordinal(), snapshotType.name(), volume.getSize(), volume.getMinIops(), volume.getMaxIops(), hypervisorType, locationType);
 
-        SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
+        SnapshotVO snapshot = null;
+        try {
+            //recheck for volume to be in ready state
+            if (volume != null && (volume.getState() == Volume.State.Ready || volume.getState() != Volume.State.Snapshotting)) {
+                //initiate snapshot creation with state change to SnapshotRequested only for detached volumes
+                if (vmInstance == null) {
+                    volume.stateTransit(Volume.Event.SnapshotRequested);
+                }
+                snapshot = _snapshotDao.persist(snapshotVO);
+            }
+        } catch(Exception e) {
+            s_logger.warn("Failed to change state of snapshot " + e);
+            throw e;
+        }
+
         if (snapshot == null) {
             throw new CloudRuntimeException("Failed to create snapshot for volume: " + volume.getId());
         }
