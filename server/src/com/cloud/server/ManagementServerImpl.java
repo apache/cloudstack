@@ -1991,8 +1991,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public Pair<List<? extends GuestOSHypervisor>, Integer> listGuestOSMappingByCriteria(final ListGuestOsMappingCmd cmd) {
         final Filter searchFilter = new Filter(GuestOSHypervisorVO.class, "hypervisorType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        final Long id = cmd.getId();
-        final Long osTypeId = cmd.getOsTypeId();
+        final String id = cmd.getId();
+        final String osTypeId = cmd.getOsTypeId();
         final String hypervisor = cmd.getHypervisor();
         final String hypervisorVersion = cmd.getHypervisorVersion();
 
@@ -2004,7 +2004,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final SearchCriteria<GuestOSHypervisorVO> sc = _guestOSHypervisorDao.createSearchCriteria();
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.addAnd("uuid", SearchCriteria.Op.EQ, id);
         }
 
         if (osTypeId != null) {
