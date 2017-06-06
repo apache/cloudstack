@@ -394,7 +394,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
         )
 
         vm_from_temp = VirtualMachine.create(
-            self.apiclient,
+            self.userapiclient,
             self.testdata["small"],
             templateid=templateFromSnapshot.id,
             accountid=self.account.name,
