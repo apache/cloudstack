@@ -952,6 +952,7 @@
                                                     },
                                                     onComplete: function(data) {
                                                         $(window).trigger('cloudStack.deleteProject', args);
+                                                        cloudStack.projects.projectSelect.trigger("chosen:updated");
                                                     },
                                                     getActionFilter: function(args) {
                                                         return function() {
