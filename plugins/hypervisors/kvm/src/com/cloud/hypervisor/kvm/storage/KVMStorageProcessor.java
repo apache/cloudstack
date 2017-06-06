@@ -225,8 +225,17 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, volume.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
             } else if (destData instanceof TemplateObjectTO) {
-                final TemplateObjectTO destTempl = (TemplateObjectTO)destData;
-                primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
+                TemplateObjectTO destTempl = (TemplateObjectTO)destData;
+
+                Map<String, String> details = primaryStore.getDetails();
+
+                String path = details != null ? details.get("managedStoreTarget") : null;
+
+                storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details);
+
+                primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
+
+                storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
             } else {
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, cmd.getWaitInMillSeconds());
             }
@@ -602,8 +611,106 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer createTemplateFromSnapshot(final CopyCommand cmd) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public Answer createTemplateFromSnapshot(CopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)snapshot.getDataStore();
+
+        DataTO destData = cmd.getDestTO();
+        TemplateObjectTO template = (TemplateObjectTO)destData;
+        DataStoreTO imageStore = template.getDataStore();
+
+        if (!(imageStore instanceof NfsTO)) {
+            return new CopyCmdAnswer("unsupported protocol");
+        }
+
+        NfsTO nfsImageStore = (NfsTO)imageStore;
+
+        KVMStoragePool secondaryStorage = null;
+
+        try {
+            Map<String, String> details = cmd.getOptions();
+
+            String path = details != null ? details.get("iqn") : null;
+
+            if (path == null) {
+                new CloudRuntimeException("The 'path' field must be specified.");
+            }
+
+            storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details);
+
+            KVMPhysicalDisk srcDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
+
+            secondaryStorage = storagePoolMgr.getStoragePoolByURI(nfsImageStore.getUrl());
+
+            String templateFolder = template.getPath();
+            String tmpltPath = secondaryStorage.getLocalPath() + File.separator + templateFolder;
+
+            storageLayer.mkdirs(tmpltPath);
+
+            String templateName = UUID.randomUUID().toString();
+
+            s_logger.debug("Converting " + srcDisk.getFormat().toString() + " disk " + srcDisk.getPath() + " into template " + templateName);
+
+            String destName = templateFolder + "/" + templateName + ".qcow2";
+
+            storagePoolMgr.copyPhysicalDisk(srcDisk, destName, secondaryStorage, cmd.getWaitInMillSeconds());
+
+            File templateProp = new File(tmpltPath + "/template.properties");
+
+            if (!templateProp.exists()) {
+                templateProp.createNewFile();
+            }
+
+            String templateContent = "filename=" + templateName + ".qcow2" + System.getProperty("line.separator");
+
+            DateFormat dateFormat = new SimpleDateFormat("MM_dd_yyyy");
+            Date date = new Date();
+
+            templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
+
+            FileOutputStream templFo = new FileOutputStream(templateProp);
+
+            templFo.write(templateContent.getBytes());
+            templFo.flush();
+            templFo.close();
+
+            Map<String, Object> params = new HashMap<>();
+
+            params.put(StorageLayer.InstanceConfigKey, storageLayer);
+
+            Processor qcow2Processor = new QCOW2Processor();
+
+            qcow2Processor.configure("QCOW2 Processor", params);
+
+            FormatInfo info = qcow2Processor.process(tmpltPath, null, templateName);
+
+            TemplateLocation loc = new TemplateLocation(storageLayer, tmpltPath);
+
+            loc.create(1, true, templateName);
+            loc.addFormat(info);
+            loc.save();
+
+            storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
+
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+
+            newTemplate.setPath(templateFolder + File.separator + templateName + ".qcow2");
+            newTemplate.setSize(info.virtualSize);
+            newTemplate.setPhysicalSize(info.size);
+            newTemplate.setFormat(ImageFormat.QCOW2);
+            newTemplate.setName(templateName);
+
+            return new CopyCmdAnswer(newTemplate);
+        } catch (Exception ex) {
+            s_logger.debug("Failed to createTemplateFromSnapshot: ", ex);
+
+            return new CopyCmdAnswer(ex.toString());
+        } finally {
+            if (secondaryStorage != null) {
+                secondaryStorage.delete();
+            }
+        }
     }
 
     protected String copyToS3(final File srcFile, final S3TO destStore, final String destPath) throws InterruptedException {

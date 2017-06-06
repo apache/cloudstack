@@ -1066,12 +1066,12 @@ public class VolumeServiceImpl implements VolumeService {
                 destPrimaryDataStore.getDriver().getCapabilities().get(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_VOLUME.toString())
         );
 
-        boolean computeZoneSupportsResign = computeZoneSupportsResign(destHost.getDataCenterId(), destHost.getHypervisorType());
+        boolean computeSupportsVolumeClone = computeSupportsVolumeClone(destHost.getDataCenterId(), destHost.getHypervisorType());
 
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
 
-        if (storageCanCloneVolume && computeZoneSupportsResign) {
-            s_logger.debug("Storage " + destDataStoreId + " can support cloning using a cached template and host cluster can perform UUID resigning.");
+        if (storageCanCloneVolume && computeSupportsVolumeClone) {
+            s_logger.debug("Storage " + destDataStoreId + " can support cloning using a cached template and compute side is OK with volume cloning.");
 
             TemplateInfo templateOnPrimary = destPrimaryDataStore.getTemplate(srcTemplateInfo.getId());
 
@@ -1108,7 +1108,11 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    private boolean computeZoneSupportsResign(long zoneId, HypervisorType hypervisorType) {
+    private boolean computeSupportsVolumeClone(long zoneId, HypervisorType hypervisorType) {
+        if (HypervisorType.KVM.equals(hypervisorType)) {
+            return true;
+        }
+
         return getHost(zoneId, hypervisorType, true) != null;
     }
 

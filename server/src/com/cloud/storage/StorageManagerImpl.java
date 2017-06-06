@@ -1242,41 +1242,54 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
+    /**
+     * This method only applies for managed storage.
+     *
+     * For XenServer and vSphere, see if we need to remove an SR or a datastore, then remove the underlying volume
+     * from any applicable access control list (before other code attempts to delete the volume that supports it).
+     *
+     * For KVM, just tell the underlying storage plug-in to remove the volume from any applicable access control list
+     * (before other code attempts to delete the volume that supports it).
+     */
     private void handleManagedStorage(Volume volume) {
         Long instanceId = volume.getInstanceId();
 
-        // The idea of this "if" statement is to see if we need to remove an SR/datastore before
-        // deleting the volume that supports it on a SAN. This only applies for managed storage.
         if (instanceId != null) {
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
             if (storagePool != null && storagePool.isManaged()) {
-                DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
-                DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
-
-                DettachCommand cmd = new DettachCommand(disk, null);
-
-                cmd.setManaged(true);
-
-                cmd.setStorageHost(storagePool.getHostAddress());
-                cmd.setStoragePort(storagePool.getPort());
-
-                cmd.set_iScsiName(volume.get_iScsiName());
-
                 VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
 
                 Long lastHostId = vmInstanceVO.getLastHostId();
 
                 if (lastHostId != null) {
-                    Answer answer = _agentMgr.easySend(lastHostId, cmd);
+                    HostVO host = _hostDao.findById(lastHostId);
+                    ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+                    VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
 
-                    if (answer != null && answer.getResult()) {
-                        VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
-                        HostVO host = _hostDao.findById(lastHostId);
-
+                    if (cluster.getHypervisorType() == HypervisorType.KVM) {
                         volService.revokeAccess(volumeInfo, host, volumeInfo.getDataStore());
-                    } else {
-                        s_logger.warn("Unable to remove host-side clustered file system for the following volume: " + volume.getUuid());
+                    }
+                    else {
+                        DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+                        DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+
+                        DettachCommand cmd = new DettachCommand(disk, null);
+
+                        cmd.setManaged(true);
+
+                        cmd.setStorageHost(storagePool.getHostAddress());
+                        cmd.setStoragePort(storagePool.getPort());
+
+                        cmd.set_iScsiName(volume.get_iScsiName());
+
+                        Answer answer = _agentMgr.easySend(lastHostId, cmd);
+
+                        if (answer != null && answer.getResult()) {
+                            volService.revokeAccess(volumeInfo, host, volumeInfo.getDataStore());
+                        } else {
+                            s_logger.warn("Unable to remove host-side clustered file system for the following volume: " + volume.getUuid());
+                        }
                     }
                 }
             }

@@ -20,12 +20,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.Storage;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.StringUtils;
@@ -37,7 +40,7 @@ import com.cloud.utils.script.Script;
 public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     private static final Logger s_logger = Logger.getLogger(IscsiAdmStorageAdaptor.class);
 
-    private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
+    private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
 
     @Override
     public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType) {
@@ -165,6 +168,23 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private void waitForDiskToBecomeUnavailable(String host, int port, String iqn, String lun) {
+        int numberOfTries = 10;
+        int timeBetweenTries = 1000;
+
+        String deviceByPath = getByPath(host, port, "/" + iqn + "/" + lun);
+
+        while (getDeviceSize(deviceByPath) > 0 && numberOfTries > 0) {
+            numberOfTries--;
+
+            try {
+                Thread.sleep(timeBetweenTries);
+            } catch (Exception ex) {
+                // don't do anything
+            }
+        }
+    }
+
     private void executeChapCommand(String path, KVMStoragePool pool, String nParameter, String vParameter, String detail) throws Exception {
         Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, s_logger);
 
@@ -193,13 +213,13 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     // example by-path: /dev/disk/by-path/ip-192.168.233.10:3260-iscsi-iqn.2012-03.com.solidfire:storagepool2-lun-0
-    private String getByPath(String host, String path) {
-        return "/dev/disk/by-path/ip-" + host + "-iscsi-" + getIqn(path) + "-lun-" + getLun(path);
+    private String getByPath(String host, int port, String path) {
+        return "/dev/disk/by-path/ip-" + host + ":" + port + "-iscsi-" + getIqn(path) + "-lun-" + getLun(path);
     }
 
     @Override
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool) {
-        String deviceByPath = getByPath(pool.getSourceHost() + ":" + pool.getSourcePort(), volumeUuid);
+        String deviceByPath = getByPath(pool.getSourceHost(), pool.getSourcePort(), volumeUuid);
         KVMPhysicalDisk physicalDisk = new KVMPhysicalDisk(deviceByPath, volumeUuid, pool);
 
         physicalDisk.setFormat(PhysicalDiskFormat.RAW);
@@ -252,7 +272,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         return tmp[index].trim();
     }
 
-    public boolean disconnectPhysicalDisk(String host, int port, String iqn, String lun) {
+    private boolean disconnectPhysicalDisk(String host, int port, String iqn, String lun) {
         // use iscsiadm to log out of the iSCSI target and un-discover it
 
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10 --logout
@@ -295,6 +315,8 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
             System.out.println("Removed iSCSI target /" + iqn + "/" + lun);
         }
 
+        waitForDiskToBecomeUnavailable(host, port, iqn, lun);
+
         return true;
     }
 
@@ -310,7 +332,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String search3 = "-iscsi-";
         String search4 = "-lun-";
 
-        if (localPath.indexOf(search3) == -1) {
+        if (!localPath.contains(search3)) {
             // this volume doesn't below to this adaptor, so just return true
             return true;
         }
@@ -356,8 +378,27 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
-        throw new UnsupportedOperationException("Copying a disk is not supported in this configuration.");
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk srcDisk, String destVolumeUuid, KVMStoragePool destPool, int timeout) {
+        QemuImg q = new QemuImg(timeout);
+
+        QemuImgFile srcFile = new QemuImgFile(srcDisk.getPath(), srcDisk.getFormat());
+
+        KVMPhysicalDisk destDisk = destPool.getPhysicalDisk(destVolumeUuid);
+
+        QemuImgFile destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
+
+        try {
+            q.convert(srcFile, destFile);
+        } catch (QemuImgException ex) {
+            String msg = "Failed to copy data from " + srcDisk.getPath() + " to " +
+                    destDisk.getPath() + ". The error was the following: " + ex.getMessage();
+
+            s_logger.error(msg);
+
+            throw new CloudRuntimeException(msg);
+        }
+
+        return destPool.getPhysicalDisk(destVolumeUuid);
     }
 
     @Override

@@ -36,6 +36,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Snapshot.State;
@@ -118,6 +119,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         mapCapabilities.put(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_VOLUME.toString(), Boolean.TRUE.toString());
+        mapCapabilities.put(DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString(), Boolean.TRUE.toString());
 
         return mapCapabilities;
     }
@@ -332,7 +334,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         float fClusterDefaultBurstIopsPercentOfMaxIops = Float.parseFloat(clusterDefaultBurstIopsPercentOfMaxIops);
 
-        return (long)(maxIops * fClusterDefaultBurstIopsPercentOfMaxIops);
+        return Math.min((long)(maxIops * fClusterDefaultBurstIopsPercentOfMaxIops), SolidFireUtil.MAX_IOPS_PER_VOLUME);
     }
 
     private SolidFireUtil.SolidFireVolume createSolidFireVolume(SolidFireUtil.SolidFireConnection sfConnection, DataObject dataObject, long sfAccountId) {
@@ -493,10 +495,15 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             // TemplateInfo sometimes has a size equal to null.
             long templateSize = templateInfo.getSize() != null ? templateInfo.getSize() : 0;
 
-            volumeSize = (long)(templateSize + templateSize * (LOWEST_HYPERVISOR_SNAPSHOT_RESERVE / 100f));
+            if (templateInfo.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                volumeSize = templateSize;
+            }
+            else {
+                volumeSize = (long)(templateSize + templateSize * (LOWEST_HYPERVISOR_SNAPSHOT_RESERVE / 100f));
+            }
         }
 
-        return volumeSize;
+        return Math.max(volumeSize, SolidFireUtil.MIN_VOLUME_SIZE);
     }
 
     private long getVolumeSizeIncludingHypervisorSnapshotReserve(long volumeSize, Integer hypervisorSnapshotReserve) {
@@ -506,7 +513,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
         }
 
-        return volumeSize;
+        return Math.max(volumeSize, SolidFireUtil.MIN_VOLUME_SIZE);
     }
 
     /**
@@ -1308,10 +1315,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             SolidFireUtil.deleteVolume(sfConnection, sfTemplateVolumeId);
 
-            VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, template.getId());
-
-            tmpltPoolDao.remove(templatePoolRef.getId());
-
             StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
 
             // getUsedBytes(StoragePool) will not include the template to delete because the "template_spool_ref" table has already been updated by this point
@@ -1329,8 +1332,54 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
-        throw new UnsupportedOperationException("Reverting not supported. Create a template or volume based on the snapshot instead.");
+    public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshot2, AsyncCompletionCallback<CommandResult> callback) {
+        VolumeInfo volumeInfo = snapshot.getBaseVolume();
+
+        VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
+
+        if (volumeVO == null || volumeVO.getRemoved() != null) {
+            String errMsg = "The volume that the snapshot belongs to no longer exists.";
+
+            CommandResult commandResult = new CommandResult();
+
+            commandResult.setResult(errMsg);
+
+            callback.complete(commandResult);
+
+            return;
+        }
+
+        SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(volumeVO.getPoolId(), storagePoolDetailsDao);
+
+        long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+
+        SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.SNAPSHOT_ID);
+
+        long sfSnapshotId = Long.parseLong(snapshotDetails.getValue());
+
+        SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection, sfVolumeId);
+
+        SolidFireUtil.SolidFireSnapshot sfSnapshot = SolidFireUtil.getSnapshot(sfConnection, sfVolumeId, sfSnapshotId);
+
+        if (sfVolume.getTotalSize() != sfSnapshot.getTotalSize()) {
+            // although the SolidFire system is capable of performing this kind of a revert, we want to prohibit it in this case in CloudStack
+            String errMsg = "The volume size is different from the snapshot size. Recover the data on the snapshot by creating " +
+                    "a new CloudStack volume from the corresponding volume snapshot.";
+
+            CommandResult commandResult = new CommandResult();
+
+            commandResult.setResult(errMsg);
+
+            callback.complete(commandResult);
+
+            return;
+        }
+
+        SolidFireUtil.rollBackVolumeToSnapshot(sfConnection, sfVolumeId, sfSnapshotId);
+
+        CommandResult commandResult = new CommandResult();
+
+        callback.complete(commandResult);
     }
 
     @Override
@@ -1338,65 +1387,77 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String iqn = null;
         String errMsg = null;
 
-        if (dataObject.getType() == DataObjectType.VOLUME) {
-            VolumeInfo volumeInfo = (VolumeInfo)dataObject;
-            iqn = volumeInfo.get_iScsiName();
-            long storagePoolId = volumeInfo.getPoolId();
-            long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
-            ResizeVolumePayload payload = (ResizeVolumePayload)volumeInfo.getpayload();
+        try {
+            if (dataObject.getType() == DataObjectType.VOLUME) {
+                VolumeInfo volumeInfo = (VolumeInfo)dataObject;
 
-            SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
-            SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection, sfVolumeId);
+                iqn = volumeInfo.get_iScsiName();
 
-            verifySufficientIopsForStoragePool(storagePoolId, volumeInfo.getId(), payload.newMinIops);
-            verifySufficientBytesForStoragePool(storagePoolId, volumeInfo.getId(), payload.newSize, payload.newHypervisorSnapshotReserve);
+                long storagePoolId = volumeInfo.getPoolId();
+                long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
 
-            long sfNewVolumeSize = sfVolume.getTotalSize();
+                ResizeVolumePayload payload = (ResizeVolumePayload)volumeInfo.getpayload();
 
-            Integer hsr = volumeInfo.getHypervisorSnapshotReserve();
+                SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
+                SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection, sfVolumeId);
 
-            if (payload.newSize != null || payload.newHypervisorSnapshotReserve != null) {
-                if (payload.newHypervisorSnapshotReserve != null) {
-                    if (hsr != null) {
-                        if (payload.newHypervisorSnapshotReserve > hsr) {
+                long newMinIops = payload.newMinIops != null ? payload.newMinIops : sfVolume.getMinIops();
+                long newMaxIops = payload.newMaxIops != null ? payload.newMaxIops : sfVolume.getMaxIops();
+                long newSize = payload.newSize != null ? payload.newSize : volumeInfo.getSize();
+
+                verifySufficientIopsForStoragePool(storagePoolId, volumeInfo.getId(), newMinIops);
+                verifySufficientBytesForStoragePool(storagePoolId, volumeInfo.getId(), newSize, payload.newHypervisorSnapshotReserve);
+
+                long sfNewVolumeSize = sfVolume.getTotalSize();
+
+                Integer hsr = volumeInfo.getHypervisorSnapshotReserve();
+
+                if (payload.newSize != null || payload.newHypervisorSnapshotReserve != null) {
+                    if (payload.newHypervisorSnapshotReserve != null) {
+                        if (hsr != null) {
+                            if (payload.newHypervisorSnapshotReserve > hsr) {
+                                hsr = payload.newHypervisorSnapshotReserve;
+                            }
+                        } else {
                             hsr = payload.newHypervisorSnapshotReserve;
                         }
                     }
-                    else {
-                        hsr = payload.newHypervisorSnapshotReserve;
-                    }
+
+                    sfNewVolumeSize = getVolumeSizeIncludingHypervisorSnapshotReserve(newSize, hsr);
                 }
 
-                sfNewVolumeSize = getVolumeSizeIncludingHypervisorSnapshotReserve(payload.newSize, hsr);
+                Map<String, String> mapAttributes = new HashMap<>();
+
+                mapAttributes.put(SolidFireUtil.CloudStackVolumeId, String.valueOf(volumeInfo.getId()));
+                mapAttributes.put(SolidFireUtil.CloudStackVolumeSize, NumberFormat.getInstance().format(payload.newSize));
+
+                SolidFireUtil.modifyVolume(sfConnection, sfVolumeId, sfNewVolumeSize, mapAttributes,
+                        newMinIops, newMaxIops, getDefaultBurstIops(storagePoolId, newMaxIops));
+
+                VolumeVO volume = volumeDao.findById(volumeInfo.getId());
+
+                volume.setMinIops(newMinIops);
+                volume.setMaxIops(newMaxIops);
+                volume.setHypervisorSnapshotReserve(hsr);
+
+                volumeDao.update(volume.getId(), volume);
+
+                // SolidFireUtil.VOLUME_SIZE was introduced in 4.5.
+                updateVolumeDetails(volume.getId(), sfNewVolumeSize);
+            } else {
+                errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to resize";
             }
-
-            Map<String, String> mapAttributes = new HashMap<>();
-
-            mapAttributes.put(SolidFireUtil.CloudStackVolumeId, String.valueOf(volumeInfo.getId()));
-            mapAttributes.put(SolidFireUtil.CloudStackVolumeSize, NumberFormat.getInstance().format(payload.newSize));
-
-            SolidFireUtil.modifyVolume(sfConnection, sfVolumeId, sfNewVolumeSize, mapAttributes,
-                    payload.newMinIops, payload.newMaxIops, getDefaultBurstIops(storagePoolId, payload.newMaxIops));
-
-            VolumeVO volume = volumeDao.findById(volumeInfo.getId());
-
-            volume.setMinIops(payload.newMinIops);
-            volume.setMaxIops(payload.newMaxIops);
-            volume.setHypervisorSnapshotReserve(hsr);
-
-            volumeDao.update(volume.getId(), volume);
-
-            // SolidFireUtil.VOLUME_SIZE was introduced in 4.5.
-            updateVolumeDetails(volume.getId(), sfNewVolumeSize);
-        } else {
-            errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to resize";
         }
+        catch (Exception ex) {
+            errMsg = ex.getMessage();
+        }
+        finally {
+            CreateCmdResult result = new CreateCmdResult(iqn, new Answer(null, errMsg == null, errMsg));
 
-        CreateCmdResult result = new CreateCmdResult(iqn, new Answer(null, errMsg == null, errMsg));
+            result.setResult(errMsg);
 
-        result.setResult(errMsg);
-
-        callback.complete(result);
+            callback.complete(result);
+        }
     }
 
     private void verifySufficientBytesForStoragePool(long requestedBytes, long storagePoolId) {

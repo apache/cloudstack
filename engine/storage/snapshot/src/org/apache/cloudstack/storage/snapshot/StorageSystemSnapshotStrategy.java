@@ -192,9 +192,52 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         return true;
     }
 
+    private void verifyFormat(VolumeInfo volumeInfo) {
+        if (volumeInfo.getFormat() != ImageFormat.VHD && volumeInfo.getFormat() != ImageFormat.QCOW2) {
+            throw new CloudRuntimeException("Only the " + ImageFormat.VHD.toString() + " and " +
+                    ImageFormat.QCOW2.toString() + " image types are currently supported.");
+        }
+    }
+
     @Override
-    public boolean revertSnapshot(SnapshotInfo snapshot) {
-        throw new UnsupportedOperationException("Reverting not supported. Create a template or volume based on the snapshot instead.");
+    public boolean revertSnapshot(SnapshotInfo snapshotInfo) {
+        VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+
+        verifyFormat(volumeInfo);
+
+        SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshotInfo.getId());
+
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException("Failed to acquire lock on the following snapshot: " + snapshotInfo.getId());
+        }
+
+        boolean success = false;
+
+        try {
+            volumeInfo.stateTransit(Volume.Event.RevertSnapshotRequested);
+
+            success = snapshotSvr.revertSnapshot(snapshotInfo);
+
+            if (!success) {
+                String errMsg = "Failed to revert a volume to a snapshot state";
+
+                s_logger.debug(errMsg);
+
+                throw new CloudRuntimeException(errMsg);
+            }
+        }
+        finally {
+            if (success) {
+                volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
+            }
+            else {
+                volumeInfo.stateTransit(Volume.Event.OperationFailed);
+            }
+
+            snapshotDao.releaseFromLockTable(snapshotInfo.getId());
+        }
+
+        return true;
     }
 
     @Override
@@ -202,9 +245,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     public SnapshotInfo takeSnapshot(SnapshotInfo snapshotInfo) {
         VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
 
-        if (volumeInfo.getFormat() != ImageFormat.VHD) {
-            throw new CloudRuntimeException("Only the " + ImageFormat.VHD.toString() + " image type is currently supported.");
-        }
+        verifyFormat(volumeInfo);
 
         SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshotInfo.getId());
 
@@ -219,16 +260,26 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         try {
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
 
-            // only XenServer is currently supported
-            HostVO hostVO = getHost(volumeInfo.getId());
+            final boolean canStorageSystemCreateVolumeFromSnapshot = canStorageSystemCreateVolumeFromSnapshot(volumeInfo.getPoolId());
+            final boolean computeClusterSupportsVolumeClone;
 
-            boolean canStorageSystemCreateVolumeFromSnapshot = canStorageSystemCreateVolumeFromSnapshot(volumeInfo.getPoolId());
-            boolean computeClusterSupportsResign = clusterDao.getSupportsResigning(hostVO.getClusterId());
+            // only XenServer and KVM are currently supported
+            if (volumeInfo.getFormat() == ImageFormat.VHD) {
+                HostVO hostVO = getHost(volumeInfo.getId());
 
-            // if canStorageSystemCreateVolumeFromSnapshot && computeClusterSupportsResign, then take a back-end snapshot or create a back-end clone;
+                computeClusterSupportsVolumeClone = clusterDao.getSupportsResigning(hostVO.getClusterId());
+            }
+            else if (volumeInfo.getFormat() == ImageFormat.QCOW2) {
+                computeClusterSupportsVolumeClone = true;
+            }
+            else {
+                throw new CloudRuntimeException("Unsupported format");
+            }
+
+            // if canStorageSystemCreateVolumeFromSnapshot && computeClusterSupportsVolumeClone, then take a back-end snapshot or create a back-end clone;
             // else, just create a new back-end volume (eventually used to create a new SR on and to copy a VDI to)
 
-            if (canStorageSystemCreateVolumeFromSnapshot && computeClusterSupportsResign) {
+            if (canStorageSystemCreateVolumeFromSnapshot && computeClusterSupportsVolumeClone) {
                 SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(snapshotInfo.getId(),
                     "takeSnapshot",
                     Boolean.TRUE.toString(),
@@ -245,7 +296,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 throw new CloudRuntimeException(result.getResult());
             }
 
-            if (!canStorageSystemCreateVolumeFromSnapshot || !computeClusterSupportsResign) {
+            if (!canStorageSystemCreateVolumeFromSnapshot || !computeClusterSupportsVolumeClone) {
                 performSnapshotAndCopyOnHostSide(volumeInfo, snapshotInfo);
             }
 
@@ -292,19 +343,27 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     private boolean canStorageSystemCreateVolumeFromSnapshot(long storagePoolId) {
-        boolean supportsCloningVolumeFromSnapshot = false;
+        return storageSystemSupportsCapability(storagePoolId, DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString());
+    }
+
+    private boolean canStorageSystemRevertVolumeToSnapshot(long storagePoolId) {
+        return storageSystemSupportsCapability(storagePoolId, DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString());
+    }
+
+    private boolean storageSystemSupportsCapability(long storagePoolId, String capability) {
+        boolean supportsCapability = false;
 
         DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
 
         if (mapCapabilities != null) {
-            String value = mapCapabilities.get(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString());
+            String value = mapCapabilities.get(capability);
 
-            supportsCloningVolumeFromSnapshot = Boolean.valueOf(value);
+            supportsCapability = Boolean.valueOf(value);
         }
 
-        return supportsCloningVolumeFromSnapshot;
+        return supportsCapability;
     }
 
     private void performSnapshotAndCopyOnHostSide(VolumeInfo volumeInfo, SnapshotInfo snapshotInfo) {
@@ -568,9 +627,18 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         }
     }
 
+    private boolean usingBackendSnapshotFor(long snapshotId) {
+        String property = getProperty(snapshotId, "takeSnapshot");
+
+        return Boolean.parseBoolean(property);
+    }
+
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
-        if (SnapshotOperation.REVERT.equals(op)) {
+        Snapshot.LocationType locationType = snapshot.getLocationType();
+
+        // If the snapshot exists on Secondary Storage, we can't delete it.
+        if (SnapshotOperation.DELETE.equals(op) && Snapshot.LocationType.SECONDARY.equals(locationType)) {
             return StrategyPriority.CANT_HANDLE;
         }
 
@@ -580,28 +648,30 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         long storagePoolId = volumeVO.getPoolId();
 
-        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        if (SnapshotOperation.REVERT.equals(op)) {
+            boolean baseVolumeExists = volumeVO.getRemoved() == null;
 
-        Snapshot.LocationType locationType = snapshot.getLocationType();
+            if (baseVolumeExists) {
+                boolean acceptableFormat = ImageFormat.QCOW2.equals(volumeVO.getFormat());
 
-        // If the snapshot exists on Secondary Storage, we can't delete it.
-        if (SnapshotOperation.DELETE.equals(op) && Snapshot.LocationType.SECONDARY.equals(locationType)) {
+                if (acceptableFormat) {
+                    boolean usingBackendSnapshot = usingBackendSnapshotFor(snapshot.getId());
+
+                    if (usingBackendSnapshot) {
+                        boolean storageSystemSupportsCapability = storageSystemSupportsCapability(storagePoolId, DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString());
+
+                        if (storageSystemSupportsCapability) {
+                            return StrategyPriority.HIGHEST;
+                        }
+                    }
+                }
+            }
+
             return StrategyPriority.CANT_HANDLE;
         }
 
-        if (dataStore != null) {
-            Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+        boolean storageSystemSupportsCapability = storageSystemSupportsCapability(storagePoolId, DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
 
-            if (mapCapabilities != null) {
-                String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-                Boolean supportsStorageSystemSnapshots = Boolean.valueOf(value);
-
-                if (supportsStorageSystemSnapshots) {
-                    return StrategyPriority.HIGHEST;
-                }
-            }
-        }
-
-        return StrategyPriority.CANT_HANDLE;
+        return storageSystemSupportsCapability ? StrategyPriority.HIGHEST : StrategyPriority.CANT_HANDLE;
     }
 }

@@ -168,6 +168,10 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         details.put(SolidFireUtil.CLUSTER_ADMIN_USERNAME, clusterAdminUsername);
         details.put(SolidFireUtil.CLUSTER_ADMIN_PASSWORD, clusterAdminPassword);
 
+        if (capacityBytes < SolidFireUtil.MIN_VOLUME_SIZE) {
+            capacityBytes = SolidFireUtil.MIN_VOLUME_SIZE;
+        }
+
         long lMinIops = 100;
         long lMaxIops = 15000;
         long lBurstIops = 15000;
@@ -214,8 +218,16 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             throw new CloudRuntimeException("The parameter '" + CAPACITY_IOPS + "' must be equal to the parameter '" + SolidFireUtil.MIN_IOPS + "'.");
         }
 
-        if (lMinIops > SolidFireUtil.MAX_IOPS_PER_VOLUME || lMaxIops > SolidFireUtil.MAX_IOPS_PER_VOLUME || lBurstIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
-            throw new CloudRuntimeException("This volume cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
+        if (lMinIops > SolidFireUtil.MAX_MIN_IOPS_PER_VOLUME) {
+            throw new CloudRuntimeException("This volume's Min IOPS cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_MIN_IOPS_PER_VOLUME) + " IOPS.");
+        }
+
+        if (lMaxIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
+            throw new CloudRuntimeException("This volume's Max IOPS cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
+        }
+
+        if (lBurstIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
+            throw new CloudRuntimeException("This volume's Burst IOPS cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
         }
 
         details.put(SolidFireUtil.MIN_IOPS, String.valueOf(lMinIops));
@@ -671,8 +683,8 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         long burstIops = currentBurstIops;
 
         if (capacityIops != null) {
-            if (capacityIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
-                throw new CloudRuntimeException("This volume cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
+            if (capacityIops > SolidFireUtil.MAX_MIN_IOPS_PER_VOLUME) {
+                throw new CloudRuntimeException("This volume cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_MIN_IOPS_PER_VOLUME) + " IOPS.");
             }
 
             float maxPercentOfMin = currentMaxIops / (float)currentMinIops;
