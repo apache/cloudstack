@@ -108,8 +108,8 @@ public class VmdkFileDescriptor {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         try {
-            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent)));
-            out = new BufferedWriter(new OutputStreamWriter(bos));
+            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent),"UTF-8"));
+            out = new BufferedWriter(new OutputStreamWriter(bos,"UTF-8"));
             String line;
             while ((line = in.readLine()) != null) {
                 // ignore empty and comment lines
