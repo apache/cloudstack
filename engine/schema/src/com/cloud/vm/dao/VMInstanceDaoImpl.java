@@ -456,6 +456,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             // state is same, don't need to update
             return true;
         }
+        if(ifStateUnchanged(oldState,newState, oldHostId, newHostId)) {
+            return true;
+        }
 
         // lock the target row at beginning to avoid lock-promotion caused deadlock
         lockRow(vm.getId(), true);
@@ -501,6 +504,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             }
         }
         return result > 0;
+    }
+
+    boolean ifStateUnchanged(State oldState, State newState, Long oldHostId, Long newHostId ) {
+        if (oldState == State.Stopped && newState == State.Stopped && newHostId == null && oldHostId == null) {
+            // No change , no need to update
+            return true;
+        }
+        return false;
     }
 
     @Override
