@@ -32,6 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.io.UnsupportedEncodingException;
 
 import com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
