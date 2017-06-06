@@ -4725,7 +4725,7 @@ class VmSnapshot:
 
     @classmethod
     def create(cls, apiclient, vmid, snapshotmemory="false",
-               name=None, description=None):
+               name=None, description=None, projectid=None):
         cmd = createVMSnapshot.createVMSnapshotCmd()
         cmd.virtualmachineid = vmid
 
@@ -4735,6 +4735,8 @@ class VmSnapshot:
             cmd.name = name
         if description:
             cmd.description = description
+        if projectid:
+            cmd.projectid = projectid
         return VmSnapshot(apiclient.createVMSnapshot(cmd).__dict__)
 
     @classmethod
