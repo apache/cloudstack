@@ -3499,7 +3499,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         ManagedObjectReference morDc = null;
         ManagedObjectReference morDcOfTargetHost = null;
         ManagedObjectReference morTgtHost = new ManagedObjectReference();
-        ManagedObjectReference morTgtDatastore = new ManagedObjectReference();
         VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
         List<VirtualMachineRelocateSpecDiskLocator> diskLocators = new ArrayList<VirtualMachineRelocateSpecDiskLocator>();
         VirtualMachineRelocateSpecDiskLocator diskLocator = null;
@@ -3554,8 +3553,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
-                morTgtDatastore = morDsAtTarget;
-
+                if (morDsAtSource == null) {
+                    s_logger.debug("Source data store is null for srcHyperHost " + srcHyperHost.getHyperHostName() + " uuid = " + filerTo.getUuid());
+                }
                 // If host version is below 5.1 then simultaneous change of VM's datastore and host is not supported.
                 // So since only the datastore will be changed first, ensure the target datastore is mounted on source host.
                 if (srcHostApiVersion.compareTo("5.1") < 0) {
@@ -3589,11 +3589,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             throw new Exception("Target VMFS datastore: " + tgtDsPath + " is not accessible on source host: " + _hostName);
                         }
                     }
-                    morTgtDatastore = morDsAtSource;
+                }
+                else {
+                    if (morDsAtSource == null) {
+                        String msg = "Unable to find the source datastore: " + filerTo.getUuid() + " on source host: " + srcHyperHost.getHyperHostName()
+                                + " to execute MigrateWithStorageCommand";
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
                 }
 
                 if (volume.getType() == Volume.Type.ROOT) {
-                    relocateSpec.setDatastore(morTgtDatastore);
+                    relocateSpec.setDatastore(morDsAtTarget);
                 }
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morDsAtSource);
