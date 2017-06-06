@@ -408,6 +408,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
                         boolean hostHasCpuCapability, hostHasCapacity = false;
+                        boolean clusterSuitable = true;
                         hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
 
                         if (hostHasCpuCapability) {
@@ -419,8 +420,17 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
                         }
 
-                        if (hostHasCapacity
-                                && hostHasCpuCapability) {
+                        DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(),
+                                host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
+                        if(planner != null && planner.canHandle(vmProfile, lastPlan, avoids) && planner instanceof DeploymentClusterPlanner) {
+                            List<Long> cls = ((DeploymentClusterPlanner)planner).orderClusters(vmProfile, lastPlan, avoids);
+                            if(cls == null || cls.isEmpty()) {
+                                clusterSuitable = false;
+                                s_logger.debug("The last cluster: " + lastPlan.getClusterId() + " does not have enough capacity for VM: " + vmProfile.getHostName());
+                            }
+                        }
+
+                        if (hostHasCapacity && hostHasCpuCapability && clusterSuitable) {
                             s_logger.debug("The last host of this VM is UP and has enough capacity");
                             s_logger.debug("Now checking for suitable pools under zone: " + host.getDataCenterId()
                                     + ", pod: " + host.getPodId() + ", cluster: " + host.getClusterId());
@@ -436,8 +446,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             // search for storage under the zone, pod, cluster
                             // of
                             // the last host.
-                            DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(),
-                                    host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
                             Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(
                                     vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
                             Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
