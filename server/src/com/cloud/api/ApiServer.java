@@ -44,6 +44,7 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -65,6 +66,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -152,6 +154,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.lang.reflect.Type;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -428,8 +431,27 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (!(responseType.equals(HttpUtils.RESPONSE_TYPE_JSON) || responseType.equals(HttpUtils.RESPONSE_TYPE_XML))) {
                 responseType = HttpUtils.RESPONSE_TYPE_XML;
             }
-
             try {
+                //verify that parameter is legit for passing via admin port
+                String[] command = (String[]) parameterMap.get("command");
+                if (command != null) {
+                    Class<?> cmdClass = getCmdClass(command[0]);
+                    if (cmdClass != null) {
+                        List<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass, BaseCmd.class);
+                        for (Field field : fields) {
+                            Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
+                            if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
+                                continue;
+                            }
+                            Object paramObj = parameterMap.get(parameterAnnotation.name());
+                            if (paramObj != null) {
+                                if (!parameterAnnotation.acceptedOnAdminPort()) {
+                                    throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Parameter " + parameterAnnotation.name() + " can't be passed through the API integration port");
+                                }
+                            }
+                        }
+                    }
+                }
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
