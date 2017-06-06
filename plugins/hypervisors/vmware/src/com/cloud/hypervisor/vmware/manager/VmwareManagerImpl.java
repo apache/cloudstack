@@ -1133,8 +1133,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws ResourceInUseException {
         Long zoneId = cmd.getZoneId();
-        // Validate zone
-        validateZone(zoneId);
+        // Validate Id of zone
+        doesZoneExist(zoneId);
         // Zone validation to check if the zone already has resources.
         // Association of VMware DC to zone is not allowed if zone already has resources added.
         validateZoneWithResources(zoneId, "remove VMware datacenter to zone");
@@ -1202,10 +1202,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private void validateZone(Long zoneId) throws InvalidParameterValueException {
         // Check if zone with specified id exists
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Can't find zone by the id specified.");
-        }
+        doesZoneExist(zoneId);
         // Check if zone is legacy zone
         if (isLegacyZone(zoneId)) {
             throw new InvalidParameterValueException("The specified zone is legacy zone. Adding VMware datacenter to legacy zone is not supported.");
@@ -1248,7 +1245,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         long vmwareDcId;
 
         // Validate if zone id parameter passed to API is valid
-        validateZone(zoneId);
+        doesZoneExist(zoneId);
 
         // Check if zone is associated with VMware DC
         vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
@@ -1263,6 +1260,17 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Currently a zone can have only 1 VMware DC associated with.
         // Returning list of VmwareDatacenterVO objects, in-line with future requirements, if any, like participation of multiple VMware DCs in a zone.
         return vmwareDcList;
+    }
+
+    private void doesZoneExist(Long zoneId) throws InvalidParameterValueException {
+        // Check if zone with specified id exists
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Can't find zone by the id specified.");
+        }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Zone with id:[" + zoneId + "] exists.");
+        }
     }
 
     @Override
