@@ -752,6 +752,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } else if (type.equals(Float.class)) {
                 errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid float value for parameter " + name;
                 Float.parseFloat(value);
+            } else if (type.equals(Long.class)) {
+                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid long value for parameter " + name;
+                Long.parseLong(value);
             }
         } catch (final Exception e) {
             // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
