@@ -161,6 +161,7 @@ public class VirtualRoutingResource {
     private ExecutionResult applyConfigToVR(String routerAccessIp, ConfigItem c, Duration timeout) {
         if (c instanceof FileConfigItem) {
             FileConfigItem configItem = (FileConfigItem)c;
+
             return _vrDeployer.createFileInVR(routerAccessIp, configItem.getFilePath(), configItem.getFileName(), configItem.getFileContents());
         } else if (c instanceof ScriptConfigItem) {
             ScriptConfigItem configItem = (ScriptConfigItem)c;
