@@ -844,8 +844,13 @@ class DeployDataCenters(object):
                     self.createPrimaryStorages(zone.primaryStorages,
                                                zoneId,
                                                )
-                enabled = getattr(zone, 'enabled', 'True')
-                if enabled == 'True' or enabled is None:
+
+                #get the variable from config file whether to enable zone or not
+                #If "enabled" tag is not found in config file, enable the zone otherwise
+                #act as mentioned in the config file
+                enabled = str(getattr(zone, 'enabled', None))
+                enabled = enabled if enabled else 'true'
+                if enabled.lower() == 'true':
                     self.enableZone(zoneId, "Enabled")
                 details = getattr(zone, 'details')
                 if details is not None:
