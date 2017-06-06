@@ -20,7 +20,7 @@ package org.apache.cloudstack.engine.cloud.entity.api;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.DiskFormat;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 public interface VolumeEntity extends CloudStackEntity {
