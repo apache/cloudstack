@@ -252,12 +252,11 @@
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
-
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
                                                 } else {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
-
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                 }
@@ -279,7 +278,7 @@
                                         label: 'label.xenserver.tools.version.61.plus',
                                         isBoolean: true,
                                         isChecked: function (args) {
-                                            var b = false;
+                                             var b = true;
                                             if (isAdmin()) {
                                                 $.ajax({
                                                     url: createURL('listConfigurations'),
@@ -288,8 +287,8 @@
                                                     },
                                                     async: false,
                                                     success: function (json) {
-                                                        if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value == 'xenserver61') {
-                                                            b = true;
+                                                        if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value != 'xenserver61') {
+                                                            b = false;
                                                         }
                                                     }
                                                 });
