@@ -705,8 +705,12 @@ class TestInternalLb(cloudstackTestCase):
                 self.apiclient, name="network.loadbalancer.haproxy.stats.port")[0].value
             settings["stats_uri"] = Configurations.list(
                 self.apiclient, name="network.loadbalancer.haproxy.stats.uri")[0].value
-            settings["username"], settings["password"] = Configurations.list(
-                self.apiclient, name="network.loadbalancer.haproxy.stats.auth")[0].value.split(":")
+            # Update global setting network.loadbalancer.haproxy.stats.auth to a known value
+            haproxy_auth = "admin:password"
+            Configurations.update(self.apiclient, "network.loadbalancer.haproxy.stats.auth", haproxy_auth)
+            self.logger.debug(
+                "Updated global setting stats network.loadbalancer.haproxy.stats.auth to %s" % (haproxy_auth))
+            settings["username"], settings["password"] = haproxy_auth.split(":")
             settings["visibility"] = Configurations.list(
                 self.apiclient, name="network.loadbalancer.haproxy.stats.visibility")[0].value
             self.logger.debug(settings)
