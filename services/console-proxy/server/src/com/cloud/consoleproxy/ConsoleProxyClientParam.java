@@ -115,7 +115,7 @@ public class ConsoleProxyClientParam {
 
     public String getClientMapKey() {
         if (clientTag != null && !clientTag.isEmpty())
-            return clientTag;
+            return clientTag + ":" + clientHostPort;
 
         return clientHostAddress + ":" + clientHostPort;
     }
