@@ -307,7 +307,11 @@ public interface ResponseGenerator {
 
     TemplateResponse createTemplateUpdateResponse(ResponseView view, VirtualMachineTemplate result);
 
-    List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
+                                                   Long zoneId, boolean readyOnly);
+
+    List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
+                                                   List<Long> zoneIds, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 

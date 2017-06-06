@@ -1197,7 +1197,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpRegisterTemplateZone: {
-        desc: 'Choose the zone where you want the template to be available, or All Zones to make it available throughout the cloud',
+        desc: 'Choose one or more zones where you want the template to be available, or All Zones to make it available throughout the cloud. (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     helpRegisterTemplateHypervisor: {

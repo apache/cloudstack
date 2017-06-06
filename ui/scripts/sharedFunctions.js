@@ -2354,3 +2354,13 @@ $.validator.addMethod("ipv46cidr", function(value, element) {
 
     return false;
 }, "The specified IPv4/IPv6 CIDR is invalid.");
+
+
+$.validator.addMethod("allzonesonly", function(value, element){
+
+    if ((value.indexOf("-1") != -1) &&(value.length > 1))
+        return false;
+    return true;
+
+},
+"All Zones cannot be combined with any other zone");
