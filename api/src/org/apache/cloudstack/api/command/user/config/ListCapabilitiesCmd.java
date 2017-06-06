@@ -44,27 +44,11 @@ public class ListCapabilitiesCmd extends BaseCmd {
 
     @Override
     public void execute() {
+
         Map<String, Object> capabilities = _mgr.listCapabilities(this);
-        CapabilitiesResponse response = new CapabilitiesResponse();
-        response.setSecurityGroupsEnabled((Boolean)capabilities.get("securityGroupsEnabled"));
-        response.setDynamicRolesEnabled(roleService.isEnabled());
-        response.setCloudStackVersion((String)capabilities.get("cloudStackVersion"));
-        response.setUserPublicTemplateEnabled((Boolean)capabilities.get("userPublicTemplateEnabled"));
-        response.setSupportELB((String)capabilities.get("supportELB"));
-        response.setProjectInviteRequired((Boolean)capabilities.get("projectInviteRequired"));
-        response.setAllowUsersCreateProjects((Boolean)capabilities.get("allowusercreateprojects"));
-        response.setDiskOffMinSize((Long)capabilities.get("customDiskOffMinSize"));
-        response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
-        response.setRegionSecondaryEnabled((Boolean)capabilities.get("regionSecondaryEnabled"));
-        response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
-        response.setAllowUserViewDestroyedVM((Boolean)capabilities.get("allowUserViewDestroyedVM"));
-        response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
-        if (capabilities.containsKey("apiLimitInterval")) {
-            response.setApiLimitInterval((Integer)capabilities.get("apiLimitInterval"));
-        }
-        if (capabilities.containsKey("apiLimitMax")) {
-            response.setApiLimitMax((Integer)capabilities.get("apiLimitMax"));
-        }
+
+        CapabilitiesResponse response = _responseGenerator.
+                                        createCapabilitiesResponse(capabilities);
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

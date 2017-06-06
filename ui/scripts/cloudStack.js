@@ -152,6 +152,8 @@
 
                         g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
+                        g_enablemetricsui = json.listcapabilitiesresponse.capability.enablemetricsui;
+
                         if (json.listcapabilitiesresponse.capability.apilimitinterval != null && json.listcapabilitiesresponse.capability.apilimitmax != null) {
                             var intervalLimit = ((json.listcapabilitiesresponse.capability.apilimitinterval * 1000) / json.listcapabilitiesresponse.capability.apilimitmax) * 3; //multiply 3 to be on safe side
                             //intervalLimit = 9999; //this line is for testing only, comment it before check in
@@ -304,6 +306,8 @@
                                 g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
 
                                 g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
+
+                                g_enablemetricsui = json.listcapabilitiesresponse.capability.enablemetricsui;
 
                                 if (json.listcapabilitiesresponse.capability.apilimitinterval != null && json.listcapabilitiesresponse.capability.apilimitmax != null) {
                                     var intervalLimit = ((json.listcapabilitiesresponse.capability.apilimitinterval * 1000) / json.listcapabilitiesresponse.capability.apilimitmax) * 3; //multiply 3 to be on safe side

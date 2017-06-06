@@ -284,7 +284,12 @@
                     label: 'label.tag.value'
                 }
             },
-
+            actionPreFilter: function(args){
+                if (g_enablemetricsui)
+                    return ['add', 'snapshot', 'viewMetrics'];
+                else
+                    return ['add', 'snapshot'];
+            },
             // List view actions
             actions: {
                 // Add instance wizard

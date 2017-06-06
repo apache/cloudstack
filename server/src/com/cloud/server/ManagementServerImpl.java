@@ -686,8 +686,17 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
+    static final ConfigKey<Boolean> enableMetricsUI = new ConfigKey<Boolean>(
+                    "Advanced",
+                    Boolean.class,
+                    "enable.metrics.ui",
+                    "false",
+                    "Enable/disable metrics related screens in the management server console",
+                    true);
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "10",
                                                                                       "Specifies the length of a randomly generated password", false);
+
+
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -3027,7 +3036,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength};
+        return new ConfigKey<?>[] {vmPasswordLength, enableMetricsUI};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -3409,6 +3418,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
+        capabilities.put("enableMetricsUI", enableMetricsUI.value());
+
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

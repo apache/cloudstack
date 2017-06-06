@@ -54,6 +54,12 @@
                             label: 'label.vm.display.name'
                         }
                     },
+                    actionPreFilter: function(args){
+                        if (g_enablemetricsui)
+                            return ['add', 'viewMetrics', 'uploadVolume', 'uploadVolumefromLocal'];
+                        else
+                            return ['add', 'uploadVolume', 'uploadVolumefromLocal'];
+                    },
 
                     // List view actions
                     actions: {
