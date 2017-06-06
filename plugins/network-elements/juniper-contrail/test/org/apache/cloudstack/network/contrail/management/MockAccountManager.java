@@ -24,6 +24,8 @@ import java.net.InetAddress;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -431,5 +433,25 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Map<String, String> getKeys(GetUserKeysCmd cmd){
+        return null;
+    }
+
+    @Override
+    public void checkAccess(User user, ControlledEntity entity)
+            throws PermissionDeniedException {
+
+    }
+    @Override
+    public String getConfigComponentName() {
+        return null;
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return null;
     }
 }
