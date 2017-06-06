@@ -1298,87 +1298,102 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
+        VolumeVO volumeLock = null;
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
 
-        if (volumeToAttach.isAttachedVM()) {
-            throw new CloudRuntimeException("This volume is already attached to a VM.");
-        }
+        try {
+            volumeLock = _volsDao.acquireInLockTable(volumeId);
+            if (volumeLock == null) {
+                String message = "Could not acquire lock for volume ID " + volumeId + ". Refusing to attach.";
+                s_logger.error(message);
+                throw new CloudRuntimeException(message);
+            }
 
-        UserVmVO vm = _userVmDao.findById(vmId);
-        VolumeVO exstingVolumeOfVm = null;
-        List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
-        if (rootVolumesOfVm.size() > 1) {
-            throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state.");
-        } else {
-            if (!rootVolumesOfVm.isEmpty()) {
-                exstingVolumeOfVm = rootVolumesOfVm.get(0);
+            if (volumeToAttach.isAttachedVM()) {
+                throw new CloudRuntimeException("This volume is already attached to a VM.");
+            }
+
+            UserVmVO vm = _userVmDao.findById(vmId);
+            VolumeVO exstingVolumeOfVm = null;
+            List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
+            if (rootVolumesOfVm.size() > 1) {
+                throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state.");
             } else {
-                // locate data volume of the vm
-                List<VolumeVO> diskVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
-                for (VolumeVO diskVolume : diskVolumesOfVm) {
-                    if (diskVolume.getState() != Volume.State.Allocated) {
-                        exstingVolumeOfVm = diskVolume;
-                        break;
+                if (!rootVolumesOfVm.isEmpty()) {
+                    exstingVolumeOfVm = rootVolumesOfVm.get(0);
+                } else {
+                    // locate data volume of the vm
+                    List<VolumeVO> diskVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
+                    for (VolumeVO diskVolume : diskVolumesOfVm) {
+                        if (diskVolume.getState() != Volume.State.Allocated) {
+                            exstingVolumeOfVm = diskVolume;
+                            break;
+                        }
                     }
                 }
             }
+
+            HypervisorType rootDiskHyperType = vm.getHypervisorType();
+            HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
+
+            VolumeInfo newVolumeOnPrimaryStorage = volumeToAttach;
+
+            //don't create volume on primary storage if its being attached to the vm which Root's volume hasn't been created yet
+            StoragePoolVO destPrimaryStorage = null;
+            if (exstingVolumeOfVm != null && !exstingVolumeOfVm.getState().equals(Volume.State.Allocated)) {
+                destPrimaryStorage = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
+            }
+
+            boolean volumeOnSecondary = volumeToAttach.getState() == Volume.State.Uploaded;
+
+            if (destPrimaryStorage != null && (volumeToAttach.getState() == Volume.State.Allocated || volumeOnSecondary)) {
+                try {
+                    newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach, rootDiskHyperType, destPrimaryStorage);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Failed to create volume on primary storage", e);
+                    throw new CloudRuntimeException("Failed to create volume on primary storage", e);
+                }
+            }
+
+            // reload the volume from db
+            newVolumeOnPrimaryStorage = volFactory.getVolume(newVolumeOnPrimaryStorage.getId());
+            boolean moveVolumeNeeded = needMoveVolume(exstingVolumeOfVm, newVolumeOnPrimaryStorage);
+
+            if (moveVolumeNeeded) {
+                PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)newVolumeOnPrimaryStorage.getDataStore();
+                if (primaryStore.isLocal()) {
+                    throw new CloudRuntimeException("Failed to attach local data volume " + volumeToAttach.getName() + " to VM " + vm.getDisplayName()
+                                                    + " as migration of local data volume is not allowed");
+                }
+                StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
+
+                try {
+                    newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(),
+                                                                      vmRootVolumePool.getClusterId(), volumeToAttachHyperType);
+                } catch (ConcurrentOperationException e) {
+                    s_logger.debug("move volume failed", e);
+                    throw new CloudRuntimeException("move volume failed", e);
+                } catch (StorageUnavailableException e) {
+                    s_logger.debug("move volume failed", e);
+                    throw new CloudRuntimeException("move volume failed", e);
+                }
+            }
+            VolumeVO newVol = _volsDao.findById(newVolumeOnPrimaryStorage.getId());
+            // Getting the fresh vm object in case of volume migration to check the current state of VM
+            if (moveVolumeNeeded || volumeOnSecondary) {
+                vm = _userVmDao.findById(vmId);
+                if (vm == null) {
+                    throw new InvalidParameterValueException("VM not found.");
+                }
+            }
+            newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
+            return newVol;
         }
-
-        HypervisorType rootDiskHyperType = vm.getHypervisorType();
-        HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
-
-        VolumeInfo newVolumeOnPrimaryStorage = volumeToAttach;
-
-        //don't create volume on primary storage if its being attached to the vm which Root's volume hasn't been created yet
-        StoragePoolVO destPrimaryStorage = null;
-        if (exstingVolumeOfVm != null && !exstingVolumeOfVm.getState().equals(Volume.State.Allocated)) {
-            destPrimaryStorage = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
-        }
-
-        boolean volumeOnSecondary = volumeToAttach.getState() == Volume.State.Uploaded;
-
-        if (destPrimaryStorage != null && (volumeToAttach.getState() == Volume.State.Allocated || volumeOnSecondary)) {
-            try {
-                newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach, rootDiskHyperType, destPrimaryStorage);
-            } catch (NoTransitionException e) {
-                s_logger.debug("Failed to create volume on primary storage", e);
-                throw new CloudRuntimeException("Failed to create volume on primary storage", e);
+        finally {
+            if (volumeLock != null) {
+                _volsDao.releaseFromLockTable(volumeId);
             }
         }
-
-        // reload the volume from db
-        newVolumeOnPrimaryStorage = volFactory.getVolume(newVolumeOnPrimaryStorage.getId());
-        boolean moveVolumeNeeded = needMoveVolume(exstingVolumeOfVm, newVolumeOnPrimaryStorage);
-
-        if (moveVolumeNeeded) {
-            PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)newVolumeOnPrimaryStorage.getDataStore();
-            if (primaryStore.isLocal()) {
-                throw new CloudRuntimeException("Failed to attach local data volume " + volumeToAttach.getName() + " to VM " + vm.getDisplayName()
-                        + " as migration of local data volume is not allowed");
-            }
-            StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
-
-            try {
-                newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(),
-                        vmRootVolumePool.getClusterId(), volumeToAttachHyperType);
-            } catch (ConcurrentOperationException e) {
-                s_logger.debug("move volume failed", e);
-                throw new CloudRuntimeException("move volume failed", e);
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("move volume failed", e);
-                throw new CloudRuntimeException("move volume failed", e);
-            }
-        }
-        VolumeVO newVol = _volsDao.findById(newVolumeOnPrimaryStorage.getId());
-        // Getting the fresh vm object in case of volume migration to check the current state of VM
-        if (moveVolumeNeeded || volumeOnSecondary) {
-            vm = _userVmDao.findById(vmId);
-            if (vm == null) {
-                throw new InvalidParameterValueException("VM not found.");
-            }
-        }
-        newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
-        return newVol;
     }
 
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
