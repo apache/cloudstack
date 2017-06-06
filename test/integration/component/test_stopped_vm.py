@@ -61,6 +61,14 @@ class TestDeployVM(cloudstackTestCase):
                 cls.skip = True
                 return
 
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.skip = False
+
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                cls.skip = True
+                return
+
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
