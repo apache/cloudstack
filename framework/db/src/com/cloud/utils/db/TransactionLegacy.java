@@ -1021,6 +1021,13 @@ public class TransactionLegacy implements Closeable {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void initDataSource(Properties dbProps) {
         try {
+            Class.forName("com.mysql.jdbc.Driver");
+            s_logger.debug("MySQL driver loaded");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Cannot find MySQL driver in the classpath", e);
+        }
+
+        try {
             if (dbProps.size() == 0)
                 return;
 

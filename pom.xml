@@ -1135,6 +1135,13 @@
         <module>developer</module>
         <module>tools</module>
       </modules>
+      <dependencies>
+        <dependency>
+	  <groupId>mysql</groupId>
+	  <artifactId>mysql-connector-java</artifactId>
+	  <version>${cs.mysql.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>impatient</id>
