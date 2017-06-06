@@ -78,7 +78,7 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                 cls.testdata["service_offering"]
             )
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:
@@ -296,7 +296,7 @@ class TestLbWithLeastConn(cloudstackTestCase):
             )
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:
@@ -523,7 +523,7 @@ class TestLbWithSourceIp(cloudstackTestCase):
             )
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:
@@ -774,7 +774,7 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:
@@ -995,7 +995,7 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:
@@ -1214,7 +1214,7 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:
@@ -1437,7 +1437,7 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:
@@ -1661,7 +1661,7 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg =e 
             else:
@@ -1884,7 +1884,7 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:

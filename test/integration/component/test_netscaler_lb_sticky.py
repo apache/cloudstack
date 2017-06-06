@@ -112,7 +112,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            if cls.exception_string.lower() in e.lower():
+            if cls.exception_string.lower() in str(e).lower():
                 cls.skiptest = True
                 cls.exception_msg = e
             else:
