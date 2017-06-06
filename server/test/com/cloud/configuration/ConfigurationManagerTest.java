@@ -36,6 +36,9 @@ import java.util.Random;
 import java.util.UUID;
 
 import com.cloud.user.User;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -143,6 +146,8 @@ public class ConfigurationManagerTest {
     HostPodDao _podDao;
     @Mock
     PhysicalNetworkDao _physicalNetworkDao;
+    @Mock
+    ImageStoreDao _imageStoreDao;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -174,6 +179,7 @@ public class ConfigurationManagerTest {
         configurationMgr._clusterDao = _clusterDao;
         configurationMgr._podDao = _podDao;
         configurationMgr._physicalNetworkDao = _physicalNetworkDao;
+        configurationMgr._imageStoreDao = _imageStoreDao;
 
 
         Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
@@ -679,6 +685,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -696,6 +703,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -713,6 +721,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -726,6 +735,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -739,6 +749,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -756,6 +767,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(arrayList);
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -773,6 +785,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(arrayList);
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -790,6 +803,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(arrayList);
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }

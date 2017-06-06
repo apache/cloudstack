@@ -53,5 +53,5 @@
     <bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
     <bean id="userIpAddressDetailsDao" class="org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDaoImpl" />
     <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
-    
+    <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
 </beans>

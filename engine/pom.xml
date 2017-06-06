@@ -46,6 +46,7 @@
   <modules>
     <module>api</module>
     <module>orchestration</module>
+    <module>schema</module>
     <module>storage</module>
     <module>storage/volume</module>
     <module>storage/image</module>
@@ -53,7 +54,6 @@
     <module>storage/cache</module>
     <module>storage/snapshot</module>
     <module>components-api</module>
-    <module>schema</module>
     <module>network</module>
     <module>service</module>
   </modules>

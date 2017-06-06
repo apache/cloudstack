@@ -37,6 +37,8 @@ import javax.naming.ConfigurationException;
 import com.google.common.base.MoreObjects;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -84,7 +86,6 @@ import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -345,6 +346,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ImageStoreDao _imageStoreDao;
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
+
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -1353,7 +1355,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String errorMsg = "The zone cannot be deleted because ";
 
 
-
         // Check if there are any non-removed hosts in the zone.
         if (!_hostDao.listByDataCenterId(zoneId).isEmpty()) {
             throw new CloudRuntimeException(errorMsg + "there are servers in this zone.");
@@ -1387,6 +1388,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Check if there are any non-removed physical networks in the zone.
         if (!_physicalNetworkDao.listByZone(zoneId).isEmpty()) {
             throw new CloudRuntimeException(errorMsg + "there are physical networks in this zone.");
+        }
+
+        //check if there are any secondary stores attached to the zone
+        if(!_imageStoreDao.findByScope(new ZoneScope(zoneId)).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are Secondary storages in this zone");
         }
 
         // Check if there are any non-removed VMware datacenters in the zone.
