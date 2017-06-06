@@ -80,7 +80,6 @@ class TestHostHA(cloudstackTestCase):
                                 "protocol": "TCP",
                                 "cidrlist": '0.0.0.0/0',
                             },
-                         "ostype": 'CentOS 5.3 (64-bit)',
                          "sleep": 60,
                          "timeout": 10,
                          }
@@ -98,14 +97,13 @@ class TestHostHA(cloudstackTestCase):
     
     def createVMs(self, hostId, number, local):
         
-        self.template = get_template(
+        self.template = get_template_macchinina(
             self.apiclient,
-            self.zone.id,
-            self.services["ostype"]
+            self.zone.id
         )
             
         if self.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
+            assert False, "get_template_macchinina() failed to return template with description "
             
         self.logger.debug("Using template %s " % self.template.id)
         

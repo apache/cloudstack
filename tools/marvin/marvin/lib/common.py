@@ -296,7 +296,62 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
     if validateList(cmd_out)[0] != PASS:
         return FAILED
     return cmd_out[0]
+
 def get_template(
+        apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
+        template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
+        hypervisor=None):
+    
+    list_templatesout = get_template_list(
+        apiclient, zone_id, ostype_desc, template_filter, template_type,
+        template_id, template_name, account, domain_id, project_id,
+        hypervisor)
+
+    for template in list_templatesout:
+        if template.isready and template.templatetype == template_type and template.name.startswith('CentOS'):
+            return template
+    '''
+    Return default first template, if no template matched
+    '''
+    return list_templatesout[0]
+
+def get_template_macchinina(
+        apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
+        template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
+        hypervisor=None):
+    
+    list_templatesout = get_template_list(
+        apiclient, zone_id, ostype_desc, template_filter, template_type,
+        template_id, template_name, account, domain_id, project_id,
+        hypervisor)
+    
+    print str(list_templatesout)
+    
+    for template in list_templatesout:
+        if template.isready and template.name.startswith('Macchinina'):
+            return template
+
+    return FAILED
+
+
+def get_windows_template(
+        apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='USER',
+        template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
+        hypervisor=None):
+    
+    list_templatesout = get_template_list(
+        apiclient, zone_id, ostype_desc, template_filter, 'USER',
+        template_id, template_name, account, domain_id, project_id,
+        hypervisor)
+   
+    for template in list_templatesout:
+        if template.isready and template.templatetype == "USER" and template.ostypename == ostype_desc:
+            return template
+        
+    return FAILED
+
+
+def get_template_list(
         apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
         template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
         hypervisor=None):
@@ -326,74 +381,18 @@ def get_template(
     if account is not None:
         cmd.account = account
 
-    '''
-    Get the Templates pertaining to the inputs provided
-    '''
-    list_templatesout = apiclient.listTemplates(cmd)
-    if validateList(list_templatesout)[0] != PASS:
-        return FAILED
-
-    for template in list_templatesout:
-        if template.isready and template.templatetype == template_type:
-            return template
-    '''
-    Return default first template, if no template matched
-    '''
-    return list_templatesout[0]
-
-
-
-def get_windows_template(
-        apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='USER',
-        template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
-        hypervisor=None):
-    '''
-    @Name : get_template
-    @Desc : Retrieves the template Information based upon inputs provided
-            Template is retrieved based upon either of the inputs matched
-            condition
-    @Input : returns a template"
-    @Output : FAILED in case of any failure
-              template Information matching the inputs
-    '''
-    cmd = listTemplates.listTemplatesCmd()
-    cmd.templatefilter = template_filter
-    if domain_id is not None:
-        cmd.domainid = domain_id
-    if zone_id is not None:
-        cmd.zoneid = zone_id
-    if template_id is not None:
-        cmd.id = template_id
-    if template_name is not None:
-        cmd.name = template_name
-    if hypervisor is not None:
-        cmd.hypervisor = hypervisor
-    if project_id is not None:
-        cmd.projectid = project_id
-    if account is not None:
-        cmd.account = account
-
 
     '''
     Get the Templates pertaining to the inputs provided
     '''
     list_templatesout = apiclient.listTemplates(cmd)
-    #print("template result is %s"%(list_templatesout))
-    if list_templatesout is None:
+
+    print str(validateList(list_templatesout))
+
+    if validateList(list_templatesout)[0] == FAIL:
         return FAILED
-    if validateList(list_templatesout[0]) == FAIL :
-            return FAILED
 
-    for template in list_templatesout:
-        if template.isready and template.templatetype == "USER" and template.ostypename == ostype_desc:
-            return template
-    '''
-    Return default first template, if no template matched
-    '''
-
-    return FAILED
-
-
+    return list_templatesout
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
