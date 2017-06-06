@@ -3561,8 +3561,7 @@ class PhysicalNetwork:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
             cmd.listall = True
-        return map(lambda pn: PhysicalNetwork(
-            pn.__dict__), apiclient.listPhysicalNetworks(cmd))
+        return(apiclient.listPhysicalNetworks(cmd))
 
 
 class SecurityGroup:
