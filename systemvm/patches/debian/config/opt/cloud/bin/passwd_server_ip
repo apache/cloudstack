@@ -21,7 +21,7 @@ addr=$1;
 ENABLED=1
 while [ "$ENABLED" == "1" ]
 do
-    python /opt/cloud/bin/passwd_server_ip.py $addr >/dev/null 2>/dev/null
+    python /opt/cloud/bin/passwd_server_ip.py $addr >> /var/log/cloud.log 2>&1 &
     rc=$?
     if [ $rc -ne 0 ]
     then
