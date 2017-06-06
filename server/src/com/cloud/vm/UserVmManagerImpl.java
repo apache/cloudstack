@@ -3281,8 +3281,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
         }
 
-        // Check templates permissions
-        _accountMgr.checkAccess(owner, AccessType.UseEntry, false, template);
+        // Check templates permissions when the create vm is not from snapshot
+        if(vmSnapshot == null)
+            _accountMgr.checkAccess(owner, AccessType.UseEntry, false, template);
 
         // check if the user data is correct
         validateUserData(userData, httpmethod);
