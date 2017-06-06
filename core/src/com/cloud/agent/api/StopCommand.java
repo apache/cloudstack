@@ -28,6 +28,7 @@ public class StopCommand extends RebootCommand {
     private String publicConsoleProxyIpAddress = null;
     private GPUDeviceTO gpuDevice;
     boolean checkBeforeCleanup = false;
+    boolean forceStop = false;
 
     protected StopCommand() {
     }
@@ -43,6 +44,12 @@ public class StopCommand extends RebootCommand {
     public StopCommand(VirtualMachine vm, boolean executeInSequence, boolean checkBeforeCleanup) {
         super(vm.getInstanceName(), executeInSequence);
         this.checkBeforeCleanup = checkBeforeCleanup;
+    }
+
+    public StopCommand(VirtualMachine vm, boolean executeInSequence, boolean checkBeforeCleanup, boolean forceStop) {
+        super(vm.getInstanceName(), executeInSequence);
+        this.checkBeforeCleanup = checkBeforeCleanup;
+        this.forceStop = forceStop;
     }
 
     public StopCommand(String vmName, boolean executeInSequence, boolean checkBeforeCleanup) {
@@ -81,5 +88,9 @@ public class StopCommand extends RebootCommand {
 
     public boolean checkBeforeCleanup() {
         return this.checkBeforeCleanup;
+    }
+
+    public boolean isForceStop() {
+        return forceStop;
     }
 }
