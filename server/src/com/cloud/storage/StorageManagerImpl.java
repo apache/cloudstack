@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -2289,25 +2290,39 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         // Cleanup expired volume URLs
         List<VolumeDataStoreVO> volumesOnImageStoreList = _volumeStoreDao.listVolumeDownloadUrls();
+        HashSet<Long> expiredVolumeIds = new HashSet<Long>();
+        HashSet<Long> activeVolumeIds = new HashSet<Long>();
         for(VolumeDataStoreVO volumeOnImageStore : volumesOnImageStoreList){
 
+            long volumeId = volumeOnImageStore.getVolumeId();
             try {
                 long downloadUrlCurrentAgeInSecs = DateUtil.getTimeDifference(DateUtil.now(), volumeOnImageStore.getExtractUrlCreated());
                 if(downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval){  // URL hasnt expired yet
+                    activeVolumeIds.add(volumeId);
                     continue;
                 }
-
-                s_logger.debug("Removing download url " + volumeOnImageStore.getExtractUrl() + " for volume id " + volumeOnImageStore.getVolumeId());
+                expiredVolumeIds.add(volumeId);
+                s_logger.debug("Removing download url " + volumeOnImageStore.getExtractUrl() + " for volume id " + volumeId);
 
                 // Remove it from image store
                 ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(volumeOnImageStore.getDataStoreId(), DataStoreRole.Image);
                 secStore.deleteExtractUrl(volumeOnImageStore.getInstallPath(), volumeOnImageStore.getExtractUrl(), Upload.Type.VOLUME);
 
-                // Now expunge it from DB since this entry was created only for download purpose
+                 // Now expunge it from DB since this entry was created only for download purpose
                 _volumeStoreDao.expunge(volumeOnImageStore.getId());
             }catch(Throwable th){
                 s_logger.warn("Caught exception while deleting download url " +volumeOnImageStore.getExtractUrl() +
                         " for volume id " + volumeOnImageStore.getVolumeId(), th);
+            }
+        }
+        for(Long volumeId : expiredVolumeIds)
+        {
+            if(activeVolumeIds.contains(volumeId)) {
+                continue;
+            }
+            Volume volume = _volumeDao.findById(volumeId);
+            if (volume != null && volume.getState() == Volume.State.Expunged) {
+                _volumeDao.remove(volumeId);
             }
         }
 
