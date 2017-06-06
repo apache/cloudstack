@@ -23,7 +23,6 @@ import logging
 import cs_ip
 import cs_guestnetwork
 import cs_cmdline
-import cs_vmp
 import cs_network_acl
 import cs_firewallrules
 import cs_loadbalancer
@@ -35,8 +34,6 @@ import cs_site2sitevpn
 import cs_remoteaccessvpn
 import cs_vpnusers
 import cs_staticroutes
-
-from pprint import pprint
 
 
 class DataBag:
@@ -105,8 +102,6 @@ class updateDataBag:
             dbag = self.processGuestNetwork(self.db.getDataBag())
         elif self.qFile.type == 'cmdline':
             dbag = self.processCL(self.db.getDataBag())
-        elif self.qFile.type == 'vmpassword':
-            dbag = self.processVMpassword(self.db.getDataBag())
         elif self.qFile.type == 'networkacl':
             dbag = self.process_network_acl(self.db.getDataBag())
         elif self.qFile.type == 'firewallrules':
@@ -187,9 +182,6 @@ class updateDataBag:
 
     def process_staticroutes(self, dbag):
         return cs_staticroutes.merge(dbag, self.qFile.data)
-
-    def processVMpassword(self, dbag):
-        return cs_vmp.merge(dbag, self.qFile.data)
 
     def processForwardingRules(self, dbag):
         # to be used by both staticnat and portforwarding
@@ -275,13 +267,21 @@ class QueueFile:
     fileName = ''
     configCache = "/var/cache/cloud"
     keep = True
+    do_merge = True
     data = {}
+
+    def update_databag(self):
+        if self.do_merge:
+            logging.info("Merging because do_merge is %s" % self.do_merge)
+            updateDataBag(self)
+        else:
+            logging.info("Not merging because do_merge is %s" % self.do_merge)
 
     def load(self, data):
         if data is not None:
             self.data = data
             self.type = self.data["type"]
-            proc = updateDataBag(self)
+            self.update_databag()
             return
         fn = self.configCache + '/' + self.fileName
         try:
@@ -296,7 +296,7 @@ class QueueFile:
                 self.__moveFile(fn, self.configCache + "/processed")
             else:
                 os.remove(fn)
-            proc = updateDataBag(self)
+            self.update_databag()
 
     def setFile(self, name):
         self.fileName = name
