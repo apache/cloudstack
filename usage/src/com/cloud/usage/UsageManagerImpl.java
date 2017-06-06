@@ -1054,8 +1054,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         if (EventTypes.EVENT_VM_START.equals(event.getType())) {
             // create a new usage_VM_instance row for this VM
-            try {
-
                 SearchCriteria<UsageVMInstanceVO> sc = _usageInstanceDao.createSearchCriteria();
                 sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
                 sc.addAnd("endDate", SearchCriteria.Op.NULL);
@@ -1100,9 +1098,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName, soId, templateId, hypervisorType, event.getCreateDate(),
                                 null);
                 populateDynamicComputeOfferingDetailsAndPersist(usageInstanceNew, event.getId());
-            } catch (Exception ex) {
-                s_logger.error("Error saving usage instance for vm: " + vmId, ex);
-            }
+
         } else if (EventTypes.EVENT_VM_STOP.equals(event.getType())) {
             // find the latest usage_VM_instance row, update the stop date (should be null) to the event date
             // FIXME: search criteria needs to have some kind of type information so we distinguish between START/STOP and CREATE/DESTROY
@@ -1123,7 +1119,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 }
             }
         } else if (EventTypes.EVENT_VM_CREATE.equals(event.getType())) {
-            try {
                 Long templateId = event.getTemplateId();
                 String hypervisorType = event.getResourceType();
 
@@ -1131,9 +1126,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName,
                         soId, templateId, hypervisorType, event.getCreateDate(), null);
                 populateDynamicComputeOfferingDetailsAndPersist(usageInstanceNew, event.getId());
-            } catch (Exception ex) {
-                s_logger.error("Error saving usage instance for vm: " + vmId, ex);
-            }
         } else if (EventTypes.EVENT_VM_DESTROY.equals(event.getType())) {
             SearchCriteria<UsageVMInstanceVO> sc = _usageInstanceDao.createSearchCriteria();
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
