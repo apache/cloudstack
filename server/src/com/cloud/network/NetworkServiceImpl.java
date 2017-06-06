@@ -4140,6 +4140,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Account caller = CallContext.current().getCallingAccount();
         Long nicId = cmd.getNicId();
         long vmId = cmd.getVmId();
+        String keyword = cmd.getKeyword();
         Long networkId = cmd.getNetworkId();
         UserVmVO  userVm = _userVmDao.findById(vmId);
 
@@ -4150,7 +4151,26 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
 
         _accountMgr.checkAccess(caller, null, true, userVm);
-        return _networkMgr.listVmNics(vmId, nicId, networkId);
+        return _networkMgr.listVmNics(vmId, nicId, networkId, keyword);
+    }
+
+    @Override
+    public List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd cmd)
+    {
+        Account caller = CallContext.current().getCallingAccount();
+        Long nicId = cmd.getNicId();
+        long vmId = cmd.getVmId();
+        String keyword = cmd.getKeyword();
+        UserVmVO  userVm = _userVmDao.findById(vmId);
+
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Virtual mahine id does not exist");
+            ex.addProxyObject(Long.valueOf(vmId).toString(), "vmId");
+            throw ex;
+        }
+
+        _accountMgr.checkAccess(caller, null, true, userVm);
+        return _nicSecondaryIpDao.listSecondaryIpUsingKeyword(nicId, keyword);
     }
 
     public List<NetworkGuru> getNetworkGurus() {

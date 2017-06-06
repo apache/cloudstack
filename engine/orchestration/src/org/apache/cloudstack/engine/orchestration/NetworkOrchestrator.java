@@ -2894,12 +2894,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<? extends Nic> listVmNics(final long vmId, final Long nicId, final Long networkId) {
+    public List<? extends Nic> listVmNics(final long vmId, final Long nicId, final Long networkId, String keyword) {
         List<NicVO> result = null;
-        if (nicId == null && networkId == null) {
-            result = _nicDao.listByVmId(vmId);
+
+        if (keyword == null || keyword.isEmpty()) {
+            if (nicId == null && networkId == null) {
+                result = _nicDao.listByVmId(vmId);
+            } else {
+                result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
+            }
         } else {
-            result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
+            result = _nicDao.listByVmIdAndKeyword(vmId, keyword);
         }
 
         for (final NicVO nic : result) {
