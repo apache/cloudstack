@@ -520,7 +520,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             for (DataStore store : ssStores) {
                 tmpltStoreRef = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
                 if (tmpltStoreRef != null) {
-                    if (tmpltStoreRef.getDownloadState() == com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                    if (tmpltStoreRef.getDownloadState() == com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED && tmpltStoreRef.getDownloadPercent() == 100) {
                         tmpltStore = (ImageStoreEntity)store;
                         break;
                     }
