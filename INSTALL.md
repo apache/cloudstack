@@ -14,7 +14,7 @@ was tested against a CentOS 6.5 x86_64 setup.
 
 Install tools and dependencies used for development:
 
-    $ yum install git ant ant-devel java-1.6.0-openjdk java-1.6.0-openjdk-devel
+    $ yum install git ant ant-devel java-1.7.0-openjdk java-1.7.0-openjdk-devel
     mysql mysql-server tomcat6 mkisofs gcc python MySQL-python openssh-clients wget
 
     # yum -y update
