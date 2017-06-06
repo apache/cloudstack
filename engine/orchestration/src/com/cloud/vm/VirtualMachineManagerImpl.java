@@ -2329,8 +2329,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
                     boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-                    vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
-                            (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+                    vmData = (ConfigDriveCreation.value())?_networkModel.generateVmData(userVm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
+                            (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows):null;
                     String vmName = vm.getInstanceName();
                     String configDriveIsoRootFolder = "/tmp";
                     String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";
@@ -2342,10 +2342,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     // At source host detach the config drive iso.
                     AttachOrDettachConfigDriveCommand dettachCommand = new AttachOrDettachConfigDriveCommand(vm.getInstanceName(), vmData, VmConfigDriveLabel.value(), false);
                     try {
-                        _agentMgr.send(srcHost.getId(), dettachCommand);
-                        s_logger.debug("Deleted config drive ISO for  vm " + vm.getInstanceName() + " In host " + srcHost);
+                        if(ConfigDriveCreation.value()) {
+                            _agentMgr.send(srcHost.getId(), dettachCommand);
+                            s_logger.debug("Deleted config drive ISO for  vm " + vm.getInstanceName() + " In host " + srcHost);
+                        }
                     } catch (OperationTimedoutException e) {
-                        s_logger.debug("TIme out occured while exeuting command AttachOrDettachConfigDrive " + e.getMessage());
+                        s_logger.debug("Time out occured while exeuting command AttachOrDettachConfigDrive " + e.getMessage());
 
                     }
 
@@ -3780,7 +3782,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
                 VmOpLockStateRetry,
-                VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel};
+                VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, ConfigDriveCreation};
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
