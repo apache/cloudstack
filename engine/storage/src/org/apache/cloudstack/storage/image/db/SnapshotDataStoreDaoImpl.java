@@ -53,6 +53,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> snapshotIdSearch;
     private SearchBuilder<SnapshotDataStoreVO> volumeIdSearch;
     private SearchBuilder<SnapshotDataStoreVO> volumeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> stateSearch;
 
     private final String parentSearch = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where store_id = ? "
         + " and store_role = ? and volume_id = ? and state = 'Ready'" + " order by created DESC " + " limit 1";
@@ -122,6 +123,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         volumeSearch.and("volume_id", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         volumeSearch.and("store_role", volumeSearch.entity().getRole(), SearchCriteria.Op.EQ);
         volumeSearch.done();
+
+        stateSearch = createSearchBuilder();
+        stateSearch.and("state", stateSearch.entity().getState(), SearchCriteria.Op.IN);
+        stateSearch.done();
 
         return true;
     }
@@ -406,5 +411,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshot.setVolumeId(newVolId);
         UpdateBuilder ub = getUpdateBuilder(snapshot);
         update(ub, sc, null);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states) {
+        SearchCriteria<SnapshotDataStoreVO> sc = stateSearch.create();
+        sc.setParameters("state", (Object[])states);
+        return listBy(sc, null);
     }
 }

@@ -41,6 +41,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.hypervisor.Hypervisor;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
@@ -290,6 +292,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ResourceLimitService _resourceLimitMgr;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    SnapshotService _snapshotService;
     @Inject
     StoragePoolTagsDao _storagePoolTagsDao;
 
@@ -1075,6 +1079,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             } catch (Exception e) {
                                 s_logger.warn("Problem cleaning up primary storage pool " + pool, e);
                             }
+                        }
+                    }
+
+                    //destroy snapshots in destroying state in snapshot_store_ref
+                    List<SnapshotDataStoreVO>  ssSnapshots = _snapshotStoreDao.listByState(ObjectInDataStoreStateMachine.State.Destroying);
+                    for(SnapshotDataStoreVO ssSnapshotVO : ssSnapshots){
+                        try {
+                            _snapshotService.deleteSnapshot(snapshotFactory.getSnapshot(ssSnapshotVO.getSnapshotId(), DataStoreRole.Image));
+                        } catch (Exception e) {
+                            s_logger.debug("Failed to delete snapshot: " + ssSnapshotVO.getId() + " from storage");
                         }
                     }
 

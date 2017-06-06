@@ -194,18 +194,23 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     }
                 }
                 if (!deleted) {
-                    boolean r = snapshotSvr.deleteSnapshot(snapshot);
-                    if (r) {
-                        // delete snapshot in cache if there is
-                        List<SnapshotInfo> cacheSnaps = snapshotDataFactory.listSnapshotOnCache(snapshot.getId());
-                        for (SnapshotInfo cacheSnap : cacheSnaps) {
-                            s_logger.debug("Delete snapshot " + snapshot.getId() + " from image cache store: " + cacheSnap.getDataStore().getName());
-                            cacheSnap.delete();
+                    try {
+                        boolean r = snapshotSvr.deleteSnapshot(snapshot);
+                        if (r) {
+                            // delete snapshot in cache if there is
+                            List<SnapshotInfo> cacheSnaps = snapshotDataFactory.listSnapshotOnCache(snapshot.getId());
+                            for (SnapshotInfo cacheSnap : cacheSnaps) {
+                                s_logger.debug("Delete snapshot " + snapshot.getId() + " from image cache store: " + cacheSnap.getDataStore().getName());
+                                cacheSnap.delete();
+                            }
                         }
-                    }
-                    if (!resultIsSet) {
-                        result = r;
-                        resultIsSet = true;
+                        if (!resultIsSet) {
+                            result = r;
+                            resultIsSet = true;
+                        }
+                    } catch (Exception e) {
+                        // Snapshots which are not successfully deleted will be retried again.
+                        s_logger.debug("Failed to delete snapshot on storage. ", e);
                     }
                 }
                 snapshot = parent;
@@ -245,7 +250,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             return true;
         }
 
-        if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState())) {
+        if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState()) &&
+                !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
             throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
         }
 
