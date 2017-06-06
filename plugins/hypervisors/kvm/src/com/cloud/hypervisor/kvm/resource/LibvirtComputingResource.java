@@ -2733,7 +2733,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (forceStop) {
             return stopVMInternal(conn, vmName, true);
         }
-        String ret = stopVM(conn, vmName, false);
+        String ret = stopVMInternal(conn, vmName, false);
         if (ret == Script.ERR_TIMEOUT) {
             ret = stopVMInternal(conn, vmName, true);
         } else if (ret != null) {
