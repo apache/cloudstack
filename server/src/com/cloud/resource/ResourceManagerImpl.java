@@ -1092,7 +1092,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 try {
                     cluster.setManagedState(Managed.ManagedState.PrepareUnmanaged);
                     _clusterDao.update(cluster.getId(), cluster);
-                    List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+                    List<HostVO> hosts = listAllHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
                     for (final HostVO host : hosts) {
                         if (host.getType().equals(Host.Type.Routing) && !host.getStatus().equals(Status.Down) && !host.getStatus().equals(Status.Disconnected) &&
                                 !host.getStatus().equals(Status.Up) && !host.getStatus().equals(Status.Alert)) {
@@ -2497,6 +2497,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        return sc.list();
+    }
+
+    @Override
+    public List<HostVO> listAllHosts(final Type type, final Long clusterId, final Long podId, final long dcId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        if (type != null) {
+            sc.and(sc.entity().getType(), Op.EQ, type);
+        }
+        if (clusterId != null) {
+            sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        }
+        if (podId != null) {
+            sc.and(sc.entity().getPodId(), Op.EQ, podId);
+        }
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         return sc.list();
     }
 
