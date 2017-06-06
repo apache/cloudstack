@@ -441,6 +441,7 @@ public class CommandSetupHelper {
             }
             for (final FirewallRule rule : rules) {
                 _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
+                _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
                     final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());

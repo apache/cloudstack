@@ -449,6 +449,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         final Command[] cmds = checkForCommandsAndTag(commands);
 
+        //check what agent is returned.
         final AgentAttache agent = getAttache(hostId);
         if (agent == null || agent.isClosed()) {
             throw new AgentUnavailableException("agent not logged into this management server", hostId);

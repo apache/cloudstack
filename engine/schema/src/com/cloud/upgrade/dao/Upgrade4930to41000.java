@@ -81,6 +81,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
     public void performDataMigration(Connection conn) {
         updateSystemVmTemplates(conn);
         populateGuestOsDetails(conn);
+        updateSourceCidrs(conn);
     }
 
     @SuppressWarnings("serial")
@@ -492,5 +493,18 @@ public class Upgrade4930to41000 implements DbUpgrade {
             }
         }
 
+    }
+
+    private void updateSourceCidrs(Connection conn){
+        //with ipset the value for source cidr 0.0.0.0/0 can't be added in ipset. So changing it to network cidr.
+        try(PreparedStatement pstmt = conn.prepareStatement("UPDATE `cloud`.`firewall_rules_cidrs` AS s, (SELECT IFNULL(networks.network_cidr,networks.cidr) cidr," +
+                "`firewall_rules_cidrs`.`id`, `firewall_rules`.`traffic_type` "+
+                "FROM `cloud`.`networks`, `cloud`.`firewall_rules`,`cloud`.`firewall_rules_cidrs` WHERE `cloud`.`networks`.`id`=`cloud`.`firewall_rules`.`network_id` " +
+                "AND `cloud`.`firewall_rules`.`id` = `cloud`.`firewall_rules_cidrs`.`firewall_rule_id`) AS p " +
+                "SET `s`.`source_cidr` = `p`.`cidr` WHERE `s`.`source_cidr`=\"0.0.0.0/0\" AND `s`.`id`=`p`.`id` AND `p`.`traffic_type`=\"Egress\" ;")){
+            pstmt.execute();
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("updateSourceCidrs:Exception:" + e.getMessage(), e);
+        }
     }
 }

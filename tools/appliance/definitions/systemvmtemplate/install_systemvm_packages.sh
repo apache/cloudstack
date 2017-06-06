@@ -28,8 +28,8 @@ function install_vhd_util() {
 
 function debconf_packages() {
   echo 'sysstat sysstat/enable boolean true' | debconf-set-selections
-  echo "openswan openswan/install_x509_certificate boolean false" | debconf-set-selections
-  echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
+  echo "strongwan strongwan/install_x509_certificate boolean false" | debconf-set-selections
+  echo "strongwan strongwan/install_x509_certificate seen true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   echo "libc6 libraries/restart-without-asking boolean false" | debconf-set-selections
@@ -67,6 +67,7 @@ function install_packages() {
     xenstore-utils libxenstore3.0 \
     conntrackd ipvsadm libnetfilter-conntrack3 libnl-3-200 libnl-genl-3-200 \
     ipcalc \
+    ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
     python-flask \
