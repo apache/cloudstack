@@ -4201,13 +4201,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (status) {
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
-            for (VolumeVO volume : volumes) {
-                if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
-                }
-            }
-
             if (vmState != State.Error) {
                 // Get serviceOffering for Virtual Machine
                 ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
