@@ -16,7 +16,17 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import java.util.Date;
+import com.cloud.host.Host.Type;
+import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster;
+import com.cloud.resource.ResourceState;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -26,18 +36,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-import com.cloud.host.Host.Type;
-import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Cluster;
-import com.cloud.resource.ResourceState;
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.ha.HAConfig;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
+import java.util.Date;
 
 /**
  * Host DB view.
@@ -191,6 +190,15 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     @Column(name = "job_status")
     private int jobStatus;
+
+    @Column(name = "annotation")
+    private String annotation;
+
+    @Column(name = "last_annotated")
+    private Date lastAnnotated;
+
+    @Column(name = "username")
+    private String username;
 
     @Override
     public long getId() {
@@ -376,5 +384,21 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public String getTag() {
         return tag;
+    }
+
+    public String getAnnotation() {
+        return annotation;
+    }
+
+    public Date getLastAnnotated() {
+        return lastAnnotated;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public boolean isAnnotated() {
+        return StringUtils.isNotBlank(annotation);
     }
 }

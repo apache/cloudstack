@@ -15741,8 +15741,11 @@
                                     array1.push("&hosttags=" + todb(args.data.hosttags));
                                     
                                     if (args.data.oscategoryid != null && args.data.oscategoryid.length > 0)
-                                    array1.push("&osCategoryId=" + args.data.oscategoryid);
-                                    
+                                        array1.push("&osCategoryId=" + args.data.oscategoryid);
+
+                                    if (args.data.annotation != null && args.data.annotation.length > 0)
+                                        array1.push("&annotation=" + args.data.annotation);
+
                                     $.ajax({
                                         url: createURL("updateHost&id=" + args.context.hosts[0].id + array1.join("")),
                                         dataType: "json",
@@ -16749,9 +16752,20 @@
                                     },
                                     disconnected: {
                                         label: 'label.last.disconnected'
-                                        },
-                                        cpusockets: {
-                                        	label: 'label.number.of.cpu.sockets'
+                                    },
+                                    cpusockets: {
+                                        label: 'label.number.of.cpu.sockets'
+                                    },
+                                    annotation: {
+                                        label: 'label.annotation',
+                                        isEditable: true
+                                    },
+                                    lastannotated: {
+                                        label: 'label.last.annotated',
+                                        converter: cloudStack.converters.toLocalDate
+                                    },
+                                    username: {
+                                        label: 'label.annotated.by'
                                     }
                                 }, {
                                     
@@ -16778,6 +16792,7 @@
                                                 item.haprovider = item.hostha.haprovider;
                                                 item.haenabled = item.hostha.haenable;
                                             }
+                                            item.annotation = item.annotation;
 
                                             $.ajax({
                                                 url: createURL("listDedicatedHosts&hostid=" + args.context.hosts[0].id),

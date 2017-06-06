@@ -25,6 +25,7 @@ public class ApiConstants {
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALLOCATED_ONLY = "allocatedonly";
+    public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
     public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
@@ -637,6 +638,8 @@ public class ApiConstants {
     public static final String PHYSICAL_SIZE = "physicalsize";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String UTILIZATION = "utilization";
+    public static final String HAS_ANNOTATION = "hasannotation";
+    public static final String LAST_ANNOTATED = "lastannotated";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

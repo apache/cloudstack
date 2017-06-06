@@ -168,6 +168,9 @@ known_categories = {
     'StratosphereSsp' : ' Stratosphere SSP',
     'Metrics' : 'Metrics',
     'Infrastructure' : 'Metrics',
+    'listAnnotations' : 'Annotations',
+    'addAnnotation' : 'Annotations',
+    'removeAnnotation' : 'Annotations',
     }
 
 

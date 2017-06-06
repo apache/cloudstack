@@ -16,6 +16,32 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.gpu.VGPUTypesVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostStats;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StorageStats;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.response.GpuResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.VgpuResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,35 +49,6 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import com.cloud.host.dao.HostDetailsDao;
-import org.apache.cloudstack.ha.HAResource;
-import org.apache.cloudstack.ha.dao.HAConfigDao;
-import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.response.GpuResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.VgpuResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.gpu.HostGpuGroupsVO;
-import com.cloud.gpu.VGPUTypesVO;
-import com.cloud.host.Host;
-import com.cloud.host.HostStats;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.StorageStats;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 
 @Component
 @Local(value = {HostJoinDao.class})
@@ -244,6 +241,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setJobId(host.getJobUuid());
             hostResponse.setJobStatus(host.getJobStatus());
         }
+        hostResponse.setAnnotation(host.getAnnotation());
+        hostResponse.setLastAnnotated(host.getLastAnnotated ());
+        hostResponse.setUsername(host.getUsername());
 
         hostResponse.setObjectName("host");
 

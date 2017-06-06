@@ -388,3 +388,128 @@ CREATE VIEW `cloud`.`volume_view` AS
 -- Out-of-band management driver for nested-cloudstack
 ALTER TABLE `cloud`.`oobm` MODIFY COLUMN port VARCHAR(255);
 
+-- Annotations specifc changes following
+CREATE TABLE IF NOT EXISTS `cloud`.`annotations` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) UNIQUE,
+  `annotation` text,
+  `entity_uuid` varchar(40),
+  `entity_type` varchar(32),
+  `user_uuid` varchar(40),
+  `created` datetime COMMENT 'date of creation',
+  `removed` datetime COMMENT 'date of removal',
+  PRIMARY KEY (`id`),
+  KEY (`uuid`),
+  KEY `i_entity` (`entity_uuid`, `entity_type`, `created`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP VIEW IF EXISTS `cloud`.`last_annotation_view`;
+CREATE VIEW `last_annotation_view` AS
+    SELECT
+        `annotations`.`uuid` AS `uuid`,
+        `annotations`.`annotation` AS `annotation`,
+        `annotations`.`entity_uuid` AS `entity_uuid`,
+        `annotations`.`entity_type` AS `entity_type`,
+        `annotations`.`user_uuid` AS `user_uuid`,
+        `annotations`.`created` AS `created`,
+        `annotations`.`removed` AS `removed`
+    FROM
+        `annotations`
+    WHERE
+        `annotations`.`created` IN (SELECT
+                                        MAX(`annotations`.`created`)
+                                    FROM
+                                        `annotations`
+                                    WHERE
+                                        `annotations`.`removed` IS NULL
+                                    GROUP BY `annotations`.`entity_uuid`);
+
+DROP VIEW IF EXISTS `cloud`.`host_view`;
+CREATE VIEW `cloud`.`host_view` AS
+    SELECT
+        host.id,
+        host.uuid,
+        host.name,
+        host.status,
+        host.disconnected,
+        host.type,
+        host.private_ip_address,
+        host.version,
+        host.hypervisor_type,
+        host.hypervisor_version,
+        host.capabilities,
+        host.last_ping,
+        host.created,
+        host.removed,
+        host.resource_state,
+        host.mgmt_server_id,
+        host.cpu_sockets,
+        host.cpus,
+        host.speed,
+        host.ram,
+        cluster.id                 cluster_id,
+        cluster.uuid               cluster_uuid,
+        cluster.name               cluster_name,
+        cluster.cluster_type,
+        data_center.id             data_center_id,
+        data_center.uuid           data_center_uuid,
+        data_center.name           data_center_name,
+        data_center.networktype    data_center_type,
+        host_pod_ref.id            pod_id,
+        host_pod_ref.uuid          pod_uuid,
+        host_pod_ref.name          pod_name,
+        host_tags.tag,
+        guest_os_category.id       guest_os_category_id,
+        guest_os_category.uuid     guest_os_category_uuid,
+        guest_os_category.name     guest_os_category_name,
+        mem_caps.used_capacity     memory_used_capacity,
+        mem_caps.reserved_capacity memory_reserved_capacity,
+        cpu_caps.used_capacity     cpu_used_capacity,
+        cpu_caps.reserved_capacity cpu_reserved_capacity,
+        async_job.id               job_id,
+        async_job.uuid             job_uuid,
+        async_job.job_status       job_status,
+        async_job.account_id       job_account_id,
+        oobm.enabled       AS      `oobm_enabled`,
+        oobm.power_state   AS      `oobm_power_state`,
+        ha_config.enabled  AS      `ha_enabled`,
+        ha_config.ha_state AS      `ha_state`,
+        ha_config.provider AS      `ha_provider`,
+        `last_annotation_view`.`annotation` AS `annotation`,
+        `last_annotation_view`.`created` AS `last_annotated`,
+        `user`.`username` AS `username`
+    FROM
+        `cloud`.`host`
+            LEFT JOIN
+        `cloud`.`cluster` ON host.cluster_id = cluster.id
+            LEFT JOIN
+        `cloud`.`data_center` ON host.data_center_id = data_center.id
+            LEFT JOIN
+        `cloud`.`host_pod_ref` ON host.pod_id = host_pod_ref.id
+            LEFT JOIN
+        `cloud`.`host_details` ON host.id = host_details.host_id
+            AND host_details.name = 'guest.os.category.id'
+            LEFT JOIN
+        `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT ( host_details.value, UNSIGNED )
+            LEFT JOIN
+        `cloud`.`host_tags` ON host_tags.host_id = host.id
+            LEFT JOIN
+        `cloud`.`op_host_capacity` mem_caps ON host.id = mem_caps.host_id
+            AND mem_caps.capacity_type = 0
+            LEFT JOIN
+        `cloud`.`op_host_capacity` cpu_caps ON host.id = cpu_caps.host_id
+            AND cpu_caps.capacity_type = 1
+            LEFT JOIN
+        `cloud`.`async_job` ON async_job.instance_id = host.id
+            AND async_job.instance_type = 'Host'
+            AND async_job.job_status = 0
+            LEFT JOIN
+        `cloud`.`oobm` ON oobm.host_id = host.id
+            LEFT JOIN
+        `cloud`.`ha_config` ON ha_config.resource_id= host.id
+            AND ha_config.resource_type='Host'
+            LEFT JOIN
+        `cloud`.`last_annotation_view` ON `last_annotation_view`.`entity_uuid` = `host`.`uuid`
+            LEFT JOIN
+        `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`;
+-- End Of Annotations specific changes
