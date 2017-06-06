@@ -40,6 +40,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.io.UnsupportedEncodingException;
 
 import javax.naming.ConfigurationException;
 
