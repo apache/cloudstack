@@ -4931,10 +4931,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    public void shutdownVM(final Connection conn, final VM vm, final String vmName) throws XmlRpcException {
+    public void shutdownVM(final Connection conn, final VM vm, final String vmName, final boolean forcedStop) throws XmlRpcException {
         Task task = null;
         try {
-            task = vm.cleanShutdownAsync(conn);
+            if (forcedStop) {
+                task = vm.hardShutdownAsync(conn);
+            } else {
+                task = vm.cleanShutdownAsync(conn);
+            }
+
             try {
                 // poll every 1 seconds , timeout after 10 minutes
                 waitForTask(conn, task, 1000, 10 * 60 * 1000);
@@ -4947,7 +4952,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new CloudRuntimeException("Shutdown VM catch HandleInvalid and VM is not in HALTED state");
             }
         } catch (final XenAPIException e) {
-            s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.getUuid() + ") due to " + e.toString());
+            s_logger.debug("Unable to shutdown VM(" + vmName + ") with force=" + forcedStop + " on host(" + _host.getUuid() + ") due to " + e.toString());
             try {
                 VmPowerState state = vm.getPowerState(conn);
                 if (state == VmPowerState.RUNNING) {
