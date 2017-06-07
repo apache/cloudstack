@@ -2799,7 +2799,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
             s_logger.debug(vmDef);
-            msg = stopVM(conn, vmName);
+            msg = stopVM(conn, vmName, false);
             msg = startVM(conn, vmName, vmDef);
             return null;
         } catch (final LibvirtException e) {
@@ -2821,7 +2821,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return msg;
     }
 
-    public String stopVM(final Connect conn, final String vmName) {
+    public String stopVM(final Connect conn, final String vmName, final boolean forceStop) {
         DomainState state = null;
         Domain dm = null;
 
@@ -2842,9 +2842,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         s_logger.debug("Try to stop the vm at first");
-        String ret = stopVM(conn, vmName, false);
+        if (forceStop) {
+            return stopVMInternal(conn, vmName, true);
+        }
+        String ret = stopVMInternal(conn, vmName, false);
         if (ret == Script.ERR_TIMEOUT) {
-            ret = stopVM(conn, vmName, true);
+            ret = stopVMInternal(conn, vmName, true);
         } else if (ret != null) {
             /*
              * There is a race condition between libvirt and qemu: libvirt
@@ -2877,7 +2880,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             if (state != DomainState.VIR_DOMAIN_SHUTOFF) {
                 s_logger.debug("Try to destroy the vm");
-                ret = stopVM(conn, vmName, true);
+                ret = stopVMInternal(conn, vmName, true);
                 if (ret != null) {
                     return ret;
                 }
@@ -2887,7 +2890,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    protected String stopVM(final Connect conn, final String vmName, final boolean force) {
+    protected String stopVMInternal(final Connect conn, final String vmName, final boolean force) {
         Domain dm = null;
         try {
             dm = conn.domainLookupByName(vmName);
