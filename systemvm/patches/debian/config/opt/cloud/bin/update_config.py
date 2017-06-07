@@ -52,15 +52,16 @@ def process(do_merge=True):
     qf.setFile(sys.argv[1])
     qf.do_merge = do_merge
     qf.load(None)
-
     return qf
 
 
 def process_file():
     print "[INFO] process_file"
     qf = process()
-    # Converge
-    finish_config()
+    # These can be safely deferred, dramatically speeding up loading times
+    if not (os.environ.get('DEFER_CONFIG', False) and sys.argv[1] in ('vm_dhcp_entry.json', 'vm_metadata.json')):
+        # Converge
+        finish_config()
 
 
 def process_vmpasswd():

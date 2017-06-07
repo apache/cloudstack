@@ -32,6 +32,7 @@ while getopts 'c:' OPTION; do
         c) cfg="$OPTARG" ;;
 esac; done
 
+export DEFER_CONFIG=true
 while read line; do
     #comment
     if [[ $line == \#* ]]; then
@@ -77,6 +78,10 @@ done < $cfg
 
 # archive the configuration file
 mv $cfg /var/cache/cloud/processed/
+
+unset DEFER_CONFIG
+# trigger finish_config()
+/opt/cloud/bin/configure.py
 
 # Flush kernel conntrack table
 log_it "VR config: Flushing conntrack table"
