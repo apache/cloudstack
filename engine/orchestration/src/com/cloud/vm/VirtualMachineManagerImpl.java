@@ -1551,7 +1551,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         vmGuru.prepareStop(profile);
-        StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+
+        final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false, cleanUpEvenIfUnableToStop);
         stpCmd.setControlIp(getControlNicIpForVM(vm));
         final StopCommand stop = stpCmd;
 

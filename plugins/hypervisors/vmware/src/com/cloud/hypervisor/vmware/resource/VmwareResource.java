@@ -3238,13 +3238,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME, cmd.getVmName());
 
                     if (getVmPowerState(vmMo) != PowerState.PowerOff) {
-                        if (vmMo.safePowerOff(_shutdownWaitMs)) {
-                            return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", true);
+                        String msg = "Stop VM " + cmd.getVmName() + " Succeed";
+                        boolean success = false;
+                        if (cmd.isForceStop()) {
+                            success = vmMo.powerOff();
                         } else {
-                            String msg = "Have problem in powering off VM " + cmd.getVmName() + ", let the process continue";
-                            s_logger.warn(msg);
-                            return new StopAnswer(cmd, msg, true);
+                            success = vmMo.safePowerOff(_shutdownWaitMs);
                         }
+                        if (!success) {
+                            msg = "Have problem in powering off VM " + cmd.getVmName() + ", let the process continue";
+                            s_logger.warn(msg);
+                        }
+                        return new StopAnswer(cmd, msg, true);
                     }
 
                     String msg = "VM " + cmd.getVmName() + " is already in stopped state";
