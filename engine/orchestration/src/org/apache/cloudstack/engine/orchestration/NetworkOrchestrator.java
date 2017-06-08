@@ -1837,14 +1837,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // cleanup the entry in vm_network_map
         if(vmProfile.getType().equals(VirtualMachine.Type.User)) {
-            final NicVO nic = _nicDao.findById(nicId);
-            if(nic != null) {
-                final NetworkVO vmNetwork = _networksDao.findById(nic.getNetworkId());
-                final VMNetworkMapVO vno = _vmNetworkMapDao.findByVmAndNetworkId(vmProfile.getVirtualMachine().getId(), vmNetwork.getId());
-                if(vno != null) {
-                    _vmNetworkMapDao.remove(vno.getId());
-                }
-            }
+            cleanupVmNetworkMap(vmProfile, nicId);
         }
 
         if (networkToRelease != null) {
@@ -1860,6 +1853,22 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     //implementations. Consider removing it from interface Element
                     element.release(network, profile, vmProfile, null);
                 }
+            }
+        }
+    }
+
+    /**
+     * method to clean up entry from vm_network_map table
+     * @param vmProfile
+     * @param nicId
+     */
+    private void cleanupVmNetworkMap(VirtualMachineProfile vmProfile, long nicId) {
+        NicVO nic = _nicDao.findById(nicId);
+        if (nic != null) {
+            NetworkVO vmNetwork = _networksDao.findById(nic.getNetworkId());
+            VMNetworkMapVO vmNetworkMap = _vmNetworkMapDao.findByVmAndNetworkId(vmProfile.getVirtualMachine().getId(), vmNetwork.getId());
+            if (vmNetworkMap != null) {
+                _vmNetworkMapDao.remove(vmNetworkMap.getId());
             }
         }
     }
@@ -1904,6 +1913,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
          * because the nic is now being removed.
          */
         if (nic.getReservationStrategy() == Nic.ReservationStrategy.Create) {
+            cleanupVmNetworkMap(vm, nic.getId());
             final List<Provider> providersToImplement = getNetworkProviders(network.getId());
             for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
