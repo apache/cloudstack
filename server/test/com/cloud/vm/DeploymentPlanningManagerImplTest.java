@@ -25,6 +25,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.dao.DomainDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -421,6 +422,9 @@ public class DeploymentPlanningManagerImplTest {
         public HostGpuGroupsDao hostGpuGroupsDap() {
             return Mockito.mock(HostGpuGroupsDao.class);
         }
+
+        @Bean
+        public DomainDao domainDao() {return Mockito.mock(DomainDao.class);}
 
         public static class Library implements TypeFilter {
 

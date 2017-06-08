@@ -30,6 +30,7 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.utils.fsm.StateMachine2;
 
 import org.apache.log4j.Logger;
@@ -37,7 +38,6 @@ import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
-import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
@@ -142,6 +142,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     protected UserVmDao _vmDao;
     @Inject
     protected VMInstanceDao _vmInstanceDao;
+    @Inject
+    protected DomainDao _domainDao;
     @Inject
     protected AffinityGroupDao _affinityGroupDao;
     @Inject
@@ -588,105 +590,64 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             isExplicit = true;
         }
 
-        List<Long> allPodsInDc = _podDao.listAllPods(dc.getId());
-        List<Long> allDedicatedPods = _dedicatedDao.listAllPods();
-        allPodsInDc.retainAll(allDedicatedPods);
+        if ((vm.getType() == VirtualMachine.Type.User && !isExplicit) || vm.getType() == VirtualMachine.Type.DomainRouter) {
+            List<Long> allPodsInDc = _podDao.listAllPods(dc.getId());
+            List<Long> allDedicatedPods = _dedicatedDao.listAllPods();
+            allPodsInDc.retainAll(allDedicatedPods);
 
-        List<Long> allClustersInDc = _clusterDao.listAllClusters(dc.getId());
-        List<Long> allDedicatedClusters = _dedicatedDao.listAllClusters();
-        allClustersInDc.retainAll(allDedicatedClusters);
+            List<Long> allClustersInDc = _clusterDao.listAllClusters(dc.getId());
+            List<Long> allDedicatedClusters = _dedicatedDao.listAllClusters();
+            allClustersInDc.retainAll(allDedicatedClusters);
 
-        List<Long> allHostsInDc = _hostDao.listAllHosts(dc.getId());
-        List<Long> allDedicatedHosts = _dedicatedDao.listAllHosts();
-        allHostsInDc.retainAll(allDedicatedHosts);
+            List<Long> allHostsInDc = _hostDao.listAllHosts(dc.getId());
+            List<Long> allDedicatedHosts = _dedicatedDao.listAllHosts();
+            allHostsInDc.retainAll(allDedicatedHosts);
 
-        //Only when the type is instance VM and not explicitly dedicated.
-        if (vm.getType() == VirtualMachine.Type.User && !isExplicit) {
-            //add explicitly dedicated resources in avoidList
+            //Only when the type is instance VM and not explicitly dedicated.
+            if (vm.getType() == VirtualMachine.Type.User && !isExplicit) {
+                //add explicitly dedicated resources in avoidList
 
-            avoids.addPodList(allPodsInDc);
-            avoids.addClusterList(allClustersInDc);
-            avoids.addHostList(allHostsInDc);
-        }
+                avoids.addPodList(allPodsInDc);
+                avoids.addClusterList(allClustersInDc);
+                avoids.addHostList(allHostsInDc);
+            }
 
-        //Handle the Virtual Router Case
-        //No need to check the isExplicit. As both the cases are handled.
-        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-            long vmAccountId = vm.getAccountId();
-            long vmDomainId = vm.getDomainId();
+            //Handle the Virtual Router Case
+            //No need to check the isExplicit. As both the cases are handled.
+            if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+                long vmAccountId = vm.getAccountId();
+                long vmDomainId = vm.getDomainId();
 
-            //Lists all explicitly dedicated resources from vm account ID or domain ID.
-            List<Long> allPodsFromDedicatedID = new ArrayList<Long>();
-            List<Long> allClustersFromDedicatedID = new ArrayList<Long>();
-            List<Long> allHostsFromDedicatedID = new ArrayList<Long>();
+                List<Long> availablePodsFromDedicatedId = new ArrayList<Long>();
+                List<Long> availableClustersFromDedicatedId = new ArrayList<Long>();
+                List<Long> availableHostsFromDedicatedId = new ArrayList<Long>();
 
-            //Whether the dedicated resources belong to Domain or not. If not, it may belongs to Account or no dedication.
-            List<AffinityGroupDomainMapVO> domainGroupMappings = _affinityGroupDomainMapDao.listByDomain(vmDomainId);
+                for (DedicatedResourceVO vo : _dedicatedDao.listAvailableResources(vmAccountId, vmDomainId)) {
+                    if (vo.getPodId() != null) {
+                        availablePodsFromDedicatedId.add(vo.getPodId());
+                        continue;
+                    }
 
-            //For temporary storage and indexing.
-            List<DedicatedResourceVO> tempStorage;
+                    if (vo.getClusterId() != null) {
+                        availableClustersFromDedicatedId.add(vo.getClusterId());
+                        continue;
+                    }
 
-            if (domainGroupMappings == null || domainGroupMappings.isEmpty()) {
-                //The dedicated resource belongs to VM Account ID.
-
-                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null).first();
-
-                for(DedicatedResourceVO vo : tempStorage) {
-                    allPodsFromDedicatedID.add(vo.getPodId());
-                }
-
-                tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null).first();
-
-                for(DedicatedResourceVO vo : tempStorage) {
-                    allClustersFromDedicatedID.add(vo.getClusterId());
-                }
-
-                tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null).first();
-
-                for(DedicatedResourceVO vo : tempStorage) {
-                    allHostsFromDedicatedID.add(vo.getHostId());
+                    if (vo.getHostId() != null) {
+                        availableHostsFromDedicatedId.add(vo.getHostId());
+                    }
                 }
 
                 //Remove the dedicated ones from main list
-                allPodsInDc.removeAll(allPodsFromDedicatedID);
-                allClustersInDc.removeAll(allClustersFromDedicatedID);
-                allHostsInDc.removeAll(allHostsFromDedicatedID);
+                allPodsInDc.removeAll(availablePodsFromDedicatedId);
+                allClustersInDc.removeAll(availableClustersFromDedicatedId);
+                allHostsInDc.removeAll(availableHostsFromDedicatedId);
+
+                //Add in avoid list or no addition if no dedication
+                avoids.addPodList(allPodsInDc);
+                avoids.addClusterList(allClustersInDc);
+                avoids.addHostList(allHostsInDc);
             }
-            else {
-                //The dedicated resource belongs to VM Domain ID or No dedication.
-
-                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null).first();
-
-                for(DedicatedResourceVO vo : tempStorage) {
-                    allPodsFromDedicatedID.add(vo.getPodId());
-                }
-
-                tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null).first();
-
-                for(DedicatedResourceVO vo : tempStorage) {
-                    allClustersFromDedicatedID.add(vo.getClusterId());
-                }
-
-                tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null).first();
-
-                for(DedicatedResourceVO vo : tempStorage) {
-                    allHostsFromDedicatedID.add(vo.getHostId());
-                }
-
-                //Remove the dedicated ones from main list
-                allPodsInDc.removeAll(allPodsFromDedicatedID);
-                allClustersInDc.removeAll(allClustersFromDedicatedID);
-                allHostsInDc.removeAll(allHostsFromDedicatedID);
-            }
-
-            //Add in avoid list or no addition if no dedication
-            avoids.addPodList(allPodsInDc);
-            avoids.addClusterList(allClustersInDc);
-            avoids.addHostList(allHostsInDc);
         }
     }
 
