@@ -3813,8 +3813,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     break;
 
                 case PowerOff:
-                case PowerReportMissing:
                     handlePowerOffReportWithNoPendingJobsOnVM(vm);
+                    break;
+                case PowerReportMissing:
+                    handlePowerReportMissingWithNoPendingJobsOnVM(vm);
                     break;
 
                     // PowerUnknown shouldn't be reported, it is a derived
@@ -3965,6 +3967,32 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             break;
         }
     }
+
+    private void handlePowerReportMissingWithNoPendingJobsOnVM(VMInstanceVO vm) {
+        switch (vm.getState()) {
+        case Starting:
+        case Stopping:
+        case Migrating:
+            s_logger.info("VM " + vm.getInstanceName() + " is believed to be at " + vm.getState() + " but a power-report is missing for this VM");
+            // investigative action??
+            break;
+
+        case Running:
+        case Stopped:
+            s_logger.info("VM " + vm.getInstanceName() + " is believed to be at " + vm.getState() + " but a power-report is missing for this VM");
+            // corrective action?
+            break;
+
+        case Destroyed:
+        case Expunging:
+            break;
+
+        case Error:
+        default:
+            break;
+        }
+    }
+
 
     private void scanStalledVMInTransitionStateOnUpHost(final long hostId) {
         //
