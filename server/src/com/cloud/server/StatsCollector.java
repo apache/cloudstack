@@ -125,6 +125,9 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.capacity.CapacityManager.ImageStoreDisableThreshold;
+import static com.cloud.storage.StorageManager.ImageStoreAllocationAlgorithm;
+
 /**
  * Provides real time stats for various agent resources up to x seconds
  *
@@ -226,7 +229,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     long autoScaleStatsInterval = -1L;
     int vmDiskStatsInterval = 0;
     List<Long> hostIds = null;
-    private double _imageStoreCapacityThreshold = 0.90;
 
     String externalStatsPrefix = "";
     String externalStatsHost = null;
@@ -1112,10 +1114,33 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     public boolean imageStoreHasEnoughCapacity(DataStore imageStore) {
         StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
-        if (imageStoreStats != null && (imageStoreStats.getByteUsed()/(imageStoreStats.getCapacityBytes()*1.0)) <= _imageStoreCapacityThreshold) {
+        if (imageStoreStats != null && (imageStoreStats.getByteUsed()/(imageStoreStats.getCapacityBytes()*1.0)) <= ImageStoreDisableThreshold.value()) {
             return true;
         }
         return false;
+    }
+
+    public List<DataStore> reOrderImageStores(List<DataStore> imageStores) {
+        String allocationAlgorithm = ImageStoreAllocationAlgorithm.value();
+        if (allocationAlgorithm.equals("random")) {
+            Collections.shuffle(imageStores);
+        } else if (allocationAlgorithm.equals("firstfitleastconsumed")) {
+            imageStores.sort((ds1, ds2) -> {
+                StorageStats ds1stats = _storageStats.get(ds1.getId());
+                StorageStats ds2stats = _storageStats.get(ds2.getId());
+                if (ds1stats == null) {
+                    return (ds2stats == null) ? 0 : 1;
+                }
+                if (ds2stats == null) {
+                    return -1;
+                }
+                Double ds1Used = ds1stats.getByteUsed() / (ds1stats.getCapacityBytes() * 1.0);
+                Double ds2Used = ds2stats.getByteUsed() / (ds2stats.getCapacityBytes() * 1.0);
+                return ds1Used.compareTo(ds2Used);
+            });
+        }
+
+        return imageStores;
     }
 
     public StorageStats getStorageStats(long id) {

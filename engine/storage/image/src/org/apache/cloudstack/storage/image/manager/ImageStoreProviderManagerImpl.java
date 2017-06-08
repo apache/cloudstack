@@ -19,9 +19,7 @@
 package org.apache.cloudstack.storage.image.manager;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -146,12 +144,8 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     @Override
     public DataStore getImageStore(List<DataStore> imageStores) {
         if (imageStores.size() > 1) {
-            Collections.shuffle(imageStores); // Randomize image store list.
-            Iterator<DataStore> i = imageStores.iterator();
-            DataStore imageStore = null;
-            while(i.hasNext()) {
-                imageStore = i.next();
-                // Return image store if used percentage is less then threshold value i.e. 90%.
+            imageStores = _statsCollector.reOrderImageStores(imageStores);
+            for (DataStore imageStore : imageStores) {
                 if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
                     return imageStore;
                 }
