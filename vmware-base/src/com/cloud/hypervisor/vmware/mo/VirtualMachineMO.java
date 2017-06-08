@@ -902,6 +902,38 @@ public class VirtualMachineMO extends BaseMO {
         return networks;
     }
 
+    public List<DatastoreMO> getAllDatastores() throws Exception {
+        PropertySpec pSpec = new PropertySpec();
+        pSpec.setType("Datastore");
+        pSpec.getPathSet().add("name");
+
+        TraversalSpec vmDatastoreTraversal = new TraversalSpec();
+        vmDatastoreTraversal.setType("VirtualMachine");
+        vmDatastoreTraversal.setPath("datastore");
+        vmDatastoreTraversal.setName("vmDatastoreTraversal");
+
+        ObjectSpec oSpec = new ObjectSpec();
+        oSpec.setObj(_mor);
+        oSpec.setSkip(Boolean.TRUE);
+        oSpec.getSelectSet().add(vmDatastoreTraversal);
+
+        PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+        pfSpec.getPropSet().add(pSpec);
+        pfSpec.getObjectSet().add(oSpec);
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        pfSpecArr.add(pfSpec);
+
+        List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
+
+        List<DatastoreMO> datastores = new ArrayList<DatastoreMO>();
+        if (ocs != null && ocs.size() > 0) {
+            for (ObjectContent oc : ocs) {
+                datastores.add(new DatastoreMO(_context, oc.getObj()));
+            }
+        }
+        return datastores;
+    }
+
     /**
      * Retrieve path info to access VM files via vSphere web interface
      * @return [0] vm-name, [1] data-center-name, [2] datastore-name
