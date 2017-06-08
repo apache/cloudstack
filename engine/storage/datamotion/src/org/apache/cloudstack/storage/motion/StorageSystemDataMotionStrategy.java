@@ -711,6 +711,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
         catch (Exception ex) {
             errMsg = ex.getMessage() != null ? ex.getMessage() : "Copy operation failed in 'StorageSystemDataMotionStrategy.handleCreateVolumeFromSnapshotBothOnStorageSystem'";
+            copyCmdAnswer = new CopyCmdAnswer(errMsg);
         }
 
         CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
