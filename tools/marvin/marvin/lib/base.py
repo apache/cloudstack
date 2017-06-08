@@ -1649,6 +1649,30 @@ class NATRule:
 
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
 
+    @classmethod
+    def update(self, apiclient, id, virtual_machine, services, fordisplay=False,
+           vmguestip=None):
+        """Create Port forwarding rule"""
+        cmd = updatePortForwardingRule.updatePortForwardingRuleCmd()
+        cmd.id = id
+
+        if "privateport" in services:
+            cmd.privateport = services["privateport"]
+
+        if "privateendport" in services:
+            cmd.privateendport = services["privateendport"]
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
+
+        if fordisplay:
+            cmd.fordisplay = fordisplay
+
+        if virtual_machine.id:
+            cmd.virtualmachineid = virtual_machine.id
+
+        return NATRule(apiclient.updatePortForwardingRule(cmd).__dict__)
+
     def delete(self, apiclient):
         """Delete port forwarding"""
         cmd = deletePortForwardingRule.deletePortForwardingRuleCmd()

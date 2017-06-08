@@ -1525,7 +1525,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_MODIFY, eventDescription = "updating forwarding rule", async = true)
-    public PortForwardingRule updatePortForwardingRule(long id, Integer privatePort, Long virtualMachineId, Ip vmGuestIp, String customId, Boolean forDisplay) {
+    public PortForwardingRule updatePortForwardingRule(long id, Integer privatePort, Integer privateEndPort, Long virtualMachineId, Ip vmGuestIp, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         PortForwardingRuleVO rule = _portForwardingDao.findById(id);
         if (rule == null) {
@@ -1541,8 +1541,23 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             rule.setDisplay(forDisplay);
         }
 
-        if (!rule.getSourcePortStart().equals(rule.getSourcePortEnd()) && privatePort != null) {
-            throw new InvalidParameterValueException("Unable to update the private port of port forwarding rule as  the rule has port range : " + rule.getSourcePortStart() + " to " + rule.getSourcePortEnd());
+        if (privatePort != null && !NetUtils.isValidPort(privatePort)) {
+            throw new InvalidParameterValueException("publicPort is an invalid value: " + privatePort);
+        }
+        if (privateEndPort != null && !NetUtils.isValidPort(privateEndPort)) {
+            throw new InvalidParameterValueException("Public port range is an invalid value: " + privateEndPort);
+        }
+
+        //in case of port range
+        if (!rule.getSourcePortStart().equals(rule.getSourcePortEnd())) {
+            if (privatePort != null && privateEndPort != null && ((privateEndPort - privatePort) != (rule.getSourcePortEnd() - rule.getSourcePortStart())))
+            {
+                throw new InvalidParameterValueException("Unable to update the private port range of port forwarding rule as  " +
+                        "the provided port range is not consistent with the port range : " + rule.getSourcePortStart() + " to " + rule.getSourcePortEnd());
+            } else if ((privatePort == null || privateEndPort == null) && !(privatePort == null && privateEndPort == null)) {
+                throw new InvalidParameterValueException("Unable to update the private port range of port forwarding rule as  " +
+                        "the provided port range is not consistent with the port range : " + rule.getSourcePortStart() + " to " + rule.getSourcePortEnd());
+            }
         }
         if (virtualMachineId == null && vmGuestIp != null) {
             throw new InvalidParameterValueException("vmguestip should be set along with virtualmachineid");
@@ -1588,8 +1603,13 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         rule.setState(State.Add);
         if (privatePort != null) {
             rule.setDestinationPortStart(privatePort.intValue());
-            rule.setDestinationPortEnd(privatePort.intValue());
+            rule.setDestinationPortEnd((privateEndPort == null) ? privatePort.intValue() : privateEndPort.intValue());
         }
+        if (privateEndPort != null) {
+            rule.setDestinationPortStart((privatePort == null) ? privateEndPort.intValue() : privatePort.intValue());
+            rule.setDestinationPortEnd(privateEndPort);
+        }
+
         if (virtualMachineId != null) {
             rule.setVirtualMachineId(virtualMachineId);
             rule.setDestinationIpAddress(dstIp);
