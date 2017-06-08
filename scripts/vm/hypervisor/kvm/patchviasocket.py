@@ -22,9 +22,10 @@
 # reads it from /dev/vport0p1 in cloud_early_config
 #
 
-import argparse
 import os
 import socket
+
+from optparse import OptionParser
 
 SOCK_FILE = "/var/lib/libvirt/qemu/{name}.agent"
 PUB_KEY_FILE = "/root/.ssh/id_rsa.pub.cloud"
@@ -65,12 +66,15 @@ def send_to_socket(sock_file, key_file, cmdline):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Send configuration to system VM socket")
-    parser.add_argument("-n", "--name", required=True, help="Name of VM")
-    parser.add_argument("-p", "--cmdline", required=True, help="Command line")
+    parser = OptionParser(usage="Send configuration to system VM socket")
+    parser.add_option("-n", "--name", action="store", dest="name", help="Name of the VM")
+    parser.add_option("-p", "--cmdline", action="store", dest="cmdline", help="Command line")
 
-    arguments = parser.parse_args()
+    (options, args) = parser.parse_args()
 
-    socket_file = SOCK_FILE.format(name=arguments.name)
+    if not options.name or not options.cmdline:
+        parser.error("VM name and cmdline are required options you need to pass")
 
-    exit(send_to_socket(socket_file, PUB_KEY_FILE, arguments.cmdline))
+    socket_file = SOCK_FILE.format(name=options.name)
+
+    exit(send_to_socket(socket_file, PUB_KEY_FILE, options.cmdline))
