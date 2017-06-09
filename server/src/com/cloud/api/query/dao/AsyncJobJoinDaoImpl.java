@@ -19,13 +19,10 @@ package com.cloud.api.query.dao;
 import java.util.Date;
 import java.util.List;
 
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.SerializationContext;
@@ -89,13 +86,12 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
     }
 
     @Override
-    public AsyncJobJoinVO newAsyncJobView(AsyncJob job) {
+    public AsyncJobJoinVO newAsyncJobView(long jobId) {
         SearchCriteria<AsyncJobJoinVO> sc = jobIdSearch.create();
-        sc.setParameters("id", job.getId());
-        List<AsyncJobJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
-        assert accounts != null && accounts.size() == 1 : "No async job found for job id " + job.getId();
-        return accounts.get(0);
-
+        sc.setParameters("id", jobId);
+        List<AsyncJobJoinVO> jobs = searchIncludingRemoved(sc, null, null, false);
+        assert jobs != null && jobs.size() == 1 : "No async job found for job id " + jobId;
+        return jobs.get(0);
     }
 
 }

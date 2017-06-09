@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.BulkDeployVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -482,4 +483,5 @@ public interface UserVmService {
      */
     public boolean isDisplayResourceEnabled(Long vmId);
 
+    List<Long> bulkDeployVirtualMachine(BulkDeployVMCmd cmd) throws ResourceAllocationException;
 }

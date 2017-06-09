@@ -16,15 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -39,11 +40,37 @@ import com.cloud.vm.VirtualMachine;
 public class DeployVMCmdByAdmin extends DeployVMCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmdByAdmin.class.getName());
 
+    private void processContextParameters() {
+        CallContext ctx = CallContext.current();
+        Object obj = ctx.getContextParameter(ApiConstants.VIRTUAL_MACHINE_IDS);
+        if (obj != null && obj instanceof String) {
+            for (String id : ((String)obj).split(",")) {
+                id = id.trim();
+                if (StringUtils.isNotEmpty(id) && StringUtils.isNumeric(id)) {
+                    vmIds.add(Long.valueOf(id));
+                }
+            }
+        }
+        obj = ctx.getContextParameter(ApiConstants.POD_ID);
+        if (obj != null && obj instanceof String) {
+            String pod = (String)obj;
+            if (StringUtils.isNumeric(pod)) {
+                podId = Long.valueOf(pod);
+            }
+        }
+        obj = ctx.getContextParameter(ApiConstants.CLUSTER_ID);
+        if (obj != null && obj instanceof String) {
+            String cluster = (String)obj;
+            if (StringUtils.isNumeric(cluster)) {
+                clusterId = Long.valueOf(cluster);
+            }
+        }
+    }
 
     @Override
-    public void execute(){
-        UserVm result;
-
+    public void execute() {
+        processContextParameters();
+        UserVm result = null;
         if (getStartVm()) {
             try {
                 CallContext.current().setEventDetails("Vm Id: "+getEntityId());

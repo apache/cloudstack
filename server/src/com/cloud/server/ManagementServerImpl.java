@@ -232,6 +232,7 @@ import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vm.AddNicToVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.BulkDeployVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.DestroyVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
@@ -2822,6 +2823,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateTemplatePermissionsCmd.class);
         cmdList.add(AddNicToVMCmd.class);
         cmdList.add(DeployVMCmd.class);
+        cmdList.add(BulkDeployVMCmd.class);
         cmdList.add(DestroyVMCmd.class);
         cmdList.add(ExpungeVMCmd.class);
         cmdList.add(GetVMPasswordCmd.class);

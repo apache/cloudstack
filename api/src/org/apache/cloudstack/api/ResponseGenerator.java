@@ -455,4 +455,6 @@ public interface ResponseGenerator {
     ListResponse<UpgradeRouterTemplateResponse> createUpgradeRouterTemplateResponse(List<Long> jobIds);
 
     SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey);
+
+    List<AsyncJobResponse> createAsyncJobResponse(List<Long> jobIds);
 }

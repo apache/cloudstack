@@ -184,9 +184,17 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
+    protected Long podId = null;
+    protected Long clusterId = null;
+    protected List<Long> vmIds = new ArrayList<Long>();
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
+    public List<Long> getVmIds() {
+        return vmIds;
+    }
 
     public String getAccountName() {
         if (accountName == null) {
@@ -252,10 +260,12 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             return displayVm;
     }
 
+    @Override
     public List<String> getSecurityGroupNameList() {
         return securityGroupNameList;
     }
 
+    @Override
     public List<Long> getSecurityGroupIdList() {
         return securityGroupIdList;
     }
@@ -278,6 +288,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     public List<Long> getNetworkIds() {

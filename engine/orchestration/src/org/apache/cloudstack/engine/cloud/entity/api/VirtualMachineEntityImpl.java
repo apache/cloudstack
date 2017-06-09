@@ -23,8 +23,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
@@ -52,7 +52,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     public void init(String vmId, String owner, String hostName, String displayName, int cpu, int speed, long memory, List<String> computeTags,
-        List<String> rootDiskTags, List<String> networks) {
+            List<String> rootDiskTags, List<String> networks) {
         init(vmId);
         this.vmEntityVO.setOwner(owner);
         this.vmEntityVO.setHostname(hostName);
@@ -94,13 +94,11 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
     @Override
     public String getCurrentState() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public String getDesiredState() {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -116,7 +114,6 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
     @Override
     public String getOwner() {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -132,66 +129,53 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
     @Override
     public void delDetail(String name, String value) {
-        // TODO Auto-generated method stub
     }
 
     @Override
     public void updateDetail(String name, String value) {
-        // TODO Auto-generated method stub
     }
 
     @Override
     public List<Method> getApplicableActions() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public List<String> listVolumeIds() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public List<VolumeEntity> listVolumes() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public List<String> listNicUuids() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public List<NicEntity> listNics() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public TemplateEntity getTemplate() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public List<String> listTags() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public void addTag() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void delTag() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -202,14 +186,12 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
     @Override
     public void migrateTo(String reservationId, String caller) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
-    public void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean deployOnGivenHost) throws InsufficientCapacityException,
+    public void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean retry) throws InsufficientCapacityException,
         ResourceUnavailableException {
-        manager.deployVirtualMachine(reservationId, this.vmEntityVO, caller, params, deployOnGivenHost);
+        manager.deployVirtualMachine(reservationId, this.vmEntityVO, caller, params, retry);
     }
 
     @Override
@@ -224,8 +206,6 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
     @Override
     public void cleanup() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -235,38 +215,28 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
     @Override
     public VirtualMachineEntity duplicate(String externalId) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public SnapshotEntity takeSnapshotOf() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public void attach(VolumeEntity volume, short deviceId) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void detach(VolumeEntity volume) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void connectTo(NetworkEntity network, short nicId) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void disconnectFrom(NetworkEntity netowrk, short nicId) {
-        // TODO Auto-generated method stub
-
     }
 
 }

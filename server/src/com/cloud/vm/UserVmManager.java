@@ -91,19 +91,20 @@ public interface UserVmManager extends UserVmService {
 
     boolean expunge(UserVmVO vm, long callerUserId, Account caller);
 
-    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
-        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams,
+            String deploymentPlannerToUse, Long podId, Long clusterId, List<Long> vmIds)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
-    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
-        ConcurrentOperationException, ManagementServerException,
-        VirtualMachineMigrationException;
+    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters)
+            throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 
     void collectVmDiskStatistics(UserVmVO userVm);
 
     UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-                                Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList) throws ResourceUnavailableException, InsufficientCapacityException;
+            Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList)
+            throws ResourceUnavailableException, InsufficientCapacityException;
 
     //the validateCustomParameters, save and remove CustomOfferingDetils functions can be removed from the interface once we can
     //find a common place for all the scaling and upgrading code of both user and systemvms.

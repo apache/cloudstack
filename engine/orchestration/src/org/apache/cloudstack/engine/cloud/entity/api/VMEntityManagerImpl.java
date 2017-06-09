@@ -218,7 +218,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public void deployVirtualMachine(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean deployOnGivenHost)
+    public void deployVirtualMachine(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean retry)
         throws InsufficientCapacityException, ResourceUnavailableException {
         //grab the VM Id and destination using the reservationId.
 
@@ -233,9 +233,9 @@ public class VMEntityManagerImpl implements VMEntityManager {
                 _itMgr.start(vm.getUuid(), params, reservedPlan, _planningMgr.getDeploymentPlannerByName(vmReservation.getDeploymentPlanner()));
             } catch (Exception ex) {
                 // Retry the deployment without using the reservation plan
-                // Retry is only done if host id is not passed in deploy virtual machine api. Otherwise
-                // the instance may be started on another host instead of the intended one.
-                if (!deployOnGivenHost) {
+                // Retry is only done if host/cluster/pod id is not exlicitly passed, otherwise
+                // the instance may be started on another host/cluster/pod instead of the intended one
+                if (retry) {
                     DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
 
                     if (reservedPlan.getAvoids() != null) {
