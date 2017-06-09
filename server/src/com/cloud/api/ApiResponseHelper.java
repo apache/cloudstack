@@ -3229,7 +3229,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             } else if(svcOffering.getRamSize() != null) {
                 usageRecResponse.setMemory(Integer.toUnsignedLong(svcOffering.getRamSize()));
             }
-            
+
         } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
             //isSourceNAT
             usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat")) ? true : false);
