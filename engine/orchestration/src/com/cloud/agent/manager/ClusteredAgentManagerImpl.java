@@ -164,6 +164,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         // Schedule tasks for agent rebalancing
         if (isAgentRebalanceEnabled()) {
+            cleanupTransferMap(_nodeId);
             s_transferExecutor.scheduleAtFixedRate(getAgentRebalanceScanTask(), 60000, 60000, TimeUnit.MILLISECONDS);
             s_transferExecutor.scheduleAtFixedRate(getTransferScanTask(), 60000, ClusteredAgentRebalanceService.DEFAULT_TRANSFER_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
         }
