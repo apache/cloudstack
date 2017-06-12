@@ -449,7 +449,7 @@ class VirtualMachine:
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
-               rootdiskcontroller=None):
+               rootdiskcontroller=None, macaddress=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -562,6 +562,11 @@ class VirtualMachine:
         # program default access to ssh
         if mode.lower() == 'basic':
             cls.ssh_access_group(apiclient, cmd)
+
+        if macaddress:
+            cmd.macaddress = macaddress
+        elif macaddress in services:
+            cmd.macaddress = services["macaddress"]
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -775,7 +780,7 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
-    def add_nic(self, apiclient, networkId, ipaddress=None):
+    def add_nic(self, apiclient, networkId, ipaddress=None, macaddress=None):
         """Add a NIC to a VM"""
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
         cmd.virtualmachineid = self.id
@@ -783,6 +788,9 @@ class VirtualMachine:
 
         if ipaddress:
             cmd.ipaddress = ipaddress
+
+        if macaddress:
+            cmd.macaddress = macaddress
 
         return apiclient.addNicToVirtualMachine(cmd)
 

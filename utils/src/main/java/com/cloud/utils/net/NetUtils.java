@@ -44,6 +44,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
+import org.apache.commons.validator.routines.RegexValidator;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.IteratorUtil;
@@ -1179,6 +1180,23 @@ public class NetUtils {
         return false;
     }
 
+    public static boolean isValidMac(final String macAddr) {
+            RegexValidator mv = new RegexValidator("^(?:[0-9a-f]{1,2}([-:\\.]))(?:[0-9a-f]{1,2}\\1){4}[0-9a-f]{1,2}$", false);
+            return mv.isValid(macAddr);
+    }
+
+    public static boolean isUnicastMac(final String macAddr) {
+        String std = standardizeMacAddress(macAddr);
+        if(std == null) {
+            return false;
+        }
+        long stdl = mac2Long(std);
+        // libvirt refuses to attach a mac address that is multicast, as defined
+        // by the least significant bit of the first octet of the mac.
+        long mask = 0x1l << 40l;
+        return ((stdl & mask) == mask) ? false : true;
+    }
+
     public static boolean verifyInstanceName(final String instanceName) {
         //instance name for cloudstack vms shouldn't contain - and spaces
         if (instanceName.contains("-") || instanceName.contains(" ") || instanceName.contains("+")) {
@@ -1454,6 +1472,15 @@ public class NetUtils {
         } catch (final IllegalArgumentException ex) {
             throw new IllegalArgumentException("Invalid IPv6 address: " + ex.getMessage());
         }
+    }
+
+    public static String standardizeMacAddress(final String macAddr) {
+        if (!isValidMac(macAddr)) {
+             return null;
+        }
+        String norm = macAddr.replace('.', ':');
+        norm = norm.replace('-',  ':');
+        return long2Mac(mac2Long(norm));
     }
 
     public static String standardizeIp6Cidr(final String ip6Cidr){
