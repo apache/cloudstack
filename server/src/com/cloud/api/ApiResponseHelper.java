@@ -3217,17 +3217,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             if(usageRecord.getCpuCores() != null) {
                 usageRecResponse.setCpuNumber(usageRecord.getCpuCores());
             } else if (svcOffering.getCpu() != null){
-                usageRecResponse.setCpuNumber(Integer.toUnsignedLong(svcOffering.getCpu()));
+                usageRecResponse.setCpuNumber(svcOffering.getCpu().longValue());
             }
             if(usageRecord.getCpuSpeed() != null) {
                 usageRecResponse.setCpuSpeed(usageRecord.getCpuSpeed());
             } else if(svcOffering.getSpeed() != null){
-                usageRecResponse.setCpuSpeed(Integer.toUnsignedLong(svcOffering.getSpeed()));
+                usageRecResponse.setCpuSpeed(svcOffering.getSpeed().longValue());
             }
             if(usageRecord.getMemory() != null) {
                 usageRecResponse.setMemory(usageRecord.getMemory());
             } else if(svcOffering.getRamSize() != null) {
-                usageRecResponse.setMemory(Integer.toUnsignedLong(svcOffering.getRamSize()));
+                usageRecResponse.setMemory(svcOffering.getRamSize().longValue());
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
