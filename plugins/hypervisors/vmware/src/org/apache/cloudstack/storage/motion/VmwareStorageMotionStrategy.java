@@ -185,19 +185,6 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException("Invalid primary storage pool detected for root volume of instance : " + userVm.getInstanceName());
         }
 
-        // Validate if template needs to be seeded to the same storage pool as that of the root volume of VM owning the VM snapshot
-        // Currently seeding from VM snapshot is supported on the same storage pool as that of the root volume of VM owning the VM snapshot
-        // This check should go if we extend the functionality to seed to any storage pool in zone
-        if (rootVolPoolUuid != null && tempalteDsUuid != null) {
-            if (!rootVolPoolUuid.equals(tempalteDsUuid)) {
-                String msg = "Unable to seed template from vm snapshot on storage pool : " + tempalteDsUuid +
-                        ", because the vm snapshot is on a different storage pool : " + rootVolPoolUuid +
-                        ". Seeding of template is supported only if the vm snapshot is also present on same storage pool.";
-                s_logger.warn(msg);
-                throw new CloudRuntimeException(msg);
-            }
-        }
-
         // Seed the template on primary storage pool
         String taskMsg = "seed template [" + templateOnPrimaryStoreObj.getUuid() +
                 "] on storage pool [" + templateDataStore.getUuid() +

@@ -3728,7 +3728,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected UserVm startVirtualMachine(DeployVMCmd cmd, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse) throws ResourceUnavailableException,
             InsufficientCapacityException, ConcurrentOperationException {
 
-        long vmId = cmd.getEntityId();
+            long vmId = cmd.getEntityId();
         Long hostId = cmd.getHostId();
         Long vmSnapshotId = cmd.getVmSnapshotId();
         UserVmVO vm = _vmDao.findById(vmId);
@@ -4099,23 +4099,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
             plan = new DataCenterDeployment(vm.getDataCenterId(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null, null);
             deployOnGivenHost = true;
-        } else {
-            // dfs: If user specified vmSnapshotId while deploying instance, then ensure deployment plan is set to storage pool id of root volume of vm associated with vm snapshot.
-            // This ensures picking same storage pool for seeding of template from specified VM snapshot as well as ROOT volume creation.
-            if (additionalParams != null && additionalParams.containsKey(VirtualMachineProfile.Param.VmSnapshot)) {
-                Long vmSnapshotId = (Long)additionalParams.get(VirtualMachineProfile.Param.VmSnapshot);
-                Long vmSnapshotPoolId = getRootVolumePoolIdFromVmSnapshot(vmSnapshotId);
-                if (vmSnapshotPoolId != null) {
-                    List<StoragePoolVO> allPools = _storagePoolDao.listAll();
-                    for (StoragePoolVO pool : allPools) {
-                        long poolId = pool.getId();
-                        if (vmSnapshotPoolId != poolId) {
-                            avoids.addPool(poolId);
-                        }
-                    }
-                    s_logger.debug("Added all primary storage pools, except the one with vm snapshot on it, to avoid pool set. The avoid pool set is " + avoids.getPoolsToAvoid());
-                }
-            }
         }
 
         // Set parameters

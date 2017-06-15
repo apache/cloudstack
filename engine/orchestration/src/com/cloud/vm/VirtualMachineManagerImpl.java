@@ -855,31 +855,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterId() + " and podId: " + vm.getPodIdToDeployIn());
         }
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
-        boolean poolTagMatched = false;
-        List<String> offeringTags = StringUtils.csvTagsToList(offering.getTags());
-        // dfs: If user specified vmSnapshotId while deploying instance, then ensure deployment plan is set to storage pool id of root volume of vm associated with vm snapshot.
-        // This ensures picking same storage pool for seeding of template from specified VM snapshot as well as ROOT volume creation.
-        if (params != null && params.containsKey(VirtualMachineProfile.Param.VmSnapshot)) {
-            Long vmSnapshotId = (Long)params.get(VirtualMachineProfile.Param.VmSnapshot);
-            plan = getDeployPlanBasedOnVmSnapshot(vmSnapshotId);
-            StoragePoolVO poolFromPlan = _storagePoolDao.findById(plan.getPoolId());
-            List<StoragePoolVO> pools = null;
-            long dcId = plan.getDataCenterId();
-            Long podId = plan.getPodId();
-            Long clusterId = plan.getClusterId();
-            if (podId == null) {
-                // Case of zone wide primary storage pool
-                pools = _storagePoolDao.findZoneWideStoragePoolsByTags(dcId, offeringTags.toArray(new String[0]));
-            } else {
-                pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, offeringTags.toArray(new String[0]));
-            }
-            for (StoragePoolVO poolVo : pools) {
-                if (poolFromPlan.getId() == poolVo.getId()) {
-                    poolTagMatched = true;
-                    break;
-                }
-            }
-        } else if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
+
+        if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:" + planToDeploy.getDataCenterId() + ", podId: " + planToDeploy.getPodId() +
                         ", clusterId: " + planToDeploy.getClusterId() + ", hostId: " + planToDeploy.getHostId() + ", poolId: " + planToDeploy.getPoolId());
@@ -904,10 +881,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
-            }
-            if (params != null && params.containsKey(VirtualMachineProfile.Param.VmSnapshot) && !poolTagMatched) {
-                String msg = "Storage pool containing VM snapshot does not have required storage pool tags : " + offeringTags + ". Hence unable to proceed.";
-                throw new CloudRuntimeException(msg);
             }
             boolean planChangedByVolume = false;
             boolean reuseVolume = true;
