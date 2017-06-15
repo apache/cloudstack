@@ -645,7 +645,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         ManagedObjectReference vmFolderMor = dataCenterMo.getVmFolder();
 
         //2nd param
-        String vmxFilePath = dsMo.searchFileInSubFolders(vmName + ".vmx", false);
+        String vmxFilePath = dsMo.searchFileInSubFolders(vmName + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
 
         // 5th param
         ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
@@ -1683,7 +1683,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
 
                     boolean vmFolderExists = rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter);
-                    String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false);
+                    String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false, VmwareManager.s_vmwareSearchExcludeFolder.value());
                     if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
                         registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
                         vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
@@ -2360,7 +2360,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 DatastoreFile file = new DatastoreFile(disks[i]);
                 if (!isManaged && file.getDir() != null && file.getDir().isEmpty()) {
                     s_logger.info("Perform run-time datastore folder upgrade. sync " + disks[i] + " to VM folder");
-                    disks[i] = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, file.getFileBaseName());
+                    disks[i] = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, file.getFileBaseName(), VmwareManager.s_vmwareSearchExcludeFolder.value());
                 }
             }
             return disks;
@@ -2370,13 +2370,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         if (isManaged) {
             if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
-                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getName());
+                datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getName(), VmwareManager.s_vmwareSearchExcludeFolder.value());
             }
             else {
                 datastoreDiskPath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
             }
         } else {
-            datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getPath());
+            datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
         }
 
         if (!dsMo.fileExists(datastoreDiskPath)) {
@@ -2802,7 +2802,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmFolder = new DatastoreFile(fileInDatastore.getDatastoreName(), fileInDatastore.getDir());
                 DatastoreMO dsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
                 s_logger.debug("Deleting file: " + file.getName());
-                dsMo.deleteFile(file.getName(), dcMo.getMor(), true);
+                dsMo.deleteFile(file.getName(), dcMo.getMor(), true, VmwareManager.s_vmwareSearchExcludeFolder.value());
             }
             // Delete files that are present in the VM folder - this will take care of the VM disks as well.
             DatastoreMO vmFolderDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(vmFolder.getDatastoreName()));
@@ -2811,7 +2811,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 for (String file : files) {
                     String vmDiskFileFullPath = String.format("%s/%s", vmFolder.getPath(), file);
                     s_logger.debug("Deleting file: " + vmDiskFileFullPath);
-                    vmFolderDsMo.deleteFile(vmDiskFileFullPath, dcMo.getMor(), true);
+                    vmFolderDsMo.deleteFile(vmDiskFileFullPath, dcMo.getMor(), true, VmwareManager.s_vmwareSearchExcludeFolder.value());
                 }
             }
             // Delete VM folder

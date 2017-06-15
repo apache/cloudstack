@@ -166,6 +166,10 @@ public class DatastoreMO extends BaseMO {
     }
 
     public boolean deleteFile(String path, ManagedObjectReference morDc, boolean testExistence) throws Exception {
+        return deleteFile(path, morDc, testExistence, null);
+    }
+
+    public boolean deleteFile(String path, ManagedObjectReference morDc, boolean testExistence, String excludeFolders) throws Exception {
         String datastoreName = getName();
         ManagedObjectReference morFileManager = _context.getServiceContent().getFileManager();
 
@@ -180,7 +184,7 @@ public class DatastoreMO extends BaseMO {
 
         try {
             if (testExistence && !fileExists(fullPath)) {
-                String searchResult = searchFileInSubFolders(file.getFileName(), true);
+                String searchResult = searchFileInSubFolders(file.getFileName(), true, excludeFolders);
                 if (searchResult == null) {
                     return true;
                 } else {
@@ -352,8 +356,13 @@ public class DatastoreMO extends BaseMO {
     }
 
     public String searchFileInSubFolders(String fileName, boolean caseInsensitive) throws Exception {
+        return searchFileInSubFolders(fileName,caseInsensitive,null);
+    }
+
+    public String searchFileInSubFolders(String fileName, boolean caseInsensitive, String excludeFolders) throws Exception {
         String datastorePath = "[" + getName() + "]";
         String rootDirectoryFilePath = String.format("%s %s", datastorePath, fileName);
+        String[] searchExcludedFolders = getSearchExcludedFolders(excludeFolders);
         if (fileExists(rootDirectoryFilePath)) {
             return rootDirectoryFilePath;
         }
@@ -380,11 +389,28 @@ public class DatastoreMO extends BaseMO {
                     if (parentFolderPath.endsWith("]"))
                         absoluteFileName += " ";
                     absoluteFileName += fi.getPath();
+                    if(isValidCloudStackFolderPath(parentFolderPath, searchExcludedFolders)) {
+                        return absoluteFileName;
+                    }
                     break;
                 }
             }
         }
         return absoluteFileName;
+    }
+
+    private String[] getSearchExcludedFolders(String excludeFolders) {
+        return excludeFolders != null ?  excludeFolders.replaceAll("\\s","").split(",") : new String[] {};
+    }
+
+    private boolean isValidCloudStackFolderPath(String dataStoreFolderPath, String[] searchExcludedFolders) throws Exception {
+        String dsFolder = dataStoreFolderPath.replaceFirst("\\[" + getName() + "\\]", "").trim();
+        for( String excludedFolder : searchExcludedFolders) {
+            if (dsFolder.startsWith(excludedFolder)) {
+                return  false;
+            }
+        }
+        return true;
     }
 
     public boolean isAccessibleToHost(String hostValue) throws Exception {

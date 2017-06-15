@@ -39,6 +39,9 @@ public interface VmwareManager {
     public static final ConfigKey<Boolean> s_vmwareCleanOldWorderVMs = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.clean.old.worker.vms", "false",
             "If a worker vm is older then twice the 'job.expire.minutes' + 'job.cancel.threshold.minutes' , remove it.", true, ConfigKey.Scope.Global);
 
+    static final ConfigKey<String> s_vmwareSearchExcludeFolder = new ConfigKey<String>("Advanced", String.class, "vmware.search.exclude.folders", null,
+            "Comma seperated list of Datastore Folders to exclude from VMWare search", true, ConfigKey.Scope.Global);
+
     String composeWorkerName();
 
     String getSystemVMIsoFileNameOnDatastore();
