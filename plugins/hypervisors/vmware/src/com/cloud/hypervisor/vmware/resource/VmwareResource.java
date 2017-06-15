@@ -1518,7 +1518,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else if (DiskControllerType.getType(scsiDiskController) == DiskControllerType.buslogic) {
             vmMo.ensureBusLogicDeviceControllers(requiredNumScsiControllers, availableBusNum);
         } else if (DiskControllerType.getType(scsiDiskController) == DiskControllerType.lsilogic) {
-            vmMo.ensureScsiDeviceControllers(requiredNumScsiControllers, availableBusNum);
+            vmMo.ensureLsiLogicDeviceControllers(requiredNumScsiControllers, availableBusNum);
         }
     }
 
