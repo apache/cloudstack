@@ -214,7 +214,7 @@ public class NetScalerControlCenterResource implements ServerResource {
             }
     }
 
-    private synchronized String login() throws ExecutionException{// , ConfigurationException {
+    private synchronized String login() throws ExecutionException{
         String result = null;
         JSONObject jsonResponse = null;
         try {
@@ -317,7 +317,6 @@ public class NetScalerControlCenterResource implements ServerResource {
             getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
             s_logger.debug("Keeping Session Alive");
         } catch (URISyntaxException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -360,7 +359,6 @@ public class NetScalerControlCenterResource implements ServerResource {
             String errMsg = "Could not generate URI for NetScaler ControlCenter";
             s_logger.error(errMsg, e);
           } catch (JSONException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return result;
@@ -436,7 +434,7 @@ public class NetScalerControlCenterResource implements ServerResource {
             JSONArray lbstatus = res.getJSONArray("lbhealthstatus");
             for(int i=0; i<lbstatus.length(); i++) {
                 JSONObject lbstat = lbstatus.getJSONObject(i);
-                LoadBalancerTO loadBalancer = null;// new LoadBalancerTO(lbstat.getString("lb_uuid"));
+                LoadBalancerTO loadBalancer = null;
                 JSONArray dest = lbstat.getJSONArray("destinations");
                 List<DestinationTO> listDestTo = new ArrayList<DestinationTO>();
                 for(int d=0; d<dest.length(); d++ ) {
@@ -478,7 +476,6 @@ public class NetScalerControlCenterResource implements ServerResource {
             response = getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
             s_logger.debug("LBHealthcheck Response :" + response);
         } catch (URISyntaxException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return response;
@@ -619,10 +616,8 @@ public class NetScalerControlCenterResource implements ServerResource {
                 }
                 s_logger.debug("IPStats Response :" + response);
             } catch (URISyntaxException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (ExecutionException e) {
-                // TODO Auto-generated catch block
                 s_logger.debug("Seesion Alive" + e.getMessage());
                 e.printStackTrace();
             }
@@ -696,6 +691,10 @@ public class NetScalerControlCenterResource implements ServerResource {
     }
 
     @Override
+    public void setName(String name) {
+    }
+
+    @Override
     public boolean start() {
         return true;
     }
@@ -711,33 +710,21 @@ public class NetScalerControlCenterResource implements ServerResource {
     }
 
     @Override
-    public void setName(String name) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public void setConfigParams(Map<String, Object> params) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public Map<String, Object> getConfigParams() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public int getRunLevel() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public void setRunLevel(int level) {
-        // TODO Auto-generated method stub
-
     }
 
     public String getSessionID() {

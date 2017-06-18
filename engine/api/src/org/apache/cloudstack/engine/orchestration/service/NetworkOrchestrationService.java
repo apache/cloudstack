@@ -60,19 +60,21 @@ import com.cloud.vm.VirtualMachineProfile;
  *
  */
 public interface NetworkOrchestrationService {
-    static final String NetworkLockTimeoutCK = "network.lock.timeout";
-    static final String GuestDomainSuffixCK = "guest.domain.suffix";
-    static final String NetworkThrottlingRateCK = "network.throttling.rate";
-    static final String MinVRVersionCK = "minreq.sysvmtemplate.version";
+    String NetworkLockTimeoutCK = "network.lock.timeout";
+    String GuestDomainSuffixCK = "guest.domain.suffix";
+    String NetworkThrottlingRateCK = "network.throttling.rate";
+    String MinVRVersionCK = "minreq.sysvmtemplate.version";
 
-    static final ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.10.0",
+    ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.10.0",
             "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
-    static final ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
+    ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
         "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
-    static final ConfigKey<String> GuestDomainSuffix = new ConfigKey<String>(String.class, GuestDomainSuffixCK, "Network", "cloud.internal",
+
+    ConfigKey<String> GuestDomainSuffix = new ConfigKey<String>(String.class, GuestDomainSuffixCK, "Network", "cloud.internal",
         "Default domain name for vms inside virtualized networks fronted by router", true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, NetworkThrottlingRateCK, "200",
+
+    ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, NetworkThrottlingRateCK, "200",
         "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)

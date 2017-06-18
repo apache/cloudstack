@@ -58,7 +58,6 @@ public class RegisterServicePackageCmd extends BaseCmd {
         try {
             NetScalerServicePackageResponse response = _netsclarLbService.registerNetscalerServicePackage(this);
             if (response != null) {
-                //NetScalerServicePackageResponse response = _netsclarLbService.createNetscalerServicePackageResponse(servicePackageVO);
                 response.setObjectName("netscalerservicepackage");
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);

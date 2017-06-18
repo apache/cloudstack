@@ -1281,14 +1281,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             if (loadBalancersToApply.size() > 0) {
                 int numLoadBalancersForCommand = loadBalancersToApply.size();
                 LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-                // LoadBalancerConfigCommand cmd = new
-                // LoadBalancerConfigCommand(loadBalancersForCommand, null);
                 HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand, network.getId());
                 long guestVlanTag = Integer.parseInt(BroadcastDomainType.getValue(network.getBroadcastUri()));
                 cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
 
-                HealthCheckLBConfigAnswer answer = (HealthCheckLBConfigAnswer) _agentMgr
-                        .easySend(externalLoadBalancer.getId(), cmd);
+                HealthCheckLBConfigAnswer answer = (HealthCheckLBConfigAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
                 // easySend will return null on error
                 return answer == null ? null : answer.getLoadBalancers();
             }

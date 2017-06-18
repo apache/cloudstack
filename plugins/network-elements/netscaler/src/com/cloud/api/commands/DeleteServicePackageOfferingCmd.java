@@ -81,13 +81,11 @@ public class DeleteServicePackageOfferingCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        // TODO Auto-generated method stub
         return s_name;
     }
 
     @Override
     public long getEntityOwnerId() {
-        // TODO Auto-generated method stub
         return CallContext.current().getCallingAccount().getId();
     }
 
