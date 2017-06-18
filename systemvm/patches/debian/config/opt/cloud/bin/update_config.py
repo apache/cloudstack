@@ -27,7 +27,7 @@ import configure
 import json
 from cs.CsVmPassword import *
 
-logging.basicConfig(filename='/var/log/cloud.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
+logging.basicConfig(filename='/var/log/cloud.log', level=logging.INFO, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
 # first commandline argument should be the file to process
 if (len(sys.argv) != 2):
@@ -52,15 +52,16 @@ def process(do_merge=True):
     qf.setFile(sys.argv[1])
     qf.do_merge = do_merge
     qf.load(None)
-
     return qf
 
 
 def process_file():
     print "[INFO] process_file"
     qf = process()
-    # Converge
-    finish_config()
+    # These can be safely deferred, dramatically speeding up loading times
+    if not (os.environ.get('DEFER_CONFIG', False) and sys.argv[1] in ('vm_dhcp_entry.json', 'vm_metadata.json')):
+        # Converge
+        finish_config()
 
 
 def process_vmpasswd():

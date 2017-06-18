@@ -26,7 +26,7 @@ class CsConfig(object):
     A class to cache all the stuff that the other classes need
     """
     __LOG_FILE = "/var/log/cloud.log"
-    __LOG_LEVEL = "DEBUG"
+    __LOG_LEVEL = "INFO"
     __LOG_FORMAT = "%(asctime)s %(levelname)-8s %(message)s"
     cl = None
 
