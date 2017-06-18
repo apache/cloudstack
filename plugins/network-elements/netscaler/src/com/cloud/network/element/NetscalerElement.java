@@ -381,7 +381,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
             networkDetails.put("name", guestConfig.getName());
             networkPayload.put("network", networkDetails);
         } catch (JSONException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -445,7 +444,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
             // multple providers available
             return false;
         } catch (ConfigurationException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return false;
@@ -1345,19 +1343,16 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
 
     @Override
     public NetScalerServicePackageResponse listNetscalerServicePackage(RegisterServicePackageCmd cmd) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public NetScalerServicePackageResponse deleteNetscalerServicePackage(RegisterServicePackageCmd cmd) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public NetScalerServicePackageResponse createNetscalerServicePackageResponse(NetScalerServicePackageVO servicePackageVO) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -1515,7 +1510,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         try {
              resp =  _netScalerVMManager.deployNsVpx(cmd.getAccount(), dest, plan, serviceOfferingId, templateId);
         } catch (InsufficientCapacityException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return resp;

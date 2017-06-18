@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
@@ -214,7 +215,8 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
         sc.addAnd("servicePackageUuid", SearchCriteria.Op.EQ, uuid);
         List<NetworkOfferingVO> list = this.search(sc, searchFilter);
-        if(list!=null && !list.isEmpty())
+
+        if(CollectionUtils.isNotEmpty(list))
             return true;
 
         return false;

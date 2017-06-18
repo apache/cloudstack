@@ -18,8 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.NetScalerServicePackageVO;
@@ -29,7 +27,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = NetScalerServicePackageDao.class)
 @DB
 public class NetScalerServicePackageDaoImpl extends GenericDaoBase<NetScalerServicePackageVO, Long> implements NetScalerServicePackageDao {
 

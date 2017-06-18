@@ -14,6 +14,7 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
+
 package com.cloud.network.vm;
 import java.util.Map;
 
@@ -27,15 +28,15 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
 public interface NetScalerVMManager {
+    //RAM/CPU for the system offering used by Internal LB VMs
+    int DEFAULT_NETSCALER_VM_RAMSIZE = 2048; // 2048 MB
+    int DEFAULT_NETSCALER_VM_CPU_MHZ = 1024; // 1024 MHz
 
- //RAM/CPU for the system offering used by Internal LB VMs
- public static final int DEFAULT_NETSCALER_VM_RAMSIZE = 2048;            // 2048 MB
- public static final int DEFAULT_NETSCALER_VM_CPU_MHZ = 1024;            // 1024 MHz
+    Map<String, Object> deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd);
 
- public Map<String, Object> deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd);
+    VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException, ResourceUnavailableException;
 
- public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException, ResourceUnavailableException;
- public Map<String, Object> deployNsVpx(Account owner, DeployDestination dest, DeploymentPlan plan, long svcOffId, long templateId) throws InsufficientCapacityException;
+    Map<String, Object> deployNsVpx(Account owner, DeployDestination dest, DeploymentPlan plan, long svcOffId, long templateId) throws InsufficientCapacityException;
 
- public VirtualRouter stopNetScalerVm(Long id, boolean forced, Account callingAccount, long callingUserId);
+    VirtualRouter stopNetScalerVm(Long id, boolean forced, Account callingAccount, long callingUserId);
 }

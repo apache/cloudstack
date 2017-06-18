@@ -40,12 +40,12 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface IpAddressManager {
-    static final String UseSystemPublicIpsCK = "use.system.public.ips";
-    static final ConfigKey<Boolean> UseSystemPublicIps = new ConfigKey<Boolean>("Advanced", Boolean.class, UseSystemPublicIpsCK, "true",
+    String UseSystemPublicIpsCK = "use.system.public.ips";
+    ConfigKey<Boolean> UseSystemPublicIps = new ConfigKey<Boolean>("Advanced", Boolean.class, UseSystemPublicIpsCK, "true",
             "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been consumed ips will be acquired from the system pool",
             true, ConfigKey.Scope.Account);
 
-    static final ConfigKey<Boolean> RulesContinueOnError = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rule.delete.ignoreerror", "true",
+    ConfigKey<Boolean> RulesContinueOnError = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rule.delete.ignoreerror", "true",
             "When true, ip address delete (ipassoc) failures are  ignored", true);
 
     /**
@@ -53,14 +53,11 @@ public interface IpAddressManager {
      *
      * @param dcId
      * @param podId
-     *            TODO
      * @param owner
      * @param type
      * @param networkId
      * @param requestedIp
-     *            TODO
-     * @param allocatedBy
-     *            TODO
+     * @param isSystem
      * @return
      * @throws InsufficientAddressCapacityException
      */
@@ -72,8 +69,7 @@ public interface IpAddressManager {
      *
      * @param userId
      * @param caller
-     *            TODO
-     * @param IpAddress
+     * @param caller
      * @return true if it did; false if it didn't
      */
     boolean disassociatePublicIpAddress(long id, long userId, Account caller);
@@ -82,17 +78,18 @@ public interface IpAddressManager {
             throws ResourceUnavailableException;
 
     /**
-     * @throws ResourceAllocationException TODO
-     * @throws InsufficientCapacityException
-     *             Associates an ip address list to an account. The list of ip addresses are all addresses associated
-     *             with the
-     *             given vlan id.
      * @param userId
      * @param accountId
      * @param zoneId
      * @param vlanId
-     * @throws InsufficientAddressCapacityException
-     * @throws
+     * @param guestNetwork
+     * @throws InsufficientCapacityException
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws ResourceAllocationException
+     *             Associates an ip address list to an account. The list of ip addresses are all addresses associated
+     *             with the
+     *             given vlan id.
      */
     boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network guestNetwork) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
@@ -104,7 +101,7 @@ public interface IpAddressManager {
 
     IPAddressVO markIpAsUnavailable(long addrId);
 
-    public String acquireGuestIpAddress(Network network, String requestedIp);
+    String acquireGuestIpAddress(Network network, String requestedIp);
 
     boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException;
 
@@ -125,9 +122,15 @@ public interface IpAddressManager {
     PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
+     *
      * @param ipAddrId
      * @param networkId
-     * @param releaseOnFailure TODO
+     * @param releaseOnFailure
+     * @return
+     * @throws ResourceAllocationException
+     * @throws ResourceUnavailableException
+     * @throws InsufficientAddressCapacityException
+     * @throws ConcurrentOperationException
      */
     IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
             InsufficientAddressCapacityException, ConcurrentOperationException;
@@ -169,7 +172,6 @@ public interface IpAddressManager {
     IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp) throws ConcurrentOperationException,
             ResourceAllocationException, InsufficientAddressCapacityException;
 
-
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp,
             boolean isSystem) throws InsufficientAddressCapacityException;
 
@@ -179,15 +181,12 @@ public interface IpAddressManager {
 
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
-    public String allocateGuestIP(Network network, String requestedIp) throws InsufficientAddressCapacityException;
+    String allocateGuestIP(Network network, String requestedIp) throws InsufficientAddressCapacityException;
 
     String allocatePublicIpForGuestNic(Network network, Long podId, Account ipOwner, String requestedIp) throws InsufficientAddressCapacityException;
 
-    public AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException,
-            ResourceAllocationException;
+    AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException, ResourceAllocationException;
 
-    public void releasePodIp(Long id) throws CloudRuntimeException;
-
-
+    void releasePodIp(Long id) throws CloudRuntimeException;
 }
 

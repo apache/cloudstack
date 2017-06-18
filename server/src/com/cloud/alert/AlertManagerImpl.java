@@ -90,7 +90,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
     private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");
 
-    private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L;// thirty seconds expressed in milliseconds
+    private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 
     private static final DecimalFormat DfPct = new DecimalFormat("###.##");
     private static final DecimalFormat DfWhole = new DecimalFormat("########");
@@ -126,7 +126,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     protected ConfigDepot _configDepot;
 
     private Timer _timer = null;
-    private long _capacityCheckPeriod = 60L * 60L * 1000L;// one hour by default
+    private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
     private double _secondaryStorageCapacityThreshold = 0.75;
@@ -249,8 +249,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             if (_emailAlert != null) {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, null, subject, body);
             } else {
-                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId +
-                        " // message:: " + subject + " // body:: " + body);
+                s_alertsLogger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " + podId +
+                        " | message:: " + subject + " | body:: " + body);
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
@@ -747,8 +747,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
         public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException,
                 UnsupportedEncodingException {
-            s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
-                    podId + " // clusterId:: " + clusterId + " // message:: " + subject);
+            s_alertsLogger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " +
+                    podId + " | clusterId:: " + clusterId + " | message:: " + subject);
             AlertVO alert = null;
             if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
                 (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&
@@ -771,7 +771,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 newAlert.setClusterId(clusterId);
                 newAlert.setPodId(podId);
                 newAlert.setDataCenterId(dataCenterId);
-                newAlert.setSentCount(1);// initialize sent count to 1 since we are now sending an alert
+                newAlert.setSentCount(1); // Initialize sent count to 1 since we are now sending an alert.
                 newAlert.setLastSent(new Date());
                 newAlert.setName(alertType.getName());
                 _alertDao.persist(newAlert);

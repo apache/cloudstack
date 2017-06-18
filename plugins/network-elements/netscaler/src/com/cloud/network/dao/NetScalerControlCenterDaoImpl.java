@@ -18,8 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.NetScalerControlCenterVO;
@@ -27,19 +25,16 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Component
-@Local(value = NetScalerControlCenterDao.class)
 @DB
 public class NetScalerControlCenterDaoImpl extends GenericDaoBase<NetScalerControlCenterVO, Long> implements NetScalerControlCenterDao {
 
     @Override
     public NetScalerControlCenterVO findByPodId(long podId) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public List<NetScalerControlCenterVO> listByNetScalerDeviceId(long netscalerDeviceId) {
-        // TODO Auto-generated method stub
         return null;
     }
 
