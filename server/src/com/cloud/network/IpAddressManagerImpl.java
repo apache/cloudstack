@@ -562,7 +562,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // the code would be triggered
         s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
         try {
-            _vpnMgr.destroyRemoteAccessVpnForIp(ipId, caller);
+            _vpnMgr.destroyRemoteAccessVpnForIp(ipId, caller,false);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
             success = false;
@@ -1897,7 +1897,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
                 nic.setFormat(AddressFormat.Ip4);
                 nic.setReservationId(String.valueOf(ip.getVlanTag()));
-                nic.setMacAddress(ip.getMacAddress());
+                if (nic.getMacAddress() == null) {
+                    nic.setMacAddress(ip.getMacAddress());
+                }
             }
             nic.setIPv4Dns1(dc.getDns1());
             nic.setIPv4Dns2(dc.getDns2());
@@ -1969,8 +1971,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                         nic.setBroadcastUri(network.getBroadcastUri());
                         nic.setFormat(AddressFormat.Ip4);
-
-                        nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
+                        if(nic.getMacAddress() == null) {
+                            nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
+                        }
                     }
                     nic.setIPv4Dns1(dc.getDns1());
                     nic.setIPv4Dns2(dc.getDns2());

@@ -14,42 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.router;
+package com.cloud.network.element;
 
-import com.cloud.vm.VirtualMachine;
+import com.cloud.network.Network;
 
 /**
- *  bridge internal and external traffic.
+ * Created by bharat on 11/08/15.
  */
-public interface VirtualRouter extends VirtualMachine {
-    public enum Role {
-        VIRTUAL_ROUTER, LB, INTERNAL_LB_VM
-    }
-
-    public enum UpdateState {
-        UPDATE_NEEDED, UPDATE_IN_PROGRESS, UPDATE_COMPLETE, UPDATE_FAILED
-    }
-
-    Role getRole();
-
-    boolean getIsRedundantRouter();
-
-    public enum RedundantState {
-        UNKNOWN, MASTER, BACKUP, FAULT
-    }
-
-    RedundantState getRedundantState();
-
-    String getPublicIpAddress();
-
-    boolean isStopPending();
-
-    void setStopPending(boolean stopPending);
-
-    /**
-     * @return
-     */
-    Long getVpcId();
-
-    String getTemplateVersion();
+public interface RedundantResource {
+     public void configureResource(Network network);
+     public int getResourceCount(Network network);
 }

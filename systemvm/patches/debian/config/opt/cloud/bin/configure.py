@@ -612,6 +612,13 @@ class CsRemoteAccessVpn(CsDataBag):
             #Enable remote access vpn
             if vpnconfig['create']:
                 logging.debug("Enabling  remote access vpn  on "+ public_ip)
+
+                dev = CsHelper.get_device(public_ip)
+                if dev == "":
+                        logging.error("Request for ipsec to %s not possible because ip is not configured", public_ip)
+                        continue
+
+                CsHelper.start_if_stopped("ipsec")
                 self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
                 logging.debug("Remote accessvpn  data bag %s",  self.dbag)
                 self.remoteaccessvpn_iptables(public_ip, self.dbag[public_ip])

@@ -152,7 +152,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     private List<String> securityGroupNameList;
 
     @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter."
-            + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid - requests to use ip 10.10.10.11 in network id=uuid")
+            + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid&iptonetworklist[0].mac=aa:bb:cc:dd:ee::ff - requests to use ip 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the ip address for default vm's network")
@@ -160,6 +160,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
 
     @Parameter(name = ApiConstants.IP6_ADDRESS, type = CommandType.STRING, description = "the ipv6 address for default vm's network")
     private String ip6Address;
+
+    @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "the mac address for default vm's network")
+    private String macAddress;
 
     @Parameter(name = ApiConstants.KEYBOARD, type = CommandType.STRING, description = "an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
     private String keyboard;
@@ -352,10 +355,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
                 }
                 String requestedIp = ips.get("ip");
                 String requestedIpv6 = ips.get("ipv6");
+                String requestedMac = ips.get("mac");
                 if (requestedIpv6 != null) {
                     requestedIpv6 = NetUtils.standardizeIp6Address(requestedIpv6);
                 }
-                IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6);
+                if (requestedMac != null) {
+                    if(!NetUtils.isValidMac(requestedMac)) {
+                        throw new InvalidParameterValueException("Mac address is not valid: " + requestedMac);
+                    } else if(!NetUtils.isUnicastMac(requestedMac)) {
+                        throw new InvalidParameterValueException("Mac address is not unicast: " + requestedMac);
+                    }
+                    requestedMac = NetUtils.standardizeMacAddress(requestedMac);
+                }
+                IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6, requestedMac);
                 ipToNetworkMap.put(networkId, addrs);
             }
         }
@@ -368,6 +380,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             return null;
         }
         return NetUtils.standardizeIp6Address(ip6Address);
+    }
+
+
+    public String getMacAddress() {
+        if (macAddress == null) {
+            return null;
+        }
+        if(!NetUtils.isValidMac(macAddress)) {
+            throw new InvalidParameterValueException("Mac address is not valid: " + macAddress);
+        } else if(!NetUtils.isUnicastMac(macAddress)) {
+            throw new InvalidParameterValueException("Mac address is not unicast: " + macAddress);
+        }
+        return NetUtils.standardizeMacAddress(macAddress);
     }
 
     public List<Long> getAffinityGroupIdList() {
@@ -577,7 +602,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             }
 
             UserVm vm = null;
-            IpAddresses addrs = new IpAddresses(ipAddress, getIp6Address());
+            IpAddresses addrs = new IpAddresses(ipAddress, getIp6Address(), getMacAddress());
             if (zone.getNetworkType() == NetworkType.Basic) {
                 if (getNetworkIds() != null) {
                     throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
