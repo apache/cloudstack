@@ -945,8 +945,10 @@ def main(argv):
 
         if process_file in ["cmd_line.json", "vm_password.json"]:
             logging.debug("Configuring vmpassword")
-            password = CsPassword("vmpassword", config)
-            password.process()
+            # TODO fix the line below
+            # password = CsPassword("vmpassword", config)
+            # password.process()
+            iptables_change = True
 
         if process_file in ["cmd_line.json", "vm_metadata.json"]:
             logging.debug("Configuring vmdata")
