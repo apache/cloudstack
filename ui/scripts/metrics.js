@@ -577,6 +577,18 @@
                 sizegb: {
                     label: 'label.metrics.disk.size'
                 },
+                physicalsize: {
+                    label: 'label.disk.physicalsize',
+                    converter: function(args) {
+                        if (args == null || args == 0)
+                            return "";
+                        else
+                            return cloudStack.converters.convertBytes(args);
+                    }
+                },
+                utilization: {
+                    label: 'label.disk.utilisation'
+                },
                 storagetype: {
                     label: 'label.metrics.disk.storagetype'
                 },

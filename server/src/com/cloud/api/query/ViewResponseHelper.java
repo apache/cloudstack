@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Hashtable;
@@ -79,6 +80,8 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VolumeStats;
 import com.cloud.user.Account;
 
 /**
@@ -263,6 +266,7 @@ public class ViewResponseHelper {
 
     public static List<VolumeResponse> createVolumeResponse(ResponseView view, VolumeJoinVO... volumes) {
         Hashtable<Long, VolumeResponse> vrDataList = new Hashtable<Long, VolumeResponse>();
+        DecimalFormat df = new DecimalFormat("0.00");
         for (VolumeJoinVO vr : volumes) {
             VolumeResponse vrData = vrDataList.get(vr.getId());
             if (vrData == null) {
@@ -274,6 +278,28 @@ public class ViewResponseHelper {
                 vrData = ApiDBUtils.fillVolumeDetails(view, vrData, vr);
             }
             vrDataList.put(vr.getId(), vrData);
+
+            if (view == ResponseView.Full) {
+                VolumeStats vs = null;
+                if (vr.getFormat() == ImageFormat.QCOW2) {
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getId());
+                }
+                else if (vr.getFormat() == ImageFormat.VHD){
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
+                }
+                else if (vr.getFormat() == ImageFormat.OVA){
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
+                }
+                if (vs != null){
+                    long vsz = vs.getVirtualSize();
+                    long psz = vs.getPhysicalSize() ;
+                    double util = (double)psz/vsz;
+                    vrData.setVirtualsize(vsz);
+                    vrData.setPhysicalsize(psz);
+                    vrData.setUtilization(df.format(util));
+                }
+            }
+
         }
         return new ArrayList<VolumeResponse>(vrDataList.values());
     }
