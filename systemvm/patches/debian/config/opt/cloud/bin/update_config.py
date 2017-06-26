@@ -25,7 +25,6 @@ import os
 import os.path
 import configure
 import json
-from cs.CsVmPassword import *
 
 logging.basicConfig(filename='/var/log/cloud.log', level=logging.INFO, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
@@ -46,29 +45,15 @@ def finish_config():
     sys.exit(returncode)
 
 
-def process(do_merge=True):
+def process_file():
     print "[INFO] Processing JSON file %s" % sys.argv[1]
     qf = QueueFile()
     qf.setFile(sys.argv[1])
-    qf.do_merge = do_merge
     qf.load(None)
-    return qf
-
-
-def process_file():
-    print "[INFO] process_file"
-    qf = process()
     # These can be safely deferred, dramatically speeding up loading times
     if not (os.environ.get('DEFER_CONFIG', False) and sys.argv[1] in ('vm_dhcp_entry.json', 'vm_metadata.json')):
         # Converge
         finish_config()
-
-
-def process_vmpasswd():
-    print "[INFO] process_vmpassword"
-    qf = process(False)
-    print "[INFO] Sending password to password server"
-    CsPassword(qf.getData())
 
 
 def is_guestnet_configured(guestnet_dict, keys):
@@ -152,10 +137,6 @@ if sys.argv[1] == "guest_network.json":
     else:
         print "[INFO] update_config.py :: No GuestNetwork configured yet. Configuring first one now."
         process_file()
-# Bypass saving passwords and running full config/convergence, just feed passwd to passwd server and stop
-elif sys.argv[1].startswith("vm_password.json"):
-    print "[INFO] update_config.py :: Processing incoming vm_passwd file => %s" % sys.argv[1]
-    process_vmpasswd()
 else:
     print "[INFO] update_config.py :: Processing incoming file => %s" % sys.argv[1]
     process_file()
