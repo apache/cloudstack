@@ -81,7 +81,12 @@ mv $cfg /var/cache/cloud/processed/
 
 unset DEFER_CONFIG
 # trigger finish_config()
-/opt/cloud/bin/configure.py
+if [ -f /etc/cloudstack/dhcpentry.json ]; then
+    /opt/cloud/bin/configure.py vm_dhcp_entry.json
+fi
+if [ -f /etc/cloudstack/vmdata.json ]; then
+    /opt/cloud/bin/configure.py vm_metadata.json
+fi
 
 # Flush kernel conntrack table
 log_it "VR config: Flushing conntrack table"
