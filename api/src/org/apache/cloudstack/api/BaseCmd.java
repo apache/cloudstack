@@ -17,32 +17,6 @@
 
 package org.apache.cloudstack.api;
 
-import java.lang.reflect.Field;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
-import javax.inject.Inject;
-
-import com.cloud.utils.HttpUtils;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.alert.AlertService;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
-import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
-import org.apache.cloudstack.query.QueryService;
-import org.apache.cloudstack.usage.UsageService;
-
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -78,11 +52,35 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.HttpUtils;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.snapshot.VMSnapshotService;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
+import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.lang.reflect.Field;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
@@ -93,6 +91,7 @@ public abstract class BaseCmd {
     public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
     private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     protected static final Map<Class<?>, List<Field>> fieldsForCmdClass = new HashMap<Class<?>, List<Field>>();
+
     public static enum HTTPMethod {
         GET, POST, PUT, DELETE
     }
@@ -192,6 +191,8 @@ public abstract class BaseCmd {
     public AlertService _alertSvc;
     @Inject
     public UUIDManager _uuidMgr;
+    @Inject
+    public AnnotationService annotationService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;

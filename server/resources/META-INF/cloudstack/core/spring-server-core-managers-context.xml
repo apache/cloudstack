@@ -283,11 +283,14 @@
         <property name="gslbServiceProviders" value="#{gslbServiceProvidersRegistry.registered}" />
     </bean>
     <bean id="certServiceImpl" class="org.apache.cloudstack.network.ssl.CertServiceImpl" />
+
     <bean id="imageStoreUploadMonitorImpl" class="com.cloud.storage.ImageStoreUploadMonitorImpl" />
 
     <!-- the new CA manager -->
     <bean id="caManager" class="org.apache.cloudstack.ca.CAManagerImpl">
         <property name="caProviders" value="#{caProvidersRegistry.registered}" />
     </bean>
+
+    <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl" />
 
 </beans>

@@ -16183,7 +16183,10 @@
                                     array1.push("&hosttags=" + todb(args.data.hosttags));
 
                                     if (args.data.oscategoryid != null && args.data.oscategoryid.length > 0)
-                                    array1.push("&osCategoryId=" + args.data.oscategoryid);
+                                        array1.push("&osCategoryId=" + args.data.oscategoryid);
+
+                                    if (args.data.annotation != null && args.data.annotation.length > 0)
+                                        array1.push("&annotation=" + args.data.annotation);
 
                                     $.ajax({
                                         url: createURL("updateHost&id=" + args.context.hosts[0].id + array1.join("")),
@@ -17194,11 +17197,22 @@
                                     ipaddress: {
                                         label: 'label.ip.address'
                                     },
+                                    annotation: {
+                                        label: 'label.annotation',
+                                        isEditable: true
+                                    },
+                                    lastannotated: {
+                                        label: 'label.last.annotated'
+                                        converter: cloudStack.converters.toLocalDate
+                                    },
+                                    username: {
+                                        label: 'label.annotated.by'
+                                    },
                                     disconnected: {
                                         label: 'label.last.disconnected'
-                                        },
-                                        cpusockets: {
-                                            label: 'label.number.of.cpu.sockets'
+                                    },
+                                    cpusockets: {
+                                        label: 'label.number.of.cpu.sockets'
                                     }
                                 }, {
 
@@ -17220,11 +17234,16 @@
                                             if (item && item.outofbandmanagement) {
                                                 item.powerstate = item.outofbandmanagement.powerstate;
                                             }
+
                                             if (item && item.hostha) {
                                                 item.hastate = item.hostha.hastate;
                                                 item.haprovider = item.hostha.haprovider;
                                                 item.haenabled = item.hostha.haenable;
                                             }
+
+                                            item.annotation = item.annotation;
+                                            item.lastannotated = item.lastannotated;
+                                            item.username = item.username;
 
                                             $.ajax({
                                                 url: createURL("listDedicatedHosts&hostid=" + args.context.hosts[0].id),

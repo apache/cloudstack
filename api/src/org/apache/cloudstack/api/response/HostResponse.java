@@ -231,6 +231,17 @@ public class HostResponse extends BaseResponse {
     @Param(description = "Host details in key/value pairs.", since = "4.5")
     private Map details;
 
+    @SerializedName(ApiConstants.ANNOTATION)
+    @Param(description = "the last annotation set on this host by an admin", since = "4.11")
+    private String annotation;
+
+    @SerializedName(ApiConstants.LAST_ANNOTATED)
+    @Param(description = "the last time this host was annotated", since = "4.11")
+    private Date lastAnnotated;
+
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "the admin that annotated this host", since = "4.11")
+    private String username;
 
     // Default visibility to support accessing the details from unit tests
     Map getDetails() {
@@ -456,6 +467,18 @@ public class HostResponse extends BaseResponse {
 
     public void setHaHost(Boolean haHost) {
         this.haHost = haHost;
+    }
+
+    public void setAnnotation(String annotation) {
+        this.annotation = annotation;
+    }
+
+    public void setLastAnnotated(Date lastAnnotated) {
+        this.lastAnnotated = lastAnnotated;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public void setDetails(Map details) {
