@@ -196,6 +196,12 @@ public class ClusterResponse extends BaseResponse {
         if (details == null) {
             return;
         }
-        this.resourceDetails = new HashMap<>(details);
+        resourceDetails = new HashMap<>(details);
+        if (resourceDetails.containsKey("username")) {
+            resourceDetails.remove("username");
+        }
+        if (resourceDetails.containsKey("password")) {
+            resourceDetails.remove("password");
+        }
     }
 }
