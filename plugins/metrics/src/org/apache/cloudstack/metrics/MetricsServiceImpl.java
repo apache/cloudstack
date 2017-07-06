@@ -316,9 +316,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             final Float cpuDisableThreshold = DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.valueIn(clusterId);
             final Float memoryDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId);
 
-            final Double cpuOvercommitRatio = findRatioValue(ApiDBUtils.findClusterDetails(clusterId, "cpuOvercommitRatio"));
-            final Double memoryOvercommitRatio = findRatioValue(ApiDBUtils.findClusterDetails(clusterId, "memoryOvercommitRatio"));
-
             // CPU and memory capacities
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, null, clusterId);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
@@ -351,13 +348,13 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             // CPU thresholds
             metricsResponse.setCpuUsageThreshold(metrics.getCpuUsedPercentage(), metrics.getTotalHosts(), cpuThreshold);
             metricsResponse.setCpuUsageDisableThreshold(metrics.getCpuUsedPercentage(), metrics.getTotalHosts(), cpuDisableThreshold);
-            metricsResponse.setCpuAllocatedThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuOvercommitRatio, cpuThreshold);
-            metricsResponse.setCpuAllocatedDisableThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuOvercommitRatio, cpuDisableThreshold);
+            metricsResponse.setCpuAllocatedThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuThreshold);
+            metricsResponse.setCpuAllocatedDisableThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuDisableThreshold);
             // Memory thresholds
             metricsResponse.setMemoryUsageThreshold(metrics.getMemoryUsed(), metrics.getTotalMemory(), memoryThreshold);
             metricsResponse.setMemoryUsageDisableThreshold(metrics.getMemoryUsed(), metrics.getTotalMemory(), memoryDisableThreshold);
-            metricsResponse.setMemoryAllocatedThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryOvercommitRatio, memoryThreshold);
-            metricsResponse.setMemoryAllocatedDisableThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryOvercommitRatio, memoryDisableThreshold);
+            metricsResponse.setMemoryAllocatedThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryThreshold);
+            metricsResponse.setMemoryAllocatedDisableThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryDisableThreshold);
 
             metricsResponses.add(metricsResponse);
         }
