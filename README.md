@@ -15,7 +15,7 @@ mvn -Pdeveloper -Dnoredist clean install -DskipTests=true
 mvn -Pdeveloper -Dnoredist clean install -pl :cloud-apidoc
 ```
 
-Generage Diff
+Generate Diff
 -------------
 
 ```bash
