@@ -7,11 +7,20 @@ Collection of API commands.xml of [Apache CloudStack](http://cloudstack.apache.o
 [How To Generate CloudStack API Documentation](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+To+Generate+CloudStack+API+Documentation)
 
 
+Install NonOSS Dependencies
+---------------------------
+
+```bash
+cd /tmp
+git clone https://github.com/rhtyd/cloudstack-nonoss.git nonoss
+cd nonoss && bash -x install-non-oss.sh
+```
+
 Build API doc
 -------------
 
 ```bash
-cd cloudstack
+cd /path/to/cloudstack
 git fetch <upstream>
 git checkout master
 git checkout <release_commit>
@@ -23,7 +32,7 @@ Generate Diff
 -------------
 
 ```bash
-cd cloudstack
+cd /path/to/cloudstack
 export COMMANDS=/path/to/acs-api-commands
 export OLD_RELEASE=4.9.0
 export NEW_RELEASE=4.10.0
