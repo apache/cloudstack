@@ -1,0 +1,410 @@
+Added commands:
+
+    listVirtualMachinesMetrics (Lists VM metrics)
+
+    listHostsMetrics (Lists hosts metrics)
+
+    listClustersMetrics (Lists clusters metrics)
+
+    listNuageUnderlayVlanIpRanges (enable Nuage underlay on vlan ip range)
+
+    listVolumesMetrics (Lists volume metrics)
+
+    disableNuageUnderlayVlanIpRange (disable Nuage underlay on vlan ip range)
+
+    enableNuageUnderlayVlanIpRange (enable Nuage underlay on vlan ip range)
+
+    listStoragePoolsMetrics (Lists storage pool metrics)
+
+    createSnapshotFromVMSnapshot (Creates an instant snapshot of a volume from existing vm snapshot.)
+
+    getUserKeys (This command allows the user to query the seceret and API keys for the account)
+
+    listInfrastructure (Lists infrastructure)
+
+    listZonesMetrics (Lists zone metrics)
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	copyIso
+
+		Request:
+
+			New parameters: destzoneids (optional) 
+
+			Changed parameters: destzoneid (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: bits 
+
+	listHosts
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	updateFirewallRule
+
+		Response:
+
+			New parameters: destcidrlist 
+
+	updateGuestOs
+
+		Request:
+
+			New parameters: details (required) 
+
+	updateHost
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	createEgressFirewallRule
+
+		Request:
+
+			New parameters: destcidrlist (optional) 
+
+		Response:
+
+			New parameters: destcidrlist 
+
+	addSwift
+
+		Response:
+
+			Removed parameters: details 
+
+	listEgressFirewallRules
+
+		Response:
+
+			New parameters: destcidrlist 
+
+	listSecondaryStagingStores
+
+		Response:
+
+			Removed parameters: details 
+
+	listTemplates
+
+		Response:
+
+			New parameters: bits 
+
+	listFirewallRules
+
+		Response:
+
+			New parameters: destcidrlist 
+
+	createSecondaryStagingStore
+
+		Response:
+
+			Removed parameters: details 
+
+	updateNetworkOffering
+
+		Response:
+
+			New parameters: supportspublicaccess 
+
+	createNetworkOffering
+
+		Response:
+
+			New parameters: supportspublicaccess 
+
+	listSnapshots
+
+		Response:
+
+			New parameters: locationtype, osdisplayname, ostypeid 
+
+	listConfigurations
+
+		Request:
+
+			New parameters: imagestoreuuid (optional) 
+
+	addIpToNic
+
+		Response:
+
+			New parameters: secondaryip 
+
+	createProject
+
+		Response:
+
+			New parameters: projectaccountname 
+
+	createSnapshot
+
+		Request:
+
+			New parameters: locationtype (optional) 
+
+		Response:
+
+			New parameters: locationtype, osdisplayname, ostypeid 
+
+	findHostsForMigration
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	dedicateGuestVlanRange
+
+		Request:
+
+			Changed parameters: account (old version - required, new version - optional), domainid (old version - required, new version - optional) 
+
+	updateIso
+
+		Request:
+
+			New parameters: cleanupdetails (optional) 
+
+		Response:
+
+			New parameters: bits 
+
+	listExternalLoadBalancers
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	prepareTemplate
+
+		Response:
+
+			New parameters: bits 
+
+	samlSso
+
+		Response:
+
+			New parameters: timezoneoffset 
+
+	login
+
+		Response:
+
+			New parameters: timezoneoffset 
+
+	addImageStore
+
+		Response:
+
+			Removed parameters: details 
+
+	copyTemplate
+
+		Request:
+
+			New parameters: destzoneids (optional) 
+
+			Changed parameters: destzoneid (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: bits 
+
+	assignVirtualMachine
+
+		Request:
+
+			New parameters: projectid (optional) 
+
+			Changed parameters: account (old version - required, new version - optional), domainid (old version - required, new version - optional) 
+
+	updateTemplate
+
+		Request:
+
+			New parameters: cleanupdetails (optional) 
+
+		Response:
+
+			New parameters: bits 
+
+	addSecondaryStorage
+
+		Response:
+
+			Removed parameters: details 
+
+	updateVirtualMachine
+
+		Request:
+
+			New parameters: cleanupdetails (optional) 
+
+	updateNetwork
+
+		Request:
+
+			New parameters: forced (optional), updateinsequence (optional) 
+
+	createTemplate
+
+		Response:
+
+			New parameters: bits 
+
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	listProjects
+
+		Response:
+
+			New parameters: projectaccountname 
+
+	addGuestOs
+
+		Request:
+
+			New parameters: details (required) 
+
+	registerIso
+
+		Response:
+
+			New parameters: bits 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	listProjectAccounts
+
+		Response:
+
+			New parameters: projectaccountname 
+
+	listNetworkOfferings
+
+		Response:
+
+			New parameters: supportspublicaccess 
+
+	addHost
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	updateProject
+
+		Response:
+
+			New parameters: projectaccountname 
+
+	listIsos
+
+		Response:
+
+			New parameters: bits 
+
+	updateCloudToUseObjectStore
+
+		Response:
+
+			Removed parameters: details 
+
+	updateConfiguration
+
+		Request:
+
+			New parameters: imagestoreuuid (optional) 
+
+	revertSnapshot
+
+		Response:
+
+			New parameters: locationtype, osdisplayname, ostypeid 
+
+	listSwifts
+
+		Response:
+
+			Removed parameters: details 
+
+	suspendProject
+
+		Response:
+
+			New parameters: projectaccountname 
+
+	registerTemplate
+
+		Request:
+
+			New parameters: zoneids (optional) 
+
+			Changed parameters: zoneid (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: bits 
+
+	addImageStoreS3
+
+		Response:
+
+			Removed parameters: details 
+
+	createFirewallRule
+
+		Response:
+
+			New parameters: destcidrlist 
+
+	listImageStores
+
+		Response:
+
+			Removed parameters: details 
+
+	activateProject
+
+		Response:
+
+			New parameters: projectaccountname 
+
+	reconnectHost
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	addBaremetalHost
+
+		Response:
+
+			New parameters: memorywithoverprovisioning 
+
+	updateEgressFirewallRule
+
+		Response:
+
+			New parameters: destcidrlist 
