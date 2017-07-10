@@ -684,7 +684,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
         when(mockNetworkHelper.deployRouter(deploymentUT, false))
         .thenReturn(routerVO1).thenReturn(routerVO2);
-
+        when(networkDetailsDao.findById(anyLong())).thenReturn(null);
         // Execute
         deploymentUT.deployAllVirtualRouters();
 

@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.router.VirtualRouter;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
@@ -106,6 +109,7 @@ public class RouterDeploymentDefinition {
     protected Long tableLockId;
     protected boolean isPublicNetwork;
     protected PublicIp sourceNatIp;
+    protected NetworkDetailsDao networkDetailsDao;
 
     protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest,
             final Account owner, final Map<Param, Object> params) {
@@ -393,7 +397,13 @@ public class RouterDeploymentDefinition {
             // Don't start the router as we are holding the network lock that
             // needs to be released at the end of router allocation
             final DomainRouterVO router = nwHelper.deployRouter(this, false);
-
+            //check if the network update is in progress.
+            //if update is in progress add the update_pending flag to DomainRouterVO.
+            NetworkDetailVO detail =networkDetailsDao.findDetail(guestNetwork.getId(),Network.updatingInSequence);
+            if("true".equalsIgnoreCase(detail!=null ? detail.getValue() : null)) {
+                router.setUpdateState(VirtualRouter.UpdateState.UPDATE_IN_PROGRESS);
+                routerDao.persist(router);
+            }
             if (router != null) {
                 routerDao.addRouterToGuestNetwork(router, guestNetwork);
                 //Fix according to changes by Sheng Yang in commit ID cb4513379996b262ae378daf00c6388c6b7313cf

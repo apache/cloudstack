@@ -29,6 +29,7 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_process_status)
 import time
+import multiprocessing
 
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -872,9 +873,16 @@ class TestRvRRedundancy(cloudstackTestCase):
             cls.testdata["nw_off_isolated_RVR"],
             conservemode=True
         )
+        cls.network_offering_for_update=NetworkOffering.create(
+            cls.api_client,
+            cls.testdata["nw_off_isolated_RVR"],
+            conservemode=True
+        )
+        cls._cleanup.append(cls.network_offering_for_update)
         cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
+        cls.network_offering_for_update.update(cls.api_client, state='Enabled')
         return
 
     @classmethod
@@ -1511,3 +1519,149 @@ class TestRvRRedundancy(cloudstackTestCase):
             "Redundant state of the router should be BACKUP but is %s" %
             routers[0].redundantstate)
         return
+
+    def updateNetwork(self, conn):
+        try:
+            self.network.update(
+                self.api_client,
+                networkofferingid=self.network_offering_for_update.id,
+                updateinsequence=True,
+                forced=True,
+                changecidr=False
+            )
+        except Exception as e:
+               conn.send("Failed to update network: %s due to %s"%(self.network.name, e))
+        conn.send("update Network Complete")
+        return
+
+
+
+    def get_master_and_backupRouter(self):
+        retry = 4
+        master_router = backup_router=None
+        while retry > 0:
+            routers = Router.list(
+                self.apiclient,
+                networkid=self.network.id,
+                listall=True
+            )
+            retry = retry-1
+            if not (routers[0].redundantstate == 'MASTER' or routers[1].redundantstate == 'MASTER'):
+                continue;
+            if routers[0].redundantstate == 'MASTER':
+               master_router = routers[0]
+               backup_router = routers[1]
+               break
+            else:
+               master_router = routers[1]
+               backup_router = routers[0]
+               break
+        return master_router, backup_router
+
+
+    def chek_for_new_backupRouter(self,old_backup_router):
+        master_router, backup_router = self.get_master_and_backupRouter()
+        retry = 4
+        self.info("Checking if new router is getting created.")
+        self.info("old_backup_router:"+old_backup_router.name+" new_backup_router:"+backup_router.name)
+        while old_backup_router.name == backup_router.name:
+            self.debug("waiting for new router old router:"+backup_router.name)
+            retry = retry-1
+            if retry == 0:
+                break;
+            time.sleep(self.testdata["sleep"])
+            master_router, backup_router = self.get_master_and_backupRouter()
+        if retry == 0:
+            self.fail("New router creation taking too long, timed out")
+
+    def wait_untill_router_stabilises(self):
+        retry=4
+        while retry > 0:
+            routers = Router.list(
+                self.apiclient,
+                networkid=self.network.id,
+                listall=True
+            )
+            retry = retry-1
+            self.info("waiting untill state of the routers is stable")
+            if routers[0].redundantstate != 'UNKNOWN' and routers[1].redundantstate != 'UNKNOWN':
+                return
+            elif retry==0:
+                self.fail("timedout while waiting for routers to stabilise")
+                return
+            time.sleep(self.testdata["sleep"])
+
+    @attr(tags=["bharat"])
+    def test_06_updateVRs_in_sequence(self):
+        """Test update network and check if VRs are updated in sequence
+        """
+
+        # Steps to validate
+        # update network to a new offering
+        # check if the master router is running while backup is starting.
+        # check if the backup is running while master is starting.
+        # check if both the routers are running after the update is complete.
+
+        #clean up the network to make sure it is in proper state.
+        self.network.restart(self.apiclient,cleanup=True)
+        time.sleep(self.testdata["sleep"])
+        self.wait_untill_router_stabilises()
+        old_master_router, old_backup_router = self.get_master_and_backupRouter()
+        self.info("old_master_router:"+old_master_router.name+" old_backup_router"+old_backup_router.name)
+        #chek if the network is in correct state
+        self.assertEqual(old_master_router.state, "Running", "The master router is not running, network is not in a correct state to start the test")
+        self.assertEqual(old_backup_router.state, "Running", "The backup router is not running, network is not in a correct state to start the test")
+
+        worker, monitor = multiprocessing.Pipe()
+        worker_process = multiprocessing.Process(target=self.updateNetwork, args=(worker,))
+        worker_process.start()
+        if not worker_process.is_alive():
+            message = monitor.recv()
+            if "Complete" not in message:
+                self.fail(message)
+
+        self.info("Network update Started, the old backup router will get destroyed and a new router will be created")
+
+        self.chek_for_new_backupRouter(old_backup_router)
+        master_router, new_backup_router=self.get_master_and_backupRouter()
+        #the state of the master router should be running. while backup is being updated
+        self.assertEqual(master_router.state, "Running", "State of the master router is not running")
+        self.assertEqual(master_router.redundantstate, 'MASTER', "Redundant state of the master router should be MASTER, but it is %s"%master_router.redundantstate)
+        self.info("Old backup router:"+old_backup_router.name+" is destroyed and new router:"+new_backup_router.name+" got created")
+
+        #wait for the new backup to become master.
+        retry = 4
+        while new_backup_router.name != master_router.name:
+            retry = retry-1
+            if retry == 0:
+                break
+            time.sleep(self.testdata["sleep"])
+            self.info("wating for backup router to become master router name:"+new_backup_router.name)
+            master_router, backup_router = self.get_master_and_backupRouter()
+        if retry == 0:
+            self.fail("timed out while waiting for new backup router to change state to MASTER.")
+
+        #new backup router has become master.
+        self.info("newly created router:"+new_backup_router.name+" has changed state to Master")
+        self.info("old master router:"+old_master_router.name+"is destroyed")
+        #old master will get destroyed and a new backup will be created.
+        #wait until new backup changes state from unknown to backup
+        master_router, backup_router = self.get_master_and_backupRouter()
+        retry = 4
+        while backup_router.redundantstate != 'BACKUP':
+            retry = retry-1
+            self.info("waiting for router:"+backup_router.name+" to change state to Backup")
+            if retry == 0:
+                break
+            time.sleep(self.testdata["sleep"])
+            master_router, backup_router = self.get_master_and_backupRouter()
+            self.assertEqual(master_router.state, "Running", "State of the master router is not running")
+            self.assertEqual(master_router.redundantstate, 'MASTER', "Redundant state of the master router should be MASTER, but it is %s"%master_router.redundantstate)
+        if retry == 0:
+            self.fail("timed out while waiting for new backup rotuer to change state to MASTER.")
+
+        #the network update is complete.finally both the router should be running.
+        new_master_router, new_backup_router=self.get_master_and_backupRouter()
+        self.assertEqual(new_master_router.state, "Running", "State of the master router:"+new_master_router.name+" is not running")
+        self.assertEqual(new_backup_router.state, "Running", "State of the backup router:"+new_backup_router.name+" is not running")
+        worker_process.join()

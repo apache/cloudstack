@@ -19,27 +19,33 @@
 from netaddr import *
 
 def merge(dbag, ip):
-    index = -1 # a non-valid array index
+    nic_dev_id = None
     for dev in dbag:
         if dev == "id":
             continue
-        for i, address in enumerate(dbag[dev]):
+        for address in dbag[dev]:
             if address['public_ip'] == ip['public_ip']:
-                index = i
+                if 'nic_dev_id' in address:
+                    nic_dev_id = address['nic_dev_id']
+                dbag[dev].remove(address)
 
     ipo = IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
-    ip['device'] = 'eth' + str(ip['nic_dev_id'])
+    if 'nic_dev_id' in ip:
+         nic_dev_id = ip['nic_dev_id']
+    ip['device'] = 'eth' + str(nic_dev_id)
     ip['broadcast'] = str(ipo.broadcast)
     ip['cidr'] = str(ipo.ip) + '/' + str(ipo.prefixlen)
     ip['size'] = str(ipo.prefixlen)
     ip['network'] = str(ipo.network) + '/' + str(ipo.prefixlen)
     if 'nw_type' not in ip.keys():
         ip['nw_type'] = 'public'
+    else:
+        ip['nw_type'] = ip['nw_type'].lower()
     if ip['nw_type'] == 'control':
         dbag[ip['device']] = [ip]
     else:
-        if index != -1:
-            dbag[ip['device']][index] = ip
+        if 'source_nat' in ip and ip['source_nat'] and ip['device'] in dbag and len(dbag[ip['device']]) > 0:
+            dbag[ip['device']].insert(0, ip) # make sure the source_nat ip is first (primary) on the device
         else:
             dbag.setdefault(ip['device'], []).append(ip)
 

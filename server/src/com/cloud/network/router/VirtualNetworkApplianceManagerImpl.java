@@ -2282,6 +2282,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
+        //clean up the update_state feild
+        if(router.getUpdateState()== VirtualRouter.UpdateState.UPDATE_FAILED){
+            router.setUpdateState(null);
+            _routerDao.update(router.getId(),router);
+        }
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
