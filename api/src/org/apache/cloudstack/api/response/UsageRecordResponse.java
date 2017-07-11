@@ -19,12 +19,15 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @SuppressWarnings("unused")
-public class UsageRecordResponse extends BaseResponse implements ControlledEntityResponse {
+public class UsageRecordResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the user account name")
     private String accountName;
@@ -136,6 +139,14 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     @SerializedName("isdefault")
     @Param(description = "True if the resource is default")
     private Boolean isDefault;
+
+    public UsageRecordResponse() {
+        tags = new LinkedHashSet<ResourceTagResponse>();
+    }
+
+    public void setTags(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
+    }
 
     @Override
     public void setAccountName(String accountName) {
