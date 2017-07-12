@@ -16,9 +16,10 @@
 # under the License.
 sudo: required
 dist: trusty
+group: edge
 language: java
 jdk:
-- oraclejdk8
+- openjdk8
 python:
   - "2.7"
 cache:
