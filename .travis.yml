@@ -19,7 +19,7 @@ dist: trusty
 group: edge
 language: java
 jdk:
-- openjdk8
+- oraclejdk8
 python:
   - "2.7"
 cache:
