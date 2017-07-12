@@ -16,6 +16,7 @@
 # under the License.
 
 # Import Local Modules
+from marvin.codes import PASS, FAILED
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (stopVirtualMachine,
@@ -27,6 +28,7 @@ from marvin.lib.utils import (cleanup_resources,
 from marvin.lib.base import (ServiceOffering,
                              VirtualMachine,
                              Account,
+                             Template,
                              ServiceOffering,
                              NATRule,
                              NetworkACL,
@@ -52,6 +54,7 @@ from marvin.lib.common import (get_zone,
 import time
 import logging
 
+
 def check_router_command(virtual_machine, public_ip, ssh_command, check_string, test_case, retries=5):
     result = 'failed'
     try:
@@ -62,6 +65,58 @@ def check_router_command(virtual_machine, public_ip, ssh_command, check_string, 
 
     logging.debug("Result from SSH into the Virtual Machine: %s" % result)
     return result.count(check_string)
+
+
+class Templates:
+    """Test data for templates
+    """
+
+    def __init__(self):
+        self.templates = {
+            "macchinina": {
+                "kvm": {
+                    "name": "tiny-kvm",
+                    "displaytext": "macchinina kvm",
+                    "format": "qcow2",
+                    "hypervisor": "kvm",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "xenserver": {
+                    "name": "tiny-xen",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "xen",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "hyperv": {
+                    "name": "tiny-hyperv",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "hyperv",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+                "vmware": {
+                    "name": "tiny-vmware",
+                    "displaytext": "macchinina vmware",
+                    "format": "ova",
+                    "hypervisor": "vmware",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
+                    "requireshvm": "True",
+                    "ispublic": "True",
+                },
+            }
+        }
+
 
 class TestRedundantIsolateNetworks(cloudstackTestCase):
 
@@ -81,12 +136,20 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+
+        macchinina = Templates().templates["macchinina"]
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.logger.debug("Downloading Template: %s from: %s" % (macchinina[cls.hypervisor.lower()],
+                         macchinina[cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.api_client, macchinina[cls.hypervisor.lower()],
+                       cls.zone.id, hypervisor=cls.hypervisor.lower(), domainid=cls.domain.id)
+        cls.template.download(cls.api_client)
+
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template"
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
 
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(
@@ -122,7 +185,8 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
 
         cls._cleanup = [
                         cls.service_offering,
-                        cls.account
+                        cls.account,
+                        cls.template
                         ]
 
         return
@@ -270,7 +334,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         # Test SSH after closing port 22
         expected = 1
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "3 packets received"
+        check_string = " 0% packet loss"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -434,7 +498,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
 
         expected = 0
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "3 packets received"
+        check_string = " 0% packet loss"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -822,7 +886,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
         # Test SSH after closing port 22
         expected = 1
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "3 packets received"
+        check_string = " 0% packet loss"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
@@ -977,7 +1041,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
 
         expected = 0
         ssh_command = "ping -c 3 8.8.8.8"
-        check_string = "3 packets received"
+        check_string = " 0% packet loss"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(

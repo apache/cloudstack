@@ -29,7 +29,7 @@ public class TransportAddress {
     private int _connectionId = LOCAL_SERVICE_CONNECTION;
     private String _endpointId;
     private int _magic;
-    private final SecureRandom randomGenerator=new SecureRandom();
+    private final SecureRandom randomGenerator = new SecureRandom();
 
     public TransportAddress(String nodeId, int connectionId, String endpointId) {
         assert (nodeId != null);

@@ -85,7 +85,7 @@ class Services:
                     "displaytext": "Public Template",
                     "name": "Public template",
                     "ostype": 'CentOS 5.3 (64-bit)',
-                    "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
+                    "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                     "hypervisor": 'XenServer',
                     "format": 'VHD',
                     "isfeatured": True,
@@ -658,7 +658,7 @@ class TestListTemplate(cloudstackTestCase):
                                     UserName=self.account.name,
                                     DomainName=self.account.domain)
         try:
-            list_template_response = Template.list(self.user_api_client, templatefilter='all')
+            list_template_response = Template.list(user_api_client, templatefilter='all')
             self.fail("Regular User is able to use templatefilter='all' in listTemplates API call")
         except Exception as e:
             self.debug("ListTemplates API with templatefilter='all' is not permitted for normal user")
@@ -674,7 +674,6 @@ class TestListTemplate(cloudstackTestCase):
                                     UserName=self.newdomain_account.name,
                                     DomainName=self.newdomain_account.domain)
         try:
-            list_template_response = Template.list(self.domain_user_api_client, templatefilter='all')
-            self.fail("Domain admin is able to use templatefilter='all' in listTemplates API call")
+            list_template_response = Template.list(domain_user_api_client, templatefilter='all')
         except Exception as e:
-            self.debug("ListTemplates API with templatefilter='all' is not permitted for domain admin user")
+            self.fail("Domain admin should be able to use templatefilter='all' in listTemplates API call")

@@ -32,10 +32,18 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.element.RedundantResource;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.dao.DomainRouterDao;
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
@@ -50,8 +58,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -134,6 +140,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.AggregatedCommandExecutor;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
@@ -265,8 +272,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     MessageBus _messageBus;
     @Inject
     VMNetworkMapDao _vmNetworkMapDao;
+    @Inject
+    DomainRouterDao _rotuerDao;
+    @Inject
+    RemoteAccessVpnDao _remoteAccessVpnDao;
+    @Inject
+    VpnUserDao _vpnUserDao;
 
     List<NetworkGuru> networkGurus;
+
 
     public List<NetworkGuru> getNetworkGurus() {
         return networkGurus;
@@ -350,6 +364,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     PortableIpDao _portableIpDao;
     @Inject
     ConfigDepot _configDepot;
+    @Inject
+    NetworkDetailsDao _networkDetailsDao;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     ScheduledExecutorService _executor;
@@ -1260,6 +1276,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     return false;
                 }
             }
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns)
+                    && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, element.getProvider()) && element instanceof DnsServiceProvider) {
+                final DnsServiceProvider sp = (DnsServiceProvider)element;
+                if (profile.getIPv6Address() == null) {
+                    if (!sp.configDnsSupportForSubnet(network, profile, vmProfile, dest, context)) {
+                        return false;
+                    }
+                }
+                if(!sp.addDnsEntry(network, profile, vmProfile, dest, context)) {
+                    return false;
+                }
+            }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)
                     && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) && element instanceof UserDataServiceProvider) {
                 final UserDataServiceProvider sp = (UserDataServiceProvider)element;
@@ -1270,6 +1298,175 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
         return true;
     }
+
+    @Override
+    public boolean canUpdateInSequence(Network network, boolean forced){
+        List<Provider> providers = getNetworkProviders(network.getId());
+
+        //check if the there are no service provider other than virtualrouter.
+        for(Provider provider :providers){
+            if(provider!=Provider.VirtualRouter)
+                throw new UnsupportedOperationException("Cannot update the network resources in sequence when providers other than virtualrouter are used");
+        }
+        //check if routers are in correct state before proceeding with the update
+        List<DomainRouterVO> routers=_rotuerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+        for(DomainRouterVO router :routers){
+            if(router.getRedundantState()== VirtualRouter.RedundantState.UNKNOWN){
+                if(!forced){
+                    throw new CloudRuntimeException("Domain router: "+router.getInstanceName()+" is in unknown state, Cannot update network. set parameter forced to true for forcing an update");
+                }
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public List<String> getServicesNotSupportedInNewOffering(Network network,long newNetworkOfferingId){
+        NetworkOffering offering =_networkOfferingDao.findById(newNetworkOfferingId);
+        List<String> services=_ntwkOfferingSrvcDao.listServicesForNetworkOffering(offering.getId());
+        List<NetworkServiceMapVO> serviceMap= _ntwkSrvcDao.getServicesInNetwork(network.getId());
+        List<String> servicesNotInNewOffering=new ArrayList<>();
+        for(NetworkServiceMapVO serviceVO :serviceMap){
+            boolean inlist=false;
+            for(String service: services){
+                if(serviceVO.getService().equalsIgnoreCase(service)){
+                    inlist=true;
+                    break;
+                }
+            }
+            if(!inlist){
+                //ignore Gateway service as this has no effect on the
+                //behaviour of network.
+                if(!serviceVO.getService().equalsIgnoreCase(Service.Gateway.getName()))
+                    servicesNotInNewOffering.add(serviceVO.getService());
+            }
+        }
+        return servicesNotInNewOffering;
+    }
+
+    @Override
+    public void cleanupConfigForServicesInNetwork(List<String> services, final Network network){
+        long networkId=network.getId();
+        Account caller=_accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
+        long userId=User.UID_SYSTEM;
+        //remove all PF/Static Nat rules for the network
+        s_logger.info("Services:"+services+" are no longer supported in network:"+network.getUuid()+
+                " after applying new network offering:"+network.getNetworkOfferingId()+" removing the related configuration");
+        if(services.contains(Service.StaticNat.getName())|| services.contains(Service.PortForwarding.getName())) {
+            try {
+                if (_rulesMgr.revokeAllPFStaticNatRulesForNetwork(networkId, userId, caller)) {
+                    s_logger.debug("Successfully cleaned up portForwarding/staticNat rules for network id=" + networkId);
+                } else {
+                    s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup");
+                }
+                if(services.contains(Service.StaticNat.getName())){
+                    //removing static nat configured on ips.
+                    //optimizing the db operations using transaction.
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
+                            List<IPAddressVO> ips = _ipAddressDao.listStaticNatPublicIps(network.getId());
+                            for (IPAddressVO ip : ips) {
+                                ip.setOneToOneNat(false);
+                                ip.setAssociatedWithVmId(null);
+                                ip.setVmIp(null);
+                                _ipAddressDao.update(ip.getId(),ip);
+                            }
+                        }
+                    });
+                }
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
+            }
+        }
+        if(services.contains(Service.SourceNat.getName())){
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(network.getId(),true);
+                    //removing static nat configured on ips.
+                    for (IPAddressVO ip : ips) {
+                        ip.setSourceNat(false);
+                        _ipAddressDao.update(ip.getId(),ip);
+                    }
+                }
+            });
+        }
+        if(services.contains(Service.Lb.getName())){
+            //remove all LB rules for the network
+            if (_lbMgr.removeAllLoadBalanacersForNetwork(networkId, caller, userId)) {
+                s_logger.debug("Successfully cleaned up load balancing rules for network id=" + networkId);
+            } else {
+                s_logger.warn("Failed to cleanup LB rules as a part of network id=" + networkId + " cleanup");
+            }
+        }
+
+        if(services.contains(Service.Firewall.getName())){
+            //revoke all firewall rules for the network
+            try {
+                if (_firewallMgr.revokeAllFirewallRulesForNetwork(networkId, userId, caller)) {
+                    s_logger.debug("Successfully cleaned up firewallRules rules for network id=" + networkId);
+                } else {
+                    s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup");
+                }
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
+            }
+        }
+
+        //do not remove vpn service for vpc networks.
+        if(services.contains(Service.Vpn.getName()) && network.getVpcId()==null){
+            RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByAccountAndNetwork(network.getAccountId(),networkId);
+            try {
+                _vpnMgr.destroyRemoteAccessVpnForIp(vpn.getServerAddressId(), caller, true);
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Failed to cleanup remote access vpn resources of network:"+network.getUuid() + " due to Exception: ", ex);
+            }
+        }
+    }
+
+    @Override
+    public void configureUpdateInSequence(Network network) {
+        List<Provider> providers = getNetworkProviders(network.getId());
+        for (NetworkElement element : networkElements) {
+            if (providers.contains(element.getProvider())) {
+                if (element instanceof RedundantResource) {
+                    ((RedundantResource) element).configureResource(network);
+                }
+            }
+        }
+    }
+
+    @Override
+    public int getResourceCount(Network network){
+        List<Provider> providers = getNetworkProviders(network.getId());
+        int resourceCount=0;
+        for (NetworkElement element : networkElements) {
+            if (providers.contains(element.getProvider())) {
+                //currently only one element implements the redundant resource interface
+                if (element instanceof RedundantResource) {
+                    resourceCount= ((RedundantResource) element).getResourceCount(network);
+                    break;
+                    }
+                }
+            }
+        return resourceCount;
+        }
+
+    @Override
+    public void finalizeUpdateInSequence(Network network, boolean success) {
+        List<Provider> providers = getNetworkProviders(network.getId());
+        for (NetworkElement element : networkElements) {
+            if (providers.contains(element.getProvider())) {
+                //currently only one element implements the redundant resource interface
+                if (element instanceof RedundantResource) {
+                    ((RedundantResource) element).finalize(network,success);
+                    break;
+                }
+            }
+        }
+    }
+
 
     @DB
     protected void updateNic(final NicVO nic, final long networkId, final int count) {
@@ -1351,6 +1548,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             nic.setIPv4Address(profile.getIPv4Address());
             nic.setAddressFormat(profile.getFormat());
             nic.setIPv6Address(profile.getIPv6Address());
+            nic.setIPv6Cidr(profile.getIPv6Cidr());
+            nic.setIPv6Gateway(profile.getIPv6Gateway());
             nic.setMacAddress(profile.getMacAddress());
             nic.setIsolationUri(profile.getIsolationUri());
             nic.setBroadcastUri(profile.getBroadCastUri());
@@ -1723,15 +1922,29 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         if (vm.getType() == Type.User
-                && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
                 && network.getTrafficType() == TrafficType.Guest
                 && network.getGuestType() == GuestType.Shared
                 && isLastNicInSubnet(nic)) {
-            // remove the dhcpservice ip if this is the last nic in subnet.
-            final DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
-            if (dhcpServiceProvider != null
-                    && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)) {
-                removeDhcpServiceInSubnet(nic);
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
+                // remove the dhcpservice ip if this is the last nic in subnet.
+                final DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
+                if (dhcpServiceProvider != null
+                        && isDhcpAccrossMultipleSubnetsSupported(dhcpServiceProvider)) {
+                    removeDhcpServiceInSubnet(nic);
+                }
+            }
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns)){
+                final DnsServiceProvider dnsServiceProvider = getDnsServiceProvider(network);
+                if (dnsServiceProvider != null) {
+                    try {
+                        if(!dnsServiceProvider.removeDnsSupportForSubnet(network)) {
+                            s_logger.warn("Failed to remove the ip alias on the dns server");
+                        }
+                    } catch (final ResourceUnavailableException e) {
+                        //failed to remove the dnsconfig.
+                        s_logger.info("Unable to delete the ip alias due to unable to contact the dns server.");
+                    }
+                }
             }
         }
 
@@ -2025,7 +2238,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // Check if cidr is RFC1918 compliant if the network is Guest Isolated for IPv4
         if (cidr != null && ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) {
             if (!NetUtils.validateGuestCidr(cidr)) {
-                throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC1918 compliant");
+                throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC 1918 or 6598 compliant");
             }
         }
 
@@ -2645,6 +2858,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    @Override
+    public DnsServiceProvider getDnsServiceProvider(final Network network) {
+        final String dnsProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Dns);
+
+        if (dnsProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.Dhcp.getName());
+            return null;
+        }
+
+        return  (DnsServiceProvider) _networkModel.getElementImplementingProvider(dnsProvider);
+    }
+
     protected boolean isSharedNetworkWithServices(final Network network) {
         assert network != null;
         final DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
@@ -2669,12 +2894,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<? extends Nic> listVmNics(final long vmId, final Long nicId, final Long networkId) {
+    public List<? extends Nic> listVmNics(final long vmId, final Long nicId, final Long networkId, String keyword) {
         List<NicVO> result = null;
-        if (nicId == null && networkId == null) {
-            result = _nicDao.listByVmId(vmId);
+
+        if (keyword == null || keyword.isEmpty()) {
+            if (nicId == null && networkId == null) {
+                result = _nicDao.listByVmId(vmId);
+            } else {
+                result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
+            }
         } else {
-            result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
+            result = _nicDao.listByVmIdAndKeyword(vmId, keyword);
         }
 
         for (final NicVO nic : result) {

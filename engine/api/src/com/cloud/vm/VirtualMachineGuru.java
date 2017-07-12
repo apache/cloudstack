@@ -20,7 +20,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
-
 /**
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
  *

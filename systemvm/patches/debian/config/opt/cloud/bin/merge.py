@@ -50,28 +50,29 @@ class DataBag:
         data = self.bdata
         if not os.path.exists(self.DPATH):
             os.makedirs(self.DPATH)
-        self.fpath = self.DPATH + '/' + self.key + '.json'
+        self.fpath = os.path.join(self.DPATH, self.key + '.json')
+
         try:
-            handle = open(self.fpath)
+            with open(self.fpath, 'r') as _fh:
+                logging.debug("Loading data bag type %s", self.key)
+                data = json.load(_fh)
         except IOError:
             logging.debug("Creating data bag type %s", self.key)
             data.update({"id": self.key})
-        else:
-            logging.debug("Loading data bag type %s",  self.key)
-            data = json.load(handle)
-            handle.close()
-        self.dbag = data
+        finally:
+            self.dbag = data
 
     def save(self, dbag):
         try:
-            handle = open(self.fpath, 'w')
+            with open(self.fpath, 'w') as _fh:
+                logging.debug("Writing data bag type %s", self.key)
+                json.dump(
+                    dbag, _fh,
+                    sort_keys=True,
+                    indent=2
+                )
         except IOError:
             logging.error("Could not write data bag %s", self.key)
-        else:
-            logging.debug("Writing data bag type %s", self.key)
-            logging.debug(dbag)
-        jsono = json.dumps(dbag, indent=4, sort_keys=True)
-        handle.write(jsono)
 
     def getDataBag(self):
         return self.dbag
@@ -214,6 +215,10 @@ class updateDataBag:
         elif (self.qFile.data['cmd_line']['type'] == "dhcpsrvr"):
             self.processCLItem('0', "guest")
             self.processCLItem('1', "control")
+        elif (self.qFile.data['cmd_line']['type'] == "ilbvm"):
+            self.processCLItem('0', "guest")
+            self.processCLItem('1', "control")
+
         return cs_cmdline.merge(dbag, self.qFile.data)
 
     def processCLItem(self, num, nw_type):
@@ -225,10 +230,13 @@ class updateDataBag:
             dp['source_nat'] = False
             dp['add'] = True
             dp['one_to_one_nat'] = False
-            if('localgw' in self.qFile.data['cmd_line']):
-                dp['gateway'] = self.qFile.data['cmd_line']['localgw']
+            if nw_type == "public":
+                dp['gateway'] = self.qFile.data['cmd_line']['gateway']
             else:
-                dp['gateway'] = 'None'
+                if('localgw' in self.qFile.data['cmd_line']):
+                    dp['gateway'] = self.qFile.data['cmd_line']['localgw']
+                else:
+                    dp['gateway'] = 'None'
             dp['nic_dev_id'] = num
             dp['nw_type'] = nw_type
             qf = QueueFile()

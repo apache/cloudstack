@@ -92,8 +92,7 @@ developer [page](http://cloudstack.apache.org/developers.html) for contributing 
 
 * [Blog](https://blogs.apache.org/cloudstack)
 * [Twitter](https://twitter.com/cloudstack)
-* [Planet CloudStack](http://planet.apache.org/cloudstack)
-* [Events and meetup](http://lanyrd.com/topics/apache-cloudstack)
+* [Events and meetup](http://cloudstackcollab.org/)
 
 ## Reporting Security Vulnerabilities
 

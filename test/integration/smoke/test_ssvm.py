@@ -20,12 +20,13 @@
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (stopSystemVm,
                                   rebootSystemVm,
-                                  destroySystemVm)
+                                  destroySystemVm, updateConfiguration)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status,
-                              get_host_credentials)
+                              get_host_credentials,
+                              wait_until)
 from marvin.lib.base import (PhysicalNetwork,
-                             NetScaler)
+                             NetScaler, ImageStore)
 from marvin.lib.common import (get_zone,
                                list_hosts,
                                list_ssvms,
@@ -33,6 +34,7 @@ from marvin.lib.common import (get_zone,
                                list_vlan_ipranges)
 from nose.plugins.attrib import attr
 import telnetlib
+import logging
 
 # Import System modules
 import time
@@ -42,11 +44,18 @@ _multiprocess_shared_ = True
 class TestSSVMs(cloudstackTestCase):
 
     def setUp(self):
+	test_case = super(TestSSVMs, self)
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
+        self.config = test_case.getClsConfig()
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+
+        self.logger = logging.getLogger('TestSSVMs')
+        self.stream_handler = logging.StreamHandler()
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.stream_handler)
 
         # Default sleep is set to 90 seconds, which is too long if the SSVM takes up to 2min to start.
         # Second sleep in the loop will waste test time.
@@ -471,7 +480,7 @@ class TestSSVMs(cloudstackTestCase):
                             credentials to check router services")
         res = str(result)
         self.debug("Cloud Process status: %s" % res)
-        # cloud.com service (type=secstorage) is running: process id: 2346
+        # Apache CloudStack service (type=secstorage) is running: process id: 2346
         self.assertEqual(
             res.count("is running"),
             1,
@@ -1196,4 +1205,163 @@ class TestSSVMs(cloudstackTestCase):
 
         # Call to verify cloud process is running
         self.test_04_cpvm_internals()
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "sg"],
+        required_hardware="true")
+    def test_11_ss_nfs_version_on_ssvm(self):
+        """Test NFS Version on Secondary Storage mounted properly on SSVM
+        """
+
+        # 1) List SSVM in zone
+        # 2) Get id and url from mounted nfs store
+        # 3) Update NFS version for previous image store
+        # 4) Stop SSVM
+        # 5) Check NFS version of mounted nfs store after SSVM starts 
+
+        nfs_version = self.config.nfsVersion
+        if nfs_version == None:
+            self.skipTest('No NFS version provided in test data')
+
+        #List SSVM for zone id
+        list_ssvm_response = list_ssvms(
+            self.apiclient,
+            systemvmtype='secondarystoragevm',
+            state='Running',
+            zoneid=self.zone.id
+        )
+        self.assertNotEqual(
+            list_ssvm_response,
+            None
+        )
+        self.assertEqual(
+            isinstance(list_ssvm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertEqual(
+            len(list_ssvm_response),
+            1,
+            "Check list System VMs response"
+        )
+
+        ssvm = list_ssvm_response[0]
+        image_stores_response = ImageStore.list(self.apiclient,zoneid=self.zone.id)
+
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
+            # SSH into SSVMs is done via management server for Vmware and Hyper-V
+            result = get_process_status(
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                ssvm.privateip,
+                "mount | grep 'type nfs'",
+                hypervisor=self.hypervisor)
+
+        for res in result:
+            split_res = res.split("on")
+            mounted_img_store_url = split_res[0].strip()
+            for img_store in image_stores_response:
+                img_store_url = str(img_store.url)
+                if img_store_url.startswith("nfs://"):
+                    img_store_url = img_store_url[6:]
+                    #Add colon after ip address to match output from mount command
+                    first_slash = img_store_url.find('/')
+                    img_store_url = img_store_url[0:first_slash] + ':' + img_store_url[first_slash:]
+                    if img_store_url == mounted_img_store_url:
+                        img_store_id = img_store.id
+                        break
+
+        self.assertNotEqual(
+            img_store_id,
+            None,
+            "Check image store id mounted on SSVM"
+        )
+
+        #Update NFS version for image store mounted on SSVM
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "secstorage.nfs.version"
+        updateConfigurationCmd.value = nfs_version
+        updateConfigurationCmd.imagestoreuuid = img_store_id
+
+        updateConfigurationResponse = self.apiclient.updateConfiguration(updateConfigurationCmd)
+        self.logger.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+
+        #Stop SSVM
+        self.debug("Stopping SSVM: %s" % ssvm.id)
+        cmd = stopSystemVm.stopSystemVmCmd()
+        cmd.id = ssvm.id
+        self.apiclient.stopSystemVm(cmd)
+
+        def checkForRunningSSVM():
+            new_list_ssvm_response = list_ssvms(
+                self.apiclient,
+                id=ssvm.id
+            )
+            if isinstance(new_list_ssvm_response, list):
+                return new_list_ssvm_response[0].state == 'Running', None                
+            
+        res, _ = wait_until(self.services["sleep"], self.services["timeout"], checkForRunningSSVM)
+        if not res:
+            self.fail("List SSVM call failed!")
+        
+        new_list_ssvm_response = list_ssvms(
+                self.apiclient,
+                id=ssvm.id
+        )
+
+        self.assertNotEqual(
+            new_list_ssvm_response,
+            None
+        )
+        self.assertEqual(
+            isinstance(new_list_ssvm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        ssvm = new_list_ssvm_response[0]
+        self.debug("SSVM state after debug: %s" % ssvm.state)
+        self.assertEqual(
+            ssvm.state,
+            'Running',
+            "Check whether SSVM is running or not"
+        )
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(ssvm.name)
+
+        #Check NFS version on mounted image store
+        result = get_process_status(
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                ssvm.privateip,
+                "mount | grep '%s'"%mounted_img_store_url,
+                hypervisor=self.hypervisor)
+
+        self.assertNotEqual(
+            result,
+            None
+        )
+        self.assertEqual(
+            len(result),
+            1,
+            "Check result length"
+        )
+
+        res = result[0]
+        mounted_nfs_version = res.split("vers=")[1][0:1]
+        self.assertEqual(
+            int(mounted_nfs_version),
+            int(nfs_version),
+            "Check mounted NFS version to be the same as provided"
+        )
+
         return

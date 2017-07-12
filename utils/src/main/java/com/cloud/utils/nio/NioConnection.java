@@ -98,10 +98,9 @@ public abstract class NioConnection implements Callable<Boolean> {
         }
         _isStartup = true;
 
-        _threadExecutor = Executors.newSingleThreadExecutor();
-        _futureTask = _threadExecutor.submit(this);
-
+        _threadExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory(this._name + "-NioConnectionHandler"));
         _isRunning = true;
+        _futureTask = _threadExecutor.submit(this);
     }
 
     public void stop() {

@@ -564,7 +564,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // Simple check to see if we got IP Address...
             boolean isIPAddress = Pattern.matches("[0-9]$", group[group.length - 1]);
             if (isIPAddress) {
-                ou = "cloud.com";
+                ou = "cloud.com"; // leaving this example reference to cloud.com as it has no real world relevance
             } else {
                 ou = group[group.length - 1];
                 for (int i = group.length - 2; i >= 0 && i >= group.length - 3; i--)
@@ -572,7 +572,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
         } catch (UnknownHostException ex) {
             s_logger.info("Fail to get user's domain name. Would use cloud.com. ", ex);
-            ou = "cloud.com";
+            ou = "cloud.com"; // leaving this example reference to cloud.com as it has no real world relevance
         }
 
         String o = ou;
@@ -1055,6 +1055,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, provisioningType, diskSize, tags, isCustomized, null, null, null);
         newDiskOffering.setUniqueName("Cloud.Com-" + name);
+        // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance
         newDiskOffering.setSystemUse(isSystemUse);
         newDiskOffering = _diskOfferingDao.persistDeafultDiskOffering(newDiskOffering);
         return newDiskOffering;
@@ -1066,6 +1067,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         ServiceOfferingVO offering =
                 new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, provisioningType, localStorageRequired, false, tags, false, null, false);
         offering.setUniqueName("Cloud.Com-" + name);
+        // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
         return offering;
     }
@@ -1203,7 +1205,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 NetworkOfferingVO defaultNetscalerNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
                                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, false, true, null, null, true,
-                                Availability.Optional, null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false, false);
+                                Availability.Optional, null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false, false, false);
 
                 defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);

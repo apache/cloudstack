@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.template;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +120,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
     @Override
     public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
-        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType, String accountName,
+        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
         Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException {
         return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId,
             hypervisorType, chksum, bootable, null, null, details, false, null, false, TemplateType.USER);
@@ -127,7 +128,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
     @Override
     public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
-        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType, String chksum,
+        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneIdList, HypervisorType hypervisorType, String chksum,
         Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
         TemplateType templateType) throws ResourceAllocationException {
         //Long accountId = null;
@@ -135,10 +136,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
-        }
-
-        if (zoneId.longValue() == -1) {
-            zoneId = null;
         }
 
         if (isIso) {
@@ -178,7 +175,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             isRegionStore = true;
         }
 
-        if (!isAdmin && zoneId == null && !isRegionStore ) {
+        if (!isAdmin && zoneIdList == null && !isRegionStore ) {
             // domain admin and user should also be able to register template on a region store
             throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
         }
@@ -215,14 +212,16 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
 
         // If a zoneId is specified, make sure it is valid
-        if (zoneId != null) {
-            DataCenterVO zone = _dcDao.findById(zoneId);
-            if (zone == null) {
-                throw new IllegalArgumentException("Please specify a valid zone.");
-            }
-            Account caller = CallContext.current().getCallingAccount();
-            if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())){
-                throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
+        if (zoneIdList != null) {
+            for (Long zoneId :zoneIdList) {
+                DataCenterVO zone = _dcDao.findById(zoneId);
+                if (zone == null) {
+                    throw new IllegalArgumentException("Please specify a valid zone.");
+                }
+                Account caller = CallContext.current().getCallingAccount();
+                if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+                    throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+                }
             }
         }
 
@@ -248,7 +247,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         CallContext.current().setEventDetails("Id: " + id + " name: " + name);
-        return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneId,
+        return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
             sshkeyEnabled, null, isDynamicallyScalable, templateType);
 
@@ -263,17 +262,22 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
 
-        Long zoneId = cmd.getZoneId();
+        List<Long> zoneId = cmd.getZoneIds();
         // ignore passed zoneId if we are using region wide image store
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
         if (stores != null && stores.size() > 0) {
-            zoneId = -1L;
+            zoneId = null;
         }
 
-        return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(),
-            cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId,
-            HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
-            cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
+        if(hypervisorType == HypervisorType.None) {
+            throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
+                    + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
+        }
+
+        return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
+                cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
+                cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
 
     }
 
@@ -286,16 +290,24 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
 
+        List<Long> zoneList = null;
         Long zoneId = cmd.getZoneId();
         // ignore passed zoneId if we are using region wide image store
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
-        if (stores != null && stores.size() > 0) {
-            zoneId = -1L;
+        if (!(stores != null && stores.size() > 0)) {
+            zoneList = new ArrayList<>();
+            zoneList.add(zoneId);
+        }
+
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
+        if(hypervisorType == HypervisorType.None) {
+            throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
+                                                         + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
         }
 
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(),
-                       cmd.getRequiresHvm(), null, cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId,
-                       HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
+                       cmd.getRequiresHvm(), null, cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneList,
+                       hypervisorType, cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
                        cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
 
     }
@@ -307,20 +319,22 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
+        List<Long> zoneList = null;
         Long zoneId = cmd.getZoneId();
         // ignore passed zoneId if we are using region wide image store
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
-        if (stores != null && stores.size() > 0) {
-            zoneId = -1L;
+        if (!(stores != null && stores.size() > 0)) {
+            zoneList = new ArrayList<>();
+            zoneList.add(zoneId);
         }
 
         return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false, true, cmd.getUrl(), cmd.isPublic(),
-            cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(), zoneId, HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null,
+            cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(), zoneList, HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null,
             owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER);
     }
 
     protected VMTemplateVO persistTemplate(TemplateProfile profile, VirtualMachineTemplate.State initialState) {
-        Long zoneId = profile.getZoneId();
+        List<Long> zoneIdList = profile.getZoneIdList();
         VMTemplateVO template =
             new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.getIsPublic(), profile.getFeatured(), profile.getIsExtractable(),
                 profile.getTemplateType(), profile.getUrl(), profile.getRequiresHVM(), profile.getBits(), profile.getAccountId(), profile.getCheckSum(),
@@ -328,7 +342,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 profile.getTemplateTag(), profile.getDetails(), profile.getSshKeyEnabled(), profile.IsDynamicallyScalable());
         template.setState(initialState);
 
-        if (zoneId == null || zoneId.longValue() == -1) {
+        if (zoneIdList == null) {
             List<DataCenterVO> dcs = _dcDao.listAll();
 
             if (dcs.isEmpty()) {
@@ -341,7 +355,9 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
 
         } else {
-            _tmpltDao.addTemplateToZone(template, zoneId);
+            for (Long zoneId: zoneIdList) {
+                _tmpltDao.addTemplateToZone(template, zoneId);
+            }
         }
         return _tmpltDao.findById(template.getId());
     }

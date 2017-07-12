@@ -1425,6 +1425,27 @@ div.list-view td.state.transition span {
   background-position: 1px -432px;
 }
 
+div.list-view td.state.suitable span {
+  background: url(../images/icons.png) no-repeat scroll 1px -224px;
+  color: #008000;
+  height: 18px;
+}
+
+div.list-view td.state.suitable-storage-migration-required span {
+  width: 200px;
+}
+
+div.list-view td.state.notsuitable span {
+  background: url(../images/icons.png) no-repeat scroll 1px -190px;
+  color: #B90606;
+  height: 19px;
+  width: 100px;
+}
+
+div.list-view td.state.notsuitable-storage-migration-required span {
+    width: 220px !important;
+}
+
 .horizontal-overflow tbody td, .horizontal-overflow thead th {
   min-width: 40px;
   padding: 10px 10px 5px 0px;
@@ -2828,6 +2849,10 @@ div.detail-group.actions td {
 #navigation ul li.instances.active span.icon,
 #navigation ul li.instances:hover span.icon {
   background-position: -82px -686px;
+}
+
+#navigation ul li.vmsnapshots span.icon {
+  background: url(../images/sprites.png) no-repeat -34px -666px;
 }
 
 #navigation ul li.affinityGroups span.icon {
@@ -8198,6 +8223,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 
 .multi-edit th.add-rule,
 .multi-edit td.add-rule {
+  border-right: 1px solid #cdcccc;
 }
 
 .multi-edit .data-table td.add-vm:hover {
@@ -12822,6 +12848,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .revertSnapshot .icon,
+.revertToVMSnapshot .icon,
 .restoreVM .icon,
 .restore .icon,
 .recover .icon {
@@ -12838,6 +12865,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .revertSnapshot:hover .icon,
+.revertToVMSnapshot:hover .icon,
 .restoreVM:hover .icon,
 .restore:hover .icon {
   background-position: -168px -613px;
@@ -13226,3 +13254,49 @@ ul.ui-autocomplete.ui-menu {
   font-size: 13px;
   padding: 5px;
 }
+
+.multi-edit-add-list .ui-button.migrateok,
+.multi-edit-add-list .ui-button.migratecancel {
+  top: -5px !important;
+}
+
+.migrate-vm-available-host-list div.text-search {
+  right: 30px;
+}
+
+.migrate-vm-available-host-list div.ui-widget-content {
+  display: block !important;
+}
+
+.list-view-select table th.availableHostSuitability,
+.list-view-select table td.availableHostSuitability {
+  max-width: 250px;
+}
+.copy-template-destination-list div.text-search {
+  right: 5px;
+}
+
+.copy-template-destination-list div.ui-widget-content {
+  display: block !important;
+}
+
+div.panel.copy-template-destination-list div.list-view div.fixed-header{
+  width: 500px;
+}
+
+.copy-template-destination-list.panel div.list-view div.data-table table{
+  width: 595px;
+}
+
+.copy-template-destination-list .list-view .toolbar {
+  width: 654px;
+}
+
+.multi-edit-add-list .ui-button.copytemplateok{
+  left: 330px;
+}
+
+.multi-edit-add-list .ui-button.copytemplatecancel {
+    left: 310px;
+}
+

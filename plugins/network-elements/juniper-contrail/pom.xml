@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-plugins</artifactId>
-    <version>4.10.0.0-SNAPSHOT</version>
+    <version>4.10.0.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <repositories>
@@ -80,6 +80,17 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-events</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-utils</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+           <artifactId>xml-apis</artifactId>
+           <groupId>xml-apis</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>

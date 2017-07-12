@@ -661,7 +661,14 @@ public class VirtualMachineMO extends BaseMO {
     public boolean hasSnapshot() throws Exception {
         VirtualMachineSnapshotInfo info = getSnapshotInfo();
         if (info != null) {
-            return info.getCurrentSnapshot() != null;
+            ManagedObjectReference currentSnapshot = info.getCurrentSnapshot();
+            if (currentSnapshot != null) {
+                return true;
+            }
+            List<VirtualMachineSnapshotTree> rootSnapshotList = info.getRootSnapshotList();
+            if (rootSnapshotList != null && rootSnapshotList.size() > 0) {
+                return true;
+            }
         }
         return false;
     }
@@ -742,6 +749,13 @@ public class VirtualMachineMO extends BaseMO {
 
     public VirtualMachineConfigInfo getConfigInfo() throws Exception {
         return (VirtualMachineConfigInfo)_context.getVimClient().getDynamicProperty(_mor, "config");
+    }
+
+    public boolean isToolsInstallerMounted() throws Exception {
+        return _context.getVimClient().getDynamicProperty(_mor, "runtime.toolsInstallerMounted");
+    }
+    public GuestInfo getGuestInfo() throws Exception {
+        return (GuestInfo)_context.getVimClient().getDynamicProperty(_mor, "guest");
     }
 
     public VirtualMachineConfigSummary getConfigSummary() throws Exception {

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.inject.Inject;
 
@@ -140,10 +139,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     private static final String LIST_CAPACITY_GROUP_BY_CAPACITY_PART1=
             "SELECT sum(capacity.used_capacity), sum(capacity.reserved_capacity),"
-                    + " (case capacity_type when 1 then (sum(total_capacity) * CAST((select value from `cloud`.`cluster_details` where cluster_details.name= 'cpuOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id) AS DECIMAL (10,4))) "
-                    + "when '0' then (sum(total_capacity) * CAST((select value from `cloud`.`cluster_details` where cluster_details.name= 'memoryOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id) AS DECIMAL(10,4)))else sum(total_capacity) end),"
-                    + "((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / ( case capacity_type when 1 then (sum(total_capacity) * CAST((select value from `cloud`.`cluster_details` where cluster_details.name= 'cpuOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id) AS DECIMAL(10,4))) "
-                    + "when '0' then (sum(total_capacity) * CAST((select value from `cloud`.`cluster_details` where cluster_details.name= 'memoryOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id) AS DECIMAL(10,4))) else sum(total_capacity) end)) percent,"
+                    + " (case capacity_type when 1 then sum(total_capacity * CAST((select value from `cloud`.`cluster_details` where cluster_details.name= 'cpuOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id) AS DECIMAL (10,4))) "
+                    + "when '0' then sum(total_capacity * CAST((select value from `cloud`.`cluster_details` where cluster_details.name= 'memoryOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id) AS DECIMAL(10,4)))else sum(total_capacity) end),"
+                    + "((sum(capacity.used_capacity) + sum(capacity.reserved_capacity)) / ( case capacity_type when 1 then sum(total_capacity * CAST((select value from `cloud`.`cluster_details` where cluster_details.name= 'cpuOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id) AS DECIMAL(10,4))) "
+                    + "when '0' then sum(total_capacity * CAST((select value from `cloud`.`cluster_details` where cluster_details.name= 'memoryOvercommitRatio' AND cluster_details.cluster_id=capacity.cluster_id) AS DECIMAL(10,4))) else sum(total_capacity) end)) percent,"
                     + "capacity.capacity_type, capacity.data_center_id, pod_id, cluster_id FROM `cloud`.`op_host_capacity` capacity WHERE  total_capacity > 0 AND data_center_id is not null AND capacity_state='Enabled' ";
 
     private static final String LIST_CAPACITY_GROUP_BY_CAPACITY_PART2 = " GROUP BY capacity_type";
@@ -356,11 +355,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
         switch (level) {
         case 1: // List all the capacities grouped by zone, capacity Type
-            finalQuery.append(LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2);
+            finalQuery.append(LIST_CAPACITY_GROUP_BY_ZONE_TYPE_PART2);
             break;
 
         case 2: // List all the capacities grouped by pod, capacity Type
-            finalQuery.append(LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2);
+            finalQuery.append(LIST_CAPACITY_GROUP_BY_POD_TYPE_PART2);
             break;
 
         case 3: // List all the capacities grouped by cluster, capacity Type
@@ -392,22 +391,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                 results.add(summedCapacity);
             }
 
-            HashMap<Integer, SummedCapacity> capacityMap = new HashMap<Integer, SummedCapacity>();
-            for (SummedCapacity result: results) {
-                if (capacityMap.containsKey(result.getCapacityType().intValue())) {
-                    SummedCapacity tempCapacity = capacityMap.get(result.getCapacityType().intValue());
-                    tempCapacity.setUsedCapacity(tempCapacity.getUsedCapacity()+result.getUsedCapacity());
-                    tempCapacity.setReservedCapacity(tempCapacity.getReservedCapacity()+result.getReservedCapacity());
-                    tempCapacity.setSumTotal(tempCapacity.getTotalCapacity()+result.getTotalCapacity());
-                }else {
-                    capacityMap.put(result.getCapacityType().intValue(),result);
-                }
-            }
-            List<SummedCapacity> summedCapacityList = new ArrayList<SummedCapacity>();
-            for (Entry<Integer, SummedCapacity> entry : capacityMap.entrySet()) {
-                summedCapacityList.add(entry.getValue());
-            }
-            return summedCapacityList;
+            return results;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + finalQuery, e);
         } catch (Throwable e) {

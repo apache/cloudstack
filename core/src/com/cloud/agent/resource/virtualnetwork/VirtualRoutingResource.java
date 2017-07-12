@@ -22,6 +22,7 @@ package com.cloud.agent.resource.virtualnetwork;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,7 +74,8 @@ public class VirtualRoutingResource {
     private int _sleep;
     private int _retry;
     private int _port;
-    private int _eachTimeout;
+    private Duration _eachTimeout;
+    private Map<String, Object> _params;
 
     private String _cfgVersion = "1.0";
 
@@ -153,10 +155,10 @@ public class VirtualRoutingResource {
     }
 
     private ExecutionResult applyConfigToVR(String routerAccessIp, ConfigItem c) {
-        return applyConfigToVR(routerAccessIp, c, VRScripts.DEFAULT_EXECUTEINVR_TIMEOUT);
+        return applyConfigToVR(routerAccessIp, c, VRScripts.VR_SCRIPT_EXEC_TIMEOUT);
     }
 
-    private ExecutionResult applyConfigToVR(String routerAccessIp, ConfigItem c, int timeout) {
+    private ExecutionResult applyConfigToVR(String routerAccessIp, ConfigItem c, Duration timeout) {
         if (c instanceof FileConfigItem) {
             FileConfigItem configItem = (FileConfigItem)c;
             return _vrDeployer.createFileInVR(routerAccessIp, configItem.getFilePath(), configItem.getFileName(), configItem.getFileContents());
@@ -180,7 +182,7 @@ public class VirtualRoutingResource {
         boolean finalResult = false;
         for (ConfigItem configItem : cfg) {
             long startTimestamp = System.currentTimeMillis();
-            ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem);
+            ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem, VRScripts.VR_SCRIPT_EXEC_TIMEOUT);
             if (s_logger.isDebugEnabled()) {
                 long elapsed = System.currentTimeMillis() - startTimestamp;
                 s_logger.debug("Processing " + configItem + " took " + elapsed + "ms");
@@ -258,8 +260,18 @@ public class VirtualRoutingResource {
         return new GetDomRVersionAnswer(cmd, result.getDetails(), lines[0], lines[1]);
     }
 
+    public boolean configureHostParams(final Map<String, String> params) {
+        if (_params.get("router.aggregation.command.each.timeout") == null) {
+            String value = (String)params.get("router.aggregation.command.each.timeout");
+            _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt(value, 10));
+        }
+
+        return true;
+    }
+
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
+        _params = params;
 
         String value = (String)params.get("ssh.sleep");
         _sleep = NumbersUtil.parseInt(value, 10) * 1000;
@@ -271,7 +283,7 @@ public class VirtualRoutingResource {
         _port = NumbersUtil.parseInt(value, 3922);
 
         value = (String)params.get("router.aggregation.command.each.timeout");
-        _eachTimeout = NumbersUtil.parseInt(value, 3);
+        _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt(value, 10));
 
         if (_vrDeployer == null) {
             throw new ConfigurationException("Unable to find the resource for VirtualRouterDeployer!");
@@ -374,12 +386,12 @@ public class VirtualRoutingResource {
                 FileConfigItem fileConfigItem = new FileConfigItem(VRScripts.CONFIG_CACHE_LOCATION, cfgFileName, sb.toString());
                 ScriptConfigItem scriptConfigItem = new ScriptConfigItem(VRScripts.VR_CFG, "-c " + VRScripts.CONFIG_CACHE_LOCATION + cfgFileName);
                 // 120s is the minimal timeout
-                int timeout = answerCounts * _eachTimeout;
-                if (timeout < 120) {
-                    timeout = 120;
+                Duration timeout = _eachTimeout.withDurationAdded(_eachTimeout.getStandardSeconds(), answerCounts);
+                if (timeout.isShorterThan(VRScripts.VR_SCRIPT_EXEC_TIMEOUT)) {
+                    timeout = VRScripts.VR_SCRIPT_EXEC_TIMEOUT;
                 }
 
-                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem);
+                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem, timeout);
                 if (!result.isSuccess()) {
                     return new Answer(cmd, false, result.getDetails());
                 }

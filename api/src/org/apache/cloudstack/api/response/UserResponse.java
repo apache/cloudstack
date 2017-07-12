@@ -94,6 +94,7 @@ public class UserResponse extends BaseResponse {
     @Param(description = "the api key of the user", isSensitive = true)
     private String apiKey;
 
+    @Deprecated
     @SerializedName("secretkey")
     @Param(description = "the secret key of the user", isSensitive = true)
     private String secretKey;
@@ -236,7 +237,6 @@ public class UserResponse extends BaseResponse {
     public String getSecretKey() {
         return secretKey;
     }
-
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }

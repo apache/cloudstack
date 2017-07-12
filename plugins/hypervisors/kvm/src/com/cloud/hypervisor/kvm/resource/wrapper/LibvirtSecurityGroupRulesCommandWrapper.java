@@ -54,7 +54,7 @@ public final class LibvirtSecurityGroupRulesCommandWrapper extends CommandWrappe
             return new SecurityGroupRuleAnswer(command, false, e.toString());
         }
 
-        final boolean result = libvirtComputingResource.addNetworkRules(command.getVmName(), Long.toString(command.getVmId()), command.getGuestIp(), command.getSignature(),
+        final boolean result = libvirtComputingResource.addNetworkRules(command.getVmName(), Long.toString(command.getVmId()), command.getGuestIp(), command.getGuestIp6(), command.getSignature(),
                 Long.toString(command.getSeqNum()), command.getGuestMac(), command.stringifyRules(), vif, brname, command.getSecIpsString());
 
         if (!result) {

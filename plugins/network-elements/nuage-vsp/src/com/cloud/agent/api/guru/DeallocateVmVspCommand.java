@@ -19,10 +19,15 @@
 
 package com.cloud.agent.api.guru;
 
-import com.cloud.agent.api.Command;
+import java.util.Objects;
+
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
 import net.nuage.vsp.acs.client.api.model.VspNic;
 import net.nuage.vsp.acs.client.api.model.VspVm;
+
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.cloud.agent.api.Command;
 
 public class DeallocateVmVspCommand extends Command {
 
@@ -56,25 +61,29 @@ public class DeallocateVmVspCommand extends Command {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof DeallocateVmVspCommand)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof DeallocateVmVspCommand)) {
+            return false;
+        }
 
         DeallocateVmVspCommand that = (DeallocateVmVspCommand) o;
 
-        if (_network != null ? !_network.equals(that._network) : that._network != null) return false;
-        if (_nic != null ? !_nic.equals(that._nic) : that._nic != null) return false;
-        if (_vm != null ? !_vm.equals(that._vm) : that._vm != null) return false;
-
-        return true;
+        return super.equals(that)
+                && Objects.equals(_network, that._network)
+                && Objects.equals(_nic, that._nic)
+                && Objects.equals(_vm, that._vm);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_network != null ? _network.hashCode() : 0);
-        result = 31 * result + (_vm != null ? _vm.hashCode() : 0);
-        result = 31 * result + (_nic != null ? _nic.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+            .appendSuper(super.hashCode())
+            .append(_network)
+            .append(_vm)
+            .append(_nic)
+            .toHashCode();
     }
 }

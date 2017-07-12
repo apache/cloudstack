@@ -25,19 +25,25 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  *
  *
  */
 public interface SnapshotManager {
-
-    public static final int HOURLYMAX = 8;
-    public static final int DAILYMAX = 8;
-    public static final int WEEKLYMAX = 8;
-    public static final int MONTHLYMAX = 12;
     public static final int DELTAMAX = 16;
 
+    static final ConfigKey<Integer> SnapshotHourlyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.hourly", "Snapshots", "8",
+            "Maximum recurring hourly snapshots to be retained for a volume. If the limit is reached, early snapshots from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring hourly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> SnapshotDailyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.daily", "Snapshots", "8",
+            "Maximum recurring daily snapshots to be retained for a volume. If the limit is reached, snapshots from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring daily snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> SnapshotWeeklyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.weekly", "Snapshots", "8",
+            "Maximum recurring weekly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> SnapshotMonthlyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.monthly", "Snapshots", "8",
+            "Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Boolean> usageSnapshotSelection = new ConfigKey<Boolean>("Usage", Boolean.class, "usage.snapshot.virtualsize.select", "false",
+            "Set the value to true if snapshot usage need to consider virtual size, else physical size is considered ", false);
     void deletePoliciesForVolume(Long volumeId);
 
     /**

@@ -31,13 +31,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -57,7 +57,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.Config;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -127,8 +126,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject
     private NetworkModel _networkMgr;
     @Inject
-    private ConfigurationDao _configDao;
-    @Inject
     private NicDao _nicDao;
     @Inject
     private PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
@@ -154,6 +151,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     public static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.mem", "Advanced", "false",
         "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true,
         ConfigKey.Scope.Cluster, null);
+
+    protected ConfigKey<Boolean> VmwareEnableNestedVirtualization = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization", "Advanced", "false",
+            "When set to true this will enable nested virtualization when this is supported by the hypervisor", true, ConfigKey.Scope.Global, null);
+
+    protected ConfigKey<Boolean> VmwareEnableNestedVirtualizationPerVM = new ConfigKey<Boolean>(Boolean.class, "vmware.nested.virtualization.perVM", "Advanced", "false",
+            "When set to true this will enable nested virtualization per vm", true, ConfigKey.Scope.Global, null);
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -306,13 +309,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         // Don't do this if the virtual machine is one of the special types
         // Should only be done on user machines
         if (userVm) {
-            String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
-            if (nestedVirt != null) {
-                s_logger.debug("Nested virtualization requested, adding flag to vm configuration");
-                details.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, nestedVirt);
-                to.setDetails(details);
-
-            }
+            configureNestedVirtualization(details, to);
         }
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
@@ -329,6 +326,50 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());
         }
         return to;
+    }
+
+    /**
+     * Decide in which cases nested virtualization should be enabled based on (1){@code globalNestedV}, (2){@code globalNestedVPerVM}, (3){@code localNestedV}<br/>
+     * Nested virtualization should be enabled when one of this cases:
+     * <ul>
+     * <li>(1)=TRUE, (2)=TRUE, (3) is NULL (missing)</li>
+     * <li>(1)=TRUE, (2)=TRUE, (3)=TRUE</li>
+     * <li>(1)=TRUE, (2)=FALSE</li>
+     * <li>(1)=FALSE, (2)=TRUE, (3)=TRUE</li>
+     * </ul>
+     * In any other case, it shouldn't be enabled
+     * @param globalNestedV value of {@code 'vmware.nested.virtualization'} global config
+     * @param globalNestedVPerVM value of {@code 'vmware.nested.virtualization.perVM'} global config
+     * @param localNestedV value of {@code 'nestedVirtualizationFlag'} key in vm details if present, null if not present
+     * @return "true" for cases in which nested virtualization is enabled, "false" if not
+     */
+    protected Boolean shouldEnableNestedVirtualization(Boolean globalNestedV, Boolean globalNestedVPerVM, String localNestedV){
+        if (globalNestedV == null || globalNestedVPerVM == null) {
+            return false;
+        }
+        boolean globalNV = globalNestedV.booleanValue();
+        boolean globalNVPVM = globalNestedVPerVM.booleanValue();
+
+        if (globalNVPVM){
+            return (localNestedV == null && globalNV) || BooleanUtils.toBoolean(localNestedV);
+        }
+        return globalNV;
+    }
+
+    /**
+     * Adds {@code 'nestedVirtualizationFlag'} value to {@code details} due to if it should be enabled or not
+     * @param details vm details
+     * @param to vm to
+     */
+    protected void configureNestedVirtualization(Map<String, String> details, VirtualMachineTO to) {
+        Boolean globalNestedV = VmwareEnableNestedVirtualization.value();
+        Boolean globalNestedVPerVM = VmwareEnableNestedVirtualizationPerVM.value();
+        String localNestedV = details.get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG);
+
+        Boolean shouldEnableNestedVirtualization = shouldEnableNestedVirtualization(globalNestedV, globalNestedVPerVM, localNestedV);
+        s_logger.debug("Nested virtualization requested, adding flag to vm configuration");
+        details.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Boolean.toString(shouldEnableNestedVirtualization));
+        to.setDetails(details);
     }
 
     private long getClusterId(long vmId) {
@@ -525,7 +566,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {VmwareReserveCpu, VmwareReserveMemory};
+        return new ConfigKey<?>[] {VmwareReserveCpu, VmwareReserveMemory, VmwareEnableNestedVirtualization, VmwareEnableNestedVirtualizationPerVM};
     }
 
     @Override

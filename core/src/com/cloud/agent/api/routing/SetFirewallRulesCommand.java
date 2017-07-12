@@ -56,13 +56,13 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
             if (fwTO.revoked()) {
                 StringBuilder sb = new StringBuilder();
                 /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
-                sb.append(fwTO.getSrcIp()).append(":reverted:0:0:0:");
+                sb.append(fwTO.getSrcIp()).append(":reverted:0:0:0:0:").append(fwTO.getId()).append(":");
                 String fwRuleEntry = sb.toString();
                 toAdd.add(fwRuleEntry);
                 continue;
             }
 
-            List<String> cidr;
+            List<String> sCidr, dCidr;
             StringBuilder sb = new StringBuilder();
             sb.append(fwTO.getSrcIp()).append(":").append(fwTO.getProtocol()).append(":");
             if ("icmp".compareTo(fwTO.getProtocol()) == 0) {
@@ -73,12 +73,13 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
             else
                 sb.append(fwTO.getStringSrcPortRange()).append(":");
 
-            cidr = fwTO.getSourceCidrList();
-            if (cidr == null || cidr.isEmpty()) {
-                sb.append("0.0.0.0/0");
+            sCidr = fwTO.getSourceCidrList();
+            dCidr = fwTO.getDestCidrList();
+            if (sCidr == null || sCidr.isEmpty()) {
+                sb.append("0.0.0.0/0");  //check if this is necessary because we are providing the source cidr by default???
             } else {
                 boolean firstEntry = true;
-                for (String tag : cidr) {
+                for (String tag : sCidr) {
                     if (!firstEntry)
                         sb.append("-");
                     sb.append(tag);
@@ -86,8 +87,23 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
                 }
             }
             sb.append(":");
-            String fwRuleEntry = sb.toString();
 
+            if(dCidr == null || dCidr.isEmpty()){
+                sb.append("");
+            }
+            else{
+                boolean firstEntry = true;
+                for(String cidr : dCidr){
+                    if(!firstEntry)
+                        sb.append("-");
+                    sb.append(cidr);
+                    firstEntry = false;
+                }
+            }
+            sb.append(":");
+            sb.append(fwTO.getId());
+            sb.append(":");
+            String fwRuleEntry = sb.toString();
             toAdd.add(fwRuleEntry);
 
         }

@@ -89,6 +89,8 @@ public interface VirtualMachineManager extends Manager {
 
     void stop(String vmUuid) throws ResourceUnavailableException;
 
+    void stopForced(String vmUuid) throws ResourceUnavailableException;
+
     void expunge(String vmUuid) throws ResourceUnavailableException;
 
     void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
@@ -108,7 +110,7 @@ public interface VirtualMachineManager extends Manager {
 
     void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    void destroy(String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    void destroy(String vmUuid, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     void migrateAway(String vmUuid, long hostId) throws InsufficientServerCapacityException;
 

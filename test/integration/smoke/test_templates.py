@@ -19,6 +19,7 @@
 #Import Local Modules
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import listZones
 from marvin.lib.utils import random_gen, cleanup_resources
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -793,4 +794,201 @@ class TestTemplates(cloudstackTestCase):
                         'SYSTEM',
                         "ListTemplates should not list any system templates"
                         )
+        return
+		
+class TestCopyDeleteTemplate(cloudstackTestCase):
+
+    def setUp(self):
+
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created templates
+            cleanup_resources(self.apiclient, self.cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestCopyDeleteTemplate, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls._cleanup = []
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            # Template creation from root volume is not supported in LXC
+            cls.unsupportedHypervisor = True
+            return
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+        try:
+            cls.disk_offering = DiskOffering.create(
+                                    cls.apiclient,
+                                    cls.services["disk_offering"]
+                                    )
+            cls._cleanup.append(cls.disk_offering)
+            template = get_template(
+                            cls.apiclient,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+            if template == FAILED:
+                assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
+            cls.services["template"]["ostypeid"] = template.ostypeid
+            cls.services["template_2"]["ostypeid"] = template.ostypeid
+            cls.services["ostypeid"] = template.ostypeid
+
+            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+            cls.services["volume"]["diskoffering"] = cls.disk_offering.id
+            cls.services["volume"]["zoneid"] = cls.zone.id
+            cls.services["sourcezoneid"] = cls.zone.id
+            cls.account = Account.create(
+                            cls.apiclient,
+                            cls.services["account"],
+                            domainid=cls.domain.id
+                            )
+            cls._cleanup.append(cls.account)
+            cls.service_offering = ServiceOffering.create(
+                                            cls.apiclient,
+                                            cls.services["service_offerings"]["tiny"]
+                                            )
+            cls._cleanup.append(cls.service_offering)
+            #create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
+                                    cls.apiclient,
+                                    cls.services["virtual_machine"],
+                                    templateid=template.id,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services["mode"]
+                                    )
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.apiclient)
+
+            list_volume = Volume.list(
+                                   cls.apiclient,
+                                   virtualmachineid=cls.virtual_machine.id,
+                                   type='ROOT',
+                                   listall=True
+                                   )
+
+            cls.volume = list_volume[0]
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.apiclient = super(TestCopyDeleteTemplate, cls).getClsTestClient().getApiClient()
+            #Cleanup resources used
+            cleanup_resources(cls.apiclient, cls._cleanup)
+
+        except Exception as e:
+           raise Exception("Warning: Exception during cleanup : %s" % e) 
+
+        return
+
+
+
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    def test_09_copy_delete_template(self):
+	cmd = listZones.listZonesCmd()
+        zones = self.apiclient.listZones(cmd)
+        if not isinstance(zones, list):
+            raise Exception("Failed to find zones.")
+        if len(zones) < 2:
+            self.skipTest(
+                "Skipping test due to there are less than two zones.")
+        return
+			
+	self.sourceZone = zones[0]
+	self.destZone = zones[1]
+            
+        template = Template.create(
+                                self.apiclient,
+                                self.services["template"],
+                                self.volume.id,
+                                account=self.account.name,
+                                domainid=self.account.domainid
+                                )
+        self.cleanup.append(template)
+
+        self.debug("Created template with ID: %s" % template.id)
+
+        list_template_response = Template.list(
+                                    self.apiclient,
+                                    templatefilter=\
+                                    self.services["templatefilter"],
+                                    id=template.id
+                                    )
+
+        self.assertEqual(
+                            isinstance(list_template_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        #Verify template response to check whether template added successfully
+        self.assertNotEqual(
+                            len(list_template_response),
+                            0,
+                            "Check template available in List Templates"
+                        )
+	#Copy template from zone1 to zone2
+        copytemplate = Template.copy(
+            cls.apiclient,
+            zoneid=cls.sourceZone.id,
+            destzoneid = cls.destZone.id
+        )
+        cls._cleanup.append(cls.copytemplate)
+
+        list_template_response = Template.list(
+            self.apiclient,
+	    templatefilter=self.services["template"]["templatefilter"],
+            id=self.template.id,
+            zoneid=self.destZone.id
+        )
+        self.assertEqual(
+            list_template_response,
+            None,
+            "Check template available in List Templates"
+        )
+
+        self.deltemplate = list_template_response[0]
+
+        self.debug("Deleting template: %s" % self.deltemplate)
+        # Delete the template
+        self.deltemplate.delete(self.apiclient)
+        self.debug("Delete template: %s successful" % self.deltemplate)
+
+        copytemplate = Template.copy(
+            self.apiclient,
+            zoneid=self.sourceZone.id,
+            destzoneid = self.destZone.id
+        )
+
+        removed = cls.dbclient.execute("select removed from template_zone_ref where zone_id='%s' and template_id='%s';" % self.destZone.id, self.template.id)
+
+        self.assertEqual(
+            removed,
+            NULL,
+            "Removed state is not correct."
+        )
         return

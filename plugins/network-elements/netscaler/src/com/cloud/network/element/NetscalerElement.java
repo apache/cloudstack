@@ -232,6 +232,10 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
+        if (canHandle(network, Service.Lb)) {
+            String algo = rule.getAlgorithm();
+            return (algo.equals("roundrobin") || algo.equals("leastconn") || algo.equals("source"));
+        }
         return true;
     }
 
@@ -260,7 +264,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
 
         // Specifies that the RoundRobin and Leastconn algorithms are supported for load balancing rules
-        lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn");
+        lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin, leastconn, source");
 
         // specifies that Netscaler network element can provided both shared and isolation modes
         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated, shared");
@@ -943,6 +947,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             s_logger.error("Network cannot handle to LB service ");
         }
         return null;
+    }
+
+    @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return true;
     }
 
     @Override

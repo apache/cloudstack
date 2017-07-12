@@ -22,6 +22,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
 import org.apache.log4j.Logger;
 
 import com.vmware.vim25.AboutInfo;
@@ -45,6 +48,8 @@ import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
@@ -123,12 +128,12 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 
-public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService {
+public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
 
+    private static final long SECONDS_PER_MINUTE = 60;
     private static final int STARTUP_DELAY = 60000;                 // 60 seconds
     private static final long DEFAULT_HOST_SCAN_INTERVAL = 600000;     // every 10 minutes
-
     private long _hostScanInterval = DEFAULT_HOST_SCAN_INTERVAL;
     private int _timeout;
 
@@ -189,7 +194,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private String _rootDiskController = DiskControllerType.ide.toString();
 
-    private String _dataDiskController = DiskControllerType.osdefault.toString();
+    private final String _dataDiskController = DiskControllerType.osdefault.toString();
 
     private final Map<String, String> _storageMounts = new HashMap<String, String>();
 
@@ -202,6 +207,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     public VmwareManagerImpl() {
         _storageMgr = new VmwareStorageManagerImpl(this);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VmwareManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs};
     }
 
     @Override
@@ -523,7 +538,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return false;
         }
 
-        Long.parseLong(tokens[0]);
+        long startTick = Long.parseLong(tokens[0]);
         long msid = Long.parseLong(tokens[1]);
         long runid = Long.parseLong(tokens[2]);
 
@@ -539,15 +554,22 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return true;
         }
 
-        // disable time-out check until we have found out a VMware API that can check if
-        // there are pending tasks on the subject VM
-        /*
-                if(System.currentTimeMillis() - startTick > _hungWorkerTimeout) {
-                    if(s_logger.isInfoEnabled())
-                        s_logger.info("Worker VM expired, seconds elapsed: " + (System.currentTimeMillis() - startTick) / 1000);
-                    return true;
-                }
-         */
+        // this time-out check was disabled
+        // "until we have found out a VMware API that can check if there are pending tasks on the subject VM"
+        // but as we expire jobs and those stale worker VMs stay around untill an MS reboot we opt in to have them removed anyway
+        Instant start = Instant.ofEpochMilli(startTick);
+        Instant end = start.plusSeconds(2 * (AsyncJobManagerImpl.JobExpireMinutes.value() + AsyncJobManagerImpl.JobCancelThresholdMinutes.value()) * SECONDS_PER_MINUTE);
+        Instant now = Instant.now();
+        if(s_vmwareCleanOldWorderVMs.value() && now.isAfter(end)) {
+            if(s_logger.isInfoEnabled()) {
+                s_logger.info("Worker VM expired, seconds elapsed: " + Duration.between(start,now).getSeconds());
+            }
+            return true;
+        }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Worker VM with tag '" + workerTag + "' does not need recycling, yet." +
+                    "But in " + Duration.between(now,end).getSeconds() + " seconds, though");
+        }
         return false;
     }
 
@@ -1111,8 +1133,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws ResourceInUseException {
         Long zoneId = cmd.getZoneId();
-        // Validate zone
-        validateZone(zoneId);
+        // Validate Id of zone
+        doesZoneExist(zoneId);
         // Zone validation to check if the zone already has resources.
         // Association of VMware DC to zone is not allowed if zone already has resources added.
         validateZoneWithResources(zoneId, "remove VMware datacenter to zone");
@@ -1180,10 +1202,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private void validateZone(Long zoneId) throws InvalidParameterValueException {
         // Check if zone with specified id exists
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Can't find zone by the id specified.");
-        }
+        doesZoneExist(zoneId);
         // Check if zone is legacy zone
         if (isLegacyZone(zoneId)) {
             throw new InvalidParameterValueException("The specified zone is legacy zone. Adding VMware datacenter to legacy zone is not supported.");
@@ -1226,7 +1245,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         long vmwareDcId;
 
         // Validate if zone id parameter passed to API is valid
-        validateZone(zoneId);
+        doesZoneExist(zoneId);
 
         // Check if zone is associated with VMware DC
         vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
@@ -1241,6 +1260,17 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Currently a zone can have only 1 VMware DC associated with.
         // Returning list of VmwareDatacenterVO objects, in-line with future requirements, if any, like participation of multiple VMware DCs in a zone.
         return vmwareDcList;
+    }
+
+    private void doesZoneExist(Long zoneId) throws InvalidParameterValueException {
+        // Check if zone with specified id exists
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Can't find zone by the id specified.");
+        }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Zone with id:[" + zoneId + "] exists.");
+        }
     }
 
     @Override

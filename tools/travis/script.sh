@@ -20,20 +20,6 @@
 # test environment and executing the tests.
 #
 
-export TEST_JOB_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f1`
-export TEST_SEQUENCE_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f2`
-
-#run regression test only on $REGRESSION_CYCLE
-MOD=$(( $TEST_JOB_NUMBER % $REGRESSION_CYCLE ))
-
-if [ $MOD -ne 0 ]; then
- if [ $TEST_SEQUENCE_NUMBER -ge $REGRESSION_INDEX ]; then
-   #skip test
-   echo "Skipping tests ... SUCCESS !"
-   exit 0
- fi
-fi
-
 mkdir -p integration-test-results/smoke/misc
 mkdir -p integration-test-results/component
 

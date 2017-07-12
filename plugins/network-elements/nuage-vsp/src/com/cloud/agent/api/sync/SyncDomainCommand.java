@@ -19,32 +19,40 @@
 
 package com.cloud.agent.api.sync;
 
-import com.cloud.agent.api.Command;
+import java.util.Objects;
+
 import net.nuage.vsp.acs.client.api.model.VspDomain;
+
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.cloud.agent.api.Command;
 
 public class SyncDomainCommand extends Command {
 
+    public enum Type { ADD, REMOVE }
     private final VspDomain _domain;
-    private final boolean _toAdd;
-    private final boolean _toRemove;
+    private final Type _action;
 
-    public SyncDomainCommand(VspDomain domain, boolean toAdd, boolean toRemove) {
+    public SyncDomainCommand(VspDomain domain, Type action) {
         super();
         this._domain = domain;
-        this._toAdd = toAdd;
-        this._toRemove = toRemove;
+        this._action = action;
     }
 
     public VspDomain getDomain() {
         return _domain;
     }
 
+    public Type getAction() {
+        return _action;
+    }
+
     public boolean isToAdd() {
-        return _toAdd;
+        return Type.ADD.equals(_action);
     }
 
     public boolean isToRemove() {
-        return _toRemove;
+        return Type.REMOVE.equals(_action);
     }
 
     @Override
@@ -60,19 +68,17 @@ public class SyncDomainCommand extends Command {
 
         SyncDomainCommand that = (SyncDomainCommand) o;
 
-        if (_toAdd != that._toAdd) return false;
-        if (_toRemove != that._toRemove) return false;
-        if (_domain != null ? !_domain.equals(that._domain) : that._domain != null) return false;
-
-        return true;
+        return super.equals(that)
+                && Objects.equals(_action, that._action)
+                && Objects.equals(_domain, that._domain);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_domain != null ? _domain.hashCode() : 0);
-        result = 31 * result + (_toAdd ? 1 : 0);
-        result = 31 * result + (_toRemove ? 1 : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_domain)
+                .append(_action)
+                .toHashCode();
     }
 }

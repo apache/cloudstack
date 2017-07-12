@@ -53,7 +53,7 @@ public interface ResourceService {
     Host reconnectHost(ReconnectHostCmd cmd);
 
     /**
-     * We will automatically create a cloud.com cluster to attach to the external cluster and return a hyper host to perform
+     * We will automatically create an Apache CloudStack cluster to attach to the external cluster and return a hyper host to perform
      * host related operation within the cluster
      *
      * @param cmd

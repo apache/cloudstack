@@ -84,6 +84,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -108,8 +109,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -174,8 +173,6 @@ public class CommandSetupHelper {
     private VlanDao _vlanDao;
     @Inject
     private IPAddressDao _ipAddressDao;
-    @Inject
-    private GuestOSDao _guestOSDao;
 
     @Inject
     private RouterControlHelper _routerControlHelper;
@@ -183,8 +180,6 @@ public class CommandSetupHelper {
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
-
-    private final String _dnsBasicZoneUpdates = "all";
 
     public void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
         final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
@@ -221,12 +216,6 @@ public class CommandSetupHelper {
                 _networkModel.getExecuteInSeqNtwkElmtCmd());
 
         String gatewayIp = nic.getIPv4Gateway();
-        if (!nic.isDefaultNic()) {
-            final GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
-            if (guestOS == null || !guestOS.getDisplayName().toLowerCase().contains("windows")) {
-                gatewayIp = "0.0.0.0";
-            }
-        }
 
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
 
@@ -452,6 +441,7 @@ public class CommandSetupHelper {
             }
             for (final FirewallRule rule : rules) {
                 _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
+                _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
                     final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
@@ -620,18 +610,17 @@ public class CommandSetupHelper {
     public void createDhcpEntryCommandsForVMs(final DomainRouterVO router, final Commands cmds, final long guestNetworkId) {
         final List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(guestNetworkId, VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
+        String dnsBasicZoneUpdates = _configDao.getValue(Config.DnsBasicZoneUpdates.key());
         for (final UserVmVO vm : vms) {
-            boolean createDhcp = true;
             if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()
-                    && _dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
-                createDhcp = false;
+                    && dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
+                continue;
             }
-            if (createDhcp) {
-                final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
-                if (nic != null) {
-                    s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
-                    createDhcpEntryCommand(router, vm, nic, cmds);
-                }
+
+            final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
+            if (nic != null) {
+                s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
+                createDhcpEntryCommand(router, vm, nic, cmds);
             }
         }
     }
@@ -681,19 +670,38 @@ public class CommandSetupHelper {
         for (final Map.Entry<String, ArrayList<PublicIpAddress>> vlanAndIp : vlanIpMap.entrySet()) {
             final List<PublicIpAddress> ipAddrList = vlanAndIp.getValue();
 
+            // Source nat ip address should always be sent first
+            Collections.sort(ipAddrList, new Comparator<PublicIpAddress>() {
+                @Override
+                public int compare(final PublicIpAddress o1, final PublicIpAddress o2) {
+                    final boolean s1 = o1.isSourceNat();
+                    final boolean s2 = o2.isSourceNat();
+                    return s1 ^ s2 ? s1 ^ true ? 1 : -1 : 0;
+                }
+            });
+
+
             // Get network rate - required for IpAssoc
             final Integer networkRate = _networkModel.getNetworkRate(ipAddrList.get(0).getNetworkId(), router.getId());
             final Network network = _networkModel.getNetwork(ipAddrList.get(0).getNetworkId());
 
             final IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
             int i = 0;
+            boolean firstIP = true;
 
             for (final PublicIpAddress ipAddr : ipAddrList) {
                 final boolean add = ipAddr.getState() == IpAddress.State.Releasing ? false : true;
+                boolean sourceNat = ipAddr.isSourceNat();
+                /* enable sourceNAT for the first ip of the public interface
+                * For additional public subnet source nat rule needs to be added for vm to reach ips in that subnet
+                */
+                if (firstIP) {
+                    sourceNat = true;
+                }
 
                 final String macAddress = vlanMacAddress.get(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())));
 
-                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, false, ipAddr.isSourceNat(), BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
+                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, sourceNat, BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
                         ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
 
                 ip.setTrafficType(network.getTrafficType());
@@ -702,6 +710,12 @@ public class CommandSetupHelper {
                 if (ipAddr.isSourceNat()) {
                     sourceNatIpAdd = new Pair<IpAddressTO, Long>(ip, ipAddr.getNetworkId());
                     addSourceNat = add;
+                }
+
+                //for additional public subnet on delete it is not sure which ip is set to first ip. So on delete we
+                //want to set sourcenat to true for all ips to delete source nat rules.
+                if (!firstIP || add) {
+                    firstIP = false;
                 }
             }
             final IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipsToSend);
@@ -823,12 +837,37 @@ public class CommandSetupHelper {
                 associatedWithNetworkId = ipAddrList.get(0).getNetworkId();
             }
 
+            // for network if the ips does not have any rules, then only last ip
+            List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(associatedWithNetworkId, null);
+
+            int ipsWithrules = 0;
+            int ipsStaticNat = 0;
+            for (IPAddressVO ip : userIps) {
+                if ( _rulesDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active) > 0){
+                    ipsWithrules++;
+                }
+
+                // check onetoonenat and also check if the ip "add":false. If there are 2 PF rules remove and
+                // 1 static nat rule add
+                if (ip.isOneToOneNat() && ip.getRuleState() == null) {
+                    ipsStaticNat++;
+                }
+            }
+
             final IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(associatedWithNetworkId, router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+
+            // if there is 1 static nat then it will be checked for remove at the resource
+            if (ipsWithrules == 0 && ipsStaticNat == 0) {
+                // there is only one ip address for the network.
+                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
+            } else {
+                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "false");
+            }
 
             cmds.addCommand(ipAssocCommand, cmd);
         }

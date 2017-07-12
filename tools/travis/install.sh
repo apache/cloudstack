@@ -19,27 +19,19 @@
 # This should be used to create the build.
 #
 
-
-export TEST_JOB_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f1`
 export TEST_SEQUENCE_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f2`
+export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/./urandom"
 
-#run regression test only on $REGRESSION_CYCLE
-MOD=$(( $TEST_JOB_NUMBER % $REGRESSION_CYCLE ))
-
-if [ $MOD -ne 0 ]; then
- if [ $TEST_SEQUENCE_NUMBER -ge $REGRESSION_INDEX ]; then
-   #skip test
-   echo "Skipping tests ... SUCCESS !"
-   exit 0
- fi
-fi
-
-export MAVEN_OPTS="-Xmx2048m -XX:MaxPermSize=500m -Djava.security.egd=file:/dev/./urandom"
+set -e
 
 if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
-   mvn -Pdeveloper,systemvm -Dsimulator clean install -T4 | egrep "Building|Tests|SUCCESS|FAILURE"
+   git clone https://github.com/rhtyd/cloudstack-nonoss.git nonoss
+   cd nonoss && bash -x install-non-oss.sh && cd ..
+   git clean -fdx .
+   mvn -P developer,systemvm -Dsimulator -Dnoredist --projects='org.apache.cloudstack:cloudstack' org.apache.rat:apache-rat-plugin:0.12:check
+   mvn -P developer,systemvm -Dsimulator -Dnoredist clean install
 else
-   mvn -Pdeveloper -Dsimulator clean install -DskipTests=true -T4 | egrep "Building|Tests|SUCCESS|FAILURE"
+   mvn -Pdeveloper -Dsimulator clean install -DskipTests -T4 | egrep "Building|Tests|SUCCESS|FAILURE"
 fi
 
 # Install mysql-connector-python

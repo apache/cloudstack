@@ -106,6 +106,10 @@ class CsAddress(CsDataBag):
                 ip.setAddress(address)
                 logging.info("Address found in DataBag ==> %s" % address)
 
+                if not address['add'] and not ip.configured():
+                    logging.info("Skipping %s as the add flag is set to %s " % (address['public_ip'], address['add']))
+                    continue
+
                 if ip.configured():
                     logging.info(
                         "Address %s on device %s already configured", ip.ip(), dev)
@@ -114,7 +118,7 @@ class CsAddress(CsDataBag):
                 else:
                     logging.info(
                         "Address %s on device %s not configured", ip.ip(), dev)
-                    
+
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure(address)
 
@@ -137,7 +141,7 @@ class CsInterface:
         return self.get_attr("netmask")
 
     def get_gateway(self):
-        if self.config.is_vpc() or self.config.cmdline().is_redundant():
+        if self.config.is_vpc() or not self.is_guest():
             return self.get_attr("gateway")
         else:
             return self.config.cmdline().get_guest_gw()
@@ -145,7 +149,7 @@ class CsInterface:
     def ip_in_subnet(self, ip):
         ipo = IPAddress(ip)
         net = IPNetwork("%s/%s" % (self.get_ip(), self.get_size()))
-        return ipo in list(net)
+        return ipo in net
 
     def get_gateway_cidr(self):
         return "%s/%s" % (self.get_gateway(), self.get_size())
@@ -191,7 +195,7 @@ class CsInterface:
         if "nw_type" in self.address and self.address['nw_type'] in ['public']:
             return True
         return False
-    
+
     def is_added(self):
         return self.get_attr("add")
 
@@ -277,9 +281,10 @@ class CsIP:
             except Exception as e:
                 logging.info("Exception occurred ==> %s" % e)
 
+            self.post_configure(address)
         else:
+            # delete method performs post_configure, so no need to call post_configure here
             self.delete(self.ip())
-        self.post_configure(address)
 
     def post_configure(self, address):
         """ The steps that must be done after a device is configured """
@@ -291,7 +296,10 @@ class CsIP:
 
             interfaces = [CsInterface(address, self.config)]
             CsHelper.reconfigure_interfaces(self.cl, interfaces)
-            self.set_mark()
+            if not self.config.is_vpc() and (self.get_type() in ['public']):
+                self.set_mark()
+            if self.config.is_vpc() and (self.get_type() in ['public']):
+                self.set_mark()
 
             if 'gateway' in self.address:
                 self.arpPing()
@@ -351,13 +359,17 @@ class CsIP:
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
-        
+
     def fw_router(self):
         if self.config.is_vpc():
             return
         self.fw.append(["mangle", "front", "-A PREROUTING " +
                         "-m state --state RELATED,ESTABLISHED " +
                         "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
+
+        self.fw.append(["mangle", "front",
+                        "-A POSTROUTING " +
+                        "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
 
         if self.get_type() in ["public"]:
             self.fw.append(["mangle", "front",
@@ -370,21 +382,20 @@ class CsIP:
                             "-A FIREWALL_%s " % self.address['public_ip'] +
                             "-m state --state RELATED,ESTABLISHED -j ACCEPT"])
             self.fw.append(["mangle", "",
-                            "-A FIREWALL_%s DROP" % self.address['public_ip']])
+                            "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
-            self.fw.append(["mangle", "front",
-                            "-A POSTROUTING " +
-                            "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
             self.fw.append(["nat", "",
                             "-A POSTROUTING -o eth2 -j SNAT --to-source %s" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
                             "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
-            self.fw.append(
-                ["mangle", "", "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
+            self.fw.append(["filter", "",
+                            "-A FORWARD -i %s -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "",
+                            "-A FORWARD -i eth0 -o %s -j FW_OUTBOUND" % self.dev])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
@@ -410,14 +421,7 @@ class CsIP:
             self.fw.append(
                 ["filter", "", "-A FORWARD -i %s -o %s -m state --state NEW -j ACCEPT" % (self.dev, self.dev)])
             self.fw.append(
-                ["filter", "", "-A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
-            self.fw.append(
                 ["filter", "", "-A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
-            self.fw.append(
-                ["filter", "", "-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND"])
-            self.fw.append(["mangle", "",
-                            "-A PREROUTING -i %s -m state --state NEW " % self.dev +
-                            "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
 
         self.fw.append(['', 'front', '-A FORWARD -j NETWORK_STATS'])
         self.fw.append(['', 'front', '-A INPUT -j NETWORK_STATS'])
@@ -426,17 +430,17 @@ class CsIP:
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 -o eth0'])
         self.fw.append(['', '', '-A NETWORK_STATS -o eth2 ! -i eth0 -p tcp'])
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
-        
+
     def fw_vpcrouter(self):
         if not self.config.is_vpc():
             return
-        self.fw.append(["mangle", "front", "-A PREROUTING " +
-                        "-m state --state RELATED,ESTABLISHED " +
-                        "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
-        
+
         self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])
 
         if self.get_type() in ["guest"]:
+            self.fw.append(["mangle", "front", "-A PREROUTING " +
+                            " -i %s -m state --state RELATED,ESTABLISHED "  % self.dev +
+                            "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
             guestNetworkCidr = self.address['network']
             self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                             (guestNetworkCidr, self.dev, self.dev)])
@@ -453,6 +457,8 @@ class CsIP:
                 ["mangle", "front", "-A ACL_OUTBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
+            self.fw.append(
+                ["mangle", "front", "-A POSTROUTING " + "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
@@ -476,10 +482,6 @@ class CsIP:
                             (guestNetworkCidr, self.dev, self.address['public_ip'])])
 
         if self.get_type() in ["public"]:
-            self.fw.append(["", "front",
-                            "-A FORWARD -o %s -d %s -j ACL_INBOUND_%s" % (
-                                self.dev, self.address['network'], self.dev)
-                            ])
             self.fw.append(
                 ["mangle", "", "-A FORWARD -j VPN_STATS_%s" % self.dev])
             self.fw.append(
@@ -512,11 +514,37 @@ class CsIP:
 
     def post_config_change(self, method):
         route = CsRoute()
+        tableName = "Table_" + self.dev
+
         if method == "add":
-            route.add_table(self.dev)
-            route.add_route(self.dev, str(self.address["network"]))
+            if not self.config.is_vpc():
+                # treat the first IP on a interface as special case to set up the routing rules
+                if self.get_type() in ["public"] and (len(self.iplist) == 1):
+                    CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth0'][0]['network'] + " table " + tableName + " proto static")
+                    CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth1'][0]['network'] + " table " + tableName + " proto static")
+
+                # add 'defaul via gateway' rule in the device specific routing table
+                if "gateway" in self.address and self.address["gateway"] != "None":
+                    route.add_route(self.dev, self.address["gateway"])
+                route.add_network_route(self.dev, str(self.address["network"]))
+
+                if self.get_type() in ["public"]:
+                    CsRule(self.dev).addRule("from " + str(self.address["network"]))
+
+            if self.config.is_vpc():
+                if self.get_type() in ["public"] and "gateway" in self.address and self.address["gateway"] != "None":
+                    route.add_route(self.dev, self.address["gateway"])
+                route.add_network_route(self.dev, str(self.address["network"]))
+
+            CsHelper.execute("sudo ip route flush cache")
+
         elif method == "delete":
-            logging.warn("delete route not implemented")
+            # treat the last IP to be dis-associated with interface as special case to clean up the routing rules
+            if self.get_type() in ["public"] and (not self.config.is_vpc()) and (len(self.iplist) == 0):
+                CsHelper.execute("sudo ip rule delete table " + tableName)
+                CsHelper.execute("sudo ip route flush table " + tableName)
+                CsHelper.execute("sudo ip route flush cache")
+                CsRule(self.dev).delMark()
 
         self.fw_router()
         self.fw_vpcrouter()
@@ -541,7 +569,7 @@ class CsIP:
         if self.get_type() in ["guest"] and not cmdline.is_redundant():
             pwdsvc = CsPasswdSvc(self.address['public_ip']).start()
 
-        if self.get_type() == "public" and self.config.is_vpc():
+        if self.get_type() == "public" and self.config.is_vpc() and method == "add":
             if self.address["source_nat"]:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(
@@ -555,15 +583,8 @@ class CsIP:
         for i in CsHelper.execute(cmd):
             vals = i.lstrip().split()
             if (vals[0] == 'inet'):
-                
                 cidr = vals[1]
-                for ip, device in self.iplist.iteritems():
-                    logging.info(
-                                 "Iterating over the existing IPs. CIDR to be configured ==> %s, existing IP ==> %s on device ==> %s",
-                                 cidr, ip, device)
-
-                    if cidr[0] != ip[0] and device != self.dev:
-                        self.iplist[cidr] = self.dev
+                self.iplist[cidr] = self.dev
 
     def configured(self):
         if self.address['cidr'] in self.iplist.keys():

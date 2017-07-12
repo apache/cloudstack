@@ -77,6 +77,9 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
 
+    @Parameter(name = ApiConstants.DEST_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic to")
+    private List<String> destCidrList;
+
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
     private Integer icmpType;
 
@@ -113,6 +116,11 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         }
     }
 
+    @Override
+    public List<String> getDestinationCidrList(){
+        return destCidrList;
+    }
+
     public Long getVpcId() {
         Network network = _networkService.getNetwork(getNetworkId());
         if (network == null) {
@@ -134,6 +142,10 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     public void setSourceCidrList(List<String> cidrs) {
         cidrlist = cidrs;
+    }
+
+    public void setDestCidrList(List<String> cidrs){
+        destCidrList = cidrs;
     }
 
     @Override
@@ -245,6 +257,16 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
                 }
             }
         }
+
+        //Destination CIDR formatting check. Since it's optional param, no need to set a default as in the case of source.
+        if(destCidrList != null){
+            for(String cidr : destCidrList){
+                if(!NetUtils.isValidCIDR(cidr)) {
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Destination cidrs formatting error" + cidr);
+                }
+            }
+        }
+
         if (getProtocol().equalsIgnoreCase(NetUtils.ALL_PROTO)) {
             if (getSourcePortStart() != null && getSourcePortEnd() != null) {
                 throw new InvalidParameterValueException("Do not pass ports to protocol ALL, protocol ALL do not require ports. Unable to create " +

@@ -27,7 +27,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-services</artifactId>
-    <version>4.10.0.0-SNAPSHOT</version>
+    <version>4.10.0.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -76,8 +76,8 @@
     <!-- Another implementation of SSL protocol. Does not work with broken MS RDP SSL too. -->
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk16</artifactId>
-      <version>1.46</version>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>${cs.bcprov.version}</version>
     </dependency>
   </dependencies>
 </project>

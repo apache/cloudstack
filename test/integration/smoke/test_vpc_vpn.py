@@ -168,7 +168,7 @@ class Services:
             "vpc2": {
                 "name": "TestVPC",
                 "displaytext": "VPC2",
-                "cidr": '10.2.0.0/16'
+                "cidr": '10.3.0.0/16'
             },
             "network_1": {
                 "name": "Test Network",
@@ -180,13 +180,13 @@ class Services:
                 "name": "Test Network",
                 "displaytext": "Test Network",
                 "netmask": '255.255.255.0',
-                "gateway": "10.2.1.1"
+                "gateway": "10.3.1.1"
             },
             "vpn": {
                 "vpn_user": "root",
                 "vpn_pass": "Md1s#dc",
                 "vpn_pass_fail": "abc!123",  # too short
-                "iprange": "10.2.2.1-10.2.2.10",
+                "iprange": "10.3.2.1-10.3.2.10",
                 "fordisplay": "true"
             },
             "vpncustomergateway": {
@@ -222,7 +222,7 @@ class Services:
                     "displaytext": "macchinina kvm",
                     "format": "qcow2",
                     "hypervisor": "kvm",
-                    "ostype": "Other PV (64-bit)",
+                    "ostype": "Other Linux (64-bit)",
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
                     "requireshvm": "True",
                 },
@@ -232,7 +232,7 @@ class Services:
                     "displaytext": "macchinina xen",
                     "format": "vhd",
                     "hypervisor": "xen",
-                    "ostype": "Other PV (64-bit)",
+                    "ostype": "Other Linux (64-bit)",
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
                     "requireshvm": "True",
                 },
@@ -242,7 +242,7 @@ class Services:
                     "displaytext": "macchinina xen",
                     "format": "vhd",
                     "hypervisor": "hyperv",
-                    "ostype": "Other PV (64-bit)",
+                    "ostype": "Other Linux (64-bit)",
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
                     "requireshvm": "True",
                 },
@@ -252,8 +252,8 @@ class Services:
                     "displaytext": "macchinina vmware",
                     "format": "ova",
                     "hypervisor": "vmware",
-                    "ostype": "Other PV (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.vmdk.bz2",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
                     "requireshvm": "True",
                 }
             }
@@ -299,7 +299,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     @attr(tags=["advanced"], required_hardware="true")
@@ -316,10 +316,11 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             networkOffering) > 0, "No VPC based network offering")
 
         # 1) Create VPC
-        vpcOffering = VpcOffering.list(self.apiclient, isdefault=True)
+        vpcOffering = VpcOffering.list(self.apiclient, name="Default VPC offering")
         self.assert_(vpcOffering is not None and len(
             vpcOffering) > 0, "No VPC offerings found")
 
+        vpc = None
         try:
             vpc = VPC.create(
                 apiclient=self.apiclient,
@@ -434,6 +435,9 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         try:
             cls.logger.debug("Cleaning up resources")
+            try:
+                cls.template.delete(cls.apiclient)
+            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
@@ -478,7 +482,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _get_ssh_client(self, virtual_machine, services, retries):
@@ -797,6 +801,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            try:
+                cls.template.delete(cls.apiclient)
+            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
@@ -841,7 +848,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
+        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _validate_vpc_offering(self, vpc_offering):
@@ -1164,6 +1171,9 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            try:
+                cls.template.delete(cls.apiclient)
+            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)

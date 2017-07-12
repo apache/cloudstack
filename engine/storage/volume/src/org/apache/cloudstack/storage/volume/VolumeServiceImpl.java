@@ -28,14 +28,6 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.offering.DiskOffering;
-import com.cloud.org.Cluster;
-import com.cloud.org.Grouping.AllocationState;
-import com.cloud.resource.ResourceState;
-import com.cloud.server.ManagementService;
-import com.cloud.storage.RegisterVolumePayload;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -68,6 +60,9 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -85,6 +80,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
@@ -94,7 +90,13 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
+import com.cloud.org.Cluster;
+import com.cloud.org.Grouping.AllocationState;
+import com.cloud.resource.ResourceState;
+import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
@@ -111,9 +113,12 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.storage.dao.VolumeDetailsDao;
+
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -141,6 +146,8 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     VMTemplatePoolDao _tmpltPoolDao;
     @Inject
+    SnapshotDataStoreDao _snapshotStoreDao;
+    @Inject
     VolumeDao _volumeDao;
     @Inject
     EndPointSelector _epSelector;
@@ -154,6 +161,10 @@ public class VolumeServiceImpl implements VolumeService {
     private ManagementService mgr;
     @Inject
     private ClusterDao clusterDao;
+    @Inject
+    private VolumeDetailsDao _volumeDetailsDao;
+
+    private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
     public VolumeServiceImpl() {
     }
@@ -316,10 +327,13 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         VolumeVO vol = volDao.findById(volume.getId());
+        if (vol == null) {
+            s_logger.debug("Volume " + volume.getId() + " is not found");
+            future.complete(result);
+            return future;
+        }
 
-        String volumePath = vol.getPath();
-        Long poolId = vol.getPoolId();
-        if (poolId == null || volumePath == null || volumePath.trim().isEmpty()) {
+        if (!volumeExistsOnPrimary(vol)) {
             // not created on primary store
             if (volumeStore == null) {
                 // also not created on secondary store
@@ -348,6 +362,32 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
+    private boolean volumeExistsOnPrimary(VolumeVO vol) {
+        Long poolId = vol.getPoolId();
+
+        if (poolId == null) {
+            return false;
+        }
+
+        PrimaryDataStore primaryStore = dataStoreMgr.getPrimaryDataStore(poolId);
+
+        if (primaryStore == null) {
+            return false;
+        }
+
+        if (primaryStore.isManaged()) {
+            return true;
+        }
+
+        String volumePath = vol.getPath();
+
+        if (volumePath == null || volumePath.trim().isEmpty()) {
+            return false;
+        }
+
+        return true;
+    }
+
     public Void deleteVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, DeleteVolumeContext<VolumeApiResult> context) {
         CommandResult result = callback.getResult();
         VolumeObject vo = context.getVolume();
@@ -358,6 +398,28 @@ public class VolumeServiceImpl implements VolumeService {
                 if (canVolumeBeRemoved(vo.getId())) {
                     s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
                     volDao.remove(vo.getId());
+                }
+
+                SnapshotDataStoreVO snapStoreVo = _snapshotStoreDao.findByVolume(vo.getId(), DataStoreRole.Primary);
+
+                if (snapStoreVo != null) {
+                    long storagePoolId = snapStoreVo.getDataStoreId();
+                    StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
+
+                    if (storagePoolVO.isManaged()) {
+                        DataStore primaryDataStore = dataStoreMgr.getPrimaryDataStore(storagePoolId);
+                        Map<String, String> mapCapabilities = primaryDataStore.getDriver().getCapabilities();
+
+                        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+                        Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+                        if (!supportsStorageSystemSnapshots) {
+                            _snapshotStoreDao.remove(snapStoreVo.getId());
+                        }
+                    }
+                    else {
+                        _snapshotStoreDao.remove(snapStoreVo.getId());
+                    }
                 }
             } else {
                 vo.processEvent(Event.OperationFailed);
@@ -1149,7 +1211,8 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             DataObject volumeOnStore = store.create(volume);
             volumeOnStore.processEvent(Event.CreateOnlyRequested);
-            snapshot.processEvent(Event.CopyingRequested);
+            _volumeDetailsDao.addDetail(volume.getId(), SNAPSHOT_ID, Long.toString(snapshot.getId()), false);
+
             CreateVolumeFromBaseImageContext<VolumeApiResult> context =
                     new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, volume, store, volumeOnStore, future, snapshot);
             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
@@ -1185,7 +1248,8 @@ public class VolumeServiceImpl implements VolumeService {
             } else {
                 volume.processEvent(event);
             }
-            snapshot.processEvent(event);
+            _volumeDetailsDao.removeDetail(volume.getId(), SNAPSHOT_ID);
+
         } catch (Exception e) {
             s_logger.debug("create volume from snapshot failed", e);
             apiResult.setResult(e.toString());
@@ -1399,6 +1463,7 @@ public class VolumeServiceImpl implements VolumeService {
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
             volDao.updateUuid(srcVolume.getId(), destVolume.getId());
+            _volumeStoreDao.updateVolumeId(srcVolume.getId(), destVolume.getId());
             try {
                 destroyVolume(srcVolume.getId());
                 srcVolume = volFactory.getVolume(srcVolume.getId());
@@ -1964,8 +2029,13 @@ public class VolumeServiceImpl implements VolumeService {
         SnapshotInfo snapshot = null;
         try {
             snapshot = snapshotMgr.takeSnapshot(volume);
+        } catch (CloudRuntimeException cre) {
+            s_logger.error("Take snapshot: " + volume.getId() + " failed", cre);
+            throw cre;
         } catch (Exception e) {
-            s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("unknown exception while taking snapshot for volume " + volume.getId() + " was caught", e);
+            }
             throw new CloudRuntimeException("Failed to take snapshot", e);
         }
 

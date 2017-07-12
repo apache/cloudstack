@@ -282,6 +282,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
 
+    static Boolean rulesContinueOnErrFlag = true;
+
     @Override
     public boolean configure(String name, Map<String, Object> params) {
         // populate providers
@@ -391,6 +393,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         AssignIpAddressFromPodVlanSearch = _ipAddressDao.createSearchBuilder();
         AssignIpAddressFromPodVlanSearch.and("dc", AssignIpAddressFromPodVlanSearch.entity().getDataCenterId(), Op.EQ);
         AssignIpAddressFromPodVlanSearch.and("allocated", AssignIpAddressFromPodVlanSearch.entity().getAllocatedTime(), Op.NULL);
+        AssignIpAddressFromPodVlanSearch.and("vlanId", AssignIpAddressFromPodVlanSearch.entity().getVlanId(), Op.IN);
+
         SearchBuilder<VlanVO> podVlanSearch = _vlanDao.createSearchBuilder();
         podVlanSearch.and("type", podVlanSearch.entity().getVlanType(), Op.EQ);
         podVlanSearch.and("networkId", podVlanSearch.entity().getNetworkId(), Op.EQ);
@@ -403,7 +407,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         Network.State.getStateMachine().registerListener(new NetworkStateListener(_configDao));
 
-        s_logger.info("Network Manager is configured.");
+        if (RulesContinueOnError.value() != null) {
+            rulesContinueOnErrFlag = RulesContinueOnError.value();
+        }
+
+        s_logger.info("IPAddress Manager is configured.");
 
         return true;
     }
@@ -460,6 +468,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     }
                 } else {
                     if (activeCount != null && activeCount > 0) {
+                        if (network.getVpcId() != null) {
+                            // If there are more than one ip in the vpc tier network and services configured on it.
+                            // restart network with cleanup case, on network reprogramming this needs to be return true
+                            // because on the VR ips has removed. In VPC case restart tier network with cleanup will not
+                            // reboot the VR. So ipassoc is needed.
+                            return true;
+                        }
                         continue;
                     } else if (addCount != null && addCount.longValue() == totalCount.longValue()) {
                         s_logger.trace("All rules are in Add state, have to assiciate IP with the backend");
@@ -562,7 +577,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // the code would be triggered
         s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
         try {
-            _vpnMgr.destroyRemoteAccessVpnForIp(ipId, caller);
+            _vpnMgr.destroyRemoteAccessVpnForIp(ipId, caller,false);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
             success = false;
@@ -594,7 +609,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (ip.getAssociatedWithNetworkId() != null) {
             Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
             try {
-                if (!applyIpAssociations(network, true)) {
+                if (!applyIpAssociations(network, rulesContinueOnErrFlag)) {
                     s_logger.warn("Unable to apply ip address associations for " + network);
                     success = false;
                 }
@@ -671,6 +686,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 boolean fetchFromDedicatedRange = false;
                 List<Long> dedicatedVlanDbIds = new ArrayList<Long>();
                 List<Long> nonDedicatedVlanDbIds = new ArrayList<Long>();
+                DataCenter zone = _entityMgr.findById(DataCenter.class, dcId);
 
                 SearchCriteria<IPAddressVO> sc = null;
                 if (podId != null) {
@@ -684,10 +700,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                 // If owner has dedicated Public IP ranges, fetch IP from the dedicated range
                 // Otherwise fetch IP from the system pool
-                List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
-                for (AccountVlanMapVO map : maps) {
-                    if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
-                        dedicatedVlanDbIds.add(map.getVlanDbId());
+                Network network = _networksDao.findById(guestNetworkId);
+                //Checking if network is null in the case of system VM's. At the time of allocation of IP address to systemVm, no network is present.
+                if(network == null || !(network.getGuestType() == GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
+                    List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
+                    for (AccountVlanMapVO map : maps) {
+                        if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
+                            dedicatedVlanDbIds.add(map.getVlanDbId());
+                    }
                 }
                 List<DomainVlanMapVO> domainMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(owner.getDomainId());
                 for (DomainVlanMapVO map : domainMaps) {
@@ -719,8 +739,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 }
 
                 sc.setParameters("dc", dcId);
-
-                DataCenter zone = _entityMgr.findById(DataCenter.class, dcId);
 
                 // for direct network take ip addresses only from the vlans belonging to the network
                 if (vlanUse == VlanType.DirectAttached) {
@@ -1698,6 +1716,22 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     Random _rand = new Random(System.currentTimeMillis());
 
+    /**
+     * Get the list of public IPs that need to be applied for a static NAT enable/disable operation.
+     * Manipulating only these ips prevents concurrency issues when disabling static nat at the same time.
+     * @param staticNats
+     * @return The list of IPs that need to be applied for the static NAT to work.
+     */
+    public List<IPAddressVO> getStaticNatSourceIps(List<? extends StaticNat> staticNats) {
+        List<IPAddressVO> userIps = new ArrayList<>();
+
+        for (StaticNat snat : staticNats) {
+            userIps.add(_ipAddressDao.findById(snat.getSourceIpAddressId()));
+        }
+
+        return userIps;
+    }
+
     @Override
     public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException {
         if (staticNats == null || staticNats.size() == 0) {
@@ -1714,8 +1748,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return true;
         }
 
-        // get the list of public ip's owned by the network
-        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+        List<IPAddressVO> userIps = getStaticNatSourceIps(staticNats);
+
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
@@ -2019,6 +2053,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSystemPublicIps};
+        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError};
     }
 }

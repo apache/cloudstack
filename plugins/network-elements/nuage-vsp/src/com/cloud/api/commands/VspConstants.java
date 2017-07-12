@@ -33,4 +33,5 @@ public class VspConstants {
     public static final String NUAGE_VSP_API_RESOURCE_FILTER = "resourcefilter";
     public static final String NUAGE_VSP_API_RESOURCE_INFO = "resourceinfo";
     public static final String NUAGE_VSP_CMS_ID = "cmsid";
+    public static final String NUAGE_VSP_API_UNDERLAY = "underlay";
 }

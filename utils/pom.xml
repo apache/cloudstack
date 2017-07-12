@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.10.0.0-SNAPSHOT</version>
+    <version>4.10.0.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <dependencies>
@@ -106,7 +106,7 @@
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
-      <artifactId>servlet-api</artifactId>
+      <artifactId>javax.servlet-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <!-- Test dependency in mysql for db tests -->
@@ -157,7 +157,7 @@
     <dependency>
       <groupId>commons-net</groupId>
       <artifactId>commons-net</artifactId>
-      <version>3.4</version>
+      <version>3.5</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -208,7 +208,6 @@
           <excludes>
             <exclude>com/cloud/utils/testcase/*TestCase*</exclude>
             <exclude>com/cloud/utils/db/*Test*</exclude>
-            <exclude>com/cloud/utils/testcase/NioTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>

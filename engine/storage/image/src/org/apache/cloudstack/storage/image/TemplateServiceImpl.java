@@ -18,64 +18,17 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Inject;
-
-import com.cloud.configuration.Resource;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.datastore.DataObjectManager;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.cloudstack.storage.image.store.TemplateObject;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
@@ -102,6 +55,51 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.DataObjectManager;
+import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 public class TemplateServiceImpl implements TemplateService {
@@ -267,7 +265,7 @@ public class TemplateServiceImpl implements TemplateService {
 
             for (VMTemplateVO template : toBeDownloaded) {
                 TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
-                if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                if (tmpltHost == null) {
                     associateTemplateToZone(template.getId(), dcId);
                     s_logger.info("Downloading builtin template " + template.getUniqueName() + " to data center: " + dcId);
                     TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
@@ -369,8 +367,10 @@ public class TemplateServiceImpl implements TemplateService {
                                             etype = EventTypes.EVENT_ISO_CREATE;
                                         }
 
-                                        UsageEventUtils.publishUsageEvent(etype, tmplt.getAccountId(), zoneId, tmplt.getId(), tmplt.getName(), null, null,
-                                                tmpltInfo.getPhysicalSize(), tmpltInfo.getSize(), VirtualMachineTemplate.class.getName(), tmplt.getUuid());
+                                        if (zoneId != null) {
+                                            UsageEventUtils.publishUsageEvent(etype, tmplt.getAccountId(), zoneId, tmplt.getId(), tmplt.getName(), null, null,
+                                                    tmpltInfo.getPhysicalSize(), tmpltInfo.getSize(), VirtualMachineTemplate.class.getName(), tmplt.getUuid());
+                                        }
                                     }
 
                                     tmpltStore.setDownloadPercent(100);

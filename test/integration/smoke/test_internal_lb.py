@@ -226,7 +226,7 @@ class Services:
                     "displaytext": "macchinina kvm",
                     "format": "qcow2",
                     "hypervisor": "kvm",
-                    "ostype": "Other PV (64-bit)",
+                    "ostype": "Other Linux (64-bit)",
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
                     "requireshvm": "True"
                 },
@@ -235,7 +235,7 @@ class Services:
                     "displaytext": "macchinina xen",
                     "format": "vhd",
                     "hypervisor": "xenserver",
-                    "ostype": "Other PV (64-bit)",
+                    "ostype": "Other Linux (64-bit)",
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
                     "requireshvm": "True",
                 },
@@ -244,7 +244,7 @@ class Services:
                     "displaytext": "macchinina xen",
                     "format": "vhd",
                     "hypervisor": "hyperv",
-                    "ostype": "Other PV (64-bit)",
+                    "ostype": "Other Linux (64-bit)",
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
                     "requireshvm": "True",
                 },
@@ -253,8 +253,8 @@ class Services:
                     "displaytext": "macchinina vmware",
                     "format": "ova",
                     "hypervisor": "vmware",
-                    "ostype": "Other PV (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.vmdk.bz2",
+                    "ostype": "Other Linux (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
                     "requireshvm": "True",
                 }
             }
@@ -302,7 +302,7 @@ class TestInternalLb(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls._cleanup = [cls.template, cls.account, cls.compute_offering]
+        cls._cleanup = [cls.account, cls.compute_offering]
         return
 
     def setUp(self):
@@ -705,8 +705,12 @@ class TestInternalLb(cloudstackTestCase):
                 self.apiclient, name="network.loadbalancer.haproxy.stats.port")[0].value
             settings["stats_uri"] = Configurations.list(
                 self.apiclient, name="network.loadbalancer.haproxy.stats.uri")[0].value
-            settings["username"], settings["password"] = Configurations.list(
-                self.apiclient, name="network.loadbalancer.haproxy.stats.auth")[0].value.split(":")
+            # Update global setting network.loadbalancer.haproxy.stats.auth to a known value
+            haproxy_auth = "admin:password"
+            Configurations.update(self.apiclient, "network.loadbalancer.haproxy.stats.auth", haproxy_auth)
+            self.logger.debug(
+                "Updated global setting stats network.loadbalancer.haproxy.stats.auth to %s" % (haproxy_auth))
+            settings["username"], settings["password"] = haproxy_auth.split(":")
             settings["visibility"] = Configurations.list(
                 self.apiclient, name="network.loadbalancer.haproxy.stats.visibility")[0].value
             self.logger.debug(settings)
@@ -842,6 +846,9 @@ class TestInternalLb(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             cls.logger.debug("Cleaning up class resources")
+            try:
+                cls.template.delete(cls.apiclient)
+            except Exception: pass
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Cleanup failed with %s" % e)

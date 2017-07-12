@@ -69,6 +69,11 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name = "vpc_id")
     private Long vpcId;
 
+
+    @Column(name= "update_state")
+    @Enumerated(EnumType.STRING)
+    private UpdateState updateState;
+
     public DomainRouterVO(final long id, final long serviceOfferingId, final long elementId, final String name, final long templateId, final HypervisorType hypervisorType, final long guestOSId, final long domainId,
             final long accountId, final long userId, final boolean isRedundantRouter, final RedundantState redundantState, final boolean haEnabled, final boolean stopPending,
             final Long vpcId) {
@@ -192,5 +197,14 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     public Long getVpcId() {
         return vpcId;
     }
+
+    public UpdateState getUpdateState() {
+        return updateState;
+    }
+
+    public void setUpdateState(UpdateState updateState) {
+        this.updateState = updateState;
+    }
+
 
 }

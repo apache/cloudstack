@@ -54,8 +54,6 @@ class Services:
         self.services = {
             "configurableData": {
                 "host": {
-                    "password": "password",
-                    "username": "root",
                     "port": 22
                 },
                 "input": "INPUT",
@@ -220,6 +218,7 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
             cls.apiclient,
             cls.zone.id,
             cls.services["ostype"])
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -254,6 +253,7 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
         return
 
     def setUp(self):
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.logger.debug("Creating a VPC offering.")
         self.vpc_off = VpcOffering.create(
             self.apiclient,
@@ -312,25 +312,36 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
                     "Check for list hosts response return valid data")
     
                 host = hosts[0]
-                host.user = self.services["configurableData"]["host"]["username"]
-                host.passwd = self.services["configurableData"]["host"]["password"]
+                host.user = self.hostConfig['username']
+                host.passwd = self.hostConfig['password']
                 host.port = self.services["configurableData"]["host"]["port"]
                 tables = [self.services["configurableData"]["input"], self.services["configurableData"]["forward"]]
                 
                 for table in tables:
-                    try:
+                    result = None
+                    if self.hypervisor.lower() in ('vmware', 'hyperv'):
                         result = get_process_status(
-                            host.ipaddress,
-                            host.port,
-                            host.user,
-                            host.passwd,
+                            self.apiclient.connection.mgtSvr,
+                            22,
+                            self.apiclient.connection.user,
+                            self.apiclient.connection.passwd,
                             router.linklocalip,
-                            'iptables -L %s' % table)
-                    except KeyError:
-                        self.skipTest(
-                            "Provide a marvin config file with host\
-                                    credentials to run %s" %
-                            self._testMethodName)
+                            'iptables -L %s' % table,
+                            hypervisor=self.hypervisor)
+                    else:
+                        try:
+                            result = get_process_status(
+                                host.ipaddress,
+                                host.port,
+                                host.user,
+                                host.passwd,
+                                router.linklocalip,
+                                'iptables -L %s' % table)
+                        except KeyError:
+                            self.skipTest(
+                                "Provide a marvin config file with host\
+                                        credentials to run %s" %
+                                self._testMethodName)
         
                     self.logger.debug("iptables -L %s: %s" % (table, result))
                     res = str(result)
@@ -360,6 +371,7 @@ class TestRouterIpTablesPolicies(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"])
         
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
@@ -392,6 +404,7 @@ class TestRouterIpTablesPolicies(cloudstackTestCase):
         return
 
     def setUp(self):
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
         self.entity_manager.set_cleanup(self.cleanup)
         return
@@ -428,25 +441,36 @@ class TestRouterIpTablesPolicies(cloudstackTestCase):
                     "Check for list hosts response return valid data")
 
                 host = hosts[0]
-                host.user = self.services["configurableData"]["host"]["username"]
-                host.passwd = self.services["configurableData"]["host"]["password"]
+                host.user = self.hostConfig['username']
+                host.passwd = self.hostConfig['password']
                 host.port = self.services["configurableData"]["host"]["port"]
                 tables = [self.services["configurableData"]["input"], self.services["configurableData"]["forward"]]
 
                 for table in tables:
-                    try:
+                    result = None
+                    if self.hypervisor.lower() in ('vmware', 'hyperv'):
                         result = get_process_status(
-                            host.ipaddress,
-                            host.port,
-                            host.user,
-                            host.passwd,
+                            self.apiclient.connection.mgtSvr,
+                            22,
+                            self.apiclient.connection.user,
+                            self.apiclient.connection.passwd,
                             router.linklocalip,
-                            'iptables -L %s' % table)
-                    except KeyError:
-                        self.skipTest(
-                            "Provide a marvin config file with host\
-                                    credentials to run %s" %
-                            self._testMethodName)
+                            'iptables -L %s' % table,
+                            hypervisor=self.hypervisor)
+                    else:
+                        try:
+                            result = get_process_status(
+                                host.ipaddress,
+                                host.port,
+                                host.user,
+                                host.passwd,
+                                router.linklocalip,
+                                'iptables -L %s' % table)
+                        except KeyError:
+                            self.skipTest(
+                                "Provide a marvin config file with host\
+                                        credentials to run %s" %
+                                self._testMethodName)
 
                     self.logger.debug("iptables -L %s: %s" % (table, result))
                     res = str(result)

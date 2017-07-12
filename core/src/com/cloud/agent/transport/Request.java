@@ -399,7 +399,7 @@ public class Request {
                 try {
                     _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
                 } catch (RuntimeException e) {
-                    s_logger.error("Unable to convert to json: " + _content);
+                    s_logger.error("Unable to deserialize from json: " + _content);
                     throw e;
                 }
             }

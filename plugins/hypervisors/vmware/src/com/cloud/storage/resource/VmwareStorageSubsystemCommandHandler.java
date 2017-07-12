@@ -19,6 +19,7 @@
 package com.cloud.storage.resource;
 
 import java.io.File;
+import java.util.EnumMap;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -37,6 +38,7 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
 
@@ -66,21 +68,25 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         this._nfsVersion = nfsVersion;
     }
 
-    /**
-     * Reconfigure NFS version for storage operations
-     * @param nfsVersion NFS version to set
-     * @return true if NFS version could be configured, false in other case
-     */
-    public boolean reconfigureNfsVersion(Integer nfsVersion){
-        try {
-            VmwareStorageProcessor processor = (VmwareStorageProcessor) this.processor;
-            processor.setNfsVersion(nfsVersion);
-            this._nfsVersion = nfsVersion;
-            return true;
-        } catch (Exception e){
-            s_logger.error("Error while reconfiguring NFS version " + nfsVersion);
-            return false;
+    public boolean reconfigureStorageProcessor(EnumMap<VmwareStorageProcessorConfigurableFields,Object> params) {
+        VmwareStorageProcessor processor = (VmwareStorageProcessor) this.processor;
+        for (VmwareStorageProcessorConfigurableFields key : params.keySet()){
+            switch (key){
+            case NFS_VERSION:
+                Integer nfsVersion = (Integer) params.get(key);
+                processor.setNfsVersion(nfsVersion);
+                this._nfsVersion = nfsVersion;
+                break;
+            case FULL_CLONE_FLAG:
+                boolean fullClone = (boolean) params.get(key);
+                processor.setFullCloneFlag(fullClone);
+                break;
+            default:
+                s_logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");
+                return false;
+            }
         }
+        return true;
     }
 
     @Override
@@ -187,4 +193,5 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
             return super.execute(cmd);
         }
     }
+
 }

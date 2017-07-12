@@ -16,25 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -43,6 +24,22 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.naming.ConfigurationException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO, Long> implements SnapshotDataStoreDao {
@@ -56,6 +53,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> snapshotIdSearch;
     private SearchBuilder<SnapshotDataStoreVO> volumeIdSearch;
     private SearchBuilder<SnapshotDataStoreVO> volumeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> stateSearch;
 
     private final String parentSearch = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where store_id = ? "
         + " and store_role = ? and volume_id = ? and state = 'Ready'" + " order by created DESC " + " limit 1";
@@ -103,6 +101,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshotSearch = createSearchBuilder();
         snapshotSearch.and("snapshot_id", snapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         snapshotSearch.and("store_role", snapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        snapshotSearch.and("state", snapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
         snapshotSearch.done();
 
         storeSnapshotSearch = createSearchBuilder();
@@ -124,6 +123,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         volumeSearch.and("volume_id", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         volumeSearch.and("store_role", volumeSearch.entity().getRole(), SearchCriteria.Op.EQ);
         volumeSearch.done();
+
+        stateSearch = createSearchBuilder();
+        stateSearch.and("state", stateSearch.entity().getState(), SearchCriteria.Op.IN);
+        stateSearch.done();
 
         return true;
     }
@@ -294,6 +297,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
         sc.setParameters("snapshot_id", snapshotId);
         sc.setParameters("store_role", role);
+        sc.setParameters("state", State.Ready);
         return findOneBy(sc);
     }
 
@@ -407,5 +411,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshot.setVolumeId(newVolId);
         UpdateBuilder ub = getUpdateBuilder(snapshot);
         update(ub, sc, null);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states) {
+        SearchCriteria<SnapshotDataStoreVO> sc = stateSearch.create();
+        sc.setParameters("state", (Object[])states);
+        return listBy(sc, null);
     }
 }

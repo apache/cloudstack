@@ -38,6 +38,7 @@ import com.cloud.hypervisor.ovm3.objects.XmlTestResultTest;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3ConfigurationTest;
 import com.cloud.hypervisor.ovm3.support.Ovm3SupportTest;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.ExecutionResult;
 
 public class Ovm3VirtualRoutingResourceTest {
@@ -206,6 +207,7 @@ public class Ovm3VirtualRoutingResourceTest {
         List<IpAddressTO> ips = new ArrayList<IpAddressTO>();
         IpAddressTO ip = new IpAddressTO(1, routerip, true, true, true, "vlan://"
                 + br[1], "64.1.1.1", "255.255.255.0", mac, 1000, false);
+        ip.setTrafficType(TrafficType.Public);
         ips.add(ip);
         IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
         return ipArray;

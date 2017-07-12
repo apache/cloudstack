@@ -88,6 +88,10 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -114,6 +118,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     private NetworkACLItemDao _networkACLItemDao;
     @Inject
     private EntityManager _entityMgr;
+    @Inject
+    protected HypervisorGuruManager _hvGuruMgr;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -280,6 +286,16 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
         final DomainRouterVO domainRouterVO = _routerDao.findById(profile.getId());
 
+        Map<String, String> details = new HashMap<String, String>();
+
+        if(profile.getHypervisorType() == Hypervisor.HypervisorType.VMware){
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(profile.getHypervisorType());
+            VirtualMachineTO vmTO = hvGuru.implement(profile);
+            if(vmTO.getDetails() != null){
+                details = vmTO.getDetails();
+            }
+        }
+
         final boolean isVpc = domainRouterVO.getVpcId() != null;
         if (!isVpc) {
             return super.finalizeCommandsOnStart(cmds, profile);
@@ -338,7 +354,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         }
                     }
                     final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()),
-                            domainRouterVO.getInstanceName(), domainRouterVO.getType());
+                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
                     final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIPv4Address(), vpc.getCidr());
@@ -361,7 +377,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 for (final Pair<Nic, Network> nicNtwk : guestNics) {
                     final Nic guestNic = nicNtwk.first();
                     // plug guest nic
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType());
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     if (!_networkModel.isPrivateGateway(guestNic.getNetworkId())) {
                         // set guest network
@@ -694,6 +710,16 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public List<DomainRouterVO> getVpcRouters(final long vpcId) {
         return _routerDao.listByVpcId(vpcId);
+    }
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
     }
 
     @Override

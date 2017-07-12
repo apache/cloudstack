@@ -19,6 +19,20 @@
 
 package com.cloud.network.guru;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.internal.util.collections.Sets;
+
+import com.google.common.collect.ImmutableMap;
+
 import com.cloud.NuageTest;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -40,7 +54,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -66,21 +79,15 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 import static com.cloud.network.manager.NuageVspManager.NuageVspIsolatedNetworkDomainTemplateName;
 import static com.cloud.network.manager.NuageVspManager.NuageVspSharedNetworkDomainTemplateName;
 import static com.cloud.network.manager.NuageVspManager.NuageVspVpcDomainTemplateName;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -89,49 +96,33 @@ import static org.mockito.Mockito.when;
 
 public class NuageVspGuestNetworkGuruTest extends NuageTest {
     private static final long NETWORK_ID = 42L;
-    private PhysicalNetworkDao _physicalNetworkDao = mock(PhysicalNetworkDao.class);
-    private DataCenterDao _dataCenterDao = mock(DataCenterDao.class);
-    private NetworkOfferingServiceMapDao _networkOfferingServiceMapDao = mock(NetworkOfferingServiceMapDao.class);
-    private AgentManager _agentManager = mock(AgentManager.class);
-    private NetworkModel _networkModel = mock(NetworkModel.class);
-    private AccountDao _accountDao = mock(AccountDao.class);
-    private DomainDao _domainDao = mock(DomainDao.class);
-    private NicDao _nicDao = mock(NicDao.class);
-    private NetworkOfferingDao _networkOfferingDao = mock(NetworkOfferingDao.class);
-    private NuageVspDao _nuageVspDao = mock(NuageVspDao.class);
-    private HostDao _hostDao = mock(HostDao.class);
-    private NetworkDao _networkDao = mock(NetworkDao.class);
-    private ConfigurationDao _configurationDao = mock(ConfigurationDao.class);
-    private IPAddressDao _ipAddressDao = mock(IPAddressDao.class);
-    private NuageVspManager _nuageVspManager = mock(NuageVspManager.class);
-    private ConfigurationManager _configurationManager = mock(ConfigurationManager.class);
-    private NetworkDetailsDao _networkDetailsDao = mock(NetworkDetailsDao.class);
+    @Mock private PhysicalNetworkDao _physicalNetworkDao;
+    @Mock private DataCenterDao _dataCenterDao;
+    @Mock private NetworkOfferingServiceMapDao _networkOfferingServiceMapDao;
+    @Mock private AgentManager _agentManager;
+    @Mock private AccountDao _accountDao;
+    @Mock private DomainDao _domainDao;
+    @Mock private NicDao _nicDao;
+    @Mock private NetworkOfferingDao _networkOfferingDao;
+    @Mock private NuageVspDao _nuageVspDao;
+    @Mock private HostDao _hostDao;
+    @Mock private NetworkDao _networkDao;
+    @Mock private IPAddressDao _ipAddressDao;
+    @Mock private NuageVspManager _nuageVspManager;
+    @Mock private ConfigurationManager _configurationManager;
+    @Mock private NetworkDetailsDao _networkDetailsDao;
+    @Mock private PhysicalNetworkVO physnet;
+
+    @InjectMocks
     private NuageVspGuestNetworkGuru _nuageVspGuestNetworkGuru;
 
     @Before
     public void setUp() throws Exception {
+        _nuageVspGuestNetworkGuru = new NuageVspGuestNetworkGuru();
+
         super.setUp();
 
-        _nuageVspGuestNetworkGuru = new NuageVspGuestNetworkGuru();
-        _nuageVspGuestNetworkGuru._physicalNetworkDao = _physicalNetworkDao;
-        _nuageVspGuestNetworkGuru._physicalNetworkDao = _physicalNetworkDao;
-        _nuageVspGuestNetworkGuru._nuageVspDao = _nuageVspDao;
-        _nuageVspGuestNetworkGuru._dcDao = _dataCenterDao;
-        _nuageVspGuestNetworkGuru._ntwkOfferingSrvcDao = _networkOfferingServiceMapDao;
-        _nuageVspGuestNetworkGuru._networkModel = _networkModel;
-        _nuageVspGuestNetworkGuru._hostDao = _hostDao;
-        _nuageVspGuestNetworkGuru._agentMgr = _agentManager;
-        _nuageVspGuestNetworkGuru._networkDao = _networkDao;
-        _nuageVspGuestNetworkGuru._accountDao = _accountDao;
-        _nuageVspGuestNetworkGuru._domainDao = _domainDao;
-        _nuageVspGuestNetworkGuru._nicDao = _nicDao;
-        _nuageVspGuestNetworkGuru._ntwkOfferingDao = _networkOfferingDao;
-        _nuageVspGuestNetworkGuru._configDao = _configurationDao;
-        _nuageVspGuestNetworkGuru._ipAddressDao = _ipAddressDao;
-        _nuageVspGuestNetworkGuru._nuageVspManager = _nuageVspManager;
-        _nuageVspGuestNetworkGuru._configMgr = _configurationManager;
         _nuageVspGuestNetworkGuru._nuageVspEntityBuilder = _nuageVspEntityBuilder;
-        _nuageVspGuestNetworkGuru._networkDetailsDao = _networkDetailsDao;
 
         final DataCenterVO dc = mock(DataCenterVO.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
@@ -142,41 +133,58 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(_configurationDao.getValue(NuageVspIsolatedNetworkDomainTemplateName.key())).thenReturn("IsolatedDomainTemplate");
         when(_configurationDao.getValue(NuageVspVpcDomainTemplateName.key())).thenReturn("VpcDomainTemplate");
         when(_configurationDao.getValue(NuageVspSharedNetworkDomainTemplateName.key())).thenReturn("SharedDomainTemplate");
+
+        when(_physicalNetworkDao.findById(any(Long.class))).thenReturn(physnet);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList("VSP"));
+        when(physnet.getId()).thenReturn(NETWORK_ID);
+
+        final HostVO host = mock(HostVO.class);
+        when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
+        when(host.getId()).thenReturn(NETWORK_ID);
+        when(_agentManager.easySend(eq(NETWORK_ID), any(Command.class))).thenReturn(new Answer(null));
+        when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
+
+        final NuageVspDeviceVO device = mock(NuageVspDeviceVO.class);
+        when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(device));
+        when(device.getId()).thenReturn(1L);
+        when(device.getHostId()).thenReturn(NETWORK_ID);
     }
 
     @Test
     public void testCanHandle() {
         final NetworkOffering offering = mock(NetworkOffering.class);
         when(offering.getId()).thenReturn(NETWORK_ID);
-        when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
-        when(offering.getGuestType()).thenReturn(GuestType.Isolated);
         when(offering.getIsPersistent()).thenReturn(false);
         when(_configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(false);
 
-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VSP"}));
-        when(physnet.getId()).thenReturn(NETWORK_ID);
+        when(_networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(NETWORK_ID, Service.Connectivity, Network.Provider.NuageVsp)).thenReturn(true);
+        when(_networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(NETWORK_ID, Service.SourceNat, Network.Provider.NuageVsp)).thenReturn(true);
 
-        when(_networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+        when(_networkModel.getNetworkOfferingServiceProvidersMap(NETWORK_ID)).thenReturn(ImmutableMap.of(
+                Service.Connectivity, Sets.newSet(Network.Provider.NuageVsp),
+                Service.SourceNat, Sets.newSet(Network.Provider.NuageVsp)
+        ));
 
-        assertTrue(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+        assertThat(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Advanced, physnet), is(true));
 
         // Not supported TrafficType != Guest
         when(offering.getTrafficType()).thenReturn(TrafficType.Management);
-        assertFalse(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        assertThat(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Advanced, physnet), is(false));
 
         // Supported: GuestType Shared
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Shared);
-        assertTrue(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        assertThat(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Advanced, physnet), is(true));
 
         // Not supported: Basic networking
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
-        assertFalse(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Basic, physnet) == true);
+        assertThat(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Basic, physnet), is(false));
 
         // Not supported: IsolationMethod != STT
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
-        assertFalse(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList("VLAN"));
+        assertThat(_nuageVspGuestNetworkGuru.canHandle(offering, NetworkType.Basic, physnet), is(false));
 
         // Not supported: Non-persistent VPC tier
         when(_configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(true);
@@ -185,13 +193,8 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
 
     @Test
     public void testDesign() {
-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(_physicalNetworkDao.findById((Long)any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VSP"}));
-        when(physnet.getId()).thenReturn(NETWORK_ID);
-
         final NuageVspDeviceVO device = mock(NuageVspDeviceVO.class);
-        when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{device}));
+        when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(device));
         when(device.getId()).thenReturn(1L);
 
         final NetworkOffering offering = mock(NetworkOffering.class);
@@ -201,29 +204,30 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(offering.getIsPersistent()).thenReturn(false);
         when(_configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(false);
 
-        when(_networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+        when(_networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(NETWORK_ID, Service.Connectivity, Network.Provider.NuageVsp)).thenReturn(true);
+        when(_networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(NETWORK_ID, Service.SourceNat, Network.Provider.NuageVsp)).thenReturn(true);
+
+        when(_networkModel.getNetworkOfferingServiceProvidersMap(NETWORK_ID)).thenReturn(ImmutableMap.of(
+                Service.Connectivity, Sets.newSet(Network.Provider.NuageVsp),
+                Service.SourceNat, Sets.newSet(Network.Provider.NuageVsp)
+        ));
 
         final DeploymentPlan plan = mock(DeploymentPlan.class);
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
         final Network designednetwork = _nuageVspGuestNetworkGuru.design(offering, plan, network, account);
-        assertTrue(designednetwork != null);
-        assertTrue(designednetwork.getBroadcastDomainType() == BroadcastDomainType.Vsp);
+        assertThat(designednetwork, notNullValue(Network.class));
+        assertThat(designednetwork.getBroadcastDomainType(), is(BroadcastDomainType.Vsp));
 
         // Can't design non-persistent VPC tier
         when(_configurationManager.isOfferingForVpc(any(NetworkOffering.class))).thenReturn(true);
-        assertNull(_nuageVspGuestNetworkGuru.design(offering, plan, network, account));
+        assertThat(_nuageVspGuestNetworkGuru.design(offering, plan, network, account), nullValue(Network.class));
     }
 
     @Test
     public void testDesignNoElementOnPhysicalNetwork() {
-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(_physicalNetworkDao.findById((Long)any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
-        when(physnet.getId()).thenReturn(NETWORK_ID);
-
-        mock(NuageVspDeviceVO.class);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList("STT"));
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NuageVspDeviceVO>emptyList());
 
         final NetworkOffering offering = mock(NetworkOffering.class);
@@ -241,12 +245,7 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
 
     @Test
     public void testDesignNoIsolationMethodVSP() {
-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(_physicalNetworkDao.findById((Long)any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
-        when(physnet.getId()).thenReturn(NETWORK_ID);
-
-        mock(NuageVspDeviceVO.class);
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList("VLAN"));
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NuageVspDeviceVO>emptyList());
 
         final NetworkOffering offering = mock(NetworkOffering.class);
@@ -278,10 +277,12 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         final DataCenterVO dataCenter = mock(DataCenterVO.class);
         when(_dataCenterDao.findById(NETWORK_ID)).thenReturn(dataCenter);
         final AccountVO networksAccount = mock(AccountVO.class);
+        when(networksAccount.getId()).thenReturn(NETWORK_ID);
         when(networksAccount.getUuid()).thenReturn("aaaa-abbbb");
         when(networksAccount.getType()).thenReturn(Account.ACCOUNT_TYPE_NORMAL);
         when(_accountDao.findById(NETWORK_ID)).thenReturn(networksAccount);
         final DomainVO networksDomain = mock(DomainVO.class);
+        when(networksDomain.getId()).thenReturn(NETWORK_ID);
         when(networksDomain.getUuid()).thenReturn("aaaaa-bbbbb");
         when(_domainDao.findById(NETWORK_ID)).thenReturn(networksDomain);
 
@@ -289,7 +290,10 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(nicvo.getId()).thenReturn(NETWORK_ID);
         when(nicvo.getMacAddress()).thenReturn("aa-aa-aa-aa-aa-aa");
         when(nicvo.getUuid()).thenReturn("aaaa-fffff");
+        when(nicvo.getNetworkId()).thenReturn(NETWORK_ID);
+        when(nicvo.getInstanceId()).thenReturn(NETWORK_ID);
         when(_nicDao.findById(NETWORK_ID)).thenReturn(nicvo);
+        when(_nicDao.findDefaultNicForVM(NETWORK_ID)).thenReturn(nicvo);
 
         final VirtualMachine vm = mock(VirtualMachine.class);
         when(vm.getId()).thenReturn(NETWORK_ID);
@@ -310,13 +314,6 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(ntwkoffering.getId()).thenReturn(NETWORK_ID);
         when(_networkOfferingDao.findById(NETWORK_ID)).thenReturn(ntwkoffering);
 
-        final HostVO host = mock(HostVO.class);
-        when(host.getId()).thenReturn(NETWORK_ID);
-        final NuageVspDeviceVO nuageVspDevice = mock(NuageVspDeviceVO.class);
-        when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
-        when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
-        when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
-
         when(_networkDao.acquireInLockTable(NETWORK_ID, 1200)).thenReturn(network);
         when(_ipAddressDao.findByVmIdAndNetworkId(NETWORK_ID, NETWORK_ID)).thenReturn(null);
         when(_domainDao.findById(NETWORK_ID)).thenReturn(mock(DomainVO.class));
@@ -325,7 +322,11 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(answer.getResult()).thenReturn(true);
         when(_agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 
-        _nuageVspGuestNetworkGuru.reserve(nicProfile, network, vmProfile, mock(DeployDestination.class), mock(ReservationContext.class));
+        final ReservationContext reservationContext = mock(ReservationContext.class);
+        when(reservationContext.getAccount()).thenReturn(networksAccount);
+        when(reservationContext.getDomain()).thenReturn(networksDomain);
+
+        _nuageVspGuestNetworkGuru.reserve(nicProfile, network, vmProfile, mock(DeployDestination.class), reservationContext);
     }
 
     @Test
@@ -358,9 +359,11 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
 
         final ReservationContext reserveContext = mock(ReservationContext.class);
         final Domain domain = mock(Domain.class);
+        when(domain.getId()).thenReturn(NETWORK_ID);
         when(reserveContext.getDomain()).thenReturn(domain);
         when(domain.getName()).thenReturn("aaaaa");
         final Account account = mock(Account.class);
+        when(account.getId()).thenReturn(NETWORK_ID);
         when(account.getAccountId()).thenReturn(NETWORK_ID);
         when(reserveContext.getAccount()).thenReturn(account);
         final DomainVO domainVo = mock(DomainVO.class);
@@ -368,19 +371,9 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         final AccountVO accountVo = mock(AccountVO.class);
         when(_accountDao.findById(NETWORK_ID)).thenReturn(accountVo);
 
-        final HostVO host = mock(HostVO.class);
-        when(host.getId()).thenReturn(NETWORK_ID);
-        final NuageVspDeviceVO nuageVspDevice = mock(NuageVspDeviceVO.class);
-        when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
-        when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
-        when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
         when(_networkDao.acquireInLockTable(NETWORK_ID, 1200)).thenReturn(network);
-        when(_nuageVspManager.getDnsDetails(network)).thenReturn(new ArrayList<String>());
+        when(_nuageVspManager.getDnsDetails(network.getDataCenterId())).thenReturn(new ArrayList<String>());
         when(_nuageVspManager.getGatewaySystemIds()).thenReturn(new ArrayList<String>());
-
-        final Answer answer = mock(Answer.class);
-        when(answer.getResult()).thenReturn(true);
-        when(_agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 
         final DataCenter dc = mock(DataCenter.class);
         when(dc.getId()).thenReturn(NETWORK_ID);
@@ -429,17 +422,6 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(vmProfile.getInstanceName()).thenReturn("Test-VM");
         when(vmProfile.getVirtualMachine()).thenReturn(vm);
 
-        final HostVO host = mock(HostVO.class);
-        when(host.getId()).thenReturn(NETWORK_ID);
-        final NuageVspDeviceVO nuageVspDevice = mock(NuageVspDeviceVO.class);
-        when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
-        when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
-        when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
-
-        final Answer answer = mock(Answer.class);
-        when(answer.getResult()).thenReturn(true);
-        when(_agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
-
         _nuageVspGuestNetworkGuru.deallocate(network, nicProfile, vmProfile);
     }
 
@@ -452,6 +434,7 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(network.getDomainId()).thenReturn(NETWORK_ID);
         when(network.getNetworkOfferingId()).thenReturn(NETWORK_ID);
         when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+        when(network.getDataCenterId()).thenReturn(NETWORK_ID);
         when(network.getVpcId()).thenReturn(null);
         when(_networkDao.acquireInLockTable(NETWORK_ID, 1200)).thenReturn(network);
 
@@ -470,12 +453,8 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[]{nuageVspDevice}));
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
-        when(_nuageVspManager.getDnsDetails(network)).thenReturn(new ArrayList<String>());
+        when(_nuageVspManager.getDnsDetails(network.getDataCenterId())).thenReturn(new ArrayList<String>());
         when(_nuageVspManager.getGatewaySystemIds()).thenReturn(new ArrayList<String>());
-
-        final Answer answer = mock(Answer.class);
-        when(answer.getResult()).thenReturn(true);
-        when(_agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 
         assertTrue(_nuageVspGuestNetworkGuru.trash(network, offering));
     }

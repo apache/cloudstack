@@ -74,4 +74,8 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listByNetworkIdTypeAndGatewayAndBroadcastUri(long networkId, VirtualMachine.Type vmType, String gateway, URI broadcastUri);
 
     int countNicsForStartingVms(long networkId);
+
+    NicVO getControlNicForVM(long vmId);
+
+    List<NicVO> listByVmIdAndKeyword(long instanceId, String keyword);
 }

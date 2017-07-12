@@ -221,4 +221,9 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
         return null;
     }
 
+    @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return true;
+    }
+
 }

@@ -19,6 +19,7 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
+import com.cloud.network.dao.FirewallRulesDcidrsDaoImpl;
 import com.cloud.storage.StorageManager;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +42,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
@@ -129,9 +132,9 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
     DiskOfferingDaoImpl.class, DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class,
     DataCenterDetailsDaoImpl.class, NicSecondaryIpDaoImpl.class, UserIpv6AddressDaoImpl.class, UserDaoImpl.class, NicDaoImpl.class,
     NetworkDomainDaoImpl.class, HostDetailsDaoImpl.class, HostTagsDaoImpl.class, ClusterDaoImpl.class, FirewallRulesDaoImpl.class,
-    FirewallRulesCidrsDaoImpl.class, PhysicalNetworkDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class, PhysicalNetworkServiceProviderDaoImpl.class,
+    FirewallRulesCidrsDaoImpl.class, FirewallRulesDcidrsDaoImpl.class, PhysicalNetworkDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class, PhysicalNetworkServiceProviderDaoImpl.class,
     LoadBalancerDaoImpl.class, NetworkServiceMapDaoImpl.class, PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class,
-    PortableIpRangeDaoImpl.class, RegionDaoImpl.class, PortableIpDaoImpl.class, AccountGuestVlanMapDaoImpl.class},
+    PortableIpRangeDaoImpl.class, RegionDaoImpl.class, PortableIpDaoImpl.class, AccountGuestVlanMapDaoImpl.class, ImageStoreDaoImpl.class, ImageStoreDetailsDaoImpl.class},
                includeFilters = {@Filter(value = ChildTestConfiguration.Library.class, type = FilterType.CUSTOM)},
                useDefaultFilters = false)
 public class

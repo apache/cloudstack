@@ -1638,20 +1638,33 @@
                                 }],
 
                                 dataProvider: function(args) {
-                                    if (isAdmin() || isDomainAdmin()) {
-                                        $.ajax({
-                                            url: createURL('listUsers'),
+                                if (isAdmin() || isDomainAdmin()) {
+                                    $.ajax({
+                                        url: createURL('listUsers'),
                                             data: {
                                                 id: args.context.users[0].id
                                             },
                                             success: function(json) {
-                                                args.response.success({
-                                                    actionFilter: userActionfilter,
-                                                    data: json.listusersresponse.user[0]
-                                                });
-                                            }
-                                        });
-                                    } else { //normal user doesn't have access listUsers API until Bug 14127 is fixed.
+                                                var items = json.listusersresponse.user[0];
+                                                    $.ajax({
+                                                        url: createURL('getUserKeys'),//change
+                                                        data: {
+                                                            id: args.context.users[0].id//change
+                                                        },
+                                                        success: function(json) {
+                                                            $.extend(items, {
+                                                                secretkey: json.getuserkeysresponse.userkeys.secretkey//change
+                                                            });
+                                                        args.response.success({
+                                                            actionFilter: userActionfilter,
+                                                                data: items
+                                                        });
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    else { //normal user doesn't have access listUsers API until Bug 14127 is fixed.
                                         args.response.success({
                                             actionFilter: userActionfilter,
                                             data: args.context.users[0]

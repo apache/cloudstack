@@ -23,7 +23,6 @@ import java.util.Map;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -39,6 +38,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -65,7 +65,7 @@ public interface NetworkOrchestrationService {
     static final String NetworkThrottlingRateCK = "network.throttling.rate";
     static final String MinVRVersionCK = "minreq.sysvmtemplate.version";
 
-    static final ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.6.0",
+    static final ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.10.0",
             "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
     static final ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
@@ -213,15 +213,29 @@ public interface NetworkOrchestrationService {
 
     boolean isSecondaryIpSetForNic(long nicId);
 
-    List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId);
+    List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId, String keyword);
 
     Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
 
     DhcpServiceProvider getDhcpServiceProvider(Network network);
+
+    DnsServiceProvider getDnsServiceProvider(Network network);
 
     void removeDhcpServiceInSubnet(Nic nic);
 
     boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
+
+    boolean canUpdateInSequence(Network network, boolean forced);
+
+    List<String> getServicesNotSupportedInNewOffering(Network network, long newNetworkOfferingId);
+
+    void cleanupConfigForServicesInNetwork(List<String> services, Network network);
+
+    void configureUpdateInSequence(Network network);
+
+    int getResourceCount(Network network);
+
+    void finalizeUpdateInSequence(Network network, boolean success);
 }

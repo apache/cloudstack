@@ -343,17 +343,17 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
 
             String sfAccountName = SolidFireUtil.getSolidFireAccountName(accountVo.getUuid(), csAccountId);
 
-            SolidFireUtil.SolidFireAccount sfAccount = SolidFireUtil.getSolidFireAccount(sfConnection, sfAccountName);
+            SolidFireUtil.SolidFireAccount sfAccount = SolidFireUtil.getAccount(sfConnection, sfAccountName);
 
             if (sfAccount == null) {
-                long sfAccountNumber = SolidFireUtil.createSolidFireAccount(sfConnection, sfAccountName);
+                long sfAccountNumber = SolidFireUtil.createAccount(sfConnection, sfAccountName);
 
-                sfAccount = SolidFireUtil.getSolidFireAccountById(sfConnection, sfAccountNumber);
+                sfAccount = SolidFireUtil.getAccountById(sfConnection, sfAccountNumber);
             }
 
-            long sfVolumeId = SolidFireUtil.createSolidFireVolume(sfConnection, SolidFireUtil.getSolidFireVolumeName(volumeName), sfAccount.getId(), volumeSize,
+            long sfVolumeId = SolidFireUtil.createVolume(sfConnection, SolidFireUtil.getSolidFireVolumeName(volumeName), sfAccount.getId(), volumeSize,
                     true, null, minIops, maxIops, burstIops);
-            SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, sfVolumeId);
+            SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getVolume(sfConnection, sfVolumeId);
 
             return new SolidFireCreateVolume(sfVolume, sfAccount);
         } catch (Throwable e) {
@@ -596,11 +596,11 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         if (vagId != null) {
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
 
-            SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getSolidFireVag(sfConnection, Long.parseLong(vagId));
+            SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getVag(sfConnection, Long.parseLong(vagId));
 
             long[] volumeIds = SolidFireUtil.getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, false);
 
-            SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), sfVag.getInitiators(), volumeIds);
+            SolidFireUtil.modifyVag(sfConnection, sfVag.getId(), sfVag.getInitiators(), volumeIds);
         }
     }
 
@@ -609,7 +609,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
 
         long sfVolumeId = getVolumeId(storagePoolId);
 
-        SolidFireUtil.deleteSolidFireVolume(sfConnection, sfVolumeId);
+        SolidFireUtil.deleteVolume(sfConnection, sfVolumeId);
     }
 
     private long getVolumeId(long storagePoolId) {
@@ -691,7 +691,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             }
         }
 
-        SolidFireUtil.modifySolidFireVolume(sfConnection, getVolumeId(storagePool.getId()), size, null, minIops, maxIops, burstIops);
+        SolidFireUtil.modifyVolume(sfConnection, getVolumeId(storagePool.getId()), size, null, minIops, maxIops, burstIops);
 
         SolidFireUtil.updateCsDbWithSolidFireIopsInfo(storagePool.getId(), _primaryDataStoreDao, _storagePoolDetailsDao, minIops, maxIops, burstIops);
     }

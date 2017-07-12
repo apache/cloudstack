@@ -554,6 +554,11 @@ StaticNatServiceProvider, IpDeployer {
         return null;
     }
 
+    @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return true;
+    }
+
     private boolean canHandleLbRules(final List<LoadBalancingRule> rules) {
         final Map<Capability, String> lbCaps = getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {

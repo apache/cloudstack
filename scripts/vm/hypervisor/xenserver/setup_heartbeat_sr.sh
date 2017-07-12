@@ -71,8 +71,12 @@ else
         dmsetup remove -f $devmapper
       fi
       rm $link -f
-    fi 
-    lvcreate VG_XenStorage-$2 -n hb-$1 --size 4M
+    fi
+    if [ -f /etc/redhat-release ] && grep -q "XenServer release 7." /etc/redhat-release; then
+        lvcreate VG_XenStorage-$2 -n hb-$1 --size 4M --config global{metadata_read_only=0}
+    else
+        lvcreate VG_XenStorage-$2 -n hb-$1 --size 4M
+    fi
     if [ $? -ne 0 ]; then
       echo "#6# Unable to create heartbeat volume hb-$1"
       exit 0

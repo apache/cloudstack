@@ -378,6 +378,11 @@ class TestVolumes(cloudstackTestCase):
         #Clean up, terminate the created volumes
         if self.attached:
             self.virtual_machine.detach_volume(self.apiClient, self.volume)
+
+        if self.virtual_machine.hypervisor == "KVM":
+            self.virtual_machine.stop(self.apiClient)
+            self.virtual_machine.start(self.apiClient)
+
         cleanup_resources(self.apiClient, self.cleanup)
         return
 

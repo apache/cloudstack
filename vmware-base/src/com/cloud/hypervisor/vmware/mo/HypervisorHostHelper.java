@@ -16,17 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.exception.CloudException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -77,6 +66,7 @@ import com.vmware.vim25.VMwareDVSPvlanConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
 import com.vmware.vim25.VirtualBusLogicController;
 import com.vmware.vim25.VirtualController;
+import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualIDEController;
@@ -91,6 +81,33 @@ import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
+import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.traversal.DocumentTraversal;
+import org.w3c.dom.traversal.NodeFilter;
+import org.w3c.dom.traversal.NodeIterator;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class HypervisorHostHelper {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostHelper.class);
@@ -1081,8 +1098,11 @@ public class HypervisorHostHelper {
             }
         } else {
             if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-                hostMo.createPortGroup(vSwitch, networkName, vid, secPolicy, shapingPolicy);
-                bWaitPortGroupReady = true;
+                hostMo.createPortGroup(vSwitch, networkName, vid, secPolicy, shapingPolicy, timeOutMs);
+                // Setting flag "bWaitPortGroupReady" to false.
+                // This flag indicates whether we need to wait for portgroup on vCenter.
+                // Above createPortGroup() method itself ensures creation of portgroup as well as wait for portgroup.
+                bWaitPortGroupReady = false;
             } else {
                 HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
                 if (!isSpecMatch(spec, vid, shapingPolicy)) {
@@ -1291,6 +1311,18 @@ public class HypervisorHostHelper {
             }
         }
 
+        if (guestOsIdentifier.startsWith("darwin")) { //Mac OS
+            s_logger.debug("Add USB Controller device for blank Mac OS VM " + vmName);
+
+            //For Mac OS X systems, the EHCI+UHCI controller is enabled by default and is required for USB mouse and keyboard access.
+            VirtualDevice usbControllerDevice = VmwareHelper.prepareUSBControllerDevice();
+            VirtualDeviceConfigSpec usbControllerSpec = new VirtualDeviceConfigSpec();
+            usbControllerSpec.setDevice(usbControllerDevice);
+            usbControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+
+            vmConfig.getDeviceChange().add(usbControllerSpec);
+        }
+
         VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
         DatastoreMO dsMo = new DatastoreMO(host.getContext(), morDs);
         fileInfo.setVmPathName(String.format("[%s]", dsMo.getName()));
@@ -1461,6 +1493,40 @@ public class HypervisorHostHelper {
         return url;
     }
 
+    public static String removeOVFNetwork(final String ovfString)  {
+        if (ovfString == null || ovfString.isEmpty()) {
+            return ovfString;
+        }
+        try {
+            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            final Document doc = factory.newDocumentBuilder().parse(new ByteArrayInputStream(ovfString.getBytes()));
+            final DocumentTraversal traversal = (DocumentTraversal) doc;
+            final NodeIterator iterator = traversal.createNodeIterator(doc.getDocumentElement(), NodeFilter.SHOW_ELEMENT, null, true);
+            for (Node n = iterator.nextNode(); n != null; n = iterator.nextNode()) {
+                final Element e = (Element) n;
+                if ("NetworkSection".equals(e.getTagName())) {
+                    if (e.getParentNode() != null) {
+                        e.getParentNode().removeChild(e);
+                    }
+                } else if ("rasd:Connection".equals(e.getTagName())) {
+                    if (e.getParentNode() != null && e.getParentNode().getParentNode() != null) {
+                        e.getParentNode().getParentNode().removeChild(e.getParentNode());
+                    }
+                }
+            }
+            final DOMSource domSource = new DOMSource(doc);
+            final StringWriter writer = new StringWriter();
+            final StreamResult result = new StreamResult(writer);
+            final TransformerFactory tf = TransformerFactory.newInstance();
+            final Transformer transformer = tf.newTransformer();
+            transformer.transform(domSource, result);
+            return writer.toString();
+        } catch (SAXException | IOException | ParserConfigurationException | TransformerException e) {
+            s_logger.warn("Unexpected exception caught while removing network elements from OVF:", e);
+        }
+        return ovfString;
+    }
+
     public static void importVmFromOVF(VmwareHypervisorHost host, String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, ManagedObjectReference morRp,
             ManagedObjectReference morHost) throws Exception {
 
@@ -1472,9 +1538,9 @@ public class HypervisorHostHelper {
         importSpecParams.setEntityName(vmName);
         importSpecParams.setDeploymentOption("");
         importSpecParams.setDiskProvisioning(diskOption); // diskOption: thin, thick, etc
-        //importSpecParams.setPropertyMapping(null);
 
-        String ovfDescriptor = HttpNfcLeaseMO.readOvfContent(ovfFilePath);
+        String ovfDescriptor = removeOVFNetwork(HttpNfcLeaseMO.readOvfContent(ovfFilePath));
+
         VmwareContext context = host.getContext();
         OvfCreateImportSpecResult ovfImportResult =
                 context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(), importSpecParams);

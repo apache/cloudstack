@@ -49,7 +49,6 @@ public class VmwareSecondaryStorageContextFactory {
         assert (context != null);
 
         context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
-        s_pool.registerOutstandingContext(context);
 
         return context;
     }

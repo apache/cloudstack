@@ -1146,6 +1146,82 @@
                                             number: true
                                         }
                                     },
+                                    qosType: {
+                                        label: 'label.qos.type',
+                                        docID: 'helpDiskOfferingQoSType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: '',
+                                                description: ''
+                                            });
+                                            items.push({
+                                                id: 'hypervisor',
+                                                description: 'hypervisor'
+                                            });
+                                            items.push({
+                                                id: 'storage',
+                                                description: 'storage'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+                                                var $isCustomizedIops = $form.find('.form-item[rel=isCustomizedIops]');
+                                                var $minIops = $form.find('.form-item[rel=minIops]');
+                                                var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                var $diskBytesReadRate = $form.find('.form-item[rel=diskBytesReadRate]');
+                                                var $diskBytesWriteRate = $form.find('.form-item[rel=diskBytesWriteRate]');
+                                                var $diskIopsReadRate = $form.find('.form-item[rel=diskIopsReadRate]');
+                                                var $diskIopsWriteRate = $form.find('.form-item[rel=diskIopsWriteRate]');
+
+                                                var qosId = $(this).val();
+
+                                                if (qosId == 'storage') { // Storage QoS
+                                                    $diskBytesReadRate.hide();
+                                                    $diskBytesWriteRate.hide();
+                                                    $diskIopsReadRate.hide();
+                                                    $diskIopsWriteRate.hide();
+
+                                                    $minIops.css('display', 'inline-block');
+                                                    $maxIops.css('display', 'inline-block');
+                                                } else if (qosId == 'hypervisor') { // Hypervisor Qos
+                                                    $minIops.hide();
+                                                    $maxIops.hide();
+
+                                                    $diskBytesReadRate.css('display', 'inline-block');
+                                                    $diskBytesWriteRate.css('display', 'inline-block');
+                                                    $diskIopsReadRate.css('display', 'inline-block');
+                                                    $diskIopsWriteRate.css('display', 'inline-block');
+                                                } else { // No Qos
+                                                    $diskBytesReadRate.hide();
+                                                    $diskBytesWriteRate.hide();
+                                                    $diskIopsReadRate.hide();
+                                                    $diskIopsWriteRate.hide();
+                                                    $minIops.hide();
+                                                    $maxIops.hide();
+                                                }
+                                            });
+                                        }
+                                    },
+                                    minIops: {
+                                        label: 'label.disk.iops.min',
+                                        docID: 'helpDiskOfferingDiskIopsMin',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
+                                    maxIops: {
+                                        label: 'label.disk.iops.max',
+                                        docID: 'helpDiskOfferingDiskIopsMax',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
                                     diskBytesReadRate: {
                                         label: 'label.disk.bytes.read.rate',
                                         docID: 'helpSystemOfferingDiskBytesReadRate',
@@ -1255,25 +1331,43 @@
                                         networkrate: args.data.networkRate
                                     });
                                 }
-                                if (args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
-                                    $.extend(data, {
-                                        bytesreadrate: args.data.diskBytesReadRate
-                                    });
-                                }
-                                if (args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
-                                    $.extend(data, {
-                                        byteswriterate: args.data.diskBytesWriteRate
-                                    });
-                                }
-                                if (args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
-                                    $.extend(data, {
-                                        iopsreadrate: args.data.diskIopsReadRate
-                                    });
-                                }
-                                if (args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
-                                    $.extend(data, {
-                                        iopswriterate: args.data.diskIopsWriteRate
-                                    });
+
+                                if (args.data.qosType == 'storage') {
+                                    if (args.data.minIops != null && args.data.minIops.length > 0) {
+                                        $.extend(data, {
+                                            miniops: args.data.minIops
+                                        });
+                                    }
+
+                                    if (args.data.maxIops != null && args.data.maxIops.length > 0) {
+                                        $.extend(data, {
+                                            maxiops: args.data.maxIops
+                                        });
+                                    }
+                                } else if (args.data.qosType == 'hypervisor') {
+                                    if (args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
+                                        $.extend(data, {
+                                            bytesreadrate: args.data.diskBytesReadRate
+                                        });
+                                    }
+
+                                    if (args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
+                                        $.extend(data, {
+                                            byteswriterate: args.data.diskBytesWriteRate
+                                        });
+                                    }
+
+                                    if (args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
+                                        $.extend(data, {
+                                            iopsreadrate: args.data.diskIopsReadRate
+                                        });
+                                    }
+
+                                    if (args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
+                                        $.extend(data, {
+                                            iopswriterate: args.data.diskIopsWriteRate
+                                        });
+                                    }
                                 }
 
                                 $.extend(data, {
@@ -1475,6 +1569,24 @@
                                     },
                                     networkrate: {
                                         label: 'label.network.rate'
+                                    },
+                                    miniops: {
+                                        label: 'label.disk.iops.min',
+                                        converter: function(args) {
+                                            if (args > 0)
+                                                return args;
+                                            else
+                                                return "N/A";
+                                        }
+                                    },
+                                    maxiops: {
+                                        label: 'label.disk.iops.max',
+                                        converter: function(args) {
+                                            if (args > 0)
+                                                return args;
+                                            else
+                                                return "N/A";
+                                        }
                                     },
                                     diskBytesReadRate: {
                                         label: 'label.disk.bytes.read.rate'
@@ -2255,6 +2367,7 @@
                                     var $serviceofferingid = args.$form.find('.form-item[rel=serviceofferingid]');
                                     var $conservemode = args.$form.find('.form-item[rel=conservemode]');
                                     var $supportsstrechedl2subnet = args.$form.find('.form-item[rel=supportsstrechedl2subnet]');
+                                    var $supportspublicaccess = args.$form.find('.form-item[rel=supportspublicaccess]');
                                     var $serviceSourceNatRedundantRouterCapabilityCheckbox = args.$form.find('.form-item[rel="service.SourceNat.redundantRouterCapabilityCheckbox"]');
                                     var hasAdvancedZones = false;
 
@@ -2562,6 +2675,20 @@
                                             $supportsstrechedl2subnet.css('display', 'inline-block');
                                         } else {
                                             $supportsstrechedl2subnet.hide();
+                                        }
+
+                                        //PublicAccess checkbox should be displayed only when 'Connectivity' service is checked
+                                        if (args.$form.find('.form-item[rel=\"service.Connectivity.isEnabled\"]').find('input[type=checkbox]').is(':checked') && $guestTypeField.val() == 'Shared' &&
+                                            args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() == 'NuageVsp') {
+                                            $supportspublicaccess.css('display', 'inline-block');
+                                        } else {
+                                            $supportspublicaccess.hide();
+                                        }
+
+                                        //Uncheck specifyVlan checkbox when (1)guest type is Shared and (2)NuageVsp is selected as a Connectivity provider
+                                        if ($guestTypeField.val() == 'Shared') {
+                                            var $specifyVlanCheckbox = args.$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]');
+                                            $specifyVlanCheckbox.attr('checked', args.$form.find('.form-item[rel=\"service.Connectivity.provider\"]').find('select').val() != 'NuageVsp')
                                         }
                                     });
 
@@ -2943,6 +3070,13 @@
                                         isHidden: true
                                     },
 
+                                    supportspublicaccess: {
+                                        label: 'label.supportspublicaccess',
+                                        isBoolean: true,
+                                        isChecked: false,
+                                        isHidden: true
+                                    },
+
                                     conservemode: {
                                         label: 'label.conserve.mode',
                                         isBoolean: true,
@@ -3075,18 +3209,23 @@
                                     }
                                 }
 
-                                //passing supportsstrechedl2subnet's value as capability
+                                //passing supportsstrechedl2subnet and supportspublicaccess's value as capability
                                 for (var k in inputData) {
                                     if (k == 'supportsstrechedl2subnet' && ("Connectivity" in serviceProviderMap)) {
-                                            inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
-                                            inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'StretchedL2Subnet';
-                                            inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
-                                            serviceCapabilityIndex++;
-                                            break;
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'StretchedL2Subnet';
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
+                                        serviceCapabilityIndex++;
+                                    } else if (k == 'supportspublicaccess' && ("Connectivity" in serviceProviderMap) && serviceProviderMap['Connectivity'] == 'NuageVsp') {
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'Connectivity';
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'PublicAccess';
+                                        inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
+                                        serviceCapabilityIndex++;
                                     }
                                 }
-                                //removing supportsstrechedl2subnet from parameters, it has been set as capability
+                                //removing supportsstrechedl2subnet and supportspublicaccess from parameters, it has been set as capability
                                 delete inputData['supportsstrechedl2subnet'];
+                                delete inputData['supportspublicaccess'];
 
                                 // Make supported services list
                                 inputData['supportedServices'] = $.map(serviceProviderMap, function(value, key) {
@@ -3095,7 +3234,8 @@
 
 
                                 if (inputData['guestIpType'] == "Shared") { //specifyVlan checkbox is disabled, so inputData won't include specifyVlan
-                                    inputData['specifyVlan'] = true; //hardcode inputData['specifyVlan']
+                                    var $specifyVlanCheckbox = args.$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]');
+                                    inputData['specifyVlan'] = $specifyVlanCheckbox.is(':checked'); //hardcode inputData['specifyVlan']
                                     inputData['specifyIpRanges'] = true;
                                     delete inputData.isPersistent; //if Persistent checkbox is unchecked, do not pass isPersistent parameter to API call since we need to keep API call's size as small as possible (p.s. isPersistent is defaulted as false at server-side)
                                 } else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
@@ -3424,6 +3564,10 @@
                                     },
                                     supportsstrechedl2subnet: {
                                         label: 'label.supportsstrechedl2subnet',
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    supportspublicaccess: {
+                                        label: 'label.supportspublicaccess',
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     supportedServices: {

@@ -19,6 +19,25 @@
 
 package com.cloud;
 
+import java.util.ArrayList;
+
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
+import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
+
+import org.junit.Before;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import com.google.common.collect.Lists;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
 import com.cloud.network.Network;
@@ -30,36 +49,28 @@ import com.cloud.util.NuageVspEntityBuilder;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
-import net.nuage.vsp.acs.client.common.model.Pair;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.junit.Before;
-
-import java.util.ArrayList;
 
 import static com.cloud.network.manager.NuageVspManager.NuageVspIsolatedNetworkDomainTemplateName;
 import static com.cloud.network.manager.NuageVspManager.NuageVspSharedNetworkDomainTemplateName;
 import static com.cloud.network.manager.NuageVspManager.NuageVspVpcDomainTemplateName;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class NuageTest {
 
     protected static final long NETWORK_ID = 42L;
-    protected NetworkModel _networkModel = mock(NetworkModel.class);
-    protected ConfigurationDao _configurationDao = mock(ConfigurationDao.class);
-    protected NuageVspEntityBuilder _nuageVspEntityBuilder = mock(NuageVspEntityBuilder.class);
+
+    @Mock protected NetworkModel _networkModel;
+    @Mock protected ConfigurationDao _configurationDao;
+    @Mock protected NuageVspEntityBuilder _nuageVspEntityBuilder;
 
     @Before
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
         // Standard responses
         when(_networkModel.isProviderForNetwork(Network.Provider.NuageVsp, NETWORK_ID)).thenReturn(true);
         when(_configurationDao.getValue(NuageVspIsolatedNetworkDomainTemplateName.key())).thenReturn("IsolatedDomainTemplate");
@@ -67,7 +78,8 @@ public class NuageTest {
         when(_configurationDao.getValue(NuageVspSharedNetworkDomainTemplateName.key())).thenReturn("SharedDomainTemplate");
 
         when(_nuageVspEntityBuilder.buildVspDomain(any(Domain.class))).thenReturn(buildVspDomain());
-        when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class), anyBoolean())).thenReturn(buildVspNetwork());
+        when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class))).thenReturn(buildVspNetwork());
+        when(_nuageVspEntityBuilder.buildVspNetwork(anyLong(), any(Network.class))).thenReturn(buildVspNetwork());
         when(_nuageVspEntityBuilder.buildVspVm(any(VirtualMachine.class), any(Network.class))).thenReturn(buildVspVm());
         when(_nuageVspEntityBuilder.buildVspNic(anyString(), any(NicProfile.class))).thenReturn(buildVspNic());
         when(_nuageVspEntityBuilder.buildVspNic(any(NicVO.class))).thenReturn(buildVspNic());
@@ -101,7 +113,6 @@ public class NuageTest {
                 .cidr("networkCidr")
                 .gateway("networkGateway")
                 .virtualRouterIp("virtualRouterIp")
-                .ipAddressRanges(new ArrayList<Pair<String, String>>())
                 .build();
     }
 
@@ -151,6 +162,25 @@ public class NuageTest {
                 .sourceCidrList(new ArrayList<String>())
                 .priority(1)
                 .type(VspAclRule.ACLType.NetworkACL)
+                .build();
+    }
+
+    protected VspDhcpDomainOption buildspDhcpDomainOption () {
+        return new VspDhcpDomainOption.Builder()
+                .vrIsDnsProvider(true)
+                .networkDomain("networkDomain")
+                .dnsServers(Lists.newArrayList("10.10.10.10", "20.20.20.20"))
+                .build();
+    }
+
+    protected VspDhcpVMOption buildspDhcpVMOption () {
+        return new VspDhcpVMOption.Builder()
+                .defaultHasDns(true)
+                .hostname("VMx")
+                .networkHasDns(true)
+                .isDefaultInterface(true)
+                .domainRouter(false)
+                .nicUuid("aaaa-bbbbbbbb-ccccccc")
                 .build();
     }
 

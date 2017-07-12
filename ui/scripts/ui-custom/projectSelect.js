@@ -22,7 +22,7 @@
         var $projectSelect = $('<select>').append(
             $('<option>').attr('value', '-1').html(_l('Default view'))
         );
-        var $label = $('<label>').html('Project:');
+        var $label = $('<label>').html(_l('label.project'));
 
         // Get project list
         cloudStack.projects.dataProvider({

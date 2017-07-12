@@ -2,28 +2,27 @@ Source: cloudstack
 Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
-Build-Depends: debhelper (>= 9), openjdk-8-jdk | java8-sdk | java8-jdk | openjdk-7-jdk, genisoimage,
- python-mysql.connector, maven (>= 3) | maven3, python (>= 2.7), lsb-release, dh-systemd
+Build-Depends: debhelper (>= 9), openjdk-8-jdk | java8-sdk | java8-jdk, genisoimage,
+ python-mysql.connector, maven (>= 3) | maven3, python (>= 2.7), lsb-release, dh-systemd, python-setuptools
 Standards-Version: 3.8.1
 Homepage: http://www.cloudstack.org/
 
 Package: cloudstack-common
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, genisoimage, nfs-common
+Depends: ${misc:Depends}, ${python:Depends}, genisoimage, nfs-common, python-netaddr
 Conflicts: cloud-scripts, cloud-utils, cloud-system-iso, cloud-console-proxy, cloud-daemonize, cloud-deps, cloud-python, cloud-setup
 Description: A common package which contains files which are shared by several CloudStack packages
 
 Package: cloudstack-management
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, cloudstack-common (= ${source:Version}), tomcat6 | tomcat7, sudo, jsvc, python-mysql.connector, libmysql-java, augeas-tools, mysql-client, adduser, bzip2, ipmitool, lsb-release
+Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime | openjdk-7-jre-headless, cloudstack-common (= ${source:Version}), tomcat6 | tomcat7, sudo, jsvc, python-mysql.connector, libmysql-java, augeas-tools, mysql-client, adduser, bzip2, ipmitool, lsb-release, init-system-helpers (>= 1.14~)
 Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
  The CloudStack management server
 
 Package: cloudstack-agent
 Architecture: all
-Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime | openjdk-7-jre-headless, cloudstack-common (= ${source:Version}), lsb-base (>= 4.0), libcommons-daemon-java, openssh-client, qemu-kvm (>= 1.0), libvirt-bin (>= 0.9.8), uuid-runtime, iproute, ebtables, vlan, jsvc, ipset, python-libvirt, ethtool, iptables, lsb-release
-Recommends: init-system-helpers
+Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, cloudstack-common (= ${source:Version}), lsb-base (>= 4.0), libcommons-daemon-java, openssh-client, qemu-kvm (>= 1.0), libvirt-bin (>= 0.9.8), uuid-runtime, iproute, ebtables, vlan, jsvc, ipset, python-libvirt, ethtool, iptables, lsb-release, init-system-helpers (>= 1.14~)
 Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
@@ -32,8 +31,7 @@ Description: CloudStack agent
 
 Package: cloudstack-usage
 Architecture: all
-Depends: openjdk-8-jre-headless | java8-runtime-headless | java8-runtime | openjdk-7-jre-headless, cloudstack-common (= ${source:Version}), jsvc, libmysql-java
-Recommends: init-system-helpers
+Depends: openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, cloudstack-common (= ${source:Version}), jsvc, libmysql-java, init-system-helpers (>= 1.14~)
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.

@@ -61,6 +61,7 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.SetHostParamsCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
@@ -213,6 +214,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _hostDao.markHostsAsDisconnected(_nodeId, lastPing);
 
         registerForHostEvents(new BehindOnPingListener(), true, true, false);
+
+        registerForHostEvents(new SetHostParamsListener(), true, true, false);
 
         _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
 
@@ -446,6 +449,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         final Command[] cmds = checkForCommandsAndTag(commands);
 
+        //check what agent is returned.
         final AgentAttache agent = getAttache(hostId);
         if (agent == null || agent.isClosed()) {
             throw new AgentUnavailableException("agent not logged into this management server", hostId);
@@ -1231,9 +1235,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 } else if (cmd instanceof PingCommand) {
                     logD = false;
                     s_logger.debug("Ping from " + hostId + "(" + hostName + ")");
-                    s_logger.trace("SeqA " + attache.getId() + "-" + request.getSequence() + ": Processing " + request);
+                    s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                 } else {
-                    s_logger.debug("SeqA " + attache.getId() + "-" + request.getSequence() + ": Processing " + request);
+                    s_logger.debug("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                 }
             }
 
@@ -1708,6 +1712,75 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, PingInterval, PingTimeout, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize,
                         DirectAgentThreadCap };
+    }
+
+    protected class SetHostParamsListener implements Listener {
+        @Override
+        public boolean isRecurring() {
+            return false;
+        }
+
+        @Override
+        public boolean processAnswers(final long agentId, final long seq, final Answer[] answers) {
+            return false;
+        }
+
+        @Override
+        public boolean processCommands(final long agentId, final long seq, final Command[] commands) {
+            return false;
+        }
+
+        @Override
+        public AgentControlAnswer processControlCommand(final long agentId, final AgentControlCommand cmd) {
+            return null;
+        }
+
+        @Override
+        public void processHostAdded(long hostId) {
+        }
+
+        @Override
+        public void processConnect(final Host host, final StartupCommand cmd, final boolean forRebalance) {
+        if (cmd instanceof StartupRoutingCommand) {
+            if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("router.aggregation.command.each.timeout", _configDao.getValue("router.aggregation.command.each.timeout"));
+
+                try {
+                    SetHostParamsCommand cmds = new SetHostParamsCommand(params);
+                    Commands c = new Commands(cmds);
+                    send(host.getId(), c, this);
+                } catch (AgentUnavailableException e) {
+                    s_logger.debug("Failed to send host params on host: " + host.getId());
+                }
+            }
+        }
+
+        }
+
+        @Override
+        public boolean processDisconnect(final long agentId, final Status state) {
+            return true;
+        }
+
+        @Override
+        public void processHostAboutToBeRemoved(long hostId) {
+        }
+
+        @Override
+        public void processHostRemoved(long hostId, long clusterId) {
+        }
+
+        @Override
+        public boolean processTimeout(final long agentId, final long seq) {
+            return false;
+        }
+
+        @Override
+        public int getTimeout() {
+            return -1;
+        }
+
     }
 
 }

@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -544,6 +545,23 @@ public class LibvirtVMDef {
             }
         }
 
+        public enum DiscardType {
+            IGNORE("ignore"), UNMAP("unmap");
+            String _discardType;
+            DiscardType(String discardType) {
+                _discardType = discardType;
+            }
+
+            @Override
+            public String toString() {
+                if (_discardType == null) {
+                    return "ignore";
+                }
+                return _discardType;
+            }
+
+        }
+
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -565,6 +583,15 @@ public class LibvirtVMDef {
         private DiskCacheMode _diskCacheMode;
         private String _serial;
         private boolean qemuDriver = true;
+        private DiscardType _discard = DiscardType.IGNORE;
+
+        public DiscardType getDiscard() {
+            return _discard;
+        }
+
+        public void setDiscard(DiscardType discard) {
+            this._discard = discard;
+        }
 
         public void setDeviceType(DeviceType deviceType) {
             _deviceType = deviceType;
@@ -583,18 +610,36 @@ public class LibvirtVMDef {
 
         /* skip iso label */
         private String getDevLabel(int devId, DiskBus bus) {
+            if (devId < 0) {
+                return "";
+            }
+
             if (devId == 2) {
                 devId++;
             }
 
-            char suffix = (char)('a' + devId);
             if (bus == DiskBus.SCSI) {
-                return "sd" + suffix;
+                return "sd" + getDevLabelSuffix(devId);
             } else if (bus == DiskBus.VIRTIO) {
-                return "vd" + suffix;
+                return "vd" + getDevLabelSuffix(devId);
             }
-            return "hd" + suffix;
+            return "hd" + getDevLabelSuffix(devId);
+        }
 
+        private String getDevLabelSuffix(int deviceIndex) {
+            if (deviceIndex < 0) {
+                return "";
+            }
+
+            int base = 'z' - 'a' + 1;
+            String labelSuffix = "";
+            do {
+                char suffix = (char)('a' + (deviceIndex % base));
+                labelSuffix = suffix + labelSuffix;
+                deviceIndex = (deviceIndex / base) - 1;
+            } while (deviceIndex >= 0);
+
+            return labelSuffix;
         }
 
         public void defFileBasedDisk(String filePath, int devId, DiskBus bus, DiskFmtType diskFmtType) {
@@ -715,11 +760,6 @@ public class LibvirtVMDef {
             return _diskFmtType;
         }
 
-        public int getDiskSeq() {
-            char suffix = _diskLabel.charAt(_diskLabel.length() - 1);
-            return suffix - 'a';
-        }
-
         public void setBytesReadRate(Long bytesReadRate) {
             _bytesReadRate = bytesReadRate;
         }
@@ -763,7 +803,11 @@ public class LibvirtVMDef {
             diskBuilder.append(">\n");
             if(qemuDriver) {
                 diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
-                        + "' cache='" + _diskCacheMode + "' " + "/>\n");
+                        + "' cache='" + _diskCacheMode + "' ");
+                if(_discard != null && _discard != DiscardType.IGNORE) {
+                    diskBuilder.append("discard='" + _discard.toString() + "' ");
+                }
+                diskBuilder.append("/>\n");
             }
 
             if (_diskType == DiskType.FILE) {
@@ -1209,25 +1253,95 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class VirtioSerialDef {
-        private final String _name;
-        private String _path;
+    public final static class ChannelDef {
+        enum ChannelType {
+            UNIX("unix"), SERIAL("serial");
+            String type;
 
-        public VirtioSerialDef(String name, String path) {
-            _name = name;
-            _path = path;
+            ChannelType(String type) {
+                this.type = type;
+            }
+
+            @Override
+            public String toString() {
+                return this.type;
+            }
+        }
+
+        enum ChannelState {
+            DISCONNECTED("disconnected"), CONNECTED("connected");
+            String type;
+
+            ChannelState(String type) {
+                this.type = type;
+            }
+
+            @Override
+            public String toString() {
+                return type;
+            }
+        }
+
+        private final String name;
+        private File path = new File("");
+        private final ChannelType type;
+        private ChannelState state;
+
+        public ChannelDef(String name, ChannelType type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, File path) {
+            this.name = name;
+            this.path = path;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state) {
+            this.name = name;
+            this.state = state;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state, File path) {
+            this.name = name;
+            this.path = path;
+            this.state = state;
+            this.type = type;
+        }
+
+        public ChannelType getChannelType() {
+            return type;
+        }
+
+        public ChannelState getChannelState() {
+            return state;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public File getPath() {
+            return path;
         }
 
         @Override
         public String toString() {
             StringBuilder virtioSerialBuilder = new StringBuilder();
-            if (_path == null) {
-                _path = "/var/lib/libvirt/qemu";
+            virtioSerialBuilder.append("<channel type='" + type.toString() + "'>\n");
+            if (path == null) {
+                virtioSerialBuilder.append("<source mode='bind'/>\n");
+            } else {
+                virtioSerialBuilder.append("<source mode='bind' path='" + path.toString() + "'/>\n");
             }
-            virtioSerialBuilder.append("<channel type='unix'>\n");
-            virtioSerialBuilder.append("<source mode='bind' path='" + _path + "/" + _name + ".agent'/>\n");
-            virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
             virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
+            if (state == null) {
+                virtioSerialBuilder.append("<target type='virtio' name='" + name + "'/>\n");
+            } else {
+                virtioSerialBuilder.append("<target type='virtio' name='" + name + "' state='" + state.toString() + "'/>\n");
+            }
             virtioSerialBuilder.append("</channel>\n");
             return virtioSerialBuilder.toString();
         }
@@ -1271,6 +1385,37 @@ public class LibvirtVMDef {
             }
             graphicBuilder.append("/>\n");
             return graphicBuilder.toString();
+        }
+    }
+
+    public static class SCSIDef {
+        private short index = 0;
+        private int domain = 0;
+        private int bus = 0;
+        private int slot = 9;
+        private int function = 0;
+
+        public SCSIDef(short index, int domain, int bus, int slot, int function) {
+            this.index = index;
+            this.domain = domain;
+            this.bus = bus;
+            this.slot = slot;
+            this.function = function;
+        }
+
+        public SCSIDef() {
+
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder scsiBuilder = new StringBuilder();
+
+            scsiBuilder.append(String.format("<controller type='scsi' index='%d' mode='virtio-scsi'>\n", this.index ));
+            scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
+                    this.domain, this.bus, this.slot, this.function ) );
+            scsiBuilder.append("</controller>");
+            return scsiBuilder.toString();
         }
     }
 
@@ -1363,6 +1508,107 @@ public class LibvirtVMDef {
                         .append("</nuage-extension>\n");
             }
             return fsBuilder.toString();
+        }
+    }
+
+    public static class RngDef {
+        enum RngModel {
+            VIRTIO("virtio");
+            String model;
+
+            RngModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum RngBackendModel {
+            RANDOM("random"), EGD("egd");
+            String model;
+
+            RngBackendModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        private String path = "/dev/random";
+        private RngModel rngModel = RngModel.VIRTIO;
+        private RngBackendModel rngBackendModel = RngBackendModel.RANDOM;
+        private int rngRateBytes = 2048;
+        private int rngRatePeriod = 1000;
+
+        public RngDef(String path) {
+            this.path = path;
+        }
+
+        public RngDef(String path, int rngRateBytes, int rngRatePeriod) {
+            this.path = path;
+            this.rngRateBytes = rngRateBytes;
+            this.rngRatePeriod = rngRatePeriod;
+        }
+
+        public RngDef(RngModel rngModel) {
+            this.rngModel = rngModel;
+        }
+
+        public RngDef(RngBackendModel rngBackendModel) {
+            this.rngBackendModel = rngBackendModel;
+        }
+
+        public RngDef(String path, RngBackendModel rngBackendModel) {
+            this.path = path;
+            this.rngBackendModel = rngBackendModel;
+        }
+
+        public RngDef(String path, RngBackendModel rngBackendModel, int rngRateBytes, int rngRatePeriod) {
+            this.path = path;
+            this.rngBackendModel = rngBackendModel;
+            this.rngRateBytes = rngRateBytes;
+            this.rngRatePeriod = rngRatePeriod;
+        }
+
+        public RngDef(String path, RngModel rngModel) {
+            this.path = path;
+            this.rngModel = rngModel;
+        }
+
+        public String getPath() {
+           return path;
+        }
+
+        public RngBackendModel getRngBackendModel() {
+            return rngBackendModel;
+        }
+
+        public RngModel getRngModel() {
+            return rngModel;
+        }
+
+        public int getRngRateBytes() {
+            return rngRateBytes;
+        }
+
+        public int getRngRatePeriod() {
+            return rngRatePeriod;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder rngBuilder = new StringBuilder();
+            rngBuilder.append("<rng model='" + rngModel + "'>\n");
+            rngBuilder.append("<rate period='" + rngRatePeriod + "' bytes='" + rngRateBytes + "' />\n");
+            rngBuilder.append("<backend model='" + rngBackendModel + "'>" + path + "</backend>");
+            rngBuilder.append("</rng>\n");
+            return rngBuilder.toString();
         }
     }
 

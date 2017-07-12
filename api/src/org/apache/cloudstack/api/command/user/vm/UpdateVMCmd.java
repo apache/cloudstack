@@ -116,6 +116,11 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction 
             )
     private List<String> securityGroupNameList;
 
+    @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
+            type = CommandType.BOOLEAN,
+            description = "optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
+    private Boolean cleanupDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -171,6 +176,10 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction 
 
     public List<String> getSecurityGroupNameList() {
         return securityGroupNameList;
+    }
+
+    public boolean isCleanupDetails(){
+        return cleanupDetails == null ? false : cleanupDetails.booleanValue();
     }
 
     /////////////////////////////////////////////////////

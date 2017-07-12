@@ -77,6 +77,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     private static final Logger status_logger = Logger.getLogger(Status.class);
     private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
+    private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join host_tags on host.id = host_tags.host_id and host_tags.tag = ?";
+
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
     protected SearchBuilder<HostVO> IdStatusSearch;
@@ -1127,6 +1129,29 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<Long> sc = HostIdSearch.create();
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listClustersByHostTag(String hostTagOnOffering) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+        StringBuilder sql = new StringBuilder(LIST_CLUSTERID_FOR_HOST_TAG);
+        // during listing the clusters that cross the threshold
+        // we need to check with disabled thresholds of each cluster if not defined at cluster consider the global value
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setString(1, hostTagOnOffering);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(rs.getLong(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
     }
 
     @Override

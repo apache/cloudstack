@@ -42,6 +42,7 @@ import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.LBStickinessPolicyDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.LBHealthCheckPolicyDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 
 import org.apache.log4j.Logger;
@@ -121,6 +122,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     LBHealthCheckPolicyDetailsDao _healthcheckPolicyDetailsDao;
     @Inject
     SnapshotPolicyDetailsDao _snapshotPolicyDetailsDao;
+    @Inject
+    GuestOsDetailsDao _guestOsDetailsDao;
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
@@ -153,7 +156,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         s_daoMap.put(ResourceObjectType.LBStickinessPolicy, _stickinessPolicyDetailsDao);
         s_daoMap.put(ResourceObjectType.LBHealthCheckPolicy, _healthcheckPolicyDetailsDao);
         s_daoMap.put(ResourceObjectType.SnapshotPolicy, _snapshotPolicyDetailsDao);
-
+        s_daoMap.put(ResourceObjectType.GuestOs, _guestOsDetailsDao);
         return true;
     }
 

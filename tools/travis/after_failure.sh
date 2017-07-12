@@ -19,4 +19,5 @@
 # As the filename suggests, this is executed on build failure
 # failure.
 #
+find rat.txt -type f -exec echo -e "Printing RAT license-failures {} :\n" \; -exec cat {} \;
 find /tmp//MarvinLogs -type f -exec echo -e "Printing logfile {} :\n" \; -exec cat {} \;

@@ -114,8 +114,14 @@ get_boot_params() {
           sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
      kvm)
-          if [ ! -e /dev/vport0p1 ]; then
-            log_it "/dev/vport0p1 not loaded, perhaps guest kernel is too old." && exit 2
+          VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
+
+          if [ -z "$VPORT" ]; then
+            log_it "No suitable VirtIO port was found in /dev/virtio-ports" && exit 2
+          fi
+
+          if [ ! -e "$VPORT" ]; then
+            log_it "${VPORT} not loaded, perhaps guest kernel is too old." && exit 2
           fi
 
 	      local factor=2
@@ -131,7 +137,7 @@ get_boot_params() {
 	            echo $pubkey > /var/cache/cloud/authorized_keys
 	            echo $pubkey > /root/.ssh/authorized_keys
               fi
-	        done < /dev/vport0p1
+	        done < $VPORT
 	        # In case of reboot we do not send the boot args again.
 	        # So, no need to wait for them, as the boot args are already set at startup
 	        if [ -s /var/cache/cloud/cmdline  ]
@@ -1052,6 +1058,10 @@ EOF
       echo 0 > /var/cache/cloud/dnsmasq_managed_lease
   fi
   load_modules
+
+  #setup hourly logrotate
+  mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
+
 }
 
 
@@ -1129,6 +1139,27 @@ getPublicIp() {
   echo $public_ip
 }
 
+setup_ntp() {
+    log_it "Setting up NTP"
+    NTP_CONF_FILE="/etc/ntp.conf"
+    if [ -f $NTP_CONF_FILE ]
+    then
+        IFS=',' read -a server_list <<< "$NTP_SERVER_LIST"
+        for (( iterator=${#server_list[@]}-1 ; iterator>=0 ; iterator-- ))
+        do
+            server=$(echo ${server_list[iterator]} | tr -d '\r')
+            PATTERN="server $server"
+            if grep -q "^$PATTERN$" $NTP_CONF_FILE ; then
+                sed -i "/^$PATTERN$/d" $NTP_CONF_FILE
+            fi
+            sed -i "0,/^server/s//$PATTERN\nserver/" $NTP_CONF_FILE
+        done
+        service ntp restart
+    else
+        log_it "NTP configuration file not found"
+    fi
+}
+
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
   sysctl vm.min_free_kbytes=8192
@@ -1181,6 +1212,7 @@ CORS
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
   rm /etc/logrotate.d/cloud
+  setup_ntp
 }
 
 setup_console_proxy() {
@@ -1502,6 +1534,9 @@ for i in $CMDLINE
         ;;
       advert_int)
         ADVERT_INT=$VALUE
+        ;;
+      ntpserverlist)
+        NTP_SERVER_LIST=$VALUE
         ;;
     esac
 done

@@ -22,8 +22,13 @@ package com.cloud.utils.ssh;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
@@ -33,12 +38,6 @@ import com.cloud.utils.Pair;
 public class SshHelper {
     private static final int DEFAULT_CONNECT_TIMEOUT = 180000;
     private static final int DEFAULT_KEX_TIMEOUT = 60000;
-
-    /**
-     * Waiting time to check if the SSH session was successfully opened. This value (of 1000
-     * milliseconds) represents one (1) second.
-     */
-    private static final long WAITING_OPEN_SSH_SESSION = 1000;
 
     private static final Logger s_logger = Logger.getLogger(SshHelper.class);
 
@@ -130,8 +129,12 @@ public class SshHelper {
         }
     }
 
-    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, int connectTimeoutInMs,
-            int kexTimeoutInMs,
+    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, Duration connectTimeout,
+            Duration kexTimeout, Duration waitTime) throws Exception {
+        return sshExecute(host, port, user, pemKeyFile, password, command, (int)connectTimeout.getMillis(), (int)kexTimeout.getMillis(), (int)waitTime.getMillis());
+    }
+
+    public static Pair<Boolean, String> sshExecute(String host, int port, String user, File pemKeyFile, String password, String command, int connectTimeoutInMs, int kexTimeoutInMs,
             int waitResultTimeoutInMs) throws Exception {
 
         com.trilead.ssh2.Connection conn = null;
@@ -196,6 +199,16 @@ public class SshHelper {
 
             String result = sbResult.toString();
 
+            if (StringUtils.isBlank(result)) {
+                try {
+                    result = IOUtils.toString(stdout, StandardCharsets.UTF_8);
+                }
+                catch (IOException e) {
+                    s_logger.error("Couldn't get content of input stream due to: " + e.getMessage());
+                    return new Pair<Boolean, String>(false, result);
+                }
+            }
+
             if (sess.getExitStatus() == null) {
                 //Exit status is NOT available. Returning failure result.
                 s_logger.error(String.format("SSH execution of command %s has no exit status set. Result output: %s", command, result));
@@ -217,14 +230,9 @@ public class SshHelper {
         }
     }
 
-    /**
-     * It gets a {@link Session} from the given {@link Connection}; then, it waits
-     * {@value #WAITING_OPEN_SSH_SESSION} milliseconds before returning the session, given a time to
-     * ensure that the connection is open before proceeding the execution.
-     */
+
     protected static Session openConnectionSession(Connection conn) throws IOException, InterruptedException {
         Session sess = conn.openSession();
-        Thread.sleep(WAITING_OPEN_SSH_SESSION);
         return sess;
     }
 

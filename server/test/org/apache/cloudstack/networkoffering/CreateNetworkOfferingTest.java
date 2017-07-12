@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.LoadBalancerVMMapDao;
 import junit.framework.TestCase;
 
 import org.apache.cloudstack.context.CallContext;
@@ -92,6 +93,9 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     @Inject
     UserIpAddressDetailsDao userIpAddressDetailsDao;
+
+    @Inject
+    LoadBalancerVMMapDao _loadBalancerVMMapDao;
 
     @Override
     @Before

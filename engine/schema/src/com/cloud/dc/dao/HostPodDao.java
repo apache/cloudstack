@@ -31,5 +31,5 @@ public interface HostPodDao extends GenericDao<HostPodVO, Long> {
 
     public List<Long> listDisabledPods(long zoneId);
 
-    public List<Long> listAllPods(long zoneId);
+    public List<Long> listAllPods(Long zoneId);
 }

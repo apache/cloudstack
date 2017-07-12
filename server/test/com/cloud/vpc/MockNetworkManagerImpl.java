@@ -59,6 +59,7 @@ import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
@@ -247,7 +248,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      */
     @Override
     public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix,
-        Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String newUUID) {
+        Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String newUUID,boolean updateInSequence, boolean forced) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -799,7 +800,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId) {
+    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId, String keyword) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -827,6 +828,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public DnsServiceProvider getDnsServiceProvider(Network network) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
     public void removeDhcpServiceInSubnet(Nic nic) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -838,6 +844,36 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override
     public void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest) {
+        return;
+    }
+
+    @Override
+    public boolean canUpdateInSequence(Network network, boolean forced) {
+        return false;
+    }
+
+    @Override
+    public List<String> getServicesNotSupportedInNewOffering(Network network, long newNetworkOfferingId) {
+        return null;
+    }
+
+    @Override
+    public void cleanupConfigForServicesInNetwork(List<String> services, Network network) {
+        return;
+    }
+
+    @Override
+    public void configureUpdateInSequence(Network network) {
+        return;
+    }
+
+    @Override
+    public int getResourceCount(Network network) {
+        return 0;
+    }
+
+    @Override
+    public void finalizeUpdateInSequence(Network network, boolean success) {
         return;
     }
 
@@ -868,6 +904,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public boolean configureNicSecondaryIp(NicSecondaryIp secIp, boolean isZoneSgEnabled) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd listNicsCmd) {
+        return null;
     }
 
 }

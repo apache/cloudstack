@@ -23,6 +23,8 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -34,6 +36,9 @@ import java.util.Random;
 import java.util.UUID;
 
 import com.cloud.user.User;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -141,6 +146,8 @@ public class ConfigurationManagerTest {
     HostPodDao _podDao;
     @Mock
     PhysicalNetworkDao _physicalNetworkDao;
+    @Mock
+    ImageStoreDao _imageStoreDao;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -172,6 +179,7 @@ public class ConfigurationManagerTest {
         configurationMgr._clusterDao = _clusterDao;
         configurationMgr._podDao = _podDao;
         configurationMgr._physicalNetworkDao = _physicalNetworkDao;
+        configurationMgr._imageStoreDao = _imageStoreDao;
 
 
         Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
@@ -677,6 +685,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -694,6 +703,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -711,6 +721,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -724,6 +735,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -737,6 +749,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -754,6 +767,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(arrayList);
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -771,6 +785,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(arrayList);
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -788,7 +803,76 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(arrayList);
+        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
+    }
+
+    @Test
+    public void hasSameSubnetTest() {
+        //Ipv4 Test
+        boolean result;
+        result = configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, false, null, null, null, null, null);
+        Assert.assertFalse(result);
+        try {
+            configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.255.0", "10.0.0.2", "255.255.255.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
+            Assert.fail();
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals(e.getMessage(), "The gateway of the subnet should be unique. The subnet already has a gateway 10.0.0.1");
+        }
+        try {
+            configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.0.0", "10.0.0.2", "255.255.255.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
+            Assert.fail();
+        } catch (InvalidParameterValueException e){
+            Assert.assertEquals(e.getMessage(), "The subnet you are trying to add is a subset of the existing subnet having gateway 10.0.0.1 and netmask 255.255.0.0");
+        }
+        try {
+            configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.255.0", "10.0.0.2", "255.255.0.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
+            Assert.fail();
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals(e.getMessage(), "The subnet you are trying to add is a superset of the existing subnet having gateway 10.0.0.1 and netmask 255.255.255.0");
+        }
+        result = configurationMgr.hasSameSubnet(true, "10.0.0.1", "255.255.255.0", "10.0.0.1", "255.255.255.0", "10.0.0.2", "10.0.0.10", false, null, null, null, null, null);
+        Assert.assertTrue(result);
+
+        //Ipv6 Test
+        Network ipV6Network = mock(Network.class);
+        when(ipV6Network.getIp6Gateway()).thenReturn("2001:db8:0:f101::1");
+        when(ipV6Network.getIp6Cidr()).thenReturn("2001:db8:0:f101::0/64");
+        doThrow(new InvalidParameterValueException("Exception from Mock: startIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel).checkIp6Parameters("2001:db9:0:f101::2", "2001:db9:0:f101::a", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
+        doThrow(new InvalidParameterValueException("Exception from Mock: endIPv6 is not in ip6cidr indicated network!")).when(configurationMgr._networkModel).checkIp6Parameters("2001:db8:0:f101::a", "2001:db9:0:f101::2", "2001:db8:0:f101::1", "2001:db8:0:f101::0/64");
+        doThrow(new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in")).when(configurationMgr._networkModel).checkIp6Parameters(Mockito.anyString(), Mockito.anyString(), Mockito.isNull(String.class), Mockito.isNull(String.class));
+
+
+        configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
+        Assert.assertTrue(result);
+        try {
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::2", "2001:db8:0:f101::0/64", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
+            Assert.fail();
+        } catch (InvalidParameterValueException e){
+            Assert.assertEquals(e.getMessage(), "The input gateway 2001:db8:0:f101::2 is not same as network gateway 2001:db8:0:f101::1");
+        }
+        try {
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/63", "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
+            Assert.fail();
+        } catch (InvalidParameterValueException e){
+            Assert.assertEquals(e.getMessage(), "The input cidr 2001:db8:0:f101::0/63 is not same as network cidr 2001:db8:0:f101::0/64");
+        }
+
+        try {
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db9:0:f101::2", "2001:db9:0:f101::a", ipV6Network);
+            Assert.fail();
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals(e.getMessage(), "Exception from Mock: startIPv6 is not in ip6cidr indicated network!");
+        }
+        try {
+            configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, "2001:db8:0:f101::1", "2001:db8:0:f101::0/64", "2001:db8:0:f101::a", "2001:db9:0:f101::2", ipV6Network);
+            Assert.fail();
+        } catch(InvalidParameterValueException e){
+            Assert.assertEquals(e.getMessage(), "Exception from Mock: endIPv6 is not in ip6cidr indicated network!");
+        }
+
+        result = configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, null, null, "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
+        Assert.assertTrue(result);
     }
 }

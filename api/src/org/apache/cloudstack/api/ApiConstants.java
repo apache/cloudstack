@@ -48,6 +48,7 @@ public class ApiConstants {
     public static final String CIDR = "cidr";
     public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
+    public static final String DEST_CIDR_LIST = "destcidrlist";
     public static final String CLEANUP = "cleanup";
     public static final String MAKEREDUNDANTE = "makeredundant";
     public static final String CLUSTER_ID = "clusterid";
@@ -131,6 +132,7 @@ public class ApiConstants {
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERVAL_TYPE = "intervaltype";
+    public static final String LOCATION_TYPE = "locationtype";
     public static final String IOPS_READ_RATE = "iopsreadrate";
     public static final String IOPS_WRITE_RATE = "iopswriterate";
     public static final String IP_ADDRESS = "ipaddress";
@@ -239,6 +241,7 @@ public class ApiConstants {
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SIZE = "size";
+    public static final String SNAPSHOT = "snapshot";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
@@ -261,6 +264,7 @@ public class ApiConstants {
     public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
+    public static final String TIMEZONEOFFSET = "timezoneoffset";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
     public static final String TRUST_STORE_PASSWORD = "truststorepass";
@@ -272,6 +276,7 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
+    public static final String Update_IN_SEQUENCE ="updateinsequence";
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
@@ -637,6 +642,7 @@ public class ApiConstants {
     public static final String READ_ONLY = "readonly";
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
     public static final String SUPPORTS_STRECHED_L2_SUBNET = "supportsstrechedl2subnet";
+    public static final String SUPPORTS_PUBLIC_ACCESS = "supportspublicaccess";
     public static final String REGION_LEVEL_VPC = "regionlevelvpc";
     public static final String STRECHED_L2_SUBNET = "strechedl2subnet";
     public static final String NETWORK_SPANNED_ZONES = "zonesnetworkspans";
@@ -645,7 +651,10 @@ public class ApiConstants {
     public static final String OVM3_POOL = "ovm3pool";
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
+    public static final String CLEAN_UP_DETAILS = "cleanupdetails";
 
+    public static final String ZONE_ID_LIST = "zoneids";
+    public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";
     public static final String ADMIN = "admin";
 
     public enum HostDetails {

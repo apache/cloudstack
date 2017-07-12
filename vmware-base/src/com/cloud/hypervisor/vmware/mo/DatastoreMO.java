@@ -282,7 +282,7 @@ public class DatastoreMO extends BaseMO {
 
             if (parentFileName.startsWith("/")) {
                 // when parent file is not at the same directory as it is, assume it is at parent directory
-                // this is only valid in cloud.com primary storage deployment
+                // this is only valid in Apache CloudStack primary storage deployment
                 DatastoreFile dsFile = new DatastoreFile(currentVmdkFullPath);
                 String dir = dsFile.getDir();
                 if (dir != null && dir.lastIndexOf('/') > 0)
