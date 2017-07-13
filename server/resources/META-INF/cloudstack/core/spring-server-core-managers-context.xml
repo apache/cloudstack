@@ -248,4 +248,7 @@
         <property name="gslbServiceProviders" value="#{gslbServiceProvidersRegistry.registered}" />
     </bean>
     <bean id="certServiceImpl" class="org.apache.cloudstack.network.lb.CertServiceImpl" />
+
+    <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl" />
+
 </beans>
