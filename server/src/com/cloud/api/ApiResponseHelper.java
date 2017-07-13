@@ -958,6 +958,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
                 capacityResponse.setCapacityType(capacity.getCapacityType());
+                capacityResponse.setCapacityName(CapacityVO.getCapacityName(capacity.getCapacityType()));
                 capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                     List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, pod.getId(), null);
@@ -994,6 +995,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (SummedCapacity capacity : capacities) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityType(capacity.getCapacityType());
+            capacityResponse.setCapacityName(CapacityVO.getCapacityName(capacity.getCapacityType()));
             capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
             if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                 List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(zoneId, null, null);
@@ -1026,6 +1028,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (CapacityVO capacity : capacities) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityType(capacity.getCapacityType());
+            capacityResponse.setCapacityName(CapacityVO.getCapacityName(capacity.getCapacityType()));
             capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
             capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
             if (capacityResponse.getCapacityTotal() != 0) {
@@ -1110,6 +1113,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
                 capacityResponse.setCapacityType(capacity.getCapacityType());
+                capacityResponse.setCapacityName(CapacityVO.getCapacityName(capacity.getCapacityType()));
                 capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
 
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
@@ -1608,7 +1612,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (Capacity summedCapacity : result) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
+            if (summedCapacity.getAllocatedCapacity() != null) {
+                capacityResponse.setCapacityAllocated(summedCapacity.getAllocatedCapacity());
+            }
             capacityResponse.setCapacityType(summedCapacity.getCapacityType());
+            capacityResponse.setCapacityName(CapacityVO.getCapacityName(summedCapacity.getCapacityType()));
             capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
             if (summedCapacity.getPodId() != null) {
                 capacityResponse.setPodId(ApiDBUtils.findPodById(summedCapacity.getPodId()).getUuid());
@@ -1679,6 +1687,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 capacityResponse.setClusterName(cluster.getName());
             }
             capacityResponse.setCapacityType(Capacity.CAPACITY_TYPE_GPU);
+            capacityResponse.setCapacityName(CapacityVO.getCapacityName(Capacity.CAPACITY_TYPE_GPU));
             capacityResponse.setCapacityUsed((long)Math.ceil(capacityUsed));
             capacityResponse.setCapacityTotal(capacityMax);
             if (capacityMax > 0) {

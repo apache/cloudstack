@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api.command.admin.resource;
 
 import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -65,7 +67,8 @@ public class ListCapacityCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "lists capacity by type" + "* CAPACITY_TYPE_MEMORY = 0" + "* CAPACITY_TYPE_CPU = 1"
         + "* CAPACITY_TYPE_STORAGE = 2" + "* CAPACITY_TYPE_STORAGE_ALLOCATED = 3" + "* CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = 4" + "* CAPACITY_TYPE_PRIVATE_IP = 5"
-        + "* CAPACITY_TYPE_SECONDARY_STORAGE = 6" + "* CAPACITY_TYPE_VLAN = 7" + "* CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8" + "* CAPACITY_TYPE_LOCAL_STORAGE = 9.")
+        + "* CAPACITY_TYPE_SECONDARY_STORAGE = 6" + "* CAPACITY_TYPE_VLAN = 7" + "* CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8" + "* CAPACITY_TYPE_LOCAL_STORAGE = 9"
+        + "* CAPACITY_TYPE_GPU = 19" + "* CAPACITY_TYPE_CPU_CORE = 90.")
     private Integer type;
 
     @Parameter(name = ApiConstants.SORT_BY, type = CommandType.STRING, since = "3.0.0", description = "Sort the results. Available values: Usage")
@@ -127,6 +130,17 @@ public class ListCapacityCmd extends BaseListCmd {
 
         ListResponse<CapacityResponse> response = new ListResponse<CapacityResponse>();
         List<CapacityResponse> capacityResponses = _responseGenerator.createCapacityResponse(result, s_percentFormat);
+        Collections.sort(capacityResponses, new Comparator<CapacityResponse>() {
+            public int compare(CapacityResponse resp1, CapacityResponse resp2) {
+                int res = resp1.getZoneName().compareTo(resp2.getZoneName());
+                if (res != 0) {
+                    return res;
+                } else {
+                    return resp1.getCapacityType().compareTo(resp2.getCapacityType());
+                }
+            }
+        });
+
         response.setResponses(capacityResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
