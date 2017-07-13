@@ -42,7 +42,6 @@ import com.cloud.upgrade.dao.Upgrade306to307;
 import com.cloud.upgrade.dao.Upgrade307to410;
 import com.cloud.upgrade.dao.Upgrade30to301;
 import com.cloud.upgrade.dao.Upgrade40to41;
-import com.cloud.upgrade.dao.Upgrade41000to41100;
 import com.cloud.upgrade.dao.Upgrade410to420;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
@@ -68,6 +67,7 @@ import com.cloud.upgrade.dao.Upgrade490to4910;
 import com.cloud.upgrade.dao.Upgrade4910to4920;
 import com.cloud.upgrade.dao.Upgrade4920to4930;
 import com.cloud.upgrade.dao.Upgrade4930to41000;
+import com.cloud.upgrade.dao.Upgrade41000to41100;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
@@ -107,6 +107,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
     private final ImmutableList<CloudStackVersion> availableVersions;
     protected Map<CloudStackVersion, DbUpgrade[]> _upgradeMap = new HashMap<>();
+
     @Inject
     VersionDao _dao;
 
@@ -389,12 +390,17 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put(CloudStackVersion.parse("4.9.0"),
             new DbUpgrade[] {new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100()});
 
-        _upgradeMap
-            .put(CloudStackVersion.parse("4.9.1.0"), new DbUpgrade[] {new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100()});
+        _upgradeMap.put(CloudStackVersion.parse("4.9.1.0"),
+            new DbUpgrade[] {new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100()});
 
-        _upgradeMap.put(CloudStackVersion.parse("4.9.2.0"), new DbUpgrade[] {new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100()});
+        _upgradeMap.put(CloudStackVersion.parse("4.9.2.0"),
+            new DbUpgrade[] {new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100()});
 
-        _upgradeMap.put(CloudStackVersion.parse("4.9.3.0"), new DbUpgrade[] {new Upgrade4930to41000(), new Upgrade41000to41100()});
+        _upgradeMap.put(CloudStackVersion.parse("4.9.3.0"),
+            new DbUpgrade[] {new Upgrade4930to41000(), new Upgrade41000to41100()});
+
+        _upgradeMap.put(CloudStackVersion.parse("4.10.0.0"),
+            new DbUpgrade[] {new Upgrade41000to41100()});
 
         //CP Upgrades
         _upgradeMap.put(CloudStackVersion.parse("3.0.3"),
