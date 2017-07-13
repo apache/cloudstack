@@ -27,24 +27,6 @@ import java.sql.Connection;
 public class Upgrade41000to41100 implements DbUpgrade {
     final static Logger LOG = Logger.getLogger(Upgrade41000to41100.class);
 
-    public static class MemoryValues {
-        long max;
-        long min;
-
-        public MemoryValues(final long min, final long max) {
-            this.min = min * 1024 * 1024;
-            this.max = max * 1024 * 1024;
-        }
-
-        public long getMax() {
-            return max;
-        }
-
-        public long getMin() {
-            return min;
-        }
-    }
-
     @Override
     public String[] getUpgradableVersionRange() {
         return new String[] {"4.10.0.0", "4.11.0.0"};
