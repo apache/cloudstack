@@ -2505,6 +2505,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (final SummedCapacity summedCapacity : summedCapacities) {
             final CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(),summedCapacity.getPodId(), summedCapacity.getClusterId(), summedCapacity.getUsedCapacity()
                     + summedCapacity.getReservedCapacity(), summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
+            capacity.setAllocatedCapacity(summedCapacity.getAllocatedCapacity());
             capacities.add(capacity);
         }
 
