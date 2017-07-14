@@ -3224,6 +3224,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             long bytes_rd = 0;
             long bytes_wr = 0;
             for (final DiskDef disk : disks) {
+                if (disk.getDeviceType() == DeviceType.CDROM || disk.getDeviceType() == DeviceType.FLOPPY) {
+                    continue;
+                }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
                 io_rd += blockStats.rd_req;
                 io_wr += blockStats.wr_req;
