@@ -2226,6 +2226,13 @@ public class JuniperSrxResource implements ServerResource {
                 xml = replaceXmlValue(xml, "from-zone", _publicZone);
                 xml = replaceXmlValue(xml, "rule-name", ruleName);
                 return sendRequestAndCheckResponse(command, xml, "name", ruleName);
+            case CHECK_PRIVATE_IF_EXISTS:
+                xml = SrxXml.DEST_NAT_RULE_GETONE.getXml();
+                xml = setDelete(xml, false);
+                xml = replaceXmlValue(xml, "rule-set", _privateZone);
+                xml = replaceXmlValue(xml, "from-zone", _privateZone);
+                xml = replaceXmlValue(xml, "rule-name", ruleName_private);
+                return sendRequestAndCheckResponse(command, xml, "name", ruleName_private);
             case ADD:
                 if (manageDestinationNatRule(SrxCommand.CHECK_IF_EXISTS, publicIp, privateIp, srcPort, destPort)) {
                     return true;
