@@ -16,12 +16,13 @@
 // under the License.
 package com.cloud.network;
 
-import java.util.List;
-
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.utils.Pair;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -32,8 +33,19 @@ public interface PhysicalNetwork extends Identity, InternalIdentity {
         Disabled, Enabled;
     }
 
-    public enum IsolationMethod {
-        VLAN, L3, GRE, STT, BCF_SEGMENT, MIDO, SSP, VXLAN, ODL, L3VPN, VSP, VCS;
+    public class IsolationMethod {
+        private static Set<IsolationMethod> registeredIsolationMethods = new HashSet<>();
+        String methodPrefix;
+        public IsolationMethod(String prfx) {
+            methodPrefix = prfx;
+            registeredIsolationMethods.add(this);
+        }
+
+        @Override
+        public String toString() {
+            return methodPrefix.toString();
+        }
+        // VLAN, L3, GRE, STT, BCF_SEGMENT, MIDO, SSP, VXLAN, ODL, L3VPN, VSP, VCS;
     }
 
     public enum BroadcastDomainRange {
