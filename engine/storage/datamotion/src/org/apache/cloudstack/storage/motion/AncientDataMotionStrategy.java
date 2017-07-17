@@ -520,10 +520,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         DataObject cacheData = null;
         SnapshotInfo snapshotInfo = (SnapshotInfo)srcData;
-        Object payload = snapshotInfo.getPayload();
+        Boolean snapshotFullBackup = snapshotInfo.getFullBackup();
         Boolean fullSnapshot = true;
-        if (payload != null) {
-            fullSnapshot = (Boolean)payload;
+        if (snapshotFullBackup != null) {
+            fullSnapshot = snapshotFullBackup;
         }
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());
