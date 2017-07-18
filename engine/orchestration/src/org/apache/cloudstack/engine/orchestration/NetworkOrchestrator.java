@@ -1322,19 +1322,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public List<String> getServicesNotSupportedInNewOffering(Network network,long newNetworkOfferingId){
-        NetworkOffering offering =_networkOfferingDao.findById(newNetworkOfferingId);
-        List<String> services=_ntwkOfferingSrvcDao.listServicesForNetworkOffering(offering.getId());
-        List<NetworkServiceMapVO> serviceMap= _ntwkSrvcDao.getServicesInNetwork(network.getId());
-        List<String> servicesNotInNewOffering=new ArrayList<>();
-        for(NetworkServiceMapVO serviceVO :serviceMap){
-            boolean inlist=false;
-            for(String service: services){
-                if(serviceVO.getService().equalsIgnoreCase(service)){
-                    inlist=true;
+        NetworkOffering offering = _networkOfferingDao.findById(newNetworkOfferingId);
+        List<String> services = _ntwkOfferingSrvcDao.listServicesForNetworkOffering(offering.getId());
+        List<NetworkServiceMapVO> serviceMap = _ntwkSrvcDao.getServicesInNetwork(network.getId());
+        List<String> servicesNotInNewOffering = new ArrayList<>();
+        for(NetworkServiceMapVO serviceVO :serviceMap) {
+            boolean inlist = false;
+            for(String service: services) {
+                if(serviceVO.getService().equalsIgnoreCase(service)) {
+                    inlist = true;
                     break;
                 }
             }
-            if(!inlist){
+            if(!inlist) {
                 //ignore Gateway service as this has no effect on the
                 //behaviour of network.
                 if(!serviceVO.getService().equalsIgnoreCase(Service.Gateway.getName()))
@@ -1352,7 +1352,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         //remove all PF/Static Nat rules for the network
         s_logger.info("Services:"+services+" are no longer supported in network:"+network.getUuid()+
                 " after applying new network offering:"+network.getNetworkOfferingId()+" removing the related configuration");
-        if(services.contains(Service.StaticNat.getName())|| services.contains(Service.PortForwarding.getName())) {
+        if(services.contains(Service.StaticNat.getName()) || services.contains(Service.PortForwarding.getName())) {
             try {
                 if (_rulesMgr.revokeAllPFStaticNatRulesForNetwork(networkId, userId, caller)) {
                     s_logger.debug("Successfully cleaned up portForwarding/staticNat rules for network id=" + networkId);

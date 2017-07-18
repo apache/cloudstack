@@ -79,8 +79,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
     private Boolean updateInSequence;
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
-               type = CommandType.BOOLEAN,
- description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
+               type = CommandType.BOOLEAN, description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
     @Parameter(name= ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Setting this to true will cause a forced network update,", authorized = {RoleType.Admin})
