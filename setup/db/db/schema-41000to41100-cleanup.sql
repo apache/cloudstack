@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade cleanup from 4.10.0.0 to 4.11.0.0
 --;
+
+-- CLOUDSTACK-9914: Alter quota_tariff to support currency values up to 5 decimal places
+ALTER TABLE `cloud_usage`.`quota_tariff` MODIFY `currency_value` DECIMAL(15,5) not null
