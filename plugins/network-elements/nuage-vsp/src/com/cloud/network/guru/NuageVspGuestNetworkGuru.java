@@ -131,7 +131,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
 
     public NuageVspGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.VSP};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("VSP")};
     }
 
     @Override
@@ -593,4 +593,16 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     }
 
 
+    private HostVO getNuageVspHost(long physicalNetworkId) throws InsufficientVirtualNetworkCapacityException {
+        HostVO nuageVspHost;
+        List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkId);
+        if (nuageVspDevices != null && (!nuageVspDevices.isEmpty())) {
+            NuageVspDeviceVO config = nuageVspDevices.iterator().next();
+            nuageVspHost = _hostDao.findById(config.getHostId());
+            _hostDao.loadDetails(nuageVspHost);
+        } else {
+            throw new InsufficientVirtualNetworkCapacityException("Nuage VSD is not configured on physical network ", PhysicalNetwork.class, physicalNetworkId);
+        }
+        return nuageVspHost;
+    }
 }
