@@ -195,7 +195,7 @@ public class SolidFireHostListener implements HypervisorHostListener {
                     if (hostIdForVm != null) {
                         HostVO hostForVm = _hostDao.findById(hostIdForVm);
 
-                        if (hostForVm.getClusterId().equals(clusterId)) {
+                        if (hostForVm != null && hostForVm.getClusterId().equals(clusterId)) {
                             storagePaths.add(volume.get_iScsiName());
                         }
                     }
