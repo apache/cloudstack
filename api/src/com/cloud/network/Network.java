@@ -37,13 +37,13 @@ import com.cloud.utils.fsm.StateObject;
  */
 public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
-    public enum GuestType {
+    enum GuestType {
         Shared, Isolated
     }
 
-    public String updatingInSequence ="updatingInSequence";
+    String updatingInSequence ="updatingInSequence";
 
-    public static class Service {
+    class Service {
         private static List<Service> supportedServices = new ArrayList<Service>();
 
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnProtocols, Capability.VpnTypes);
@@ -112,7 +112,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     /**
      * Provider -> NetworkElement must always be one-to-one mapping. Thus for each NetworkElement we need a separate Provider added in here.
      */
-    public static class Provider {
+    class Provider {
         private static List<Provider> supportedProviders = new ArrayList<Provider>();
 
         public static final Provider VirtualRouter = new Provider("VirtualRouter", false, false);
@@ -186,7 +186,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         }
     }
 
-    public static class Capability {
+    class Capability {
 
         private static List<Capability> supportedCapabilities = new ArrayList<Capability>();
 
@@ -244,7 +244,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         ImplementNetwork, DestroyNetwork, OperationSucceeded, OperationFailed;
     }
 
-    public enum State {
+    enum State {
 
         Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"), Implementing(
                 "Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"), Shutdown(
@@ -274,7 +274,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         }
     }
 
-    public class IpAddresses {
+    class IpAddresses {
         private String ip4Address;
         private String ip6Address;
 
@@ -350,7 +350,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     void setPhysicalNetworkId(Long physicalNetworkId);
 
-    public void setTrafficType(TrafficType type);
+    void setTrafficType(TrafficType type);
 
     ACLType getAclType();
 

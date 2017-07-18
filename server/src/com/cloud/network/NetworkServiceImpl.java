@@ -56,6 +56,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -2260,26 +2261,28 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             _networkMgr.configureUpdateInSequence(network);
             resourceCount=_networkMgr.getResourceCount(network);
         }
-        List<String > servicesNotInNewOffering = null;
-        if(networkOfferingId != null)
-                 servicesNotInNewOffering = _networkMgr.getServicesNotSupportedInNewOffering(network,networkOfferingId);
-        if(!forced && servicesNotInNewOffering != null && !servicesNotInNewOffering.isEmpty()){
+        List<String> servicesNotInNewOffering = null;
+        if(networkOfferingId != null) {
+            servicesNotInNewOffering = _networkMgr.getServicesNotSupportedInNewOffering(network, networkOfferingId);
+        }
+
+        if(!forced && CollectionUtils.isNotEmpty(servicesNotInNewOffering)) {
             NetworkOfferingVO newOffering = _networkOfferingDao.findById(networkOfferingId);
             throw new CloudRuntimeException("The new offering:"+newOffering.getUniqueName()
                     +" will remove the following services "+servicesNotInNewOffering +"along with all the related configuration currently in use. will not proceed with the network update." +
                     "set forced parameter to true for forcing an update.");
         }
-        try{
-            if(servicesNotInNewOffering!=null && !servicesNotInNewOffering.isEmpty()){
-                _networkMgr.cleanupConfigForServicesInNetwork(servicesNotInNewOffering,network);
+
+        try {
+            if(CollectionUtils.isNotEmpty(servicesNotInNewOffering)) {
+                _networkMgr.cleanupConfigForServicesInNetwork(servicesNotInNewOffering, network);
             }
-        }catch (Throwable e){
-            s_logger.debug("failed to cleanup config related to unused services error:"+e.getMessage());
+        } catch (Throwable e) {
+            s_logger.debug("failed to cleanup config related to unused services error: " + e.getMessage());
         }
 
         boolean validStateToShutdown = (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup || network.getState() == Network.State.Allocated);
         try {
-
             do {
                 if (restartNetwork) {
                     if (validStateToShutdown) {
