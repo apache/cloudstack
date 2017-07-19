@@ -17202,7 +17202,7 @@
                                         isEditable: true
                                     },
                                     lastannotated: {
-                                        label: 'label.last.annotated'
+                                        label: 'label.last.annotated',
                                         converter: cloudStack.converters.toLocalDate
                                     },
                                     username: {
