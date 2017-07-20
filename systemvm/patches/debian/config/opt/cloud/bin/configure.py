@@ -566,7 +566,7 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" lifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
         file.addeq(" pfs=%s" % pfs)
         file.addeq(" keyingtries=2")
-        file.addeq(" auto=start")
+        file.addeq(" auto=route")
         if 'encap' not in obj:
             obj['encap']=False
         file.addeq(" forceencaps=%s" % CsHelper.bool_to_yn(obj['encap']))
@@ -582,9 +582,20 @@ class CsSite2SiteVpn(CsDataBag):
             logging.info("Configured vpn %s %s", leftpeer, rightpeer)
             CsHelper.execute("ipsec rereadsecrets")
 
-        # This will load the new config and start the connection when needed since auto=start in the config
+        # This will load the new config
         CsHelper.execute("ipsec reload")
         os.chmod(vpnsecretsfile, 0400)
+
+        # Check that the ipsec config is ready
+        for i in range(2):
+            result = CsHelper.execute('ipsec status vpn-%s | grep "%s"' % (rightpeer, peerlist.split(",", 1)[0]))
+            if result != "":
+                break
+            time.sleep(1)
+
+        # With 'auto=route', connections are established with an attempt to communicate over the S2S VPN
+        # Attempt to ping the other side to initialize the connection of the S2S VPN configuration
+        CsHelper.execute("timeout 0.5 ping -c 1 %s" % (peerlist.split("/", 1)[0]))
 
     def convert_sec_to_h(self, val):
         hrs = int(val) / 3600
