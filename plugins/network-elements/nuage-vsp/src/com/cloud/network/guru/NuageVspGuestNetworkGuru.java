@@ -591,18 +591,4 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
         if (defaultNic != null) return defaultNic.getNetworkId();
         return  null;
     }
-
-
-    private HostVO getNuageVspHost(long physicalNetworkId) throws InsufficientVirtualNetworkCapacityException {
-        HostVO nuageVspHost;
-        List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkId);
-        if (nuageVspDevices != null && (!nuageVspDevices.isEmpty())) {
-            NuageVspDeviceVO config = nuageVspDevices.iterator().next();
-            nuageVspHost = _hostDao.findById(config.getHostId());
-            _hostDao.loadDetails(nuageVspHost);
-        } else {
-            throw new InsufficientVirtualNetworkCapacityException("Nuage VSD is not configured on physical network ", PhysicalNetwork.class, physicalNetworkId);
-        }
-        return nuageVspHost;
-    }
 }

@@ -43,8 +43,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
-
 @Component
 public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(VxlanGuestNetworkGuru.class);

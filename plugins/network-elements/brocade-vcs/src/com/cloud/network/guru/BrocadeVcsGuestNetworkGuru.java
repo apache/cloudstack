@@ -58,7 +58,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import java.util.List;
 

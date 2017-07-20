@@ -60,7 +60,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import java.util.List;
 

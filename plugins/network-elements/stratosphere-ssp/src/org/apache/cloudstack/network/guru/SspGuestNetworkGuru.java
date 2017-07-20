@@ -37,7 +37,6 @@ import org.apache.cloudstack.network.element.SspElement;
 import org.apache.cloudstack.network.element.SspManager;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 /**

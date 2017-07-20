@@ -49,7 +49,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 @Component
