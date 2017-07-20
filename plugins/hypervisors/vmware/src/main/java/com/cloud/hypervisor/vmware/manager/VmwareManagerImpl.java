@@ -136,6 +136,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
 
     private static final long SECONDS_PER_MINUTE = 60;
+
     private int _timeout;
 
     private String _instance;
@@ -204,7 +205,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private int _additionalPortRangeSize;
     private int _routerExtraPublicNics = 2;
     private int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
-
     private String _rootDiskController = DiskControllerType.ide.toString();
 
     private final String _dataDiskController = DiskControllerType.osdefault.toString();
@@ -229,9 +229,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout};
     }
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         s_logger.info("Configure VmwareManagerImpl, manager name: " + name);

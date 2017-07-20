@@ -21,6 +21,8 @@ package com.cloud.storage.resource;
 import java.io.File;
 import java.util.EnumMap;
 
+import com.cloud.hypervisor.vmware.manager.VmwareManager;
+import com.cloud.utils.NumbersUtil;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -95,6 +97,8 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
+        int timeout = NumbersUtil.parseInt(cmd.getContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key()),
+                        Integer.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.defaultValue()) * VmwareManager.s_vmwareOVAPackageTimeout.multiplier());
         //if copied between s3 and nfs cache, go to resource
         boolean needDelegation = false;
         if (destDataStore instanceof NfsTO && destDataStore.getRole() == DataStoreRole.ImageCache) {
@@ -112,11 +116,11 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 String path = vol.getPath();
                 int index = path.lastIndexOf(File.separator);
                 String name = path.substring(index + 1);
-                storageManager.createOva(parentPath + File.separator + path, name);
+                storageManager.createOva(parentPath + File.separator + path, name, timeout);
                 vol.setPath(path + File.separator + name + ".ova");
             } else if (srcData.getObjectType() == DataObjectType.TEMPLATE) {
                 // sync template from NFS cache to S3 in NFS migration to S3 case
-                storageManager.createOvaForTemplate((TemplateObjectTO)srcData);
+                storageManager.createOvaForTemplate((TemplateObjectTO)srcData, timeout);
             } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT) {
                 // pack ova first
                 // sync snapshot from NFS cache to S3 in NFS migration to S3 case
@@ -126,7 +130,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 int index = path.lastIndexOf(File.separator);
                 String name = path.substring(index + 1);
                 String snapDir = path.substring(0, index);
-                storageManager.createOva(parentPath + File.separator + snapDir, name);
+                storageManager.createOva(parentPath + File.separator + snapDir, name, timeout);
                 if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                     //create template from snapshot on src at first, then copy it to s3
                     TemplateObjectTO cacheTemplate = (TemplateObjectTO)destData;
@@ -169,7 +173,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 int index = path.lastIndexOf(File.separator);
                 String name = path.substring(index + 1);
                 String dir = path.substring(0, index);
-                storageManager.createOva(parentPath + File.separator + dir, name);
+                storageManager.createOva(parentPath + File.separator + dir, name, timeout);
                 newSnapshot.setPath(newSnapshot.getPath() + ".ova");
                 newSnapshot.setDataStore(cmd.getCacheTO().getDataStore());
                 CopyCommand newCmd = new CopyCommand(newSnapshot, destData, cmd.getWait(), cmd.executeInSequence());

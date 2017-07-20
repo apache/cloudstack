@@ -251,6 +251,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected String createTemplateFromSnapshotXenScript;
     private HashMap<String, UploadEntity> uploadEntityStateMap = new HashMap<String, UploadEntity>();
     private String _ssvmPSK = null;
+    private long processTimeout;
 
     public void setParentPath(String path) {
         _parent = path;
@@ -3345,6 +3346,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             throw new InvalidParameterValueException(errorMessage);
         } else {
             uuid = cmd.getEntityUUID();
+            processTimeout = cmd.getProcessTimeout();
             if (isOneTimePostUrlUsed(cmd)) {
                 uploadEntity = uploadEntityStateMap.get(uuid);
                 StringBuilder errorMessage = new StringBuilder("The one time post url is already used");
@@ -3366,6 +3368,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntity = new UploadEntity(uuid, cmd.getEntityId(), UploadEntity.Status.IN_PROGRESS, cmd.getName(), absolutePath);
                 uploadEntity.setMetaDataPopulated(true);
                 uploadEntity.setResourceType(UploadEntity.ResourceType.valueOf(cmd.getType()));
+                uploadEntity.setProcessTimeout(processTimeout);
                 uploadEntity.setFormat(Storage.ImageFormat.valueOf(cmd.getImageFormat()));
                 //relative path with out ssvm mount info.
                 uploadEntity.setTemplatePath(absolutePath);
@@ -3447,7 +3450,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return (int)Math.ceil(sizeInBytes * 1.0d / (1024 * 1024 * 1024));
     }
 
-    public String postUpload(String uuid, String filename) {
+    public String postUpload(String uuid, String filename, long processTimeout) {
         UploadEntity uploadEntity = uploadEntityStateMap.get(uuid);
         int installTimeoutPerGig = 180 * 60 * 1000;
 
@@ -3552,7 +3555,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         for (Processor processor : processors.values()) {
             FormatInfo info = null;
             try {
-                info = processor.process(resourcePath, null, templateName);
+                 info = processor.process(resourcePath, null, templateName, processTimeout * 1000);
             } catch (InternalErrorException e) {
                 s_logger.error("Template process exception ", e);
                 return e.toString();

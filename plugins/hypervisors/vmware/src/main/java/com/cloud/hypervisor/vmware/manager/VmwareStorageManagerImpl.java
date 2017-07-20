@@ -98,28 +98,32 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     @Override
     public boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd) {
         DataTO data = cmd.getData();
+        int timeout = NumbersUtil.parseInt(cmd.getContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key()),
+                    Integer.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.defaultValue()) * VmwareManager.s_vmwareOVAPackageTimeout.multiplier());
         if (data == null) {
             return false;
         }
 
         String newPath = null;
         if (data.getObjectType() == DataObjectType.VOLUME) {
-            newPath = createOvaForVolume((VolumeObjectTO)data);
+            newPath = createOvaForVolume((VolumeObjectTO)data, timeout);
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
-            newPath = createOvaForTemplate((TemplateObjectTO)data);
+            newPath = createOvaForTemplate((TemplateObjectTO)data, timeout);
         }
         if (newPath != null) {
             cmd.setInstallPath(newPath);
+            return true;
         }
-        return true;
+        return false;
+
     }
 
     @Override
-    public void createOva(String path, String name) {
+    public void createOva(String path, String name, int archiveTimeout) {
         Script commandSync = new Script(true, "sync", 0, s_logger);
         commandSync.execute();
 
-        Script command = new Script(false, "tar", 0, s_logger);
+        Script command = new Script(false, "tar", archiveTimeout, s_logger);
         command.setWorkDir(path);
         command.add("-cf", name + ".ova");
         command.add(name + ".ovf");        // OVF file should be the first file in OVA archive
@@ -155,7 +159,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     @Override
-    public String createOvaForTemplate(TemplateObjectTO template) {
+    public String createOvaForTemplate(TemplateObjectTO template, int archiveTimeout) {
         DataStoreTO storeTO = template.getDataStore();
         if (!(storeTO instanceof NfsTO)) {
             s_logger.debug("Can only handle NFS storage, while creating OVA from template");
@@ -173,7 +177,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     s_logger.debug("OVA file found at: " + installFullPath);
                 } else {
                     if (new File(installFullPath + ".meta").exists()) {
-                        createOVAFromMetafile(installFullPath + ".meta");
+                        createOVAFromMetafile(installFullPath + ".meta", archiveTimeout);
                     } else {
                         String msg = "Unable to find OVA or OVA MetaFile to prepare template.";
                         s_logger.error(msg);
@@ -190,7 +194,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     //Fang: new command added;
     // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
-    public String createOvaForVolume(VolumeObjectTO volume) {
+    public String createOvaForVolume(VolumeObjectTO volume, int archiveTimeout) {
         DataStoreTO storeTO = volume.getDataStore();
         if (!(storeTO instanceof NfsTO)) {
             s_logger.debug("can only handle nfs storage, when create ova from volume");
@@ -215,15 +219,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             } else {
                 Script commandSync = new Script(true, "sync", 0, s_logger);
                 commandSync.execute();
-
-                Script command = new Script(false, "tar", 0, s_logger);
+                Script command = new Script(false, "tar", archiveTimeout, s_logger);
                 command.setWorkDir(installFullPath);
                 command.add("-cf", volumeUuid + ".ova");
                 command.add(volumeUuid + ".ovf");        // OVF file should be the first file in OVA archive
                 command.add(volumeUuid + "-disk0.vmdk");
 
-                command.execute();
-                return volumePath;
+                String result = command.execute();
+                if (result != Script.ERR_TIMEOUT) {
+                    return volumePath;
+                }
+
             }
         } catch (Throwable e) {
             s_logger.info("Exception for createVolumeOVA");
@@ -1046,7 +1052,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     // here we use a method to return the ovf and vmdk file names; Another way to do it:
     // create a new class, and like TemplateLocation.java and create templateOvfInfo.java to handle it;
-    private String createOVAFromMetafile(String metafileName) throws Exception {
+    private String createOVAFromMetafile(String metafileName, int archiveTimeout) throws Exception {
         File ova_metafile = new File(metafileName);
         Properties props = null;
         String ovaFileName = "";
@@ -1080,7 +1086,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             s_logger.info("ova: " + ovaFileName + ", ovf:" + ovfFileName + ", vmdk:" + disks[0] + ".");
             Script commandSync = new Script(true, "sync", 0, s_logger);
             commandSync.execute();
-            Script command = new Script(false, "tar", 0, s_logger);
+            Script command = new Script(false, "tar", archiveTimeout, s_logger);
             command.setWorkDir(exportDir); // Fang: pass this in to the method?
             command.add("-cf", ovaFileName);
             command.add(ovfFileName); // OVF file should be the first file in OVA archive

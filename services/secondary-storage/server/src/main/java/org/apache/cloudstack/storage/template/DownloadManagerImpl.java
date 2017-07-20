@@ -90,7 +90,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private String _name;
     StorageLayer _storage;
     public Map<String, Processor> _processors;
-
+    private long _processTimeout;
     private Integer _nfsVersion;
 
     public class Completion implements DownloadCompleteCallback {
@@ -459,7 +459,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             FormatInfo info = null;
             try {
-                info = processor.process(resourcePath, null, templateName);
+                info = processor.process(resourcePath, null, templateName, this._processTimeout);
             } catch (InternalErrorException e) {
                 s_logger.error("Template process exception ", e);
                 return e.toString();
@@ -677,6 +677,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
     @Override
     public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd) {
+        int timeout = NumbersUtil.parseInt(cmd.getContextParam("vmware.package.ova.timeout"), 3600000);
+        this._processTimeout = timeout;
         ResourceType resourceType = cmd.getResourceType();
         if (cmd instanceof DownloadProgressCommand) {
             return handleDownloadProgressCmd(resource, (DownloadProgressCommand)cmd);

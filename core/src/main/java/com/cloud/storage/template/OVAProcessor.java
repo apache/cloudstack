@@ -42,11 +42,15 @@ import com.cloud.utils.script.Script;
 
 public class OVAProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(OVAProcessor.class);
-
     StorageLayer _storage;
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
+        return process(templatePath, format, templateName, 0);
+    }
+
+    @Override
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException {
         if (format != null) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("We currently don't handle conversion from " + format + " to OVA.");
@@ -66,8 +70,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         s_logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFileFullPath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         File templateFile = new File(templateFileFullPath);
-
-        Script command = new Script("tar", 0, s_logger);
+        Script command = new Script("tar", processTimeout, s_logger);
         command.add("--no-same-owner");
         command.add("--no-same-permissions");
         command.add("-xf", templateFileFullPath);

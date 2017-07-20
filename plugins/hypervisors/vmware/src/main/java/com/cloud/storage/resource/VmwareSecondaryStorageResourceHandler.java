@@ -145,8 +145,11 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     }
 
     protected Answer execute(CreateEntityDownloadURLCommand cmd) {
-        _storageMgr.execute(this, cmd);
-        return _resource.defaultAction(cmd);
+        boolean success = _storageMgr.execute(this, cmd);
+        if (success) {
+            return _resource.defaultAction(cmd);
+        }
+        return new Answer(cmd, false, "Failed to download");
     }
 
     private Answer execute(PrimaryStorageDownloadCommand cmd) {
