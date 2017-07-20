@@ -984,13 +984,6 @@ test_data = {
         "format": "OVA",
         "ostype": "Red Hat Enterprise Linux 6.0 (64-bit)"
     },
-    "templateregister": {
-        "displaytext": "xs",
-        "name": "xs",
-        "passwordenabled": False,
-        "url": "http://people.apache.org/~sanjeev/ttylinux_pv.vhd.bz2",
-        "format": "VHD"
-    },
     "security_group": {"name": "custom_Sec_Grp"},
     "ingress_rule": {
         "protocol": "TCP",
