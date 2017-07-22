@@ -150,7 +150,7 @@ class CsAcl(CsDataBag):
                                         " -A FIREWALL_%s" % self.ip +
                                         " -s %s " % cidr +
                                         " -p %s " % rule['protocol'] +
-                                        "  %s -j RETURN" % rnge])
+                                        "  %s -j %s" % (rnge, self.rule['action'])])
 
             sflag=False
             dflag=False
