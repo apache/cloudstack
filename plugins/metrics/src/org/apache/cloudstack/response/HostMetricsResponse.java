@@ -167,13 +167,13 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setCpuAllocatedThreshold(final String cpuAllocated, final Double overCommitRatio, final Double threshold) {
         if (cpuAllocated != null && overCommitRatio != null && threshold != null) {
-            this.cpuAllocatedThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold * overCommitRatio);
+            this.cpuAllocatedThresholdExceeded = (Double.valueOf(cpuAllocated.replace("%", "")) * overCommitRatio) > (100.0 * threshold);
         }
     }
 
     public void setCpuAllocatedDisableThreshold(final String cpuAllocated, final Double overCommitRatio, final Float threshold) {
         if (cpuAllocated != null && overCommitRatio != null && threshold != null) {
-            this.cpuAllocatedDisableThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold * overCommitRatio);
+            this.cpuAllocatedDisableThresholdExceeded = (Double.valueOf(cpuAllocated.replace("%", "")) * overCommitRatio) > (100.0 * threshold);
         }
     }
 
@@ -191,13 +191,13 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setMemoryAllocatedThreshold(final Long memAllocated, final Long memTotal, final Double overCommitRatio, final Double threshold) {
         if (memAllocated != null && memTotal != null && overCommitRatio != null && threshold != null) {
-            this.memoryAllocatedThresholdExceeded = memAllocated > (memTotal * threshold * overCommitRatio);
+            this.memoryAllocatedThresholdExceeded = (memAllocated * overCommitRatio) > (memTotal * threshold);
         }
     }
 
     public void setMemoryAllocatedDisableThreshold(final Long memAllocated, final Long memTotal, final Double overCommitRatio, final Float threshold) {
         if (memAllocated != null && memTotal != null && overCommitRatio != null && threshold != null) {
-            this.memoryAllocatedDisableThresholdExceeded = memAllocated > (memTotal * threshold * overCommitRatio);
+            this.memoryAllocatedDisableThresholdExceeded = (memAllocated * overCommitRatio) > (memTotal * threshold);
         }
     }
 
