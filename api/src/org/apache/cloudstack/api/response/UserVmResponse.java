@@ -284,7 +284,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.OS_TYPE_ID)
     @Param(description = "OS type id of the vm", since = "4.4")
-    private Long osTypeId;
+    private String osTypeId;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -810,7 +810,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.details = details;
     }
 
-    public void setOsTypeId(Long osTypeId) {
+    public void setOsTypeId(String osTypeId) {
         this.osTypeId = osTypeId;
     }
 
