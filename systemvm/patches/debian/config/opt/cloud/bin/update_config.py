@@ -24,7 +24,10 @@ from subprocess import PIPE, STDOUT
 import os
 import os.path
 import configure
+import glob
 import json
+
+OCCURRENCES = 1
 
 logging.basicConfig(filename='/var/log/cloud.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
@@ -70,7 +73,8 @@ def is_guestnet_configured(guestnet_dict, keys):
         print "[WARN] update_config.py :: Reconfiguring guest network..."
         return False
 
-    file = open(jsonCmdConfigPath)
+    fn = min(glob.iglob(jsonCmdConfigPath + '*'), key=os.path.getctime)
+    file = open(fn)
     new_guestnet_dict = json.load(file)
 
     if not new_guestnet_dict['add']:
@@ -109,19 +113,13 @@ def is_guestnet_configured(guestnet_dict, keys):
 
     return exists
 
-if not (os.path.isfile(jsonCmdConfigPath) and os.access(jsonCmdConfigPath, os.R_OK)):
+filename = min(glob.iglob(jsonCmdConfigPath + '*'), key=os.path.getctime)
+if not (os.path.isfile(filename) and os.access(filename, os.R_OK)):
     print "[ERROR] update_config.py :: You are telling me to process %s, but i can't access it" % jsonCmdConfigPath
     sys.exit(1)
 
-# If the command line json file is unprocessed process it
-# This is important or, the control interfaces will get deleted!
-if os.path.isfile(jsonPath % "cmd_line.json"):
-    qf = QueueFile()
-    qf.setFile("cmd_line.json")
-    qf.load(None)
-
 # If the guest network is already configured and have the same IP, do not try to configure it again otherwise it will break
-if sys.argv[1] == "guest_network.json":
+if sys.argv[1] and sys.argv[1].count("guest_network.json") == OCCURRENCES:
     if os.path.isfile(currentGuestNetConfig):
         file = open(currentGuestNetConfig)
         guestnet_dict = json.load(file)
