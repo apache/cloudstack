@@ -23,20 +23,23 @@ function add_backports() {
   sed -i '/cdrom/d' /etc/apt/sources.list
   sed -i '/deb-src/d' /etc/apt/sources.list
   sed -i '/backports/d' /etc/apt/sources.list
-  echo 'deb http://http.debian.net/debian wheezy-backports main' >> /etc/apt/sources.list
+  echo 'deb http://http.debian.net/debian stretch-backports main' >> /etc/apt/sources.list
 }
 
 function apt_upgrade() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
 
+  # Setup sudo
+  echo 'cloud ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/cloud
+
   add_backports
 
   rm -fv /root/*.iso
   apt-get -y autoremove
   apt-get autoclean
-  apt-get -q -y --force-yes update
-  apt-get -q -y --force-yes upgrade
+  apt-get -q -y update
+  apt-get -q -y upgrade
 
   df -h
 }

@@ -19,15 +19,15 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.6.0
+CLOUDSTACK_RELEASE=4.11.0
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
    a2enmod ssl rewrite auth_basic auth_digest
    a2ensite default-ssl
    # Backup stock apache configuration since we may modify it in Secondary Storage VM
-   cp /etc/apache2/sites-available/default /etc/apache2/sites-available/default.orig
-   cp /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.orig
+   cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/default.orig
+   cp /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available/default-ssl.orig
    sed -i 's/SSLProtocol all -SSLv2$/SSLProtocol all -SSLv2 -SSLv3/g' /etc/apache2/mods-available/ssl.conf
 }
 
@@ -39,12 +39,76 @@ function install_cloud_scripts() {
     /etc/init.d/{cloud,cloud-early-config,cloud-passwd-srvr,postinit} \
     /etc/profile.d/cloud.sh
 
-  chkconfig --add cloud-early-config
-  chkconfig cloud-early-config on
-  chkconfig --add cloud-passwd-srvr
-  chkconfig cloud-passwd-srvr off
-  chkconfig --add cloud
-  chkconfig cloud off
+  cat > /lib/systemd/system/cloud-early-config.service << EOF
+[Unit]
+Description=cloud-early-config: configure according to cmdline
+DefaultDependencies=no
+After=local-fs.target apparmor.service systemd-sysctl.service systemd-modules-load.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/etc/init.d/cloud-early-config start
+ExecStop=/etc/init.d/cloud-early-config stop
+RemainAfterExit=true
+TimeoutStartSec=5min
+
+EOF
+
+  cat > /lib/systemd/system/cloud.service << EOF
+[Unit]
+Description=cloud: startup cloud service
+After=cloud-early-config.service network.target local-fs.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=forking
+ExecStart=/etc/init.d/cloud start
+ExecStop=/etc/init.d/cloud stop
+RemainAfterExit=true
+TimeoutStartSec=5min
+EOF
+
+  cat > /lib/systemd/system/cloud-passwd-srvr.service << EOF
+[Unit]
+Description=cloud-passwd-srvr: cloud password server
+After=network.target local-fs.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=forking
+ExecStart=/etc/init.d/cloud-passwd-srvr start
+ExecStop=/etc/init.d/cloud-passwd-srvr stop
+RemainAfterExit=true
+TimeoutStartSec=5min
+EOF
+
+  cat > /lib/systemd/system/postinit.service << EOF
+[Unit]
+Description=cloud post-init service
+After=cloud-early-config.service network.target local-fs.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=forking
+ExecStart=/etc/init.d/postinit start
+ExecStop=/etc/init.d/postinit stop
+RemainAfterExit=true
+TimeoutStartSec=5min
+EOF
+
+  systemctl daemon-reload
+  systemctl enable cloud-early-config
+  systemctl disable cloud-passwd-srvr
+  systemctl disable cloud
 }
 
 function do_signature() {
@@ -72,18 +136,20 @@ function configure_services() {
   install_cloud_scripts
   do_signature
 
-  chkconfig xl2tpd off
+  systemctl daemon-reload
+  systemctl disable xl2tpd
 
   # Disable services that slow down boot and are not used anyway
-  chkconfig x11-common off
-  chkconfig console-setup off
+  systemctl disable x11-common
+  systemctl disable console-setup
+  systemctl disable haproxy
 
   # Hyperv kvp daemon - 64bit only
   local arch=`dpkg --print-architecture`
   if [ "${arch}" == "amd64" ]; then
-    chkconfig hv_kvp_daemon off
+    systemctl disable hv_kvp_daemon
   fi
-  chkconfig radvd off
+  systemctl disable radvd
 
   configure_apache2
   configure_strongswan

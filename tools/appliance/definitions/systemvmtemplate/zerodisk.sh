@@ -22,9 +22,10 @@ set -x
 # clean up stuff copied in by veewee
 function cleanup_veewee() {
   # this has to be here since it is the last file to run (and we remove ourselves)
-  rm -fv /root/*.iso
-  rm -fv /root/{apt_upgrade,authorized_keys,build_time,cleanup,install_systemvm_packages,zerodisk}.sh
-  rm -fv /root/configure_{acpid,conntrack,grub,locale,login,networking,systemvm_services}.sh
+  cd /home/cloud
+  rm -fv *.iso
+  rm -fv {apt_upgrade,authorized_keys,cleanup,install_systemvm_packages,zerodisk}.sh
+  rm -fv configure_{acpid,conntrack,grub,locale,networking,persistent_config,systemvm_services}.sh /home/cloud/install_systemvm_packages.sh
   rm -fv .veewee_version .veewee_params .vbox_version
 }
 
@@ -32,7 +33,7 @@ function cleanup_veewee() {
 function zero_disk() {
   cleanup_veewee
 
-  for path in / /boot /usr /var /var/log /opt /tmp /home
+  for path in / /boot /var/log /tmp
   do
     dd if=/dev/zero of=${path}/zero bs=1M || true
     sync

@@ -1,12 +1,10 @@
-#!/bin/bash 
+#!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          cloud-passwd-srvr
-# Required-Start:    mountkernfs $local_fs cloud-early-config iptables-persistent
+# Required-Start:    $local_fs cloud-early-config
 # Required-Stop:     $local_fs
-# Should-Start:      
-# Should-Stop:       
-# Default-Start:     
-# Default-Stop:      0 6
+# Default-Start:     3 4 5
+# Default-Stop:      0 1 6
 # Short-Description: Web server that sends passwords to User VMs
 ### END INIT INFO
 # Licensed to the Apache Software Foundation (ASF) under one

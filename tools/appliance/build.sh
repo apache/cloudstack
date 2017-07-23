@@ -594,7 +594,7 @@ function main() {
   add_on_exit veewee_destroy
   veewee_build
   save_mac_address
-  veewee_halt
+  veewee_halt || true
   retry 10 check_appliance_shutdown
   retry 10 check_appliance_disk_ready
   retry 10 remove_shares

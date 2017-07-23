@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-arch = ENV['VM_ARCH'] || 'i386'
+arch = 'amd64'
 
 #
 # NOTE: Before changing the version of the debian image make
@@ -25,25 +25,19 @@ arch = ENV['VM_ARCH'] || 'i386'
 # removed from the debian mirrors
 #
 architectures = {
-    :i386 => {
-        :os_type_id => 'Debian',
-        :iso_file => 'debian-7.11.0-i386-netinst.iso',
-        :iso_src => 'http://cdimage.debian.org/cdimage/archive/7.11.0/i386/iso-cd/debian-7.11.0-i386-netinst.iso',
-        :iso_md5 => '75055a694508f5b891038ec12d703c9e',
-    },
     :amd64 => {
         :os_type_id => 'Debian_64',
-        :iso_file => 'debian-7.11.0-amd64-netinst.iso',
-        :iso_src => 'http://cdimage.debian.org/cdimage/archive/7.11.0/amd64/iso-cd/debian-7.11.0-amd64-netinst.iso',
-        :iso_md5 => '096c1c18b44c269808bd815d58c53c8f'
+        :iso_file => 'debian-9.1.0-amd64-netinst.iso',
+        :iso_src => 'https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.1.0-amd64-netinst.iso',
+        :iso_md5 => 'ddd8f6542dae8baf410e90b9ae0fe986'
     }
 }
 
 config = {
     :cpu_count => '1',
-    :memory_size => '256',
-    :disk_size => '3200', :disk_format => 'VDI', :hostiocache => 'off',
-    :iso_download_timeout => '1200',
+    :memory_size => '512',
+    :disk_size => '2000', :disk_format => 'VDI', :hostiocache => 'off',
+    :iso_download_timeout => '1000',
     :boot_wait => '10',
     :boot_cmd_sequence => [
         '<Esc>',
@@ -63,11 +57,11 @@ config = {
         '<Enter>'
     ],
     :kickstart_port => '7122',
-    :kickstart_timeout => '1200',
+    :kickstart_timeout => '1000',
     :kickstart_file => 'preseed.cfg',
-    :ssh_login_timeout => '1200',
-    :ssh_user => 'root',
-    :ssh_password => 'password',
+    :ssh_login_timeout => '10000',
+    :ssh_user => 'cloud',
+    :ssh_password => 'cloud',
     :ssh_key => '',
     :ssh_host_port => '7222',
     :ssh_guest_port => '22',
@@ -75,11 +69,9 @@ config = {
     :shutdown_cmd => 'halt -p',
     :postinstall_files => [
         # basic minimal vm creation
-        'build_time.sh',
         'apt_upgrade.sh',
         'configure_grub.sh',
         'configure_locale.sh',
-        'configure_login.sh',
         'configure_networking.sh',
         'configure_acpid.sh',
         # turning it into a systemvm
@@ -91,9 +83,11 @@ config = {
         'configure_persistent_config.sh',
         # cleanup & space-saving
         'cleanup.sh',
-        'zerodisk.sh'
+        'zerodisk.sh',
+        # setup login stuff
+        'configure_login.sh'
     ],
-    :postinstall_timeout => '1200'
+    :postinstall_timeout => '10000'
 }
 
 config.merge! architectures[arch.to_sym]

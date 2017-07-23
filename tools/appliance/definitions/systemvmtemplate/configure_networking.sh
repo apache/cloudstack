@@ -21,13 +21,6 @@ set -x
 
 HOSTNAME=systemvm
 
-# Adding a 2 sec delay to the interface up, to make the dhclient happy
-function set_interface_sleep() {
-  grep "pre-up sleep 2" /etc/network/interfaces && return
-
-  echo "pre-up sleep 2" >> /etc/network/interfaces
-}
-
 function configure_resolv_conf() {
   grep 8.8.8.8 /etc/resolv.conf && grep 8.8.4.4 /etc/resolv.conf && return
 
@@ -52,8 +45,24 @@ function configure_hostname() {
   hostname $HOSTNAME
 }
 
+function configure_interfaces() {
+  cat > /etc/network/interfaces << EOF
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto eth0
+iface eth0 inet dhcp
+pre-up sleep 2
+
+EOF
+}
+
 function configure_networking() {
-  set_interface_sleep
+  configure_interfaces
   configure_resolv_conf
   delete_dhcp_ip
   configure_hostname

@@ -1,13 +1,11 @@
-#!/bin/bash 
+#!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          cloud
-# Required-Start:    mountkernfs $local_fs cloud-early-config
+# Required-Start:    $local_fs cloud-early-config
 # Required-Stop:     $local_fs
-# Should-Start:      
-# Should-Stop:       
-# Default-Start:     
+# Default-Start:     3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: 	Start up the CloudStack cloud service
+# Short-Description: Start up the CloudStack cloud service
 ### END INIT INFO
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file

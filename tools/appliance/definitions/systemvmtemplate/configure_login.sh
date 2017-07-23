@@ -23,11 +23,12 @@ function add_admin_group() {
   groupadd -f -r admin
 }
 
-function configure_cloud_user() {
+function configure_user() {
   usermod -a -G admin cloud
   mkdir -p /home/cloud/.ssh
   chmod 700 /home/cloud/.ssh
   echo "cloud:`openssl rand -base64 32`" | chpasswd
+  echo "root:password" | chpasswd
 }
 
 function configure_sudoers() {
@@ -42,7 +43,7 @@ root	  ALL=(ALL:ALL) ALL
 
 #includedir /etc/sudoers.d
 END
-  echo 'cloud ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount' > /etc/sudoers.d/cloud
+  echo 'cloud ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount, /sbin/halt' > /etc/sudoers.d/cloud
 }
 
 # sshd_config is overwritten from cloud_scripts
@@ -58,8 +59,6 @@ END
 #}
 
 function configure_inittab() {
-  grep "vc:2345:respawn:/sbin/getty" /etc/inittab && return
-
   # Fix inittab
   cat >> /etc/inittab << EOF
 
@@ -68,11 +67,13 @@ EOF
 }
 
 function configure_login() {
-  add_admin_group
-  configure_cloud_user
-  configure_sudoers
   # configure_sshd
   configure_inittab
+  add_admin_group
+  configure_sudoers
+  configure_user
+  rm -fv /home/cloud/configure_login.sh
+  halt -p
 }
 
 return 2>/dev/null || configure_login

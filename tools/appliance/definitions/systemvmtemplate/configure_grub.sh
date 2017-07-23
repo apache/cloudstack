@@ -31,9 +31,13 @@ GRUB_DEFAULT=0
 GRUB_TIMEOUT=0
 GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
 GRUB_CMDLINE_LINUX_DEFAULT="quiet"
-GRUB_CMDLINE_LINUX="debian-installer=en_US"
+GRUB_CMDLINE_LINUX="console=tty1 console=ttyS0,115200n8 net.ifnames=0 biosdevname=0 debian-installer=en_US"
+GRUB_TERMINAL="console serial"
+GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"
+
 EOF
 
+  grub-mkconfig -o /boot/grub/grub.cfg
   update-grub
 }
 

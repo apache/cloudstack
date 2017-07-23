@@ -43,7 +43,7 @@ function install_packages() {
   debconf_packages
   install_vhd_util
 
-  local apt_get="apt-get --no-install-recommends -q -y --force-yes"
+  local apt_get="apt-get --no-install-recommends -q -y"
 
   #32 bit architecture support:: not required for 32 bit template
   if [ "${arch}" != "i386" ]; then
@@ -53,8 +53,8 @@ function install_packages() {
   fi
 
   ${apt_get} install \
-    rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables \
-    openssh-server e2fsprogs dhcp3-client tcpdump socat wget \
+    rsyslog logrotate cron insserv net-tools ifupdown vim netbase iptables \
+    openssh-server e2fsprogs isc-dhcp-client tcpdump socat wget \
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping  curl \
     dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo \
@@ -67,19 +67,22 @@ function install_packages() {
     xenstore-utils libxenstore3.0 \
     conntrackd ipvsadm libnetfilter-conntrack3 libnl-3-200 libnl-genl-3-200 \
     ipcalc \
+    openjdk-8-jre-headless \
     ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
     python-flask \
     haproxy \
     radvd \
-    sharutils
+    sharutils \
+    keepalived irqbalance open-vm-tools qemu-guest-agent \
+    strongswan libcharon-extra-plugins libstrongswan-extra-plugins
 
-  ${apt_get} -t wheezy-backports install keepalived irqbalance open-vm-tools qemu-guest-agent
-  ${apt_get} -t wheezy-backports install strongswan libcharon-extra-plugins libstrongswan-extra-plugins
+  apt-get autoclean
+  apt-get clean
 
   apt-get update
-  apt-get -y --force-yes upgrade
+  apt-get -y upgrade
 
   if [ "${arch}" == "amd64" ]; then
     # Hyperv  kvp daemon - 64bit only
@@ -87,22 +90,7 @@ function install_packages() {
     wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
     dpkg -i hv-kvp-daemon_3.1_amd64.deb
     rm -f hv-kvp-daemon_3.1_amd64.deb
-    # XS tools
-    wget --no-check-certificate https://raw.githubusercontent.com/rhtyd/cloudstack-nonoss/master/xe-guest-utilities_6.5.0_amd64.deb
-    md5sum xe-guest-utilities_6.5.0_amd64.deb
-    dpkg -i xe-guest-utilities_6.5.0_amd64.deb
-    rm -f xe-guest-utilities_6.5.0_amd64.deb
   fi
-
-  # Install OpenJDK8 pkgs maintained by Azul
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9
-  echo 'deb http://repos.azulsystems.com/debian stable main' > /etc/apt/sources.list.d/zulu.list
-  apt-get -y autoremove
-  apt-get autoclean
-  apt-get clean
-  apt-get update
-  ${apt_get} install zulu-8
-  java -version
 }
 
 return 2>/dev/null || install_packages

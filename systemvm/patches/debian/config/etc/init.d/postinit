@@ -1,13 +1,11 @@
 #!/bin/bash -e
 ### BEGIN INIT INFO
 # Provides:          postinit
-# Required-Start:    mountkernfs $local_fs cloud-early-config
+# Required-Start:    $local_fs cloud-early-config
 # Required-Stop:     $local_fs
-# Should-Start:      
-# Should-Stop:       
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: 	post-init
+# Short-Description: post-init
 ### END INIT INFO
 
 # Licensed to the Apache Software Foundation (ASF) under one

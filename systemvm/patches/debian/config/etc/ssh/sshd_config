@@ -13,7 +13,6 @@
 Port 3922
 #AddressFamily any
 #ListenAddress 0.0.0.0
-#ListenAddress ::
 
 # Disable legacy (protocol version 1) support in the server for new
 # installations. In future the default will change to require explicit

@@ -20,7 +20,6 @@ set -e
 set -x
 
 function cleanup_apt() {
-  #apt-get -y remove linux-headers-$(uname -r) build-essential
   apt-get -y remove dictionaries-common busybox
   apt-get -y autoremove
   apt-get autoclean
