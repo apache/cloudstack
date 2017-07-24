@@ -589,7 +589,7 @@ class CsSite2SiteVpn(CsDataBag):
         # Check that the ipsec config is ready
         for i in range(2):
             result = CsHelper.execute('ipsec status vpn-%s | grep "%s"' % (rightpeer, peerlist.split(",", 1)[0]))
-            if result != "":
+            if len(result) > 0:
                 break
             time.sleep(1)
 
