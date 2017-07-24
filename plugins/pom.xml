@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.10.0.0-SNAPSHOT</version>
+    <version>4.11.0.0-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -79,7 +79,6 @@
     <module>network-elements/nuage-vsp</module>
     <module>network-elements/bigswitch</module>
     <module>network-elements/brocade-vcs</module>
-    <module>network-elements/midonet</module>
     <module>network-elements/stratosphere-ssp</module>
     <module>network-elements/opendaylight</module>
     <module>outofbandmanagement-drivers/ipmitool</module>
@@ -204,6 +203,12 @@
       </activation>
       <modules>
         <module>hypervisors/simulator</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>midonet</id>
+      <modules>
+        <module>network-elements/midonet</module>
       </modules>
     </profile>
   </profiles>

@@ -23,7 +23,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.lb.SslCert;
+import org.apache.cloudstack.network.tls.SslCert;
 import com.cloud.utils.db.Encrypt;
 
 @Entity
@@ -60,11 +60,14 @@ public class SslCertVO implements SslCert {
     @Column(name = "fingerprint")
     String fingerPrint;
 
+    @Column(name = "name")
+    String name;
+
     public SslCertVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public SslCertVO(String cert, String key, String password, String chain, Long accountId, Long domainId, String fingerPrint) {
+    public SslCertVO(String cert, String key, String password, String chain, Long accountId, Long domainId, String fingerPrint, String name) {
         certificate = cert;
         this.key = key;
         this.chain = chain;
@@ -73,6 +76,7 @@ public class SslCertVO implements SslCert {
         this.domainId = domainId;
         this.fingerPrint = fingerPrint;
         uuid = UUID.randomUUID().toString();
+        this.name = name;
     }
 
     // Getters
@@ -119,6 +123,11 @@ public class SslCertVO implements SslCert {
     @Override
     public String getFingerPrint() {
         return fingerPrint;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

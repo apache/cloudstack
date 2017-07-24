@@ -34,6 +34,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.commons.codec.binary.Base64;
@@ -124,7 +126,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class NetworkModelImpl extends ManagerBase implements NetworkModel {
+public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
     @Inject
     EntityManager _entityMgr;
@@ -561,7 +563,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public String getNextAvailableMacAddressInNetwork(long networkId) throws InsufficientAddressCapacityException {
-        String mac = _networksDao.getNextAvailableMacAddress(networkId);
+        NetworkVO network = _networksDao.findById(networkId);
+        String mac = _networksDao.getNextAvailableMacAddress(networkId, MACIdentifier.value());
         if (mac == null) {
             throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
         }
@@ -2217,24 +2220,29 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public NicVO getPlaceholderNicForRouter(Network network, Long podId) {
         List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkIdAndVmType(network.getId(), VirtualMachine.Type.DomainRouter);
+        List<? extends Vlan> vlans = new ArrayList<VlanVO>();
+        if (podId != null) {
+            vlans = _vlanDao.listVlansForPod(podId);
+        }
         for (NicVO nic : nics) {
             if (nic.getReserver() == null && (nic.getIPv4Address() != null || nic.getIPv6Address() != null)) {
                 if (podId == null) {
                     return nic;
                 } else {
+                    IpAddress ip = null;
+                    UserIpv6AddressVO ipv6 = null;
+
+                    if (nic.getIPv4Address() != null) {
+                        ip = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), nic.getIPv4Address());
+                    } else {
+                        ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIPv6Address());
+                    }
                     //return nic only when its ip address belong to the pod range (for the Basic zone case)
-                    List<? extends Vlan> vlans = _vlanDao.listVlansForPod(podId);
                     for (Vlan vlan : vlans) {
-                        if (nic.getIPv4Address() != null) {
-                            IpAddress ip = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), nic.getIPv4Address());
-                            if (ip != null && ip.getVlanId() == vlan.getId()) {
-                                return nic;
-                            }
-                        } else {
-                            UserIpv6AddressVO ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIPv6Address());
-                            if (ipv6 != null && ipv6.getVlanId() == vlan.getId()) {
-                                return nic;
-                            }
+                        if (ip != null && ip.getVlanId() == vlan.getId()) {
+                            return nic;
+                        } else if (ipv6 != null && ipv6.getVlanId() == vlan.getId()) {
+                            return nic;
                         }
                     }
                 }
@@ -2358,5 +2366,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
 
         return vmData;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return NetworkModel.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {MACIdentifier};
     }
 }

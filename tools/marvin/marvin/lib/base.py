@@ -32,7 +32,6 @@ import time
 import hashlib
 import base64
 
-
 class Domain:
     """ Domain Life Cycle """
     def __init__(self, items):
@@ -449,7 +448,8 @@ class VirtualMachine:
                affinitygroupnames=None, affinitygroupids=None, group=None,
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
-               customcpuspeed=None, custommemory=None, rootdisksize=None):
+               customcpuspeed=None, custommemory=None, rootdisksize=None,
+               rootdiskcontroller=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -552,6 +552,9 @@ class VirtualMachine:
 
         if rootdisksize >= 0:
             cmd.details[0]["rootdisksize"] = rootdisksize
+
+        if rootdiskcontroller:
+            cmd.details[0]["rootDiskController"] = rootdiskcontroller
 
         if group:
             cmd.group = group
@@ -1250,6 +1253,7 @@ class Template:
             "ispublic"] if "ispublic" in services else False
         cmd.isextractable = services[
             "isextractable"] if "isextractable" in services else False
+        cmd.isdynamicallyscalable=services["isdynamicallyscalable"] if "isdynamicallyscalable" in services else False
         cmd.passwordenabled = services[
             "passwordenabled"] if "passwordenabled" in services else False
 
@@ -2197,6 +2201,12 @@ class NetworkOffering:
             cmd.ispersistent = services["ispersistent"]
         if "egress_policy" in services:
             cmd.egressdefaultpolicy = services["egress_policy"]
+        cmd.details = [{}]
+        if "servicepackageuuid" in services:
+            cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
+        if "servicepackagedescription" in services:
+            cmd.details[0]["servicepackagedescription"] = services["servicepackagedescription"]
+
 
         cmd.availability = 'Optional'
 
@@ -2264,6 +2274,33 @@ class SnapshotPolicy:
             cmd.listall = True
         return(apiclient.listSnapshotPolicies(cmd))
 
+class GuestOs:
+    """Guest OS calls (currently read-only implemented)"""
+    def __init(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def listMapping(cls, apiclient, **kwargs):
+        """List all Guest Os Mappings matching criteria"""
+        cmd = listGuestOsMapping.listGuestOsMappingCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+
+        return (apiclient.listGuestOsMapping(cmd))
+
+    @classmethod
+    def listCategories(cls, apiclient, **kwargs):
+        """List all Os Categories"""
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+
+        return (apiclient.listOsCategories(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all Os Types matching criteria"""
+
+        cmd = listOsTypes.listOsTypesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listOsTypes(cmd))
 
 class Hypervisor:
     """Manage Hypervisor"""
@@ -3858,7 +3895,7 @@ class Configurations:
     """Manage Configuration"""
 
     @classmethod
-    def update(cls, apiclient, name, value=None, zoneid=None):
+    def update(cls, apiclient, name, value=None, zoneid=None, clusterid=None, storageid=None):
         """Updates the specified configuration"""
 
         cmd = updateConfiguration.updateConfigurationCmd()
@@ -3867,7 +3904,12 @@ class Configurations:
 
         if zoneid:
             cmd.zoneid = zoneid
+        if clusterid:
+            cmd.clusterid = clusterid
+        if storageid:
+            cmd.storageid=storageid
         apiclient.updateConfiguration(cmd)
+
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -5154,3 +5196,18 @@ class StorageNetworkIpRange:
         cmd = listStorageNetworkIpRange.listStorageNetworkIpRangeCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listStorageNetworkIpRange(cmd))
+
+class RegisteredServicePackage:
+    """Manage ServicePackage registered with NCC"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists service packages published by NCC"""
+
+        cmd = listRegisteredServicePackages.listRegisteredServicePackagesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRegisteredServicePackages(cmd))
+

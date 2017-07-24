@@ -26,7 +26,7 @@ import os.path
 import configure
 import json
 
-logging.basicConfig(filename='/var/log/cloud.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
+logging.basicConfig(filename='/var/log/cloud.log', level=logging.INFO, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
 # first commandline argument should be the file to process
 if (len(sys.argv) != 2):
@@ -50,8 +50,10 @@ def process_file():
     qf = QueueFile()
     qf.setFile(sys.argv[1])
     qf.load(None)
-    # Converge
-    finish_config()
+    # These can be safely deferred, dramatically speeding up loading times
+    if not (os.environ.get('DEFER_CONFIG', False) and sys.argv[1] in ('vm_dhcp_entry.json', 'vm_metadata.json')):
+        # Converge
+        finish_config()
 
 
 def is_guestnet_configured(guestnet_dict, keys):

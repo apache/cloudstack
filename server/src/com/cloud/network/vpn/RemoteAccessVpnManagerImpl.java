@@ -90,6 +90,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
     private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
@@ -508,6 +509,12 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         s_logger.debug("Applying vpn users for " + owner);
         List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
+
+        if (CollectionUtils.isEmpty(vpns)) {
+            s_logger.debug("There are no remote access vpns configured on this account  " + owner +" to apply vpn user, failing add vpn user ");
+            return false;
+        }
+
         RemoteAccessVpnVO vpnTemp  = null;
 
         List<VpnUserVO> users = _vpnUsersDao.listByAccount(vpnOwnerId);
@@ -522,21 +529,26 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         boolean success = true;
 
-        boolean[] finals = new boolean[users.size()];
+        Boolean[] finals = new Boolean[users.size()];
         for (RemoteAccessVPNServiceProvider element : _vpnServiceProviders) {
             s_logger.debug("Applying vpn access to " + element.getName());
             for (RemoteAccessVpnVO vpn : vpns) {
                 try {
                     String[] results = element.applyVpnUsers(vpn, users);
                     if (results != null) {
+                        int indexUser = -1;
                         for (int i = 0; i < results.length; i++) {
-                            s_logger.debug("VPN User " + users.get(i) + (results[i] == null ? " is set on " : (" couldn't be set due to " + results[i]) + " on ") + vpn);
+                            indexUser ++;
+                            if (indexUser == users.size()) {
+                                indexUser = 0; // results on multiple VPC routers are combined in commit 13eb789, reset user index if one VR is done.
+                            }
+                            s_logger.debug("VPN User " + users.get(indexUser) + (results[i] == null ? " is set on " : (" couldn't be set due to " + results[i]) + " on ") + vpn.getUuid());
                             if (results[i] == null) {
-                                if (!finals[i]) {
-                                    finals[i] = true;
+                                if (finals[indexUser] == null) {
+                                    finals[indexUser] = true;
                                 }
                             } else {
-                                finals[i] = false;
+                                finals[indexUser] = false;
                                 success = false;
                                 vpnTemp = vpn;
                             }
@@ -590,6 +602,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public Pair<List<? extends VpnUser>, Integer> searchForVpnUsers(ListVpnUsersCmd cmd) {
         String username = cmd.getUsername();
         Long id = cmd.getId();
+        String keyword = cmd.getKeyword();
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -605,6 +618,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), Op.IN);
 
         SearchCriteria<VpnUserVO> sc = sb.create();
@@ -612,6 +626,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         //list only active users
         sc.setParameters("state", State.Active, State.Add);
+
+        if(keyword != null){
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
 
         if (id != null) {
             sc.setParameters("id", id);

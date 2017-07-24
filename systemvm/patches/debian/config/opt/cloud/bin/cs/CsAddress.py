@@ -382,9 +382,9 @@ class CsIP:
                             "-A FIREWALL_%s " % self.address['public_ip'] +
                             "-m state --state RELATED,ESTABLISHED -j ACCEPT"])
             self.fw.append(["mangle", "",
-                            "-A FIREWALL_%s DROP" % self.address['public_ip']])
+                            "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
             self.fw.append(["mangle", "",
-                            "-A VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
+                            "-I VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
             self.fw.append(["nat", "",
@@ -392,8 +392,6 @@ class CsIP:
             self.fw.append(["mangle", "",
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
                             "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
-            self.fw.append(
-                ["mangle", "", "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
             self.fw.append(["filter", "",
                             "-A FORWARD -i %s -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
             self.fw.append(["filter", "",
@@ -484,10 +482,6 @@ class CsIP:
                             (guestNetworkCidr, self.dev, self.address['public_ip'])])
 
         if self.get_type() in ["public"]:
-            self.fw.append(["", "front",
-                            "-A FORWARD -o %s -d %s -j ACL_INBOUND_%s" % (
-                                self.dev, self.address['network'], self.dev)
-                            ])
             self.fw.append(
                 ["mangle", "", "-A FORWARD -j VPN_STATS_%s" % self.dev])
             self.fw.append(

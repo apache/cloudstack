@@ -28,6 +28,10 @@ public class CapacityResponse extends BaseResponse {
     @Param(description = "the capacity type")
     private Short capacityType;
 
+    @SerializedName(ApiConstants.NAME)
+    @Param(description="the capacity name")
+    private String capacityName;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the Zone ID")
     private String zoneId;
@@ -52,6 +56,10 @@ public class CapacityResponse extends BaseResponse {
     @Param(description = "the Cluster name")
     private String clusterName;
 
+    @SerializedName("capacityallocated")
+    @Param(description="the capacity currently in allocated")
+    private Long capacityAllocated;
+
     @SerializedName("capacityused")
     @Param(description = "the capacity currently in use")
     private Long capacityUsed;
@@ -70,6 +78,14 @@ public class CapacityResponse extends BaseResponse {
 
     public void setCapacityType(Short capacityType) {
         this.capacityType = capacityType;
+    }
+
+    public String getCapacityName() {
+        return capacityName;
+    }
+
+    public void setCapacityName(String capacityName) {
+        this.capacityName = capacityName;
     }
 
     public String getZoneId() {
@@ -118,6 +134,14 @@ public class CapacityResponse extends BaseResponse {
 
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
+    }
+
+    public Long getCapacityAllocated() {
+        return capacityAllocated;
+    }
+
+    public void setCapacityAllocated(Long capacityAllocated) {
+        this.capacityAllocated = capacityAllocated;
     }
 
     public Long getCapacityUsed() {

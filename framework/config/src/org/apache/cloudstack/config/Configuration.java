@@ -81,4 +81,10 @@ public interface Configuration {
      * parameter is no longer used and can be deleted.
      */
     Date getUpdated();
+
+    /**
+     *
+     * @return returns true if the configuration is encrypted else false.
+     */
+    boolean isEncrypted();
 }

@@ -169,6 +169,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private Future _scheduledFuture = null;
     private Future _heartbeat = null;
     private Future _sanity = null;
+    private boolean  usageSnapshotSelection = false;
 
     public UsageManagerImpl() {
     }
@@ -208,6 +209,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         String sanityCheckInterval = configs.get("usage.sanity.check.interval");
         String quotaEnable = configs.get("quota.enable.service");
         _runQuota = Boolean.valueOf(quotaEnable == null ? "false" : quotaEnable );
+        usageSnapshotSelection  = Boolean.valueOf(configs.get("usage.snapshot.virtualsize.select"));
         if (sanityCheckInterval != null) {
             _sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
@@ -1535,7 +1537,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         long snapId = event.getResourceId();
         if (EventTypes.EVENT_SNAPSHOT_CREATE.equals(event.getType())) {
-            snapSize = event.getSize();
+            if (usageSnapshotSelection){
+                snapSize =  event.getVirtualSize();
+            }else {
+                snapSize = event.getSize();
+            }
             zoneId = event.getZoneId();
         }
 

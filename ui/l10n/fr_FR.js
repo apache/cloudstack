@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "Propriétés de l'élément modifiées",
     "confirm.enable.s3": "Remplir les informations suivantes pour activer le support de stockage secondaire S3",
     "confirm.enable.swift": "Remplir les informations suivantes pour activer Swift",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Erreur: impossible de changer votre mot de passe car le mode LDAP est activé.",
+    "error.could.not.change.your.password.because.non.native.user": "Erreur: impossible de changer votre mot de passe car le mode LDAP est activé.",
     "error.could.not.enable.zone": "Impossible d'activer la zone",
     "error.installWizard.message": "Une erreur s'est produite ; vous pouvez retourner en arrière et corriger les erreurs",
     "error.invalid.username.password": "Identifiant ou mot de passe invalide",

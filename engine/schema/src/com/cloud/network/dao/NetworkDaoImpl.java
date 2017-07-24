@@ -24,8 +24,9 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.Event;
@@ -42,6 +43,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -56,7 +58,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 @DB()
-public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
+public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements NetworkDao {
     SearchBuilder<NetworkVO> AllFieldsSearch;
     SearchBuilder<NetworkVO> AccountSearch;
     SearchBuilder<NetworkVO> RelatedConfigSearch;
@@ -275,7 +277,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         return listBy(sc, null);
     }
 
-
     public List<NetworkVO> findBy(final TrafficType trafficType, final Mode mode, final BroadcastDomainType broadcastType, final long networkOfferingId, final long dataCenterId) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("trafficType", trafficType);
@@ -377,11 +378,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public String getNextAvailableMacAddress(final long networkConfigId) {
+    public String getNextAvailableMacAddress(final long networkConfigId, Integer zoneMacIdentifier) {
         final SequenceFetcher fetch = SequenceFetcher.getInstance();
-
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, networkConfigId);
-        seq = seq | _prefix << 40 | _rand.nextInt(Short.MAX_VALUE) << 16 & 0x00000000ffff0000l;
+        if(zoneMacIdentifier != null && zoneMacIdentifier.intValue() != 0 ){
+            seq = seq | _prefix << 40 | (long)zoneMacIdentifier << 32 | networkConfigId << 16 & 0x00000000ffff0000l;
+        }
+        else {
+            seq = seq | _prefix << 40 | _rand.nextInt(Short.MAX_VALUE) << 16 & 0x00000000ffff0000l;
+        }
         return NetUtils.long2Mac(seq);
     }
 
@@ -675,5 +680,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setJoinParameters("offerings", "isSystem", false);
         final List<Integer> results = customSearch(sc, null);
         return results.get(0);
+    }
+
+    @Override
+    public List<NetworkVO> listNetworkVO(List<Long> idset) {
+        final SearchCriteria<NetworkVO> sc_2 = createSearchCriteria();
+        final Filter searchFilter_2 = new Filter(NetworkVO.class, "id", false, null, null);
+        sc_2.addAnd("networkOfferingId", SearchCriteria.Op.IN, idset);
+        sc_2.addAnd("removed", SearchCriteria.Op.EQ, null);
+        return this.search(sc_2, searchFilter_2);
     }
 }

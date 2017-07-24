@@ -50,6 +50,12 @@
                                 return true;
                             }
                             return false;
+                        },
+                        isDisabled: function(args){
+                            if(args.context.instances[0].state == 'Stopped'){
+                                    return true;
+                            }
+                            return false;
                         }
                     },
                     quiescevm: {
@@ -1479,113 +1485,130 @@
                         label: 'label.migrate.instance.to.host',
                         compactLabel: 'label.migrate.to.host',
                         messages: {
-                            confirm: function(args) {
-                                return 'message.migrate.instance.to.host';
-                            },
                             notification: function(args) {
                                 return 'label.migrate.instance.to.host';
                             }
                         },
-                        createForm: {
-                            title: 'label.migrate.instance.to.host',
-                            desc: '',
-                            fields: {
-                                hostId: {
-                                    label: 'label.host',
-                                    validation: {
-                                        required: true
-                                    },
-                                    select: function(args) {
-                                        $.ajax({
-                                            url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.instances[0].id),
-                                            dataType: "json",
-                                            async: true,
-                                            success: function(json) {
-                                                if (json.findhostsformigrationresponse.host != undefined) {
-                                                    vmMigrationHostObjs = json.findhostsformigrationresponse.host;
-                                                    var items = [];
-                                                    $(vmMigrationHostObjs).each(function() {
-                                                        if (this.requiresStorageMotion == true) {
+                        action: {
+                            custom: cloudStack.uiCustom.migrate({
+                                listView: {
+                                    listView: {
+                                        id: 'availableHosts',
+                                        fields: {
+                                            availableHostName: {
+                                                label: 'label.name'
+                                            },
+                                            availableHostSuitability: {
+                                                 label: 'label.suitability',
+                                                 indicator: {
+                                                    'Suitable': 'suitable',
+                                                    'Suitable-Storage migration required': 'suitable suitable-storage-migration-required',
+                                                    'Not Suitable': 'notsuitable',
+                                                    'Not Suitable-Storage migration required': 'notsuitable notsuitable-storage-migration-required'
+                                                 }
+                                            },
+                                            cpuused: {
+                                                label: 'label.cpu.utilized'
+                                            },
+                                            memoryused: {
+                                                label: 'label.memory.used'
+                                            }
+                                        },
+                                        dataProvider: function(args) {
+                                             var data = {
+                                                page: args.page,
+                                                pagesize: pageSize
+                                            };
+                                            if (args.filterBy.search.value) {
+                                                data.keyword = args.filterBy.search.value;
+                                            }
+                                            $.ajax({
+                                                url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.instances[0].id),
+                                                data: data,
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    if (json.findhostsformigrationresponse.host != undefined) {
+                                                        vmMigrationHostObjs = json.findhostsformigrationresponse.host;
+                                                        var items = [];
+                                                        $(vmMigrationHostObjs).each(function() {
+                                                            var suitability = (this.suitableformigration ? "Suitable" : "Not Suitable");
+                                                            if (this.requiresStorageMotion == true) {
+                                                                suitability += ("-Storage migration required");
+                                                            }
                                                             items.push({
                                                                 id: this.id,
-                                                                description: (this.name + " (" + (this.suitableformigration ? "Suitable, " : "Not Suitable, ") + "Storage migration required)")
+                                                                availableHostName: this.name,
+                                                                availableHostSuitability: suitability,
+                                                                cpuused: this.cpuused,
+                                                                memoryused: (parseFloat(this.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB'
                                                             });
-
-                                                        } else {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: (this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")")
-                                                            });
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    } else if(args.page == 1) {
+                                                        args.response.success({
+                                                            data: null
+                                                        });
+                                                    } else {
+                                                         cloudStack.dialog.notice({
+                                                             message: _l('message.no.more.hosts.available')
+                                                         });
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var selectedHostObj;
+                                    if (args.context.selectedHost != null && args.context.selectedHost.length > 0) {
+                                        selectedHostObj = args.context.selectedHost[0];
+                                        if (selectedHostObj.requiresStorageMotion == true) {
+                                            $.ajax({
+                                                url: createURL("migrateVirtualMachineWithVolume&hostid=" + selectedHostObj.id + "&virtualmachineid=" + args.context.instances[0].id),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var jid = json.migratevirtualmachinewithvolumeresponse.jobid;
+                                                    args.response.success({
+                                                        _custom: {
+                                                            jobId: jid,
+                                                            getUpdatedItem: function(json) {
+                                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                            },
+                                                            getActionFilter: function() {
+                                                                return vmActionfilter;
+                                                            }
                                                         }
                                                     });
+                                                }
+                                            });
+                                        } else {
+                                            $.ajax({
+                                                url: createURL("migrateVirtualMachine&hostid=" + selectedHostObj.id + "&virtualmachineid=" + args.context.instances[0].id),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var jid = json.migratevirtualmachineresponse.jobid;
                                                     args.response.success({
-                                                        data: items
+                                                        _custom: {
+                                                            jobId: jid,
+                                                            getUpdatedItem: function(json) {
+                                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                            },
+                                                            getActionFilter: function() {
+                                                                return vmActionfilter;
+                                                            }
+                                                        }
                                                     });
-                                                } else {
-                                                    cloudStack.dialog.notice({
-                                                        message: _l('message.no.host.available')
-                                                    }); //Only a single host in the set up
                                                 }
-                                            }
-                                        });
+                                            });
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        action: function(args) {
-                            var selectedHostObj;
-                            if (vmMigrationHostObjs != null) {
-                                for (var i = 0; i < vmMigrationHostObjs.length; i++) {
-                                    if (vmMigrationHostObjs[i].id == args.data.hostId) {
-                                        selectedHostObj = vmMigrationHostObjs[i];
-                                        break;
-                                    }
-                                }
-                            }
-                            if (selectedHostObj == null)
-                                return;
-
-                            if (selectedHostObj.requiresStorageMotion == true) {
-                                $.ajax({
-                                    url: createURL("migrateVirtualMachineWithVolume&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.instances[0].id),
-                                    dataType: "json",
-                                    async: true,
-                                    success: function(json) {
-                                        var jid = json.migratevirtualmachinewithvolumeresponse.jobid;
-                                        args.response.success({
-                                            _custom: {
-                                                jobId: jid,
-                                                getUpdatedItem: function(json) {
-                                                    return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                                },
-                                                getActionFilter: function() {
-                                                    return vmActionfilter;
-                                                }
-                                            }
-                                        });
-                                    }
-                                });
-                            } else {
-                                $.ajax({
-                                    url: createURL("migrateVirtualMachine&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.instances[0].id),
-                                    dataType: "json",
-                                    async: true,
-                                    success: function(json) {
-                                        var jid = json.migratevirtualmachineresponse.jobid;
-                                        args.response.success({
-                                            _custom: {
-                                                jobId: jid,
-                                                getUpdatedItem: function(json) {
-                                                    return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                                },
-                                                getActionFilter: function() {
-                                                    return vmActionfilter;
-                                                }
-                                            }
-                                        });
-                                    }
-                                });
-                            }
+                            })
                         },
                         notification: {
                             poll: pollAsyncJobResult
@@ -2240,7 +2263,7 @@
                             if (isAdmin()) {
                                 hiddenFields = [];
                             } else {
-                                hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
+                                hiddenFields = ["hypervisor"];
                             }
 
                             if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
@@ -2358,12 +2381,7 @@
                             xenserverToolsVersion61plus: {
                                 label: 'label.Xenserver.Tools.Version61plus',
                                 isBoolean: true,
-                                isEditable: function () {
-                                    if (isAdmin())
-                                        return true;
-                                    else
-                                        return false;
-                                },
+                                isEditable: true,
                                 converter: cloudStack.converters.toBooleanText
                             },
 

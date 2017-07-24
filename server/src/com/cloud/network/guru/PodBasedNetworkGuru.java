@@ -20,6 +20,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.network.NetworkModel;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
@@ -53,6 +54,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     DataCenterDao _dcDao;
     @Inject
     StorageNetworkManager _sNwMgr;
+
     Random _rand = new Random(System.currentTimeMillis());
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Management};
@@ -123,7 +125,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         nic.setIPv4Address(ip.first());
-        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.second())));
+        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.second(), NetworkModel.MACIdentifier.value())));
         nic.setIPv4Gateway(pod.getGateway());
         nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());

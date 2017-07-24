@@ -25,6 +25,7 @@ from marvin.lib.base import (Account,
                              ServiceOffering,
                              Volume,
                              DiskOffering,
+                             VmSnapshot,
                              Template,
                              listConfigurations)
 from marvin.lib.common import (get_domain,list_isos,
@@ -44,6 +45,7 @@ class TestVMware(cloudstackTestCase):
             cls.testClient = super(TestVMware, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -266,5 +268,103 @@ class TestVMware(cloudstackTestCase):
         attachedIsoName=response[0].isoname;
         self.assertEqual(attachedIsoName, "vmware-tools.iso", "vmware-tools.iso not attached")
         return
+
+    @attr(tags=["advanced", "basic"], required_hardware="true")
+    def test3_attach_ISO_in_RHEL7OSVM(self):
+        """
+        @desc:Incorrect guest os mapping in vmware for Rhel7. Add a valid RHEL7 URL to execute this test case
+        Step1 :Register an RHEL 7 template
+        Step2 :Launch a VM
+        Step3: Try to attach VMware Tools ISO
+        Step4: Verify VMware tools ISO attached correctly
+        """
+        self.hypervisor = str(get_hypervisor_type(self.api_client)).lower()
+        if self.hypervisor != "vmware":
+            self.skipTest("This test can be run only on vmware")
+        self.services["Rhel7template"]["url"]="http://10.147.28.7/templates/rhel71.ova",
+        template = Template.register(
+            self.userapiclient,
+            self.services["Rhel7template"],
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            hypervisor=self.hypervisor
+        )
+        self.debug(
+            "Registered a template with format {} and id {}".format(
+                self.services["Rhel7template"]["format"],template.id)
+        )
+        template.download(self.userapiclient)
+        self.cleanup.append(template)
+        vm = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=template.id,
+            zoneid=self.zone.id
+        )
+        self.cleanup.append(vm)
+        response = VirtualMachine.list(self.userapiclient,id=vm.id)
+        status = validateList(response)
+        self.assertEqual(status[0],PASS,"list vm response returned invalid list")
+        list_default_iso_response = list_isos(
+            self.api_client,
+            name="vmware-tools.iso",
+            account="system",
+            isready="true"
+        )
+        status = validateList(list_default_iso_response)
+        self.assertEquals(
+                PASS,
+                status[0],
+                "ISO list is empty")
+        self.debug(
+            "Registered a ISO with name {}".format(list_default_iso_response[0].name))
+        try:
+            vm.attach_iso(self.userapiclient,list_default_iso_response[0])
+        except CloudstackAPIException  as e:
+            self.fail("Attached ISO failed : %s" % e)
+        response = VirtualMachine.list(self.userapiclient, id=vm.id)
+        status = validateList(response)
+        self.assertEqual(status[0], PASS,"list vm response returned invalid list")
+        attachedIsoName=response[0].isoname;
+        self.assertEqual(attachedIsoName, "vmware-tools.iso", "vmware-tools.iso not attached")
+        return
+
+    @attr(tags=["advanced", "basic"], required_hardware="true")
+    def test_04_check_vm_snapshot_creation_after_Instance_creation(self):
+        """
+        @summary: Test  if Snapshot creation is successful
+        after VM deployment
+        CLOUDSTACK-8830 : VM snapshot creation fails for 12 min
+
+        Step1: Create a VM with any Service offering
+        Step2: Create a VM snapshot
+        Step3: Verify is VM SS creation is failed
+        """
+
+        if self.hypervisor.lower() not in ['vmware']:
+            self.skipTest("This test case is only for vmware. Hence, skipping the test")
+        vm = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id
+        )
+
+        snapshot_created_1 = VmSnapshot.create(
+            self.userapiclient,
+            vm.id
+        )
+        self.assertIsNotNone(
+            snapshot_created_1,
+            "VM Snapshot creation failed"
+        )
+
 
 

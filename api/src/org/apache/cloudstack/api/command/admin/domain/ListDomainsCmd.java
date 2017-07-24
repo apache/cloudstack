@@ -16,10 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.domain;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -27,6 +32,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.domain.Domain;
+import com.cloud.exception.InvalidParameterValueException;
 
 @APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class, responseView = ResponseView.Restricted, entityType = {Domain.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -53,6 +59,12 @@ public class ListDomainsCmd extends BaseListCmd {
                description = "If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
     private Boolean listAll;
 
+    @Parameter(name = ApiConstants.DETAILS,
+               type = CommandType.LIST,
+               collectionType = CommandType.STRING,
+               description = "comma separated list of domain details requested, value can be a list of [ all, resource, min]")
+    private List<String> viewDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,6 +83,25 @@ public class ListDomainsCmd extends BaseListCmd {
 
     public boolean listAll() {
         return listAll == null ? false : listAll;
+    }
+
+    public EnumSet<DomainDetails> getDetails() throws InvalidParameterValueException {
+        EnumSet<DomainDetails> dv;
+        if (viewDetails == null || viewDetails.size() <= 0) {
+            dv = EnumSet.of(DomainDetails.all);
+        } else {
+            try {
+                ArrayList<DomainDetails> dc = new ArrayList<DomainDetails>();
+                for (String detail : viewDetails) {
+                    dc.add(DomainDetails.valueOf(detail));
+                }
+                dv = EnumSet.copyOf(dc);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " +
+                    EnumSet.allOf(DomainDetails.class));
+            }
+        }
+        return dv;
     }
 
     /////////////////////////////////////////////////////

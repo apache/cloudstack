@@ -314,9 +314,15 @@ public class NetUtilsTest {
 
     @Test
     public void testValidateGuestCidr() throws Exception {
-        final String guestCidr = "192.168.1.0/24";
+        final String[] validCidrs = {"10.1.1.1/16", "172.16.1.0/16", "192.168.1.0/24", "100.64.1.0/24"};
+        final String[] invalidCidrs = {"172.33.1.0/16", "100.128.1.0/10"};
 
-        assertTrue(NetUtils.validateGuestCidr(guestCidr));
+        for (String cidr: validCidrs) {
+            assertTrue(NetUtils.validateGuestCidr(cidr));
+        }
+        for (String cidr: invalidCidrs) {
+            assertFalse(NetUtils.validateGuestCidr(cidr));
+        }
     }
 
     @Test
@@ -518,6 +524,19 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testIsNetworkAWithinNetworkB() {
+        assertTrue(NetUtils.isNetworkAWithinNetworkB("192.168.30.0/24", "192.168.30.0/23"));
+        assertTrue(NetUtils.isNetworkAWithinNetworkB("192.168.30.0/24", "192.168.30.0/22"));
+        assertFalse(NetUtils.isNetworkAWithinNetworkB("192.168.30.0/23", "192.168.30.0/24"));
+        assertFalse(NetUtils.isNetworkAWithinNetworkB("192.168.30.0/22", "192.168.30.0/24"));
+        assertTrue(NetUtils.isNetworkAWithinNetworkB("192.168.28.0/24", "192.168.28.0/23"));
+        assertTrue(NetUtils.isNetworkAWithinNetworkB("192.168.28.0/24", "192.168.28.0/22"));
+        assertFalse(NetUtils.isNetworkAWithinNetworkB("192.168.28.0/23", "192.168.28.0/24"));
+        assertFalse(NetUtils.isNetworkAWithinNetworkB("192.168.28.0/22", "192.168.28.0/24"));
+        assertTrue(NetUtils.isNetworkAWithinNetworkB("192.168.30.0/24", "192.168.28.0/22"));
+    }
+
+    @Test
     public void testIsNetworksOverlapWithEmptyValues() {
         assertEquals(false, NetUtils.isNetworksOverlap("", null));
     }
@@ -552,6 +571,19 @@ public class NetUtilsTest {
 
         assertEquals(IPv6Address.fromString("2001:980:7936:0:c23f:d5ff:fe68:2808"),
                 NetUtils.EUI64Address("2001:980:7936::/64", "c0:3f:d5:68:28:08"));
+    }
+
+    @Test
+    public void testcreateSequenceBasedMacAddress(){
+        long mac1 = NetUtils.createSequenceBasedMacAddress(10l,10l);
+        assertEquals(10l,(mac1 & (0x0al<<32)) >> 32);
+        assertEquals(10l,mac1 & 0x0al);
+        assertEquals(30l, mac1>>40);
+
+        long mac2 = NetUtils.createSequenceBasedMacAddress(20l,15l);
+        assertEquals(15l, (mac2 & (0x0fl << 32)) >> 32);
+        assertEquals(20l, mac2 & 0x14l);
+        assertEquals(30l, mac1>>40);
     }
 
     @Test

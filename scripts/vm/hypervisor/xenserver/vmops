@@ -42,9 +42,10 @@ lib.setup_logging("/var/log/cloud/cloud.log")
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### CLOUD enter  %s ####" % name )
+        #command string is logged in SMlog, so method enter/exit logging into SMlog will help for debugging
+        util.SMlog("#### CLOUD enter  %s ####" % name )
         res = fn(*v, **k)
-        logging.debug("#### CLOUD exit  %s ####" % name )
+        util.SMlog("#### CLOUD exit  %s ####" % name )
         return res
     return wrapped
 
@@ -232,28 +233,51 @@ def deleteFile(session, args):
 
     return txt
 
+#using all the iptables chain names length to 24 because cleanup_rules groups the vm chain excluding -def,-eg
+#to avoid multiple iptables chains for single vm, there using length 24
 def chain_name(vm_name):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         if vm_name.endswith('untagged'):
             return '-'.join(vm_name.split('-')[:-1])
-    if len(vm_name) > 28:
-        vm_name = vm_name[0:27]
+    if len(vm_name) > 25:
+        vm_name = vm_name[0:24]
     return vm_name
 
 def chain_name_def(vm_name):
+    #iptables chain length max is 29 chars
+    if len(vm_name) > 25:
+        vm_name = vm_name[0:24]
+
     if vm_name.startswith('i-'):
         if vm_name.endswith('untagged'):
-            return '-'.join(vm_name.split('-')[:-2]) + "-def"
-        return '-'.join(vm_name.split('-')[:-1]) + "-def"
+            return '-'.join(vm_name.split('-')[:-1]) + "-def"
+        return vm_name + "-def"
 
     if len(vm_name) > 28:
         vm_name = vm_name[0:27]
     return vm_name
 
 def egress_chain_name(vm_name):
-    name = chain_name(vm_name) + "-eg"
-    if len(name) > 28:
-        name = name[0:27]
+    #iptables chain length max is 29 chars
+    name = chain_name(vm_name)
+    name = name+"-eg"
+    return name
+
+#chain name length is 14 because it has protocol and ports appends
+def chain_name_ipset(vm_name):
+    if vm_name.startswith('i-') or vm_name.startswith('r-'):
+        if vm_name.endswith('untagged'):
+            return ''.join(vm_name.split('')[:-1])
+        if len(vm_name) > 14:
+            vm_name = vm_name[0:13]
+    return vm_name
+
+def egress_chain_name_ipset(vm_name):
+    name = chain_name_ipset(vm_name) + "-e"
+    return name
+
+def ingress_chain_name_ipset(vm_name):
+    name = chain_name_ipset(vm_name)
     return name
 
 @echo
@@ -1109,21 +1133,37 @@ def cleanup_rules(session, args):
     hostrec = session.xenapi.host.get_record(thishost[0])
     vms = hostrec.get('resident_VMs')
     resident_vms = [session.xenapi.VM.get_name_label(x) for x in vms]
-    logging.debug('cleanup_rules: found %s resident vms on this host %s' % (len(resident_vms)-1, hostname[0]))
+    util.SMlog('cleanup_rules: resident_vms= %s' %resident_vms)
+    util.SMlog('cleanup_rules: found %s resident vms on this host %s' % (len(resident_vms)-1, hostname[0]))
 
-    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/'| sed 's/-eg//' | sort|uniq" % instance
+    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def//'| sed 's/-eg//' | sort|uniq"
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
     vmchains = [ch  for ch in chains if 1 in [ ch.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-']]]
-    logging.debug('cleanup_rules: found %s iptables chains for vms on this host %s' % (len(vmchains), hostname[0]))
+    util.SMlog('cleanup_rules: vmchains= %s' %vmchains)
+    util.SMlog('cleanup_rules: found %s iptables chains for vms on this host %s' % (len(vmchains), hostname[0]))
     cleaned = 0
     cleanup = []
     for chain in vmchains:
         vmname = chain
-        if vmname not in resident_vms:
+        vmpresent = False
+        #looping intentionally because if vmaname in resident_vms is not greedy.
+        #after trimming the vm names which more than 29 chars, resident vm name and iptables chain name is substring of
+        #of resident vm.
+        for rvm in resident_vms:
+            if vmname  in rvm:
+                vmpresent = True
+                break
+
+        if vmpresent is False:
             vmname = chain + "-untagged"
-            if vmname not in resident_vms:
-                logging.debug("vm " + chain + " is not running on this host, cleaning up")
-                cleanup.append(chain)
+            for rvm in resident_vms:
+                if vmname  in rvm:
+                    vmpresent = True
+                    break
+        #vm chain is present but vm is not running on the host. So remove the rules
+        if vmpresent is False:
+            logging.debug("vm " + chain + " is not running on this host, cleaning up")
+            cleanup.append(chain)
 
     for vm_name in cleanup:
         destroy_network_rules_for_vm(session, {'vmName':vm_name})
@@ -1411,10 +1451,14 @@ def network_rules(session, args):
 
         if token_type == 'E':
             vmchain = egress_chain_name(vm_name)
+            #ipset chain name
+            ipset_chain = egress_chain_name_ipset(vm_name)
             action = "RETURN"
             direction = "dst"
             egressrules = egressrules + 1
         else:
+            #ipset chain name
+            ipset_chain = ingress_chain_name_ipset(vm_name)
             vmchain = chain_name(vm_name)
             action = "ACCEPT"
             direction = "src"
@@ -1424,9 +1468,10 @@ def network_rules(session, args):
             allow_any = True
         port_range = start + ":" + end
         if cidrs:
-            ipsetname = vmchain + "_" + protocol + "_" + start + "_" + end
+            #create seperate ipset name
+            ipsetname = ipset_chain + "" + protocol[0:1] + "" + start + "_" + end
             if start == "-1":
-                ipsetname = vmchain + "_" + protocol + "_any"
+                ipsetname = ipset_chain + "_" + protocol[0:1] + "_any"
 
             if ipset(ipsetname, protocol, start, end, cidrs) == False:
                 logging.debug(" failed to create ipset for rule " + str(tokens))

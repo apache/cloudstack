@@ -171,6 +171,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setSize(templateSize);
         }
 
+        Long templatePhysicalSize = template.getPhysicalSize();
+        if (templatePhysicalSize > 0) {
+            templateResponse.setPhysicalSize(templatePhysicalSize);
+        }
+
         templateResponse.setChecksum(template.getChecksum());
         if (template.getSourceTemplateId() != null) {
             templateResponse.setSourceTemplateId(template.getSourceTemplateUuid());

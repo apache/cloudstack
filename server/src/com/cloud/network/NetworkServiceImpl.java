@@ -39,10 +39,10 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.router.VirtualRouter;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -181,7 +182,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
@@ -197,6 +197,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.network.dao.LoadBalancerDao;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -334,6 +335,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Inject
     NetworkDetailsDao _networkDetailsDao;
+
+    @Inject
+    LoadBalancerDao _loadBalancerDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -852,7 +856,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Can' remove the ip " + secondaryIp + "is associate with static NAT rule public IP address id " + publicIpVO.getId());
             }
 
-            if (_lbService.isLbRuleMappedToVmGuestIp(secondaryIp)) {
+            if (_loadBalancerDao.isLoadBalancerRulesMappedToVmGuestIp(vm.getId(), secondaryIp, network.getId())) {
                 s_logger.debug("VM nic IP " + secondaryIp + " is mapped to load balancing rule");
                 throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is mapped to load balancing rule");
             }
@@ -2018,7 +2022,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {
             Vpc vpc = _entityMgr.findById(Vpc.class, network.getVpcId());
-            _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()), null);
+            _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()), network.getNetworkACLId());
         }
 
         // don't allow to update network in Destroy state
@@ -2252,20 +2256,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         int resourceCount=1;
         if(updateInSequence && restartNetwork && _networkOfferingDao.findById(network.getNetworkOfferingId()).getRedundantRouter()
                 && (networkOfferingId==null || _networkOfferingDao.findById(networkOfferingId).getRedundantRouter()) && network.getVpcId()==null) {
-            _networkMgr.canUpdateInSequence(network);
+            _networkMgr.canUpdateInSequence(network, forced);
             NetworkDetailVO networkDetail =new NetworkDetailVO(network.getId(),Network.updatingInSequence,"true",true);
             _networkDetailsDao.persist(networkDetail);
             _networkMgr.configureUpdateInSequence(network);
             resourceCount=_networkMgr.getResourceCount(network);
-            //check if routers are in correct state before proceeding with the update
-            List<DomainRouterVO> routers=_routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER);
-            for(DomainRouterVO router :routers){
-                if(router.getRedundantState()== VirtualRouter.RedundantState.UNKNOWN){
-                    if(!forced){
-                        throw new CloudRuntimeException("Domain router: "+router.getInstanceName()+" is in unknown state, Cannot update network. set parameter forced to true for forcing an update");
-                    }
-                }
-            }
         }
         List<String > servicesNotInNewOffering = null;
         if(networkOfferingId != null)
@@ -2413,7 +2408,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 resourceCount--;
             } while(updateInSequence && resourceCount>0);
         }catch (Exception exception){
-             throw new CloudRuntimeException("failed to update network "+network.getUuid()+"due to "+exception.getMessage());
+             if(updateInSequence)
+                 _networkMgr.finalizeUpdateInSequence(network,false);
+             throw new CloudRuntimeException("failed to update network "+network.getUuid()+" due to "+exception.getMessage());
         }finally {
             if(updateInSequence){
                 if( _networkDetailsDao.findDetail(networkId,Network.updatingInSequence)!=null){
@@ -4145,6 +4142,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Account caller = CallContext.current().getCallingAccount();
         Long nicId = cmd.getNicId();
         long vmId = cmd.getVmId();
+        String keyword = cmd.getKeyword();
         Long networkId = cmd.getNetworkId();
         UserVmVO  userVm = _userVmDao.findById(vmId);
 
@@ -4155,7 +4153,26 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
 
         _accountMgr.checkAccess(caller, null, true, userVm);
-        return _networkMgr.listVmNics(vmId, nicId, networkId);
+        return _networkMgr.listVmNics(vmId, nicId, networkId, keyword);
+    }
+
+    @Override
+    public List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd cmd)
+    {
+        Account caller = CallContext.current().getCallingAccount();
+        Long nicId = cmd.getNicId();
+        long vmId = cmd.getVmId();
+        String keyword = cmd.getKeyword();
+        UserVmVO  userVm = _userVmDao.findById(vmId);
+
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Virtual mahine id does not exist");
+            ex.addProxyObject(Long.valueOf(vmId).toString(), "vmId");
+            throw ex;
+        }
+
+        _accountMgr.checkAccess(caller, null, true, userVm);
+        return _nicSecondaryIpDao.listSecondaryIpUsingKeyword(nicId, keyword);
     }
 
     public List<NetworkGuru> getNetworkGurus() {
@@ -4193,6 +4210,29 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         _ipAddressDao.update(id, ipVO);
         return _ipAddressDao.findById(id);
+    }
+
+    @Override
+    public AcquirePodIpCmdResponse allocatePodIp(Account ipOwner, String zoneId, String podId) throws ResourceAllocationException {
+
+        Account caller = CallContext.current().getCallingAccount();
+        long callerUserId = CallContext.current().getCallingUserId();
+        DataCenter zone = _entityMgr.findByUuid(DataCenter.class, zoneId);
+
+        if (zone == null)
+            throw new InvalidParameterValueException("Invalid zone Id ");
+        if (_accountMgr.checkAccessAndSpecifyAuthority(caller, zone.getId()) != zone.getId())
+            throw new InvalidParameterValueException("Caller does not have permission for this Zone" + "(" + zoneId + ")");
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+        return _ipAddrMgr.allocatePodIp(zoneId, podId);
+
+    }
+
+    @Override
+    public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
+        _ipAddrMgr.releasePodIp(ip.getId());
+        return true;
     }
 
 }

@@ -435,22 +435,22 @@
                                         var $target = $(this);
                                         var val = $target.val();
                                         var item = null;
-                                        if (item == null) {
+                                        if (item == null && args.data.templates.featuredtemplates != undefined) {
                                             item = $.grep(args.data.templates.featuredtemplates, function(elem) {
                                                 return elem.id == val;
                                             })[0];
                                         }
-                                        if (item == null) {
+                                        if (item == null && args.data.templates.communitytemplates != undefined) {
                                             item = $.grep(args.data.templates.communitytemplates, function(elem) {
                                                 return elem.id == val;
                                             })[0];
                                         }
-                                        if (item == null) {
+                                        if (item == null && args.data.templates.mytemplates!=undefined) {
                                             item = $.grep(args.data.templates.mytemplates, function(elem) {
                                                 return elem.id == val;
                                             })[0];
                                         }
-                                        if (item == null) {
+                                        if (item == null && args.data.templates.sharedtemplates!=undefined) {
                                             item = $.grep(args.data.templates.sharedtemplates, function(elem) {
                                                 return elem.id == val;
                                             })[0];
@@ -459,7 +459,7 @@
                                         if (!item) return true;
 
                                         var hypervisor = item['hypervisor'];
-                                        if (hypervisor == 'KVM') {
+                                        if (hypervisor == 'KVM' || hypervisor == 'XenServer' || hypervisor == 'VMware') {
                                             $step.find('.section.custom-size').show();
                                             $step.addClass('custom-disk-size');
                                         } else {

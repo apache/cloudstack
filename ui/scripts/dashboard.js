@@ -246,8 +246,6 @@
                             data: {
                                 fetchLatest: data.fetchLatest,
                                 sortBy: 'usage',
-                                page: 0,
-                                pageSize: (pageSize > 8? 8: pageSize)
                             },
                             success: function(json) {
                                 var capacities = json.listcapacityresponse.capacity ?

@@ -489,10 +489,7 @@ public enum Config {
             null),
 
     // Snapshots
-    SnapshotHourlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.hourly", "8", "Maximum hourly snapshots for a volume", null),
-    SnapshotDailyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.daily", "8", "Maximum daily snapshots for a volume", null),
-    SnapshotWeeklyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.weekly", "8", "Maximum weekly snapshots for a volume", null),
-    SnapshotMonthlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.monthly", "8", "Maximum monthly snapshots for a volume", null),
+
     SnapshotPollInterval(
             "Snapshots",
             SnapshotManager.class,
@@ -814,7 +811,14 @@ public enum Config {
             "600",
             "Time Interval to fetch the LB health check states (in sec)",
             null),
-
+    NCCCmdTimeOut(
+            "Advanced",
+            ManagementServer.class,
+            Long.class,
+            "ncc.command.timeout",
+            "600000", // 10 minutes
+            "Command Timeout Interval (in millisec)",
+            null),
     DirectAttachNetworkEnabled(
             "Advanced",
             ManagementServer.class,
@@ -864,7 +868,6 @@ public enum Config {
             "60000",
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
-    VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -1455,15 +1458,6 @@ public enum Config {
             "The default maximum secondary storage space (in GiB) that can be used for an account",
             null),
 
-    ResourceCountCheckInterval(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "resourcecount.check.interval",
-            "0",
-            "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task",
-            "Seconds"),
-
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
             "Advanced",
@@ -1498,24 +1492,6 @@ public enum Config {
             "agent.load.threshold",
             "0.7",
             "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening",
-            null),
-
-    JSONDefaultContentType(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "json.content.type",
-            "application/json; charset=UTF-8",
-            "Http response content type for JSON",
-            null),
-
-    EnableSecureSessionCookie(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "enable.secure.session.cookie",
-            "false",
-            "Session cookie's secure flag is enabled if true. Use this only when using HTTPS",
             null),
 
     DefaultMaxDomainUserVms("Domain Defaults", ManagementServer.class, Long.class, "max.domain.user.vms", "40", "The default maximum number of user VMs that can be deployed for a domain", null),

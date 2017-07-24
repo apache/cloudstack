@@ -146,6 +146,7 @@ class TestCreateRvRNetwork(cloudstackTestCase):
             cls.zone.id,
             cls.testdata["ostype"]
         )
+
         cls.testdata["small"]["zoneid"] = cls.zone.id
         cls.testdata["small"]["template"] = cls.template.id
 
@@ -1546,6 +1547,8 @@ class TestRvRRedundancy(cloudstackTestCase):
                 listall=True
             )
             retry = retry-1
+            if len(routers) < 2:
+               continue
             if not (routers[0].redundantstate == 'MASTER' or routers[1].redundantstate == 'MASTER'):
                 continue;
             if routers[0].redundantstate == 'MASTER':
@@ -1556,6 +1559,7 @@ class TestRvRRedundancy(cloudstackTestCase):
                master_router = routers[1]
                backup_router = routers[0]
                break
+            self.info("master_router: %s, backup_router: %s" % (master_router, backup_router))
         return master_router, backup_router
 
 

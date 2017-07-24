@@ -50,28 +50,29 @@ class DataBag:
         data = self.bdata
         if not os.path.exists(self.DPATH):
             os.makedirs(self.DPATH)
-        self.fpath = self.DPATH + '/' + self.key + '.json'
+        self.fpath = os.path.join(self.DPATH, self.key + '.json')
+
         try:
-            handle = open(self.fpath)
+            with open(self.fpath, 'r') as _fh:
+                logging.debug("Loading data bag type %s", self.key)
+                data = json.load(_fh)
         except IOError:
             logging.debug("Creating data bag type %s", self.key)
             data.update({"id": self.key})
-        else:
-            logging.debug("Loading data bag type %s",  self.key)
-            data = json.load(handle)
-            handle.close()
-        self.dbag = data
+        finally:
+            self.dbag = data
 
     def save(self, dbag):
         try:
-            handle = open(self.fpath, 'w')
+            with open(self.fpath, 'w') as _fh:
+                logging.debug("Writing data bag type %s", self.key)
+                json.dump(
+                    dbag, _fh,
+                    sort_keys=True,
+                    indent=2
+                )
         except IOError:
             logging.error("Could not write data bag %s", self.key)
-        else:
-            logging.debug("Writing data bag type %s", self.key)
-            logging.debug(dbag)
-        jsono = json.dumps(dbag, indent=4, sort_keys=True)
-        handle.write(jsono)
 
     def getDataBag(self):
         return self.dbag

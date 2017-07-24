@@ -105,14 +105,12 @@ public class DedicateClusterCmd extends BaseAsyncCmd {
         List<? extends DedicatedResources> result = dedicatedService.dedicateCluster(getClusterId(), getDomainId(), getAccountName());
         ListResponse<DedicateClusterResponse> response = new ListResponse<DedicateClusterResponse>();
         List<DedicateClusterResponse> clusterResponseList = new ArrayList<DedicateClusterResponse>();
-        if (result != null) {
-            for (DedicatedResources resource : result) {
-                DedicateClusterResponse clusterResponse = dedicatedService.createDedicateClusterResponse(resource);
-                clusterResponseList.add(clusterResponse);
-            }
-            response.setResponses(clusterResponseList);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+
+        // List of result should always contain single element as only one cluster will be associated with each cluster ID.
+        if (result != null && result.size() == 1) {
+            DedicateClusterResponse clusterResponse = dedicatedService.createDedicateClusterResponse(result.get(0));
+            clusterResponse.setResponseName(getCommandName());
+            this.setResponseObject(clusterResponse);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to dedicate cluster");
         }

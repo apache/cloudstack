@@ -38,6 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * The NetworkModel presents a read-only view into the Network data such as L2 networks,
@@ -46,6 +47,9 @@ import com.cloud.vm.VirtualMachine;
  * participants in the orchestration can use this interface to query the data.
  */
 public interface NetworkModel {
+
+    static final ConfigKey<Integer> MACIdentifier = new ConfigKey<Integer>("Advanced",Integer.class, "mac.identifier", "0",
+            "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is null which means this feature is disabled.Its scope is global.", true, ConfigKey.Scope.Global);
 
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs

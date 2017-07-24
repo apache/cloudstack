@@ -121,7 +121,7 @@ test_data = {
             "name": "LargeInstance",
             "displaytext": "LargeInstance",
             "cpunumber": 1,
-            "cpuspeed": 500,
+            "cpuspeed": 1024,
             "memory": 2048,
         },
         "hasmall": {
@@ -674,6 +674,54 @@ test_data = {
         "cidr": "0.0.0.0/0",
         "protocol": "TCP"
     },
+    "nw_off_ncc_SharedSP": {
+        "name": 'SharedSP',
+        "displaytext": 'SharedSP',
+        "guestiptype": 'Isolated',
+        "supportedservices":
+            'Dhcp,Dns,SourceNat,Lb,StaticNat',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "Lb": 'Netscaler',
+            "StaticNat": 'VirtualRouter'
+        }
+    },
+    "nw_off_ncc_DedicatedSP": {
+        "name": 'DedicatedSP',
+        "displaytext": 'DedicatedSP',
+        "guestiptype": 'Isolated',
+        "supportedservices":
+            'Dhcp,Dns,SourceNat,Lb,StaticNat',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "Lb": 'Netscaler',
+            "StaticNat": 'VirtualRouter'
+        }
+    },
+    "NCC": {
+        "NCCIP": '10.102.195.215',
+    },
+    "NSShared": {
+        "NSIP": '10.102.195.210',
+    },
+    "NSDedicated": {
+        "NSIP": '10.102.195.212'
+    },
+    "servicepackage_shared": {
+        "name": "SharedSP",
+    },
+    "servicepackage_dedicated": {
+        "name": "DedicatedSP",
+    },
+
     "nw_off_isolated_persistent_netscaler": {
         "name": 'Netscaler',
         "displaytext": 'Netscaler',
@@ -833,12 +881,39 @@ test_data = {
         "ostype": "CentOS 5.6 (64-bit)"
 
     },
+    "coreos_volume": {
+        "diskname": "Volume_core",
+        "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
+        "urlxen":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
+        "urlkvm": "http://dl.openvm.eu/cloudstack/coreos/x86_64/" \
+                         "coreos_production_cloudstack_image-kvm.qcow2.bz2",
+        "urlhyperv":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-hyperv.vhd.zip"
+        },
     "CentOS6.3template": {
         "displaytext": "Centos",
         "name": "Centos",
         "passwordenabled": False,
         "ostype": "CentOS 6.3 (64-bit)",
         "url": "http://people.apache.org/~sanjeev/centos63.ova",
+        "format": "OVA",
+        "ispublic": "true"
+    },
+    "CentOS7template": {
+        "displaytext": "Centos",
+        "name": "Centos",
+        "passwordenabled": False,
+        "isdynamicallyscalable":True,
+        "ostype": "CentOS 7",
+        "url": "http://dl.openvm.eu/cloudstack/centos/vanilla/7/x86_64/CentOS-7-x86_64-vanilla-xen.vhd.bz2",
+        "format": "VHD",
+        "ispublic": "true",
+        "hypervisor":"Xenserver"
+    },
+    "Rhel7template": {
+        "displaytext": "Rhel",
+        "name": "Rhel",
+        "passwordenabled": False,
+        "ostype": "Red Hat Enterprise Linux 7",
         "format": "OVA",
         "ispublic": "true"
     },
@@ -862,6 +937,15 @@ test_data = {
         "ispublic": "true",
         "hypervisor": "XenServer"
     },
+    "Windows Server 2012": {
+            "displaytext": "Windows Server 2012",
+            "name": "Windows Server 2012",
+            "passwordenabled": False,
+            "format": "OVA",
+            "ostype": "Windows Server 2012 (64-bit)",
+            "ispublic": "true",
+            "hypervisor": "Vmware"
+     },
     "privatetemplate": {
         "displaytext": "Public Template",
         "name": "Public template",
@@ -899,13 +983,6 @@ test_data = {
         "url": "http://people.apache.org/~sanjeev/Rhel6-64bit.ova",
         "format": "OVA",
         "ostype": "Red Hat Enterprise Linux 6.0 (64-bit)"
-    },
-    "templateregister": {
-        "displaytext": "xs",
-        "name": "xs",
-        "passwordenabled": False,
-        "url": "http://people.apache.org/~sanjeev/ttylinux_pv.vhd.bz2",
-        "format": "VHD"
     },
     "security_group": {"name": "custom_Sec_Grp"},
     "ingress_rule": {
@@ -1685,6 +1762,18 @@ test_data = {
                 "username": "",
                 "password": "",
             },
+            "link_ldap_details": {
+                "domain_name": "",
+                "accounttype": "",
+                "name": "",
+                "type": "",
+                "admin": "",
+                "linkLdapUsername": "",
+                "linkLdapPassword": "",
+                "linkLdapNestedUser": "",
+                "linkLdapNestedPassword": ""
+
+            },
             "ldap_configuration": {
                 "basedn": "",
                 "emailAttribute": "",
@@ -1708,7 +1797,7 @@ test_data = {
             "upload_volume": {
                 "diskname": "UploadVol",
                 "format": "VHD",
-                "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
+                "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                 "checksum": "",
             },
             "bootableIso":

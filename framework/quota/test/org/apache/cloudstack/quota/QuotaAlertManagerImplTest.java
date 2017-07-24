@@ -32,7 +32,6 @@ import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,8 +46,10 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaAlertManagerImplTest extends TestCase {
@@ -179,7 +180,11 @@ public class QuotaAlertManagerImplTest extends TestCase {
     public void testGetDifferenceDays() {
         Date now = new Date();
         assertTrue(QuotaAlertManagerImpl.getDifferenceDays(now, now) == 0L);
-        assertTrue(QuotaAlertManagerImpl.getDifferenceDays(now, new DateTime(now).plusDays(1).toDate()) == 1L);
+        Calendar c = Calendar.getInstance();
+        c.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Calendar c2 = (Calendar) c.clone();
+        c2.add(Calendar.DATE, 1);
+        assertEquals(1L, QuotaAlertManagerImpl.getDifferenceDays(c.getTime(), c2.getTime()));
     }
 
     @Test
