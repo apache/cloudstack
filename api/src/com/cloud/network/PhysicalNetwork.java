@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network;
 
+import com.cloud.exception.CloudException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.Identity;
@@ -37,40 +38,10 @@ public interface PhysicalNetwork extends Identity, InternalIdentity {
 
     public class IsolationMethod {
         protected static final String UNKNOWN_PROVIDER = "Unknown";
-        private static Set<IsolationMethod> registeredIsolationMethods = new HashSet<>();
-
-        /**
-         * gets a IsolationMethod object that defines this prefix and if any it returns the first one found that has a known provider. If none has a known provider
-         * it will return the one with the unknown provider. if none is found it return null.
-         *
-         * @param prfx
-         * @return
-         */
-        public static IsolationMethod getIsolationMethod(String prfx) {
-            IsolationMethod rc = null;
-            for (IsolationMethod method: registeredIsolationMethods) {
-                if (method.provider.equals(prfx)) {
-                    rc = method;
-                    if(! rc.getProvider().equals(UNKNOWN_PROVIDER)) {
-                        break;
-                    }
-                }
-            }
-            return rc;
-        }
-
-        public String getMethodPrefix() {
-            return methodPrefix;
-        }
-
-        public String getProvider() {
-            return provider;
-        }
+        static Set<IsolationMethod> registeredIsolationMethods = new HashSet<>();
 
         String methodPrefix;
         String provider;
-
-        // VLAN, L3, GRE, STT, BCF_SEGMENT, MIDO, SSP, VXLAN, ODL, L3VPN, VSP, VCS;
 
         public IsolationMethod(String prfx) {
             this(prfx, UNKNOWN_PROVIDER);
@@ -80,6 +51,52 @@ public interface PhysicalNetwork extends Identity, InternalIdentity {
             methodPrefix = prfx;
             provider = StringUtils.isNotBlank(prvdr)? prvdr : UNKNOWN_PROVIDER;
             registeredIsolationMethods.add(this);
+        }
+
+        /**
+         * gets a IsolationMethod object that defines this prefix and if any it returns the first one found that has a known provider. If none has a known provider
+         * it will return the one with the unknown provider. if none is found it return null.
+         *
+         * @param prfx
+         * @return
+         */
+        public static IsolationMethod getIsolationMethod(String prfx) throws IsolationMethodNotRegistered {
+            IsolationMethod rc = null;
+            for (IsolationMethod method: registeredIsolationMethods) {
+                if (method.methodPrefix.equals(prfx)) {
+                    rc = method;
+                    if(! rc.getProvider().equals(UNKNOWN_PROVIDER)) {
+                        break;
+                    }
+                }
+            }
+            if (rc == null) {
+                throw new IsolationMethodNotRegistered("No registration of prefix '" + prfx + "' found.");
+            }
+            return rc;
+        }
+
+        public static IsolationMethod getIsolationMethod(String prfx, String provider) throws IsolationMethodNotRegistered {
+            for (IsolationMethod method: registeredIsolationMethods) {
+                if (method.methodPrefix.equals(prfx) && method.provider.equals(provider)) {
+                    return method;
+                }
+            }
+            throw new IsolationMethodNotRegistered("No registration of prefix '" + prfx + "' for provider '" + provider + "' found.");
+        }
+
+        static class IsolationMethodNotRegistered extends CloudException {
+            IsolationMethodNotRegistered (String message) {
+                super(message);
+            }
+        }
+
+        public String getMethodPrefix() {
+            return methodPrefix;
+        }
+
+        public String getProvider() {
+            return provider;
         }
 
         @Override
@@ -99,14 +116,17 @@ public interface PhysicalNetwork extends Identity, InternalIdentity {
 
         @Override
         public String toString() {
-            return methodPrefix.toString();
+            return methodPrefix;
         }
 
         public static boolean remove(String prfx, String prvdr) {
-            if(prvdr == null || prvdr.isEmpty()) {
-                prvdr = UNKNOWN_PROVIDER;
+            prvdr = StringUtils.isNotBlank(prvdr)? prvdr : UNKNOWN_PROVIDER;
+
+            try {
+                return remove(getIsolationMethod(prfx, prvdr));
+            } catch (IsolationMethodNotRegistered isolationMethodNotRegistered) {
+                return false;
             }
-            return remove(new IsolationMethod(prfx, prvdr));
         }
         public static boolean remove(IsolationMethod method) {
             return registeredIsolationMethods.remove(method);
