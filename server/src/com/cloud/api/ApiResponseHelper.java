@@ -161,6 +161,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -3600,21 +3601,26 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVmJoinVO userVm = _entityMgr.findById(UserVmJoinVO.class, result.getInstanceId());
         List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOs = _nicExtraDhcpOptionDao.listByNicId(result.getId());
 
+/*1: nicUuid*/
         response.setId(result.getUuid());
+/*2: networkUuid*/
         response.setNetworkid(network.getUuid());
-
+/*3: vmId*/
         if (vm != null) {
             response.setVmId(vm.getUuid());
         }
 
         if (userVm != null){
             if (userVm.getTrafficType() != null) {
+/*4: trafficType*/
                 response.setTrafficType(userVm.getTrafficType().toString());
             }
             if (userVm.getGuestType() != null) {
+/*5: guestType*/
                 response.setType(userVm.getGuestType().toString());
             }
         }
+/*6: ipAddress*/
         response.setIpaddress(result.getIPv4Address());
 
         List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs
@@ -3624,6 +3630,40 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
 
+/*7: gateway*/
+        response.setGateway(result.getIPv4Gateway());
+/*8: netmask*/
+        response.setNetmask(result.getIPv4Netmask());
+/*9: networkName*/
+        if(userVm != null && userVm.getNetworkName() != null) {
+            response.setNetworkName(userVm.getNetworkName());
+        }
+/*10: macAddress*/
+        response.setMacAddress(result.getMacAddress());
+/*11: IPv6Address*/
+        if (result.getIPv6Address() != null) {
+            response.setIp6Address(result.getIPv6Address());
+        }
+/*12: IPv6Gateway*/
+        if (result.getIPv6Gateway() != null) {
+            response.setIp6Gateway(result.getIPv6Gateway());
+        }
+/*13: IPv6Cidr*/
+        if (result.getIPv6Cidr() != null) {
+            response.setIp6Cidr(result.getIPv6Cidr());
+        }
+/*14: deviceId*/
+        response.setDeviceId(String.valueOf(result.getDeviceId()));
+/*15: broadcastURI*/
+        if (result.getBroadcastUri() != null) {
+            response.setBroadcastUri(result.getBroadcastUri().toString());
+        }
+/*16: isolationURI*/
+        if (result.getIsolationUri() != null) {
+            response.setIsolationUri(result.getIsolationUri().toString());
+        }
+/*17: default*/
+        response.setIsDefault(result.isDefaultNic());
         if (result.getSecondaryIp()) {
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
             if (secondaryIps != null) {
@@ -3637,22 +3677,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setSecondaryIps(ipList);
             }
         }
-
-        response.setGateway(result.getIPv4Gateway());
-        response.setNetmask(result.getIPv4Netmask());
-        response.setMacAddress(result.getMacAddress());
-
-        if (result.getIPv6Address() != null) {
-            response.setIp6Address(result.getIPv6Address());
-        }
-
-        if (result.getIPv6Cidr() != null) {
-            response.setIp6Cidr(result.getIPv6Cidr());
-        }
-
-        response.setDeviceId(String.valueOf(result.getDeviceId()));
-
-        response.setIsDefault(result.isDefaultNic());
 
         if (result instanceof NicVO){
             if (((NicVO)result).getNsxLogicalSwitchUuid() != null){

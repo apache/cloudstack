@@ -58,6 +58,26 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJoinVO, UserVmResponse> implements UserVmJoinDao {
@@ -345,28 +365,48 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         long nic_id = uvo.getNicId();
         if (nic_id > 0) {
             NicResponse nicResponse = new NicResponse();
+/*1: nicUuid*/
             nicResponse.setId(uvo.getNicUuid());
-            nicResponse.setIpaddress(uvo.getIpAddress());
-            nicResponse.setGateway(uvo.getGateway());
-            nicResponse.setNetmask(uvo.getNetmask());
+/*2: networkUuid*/
             nicResponse.setNetworkid(uvo.getNetworkUuid());
-            nicResponse.setNetworkName(uvo.getNetworkName());
-            nicResponse.setMacAddress(uvo.getMacAddress());
-            nicResponse.setIp6Address(uvo.getIp6Address());
-            nicResponse.setIp6Gateway(uvo.getIp6Gateway());
-            nicResponse.setIp6Cidr(uvo.getIp6Cidr());
-            if (uvo.getBroadcastUri() != null) {
-                nicResponse.setBroadcastUri(uvo.getBroadcastUri().toString());
-            }
-            if (uvo.getIsolationUri() != null) {
-                nicResponse.setIsolationUri(uvo.getIsolationUri().toString());
-            }
+/*3: vmId makes no sense on a nested nic object */
+
             if (uvo.getTrafficType() != null) {
+/*4: trafficType*/
                 nicResponse.setTrafficType(uvo.getTrafficType().toString());
             }
             if (uvo.getGuestType() != null) {
+/*5: guestType*/
                 nicResponse.setType(uvo.getGuestType().toString());
             }
+/*6: ipAddress*/
+            nicResponse.setIpaddress(uvo.getIpAddress());
+/*7: gateway*/
+            nicResponse.setGateway(uvo.getGateway());
+/*8: netmask*/
+            nicResponse.setNetmask(uvo.getNetmask());
+/*9: networkName*/
+            nicResponse.setNetworkName(uvo.getNetworkName());
+/*10: macAddress*/
+            nicResponse.setMacAddress(uvo.getMacAddress());
+/*11: IPv6Address*/
+            nicResponse.setIp6Address(uvo.getIp6Address());
+/*12: IPv6Gateway*/
+            nicResponse.setIp6Gateway(uvo.getIp6Gateway());
+/*13: IPv6Cidr*/
+            nicResponse.setIp6Cidr(uvo.getIp6Cidr());
+/*14: deviceId*/
+// where do we find           nicResponse.setDeviceId(
+// this is probably not String.valueOf(uvo.getNicId())); as this is a db-id
+/*15: broadcastURI*/
+            if (uvo.getBroadcastUri() != null) {
+                nicResponse.setBroadcastUri(uvo.getBroadcastUri().toString());
+            }
+/*16: isolationURI*/
+            if (uvo.getIsolationUri() != null) {
+                nicResponse.setIsolationUri(uvo.getIsolationUri().toString());
+            }
+/*17: default*/
             nicResponse.setIsDefault(uvo.isDefaultNic());
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
             if (secondaryIps != null) {
