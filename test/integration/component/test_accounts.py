@@ -1649,10 +1649,6 @@ class TestUserAPIKeys(cloudstackTestCase):
             user.apikey,
             userkeys.apikey,
             "Check User api key")
-        self.assertEqual(
-            user.secretkey,
-            userkeys.secretkey,
-            "Check User having secret key")
 
         self.debug("Get test client with user keys")
         cs_api = self.testClient.getUserApiClient(
@@ -1664,10 +1660,6 @@ class TestUserAPIKeys(cloudstackTestCase):
             userkeys.apikey,
             new_keys.apikey,
             "Check API key is different")
-        self.assertNotEqual(
-            userkeys.secretkey,
-            new_keys.secretkey,
-            "Check secret key is different")
 
     @attr(tags=[
         "role",
