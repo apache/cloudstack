@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.domain.Domain;
@@ -123,9 +124,16 @@ public interface RegionManager {
     boolean deleteUser(DeleteUserCmd deleteUserCmd);
 
     /**
+     * Deletes user by Id
+     * @param moveUserCmd
+     * @return
+     */
+    boolean moveUser(MoveUserCmd moveUserCmd);
+
+    /**
      * update an existing domain
      *
-     * @param cmd
+     * @param updateDomainCmd
      *            - the command containing domainId and new domainName
      * @return Domain object if the command succeeded
      */
@@ -142,7 +150,7 @@ public interface RegionManager {
     /**
      * Update a user by userId
      *
-     * @param userId
+     * @param updateUserCmd
      * @return UserAccount object
      */
     UserAccount updateUser(UpdateUserCmd updateUserCmd);
@@ -150,7 +158,7 @@ public interface RegionManager {
     /**
      * Disables a user by userId
      *
-     * @param userId
+     * @param id
      *            - the userId
      * @return UserAccount object
      */

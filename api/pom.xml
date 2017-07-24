@@ -56,6 +56,11 @@
       <artifactId>cloud-framework-ca</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${cs.commons-lang3.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

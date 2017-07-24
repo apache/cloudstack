@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
 
@@ -111,9 +112,16 @@ public interface RegionService {
     boolean deleteUser(DeleteUserCmd deleteUserCmd);
 
     /**
+     * Deletes user by Id
+     * @param moveUserCmd
+     * @return true if delete was successful, false otherwise
+     */
+    boolean moveUser(MoveUserCmd moveUserCmd);
+
+    /**
      * update an existing domain
      *
-     * @param cmd
+     * @param updateDomainCmd
      *            - the command containing domainId and new domainName
      * @return Domain object if the command succeeded
      */

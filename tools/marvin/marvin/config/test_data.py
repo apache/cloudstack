@@ -70,6 +70,15 @@ test_data = {
             "url": 'http://10.147.60.15/42xescauto spaces/42xesc Clusters',
             "clustername": 'VMWare Cluster with Space in DC name',
         },
+    "user": {
+         "email": "user@test.com",
+         "firstname": "User",
+         "lastname": "User",
+         "username": "User",
+           # Random characters are appended for unique
+           # username
+         "password": "fr3sca",
+     },
     "small": {
         "displayname": "testserver",
         "username": "root",
