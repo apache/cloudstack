@@ -50,6 +50,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 @Local(value = {RoleService.class})
@@ -172,7 +173,12 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                             rolePermissionsDao.remove(rolePermission.getId());
                         }
                     }
-                    return roleDao.remove(role.getId());
+                    if (roleDao.remove(role.getId())) {
+                        RoleVO roleVO = roleDao.findByIdIncludingRemoved(role.getId());
+                        roleVO.setName(role.getName() + "-deleted-" + new Date());
+                        return roleDao.update(role.getId(), roleVO);
+                    }
+                    return false;
                 }
             });
         }
