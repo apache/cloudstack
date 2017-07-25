@@ -19,9 +19,12 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
+
 public class SecStorageVMSetupCommand extends Command {
     String[] allowedInternalSites = new String[0];
     String copyUserName;
+    @LogLevel(Log4jLevel.Off)
     String copyPassword;
 
     public SecStorageVMSetupCommand() {

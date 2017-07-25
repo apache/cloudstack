@@ -139,6 +139,8 @@ import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
+import com.cloud.agent.api.GetVmNetworkStatsAnswer;
+import com.cloud.agent.api.GetVmNetworkStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -407,6 +409,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((GetHostStatsCommand)cmd);
             } else if (clz == GetVmStatsCommand.class) {
                 answer = execute((GetVmStatsCommand)cmd);
+            } else if (clz == GetVmNetworkStatsCommand.class) {
+                answer = execute((GetVmNetworkStatsCommand) cmd);
             } else if (clz == GetVmDiskStatsCommand.class) {
                 answer = execute((GetVmDiskStatsCommand)cmd);
             } else if (clz == CheckHealthCommand.class) {
@@ -2022,6 +2026,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
             configCustomExtraOption(extraOptions, vmSpec);
 
+            // config for NCC
+            VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
+            if (vmType.equals(VirtualMachine.Type.NetScalerVm)) {
+                NicTO mgmtNic = vmSpec.getNics()[0];
+                OptionValue option = new OptionValue();
+                option.setKey("machine.id");
+                option.setValue("ip=" + mgmtNic.getIp() + "&netmask=" + mgmtNic.getNetmask() + "&gateway=" + mgmtNic.getGateway());
+                extraOptions.add(option);
+            }
+
             // config VNC
             String keyboardLayout = null;
             if (vmSpec.getDetails() != null)
@@ -3194,6 +3208,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(GetVmDiskStatsCommand cmd) {
         return new GetVmDiskStatsAnswer(cmd, null, null, null);
+    }
+
+    protected Answer execute(GetVmNetworkStatsCommand cmd) {
+        return new GetVmNetworkStatsAnswer(cmd, null, null, null);
     }
 
     protected Answer execute(CheckHealthCommand cmd) {

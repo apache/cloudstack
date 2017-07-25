@@ -568,6 +568,10 @@ cloudStack.docs = {
         desc: 'Number of guest networks/accounts that will share this device',
         externalLink: ''
     },
+    helpNetscalerServicePackages: {
+        desc: 'Choose the Netscaler Service Package you want to use.',
+        externalLink: ''
+    },
     // Add network offering
     helpNetworkOfferingName: {
         desc: 'Any desired name for the network offering',

@@ -214,6 +214,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
 
     public enum Type {
         User(false), DomainRouter(true), ConsoleProxy(true), SecondaryStorageVm(true), ElasticIpVm(true), ElasticLoadBalancerVm(true), InternalLoadBalancerVm(true),
+        NetScalerVm(true),
 
         /*
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no

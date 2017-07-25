@@ -895,6 +895,199 @@
                                 }
                             },
 
+                            sslCertificates: {
+                                title: 'label.sslcertificates',
+                                listView: {
+                                    id: 'sslCertificates',
+                                    
+                                    fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        },
+                                        id: {
+                                            label: 'label.certificateid'
+                                        }
+                                    },
+                                    
+                                    dataProvider: function(args) {
+                                        var data = {};
+                                        listViewDataProvider(args, data);
+                                        if (args.context != null) {
+                                            if ("accounts" in args.context) {
+                                                $.extend(data, {
+                                                    accountid: args.context.accounts[0].id
+                                                });
+                                            }
+                                        }
+                                        $.ajax({
+                                            url: createURL('listSslCerts'),
+                                            data: data,
+                                            success: function(json) {
+                                                var items = json.listsslcertsresponse.sslcert;
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    },
+                                    
+                                    actions: {
+                                        add: {
+                                            label: 'label.add.certificate',
+
+                                            messages: {
+                                                notification: function(args) {
+                                                    return 'label.add.certificate';
+                                                }
+                                            },
+
+                                            createForm: {
+                                                title: 'label.add.certificate',
+                                                fields: {
+                                                    name: {
+                                                        label: 'label.name',
+                                                        validation: {
+                                                            required: true
+                                                        }
+                                                    },
+                                                    certificate: {
+                                                        label: 'label.certificate.name',
+                                                        isTextarea: true,
+                                                        validation: {
+                                                            required: true
+                                                        },
+                                                    },
+                                                    privatekey: {
+                                                        label: 'label.privatekey.name',
+                                                        isTextarea: true,
+                                                        validation: {
+                                                            required: true
+                                                        }
+                                                    },
+                                                    certchain: {
+                                                        label: "label.chain",
+                                                        isTextarea: true,
+                                                        validation: {
+                                                            required: false
+                                                        }
+                                                    },
+                                                    password: {
+                                                        label: "label.privatekey.password",
+                                                        isPassword: true,
+                                                        validation: {
+                                                            required: false
+                                                        }
+                                                    }
+                                                }
+                                            },
+
+                                            action: function(args) {
+                                                var data = {
+                                                    name: args.data.name,
+                                                    certificate: args.data.certificate,
+                                                    privatekey: args.data.privatekey
+                                                };
+
+                                                if (args.data.certchain != null && args.data.certchain.length > 0) {
+                                                    $.extend(data, {
+                                                        certchain: args.data.certchain
+                                                    });
+                                                }
+
+                                                if (args.data.password != null && args.data.password.length > 0) {
+                                                    $.extend(data, {
+                                                        password: args.data.password
+                                                    });
+                                                }
+
+                                                $.ajax({
+                                                    url: createURL('uploadSslCert'),
+                                                    data: data,
+                                                    success: function(json) {
+                                                        var item = json.uploadsslcertresponse.sslcert;
+                                                        args.response.success({
+                                                            data: item
+                                                        });
+                                                    },
+                                                    error: function(json) {
+                                                        args.response.error(parseXMLHttpResponse(json));
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    },
+                                    
+                                    detailView: {
+                                        actions: {
+                                            remove: {
+                                                label: 'label.delete.sslcertificate',
+                                                messages: {
+                                                    confirm: function(args) {
+                                                        return 'message.delete.sslcertificate';
+                                                    },
+                                                    notification: function(args) {
+                                                        return 'label.delete.sslcertificate';
+                                                    }
+                                                },
+                                                action: function(args) {
+                                                    $.ajax({
+                                                        url: createURL('deleteSslCert'),
+                                                        data: {
+                                                            id: args.context.sslCertificates[0].id
+                                                        },
+                                                        success: function(json) {
+                                                            var items = json.deletesslcertresponse.sslcert;
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        },
+
+                                        tabs: {
+                                            details: {
+                                                title: 'label.certificate.details',
+                                                fields: {
+                                                    name: {
+                                                        label: 'label.name'
+                                                    },
+                                                    certificate: {
+                                                        label: 'label.certificate.name'
+                                                    },
+                                                    certchain: {
+                                                        label: 'label.chain'
+                                                    }
+                                                },
+
+                                                dataProvider: function(args) {
+                                                    var data = {};
+                                                
+                                                    if (args.context != null) {
+                                                        if ("sslCertificates" in args.context) {
+                                                            $.extend(data, {
+                                                                certid: args.context.sslCertificates[0].id
+                                                            });
+                                                        }
+                                                    }
+                                                    $.ajax({
+                                                        url: createURL('listSslCerts'),
+                                                        data: data,
+                                                        success: function(json) {
+                                                            var items = json.listsslcertsresponse.sslcert[0];
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+
                             // Granular settings for account
                             settings: {
                                 title: 'label.settings',
@@ -1267,9 +1460,8 @@
                                         var complete = args.complete;
                                         var context = args.context;
 
-                                        if (isLdapEnabled()) {
-                                            cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.ldap.is.enabled') });
-                                        } else {
+                                        var userSource = context.users[0].usersource;
+                                        if (userSource == "native") {
                                             cloudStack.dialog.createForm({
                                                 form: {
                                                     title: 'label.action.change.password',
@@ -1316,6 +1508,8 @@
                                                     });
                                                 }
                                             });
+                                        } else {
+                                            cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.non.native.user') });
                                         }
                                     }
                                 }
@@ -1754,7 +1948,11 @@
                                         select: function(args) {
                                             if (isAdmin() || isDomainAdmin()) {
                                                 $.ajax({
-                                                    url: createURL("listDomains&listAll=true"),
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
                                                     success: function(json) {
                                                         var items = [];
                                                         items.push({

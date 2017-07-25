@@ -93,6 +93,7 @@ env:
              smoke/misc/test_vm_sync"
 
     - TESTS="component/find_hosts_for_migration
+             component/test_accounts
              component/test_acl_isolatednetwork_delete
              component/test_acl_listsnapshot
              component/test_acl_listvm
@@ -146,7 +147,6 @@ env:
 #    - TESTS="component/test_project_resources"
 #    - TESTS="component/test_cpu_domain_limits"
 #    - TESTS="component/test_acl_isolatednetwork"
-#    - TESTS="component/test_accounts"
 #    - TESTS="component/test_organization_states"
 
 before_install: travis_wait 30 ./tools/travis/before_install.sh

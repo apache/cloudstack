@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "更改项目属性",
     "confirm.enable.s3": "请填写以下信息以启用对 S3 支持的二级存储的支持",
     "confirm.enable.swift": "请填写以下信息以启用对 SWIFT 的支持",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "错误。LDAP 处于启用状态，无法更改您的密码。",
+    "error.could.not.change.your.password.because.non.native.user": "错误。LDAP 处于启用状态，无法更改您的密码。",
     "error.could.not.enable.zone": "无法启用资源域",
     "error.installWizard.message": "出现问题；请返回并更正任何错误",
     "error.invalid.username.password": "用户名或密码无效",

@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "Endrede egenskaper",
     "confirm.enable.s3": "Vennligst fyll inn følgende informasjon for å aktivere støtte for S3-støttet sekundærlagring",
     "confirm.enable.swift": "Vennligst fyll inn følgende informasjon for å aktivere støtte for Swift",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Feil kunne ikke bytte ditt passord fordi LDAP er aktivert.",
+    "error.could.not.change.your.password.because.non.native.user": "Feil kunne ikke bytte ditt passord fordi LDAP er aktivert.",
     "error.could.not.enable.zone": "Kunne ikke aktivere sonen",
     "error.installWizard.message": "Noe gikk galt. Gå tilbake og korriger feilene.",
     "error.invalid.username.password": "Ugyldig brukernavn eller passord",

@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "Параметры элемента изменены",
     "confirm.enable.s3": "Заполните информацию для включения  S3-совместимого дополнительного хранилища",
     "confirm.enable.swift": "Заполните нижеследующую информацию для включения поддержи Swift",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Error could not change your password because LDAP is enabled.",
+    "error.could.not.change.your.password.because.non.native.user": "Error could not change your password because LDAP is enabled.",
     "error.could.not.enable.zone": "Не удалось включить зону",
     "error.installWizard.message": "Что-то не так. Вернитесь назад и исправьте ошибки.",
     "error.invalid.username.password": "Неправильній логин или пароль",

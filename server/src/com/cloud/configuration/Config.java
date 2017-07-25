@@ -811,7 +811,14 @@ public enum Config {
             "600",
             "Time Interval to fetch the LB health check states (in sec)",
             null),
-
+    NCCCmdTimeOut(
+            "Advanced",
+            ManagementServer.class,
+            Long.class,
+            "ncc.command.timeout",
+            "600000", // 10 minutes
+            "Command Timeout Interval (in millisec)",
+            null),
     DirectAttachNetworkEnabled(
             "Advanced",
             ManagementServer.class,
@@ -861,7 +868,6 @@ public enum Config {
             "60000",
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
-    VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -1451,15 +1457,6 @@ public enum Config {
             "400",
             "The default maximum secondary storage space (in GiB) that can be used for an account",
             null),
-
-    ResourceCountCheckInterval(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "resourcecount.check.interval",
-            "0",
-            "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task",
-            "Seconds"),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(

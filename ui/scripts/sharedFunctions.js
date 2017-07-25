@@ -1225,6 +1225,8 @@ cloudStack.converters = {
                 return _l('label.secondary.storage.vm');
             case 19:
                 return _l('label.gpu');
+            case 90:
+                return _l('label.num.cpu.cores');
         }
     },
 

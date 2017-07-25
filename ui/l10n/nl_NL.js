@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "Item eigenschappen gewijzigd",
     "confirm.enable.s3": "Vul de volgende informatie in om ondersteuning voor S3-aangestuurde Secundaire Opslag te activeren",
     "confirm.enable.swift": "Vul de volgende informatie in om ondersteuning voor Swift te activeren",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Fout. Kan wachtwoord niet wijzigen omdat LDAP is uitgeschakeld.",
+    "error.could.not.change.your.password.because.non.native.user": "Fout. Kan wachtwoord niet wijzigen omdat LDAP is uitgeschakeld.",
     "error.could.not.enable.zone": "Kon zone niet activeren",
     "error.installWizard.message": "Er ging iets mis; je kunt teruggaan om de eventuele fouten te herstellen",
     "error.invalid.username.password": "Ongeldige gebruikersnaam of wachtwoord",

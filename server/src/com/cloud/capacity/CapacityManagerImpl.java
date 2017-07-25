@@ -591,6 +591,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             offeringsMap.put(offering.getId(), offering);
         }
 
+        long usedCpuCore = 0;
+        long reservedCpuCore = 0;
         long usedCpu = 0;
         long usedMemory = 0;
         long reservedMemory = 0;
@@ -626,9 +628,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 usedCpu +=
                     ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
                         clusterCpuOvercommitRatio;
+                usedCpuCore += Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
             } else {
                 usedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;
                 usedCpu += ((so.getCpu() * so.getSpeed()) / cpuOvercommitRatio) * clusterCpuOvercommitRatio;
+                usedCpuCore += so.getCpu();
             }
         }
 
@@ -655,9 +659,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     reservedCpu +=
                         ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
                             clusterCpuOvercommitRatio;
+                    reservedCpuCore += Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
                 } else {
                     reservedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;
                     reservedCpu += (so.getCpu() * so.getSpeed() / cpuOvercommitRatio) * clusterCpuOvercommitRatio;
+                    reservedCpuCore += so.getCpu();
                 }
             } else {
                 // signal if not done already, that the VM has been stopped for skip.counting.hours,
@@ -678,6 +684,53 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         CapacityVO cpuCap = _capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU);
         CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
+        CapacityVO cpuCoreCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU_CORE);
+
+        if (cpuCoreCap != null) {
+            long hostTotalCpuCore = host.getCpus().longValue();
+
+            if (cpuCoreCap.getTotalCapacity() != hostTotalCpuCore) {
+                s_logger.debug("Calibrate total cpu for host: " + host.getId() + " old total CPU:"
+                        + cpuCoreCap.getTotalCapacity() + " new total CPU:" + hostTotalCpuCore);
+                cpuCoreCap.setTotalCapacity(hostTotalCpuCore);
+
+            }
+
+            if (cpuCoreCap.getUsedCapacity() == usedCpuCore && cpuCoreCap.getReservedCapacity() == reservedCpuCore) {
+                s_logger.debug("No need to calibrate cpu capacity, host:" + host.getId() + " usedCpuCore: " + cpuCoreCap.getUsedCapacity()
+                        + " reservedCpuCore: " + cpuCoreCap.getReservedCapacity());
+            } else {
+                if (cpuCoreCap.getReservedCapacity() != reservedCpuCore) {
+                    s_logger.debug("Calibrate reserved cpu core for host: " + host.getId() + " old reservedCpuCore:"
+                            + cpuCoreCap.getReservedCapacity() + " new reservedCpuCore:" + reservedCpuCore);
+                    cpuCoreCap.setReservedCapacity(reservedCpuCore);
+                }
+                if (cpuCoreCap.getUsedCapacity() != usedCpuCore) {
+                    s_logger.debug("Calibrate used cpu core for host: " + host.getId() + " old usedCpuCore:"
+                            + cpuCoreCap.getUsedCapacity() + " new usedCpuCore:" + usedCpuCore);
+                    cpuCoreCap.setUsedCapacity(usedCpuCore);
+                }
+            }
+            try {
+                _capacityDao.update(cpuCoreCap.getId(), cpuCoreCap);
+            } catch (Exception e) {
+                s_logger.error("Caught exception while updating cpucore capacity for the host " +host.getId(), e);
+            }
+        } else {
+            final long usedCpuCoreFinal = usedCpuCore;
+            final long reservedCpuCoreFinal = reservedCpuCore;
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId(), usedCpuCoreFinal, host.getCpus().longValue(),
+                            CapacityVO.CAPACITY_TYPE_CPU_CORE);
+                    capacity.setReservedCapacity(reservedCpuCoreFinal);
+                    capacity.setCapacityState(capacityState);
+                    _capacityDao.persist(capacity);
+                }
+            });
+        }
+
         if (cpuCap != null && memCap != null) {
             if (host.getTotalMemory() != null) {
                 memCap.setTotalCapacity(host.getTotalMemory());

@@ -148,7 +148,6 @@ public class RegisterTemplateCmd extends BaseCmd {
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
             required=false,
-            since="4.10.0.0",
             description="A list of zone ids where the template will be hosted. Use this parameter if the template needs " +
                     "to be registered to multiple zones in one go. Use zoneid if the template " +
                     "needs to be registered to only one zone." +

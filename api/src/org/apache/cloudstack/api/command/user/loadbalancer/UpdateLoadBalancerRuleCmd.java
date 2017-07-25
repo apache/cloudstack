@@ -64,6 +64,9 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB")
+    private String lbProtocol;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -86,6 +89,10 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
 
     public Boolean getDisplay() {
         return display;
+    }
+
+    public String getLbProtocol() {
+       return lbProtocol;
     }
 
     /////////////////////////////////////////////////////
