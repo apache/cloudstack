@@ -822,7 +822,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
             List<PhysicalNetworkVO> physicalNetworksInZone = _physicalNetworkDao.listByZone(physicalNetwork.getDataCenterId());
             for (PhysicalNetworkVO physicalNetworkInZone : physicalNetworksInZone) {
-                if (physicalNetworkInZone.getIsolationMethods().contains(PhysicalNetwork.IsolationMethod.getIsolationMethod("VSP").toString())) {
+                if (physicalNetworkInZone.getIsolationMethods().contains("VSP")) {
                     nuageVspDevices = _nuageVspDao.listByPhysicalNetwork(physicalNetworkInZone.getId());
                     break;
                 }
