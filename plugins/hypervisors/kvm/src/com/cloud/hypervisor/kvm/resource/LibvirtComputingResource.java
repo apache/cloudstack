@@ -1695,8 +1695,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
                     broadcastUriAllocatedToVM.put("LinkLocal", nicPos);
                 } else {
-                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) ||
-                            nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
+                    if (nic.getBrName() == null) {
                         broadcastUriAllocatedToVM.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), nicPos);
                     } else {
                         final String broadcastUri = getBroadcastUriFromBridge(nic.getBrName());
@@ -1749,8 +1748,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
                     broadcastUriAllocatedToVM.put("LinkLocal", nicPos);
                 } else {
-                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) ||
-                            nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
+                    if (nic.getBrName() == null) {
                         broadcastUriAllocatedToVM.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), nicPos);
                     } else {
                         final String broadcastUri = getBroadcastUriFromBridge(nic.getBrName());
