@@ -43,8 +43,7 @@ from marvin.lib.base import (Domain,
                              StaticNATRule,
                              Vpn,
                              VpnCustomerGateway,
-                             VpnUser,
-                             Project
+                             VpnUser
                              )
 
 from marvin.sshClient import SshClient
@@ -258,10 +257,6 @@ class Services:
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
                     "requireshvm": "True",
                 }
-            },
-            "project": {
-                "name": "Project",
-                "displaytext": "Test project"
             }
         }
 
@@ -1208,20 +1203,13 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
-        cls.project = Project.create(
-            cls.apiclient,
-            cls.services["project"],
-            account=cls.account.name,
-            domainid=cls.domain.id
-        )
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
         cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
                          cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
         cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
-        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), projectid=cls.project.id)
-        cls.template.zoneid=cls.zone.id
+        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
@@ -1231,7 +1219,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.project, cls.account, cls.compute_offering]
+        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _get_ssh_client(self, virtual_machine, services, retries):
@@ -1268,8 +1256,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             services=services,
             ipaddressid=public_ip.ipaddress.id,
             virtual_machine=vm,
-            networkid=network.id,
-            projectid=self.project.id
+            networkid=network.id
         )
         self.assertIsNotNone(
             nat_rule, "Failed to create NAT Rule for %s" % public_ip.ipaddress.ipaddress)
@@ -1343,7 +1330,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                 networkDomain="vpc1.vpn",
                 vpcofferingid=vpc_offering.id,
                 zoneid=self.zone.id,
-                projectid=self.project.id
+                account=self.account.name,
+                domainid=self.domain.id
             )
         except Exception as e:
             self.fail(e)
@@ -1361,7 +1349,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                 networkDomain="vpc2.vpn",
                 vpcofferingid=vpc_offering.id,
                 zoneid=self.zone.id,
-                projectid=self.project.id
+                account=self.account.name,
+                domainid=self.domain.id
             )
         except Exception as e:
             self.fail(e)
@@ -1379,7 +1368,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             ntwk1 = Network.create(
                 apiclient=self.apiclient,
                 services=self.services["network_1"],
-                projectid=self.project.id,
+                accountid=self.account.name,
+                domainid=self.account.domainid,
                 networkofferingid=networkOffering[0].id,
                 zoneid=self.zone.id,
                 vpcid=vpc1.id,
@@ -1398,7 +1388,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             ntwk2 = Network.create(
                 apiclient=self.apiclient,
                 services=self.services["network_2"],
-                projectid=self.project.id,
+                accountid=self.account.name,
+                domainid=self.account.domainid,
                 networkofferingid=networkOffering[0].id,
                 zoneid=self.zone.id,
                 vpcid=vpc2.id,
@@ -1417,7 +1408,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
-                                        projectid=self.project.id,
+                                        accountid=self.account.name,
+                                        domainid=self.account.domainid,
                                         serviceofferingid=self.compute_offering.id,
                                         networkids=[ntwk1.id],
                                         vpcid=vpc1.id,
@@ -1437,7 +1429,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             vm2 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
-                                        projectid=self.project.id,
+                                        accountid=self.account.name,
+                                        domainid=self.account.domainid,
                                         serviceofferingid=self.compute_offering.id,
                                         networkids=[ntwk2.id],
                                         vpcid=vpc2.id,
@@ -1500,7 +1493,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         # 5) Add VPN Customer gateway info
         src_nat_list = PublicIPAddress.list(
             self.apiclient,
-            projectid=self.project.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
             listall=True,
             issourcenat=True,
             vpcid=vpc1.id
@@ -1508,7 +1502,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         ip1 = src_nat_list[0]
         src_nat_list = PublicIPAddress.list(
             self.apiclient,
-            projectid=self.project.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
             listall=True,
             issourcenat=True,
             vpcid=vpc2.id
@@ -1522,7 +1517,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             vm2.public_ip = PublicIPAddress.create(
                 apiclient=self.apiclient,
                 zoneid=self.zone.id,
-                projectid=self.project.id,
+                account=self.account.name,
+                domainid=self.account.domainid,
                 services=services,
                 networkid=ntwk2.id,
                 vpcid=vpc2.id)
@@ -1555,12 +1551,24 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             services = self._get_vpn_config(c)
             self.logger.debug(services)
             customer1_response = VpnCustomerGateway.create(
-                self.apiclient, services, "Peer VPC1", ip1.ipaddress, vpc1.cidr, projectid=self.project.id)
+                self.apiclient,
+                services,
+                "Peer VPC1",
+                ip1.ipaddress,
+                vpc1.cidr,
+                account=self.account.name,
+                domainid=self.account.domainid)
             self.logger.debug("VPN customer gateway added for VPC %s enabled" % vpc1.id)
             self.logger.debug(vars(customer1_response))
 
             customer2_response = VpnCustomerGateway.create(
-                self.apiclient, services, "Peer VPC2", ip2.ipaddress, vpc2.cidr, projectid=self.project.id)
+                self.apiclient,
+                services,
+                "Peer VPC2",
+                ip2.ipaddress,
+                vpc2.cidr,
+                account=self.account.name,
+                domainid=self.account.domainid)
             self.logger.debug("VPN customer gateway added for VPC %s enabled" % vpc2.id)
             self.logger.debug(vars(customer2_response))
 
