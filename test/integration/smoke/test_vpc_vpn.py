@@ -1369,7 +1369,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                 apiclient=self.apiclient,
                 services=self.services["network_1"],
                 accountid=self.account.name,
-                domainid=self.account.domainid,
+                domainid=self.account.domain.id,
                 networkofferingid=networkOffering[0].id,
                 zoneid=self.zone.id,
                 vpcid=vpc1.id,
@@ -1389,7 +1389,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                 apiclient=self.apiclient,
                 services=self.services["network_2"],
                 accountid=self.account.name,
-                domainid=self.account.domainid,
+                domainid=self.account.domain.id,
                 networkofferingid=networkOffering[0].id,
                 zoneid=self.zone.id,
                 vpcid=vpc2.id,
@@ -1409,10 +1409,9 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
-                                        domainid=self.account.domainid,
+                                        domainid=self.account.domain.id,
                                         serviceofferingid=self.compute_offering.id,
-                                        networkids=[ntwk1.id],
-                                        vpcid=vpc1.id,
+                                        networkids=ntwk1.id,
                                         hypervisor=self.hypervisor
                                         )
         except Exception as e:
@@ -1430,10 +1429,9 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
-                                        domainid=self.account.domainid,
+                                        domainid=self.account.domain.id,
                                         serviceofferingid=self.compute_offering.id,
-                                        networkids=[ntwk2.id],
-                                        vpcid=vpc2.id,
+                                        networkids=ntwk2.id,
                                         hypervisor=self.hypervisor
                                         )
         except Exception as e:
@@ -1494,7 +1492,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domain.id,
             listall=True,
             issourcenat=True,
             vpcid=vpc1.id
@@ -1503,7 +1501,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domain.id,
             listall=True,
             issourcenat=True,
             vpcid=vpc2.id
@@ -1518,7 +1516,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                 apiclient=self.apiclient,
                 zoneid=self.zone.id,
                 account=self.account.name,
-                domainid=self.account.domainid,
+                domainid=self.account.domain.id,
                 services=services,
                 networkid=ntwk2.id,
                 vpcid=vpc2.id)
@@ -1557,7 +1555,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                 ip1.ipaddress,
                 vpc1.cidr,
                 account=self.account.name,
-                domainid=self.account.domainid)
+                domainid=self.account.domain.id)
             self.logger.debug("VPN customer gateway added for VPC %s enabled" % vpc1.id)
             self.logger.debug(vars(customer1_response))
 
@@ -1568,7 +1566,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
                 ip2.ipaddress,
                 vpc2.cidr,
                 account=self.account.name,
-                domainid=self.account.domainid)
+                domainid=self.account.domain.id)
             self.logger.debug("VPN customer gateway added for VPC %s enabled" % vpc2.id)
             self.logger.debug(vars(customer2_response))
 
