@@ -247,13 +247,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             // collect list of vm names for the alert email
             for (int i = 0; i < vms.size(); i++) {
                 VMInstanceVO vm = vms.get(i);
-                if (vm.getType() == VirtualMachine.Type.User) {
-                    reorderedVMList.add(vm);
-                } else {
-                    reorderedVMList.add(0, vm);
-                }
                 if (vm.isHaEnabled()) {
                     sb.append(" " + vm.getHostName());
+                    if (vm.getType() == VirtualMachine.Type.User) {
+                        reorderedVMList.add(vm);
+                    } else {
+                        reorderedVMList.add(0, vm);
+                    }
                 }
             }
         }
@@ -282,6 +282,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                         + hostId + " VM HA is done");
                 continue;
             }
+
             scheduleRestart(vm, investigate);
         }
     }
@@ -497,7 +498,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
                 boolean fenced = false;
                 if (alive == null) {
-                    s_logger.debug("Fencing off VM that we don't know the state of");
+                    s_logger.warn("Fencing off VM " + vm + " that we don't know the state of");
                     for (FenceBuilder fb : fenceBuilders) {
                         Boolean result = fb.fenceOff(vm, host);
                         s_logger.info("Fencer " + fb.getName() + " returned " + result);
@@ -521,7 +522,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 }
 
                 if (!fenced) {
-                    s_logger.debug("We were unable to fence off the VM " + vm);
+                    s_logger.warn("We were unable to fence off the VM " + vm);
                     _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() +
                         " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getHostName() + ", id: " + vmId +
                         " which was running on host " + hostDesc);
