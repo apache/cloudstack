@@ -99,7 +99,7 @@ class TestVR(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "routers"], required_hardware="true")
     def test_01_FTPModulesInVR(self):
         """
         @desc: Verify FTP modules are loaded in VR of advance zone

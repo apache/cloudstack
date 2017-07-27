@@ -226,7 +226,7 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         self.assertTrue(successResponse.success, "Failed to replace ACL list.")
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "networks", "vpc"], required_hardware="true")
     def test_01_vpc_privategw_acl(self):
         self.logger.debug("Creating a VPC offering..")
         vpc_off = VpcOffering.create(
@@ -266,7 +266,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         privateGw = self.createPvtGw(vpc, "10.0.3.99", "10.0.3.100", acl.id, vlan_1)
         self.replacePvtGwACL(acl.id, privateGw.id)
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "networks", "vpc"], required_hardware="true")
     def test_02_vpc_privategw_static_routes(self):
         self.logger.debug("Creating a VPC offering..")
         vpc_off = VpcOffering.create(
@@ -278,7 +278,7 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         self.performVPCTests(vpc_off)
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "networks", "vpc"], required_hardware="true")
     def test_03_vpc_privategw_restart_vpc_cleanup(self):
         self.logger.debug("Creating a VPC offering..")
         vpc_off = VpcOffering.create(
@@ -290,7 +290,7 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         self.performVPCTests(vpc_off, restart_with_cleanup = True)
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "networks", "vpc"], required_hardware="true")
     def test_04_rvpc_privategw_static_routes(self):
         self.logger.debug("Creating a Redundant VPC offering..")
         vpc_off = VpcOffering.create(
@@ -302,7 +302,7 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         self.performVPCTests(vpc_off)
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "networks", "vpc"], required_hardware="true")
     def _test_05_rvpc_privategw_check_interface(self):
         self.logger.debug("Creating a Redundant VPC offering..")
         vpc_off = VpcOffering.create(

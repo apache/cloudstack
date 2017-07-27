@@ -111,7 +111,7 @@ class TestStaticRoles(cloudstackTestCase):
         return -1
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_static_role_account_acls(self):
         """
             Tests allowed APIs for common account types

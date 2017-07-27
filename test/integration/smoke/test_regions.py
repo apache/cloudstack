@@ -64,7 +64,7 @@ class TestRegions(cloudstackTestCase):
             msg="Region creation failed"
         )
 
-    @attr(tags=["basic", "advanced"], required_hardware="false")
+    @attr(tags=["basic", "advanced", "quick-test"], required_hardware="false")
     def test_createRegion(self):
         """ Test for create region
         """

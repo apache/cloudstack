@@ -229,7 +229,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "networks"], required_hardware="false")
     def test_network_state_after_destroying_vms(self):
         # steps
         # 1. Create an isolated persistent network
@@ -298,7 +298,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.fail(exceptionMessage)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "networks"], required_hardware="false")
     def test_shared_network_offering_with_persistent(self):
         # steps
         # 1. create shared network offering with persistent field enabled
@@ -315,7 +315,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         except Exception:
             pass
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_persistent_network_offering_with_VPCVR_services(self):
         # steps
         # 1. create network offering with persistent field enabled and
@@ -333,7 +333,7 @@ class TestPersistentNetworks(cloudstackTestCase):
                 with VPCVR services: %s" %
                 e)
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_list_persistent_network_offering(self):
         # steps
         # 1. create isolated network offering with ispersistent True
@@ -359,7 +359,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         return
 
     @data("LB-VR", "LB-NS")
-    @attr(tags=["advanced", "advancedns"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="true")
     def test_upgrade_to_persistent_services_VR(self, value):
 
         # This test is run against two networks (one with LB as virtual router
@@ -507,7 +507,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.fail(exceptionMessage)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_upgrade_network_VR_to_PersistentRVR(self):
         # steps
         # 1. create isolated network with network offering which has
@@ -626,7 +626,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.fail(exceptionMessage)
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "networks"])
     def test_upgrade_network_NS_to_persistent_NS(self):
         # steps
         # 1. create isolated network with network offering which
@@ -754,7 +754,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         return
 
     @data("LB-VR", "LB-Netscaler")
-    @attr(tags=["advanced", "advancedns"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="true")
     def test_pf_nat_rule_persistent_network(self, value):
 
         # This test shall run with two scenarios, one with LB services
@@ -872,7 +872,7 @@ class TestPersistentNetworks(cloudstackTestCase):
                 (virtual_machine.id, ipaddress.ipaddress.ipaddress))
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_persistent_network_with_RVR(self):
         # steps
         # 1. create account and isolated network with network
@@ -982,7 +982,7 @@ class TestPersistentNetworks(cloudstackTestCase):
                 (virtual_machine.id, ipaddress.ipaddress.ipaddress))
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_vm_deployment_two_persistent_networks(self):
         # steps
         # 1. Deploy VM in two persistent networks
@@ -1143,7 +1143,7 @@ class TestPersistentNetworks(cloudstackTestCase):
                 (virtual_machine.id, ipaddress_nw_2.ipaddress.ipaddress))
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_vm_deployment_persistent_and_non_persistent_networks(self):
         # steps
         # 1. create account and create two networks in it
@@ -1264,7 +1264,7 @@ class TestPersistentNetworks(cloudstackTestCase):
                 (virtual_machine.id, ipaddress_nw_2.ipaddress.ipaddress))
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_change_persistent_network_to_non_persistent(self):
         # steps
         # 1. Create a persistent network and deploy VM in it
@@ -1372,7 +1372,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.fail(exceptionMessage)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_delete_account(self):
         # steps
         # 1. create persistent network and deploy VM in it
@@ -1461,7 +1461,7 @@ class TestPersistentNetworks(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_volume_delete_event_errorState(self):
         """
         @summary: Test volume delete event generation in error state condition
@@ -1683,7 +1683,7 @@ class TestAssignVirtualMachine(cloudstackTestCase):
         return
 
     @data("VR", "RVR", "LB-NS")
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "networks"])
     def test_assign_vm_different_account_VR(self, value):
 
         # This test shall be run with three types of persistent networks
@@ -1861,7 +1861,7 @@ class TestProjectAccountOperations(cloudstackTestCase):
         return
 
     @data("locked", "disabled")
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_account_operations(self, value):
         # steps
         # 1. create account and create persistent network in it
@@ -1943,7 +1943,7 @@ class TestProjectAccountOperations(cloudstackTestCase):
             "vlan must not be null for persistent network")
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_project_operations(self):
         # steps
         # 1. create account and create persistent network in it
@@ -2177,7 +2177,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
         return
 
     @data("true", "false")
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_cleanup_persistent_network(self, value):
         # steps
         # 1. Create account and create persistent network in it
@@ -2310,7 +2310,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
         return
 
     @data("true", "false")
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "networks"])
     def test_cleanup_persistent_network_lb_netscaler(self, value):
         # steps
         # 1. Create account and create persistent network in
@@ -2634,7 +2634,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         return
 
     @data("delete", "restart")
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_vpc_network_life_cycle(self, value):
         # steps
         # 1. Create account and create VPC network in the account
@@ -2788,7 +2788,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                 ipaddresses)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_vpc_force_delete_domain(self):
         # steps
         # 1. Create account and create VPC network in the account
@@ -2922,7 +2922,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         self.VerifyNetworkCleanup(persistent_network_2.id)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_vpc_delete_account(self):
         # steps
         # 1. Create account and create VPC network in the account
@@ -3142,7 +3142,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         return
 
     @unittest.skip("WIP")
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_vpc_private_gateway_static_route(self):
         # steps
         # 1. Create account and create VPC network in the account

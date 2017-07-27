@@ -434,7 +434,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                 )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "vpc"])
     def test_01_enable_maintenance_with_vpc_nw(self):
         """ Test enable Maintenance Mode on Hosts which have VPC elements
         """
@@ -523,7 +523,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "vpc"])
     def test_02_cancel_maintenance(self):
         """ Test cancel Maintenance Mode on the above Hosts + Migrate VMs Back
         """
@@ -612,7 +612,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         #  TODO: Check for the network connectivity
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "vpc"])
     def test_03_reconnect_host(self):
         """ Test reconnect Host which has VPC elements
         """

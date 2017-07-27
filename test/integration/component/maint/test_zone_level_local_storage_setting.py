@@ -395,7 +395,7 @@ class TestSystemVmLocalStorage(cloudstackTestCase):
                 "check local and shared service offerings for %s" %
                 value)
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic", "storage"])
     @data('consoleproxy', 'secondarystoragevm')
     def test_02_system_vm_storage(self, value):
         """ Check if system vms are honouring zone level setting
@@ -463,7 +463,7 @@ class TestSystemVmLocalStorage(cloudstackTestCase):
                 name="secstorage.service.offering")
 
     @attr(tags=["advanced", "basic"])
-    @data('consoleproxy', 'secondarystoragevm')
+    @data('consoleproxy', 'secondarystoragevm', "storage")
     def test_03_custom_so(self, value):
         """
         update global setting with system offering and check if it is being

@@ -78,7 +78,7 @@ class TestNestedVirtualization(cloudstackTestCase):
 
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm"], required_hardware="true")
     def test_nested_virtualization_vmware(self):
         """Test nested virtualization on Vmware hypervisor"""
         if self.hypervisor.lower() not in ["vmware"]:

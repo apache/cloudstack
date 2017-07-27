@@ -175,7 +175,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "templates"], required_hardware="true")
     def test_01_create_template(self):
         """Test create public & private template
         """
@@ -410,7 +410,7 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "templates"], required_hardware="false")
     def test_01_create_template_volume(self):
         """Test Create template from volume
         """
@@ -451,7 +451,7 @@ class TestTemplates(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "templates"], required_hardware="false")
     def test_03_delete_template(self):
         """Test Delete template
         """
@@ -506,7 +506,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed="slow")
-    @attr(tags=["advanced", "advancedns"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "templates"], required_hardware="true")
     def test_04_template_from_snapshot(self):
         """Create Template from snapshot
         """
@@ -648,7 +648,7 @@ class TestListTemplate(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
 
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "templates"], required_hardware="false")
     def test_01_list_templates_with_templatefilter_all_normal_user(self):
         """
             Test list templates with templatefilter=all is not permitted for normal user
@@ -664,7 +664,7 @@ class TestListTemplate(cloudstackTestCase):
             self.debug("ListTemplates API with templatefilter='all' is not permitted for normal user")
 
 
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "templates"], required_hardware="false")
     def test_02_list_templates_with_templatefilter_all_domain_admin(self):
         """
             Test list templates with templatefilter=all is not permitted for domain admin

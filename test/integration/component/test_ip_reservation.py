@@ -162,7 +162,7 @@ class TestIpReservation(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers"])
     def test_vm_create_after_reservation(self):
         """ Test creating VM in network after IP reservation
         # steps
@@ -206,7 +206,7 @@ class TestIpReservation(cloudstackTestCase):
             self.fail("VM creation failed, cannot validate the condition: %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers", "networks"])
     def test_vm_create_outside_cidr_after_reservation(self):
         """ Test create VM outside the range of reserved IPs
         # steps
@@ -238,7 +238,7 @@ class TestIpReservation(cloudstackTestCase):
             self.debug("exception as IP is outside of guestvmcidr %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers", "networks"])
     def test_update_cidr_multiple_vms_not_all_inclusive(self):
         """ Test reserve IP range such that one of the VM is not included
         # steps
@@ -274,7 +274,7 @@ class TestIpReservation(cloudstackTestCase):
             isolated_network.update(self.apiclient, guestvmcidr=guest_vm_cidr)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers", "networks"])
     def test_update_cidr_single_vm_not_inclusive(self):
         """ Test reserving IP range in network such that existing VM is outside the range
         # steps
@@ -305,7 +305,7 @@ class TestIpReservation(cloudstackTestCase):
         return
 
     @data(NAT_RULE, STATIC_NAT_RULE)
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "routers", "networks"], required_hardware="true")
     def test_nat_rules(self, value):
         """ Test NAT rules working with IP reservation
         # steps
@@ -368,7 +368,7 @@ class TestIpReservation(cloudstackTestCase):
         return
 
     @unittest.skip("Skip - WIP")
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers", "networks"])
     def test_RVR_network(self):
         """ Test IP reservation in network with RVR
         # steps
@@ -446,7 +446,7 @@ class TestIpReservation(cloudstackTestCase):
             self.fail("VM creation failed, cannot validate the condition: %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers", "networks"])
     def test_ip_reservation_in_multiple_networks_same_account(self):
         """ Test IP reservation in multiple networks created in same account
         # steps
@@ -608,7 +608,7 @@ class TestRestartNetwork(cloudstackTestCase):
         return
 
     @data(True, False)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers", "networks"])
     def test_restart_network_with_cleanup(self, value):
         """ Test IP reservation rules with network restart operation
         # steps
@@ -732,7 +732,7 @@ class TestUpdateIPReservation(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @data("existingVmInclusive", "existingVmExclusive")
+    @data("existingVmInclusive", "existingVmExclusive", "routers", "networks")
     @attr(tags=["advanced"])
     def test_update_network_guestvmcidr(self, value):
         """ Test updating guest vm cidr of the network after
@@ -882,7 +882,7 @@ class TestRouterOperations(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers", "networks"])
     def test_reservation_after_router_restart(self):
         """ Test IP reservation working before and after router is restarted
         # steps
@@ -918,7 +918,7 @@ class TestRouterOperations(cloudstackTestCase):
         self.assertEqual(networks[0].cidr, guest_vm_cidr, "guestvmcidr should match after router reboot")
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "routers", "networks"])
     def test_destroy_recreate_router(self):
         """ Test IP reservation working after destroying and recreating router
         # steps
@@ -1062,7 +1062,7 @@ class TestFailureScnarios(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "routers", "networks"], required_hardware="false")
     def test_network_not_implemented(self):
         # steps
         # 1. update guestvmcidr of isolated network (non persistent)
@@ -1081,7 +1081,7 @@ class TestFailureScnarios(cloudstackTestCase):
             isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "routers", "networks"], required_hardware="false")
     def test_vm_create_after_reservation(self):
         # steps
         # 1. create vm in persistent isolated network with ip in guestvmcidr
@@ -1140,7 +1140,7 @@ class TestFailureScnarios(cloudstackTestCase):
             self.skipTest("VM creation fails, cannot validate the condition: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "routers", "networks"], required_hardware="false")
     def test_reservation_after_router_restart(self):
         # steps
         # 1. update guestvmcidr of persistent isolated network
@@ -1193,7 +1193,7 @@ class TestFailureScnarios(cloudstackTestCase):
         self.assertEqual(networks[0].cidr, guest_vm_cidr, "guestvmcidr should match after router reboot")
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "routers", "networks"], required_hardware="false")
     def test_vm_create_outside_cidr_after_reservation(self):
         # steps
         # 1. update guestvmcidr of persistent isolated network

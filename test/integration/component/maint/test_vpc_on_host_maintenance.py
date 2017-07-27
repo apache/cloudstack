@@ -194,7 +194,7 @@ class TestVPCHostMaintenance(cloudstackTestCase):
         self.debug("VPC network validated - %s" % network.name)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "vpc"])
     def test_01_create_vpc_host_maintenance(self):
         """ Test VPC when host is in maintenance mode
         """

@@ -171,7 +171,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             )
 		
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', 'deploy-vm'], required_hardware="true")
     def test_deploy_vgpu_enabled_vm(self):
         """Test Deploy Virtual Machine
 
@@ -265,7 +265,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.debug("Warning! Exception in tearDown: %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", 'deploy-vm'])
     def test_3d_gpu_support(self):
         """Test 3D GPU support
 

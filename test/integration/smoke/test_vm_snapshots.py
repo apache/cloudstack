@@ -112,7 +112,7 @@ class TestVmSnapshot(cloudstackTestCase):
     def tearDown(self):
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "quick-test", "deploy-vm"], required_hardware="true")
     def test_01_create_vm_snapshots(self):
         """Test to create VM snapshots
         """
@@ -163,7 +163,7 @@ class TestVmSnapshot(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_02_revert_vm_snapshots(self):
         """Test to revert VM snapshots
         """
@@ -250,7 +250,7 @@ class TestVmSnapshot(cloudstackTestCase):
             "Check the random data is equal with the ramdom file!"
         )
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_03_delete_vm_snapshots(self):
         """Test to delete vm snapshots
         """
@@ -417,7 +417,7 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             "Check Memory(kb) for service offering"
         )
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "smoke", "deploy-vm"], required_hardware="true")
     def test_change_service_offering_for_vm_with_snapshots(self):
         """Test to change service offering for instances with vm snapshots
         """

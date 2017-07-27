@@ -217,7 +217,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
             self.fail("Expected an exception to be thrown, failing")
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "quick-test"], required_hardware="false")
     def test_oobm_configure_default_driver(self):
         """
             Tests out-of-band management configuration with valid data
@@ -295,7 +295,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
             self.fail("Expected an exception to be thrown, failing")
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "quick-test"], required_hardware="false")
     def test_oobm_enable_feature_valid(self):
         """
             Tests out-of-band management host enable feature with
@@ -308,7 +308,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         self.assertEqual(response.enabled, True)
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "quick-test"], required_hardware="false")
     def test_oobm_disable_feature_valid(self):
         """
             Tests out-of-band management host disable feature with
@@ -408,7 +408,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         self.assertEqual(response.powerstate, expected)
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "quick-test"], required_hardware="false")
     def test_oobm_issue_power_status(self):
         """
             Tests out-of-band management issue power action
@@ -444,7 +444,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         self.assertIssueCommandState('CYCLE', 'On')
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "quick-test"], required_hardware="false")
     def test_oobm_issue_power_reset(self):
         """
             Tests out-of-band management issue power reset action

@@ -170,7 +170,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
             return [FAIL, e]
         return [PASS, None]
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_01_deploy_vm_domain_limit_reached(self):
         """Test Try to deploy VM with admin account where account has not used
             the resources but @ domain they are not available
@@ -207,7 +207,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
             template.delete(self.userapiclient)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_02_deploy_vm_account_limit_reached(self):
         """Test Try to deploy VM with admin account where account has used
             the resources but @ domain they are available
@@ -244,7 +244,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
             template.delete(self.userapiclient)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_03_deploy_vm_project_limit_reached(self):
         """Test TTry to deploy VM with admin account where account has not used
         the resources but @ project they are not available

@@ -343,7 +343,7 @@ class TestStorageMigration(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "storage"], required_hardware="true")
     def test_01_migrate_root_and_data_disk_nonlive(self):
         """ Test migrate Volume (root and data disk)
 
@@ -1092,7 +1092,7 @@ class TestStorageMigration(cloudstackTestCase):
                 ), None, "VM list should be empty")
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "storage"], required_hardware="true")
     def test_02_migration_nonlive_xenserver_supported(self):
         """ Test migrate Volume (root and data disk) for Hypervisor Xenserver
 
@@ -1551,7 +1551,7 @@ class TestStorageMigration(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "storage"], required_hardware="true")
     def test_03_migrate_root_and_data_disk_nonlive_cwps_vmware(self):
         """ Test migrate Volume (root and data disk)
 
@@ -2016,7 +2016,7 @@ class TestStorageMigration(cloudstackTestCase):
                 ), None, "VM list should be empty")
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "storage"], required_hardware="true")
     def test_04_migrate_root_and_data_disk_nonlive_zwps_vmware(self):
         """ Test migrate Volume (root and data disk)
 
@@ -2364,7 +2364,7 @@ class NegativeTestStorageMigration(cloudstackTestCase):
         except Exception as e:
             self.exceptionList.append(e)
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "storage"], required_hardware="true")
     def test_01_migrate_data_disk_negative_test(self):
         """ Negative test cases
 
@@ -2724,7 +2724,7 @@ class TestLiveStorageMigration(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "storage"], required_hardware="true")
     def test_01_migrate_live(self):
         """ Test migrate Volume (root and data disk)
 
@@ -2924,7 +2924,7 @@ class TestLiveStorageMigration(cloudstackTestCase):
     @unittest.skip(
         "Requires setup with 2 pods - Each pod having 2 clusters. \
             Yet to be tested")
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "storage"], required_hardware="true")
     def test_02_migration_live_different_pods(self):
         """ Test migrate Volume (root and data disk)
 
@@ -3755,7 +3755,8 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             "advanced",
             "basic",
             "vmware",
-            "vmfs"],
+            "vmfs",
+            "storage"],
         required_hardware="True")
     def test_01_migrate_root_and_data_disk_live(self):
         """

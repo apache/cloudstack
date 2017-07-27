@@ -33,7 +33,6 @@ from marvin.codes import PASS
 
 
 class TestDeployVMFromISO(cloudstackTestCase):
-
     @classmethod
     def setUpClass(cls):
 
@@ -106,7 +105,8 @@ class TestDeployVMFromISO(cloudstackTestCase):
             "eip",
             "advancedns",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_deploy_vm_from_iso(self):
         """Test Deploy Virtual Machine from ISO

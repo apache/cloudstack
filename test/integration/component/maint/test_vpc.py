@@ -278,7 +278,7 @@ class TestVPC(cloudstackTestCase):
         sshClient.execute(command)
         return
 
-    @attr(tags=["advanced", "intervlan", "dvs", "test"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "dvs", "test", "vpc"], required_hardware="true")
     def test_01_create_tier_Vmxnet3(self):
         """
             Test to create vpc tier with nic type as Vmxnet3

@@ -223,7 +223,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             # cls.k200_vgpu_service_offering
         ]
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def setUp(self):
         self.testdata = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
@@ -247,7 +247,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return(vgpucapacity)
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def vgpu_serviceoffering_creation(self, gtype, nvidiamodel):
         if gtype == "nonvgpuoffering" and nvidiamodel == "None":
             self.service_offering = ServiceOffering.create(
@@ -308,7 +308,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             )
         return(self.service_offering)
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def check_for_vGPU_resource(
             self,
             hostid,
@@ -382,7 +382,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def deploy_vGPU_windows_vm(self, vgpuofferingid, vgput):
         """
         Validate vGPU K1 windows instances
@@ -441,7 +441,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             )
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def delete_vgpu_service_offering(self, serviceoffering):
         """
         delete vGPU Service Offering
@@ -460,7 +460,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def check_for_vm(self, vgpucard, vgpuofferingid, vmid):
         list_vm_response = list_virtual_machines(
             self.apiclient,
@@ -488,7 +488,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                         (vm.id, vgpucard))
         return(list_vm_response[0])
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def destroy_vm(self):
         """Destroy Virtual Machine
         """
@@ -518,7 +518,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def stop_vm(self):
         """Stop Virtual Machine
         """
@@ -529,7 +529,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             self.fail("Failed to stop VM: %s" % e)
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def start_vm(self):
         """Start Virtual Machine
         """
@@ -564,7 +564,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def serviceoffering_upgrade(
             self,
             sourcetype,
@@ -614,7 +614,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         self.destroy_vm()
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def vm_snapshot_serviceoffering_upgrade(
             self,
             sourcetype,
@@ -664,7 +664,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         self.destroy_vm()
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def deploy_vm(self, type, model):
 
         self.vgpuoffering = self.vgpu_serviceoffering_creation(type, model)
@@ -1351,7 +1351,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         self.verify_vm(vm_vgpu_card)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def vm_snapshot_vgpu(
             self,
             vmcard,
@@ -1472,7 +1472,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                 self.fail(
                     "list host details with K1 Passthrough vgpu are not correct")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_02_create_deploy_windows_vm_with_k100_vgpu_service_offering(self):
         """Test to create and deploy vm with K100 vGPU service offering"""
 
@@ -1488,7 +1488,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "GRID K100",
             "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_03_create_deploy_windows_vm_with_k120q_vgpu_service_offering(
             self):
         """Test to create and deploy vm with K120Q vGPU service offering"""
@@ -1505,7 +1505,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "GRID K120Q",
             "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_04_create_deploy_windows_vm_with_k140q_vgpu_service_offering(
             self):
         """Test to create and deploy vm with K140Q vGPU service offering"""
@@ -1522,7 +1522,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "GRID K140Q",
             "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_05_create_deploy_windows_vm_with_k1_passthrough_vgpu_service_offering(
             self):
         """Test to create and deploy vm with K1 passthrough vGPU service offering"""
@@ -1539,7 +1539,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "passthrough",
             "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_06_create_deploy_windows_vm_with_k2_passthrough_vgpu_service_offering(
             self):
         """Test to create and deploy vm with K2 pasthrough vGPU service offering"""
@@ -1556,7 +1556,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "passthrough",
             "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_07_create_deploy_windows_vm_with_k260q_vgpu_service_offering(
             self):
         """Test to create and deploy vm with K260Q vGPU service offering"""
@@ -1573,7 +1573,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "GRID K260Q",
             "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_08_create_deploy_windows_vm_with_k240q_vgpu_service_offering(
             self):
         """   Test to create and deploy vm with K240Q vGPU service offering """
@@ -1590,7 +1590,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "GRID K240Q",
             "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_09_create_deploy_windows_vm_with_k220q_vgpu_service_offering(
             self):
         """  Test to create and deploy vm with K220Q vGPU service offering """
@@ -1607,7 +1607,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "GRID K220Q",
             "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_10_create_deploy_windows_vm_with_k200_vgpu_service_offering(self):
         """   Test to create and deploy vm with K200 vGPU service offering  """
 
@@ -1623,7 +1623,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "GRID K200",
             "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_11_add_nonvgpu_host_to_vgpucluster(self):
         """   Test to add non vGPU host to an existing cluster  """
         countx = 0
@@ -1733,7 +1733,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                 # Cleanup Host
         self.cleanup.append(nongpuhost)
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_12_validate_deployed_vGPU_windows_vm(self):
         """ Test deploy virtual machine
         """
@@ -1754,7 +1754,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         self.__class__.vmlifecycletest = 1
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_13_stop_vGPU_windows_vm(self):
         """ Test stop virtual machine
         """
@@ -1773,7 +1773,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_14_start_vGPU_windows_vm(self):
         """ Test start virtual machine
         """
@@ -1792,7 +1792,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_15_restore_vGPU_windows_vm(self):
         """Test restore Virtual Machine
         """
@@ -1810,7 +1810,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_16_reboot_vGPU_windows_vm(self):
         """ Test reboot virtual machine
         """
@@ -1828,7 +1828,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_17_create_k1_vm_snapshot_wo_memory(self):
         """Test to create VM snapshots
         """
@@ -1846,7 +1846,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_18_revert_k1_vm_snapshot_wo_memory(self):
         """Test to revert VM snapshots
         """
@@ -1866,7 +1866,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_19_delete_k1_vm_snapshot_wo_memory(self):
         """Test to delete vm snapshots
         """
@@ -1886,7 +1886,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_20_create_k2_vm_snapshot_with_memory(self):
         """Test to create VM snapshots
         """
@@ -1902,7 +1902,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_21_revert_k2_vm_snapshot_with_memory(self):
         """Test to revert VM snapshots
         """
@@ -1922,7 +1922,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_22_delete_k2_vm_snapshot_with_memory(self):
         """Test to delete vm snapshots
         """
@@ -1942,7 +1942,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_23_vm_snapshot_without_memory_from_k1_vgpu_nonvgpu_vgpu(self):
         """Test to verify VM snapshot from vGPU to non vgpu to vGPU snap
         """
@@ -1971,7 +1971,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_24_vm_snapshot_without_memory_from_nonvgpu_k1vgpu_nonvgpu(self):
         """Test to verify VM snapshot from non vGPU snap to vGPU snap to non vGPU snap
         """
@@ -2000,7 +2000,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "deploy-vm"], required_hardware="true")
     def test_25_vm_snapshot_without_memory_from_k2vgpu_k1vgpu_k2vgpu(self):
         """Test to verify VM snapshot from K2 vGPU snap to K1 vGPU snap to K2 vGPU snap
         """
@@ -2029,7 +2029,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_26_destroy_vGPU_windows_vm(self):
         """Test destroy Virtual Machine
         """
@@ -2056,7 +2056,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_27_recover_vGPU_windows_vm(self):
         """Test recover Virtual Machine
         """
@@ -2101,7 +2101,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_29_nonvgpuvm_k2vgpuvm_offline(self):
         """Test to change service from non vgpu to vgpu K200"""
         k200capacity = self.check_host_vgpu_capacity(
@@ -2119,7 +2119,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_30_K2_vgpuvm_vgpuvm_offline(self):
         """Test to change service from vgpu K200 to vgpu K240Q"""
         k240qcapacity = self.check_host_vgpu_capacity(
@@ -2141,7 +2141,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_31_K1_vgpuvm_vgpuvm_offline(self):
         """Test to change service from K1 vgpu K120Q to K1 vgpu K140Q"""
 
@@ -2165,7 +2165,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_32_nonvgpuvm_k1vgpuvm_offline(self):
         """Test to change service from non vgpu to vgpu K100"""
 
@@ -2183,7 +2183,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_33_K2_vgpuvm_nonvgpuvm_offline(self):
         """Test to change service from non vgpu to vgpu K240Q"""
 
@@ -2202,7 +2202,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_34_K1_vgpuvm_nonvgpuvm_offline(self):
         """Test to change service from non vgpu to vgpu K140Q"""
 
@@ -2222,7 +2222,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_35_K140Q_vgpuvm_K240Q_vgpuvm_offline(self):
         """Test to change service from K1 vgpu K140Q to K2 vgpu K240Q"""
 
@@ -2245,7 +2245,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
         return
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    @attr(tags=['advanced', 'basic', 'vgpu', "deploy-vm"], required_hardware="true")
     def test_36_K240Q_vgpuvm_K140Q_vgpuvm_offline(self):
         """Test to change service from K2 vgpu K240Q to K1 vgpu K140Q"""
 

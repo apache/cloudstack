@@ -121,7 +121,7 @@ class TestDeployVmWithUserDataMultiNic(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced"], required_hardware="false")
+    @attr(tags=["simulator", "devcloud", "basic", "advanced", "deploy-vm"], required_hardware="false")
     def test_deployvm_multinic(self):
         """Test userdata update when non default nic is without userdata for deploy and update
         """

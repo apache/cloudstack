@@ -110,7 +110,9 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "quick-test",
+            "deploy-vm"],
         required_hardware="false")
     def test_01_list_sec_storage_vm(self):
         """Test List secondary storage VMs
@@ -251,7 +253,9 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "quick-test",
+            "deploy-vm"],
         required_hardware="false")
     def test_02_list_cpvm_vm(self):
         """Test List console proxy VMs
@@ -385,7 +389,8 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_03_ssvm_internals(self):
         """Test SSVM Internals"""
@@ -550,7 +555,8 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_04_cpvm_internals(self):
         """Test CPVM Internals"""
@@ -683,7 +689,8 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_05_stop_ssvm(self):
         """Test stop SSVM
@@ -746,7 +753,8 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_06_stop_cpvm(self):
         """Test stop CPVM
@@ -810,7 +818,9 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "quick-test",
+            "deploy-vm"],
         required_hardware="true")
     def test_07_reboot_ssvm(self):
         """Test reboot SSVM
@@ -883,7 +893,8 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_08_reboot_cpvm(self):
         """Test reboot CPVM
@@ -955,7 +966,8 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_09_destroy_ssvm(self):
         """Test destroy SSVM
@@ -1027,7 +1039,8 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_10_destroy_cpvm(self):
         """Test destroy CPVM
@@ -1098,7 +1111,8 @@ class TestSSVMs(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_11_ss_nfs_version_on_ssvm(self):
         """Test NFS Version on Secondary Storage mounted properly on SSVM

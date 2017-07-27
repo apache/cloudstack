@@ -203,7 +203,8 @@ class TestVmUsage(cloudstackTestCase):
             "sg",
             "eip",
             "advancedns",
-            "simulator"],
+            "simulator",
+            "usage"],
         required_hardware="false")
     def test_01_vm_usage(self):
         """Test Create/Destroy VM and verify usage calculation
@@ -408,7 +409,8 @@ class TestPublicIPUsage(cloudstackTestCase):
             "advanced",
             "eip",
             "advancedns",
-            "simulator"],
+            "simulator",
+            "usage"],
         required_hardware="false")
     def test_01_public_ip_usage(self):
         """Test Assign new IP and verify usage calculation
@@ -574,7 +576,8 @@ class TestVolumeUsage(cloudstackTestCase):
             "basic",
             "sg",
             "eip",
-            "advancedns"],
+            "advancedns",
+            "usage"],
         required_hardware="true")
     def test_01_volume_usage(self):
         """Test Create/delete a volume and verify correct usage is recorded
@@ -884,7 +887,8 @@ class TestTemplateUsage(cloudstackTestCase):
             "basic",
             "sg",
             "eip",
-            "advancedns"],
+            "advancedns",
+            "usage"],
         required_hardware="false")
     def test_01_template_usage(self):
         """Test Upload/ delete a template and verify correct usage is generated
@@ -1042,7 +1046,8 @@ class TestISOUsage(cloudstackTestCase):
             "basic",
             "sg",
             "eip",
-            "advancedns"],
+            "advancedns",
+            "usage"],
         required_hardware="true")
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
@@ -1202,7 +1207,8 @@ class TestLBRuleUsage(cloudstackTestCase):
             "advanced",
             "eip",
             "advancedns",
-            "simulator"],
+            "simulator",
+            "usage"],
         required_hardware="false")
     def test_01_lb_usage(self):
         """Test Create/Delete a LB rule and verify correct usage is recorded
@@ -1378,7 +1384,8 @@ class TestSnapshotUsage(cloudstackTestCase):
             "sg",
             "eip",
             "advancedns",
-            "simulator"],
+            "simulator",
+            "usage"],
         required_hardware="false")
     def test_01_snapshot_usage(self):
         """Test Create/Delete a manual snap shot and verify
@@ -1558,7 +1565,8 @@ class TestNatRuleUsage(cloudstackTestCase):
         tags=[
             "advanced",
             "advancedns",
-            "simulator"],
+            "simulator",
+            "usage"],
         required_hardware="false")
     def test_01_nat_usage(self):
         """Test Create/Delete a PF rule and verify correct usage is recorded
@@ -1723,7 +1731,7 @@ class TestVpnUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "usage"], required_hardware="false")
     def test_01_vpn_usage(self):
         """Test Create/Delete a VPN and verify correct usage is recorded
         """
