@@ -617,6 +617,7 @@ AjaxViewer.prototype = {
 		var img = $(this.img); 
 		this.fullImage = fullImage;
 		this.imgUrl=imageUrl;
+		this.imageLoaded = false;
 
 		img.attr('src', imageUrl).load(function() {
 			ajaxViewer.imageLoaded = true;
