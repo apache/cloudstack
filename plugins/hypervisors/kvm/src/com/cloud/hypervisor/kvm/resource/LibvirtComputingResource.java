@@ -89,6 +89,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
@@ -3114,6 +3115,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return command.execute();
     }
 
+    public List<VmNetworkStatsEntry> getVmNetworkStat(Connect conn, String vmName) throws LibvirtException {
+        Domain dm = null;
+        try {
+            dm = getDomain(conn, vmName);
+
+            List<VmNetworkStatsEntry> stats = new ArrayList<VmNetworkStatsEntry>();
+
+            List<InterfaceDef> nics = getInterfaces(conn, vmName);
+
+            for (InterfaceDef nic : nics) {
+                DomainInterfaceStats nicStats = dm.interfaceStats(nic.getDevName());
+                String macAddress = nic.getMacAddress();
+                VmNetworkStatsEntry stat = new VmNetworkStatsEntry(vmName, macAddress, nicStats.tx_bytes, nicStats.rx_bytes);
+                stats.add(stat);
+            }
+
+            return stats;
+        } finally {
+            if (dm != null) {
+                dm.free();
+            }
+        }
+    }
+
     public List<VmDiskStatsEntry> getVmDiskStat(final Connect conn, final String vmName) throws LibvirtException {
         Domain dm = null;
         try {
@@ -3224,6 +3249,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             long bytes_rd = 0;
             long bytes_wr = 0;
             for (final DiskDef disk : disks) {
+                if (disk.getDeviceType() == DeviceType.CDROM || disk.getDeviceType() == DeviceType.FLOPPY) {
+                    continue;
+                }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
                 io_rd += blockStats.rd_req;
                 io_wr += blockStats.wr_req;

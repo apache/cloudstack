@@ -386,6 +386,9 @@
                     },
                     19: {
                         name: _l('GPU')
+                    },
+                    90: {
+                        name: _l('label.num.cpu.cores')
                     }
                 };
 

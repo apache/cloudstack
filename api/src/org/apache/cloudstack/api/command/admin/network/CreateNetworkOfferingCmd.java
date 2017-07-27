@@ -273,8 +273,21 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         }
 
         Collection paramsCollection = details.values();
-        Map<String, String> params = (Map<String, String>)(paramsCollection.toArray())[0];
+        Object objlist[]= paramsCollection.toArray();
+        Map<String, String> params = (Map<String, String>)(objlist[0]);
+        for(int i=1; i< objlist.length; i++)
+        {
+            params.putAll((Map<String, String>)(objlist[i]));
+        }
+
         return params;
+    }
+
+    public String getServicePackageId() {
+        Map<String, String> data = getDetails();
+        if (data == null)
+            return null;
+        return data.get(NetworkOffering.Detail.servicepackageuuid+ "");
     }
 
     /////////////////////////////////////////////////////

@@ -87,6 +87,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.ConstantTimeComparator;
@@ -263,6 +264,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private DedicatedResourceDao _dedicatedDao;
     @Inject
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
+    @Inject
+    private SSHKeyPairDao _sshKeyPairDao;
 
     List<QuerySelector> _querySelectors;
 
@@ -924,6 +927,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete resource count and resource limits entries set for this account (if there are any).
             _resourceCountDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
             _resourceLimitDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
+
+            // Delete ssh keypairs
+            List<SSHKeyPairVO> sshkeypairs = _sshKeyPairDao.listKeyPairs(accountId, account.getDomainId());
+            for (SSHKeyPairVO keypair: sshkeypairs) {
+                _sshKeyPairDao.remove(keypair.getId());
+            }
             return true;
         } catch (Exception ex) {
             s_logger.warn("Failed to cleanup account " + account + " due to ", ex);

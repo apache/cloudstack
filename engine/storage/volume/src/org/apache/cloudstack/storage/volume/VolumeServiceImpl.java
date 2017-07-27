@@ -62,6 +62,7 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -398,9 +399,27 @@ public class VolumeServiceImpl implements VolumeService {
                     s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
                     volDao.remove(vo.getId());
                 }
+
                 SnapshotDataStoreVO snapStoreVo = _snapshotStoreDao.findByVolume(vo.getId(), DataStoreRole.Primary);
-                if(snapStoreVo != null){
-                    _snapshotStoreDao.remove(snapStoreVo.getId());
+
+                if (snapStoreVo != null) {
+                    long storagePoolId = snapStoreVo.getDataStoreId();
+                    StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
+
+                    if (storagePoolVO.isManaged()) {
+                        DataStore primaryDataStore = dataStoreMgr.getPrimaryDataStore(storagePoolId);
+                        Map<String, String> mapCapabilities = primaryDataStore.getDriver().getCapabilities();
+
+                        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+                        Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+                        if (!supportsStorageSystemSnapshots) {
+                            _snapshotStoreDao.remove(snapStoreVo.getId());
+                        }
+                    }
+                    else {
+                        _snapshotStoreDao.remove(snapStoreVo.getId());
+                    }
                 }
             } else {
                 vo.processEvent(Event.OperationFailed);
