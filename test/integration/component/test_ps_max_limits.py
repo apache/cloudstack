@@ -151,7 +151,7 @@ class TestMaxPrimaryStorageLimits(cloudstackTestCase):
             return [FAIL, e]
         return [PASS, None]
 
-    @attr(tags=["advanced","selfservice"])
+    @attr(tags=["advanced","selfservice", "storage"])
     def test_01_deploy_vm_domain_limit_reached(self):
         """Test Try to deploy VM with admin account where account has not used
             the resources but @ domain they are not available
@@ -201,7 +201,7 @@ class TestMaxPrimaryStorageLimits(cloudstackTestCase):
                                    diskofferingid=disk_offering.id)
         return
 
-    @attr(tags=["advanced","selfservice"])
+    @attr(tags=["advanced","selfservice", "storage"])
     def test_02_deploy_vm_account_limit_reached(self):
         """Test Try to deploy VM with admin account where account has used
             the resources but @ domain they are available"""
@@ -245,7 +245,7 @@ class TestMaxPrimaryStorageLimits(cloudstackTestCase):
                                    diskofferingid=disk_offering.id)
         return
 
-    @attr(tags=["advanced","selfservice"])
+    @attr(tags=["advanced","selfservice", "storage"])
     def test_03_deploy_vm_project_limit_reached(self):
         """Test TTry to deploy VM with admin account where account has not used
         the resources but @ project they are not available

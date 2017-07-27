@@ -145,7 +145,7 @@ class TestLoadBalance(cloudstackTestCase):
                                     (e, ip_addr))
         time.sleep(5)
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags = ["advanced", "advancedns", "smoke", "routers", "networks"], required_hardware="true")
     def test_01_create_lb_rule_src_nat(self):
         """Test to create Load balancing rule with source NAT"""
 
@@ -305,7 +305,7 @@ class TestLoadBalance(cloudstackTestCase):
             self.try_ssh(src_nat_ip_addr.ipaddress, unameResults)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags = ["advanced", "advancedns", "smoke", "routers", "networks"], required_hardware="true")
     def test_02_create_lb_rule_non_nat(self):
         """Test to create Load balancing rule with non source NAT"""
 
@@ -423,7 +423,7 @@ class TestLoadBalance(cloudstackTestCase):
             self.try_ssh(self.non_src_nat_ip.ipaddress.ipaddress, unameResults)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags = ["advanced", "advancedns", "smoke", "routers", "networks"], required_hardware="true")
     def test_assign_and_removal_lb(self):
         """Test for assign & removing load balancing rule"""
 

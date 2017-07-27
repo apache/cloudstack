@@ -146,7 +146,7 @@ class TestNetworks_1(cloudstackTestCase):
                     (exp_val, act_val))
         return return_flag
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_01_list_networks_pagination(self):
         """
         @Desc: Test List Networks pagination
@@ -274,7 +274,7 @@ class TestNetworks_1(cloudstackTestCase):
             )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_02_create_network_without_sourcenat(self):
         """
         @Desc: Test create network if supported services doesn't have sourcenat
@@ -310,7 +310,7 @@ class TestNetworks_1(cloudstackTestCase):
             "networkoffering"] = self.network_offering.id
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_03_list_vpc_pagination(self):
         """
         @Desc: Test create vpc with network domain as parameter
@@ -431,7 +431,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_04_create_vpc_with_networkdomain(self):
         """
         @Desc: Test create vpc with network domain as parameter
@@ -480,7 +480,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_05_list_network_offerings_with_and_without_vpc(self):
         """
         @Desc: Test list network offerings for vpc true and false parameters
@@ -602,7 +602,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_06_create_network_in_vpc(self):
         """
         @Desc: Test create network in vpc and verify VPC name
@@ -769,7 +769,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_07_create_delete_network(self):
         """
         @Desc: Test delete network
@@ -875,7 +875,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_08_update_network(self):
         """
         @Desc: Test update network
@@ -997,7 +997,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_09_list_virtual_machines_single_network(self):
         """
         @Desc: Test update network
@@ -1126,7 +1126,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_10_list_networks_in_vpc(self):
         """
         @Desc: Test list networks in vpc and verify VPC name
@@ -1271,7 +1271,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_11_update_vpc(self):
         """
         @Desc: Test create vpc with network domain as parameter
@@ -1370,7 +1370,7 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_12_list_create_delete_networkACL(self):
         """
         @Desc: Test create network in vpc and verify VPC name
@@ -1668,7 +1668,7 @@ class TestNetworks_2(cloudstackTestCase):
                     (exp_val, act_val))
         return return_flag
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_13_list_vpc_byid(self):
         """
         @summary: Test List VPC with Id
@@ -1762,7 +1762,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_14_list_public_ipaddress_by_associated_networkid(self):
         """
         @summary: Test List Public IPAddress with associatednetworkid
@@ -1908,7 +1908,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_15_list_privategateway_byvpcid(self):
         """
         @summary: Test List PrivateGateway by vpcid
@@ -2028,7 +2028,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_16_create_list_delete_egressfirewallrule_bynetworkid(self):
         """
         @summary: Test Create List Delete Egress Firewall Rule by Network ID
@@ -2180,7 +2180,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_17_restart_vpc(self):
         """
         @summary: Test to restart VPC
@@ -2257,7 +2257,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_18_create_list_vpn_gateway(self):
         """
         @Desc: Test to Create and list Vpn Gateway by VPCid
@@ -2367,7 +2367,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_19_create_list_reset_delete_vpnconnections(self):
         """
         @Desc: Test to List Create Reset and Delete VPN Customer
@@ -2617,7 +2617,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_20_list_capabilities(self):
         """
         @summary: Test List Capabilities
@@ -2640,7 +2640,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_21_listNetworkacls_by_privategateway_aclid(self):
         """
         @summary: Test to list Networkacllists by private gateway aclid

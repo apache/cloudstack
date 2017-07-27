@@ -173,7 +173,7 @@ class TestDynamicRoles(cloudstackTestCase):
             )
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "quick-test", "roles"], required_hardware=False)
     def test_role_lifecycle_create(self):
         """
             Tests normal lifecycle operations for roles
@@ -295,7 +295,7 @@ class TestDynamicRoles(cloudstackTestCase):
 
         self.validate_permissions_dict(self.testdata["importrole"]["rules"], role_imported.id)
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_role_lifecycle_update(self):
         """
             Tests role update
@@ -321,7 +321,7 @@ class TestDynamicRoles(cloudstackTestCase):
             msg="Role description does not match updated role description"
             )
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_role_lifecycle_update_role_inuse(self):
         """
             Tests role update when role is in use by an account
@@ -341,7 +341,7 @@ class TestDynamicRoles(cloudstackTestCase):
         )
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "quick-test", "roles"], required_hardware=False)
     def test_role_lifecycle_delete(self):
         """
             Tests role update
@@ -356,7 +356,7 @@ class TestDynamicRoles(cloudstackTestCase):
         )
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_role_inuse_deletion(self):
         """
             Test to ensure role in use cannot be deleted
@@ -367,7 +367,7 @@ class TestDynamicRoles(cloudstackTestCase):
         except CloudstackAPIException: pass
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_default_role_deletion(self):
         """
             Test to ensure 4 default roles cannot be deleted
@@ -381,7 +381,7 @@ class TestDynamicRoles(cloudstackTestCase):
             except CloudstackAPIException: pass
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "quick-test", "roles"], required_hardware=False)
     def test_rolepermission_lifecycle_list(self):
         """
             Tests listing of default role's permission
@@ -399,7 +399,7 @@ class TestDynamicRoles(cloudstackTestCase):
             )
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "quick-test", "roles"], required_hardware=False)
     def test_rolepermission_lifecycle_create(self):
         """
             Tests creation of role permission
@@ -436,7 +436,7 @@ class TestDynamicRoles(cloudstackTestCase):
         )
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_rolepermission_lifecycle_update(self):
         """
             Tests order updation of role permission
@@ -512,7 +512,7 @@ class TestDynamicRoles(cloudstackTestCase):
         else:
             self.fail("Negative test: Setting permission to 'some_other_value' should not be successful, failing")
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_rolepermission_lifecycle_concurrent_updates(self):
         """
             Tests concurrent order updation of role permission
@@ -546,7 +546,7 @@ class TestDynamicRoles(cloudstackTestCase):
         except CloudstackAPIException: pass
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_rolepermission_lifecycle_delete(self):
         """
             Tests deletion of role permission
@@ -606,7 +606,7 @@ class TestDynamicRoles(cloudstackTestCase):
 
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_role_account_acls(self):
         """
             Test to check role, role permissions and account life cycles
@@ -632,7 +632,7 @@ class TestDynamicRoles(cloudstackTestCase):
         self.checkApiCall(apiConfig, userApiClient)
 
 
-    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', "roles"], required_hardware=False)
     def test_role_account_acls_multiple_mgmt_servers(self):
         """
             Test for role-rule enforcement in case of multiple mgmt servers

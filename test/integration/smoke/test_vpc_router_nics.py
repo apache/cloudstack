@@ -375,7 +375,7 @@ class TestVPCNics(cloudstackTestCase):
         self.logger.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
         return nat_rule
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "vpc"], required_hardware="true")
     def test_01_VPC_nics_after_destroy(self):
         """ Create a VPC with two networks with one VM in each network and test nics after destroy"""
         self.logger.debug("Starting test_01_VPC_nics_after_destroy")
@@ -399,7 +399,7 @@ class TestVPCNics(cloudstackTestCase):
         self.add_nat_rules()
         self.check_ssh_into_vm()
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "vpc"], required_hardware="true")
     def test_02_VPC_default_routes(self):
         """ Create a VPC with two networks with one VM in each network and test default routes"""
         self.logger.debug("Starting test_02_VPC_default_routes")

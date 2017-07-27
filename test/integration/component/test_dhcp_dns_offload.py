@@ -399,7 +399,7 @@ class TestDeployVMs(cloudstackTestCase):
                 return False
         return True
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_01_createNetworks_TC3(self):
 
         """
@@ -429,7 +429,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.services["network2"]["name"] = name
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_02_deployVM_nw_without_services_TC6(self):
         """
         1.Create shared network without any services
@@ -470,7 +470,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_03_deployVM_with_userdata_TC7(self):
         """
         1.Create shared network without any services
@@ -518,7 +518,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_04_deploy_win_VM_with_userdata_TC8(self):
         """
         1.Create shared network without any services
@@ -558,7 +558,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.list_nics(self.vm_id)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_06_deployVM_with_userdata_TC11(self):
         """
         1.Create shared network with DHCP,DNS and userdata services provided by VR
@@ -612,7 +612,7 @@ class TestDeployVMs(cloudstackTestCase):
                         It might have got from external dhcp server in that network")
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_07_deployVM_with_userdata_VR_TC12(self):
         """
         1.Create shared network with only userdata service and VR as the provider
@@ -629,7 +629,7 @@ class TestDeployVMs(cloudstackTestCase):
             self.debug("NO creation failed as expected with error message %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_09_StopStartVMAndGetVMIpAddress_TC16(self):
         """
         1.Create shared network without any services
@@ -700,7 +700,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_10_RebootVMAndGetVMIpAddress_TC17(self):
         """
         1.Create shared network without any services
@@ -770,7 +770,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_11_DestroyVMAndGetVMIpAddress_TC18(self):
         """
         1.Create shared network without any services
@@ -842,7 +842,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_12_ReInstallVMAndGetVMIpAddress_TC19(self):
         """
         1.Create shared network without any services
@@ -911,7 +911,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_13_MigrateVMAndGetVMIpAddress_TC20(self):
         """
         1.Create shared network without any services
@@ -982,7 +982,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_14_VM_with_password_enabled_template_TC24(self):
         """
         1.Create shared network without any services
@@ -1019,7 +1019,7 @@ class TestDeployVMs(cloudstackTestCase):
                       (self.vm.ssh_ip, e))
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_15_reset_password_TC27(self):
         """
         1.Create shared network without any services
@@ -1065,7 +1065,7 @@ class TestDeployVMs(cloudstackTestCase):
                       (self.vm.ssh_ip, e))
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_16_deployVM_with_sshkeys_TC26(self):
         """
         1.Create shared network without any services
@@ -1105,7 +1105,7 @@ class TestDeployVMs(cloudstackTestCase):
                       (self.vm.ssh_ip, e))
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_17_reset_sshkeys_TC29(self):
         """
         1.Create shared network without any services
@@ -1167,7 +1167,7 @@ class TestDeployVMs(cloudstackTestCase):
                       (self.vm.ssh_ip, e))
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_18_reset_password_verify_after_vm_restart_TC36(self):
         """
         1.Create shared network without any services
@@ -1224,7 +1224,7 @@ class TestDeployVMs(cloudstackTestCase):
             self.fail("SSH into vm failed with the same password after vm stop start")
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_19_reset_sshkeys_verify_after_vm_restartTC37(self):
         """
         1.Create shared network without any services
@@ -1295,7 +1295,7 @@ class TestDeployVMs(cloudstackTestCase):
             self.fail("SSH into vm failed with new ssh keypair after vm stop start")
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_20_verify_VM_metadata_TC30(self):
         """
         1.Create shared network without any services
@@ -1338,7 +1338,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.verifyMetaData(metadata)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_21_StopStartVM_verify_ConfigDrive_TC31(self):
         """
         1.Create shared network without any services
@@ -1413,7 +1413,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.verifyMetaData(metadata)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_22_RebootVM_verify_ConfigDrive_TC32(self):
         """
         1.Create shared network without any services
@@ -1487,7 +1487,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.verifyMetaData(metadata)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_23_DestroyVM_verify_ConfigDrive_TC33(self):
         """
         1.Create shared network without any services
@@ -1563,7 +1563,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.verifyMetaData(metadata)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_24_ReInstallVM_verify_ConfigDrive_TC34(self):
         """
         1.Create shared network without any services
@@ -1637,7 +1637,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.verifyMetaData(metadata)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_25_MigrateVMVM_verify_ConfigDrive_TC35(self):
         """
         1.Create shared network without any services
@@ -1716,7 +1716,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.verifyMetaData(metadata)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_26_DeployVM_verify_IPFetchEvent_TC56(self):
         """
         1.Create shared network without any services
@@ -1764,7 +1764,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_27_StopStartVM_verify_IPFetchEvent_TC57(self):
         """
         1.Create shared network without any services
@@ -1822,7 +1822,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_28_RebootVM_verify_IPFetchEvent_TC58(self):
         """
         1.Create shared network without any services
@@ -1879,7 +1879,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_29_deployVM_In_Two_Networks_TC49(self):
         """
         1.Create shared network without any services
@@ -1938,7 +1938,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.verifyMetaData(metadata)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_30_deployVM_In_Two_Networks_TC50(self):
         """
         1.Create shared network without any services
@@ -2004,7 +2004,7 @@ class TestDeployVMs(cloudstackTestCase):
         self.verifyMetaData(metadata)
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_31_deployVM_with_userdataByVR_TC38(self):
         """
         1.Create shared network with userdata service and VR as the provider
@@ -2055,7 +2055,7 @@ class TestDeployVMs(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_32_restart_network_TC6(self):
         """
         1.Create shared network without any services
@@ -2099,7 +2099,7 @@ class TestDeployVMs(cloudstackTestCase):
             self.fail("Failed restarting shared network without any services")
         return
 
-    @attr(tags=["advanced"], required_hardware='True')
+    @attr(tags=["advanced", "networks"], required_hardware='True')
     def test_33_verify_config_params_TC65(self):
         """
         #@desc: Validate external dhcp config parameters against invalid values

@@ -118,7 +118,7 @@ class TestScaleVm(cloudstackTestCase):
         return
 
     @attr(hypervisor="xenserver")
-    @attr(tags=["advanced", "basic"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "deploy-vm"], required_hardware="false")
     def test_01_scale_vm(self):
         """Test scale virtual machine
         """

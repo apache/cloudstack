@@ -91,7 +91,7 @@ class TestMigrationMaintainedPool(cloudstackTestCase):
         return
 
 
-    @attr(tags=["advanced", "basic", "multipool", "storagemotion", "xenserver"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "multipool", "storagemotion", "xenserver", "storage"], required_hardware="false")
     def test_02_migrate_volume_to_maintenance_pool(self):
             """
              Trying to migrate a volume to a pool in maintenance mode should fail

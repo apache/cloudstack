@@ -343,7 +343,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
 ## Test cases relating to delete Network as admin user
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_admin(self):
 	"""
         Validate that Admin should be able to delete network he owns
@@ -359,7 +359,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
                     "Admin User is not able to restart network he owns")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_admin_foruserinsamedomain(self):
 
 	"""
@@ -375,7 +375,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
                     None,
                     "Admin User is not able to delete network owned by users his domain")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_admin_foruserinotherdomain(self):
 
         # Validate that Admin should be able to delete network for users in his sub domain
@@ -391,7 +391,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
 ## Test cases relating to delete Network as domain admin user
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_domaindmin(self):
 	"""
         Validate that Domain admin should be able to delete network for himslef
@@ -407,7 +407,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
                     "Domain admin User is not able to delete a network he owns")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_domaindmin_foruserinsamedomain(self):
 
 	"""
@@ -422,7 +422,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
                     None,
                     "Domain admin User is not able to delete a network that is owned by user in the same domain")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_domaindmin_foruserinsubdomain(self):
 
 	"""
@@ -438,7 +438,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
                     None,
                     "Domain admin User is not able to delete a network that is owned by user in the subdomain")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_domaindmin_forcrossdomainuser(self):
 
 	"""
@@ -458,7 +458,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
 ## Test cases relating deleting network as regular user
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_user(self):
 
 	"""
@@ -475,7 +475,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
                     "User is not able to delete a network he owns")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_user_foruserinsamedomain(self):
 
 	"""
@@ -492,7 +492,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 		if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
                     self.fail("Regular user is allowed to delete network for users in his domain ")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deleteNetwork_user_foruserinotherdomain(self):
 
 	"""

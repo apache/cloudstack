@@ -286,7 +286,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(SHARED_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_add_ip_to_nic(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -362,7 +362,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_remove_ip_from_nic(self, value):
         """ Remove secondary IP from NIC of a VM"""
 
@@ -442,7 +442,7 @@ class TestBasicOperations(cloudstackTestCase):
                 e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_remove_invalid_ip(self):
         """ Remove invalid ip"""
 
@@ -463,7 +463,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_list_nics(self, value):
         """Test listing nics associated with the ip address"""
 
@@ -577,7 +577,7 @@ class TestBasicOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_operations_non_root_admin_api_client(self, value):
         """Test basic operations using non root admin apii client"""
 
@@ -756,7 +756,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced", "dvs"])
+    @attr(tags=["advanced", "dvs", "networks"])
     def test_add_PF_rule(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -847,7 +847,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced", "dvs"])
+    @attr(tags=["advanced", "dvs", "networks"])
     def test_delete_PF_nat_rule(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -935,7 +935,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced", "dvs"])
+    @attr(tags=["advanced", "dvs", "networks"])
     def test_disassociate_ip_mapped_to_secondary_ip_through_PF_rule(
             self,
             value):
@@ -1007,7 +1007,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced", "dvs"])
+    @attr(tags=["advanced", "dvs", "networks"])
     def test_add_static_nat_rule(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -1109,7 +1109,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced", "dvs"])
+    @attr(tags=["advanced", "dvs", "networks"])
     def test_disable_static_nat(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -1296,7 +1296,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_delete_vm(self, value):
         """ Test delete VM and verify network rules are cleaned up"""
 
@@ -1405,7 +1405,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_recover_vm(self, value):
         """ Test recover VM operation with VM having secondary IPs"""
 
@@ -1515,7 +1515,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_network_restart_cleanup_true(self, value):
         """Test network restart (cleanup True) with VM having secondary IPs and related network rules"""
 
@@ -1609,7 +1609,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_network_restart_cleanup_false(self, value):
         """Test network restart (cleanup True) with VM having secondary IPs and related network rules"""
 
@@ -1703,7 +1703,7 @@ class TestVmNetworkOperations(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "networks"])
     def test_reboot_router_VM(self, value):
         """ Test reboot router and persistence of network rules"""
 

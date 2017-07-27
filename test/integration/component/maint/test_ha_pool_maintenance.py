@@ -144,7 +144,7 @@ class testHaPoolMaintenance(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "cl", "advancedns", "sg",
-                "basic", "eip", "simulator", "multihost"])
+                "basic", "eip", "simulator", "multihost", "storage"])
     def test_ha_with_storage_maintenance(self):
         """put storage in maintenance mode and start ha vm and check usage"""
         # Steps

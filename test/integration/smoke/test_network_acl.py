@@ -55,7 +55,7 @@ class TestNetworkACL(cloudstackTestCase):
                           cls.account.id))
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "networks", "vpc"], required_hardware="true")
     def test_network_acl(self):
         #TODO: SIMENH: add actual verification Logic for rules.
         """Test network ACL lists and items in VPC"""

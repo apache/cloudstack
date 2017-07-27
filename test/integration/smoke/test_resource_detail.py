@@ -89,7 +89,7 @@ class TestResourceDetail(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "xenserver"], required_hardware="false")
+    @attr(tags = ["advanced", "xenserver", "quick-test"], required_hardware="false")
     def test_01_updatevolumedetail(self):
         """Test volume detail 
         """

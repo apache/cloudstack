@@ -82,7 +82,7 @@ class Services():
                         }
 
 
-@attr(tags = ["simulator", "advanced"])
+@attr(tags = ["simulator", "advanced", "networks"])
 class TestNonContiguousVLANRanges(cloudstackTestCase):
     """
     Test to add non contiguous vlan ranges into existing physical network

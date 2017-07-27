@@ -265,7 +265,8 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             "advancedns",
             "smoke",
             "basic",
-            "sg"],
+            "sg",
+            "deploy-vm"],
         required_hardware="true")
     def test_11_get_vm_password(self):
         """Test get VM password for password enabled template"""

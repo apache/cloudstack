@@ -544,7 +544,7 @@ class TestInternalLb(cloudstackTestCase):
                         "Response distribution count: %d difference to mean: %d within standard deviation: %d" % (value, mean, stddev))
                 return True
 
-    @attr(tags=["smoke", "advanced"], required_hardware="true")
+    @attr(tags=["smoke", "advanced", "routers", "networks"], required_hardware="true")
     def test_01_internallb_roundrobin_1VPC_3VM_HTTP_port80(self):
         """
            Test create, assign, remove of an Internal LB with roundrobin http traffic to 3 vm's in a Single VPC
@@ -562,7 +562,7 @@ class TestInternalLb(cloudstackTestCase):
         self.cleanup.insert(0, vpc_offering)
         self.execute_internallb_roundrobin_tests(vpc_offering)
 
-    @attr(tags=["smoke", "advanced"], required_hardware="true")
+    @attr(tags=["smoke", "advanced", "routers", "networks"], required_hardware="true")
     def test_02_internallb_roundrobin_1RVPC_3VM_HTTP_port80(self):
         """
            Test create, assign, remove of an Internal LB with roundrobin http traffic to 3 vm's in a Redundant VPC
@@ -709,7 +709,7 @@ class TestInternalLb(cloudstackTestCase):
         else:
             return False
 
-    @attr(tags=["smoke", "advanced"], required_hardware="true")
+    @attr(tags=["smoke", "advanced", "routers", "networks"], required_hardware="true")
     def test_03_vpc_internallb_haproxy_stats_on_all_interfaces(self):
         """ Test to verify access to loadbalancer haproxy admin stats page
             when global setting network.loadbalancer.haproxy.stats.visibility is set to 'all'
@@ -730,7 +730,7 @@ class TestInternalLb(cloudstackTestCase):
 
         self.execute_internallb_haproxy_tests(vpc_offering)
 
-    @attr(tags=["smoke", "advanced"], required_hardware="true")
+    @attr(tags=["smoke", "advanced", "routers", "networks"], required_hardware="true")
     def test_04_rvpc_internallb_haproxy_stats_on_all_interfaces(self):
         """ Test to verify access to loadbalancer haproxy admin stats page
             when global setting network.loadbalancer.haproxy.stats.visibility is set to 'all'

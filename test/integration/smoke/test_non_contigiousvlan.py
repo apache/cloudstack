@@ -38,7 +38,7 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
             raise Exception("Failed to set non contiguous vlan ids to test. Free some ids from \
                         from existing physical networks at ends")
 
-    @attr(tags = ["advanced"], required_hardware="false")
+    @attr(tags = ["advanced", "quick-test", "networks"], required_hardware="false")
     def test_extendPhysicalNetworkVlan(self):
         """
         Test to update a physical network and extend its vlan

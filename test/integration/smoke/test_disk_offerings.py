@@ -46,7 +46,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke", "service-offerings"], required_hardware="false")
     def test_01_create_disk_offering(self):
         """Test to create disk offering
 
@@ -91,7 +91,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
         return
 
     @attr(hypervisor="kvm")
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke", "service-offerings"])
     def test_02_create_sparse_type_disk_offering(self):
         """Test to create  a sparse type disk offering"""
 
@@ -132,7 +132,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
 
 
     @attr(hypervisor="kvm")
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke", "service-offerings"])
     def test_04_create_fat_type_disk_offering(self):
         """Test to create  a sparse type disk offering"""
 
@@ -338,7 +338,7 @@ class TestDiskOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns",  "smoke"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns",  "smoke", "service-offerings"], required_hardware="false")
     def test_02_edit_disk_offering(self):
         """Test to update existing disk offering
 
@@ -390,7 +390,7 @@ class TestDiskOfferings(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke", "service-offerings"], required_hardware="false")
     def test_03_delete_disk_offering(self):
         """Test to delete disk offering
 

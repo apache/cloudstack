@@ -195,7 +195,7 @@ class TestRouterDns(cloudstackTestCase):
         return public_ips
 
 
-    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "ssh", "routers", "networks"], required_hardware="true")
     def test_router_dns_externalipquery(self):
         """Checks that non-guest network IPs cannot access VR DNS"""
 
@@ -213,7 +213,7 @@ class TestRouterDns(cloudstackTestCase):
             self.logger.debug("VR DNS query failed from non-guest network IP as expected")
 
 
-    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "ssh", "routers", "networks"], required_hardware="true")
     def test_router_dns_guestipquery(self):
         """Checks that guest VM can query VR DNS"""
 

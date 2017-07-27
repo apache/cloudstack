@@ -112,7 +112,7 @@ class TestAdapterTypeForNic(cloudstackTestCase):
         return
 
     @unittest.skip("VCenter API Integration Remaining")
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "deploy-vm", "routers"])
     def test_vm_nic_adapter_vmxnet3(self):
         """
 

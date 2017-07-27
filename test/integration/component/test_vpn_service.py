@@ -193,7 +193,7 @@ class TestVPNService(cloudstackTestCase):
             self.fail("Failed to create remote VPN access: %s" % e)
 
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns", "networks"])
     def test_01_VPN_service(self):
         """Tests if VPN service is running"""
 

@@ -118,7 +118,7 @@ class TestCreateZoneSG(cloudstackTestCase):
                         % listzones[0].securitygroupsenabled)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_01_createZone_secGrp_enabled(self):
         """ Test to verify Advance Zone with security group enabled can be created"""
 
@@ -136,7 +136,7 @@ class TestCreateZoneSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_02_createZone_secGrp_disabled(self):
         """ Test to verify Advance Zone created with flag
             securitygroupsenabled=False"""
@@ -293,7 +293,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_03_createIsolatedNetwork(self):
         """ Test Isolated Network """
 
@@ -330,7 +330,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                         Exception: %s" % e)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_04_createSharedNetwork_withoutSG(self):
         """ Test Shared Network creation without Security Group Service Provider in Network Offering"""
 
@@ -373,7 +373,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                         Exception: %s" % e)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_05_deployVM_SharedwithSG(self):
         """ Test VM deployment in shared networks with SecurityGroup Provider """
 
@@ -452,7 +452,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         self.debug("Virtual Machine created: %s" % virtual_machine.id)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_06_SharedNwSGAccountSpecific(self):
         """ Test Account specific shared network creation with SG"""
 
@@ -534,7 +534,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_07_SharedNwSG_DomainWide_SubdomainAcccess(self):
         """ Test Domain wide shared network with SG, with subdomain access set True"""
 
@@ -604,7 +604,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         return
 
     @unittest.skip("Skip - Failing - WIP")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_08_SharedNwSGAccountSpecific_samevlan_samesubnet(self):
         """ Test Account specific shared network creation with SG in multiple accounts
             with same subnet and vlan"""
@@ -674,7 +674,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         return
 
     @unittest.skip("Skip - Failing - WIP")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_09_SharedNwDomainWide_samevlan_samesubnet(self):
         """ Test Domain wide shared network creation with SG in different domains
             with same vlan and same subnet"""
@@ -752,7 +752,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_10_deleteSharedNwSGAccountSpecific_InUse(self):
         """ Test delete Account specific shared network creation with SG which is in use"""
 
@@ -805,7 +805,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_11_deleteSharedNwSG_DomainWide_InUse(self):
         """ Test delete Domain wide shared network with SG which is in use"""
 
@@ -860,7 +860,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_29_deleteSharedNwSG_ZoneWide_InUse(self):
         """ Test delete Zone wide shared network with SG which is in use"""
 
@@ -907,7 +907,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         self.cleanup_vms.append(vm)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_12_deleteSharedNwSGAccountSpecific_NotInUse(self):
         """ Test delete Account specific shared network creation with SG which is not in use"""
 
@@ -949,7 +949,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_13_deleteSharedNwSG_DomainWide_NotInUse(self):
         """ Test delete Domain wide shared network with SG which is not in use"""
 
@@ -993,7 +993,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_30_deleteSharedNwSG_ZoneWide_NotInUse(self):
         """ Test delete zone wide shared network with SG which is not in use"""
 
@@ -1030,7 +1030,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test__14_createSharedNwWithSG_withoutParams(self):
         """ Test create shared network with SG without specifying necessary parameters"""
 
@@ -1075,7 +1075,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test__15_createVPC(self):
         """ Test create VPC in advanced SG enabled zone"""
 
@@ -1313,7 +1313,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         status = os.system("%s -i %s" %(file2, config_file))
         return status
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test__16_AccountSpecificNwAccess(self):
         """ Test account specific network access of users"""
 
@@ -1408,7 +1408,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test__17_DomainSpecificNwAccess(self):
         """ Test domain specific network access of users"""
 
@@ -1519,7 +1519,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         return
 
     @data("account", "domain")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_18_DeployVM_NoFreeIPs(self, value):
         """ Test deploy VM in account/domain specific SG enabled shared network when no free IPs are available"""
 
@@ -1582,7 +1582,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_19_DeployVM_DefaultSG(self):
         """ Test deploy VM in default security group"""
 
@@ -1623,7 +1623,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         return
 
     @data("default", "custom")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_20_DeployVM_SecGrp_sharedNetwork(self, value):
         """ Test deploy VM in default/custom security group and shared network"""
 
@@ -1679,7 +1679,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_24_DeployVM_Multiple_Shared_Networks(self):
         """ Test deploy VM in multiple zone wide shared networks"""
 
@@ -1727,7 +1727,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_25_Deploy_Multiple_VM_Different_Shared_Networks_Same_SG(self):
         """ Test deploy Multiple VMs in different shared networks but same security group"""
 
@@ -1795,7 +1795,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_26_Destroy_Deploy_VM_NoFreeIPs(self):
         """ Test destroy VM in zone wide shared nw when IPs are full and then try to deploy vm"""
 
@@ -1859,7 +1859,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         return
 
     @data("stopStart","reboot")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_27_start_stop_vm(self, value):
         """ Test start and stop vm"""
 
@@ -1928,7 +1928,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         return
 
     @data("recover","expunge")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_28_destroy_recover_expunge_vm(self, value):
         """ Test start and stop vm"""
 
@@ -2018,7 +2018,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_31_Deploy_VM_multiple_shared_networks_sg(self):
         """ Test deploy VM in multiple SG enabled shared networks"""
 
@@ -2068,7 +2068,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
     @unittest.skip("Testing pending on multihost setup")
     @data("account","domain","zone")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_33_VM_Migrate_SharedNwSG(self, value):
         """ Test migration of VM deployed in Account specific shared network"""
 
@@ -2143,7 +2143,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         self.assertEqual(vm_list[0].hostid, hosts_to_migrate[0].id, "VM host id does not reflect the migration")
         return
 
-    @attr(tags=["advancedsg"], required_hardware="false")
+    @attr(tags=["advancedsg", "networks"], required_hardware="false")
     def test_34_DeployVM_in_SecondSGNetwork(self):
         """
         @Desc: VM Cannot deploy to second network in advanced SG network
@@ -2416,7 +2416,7 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_21_DeployVM_WithoutSG(self):
         """ Test deploy VM without passing any security group id"""
 
@@ -2509,7 +2509,7 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_22_DeployVM_With_Custom_SG(self):
         """ Test deploy VM by passing custom security group id"""
 
@@ -2602,7 +2602,7 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_23_DeployVM_MultipleSG(self):
         """ Test deploy VM in multiple security groups"""
 
@@ -2694,7 +2694,7 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_32_delete_default_security_group(self):
         """ Test Delete the default security group when No VMs are deployed"""
 
@@ -2863,7 +2863,7 @@ class TestSharedNetworkOperations(cloudstackTestCase):
         return
 
     @data("account","domain","zone")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_34_restart_shared_network_sg(self, value):
         """ Test restart account/domain/zone wide shared network"""
 
@@ -2914,7 +2914,7 @@ class TestSharedNetworkOperations(cloudstackTestCase):
 
     @unittest.skip("Testing pending on multihost setup")
     @data("account","domain","zone")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_35_Enable_Host_Maintenance(self, value):
         """ Test security group rules of VM after putting host in maintenance mode"""
 
@@ -3165,7 +3165,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         return
 
     @data("accessByIp","accessByName")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_36_ssh_vm_other_sg(self, value):
         """ Test access VM in other security group from vm in one security group"""
 
@@ -3221,7 +3221,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
             )
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_37_ping_vm_other_sg(self):
         """ Test access VM in other security group from vm in one security group"""
 
@@ -3275,7 +3275,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         return
 
     @data("accessByIp","accessByName")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_38_ssh_vm_other_sg_new_vm(self, value):
         """ Test access VM in other security group from a new vm in one security group"""
 
@@ -3343,7 +3343,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         return
 
     @data("accessByIp","accessByName")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_39_ssh_vm_other_sg_from_multiple_sg_vm(self, value):
         """ Test access VM in other security group from vm belonging to multiple security groups"""
 
@@ -3411,7 +3411,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
             )
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "networks"])
     def test_40_ssh_vm_other_sg_reboot(self):
         """ Test access VM in other security group from vm in one security group before and after reboot"""
 

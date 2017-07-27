@@ -77,7 +77,7 @@ class TestLogin(cloudstackTestCase):
 
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "advancedsg", "smoke",
-                  "basic", "sg"], required_hardware="false")
+                  "basic", "sg", "quick-test"], required_hardware="false")
     def login_test_saml_user(self):
         """
             Tests that SAML users are not allowed CloudStack local log in

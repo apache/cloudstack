@@ -109,7 +109,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_create_normal_compute_offering(self):
         """ Create normal compute offering with non zero values for cpu,
             cpu number and memory"""
@@ -138,7 +138,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
         self.cleanup_co.append(serviceOffering)
         return
 
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_create_dynamic_compute_offering(self):
         """ Create dynamic compute offering with cpunumber, cpuspeed and memory
             not specified"""
@@ -167,7 +167,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
         self.cleanup_co.append(serviceOffering)
         return
 
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_create_dynamic_compute_offering_no_cpunumber(self):
         """ Create dynamic compute offering with only cpunumber unspecified"""
 
@@ -189,7 +189,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
             self.debug("Compute Offering Creation failed as expected")
         return
 
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_create_dynamic_compute_offering_no_cpuspeed(self):
         """ Create dynamic compute offering with only cpuspeed unspecified"""
 
@@ -211,7 +211,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
             self.debug("Compute Offering Creation failed as expected")
         return
 
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_create_dynamic_compute_offering_no_memory(self):
         """ Create dynamic compute offering with only memory unspecified"""
 
@@ -234,7 +234,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_deploy_virtual_machines_static_offering(self, value):
         """Test deploy VM with static offering"""
 
@@ -303,7 +303,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_deploy_virtual_machines_dynamic_offering(self, value):
         """Test deploy VM with dynamic compute offering"""
 
@@ -394,7 +394,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_check_vm_stats(self, value):
         """Deploy VM with dynamic service offering and check VM stats"""
 
@@ -555,7 +555,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_change_so_stopped_vm_static_to_static(self, value):
         """Test scale stopped VM from static offering to static offering"""
 
@@ -625,7 +625,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_change_so_stopped_vm_static_to_dynamic(self, value):
         """Test scale stopped VM from static offering to dynamic offering"""
 
@@ -722,7 +722,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_change_so_stopped_vm_dynamic_to_static(self, value):
         """Test scale stopped VM from dynamic offering to static offering"""
 
@@ -795,7 +795,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_change_so_stopped_vm_dynamic_to_dynamic(self, value):
         """Test scale stopped VM from dynamic offering to dynamic offering"""
 
@@ -888,7 +888,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"],required_hardware="true")
+    @attr(tags=["basic", "advanced", "service-offerings"],required_hardware="true")
     def test_change_so_running_vm_static_to_static(self, value):
         """Test scale running VM from static offering to static offering"""
 
@@ -960,7 +960,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"],required_hardware="true")
+    @attr(tags=["basic", "advanced", "service-offerings"],required_hardware="true")
     def test_change_so_running_vm_static_to_dynamic(self, value):
         """Test scale running VM from static offering to dynamic offering"""
 
@@ -1066,7 +1066,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"],required_hardware="true")
+    @attr(tags=["basic", "advanced", "service-offerings"],required_hardware="true")
     def test_change_so_running_vm_dynamic_to_static(self, value):
         """Test scale running VM from dynamic offering to static offering"""
 
@@ -1143,7 +1143,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"],required_hardware="true")
+    @attr(tags=["basic", "advanced", "service-offerings"],required_hardware="true")
     def test_change_so_running_vm_dynamic_to_dynamic(self, value):
         """Test scale running VM from dynamic offering to dynamic offering"""
 
@@ -1313,7 +1313,7 @@ class TestAccountLimits(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_max_account_cpus_deploy_VM(self, value):
         """Test cpu limits of account while deploying VM with dynamic
            compute offering"""
@@ -1374,7 +1374,7 @@ class TestAccountLimits(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_max_account_cpus_scale_VM(self, value):
         """Test cpu limits of account while scaling VM with dynamic
            compute offering"""
@@ -1451,7 +1451,7 @@ class TestAccountLimits(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_max_account_memory_deploy_VM(self, value):
         """Test memory limits of account while deploying VM with dynamic
            compute offering"""
@@ -1512,7 +1512,7 @@ class TestAccountLimits(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"])
+    @attr(tags=["basic", "advanced", "service-offerings"])
     def test_max_account_memory_scale_VM(self, value):
         """Test memory limits of account while scaling VM with
            dynamic compute offering"""
@@ -1653,7 +1653,7 @@ class TestAffinityGroup(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic", "advanced"], BugId="7180", required_hardware="true")
+    @attr(tags=["basic", "advanced", "service-offerings"], BugId="7180", required_hardware="true")
     def test_deploy_VM_with_affinity_group(self, value):
         """Test deploy VMs with affinity group and dynamic compute offering"""
 

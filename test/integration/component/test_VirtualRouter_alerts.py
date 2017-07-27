@@ -113,7 +113,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         return
 
     @attr(hypervisor="xenserver")
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "routers"], required_hardware="true")
     def test_01_VRServiceFailureAlerting(self):
 
         if self.zone.networktype == "Basic":

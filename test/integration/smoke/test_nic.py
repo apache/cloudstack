@@ -154,7 +154,8 @@ class TestNic(cloudstackTestCase):
             "devcloud",
             "smoke",
             "advanced",
-            "advancedns"],
+            "advancedns",
+            "deploy-vm"],
         required_hardware="true")
     def test_01_nic(self):
         # TODO: SIMENH: add validation

@@ -77,7 +77,7 @@ class TestIsolatedNetworkInvalidGw(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "smoke", "dvs", "networks"], required_hardware="false")
     def test_isolated_nw_invalid_gw(self):
 
         self.debug("Trying to create a network with Gateway as 192.168.3.0. This should fail")
