@@ -228,7 +228,7 @@ cat > etc/init.d/iptables-persistent << EOF
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          iptables
-# Required-Start:    mountkernfs $local_fs
+# Required-Start:    mountkernfs $local_fs cloud-early-init
 # Required-Stop:     $local_fs
 # Should-Start:      cloud-early-config
 # Default-Start:     S
@@ -418,6 +418,8 @@ services() {
   
   /bin/cp -r ${scriptdir}/config/* ./
   chroot . chkconfig xl2tpd off
+  chroot . chkconfig --add cloud-early-init
+  chroot . chkconfig cloud-early-init on
   chroot . chkconfig --add cloud-early-config
   chroot . chkconfig cloud-early-config on
   chroot . chkconfig --add iptables-persistent
