@@ -25,5 +25,6 @@ set -x
 key='ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAvFu3MLSPphFRBR1yM7nBukXWS9gPdAXfqq9cfC8ZqQN9ybi531aj44CybZ4BVT4kLfzbAs7+7nJeSIpPHxjv9XFqbxjIxoFeGYkj7s0RrJgtsEmvAAubZ3mYboUAYUivMgnJFLnv4VqyAbpjix6CfECUiU4ygwo24F3F6bAmhl4Vo1R5TSUdDIX876YePJTFtuVkLl4lu/+xw1QRWrgaSFosGICT37IKY7RjE79Ozb0GjNHyJPPgVAGkUVO4LawroL9dYOBlzdHpmqqA9Kc44oQBpvcU7s1+ezRTt7fZNnP7TG9ninZtrvnP4qmwAc4iUJ7N1bwh0mCblnoTfZ28hw== anthony@mobl-ant'
 mkdir -p /root/.ssh
 chmod 644 /root/.ssh
+#touch /root/.ssh/authorized_keys
 echo ${key}  > /root/.ssh/authorized_keys
 chmod 600 /root/.ssh/authorized_keys
