@@ -19,6 +19,30 @@
 
 package com.cloud.util;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
+import javax.inject.Inject;
+
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
+import net.nuage.vsp.acs.client.common.model.Pair;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
@@ -44,25 +68,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
-import net.nuage.vsp.acs.client.common.model.Pair;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class NuageVspEntityBuilder {
     private static final Logger s_logger = Logger.getLogger(NuageVspEntityBuilder.class);
@@ -270,22 +275,27 @@ public class NuageVspEntityBuilder {
         return vspNicBuilder.build();
     }
 
-    public VspStaticNat buildVspStaticNat(Boolean forRevoke, IPAddressVO staticNatIp, VlanVO staticNatVlan, NicVO nic) {
+    public VspStaticNat buildVspStaticNat(Boolean forRevoke, IPAddressVO staticNatIp, VlanVO staticNatVlan, VspNic vspNic) {
         VspStaticNat.Builder vspStaticNatBuilder = new VspStaticNat.Builder()
                 .ipUuid(staticNatIp.getUuid())
                 .ipAddress(staticNatIp.getAddress().addr())
                 .revoke(forRevoke)
                 .oneToOneNat(staticNatIp.isOneToOneNat())
+                .state(getEnumValue(staticNatIp.getState(), VspStaticNat.State.class))
                 .vlanUuid(staticNatVlan.getUuid())
                 .vlanGateway(staticNatVlan.getVlanGateway())
                 .vlanNetmask(staticNatVlan.getVlanNetmask());
 
-        if (nic != null) {
-            VspNic vspNic = buildVspNic(nic);
+        if (vspNic != null) {
             vspStaticNatBuilder.nic(vspNic);
         }
 
         return vspStaticNatBuilder.build();
+    }
+
+    public VspStaticNat buildVspStaticNat(Boolean forRevoke, IPAddressVO staticNatIp, VlanVO staticNatVlan, NicVO nic) {
+        VspNic vspNic = (nic != null) ?buildVspNic(nic) : null;
+        return buildVspStaticNat(forRevoke, staticNatIp, staticNatVlan, vspNic);
     }
 
     public VspAclRule buildVspAclRule(FirewallRule firewallRule, Network network) {
@@ -366,5 +376,21 @@ public class NuageVspEntityBuilder {
         }
 
         return vspAclRuleBuilder.build();
+    }
+
+    private <E extends Enum<E>> E getEnumValue(Enum cloudstackValue, Class<E> target) {
+        try {
+            return Enum.valueOf(target, cloudstackValue.name());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private <E extends Enum<E>> E getEnumValue(Enum cloudstackValue, E defaultValue) {
+        try {
+            return Enum.valueOf(defaultValue.getDeclaringClass(), cloudstackValue.name());
+        } catch (IllegalArgumentException e) {
+            return defaultValue;
+        }
     }
 }

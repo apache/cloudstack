@@ -19,6 +19,22 @@
 
 package com.cloud.network.guru;
 
+import java.util.List;
+
+import javax.inject.Inject;
+
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Strings;
+
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.guru.DeallocateVmVspCommand;
@@ -59,6 +75,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.util.NuageVspEntityBuilder;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -66,18 +83,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
-import com.google.common.base.Strings;
-import com.cloud.util.NuageVspEntityBuilder;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
-import org.apache.cloudstack.resourcedetail.VpcDetailVO;
-import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.List;
 
 public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     public static final Logger s_logger = Logger.getLogger(NuageVspGuestNetworkGuru.class);
@@ -256,7 +261,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             VspStaticNat vspStaticNat = null;
             if (staticNatIp != null) {
                 VlanVO staticNatVlan = _vlanDao.findById(staticNatIp.getVlanId());
-                vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(null, staticNatIp, staticNatVlan, null);
+                vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(null, staticNatIp, staticNatVlan, vspNic);
             }
 
             HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
