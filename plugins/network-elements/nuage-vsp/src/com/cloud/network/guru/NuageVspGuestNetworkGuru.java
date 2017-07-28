@@ -25,25 +25,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.google.common.collect.FluentIterable;
-import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
-import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
-
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import org.apache.cloudstack.resourcedetail.VpcDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -98,6 +82,20 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Strings;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
+import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
 
 public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     public static final Logger s_logger = Logger.getLogger(NuageVspGuestNetworkGuru.class);
@@ -335,7 +333,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             VspStaticNat vspStaticNat = null;
             if (staticNatIp != null) {
                 VlanVO staticNatVlan = _vlanDao.findById(staticNatIp.getVlanId());
-                vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(null, staticNatIp, staticNatVlan, null);
+                vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(null, staticNatIp, staticNatVlan, vspNic);
             }
 
             boolean defaultHasDns = getDefaultHasDns(networkHasDnsCache, nicFromDb);
