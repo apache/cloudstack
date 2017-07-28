@@ -19,18 +19,16 @@
 
 package com.cloud.util;
 
-import net.nuage.vsp.acs.client.api.model.Protocol;
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
 
 import com.cloud.NuageTest;
 import com.cloud.dc.VlanDetailsVO;
@@ -39,6 +37,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -58,14 +57,15 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
+import com.google.common.collect.Lists;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import net.nuage.vsp.acs.client.api.model.Protocol;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
 
 public class NuageVspEntityBuilderTest extends NuageTest {
 
@@ -361,6 +361,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
         when(_mockedStaticNatIp.getAddress()).thenReturn(new Ip("10.10.10.2"));
         when(_mockedStaticNatIp.isOneToOneNat()).thenReturn(true);
         when(_mockedStaticNatIp.getVmIp()).thenReturn("192.168.0.24");
+        when(_mockedStaticNatIp.getState()).thenReturn(IpAddress.State.Allocated);
     }
 
     private void setUpMockedStaticNatVlan() {
