@@ -16,13 +16,6 @@
 // under the License.
 package com.cloud.network.guru;
 
-import java.util.List;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AssociateMacToNetworkAnswer;
 import com.cloud.agent.api.AssociateMacToNetworkCommand;
@@ -62,6 +55,11 @@ import com.cloud.user.Account;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.util.List;
 
 @Local(value = NetworkGuru.class)
 public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
@@ -84,7 +82,7 @@ public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
 
     public BrocadeVcsGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.VCS};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("VCS")};
     }
 
     @Override

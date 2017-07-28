@@ -16,13 +16,6 @@
 // under the License.
 package com.cloud.network.guru;
 
-import javax.ejb.Local;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.context.CallContext;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
@@ -45,6 +38,11 @@ import com.cloud.user.Account;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
 
 @Component
 @Local(value = NetworkGuru.class)
@@ -53,7 +51,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
 
     public VxlanGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.VXLAN};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("VXLAN")};
     }
 
     @Override

@@ -19,15 +19,6 @@
 
 package com.cloud.network.guru;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateLogicalSwitchAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchCommand;
@@ -66,6 +57,13 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
 
 @Local(value = NetworkGuru.class)
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
@@ -98,7 +96,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
 
     public NiciraNvpGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.STT};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("STT")};
     }
 
     @Override

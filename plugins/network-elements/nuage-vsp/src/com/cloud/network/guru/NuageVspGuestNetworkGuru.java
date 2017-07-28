@@ -106,7 +106,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
 
     public NuageVspGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.VSP};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("VSP")};
     }
 
     @Override
