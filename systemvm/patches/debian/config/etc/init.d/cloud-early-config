@@ -1,8 +1,8 @@
 #!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          cloud-early-config
-# Required-Start:    mountkernfs $local_fs
-# Required-Stop:     $local_fs
+# Required-Start:    mountkernfs $local_fs cloud-early-init
+# Required-Stop:     $local_fs cloud-early-init
 # Should-Start:      
 # Should-Stop:       
 # Default-Start:     S
