@@ -66,7 +66,6 @@ override_dh_auto_install:
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
-	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management
@@ -76,21 +75,24 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/mnt
 	cp -r client/target/utilities/scripts/db/* $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/
-	cp -r client/target/cloud-client-ui-$(VERSION)/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/
+	# To have a uniq name across versions for the startup script
+	ln -s cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/cloud-management-server.jar
+	cp client/target/bcprov-jdk15on-1.55.jar $(DESTDIR)/usr/share/$(PACKAGE)-management/
+	# To make jetty happy from the 1st line of log
+	ln -s log4j-cloud.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/log4j.xml
 
 	# nast hack for a couple of configuration files
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-sudoers $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
 	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
 
-	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management
 	install -D client/target/utilities/bin/cloud-update-xenserver-licenses $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
 	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
 	# This should all be in /etc/cloudstack/management
-	rm $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/WEB-INF/classes/*.*
 	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/conf
 	ln -s ../../../var/log/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/logs
 	ln -s ../../../var/cache/$(PACKAGE)/management/temp $(DESTDIR)/usr/share/$(PACKAGE)-management/temp
