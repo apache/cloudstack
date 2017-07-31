@@ -22,6 +22,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -29,12 +30,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 
-/**
- * @since 4.11
- */
 @APICommand(name = RemoveAnnotationCmd.APINAME, description = "remove an annotation.", responseObject = AnnotationResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class RemoveAnnotationCmd extends BaseCmd{
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
+public class RemoveAnnotationCmd extends BaseCmd {
+
+    public static final String APINAME = "removeAnnotation";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true, description = "the id of the annotation")
     private String uuid;
@@ -42,8 +42,6 @@ public class RemoveAnnotationCmd extends BaseCmd{
     public String getUuid() {
         return uuid;
     }
-
-    public static final String APINAME = "removeAnnotation";
 
     @Override
     public void execute()

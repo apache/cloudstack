@@ -23,6 +23,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.StringUtils;
 import com.google.common.base.Preconditions;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,14 +33,18 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-/**
- * @since 4.11
- */
 @APICommand(name = ListAnnotationsCmd.APINAME, description = "Lists annotations.", responseObject = AnnotationResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
 public class ListAnnotationsCmd extends BaseListCmd {
 
     public static final String APINAME = "listAnnotations";
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, description = "the id of the annotation")
+    private String uuid;
+    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "the entity type")
+    private String entityType;
+    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "the id of the entity for which to show annotations")
+    private String entityUuid;
 
     public String getUuid() {
         return uuid;
@@ -52,13 +57,6 @@ public class ListAnnotationsCmd extends BaseListCmd {
     public String getEntityUuid() {
         return entityUuid;
     }
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, description = "the id of the annotation")
-    private String uuid;
-    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "the entity type")
-    private String entityType;
-    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "the id of the entity for which to show annotations")
-    private String entityUuid;
 
     @Override public void execute()
             throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,

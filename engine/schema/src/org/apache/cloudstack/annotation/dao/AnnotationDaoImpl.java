@@ -22,14 +22,12 @@ import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.annotation.AnnotationVO;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.util.List;
 
 /**
  * @since 4.1
  */
 @Component
-@Local(value = {AnnotationDao.class})
 public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implements AnnotationDao {
     private final SearchBuilder<AnnotationVO> AnnotationSearchByType;
     private final SearchBuilder<AnnotationVO> AnnotationSearchByTypeAndUuid;

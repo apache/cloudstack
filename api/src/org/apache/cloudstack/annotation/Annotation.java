@@ -21,9 +21,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.Date;
 
-/**
- * @since 4.11
- */
 public interface Annotation extends InternalIdentity, Identity {
 
     String getAnnotation();

@@ -35,17 +35,15 @@ import java.util.List;
  * @since 4.11
  */
 public final class AnnotationManagerImpl extends ManagerBase implements AnnotationService, PluggableService {
-    public static final Logger s_logger = Logger.getLogger(AnnotationManagerImpl.class);
+    public static final Logger LOGGER = Logger.getLogger(AnnotationManagerImpl.class);
 
     @Inject
     private AnnotationDao annotationDao;
 
     @Override
     public ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd) {
-        List<AnnotationVO> annotations =
-                getAnnotationsForApiCmd(cmd);
-        List<AnnotationResponse> annotationResponses =
-                convertAnnotationsToResponses(annotations);
+        List<AnnotationVO> annotations = getAnnotationsForApiCmd(cmd);
+        List<AnnotationResponse> annotationResponses = convertAnnotationsToResponses(annotations);
         return createAnnotationsResponseList(annotationResponses);
     }
 
@@ -66,8 +64,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
     @Override public AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd) {
         String uuid = removeAnnotationCmd.getUuid();
-        if(s_logger.isDebugEnabled()) {
-            s_logger.debug("marking annotation removed: " + uuid);
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("marking annotation removed: " + uuid);
         }
         AnnotationVO annotation = annotationDao.findByUuid(uuid);
         annotationDao.remove(annotation.getId());
@@ -79,28 +77,28 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if(cmd.getUuid() != null) {
             annotations = new ArrayList<>();
             String uuid = cmd.getUuid().toString();
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("getting single annotation by uuid: " + uuid);
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("getting single annotation by uuid: " + uuid);
             }
 
             annotations.add(annotationDao.findByUuid(uuid));
         } else if( ! (cmd.getEntityType() == null || cmd.getEntityType().isEmpty()) ) {
             String type = cmd.getEntityType();
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("getting annotations for type: " + type);
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("getting annotations for type: " + type);
             }
             if (cmd.getEntityUuid() != null) {
                 String uuid = cmd.getEntityUuid().toString();
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("getting annotations for entity: " + uuid);
+                if(LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("getting annotations for entity: " + uuid);
                 }
                 annotations = annotationDao.findByEntity(type,cmd.getEntityUuid().toString());
             } else {
                 annotations = annotationDao.findByEntityType(type);
             }
         } else {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("getting all annotations");
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("getting all annotations");
             }
             annotations = annotationDao.listAll();
         }

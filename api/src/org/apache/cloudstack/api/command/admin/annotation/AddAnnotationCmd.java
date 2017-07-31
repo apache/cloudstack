@@ -23,6 +23,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.google.common.base.Preconditions;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,16 +32,15 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 
-/**
- * @since 4.11
- */
 @APICommand(name = AddAnnotationCmd.APINAME, description = "add an annotation.", responseObject = AnnotationResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class AddAnnotationCmd extends BaseCmd{
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
+public class AddAnnotationCmd extends BaseCmd {
+
+    public static final String APINAME = "addAnnotation";
 
     @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "the annotation text")
     private String annotation;
-    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "the entity type")
+    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "the entity type (only HOST is allowed atm)")
     private String entityType;
     @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "the id of the entity to annotate")
     private String entityUuid;
@@ -56,8 +56,6 @@ public class AddAnnotationCmd extends BaseCmd{
     public String getEntityUuid() {
         return entityUuid;
     }
-
-    public static final String APINAME = "addAnnotation";
 
     @Override
     public void execute()

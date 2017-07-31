@@ -181,9 +181,7 @@ known_categories = {
     'deleteServicePackageOffering' : 'Load Balancer',
     'destroyNsVpx' : 'Load Balancer',
     'startNsVpx' : 'Load Balancer',
-    'listAnnotations' : 'Annotations',
-    'addAnnotation' : 'Annotations',
-    'removeAnnotation' : 'Annotations',
+    'Annotations' : 'Annotations',
     'CA': 'Certificate'
     }
 

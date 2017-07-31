@@ -22,9 +22,6 @@ import org.apache.cloudstack.api.command.admin.annotation.RemoveAnnotationCmd;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-/**
- * @since 4.11
- */
 public interface AnnotationService {
     ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd);
 
