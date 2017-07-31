@@ -1584,6 +1584,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             args += " -N";
         }
 
+        if (cmd.isWindows()) {
+            args += " -W";
+        }
+
         final String command = String.format("%s%s %s", "/root/", VRScripts.DHCP, args);
 
         if (s_logger.isDebugEnabled()) {

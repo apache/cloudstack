@@ -130,6 +130,7 @@ class CsDhcp(CsDataBag):
             logging.debug("Hosts file unchanged")
 
     def add(self, entry):
+        windowsInterfaceMetric="1i"
         self.add_host(entry['ipv4_adress'], entry['host_name'])
         # lease time boils down to once a month
         # with a splay of 60 hours to prevent storms
@@ -150,6 +151,9 @@ class CsDhcp(CsDataBag):
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))
+
+        if entry['windows_entry'] == True:
+            self.dhcp_opts.add("%s,%s,%d,%s" % (tag,'vendor:MSFT',3,windowsInterfaceMetric))
 
         i = IPAddress(entry['ipv4_adress'])
         # Calculate the device

@@ -29,13 +29,14 @@ public class VmDhcpConfig extends ConfigBase {
     private String defaultGateway;
     private String staticRoutes;
     private boolean defaultEntry;
+    private boolean windowsEntry;
 
     public VmDhcpConfig() {
         super(VM_DHCP);
     }
 
     public VmDhcpConfig(String hostName, String macAddress, String ipv4Adress, String ipv6Address, String ipv6Duid, String dnsAdresses, String defaultGateway,
-            String staticRoutes, boolean defaultEntry) {
+            String staticRoutes, boolean defaultEntry,boolean windowsEntry) {
         super(VM_DHCP);
         this.hostName = hostName;
         this.macAddress = macAddress;
@@ -46,6 +47,7 @@ public class VmDhcpConfig extends ConfigBase {
         this.defaultGateway = defaultGateway;
         this.staticRoutes = staticRoutes;
         this.defaultEntry = defaultEntry;
+        this.windowsEntry = windowsEntry;
     }
 
     public String getHostName() {
@@ -120,4 +122,7 @@ public class VmDhcpConfig extends ConfigBase {
         this.defaultEntry = defaultEntry;
     }
 
+    public boolean isWindowsEntry() {return windowsEntry;  }
+
+    public void setWindowsEntry(boolean windowsEntry) {this.windowsEntry = windowsEntry;  }
 }

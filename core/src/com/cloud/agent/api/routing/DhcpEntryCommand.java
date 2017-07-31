@@ -34,6 +34,7 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String ip6Gateway;
     String duid;
     private boolean isDefault;
+    private boolean  isWindows;
     boolean executeInSequence = false;
 
     protected DhcpEntryCommand() {
@@ -142,5 +143,11 @@ public class DhcpEntryCommand extends NetworkElementCommand {
 
     public void setDefault(boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public boolean isWindows() { return isWindows; }
+
+    public void setWindows(boolean windows) {
+        isWindows = windows;
     }
 }
