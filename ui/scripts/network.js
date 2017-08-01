@@ -400,6 +400,22 @@
                                 }
                             }
                         }
+                        //Ajax call to check if VPN is enabled.
+                        $.ajax({
+                            url: createURL('listRemoteAccessVpns'),
+                            data: {
+                                account: g_account,
+                                domainid: g_domainid,
+                                listAll: true
+                            },
+                            async: false,
+                            success: function(vpnResponse) {
+                                var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+                                if (isVPNEnabled) {
+                                    sectionsToShow.push('vpnuser');
+                                }
+                            }
+                        });
                     }
                 });
 
@@ -4259,99 +4275,11 @@
                                                 $('<li>').addClass('psk').html(_l('message.enabled.vpn.ip.sec') + ' ')
                                                 .append($('<strong>').html(psk))
                                             )
-                                    ).multiEdit({
-                                        context: args.context,
-                                        noSelect: true,
-                                        fields: {
-                                            'username': {
-                                                edit: true,
-                                                label: 'label.username'
-                                            },
-                                            'password': {
-                                                edit: true,
-                                                isPassword: true,
-                                                label: 'label.password'
-                                            },
-                                            'add-user': {
-                                                addButton: true,
-                                                label: 'label.add.user'
-                                            }
-                                        },
-                                        add: {
-                                            label: 'label.add.user',
-                                            action: function(args) {
-                                                $.ajax({
-                                                    url: createURL('addVpnUser'),
-                                                    data: $.extend(args.data, {
-                                                        domainid: args.context.ipAddresses[0].domainid,
-                                                        account: args.context.ipAddresses[0].account
-                                                    }),
-                                                    dataType: 'json',
-                                                    type: "POST",
-                                                    success: function(data) {
-                                                        args.response.success({
-                                                            _custom: {
-                                                                jobId: data.addvpnuserresponse.jobid
-                                                            },
-                                                            notification: {
-                                                                label: 'label.add.vpn.user',
-                                                                poll: pollAsyncJobResult
-                                                            }
-                                                        });
-                                                    },
-                                                    error: function(data) {
-                                                        args.response.error(parseXMLHttpResponse(data));
-                                                    }
-                                                });
-                                            }
-                                        },
-                                        actions: {
-                                            destroy: {
-                                                label: 'label.action.delete.user',
-                                                action: function(args) {
-                                                    $.ajax({
-                                                        url: createURL('removeVpnUser'),
-                                                        data: {
-                                                            domainid: args.context.multiRule[0].domainid,
-                                                            account: args.context.multiRule[0].account,
-                                                            username: args.context.multiRule[0].username
-                                                        },
-                                                        dataType: 'json',
-                                                        async: true,
-                                                        success: function(data) {
-                                                            var jobID = data.removevpnuserresponse.jobid;
-
-                                                            args.response.success({
-                                                                _custom: {
-                                                                    jobId: jobID
-                                                                },
-                                                                notification: {
-                                                                    label: 'label.delete.vpn.user',
-                                                                    poll: pollAsyncJobResult
-                                                                }
-                                                            });
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                        },
-                                        dataProvider: function(args) {
-                                            $.ajax({
-                                                url: createURL('listVpnUsers'),
-                                                data: {
-                                                    domainid: args.context.ipAddresses[0].domainid,
-                                                    account: args.context.ipAddresses[0].account
-                                                },
-                                                dataType: 'json',
-                                                async: true,
-                                                success: function(data) {
-                                                    args.response.success({
-                                                        data: data.listvpnusersresponse.vpnuser
-                                                    });
-                                                }
-                                            });
-                                        }
-                                    });
+                                            .append(
+                                                //Note
+                                                $('<li>').html('Note: VPN users are now accessed by changing views at the networks tab.')
+                                            )
+                                    )
                                 }
                             }
                         }
@@ -6349,7 +6277,192 @@
                         }
                     }
                 }
-            }
+            },
+            vpnuser: {
+                        type: 'select',
+                        title: 'VPN Users',
+
+                        listView: {
+                        id: 'vpnUsers',
+                        fields: {
+                            username: { label: 'label.name' },
+                            domain: { label: 'label.domain' },
+                            state: { label: 'label.state',
+                                indicator: {
+                                    'Active': 'on',
+                                }
+                            }
+                        },
+                        dataProvider: function(args) {
+                            var data = {};
+                            listViewDataProvider(args, data);
+                            $.ajax({
+                                url: createURL('listVpnUsers'),
+                                data: data,
+                                dataType: 'json',
+                                async: true,
+                                success: function(data) {
+                                    args.response.success({
+                                        data: data.listvpnusersresponse.vpnuser
+                                    });
+                                }
+                            });
+                        },
+                        actions:{
+                            destroy: {
+                                label: 'label.action.delete.user',
+                                messages: {
+                                    confirm: function(args) { return 'Are you sure you want to delete the VPN user'},
+                                    notification: function(args) { return 'label.delete.vpn.user'}
+                                },
+                                action: function(args) {
+                                console.log(args.context);
+                                $.ajax({
+                                    url: createURL('removeVpnUser'),
+                                    data: {
+                                        domainid: args.context.vpnuser[0].domainid,
+                                        account: args.context.vpnuser[0].account,
+                                        username: args.context.vpnuser[0].username
+                                    },
+                                    dataType: 'json',
+                                    async: true,
+                                    success: function(data) {
+                                    var jobID = data.removevpnuserresponse.jobid;
+                                    args.response.success({
+                                       _custom: {
+                                            jobId: jobID
+                                       }
+                                    });
+                                    }
+                                });
+                                },
+                                notification: {
+                                    label: 'label.delete.vpn.user',
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            add: {
+                                label: 'label.add.user',
+                                messages: {
+                                    notification: function(args) {
+                                    return 'label.add.vpn.user';
+                                }
+                                                            },
+                                createForm:{
+                                    title: 'label.add.vpn.user',
+                                    fields: {
+                                        'username': {
+                                            edit: true,
+                                            label: 'label.username'
+                                        },
+                                        'password': {
+                                            edit: true,
+                                            isPassword: true,
+                                            label: 'label.password'
+                                        },
+                                         domain: {
+                                            label: 'label.domain',
+                                            isHidden: function(args) {
+                                                if (isAdmin() || isDomainAdmin())
+                                                    return false;
+                                                else
+                                                    return true;
+                                                },
+                                            select: function(args) {
+                                                if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "",
+                                                            description: ""
+                                                        });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                data: null
+                                                });
+                                                }
+                                            }
+                                        },
+                                        account: {
+                                            label: 'label.account',
+                                            validation: {
+                                                required: true
+                                            },
+                                            isHidden: function(args) {
+                                                if (isAdmin() || isDomainAdmin())
+                                                    return false;
+                                                else
+                                                    return true;
+                                                }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                var dataObj = {
+                                    username: args.data.username,
+                                    password: args.data.password
+
+                                };
+                                if (args.data.domain != null && args.data.domain.length > 0) {
+                                    $.extend(dataObj, {
+                                        domainid: args.data.domain
+                                    });
+                                    if (args.data.account != null && args.data.account.length > 0) {
+                                        $.extend(dataObj, {
+                                            account: args.data.account
+                                        });
+                                    }
+                                }
+                                $.ajax({
+                                url: createURL('addVpnUser'),
+                                data: dataObj,
+                                dataType: 'json',
+                                success: function(json) {
+                                    var jid = json.addvpnuserresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getUpdatedItem: function(json) {
+                                            return json.queryasyncjobresultresponse.jobresult.vpnuser;
+                                            }
+                                        }
+                                    });
+                                }
+                                });
+                            },
+                            notification: {
+                                label: 'label.add.vpn.user',
+                                poll: pollAsyncJobResult
+                            }
+                        }
+                    }
+                    }
+                }
         }
     };
 
