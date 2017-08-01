@@ -17,35 +17,6 @@
 
 package com.cloud.configuration;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
@@ -68,17 +39,16 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.Networks;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.ProjectManager;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -87,16 +57,37 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchCriteria;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
@@ -111,7 +102,6 @@ public class ConfigurationManagerTest {
 
     private static final Logger s_logger = Logger.getLogger(ConfigurationManagerTest.class);
 
-    @InjectMocks
     ConfigurationManagerImpl configurationMgr = new ConfigurationManagerImpl();
 
     DedicatePublicIpRangeCmd dedicatePublicIpRangesCmd = new DedicatePublicIpRangeCmdExtn();
@@ -128,8 +118,6 @@ public class ConfigurationManagerTest {
     ResourceLimitService _resourceLimitMgr;
     @Mock
     NetworkOrchestrationService _networkMgr;
-    @Mock
-    NetworkOfferingDao _networkOfferingDao;
     @Mock
     AccountDao _accountDao;
     @Mock
@@ -165,7 +153,9 @@ public class ConfigurationManagerTest {
     @Mock
     ImageStoreDao _imageStoreDao;
     @Mock
-    ConfigurationDao _configDao;
+    UserDao _userDao;
+    @Mock
+    DiskOfferingDao _diskOfferingDao;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -177,6 +167,28 @@ public class ConfigurationManagerTest {
     @Before
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
+        configurationMgr._accountMgr = _accountMgr;
+        configurationMgr._projectMgr = _projectMgr;
+        configurationMgr._resourceLimitMgr = _resourceLimitMgr;
+        configurationMgr._networkMgr = _networkMgr;
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._vlanDao = _vlanDao;
+        configurationMgr._accountVlanMapDao = _accountVlanMapDao;
+        configurationMgr._domainVlanMapDao = _domainVlanMapDao;
+        configurationMgr._publicIpAddressDao = _publicIpAddressDao;
+        configurationMgr._zoneDao = _zoneDao;
+        configurationMgr._firewallDao = _firewallDao;
+        configurationMgr._ipAddrMgr = _ipAddrMgr;
+        configurationMgr._networkModel = _networkModel;
+        configurationMgr._privateIpAddressDao = _privateIpAddressDao;
+        configurationMgr._volumeDao = _volumeDao;
+        configurationMgr._hostDao = _hostDao;
+        configurationMgr._vmInstanceDao = _vmInstanceDao;
+        configurationMgr._clusterDao = _clusterDao;
+        configurationMgr._podDao = _podDao;
+        configurationMgr._physicalNetworkDao = _physicalNetworkDao;
+        configurationMgr._imageStoreDao = _imageStoreDao;
+
 
         Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(configurationMgr._accountMgr.getAccount(anyLong())).thenReturn(account);
@@ -247,7 +259,7 @@ public class ConfigurationManagerTest {
         /*
          * TEST 5: given range is already allocated to a different account DedicatePublicIpRange should fail
          */
-        runDedicatePublicIpRangeIPAddressAllocated();
+        runDedicatePublicIpRangeIPAdressAllocated();
     }
 
     @Test
@@ -373,8 +385,8 @@ public class ConfigurationManagerTest {
         }
     }
 
-    void runDedicatePublicIpRangeIPAddressAllocated() throws Exception {
-        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeIPAddressAllocated");
+    void runDedicatePublicIpRangeIPAdressAllocated() throws Exception {
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeIPAdressAllocated");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -397,7 +409,7 @@ public class ConfigurationManagerTest {
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Public IP address in range is allocated to another account"));
         } finally {
-            txn.close("runDedicatePublicIpRangeIPAddressAllocated");
+            txn.close("runDedicatePublicIpRangeIPAdressAllocated");
         }
     }
 
@@ -486,26 +498,6 @@ public class ConfigurationManagerTest {
         } finally {
             txn.close("runReleaseNonDedicatedPublicIpRange");
         }
-    }
-
-    @Test
-    public void searchForNetworkOfferingsTest() {
-        List<NetworkOfferingVO> offerings = Arrays.asList(
-                new NetworkOfferingVO("off1", "off1", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, false),
-                new NetworkOfferingVO("off2", "off2", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, false),
-                new NetworkOfferingVO("off3", "off3", Networks.TrafficType.Guest, false, false, null, null, false, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false, true)
-        );
-
-        Mockito.when(_networkOfferingDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
-        Mockito.when(_networkOfferingDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class))).thenReturn(offerings);
-
-        ListNetworkOfferingsCmd cmd = Mockito.spy(ListNetworkOfferingsCmd.class);
-        Mockito.when(cmd.getPageSize()).thenReturn(10);
-
-        assertThat(configurationMgr.searchForNetworkOfferings(cmd).second(), is(3));
-
-        Mockito.when(cmd.getForVpc()).thenReturn(Boolean.FALSE);
-        assertThat(configurationMgr.searchForNetworkOfferings(cmd).second(), is(2));
     }
 
     @Test
@@ -892,23 +884,353 @@ public class ConfigurationManagerTest {
         Assert.assertTrue(result);
     }
 
-    @Test(expected = CloudRuntimeException.class)
-    public void testGetVlanNumberFromUriInvalidParameter() {
-        configurationMgr.getVlanNumberFromUri("vlan");
-    }
+    @Test
+    public void testCreateDiskOfferingNoIopsFixedSize(){
 
-    @Test(expected = CloudRuntimeException.class)
-    public void testGetVlanNumberFromUriInvalidSintax() {
-        configurationMgr.getVlanNumberFromUri("xxx://7");
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        DiskOfferingVO diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                10L, null, false, false, false, null, null, null, null, null, null, null, null, null, null, null, null);
+
+        Assert.assertEquals((10L * 1024 * 1024 * 1024), diskOfferingVO.getDiskSize());
+        Assert.assertNull(diskOfferingVO.getMinIops());
+        Assert.assertNull(diskOfferingVO.getMaxIops());
+        Assert.assertFalse(diskOfferingVO.isCustomized());
+        Assert.assertNull(diskOfferingVO.isCustomizedIops());
+        Assert.assertNull(diskOfferingVO.getHighestMinIops());
+        Assert.assertNull(diskOfferingVO.getHighestMaxIops());
+        Assert.assertNull(diskOfferingVO.getMinIopsPerGb());
+        Assert.assertNull(diskOfferingVO.getMaxIopsPerGb());
     }
 
     @Test
-    public void testGetVlanNumberFromUriVlan() {
-        Assert.assertEquals("7", configurationMgr.getVlanNumberFromUri("vlan://7"));
+    public void testCreateDiskOfferingFixedIopsFixedSizeNoHighest(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        DiskOfferingVO diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                10L, null, false, false, false, null, null, null, null, null, null, null, null, null, null, null, null);
+
+        Assert.assertEquals((10L * 1024 * 1024 * 1024), diskOfferingVO.getDiskSize());
+        Assert.assertNull(diskOfferingVO.getMinIops());
+        Assert.assertNull(diskOfferingVO.getMaxIops());
+        Assert.assertFalse(diskOfferingVO.isCustomized());
+        Assert.assertNull(diskOfferingVO.isCustomizedIops());
+        Assert.assertNull(diskOfferingVO.getHighestMinIops());
+        Assert.assertNull(diskOfferingVO.getHighestMaxIops());
+        Assert.assertNull(diskOfferingVO.getMinIopsPerGb());
+        Assert.assertNull(diskOfferingVO.getMaxIopsPerGb());
     }
 
     @Test
-    public void testGetVlanNumberFromUriUntagged() {
-        Assert.assertEquals("untagged", configurationMgr.getVlanNumberFromUri("vlan://untagged"));
+    public void testCreateDiskOfferingNoIopsFixedSizeWithHighest(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+        boolean seenException = false;
+
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        try {
+            DiskOfferingVO diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                    10L, null, false, false, false, null, null, null, null, null, null, null, null, null, 1000L, 5000L, null);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.toString().contains("highestminops specified but none of customizediops or miniopspergb specified"));
+            seenException = true;
+        }
+
+        Assert.assertTrue("InvalidParameterValueException expected but got no exception", seenException);
+    }
+
+    @Test
+    public void testCreateDiskOfferingFixedIopsFixedSizeWithHighest(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+        boolean seenException = false;
+
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        try {
+            DiskOfferingVO diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                    10L, null, false, false, false, null, 1000L, 5000L, null, null, null, null, null, null, 1000L, 5000L, null);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.toString().contains("highestminops specified but none of customizediops or miniopspergb specified"));
+            seenException = true;
+        }
+
+        Assert.assertTrue("InvalidParameterValueException expected but got no exception", seenException);
+
+    }
+
+    @Test
+    public void testCreateDiskOfferingCustomIopsFixedSizeNoHighest(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        DiskOfferingVO diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                10L, null, false, false, false, true, null, null, null, null, null, null, null, null, null, null, null);
+
+        Assert.assertEquals((10L * 1024 * 1024 * 1024), diskOfferingVO.getDiskSize());
+        Assert.assertNull(diskOfferingVO.getMinIops());
+        Assert.assertNull(diskOfferingVO.getMaxIops());
+        Assert.assertFalse(diskOfferingVO.isCustomized());
+        Assert.assertTrue(diskOfferingVO.isCustomizedIops());
+        Assert.assertNull(diskOfferingVO.getHighestMinIops());
+        Assert.assertNull(diskOfferingVO.getHighestMaxIops());
+        Assert.assertNull(diskOfferingVO.getMinIopsPerGb());
+        Assert.assertNull(diskOfferingVO.getMaxIopsPerGb());
+
+    }
+
+    @Test
+    public void testCreateDiskOfferingCustomIopsFixedSizeWithHighest(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+        DiskOfferingVO diskOfferingVO  = null;
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        Long testHighestMinIops = 1000L;
+        Long testHighestMaxIops = 5000L;
+        boolean seenException = false;
+
+        diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                10L, null, false, false, false, true, null, null, null, null, null, null, null, null, testHighestMinIops, testHighestMaxIops, null);
+
+        Assert.assertEquals((10L * 1024 * 1024 * 1024), diskOfferingVO.getDiskSize());
+        Assert.assertNull(diskOfferingVO.getMinIops());
+        Assert.assertNull(diskOfferingVO.getMaxIops());
+        Assert.assertFalse(diskOfferingVO.isCustomized());
+        Assert.assertTrue(diskOfferingVO.isCustomizedIops());
+        Assert.assertEquals(testHighestMinIops, diskOfferingVO.getHighestMinIops());
+        Assert.assertEquals(testHighestMaxIops, diskOfferingVO.getHighestMaxIops());
+        Assert.assertNull(diskOfferingVO.getMinIopsPerGb());
+        Assert.assertNull(diskOfferingVO.getMaxIopsPerGb());
+
+        // highestminiops specified but no highestmaxiops
+        try {
+            diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                    10L, null, false, false, false, true, null, null, null, null, null, null, null, null, testHighestMinIops, null, null);
+        }catch (InvalidParameterValueException e) {
+            Assert.assertTrue("Incorrect exception raised", e.toString().contains("Both highestminiops and highestmaxiops should be specified"));
+            seenException = true;
+        }
+        Assert.assertTrue("Expected to raise an exception, but no exception was raised", seenException);
+
+        // highestmaxiops specified but no highestminiops
+        seenException = false;
+         try {
+            diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                    10L, null, false, false, false, true, null, null, null, null, null, null, null, null, null, testHighestMaxIops, null);
+        }catch (InvalidParameterValueException e) {
+            Assert.assertTrue("Incorrect exception raised", e.toString().contains("Both highestminiops and highestmaxiops should be specified"));
+            seenException = true;
+        }
+        Assert.assertTrue("Expected to raise an exception, but no exception was raised", seenException);
+
+        // highest min > highest max
+        testHighestMinIops = 5000L;
+        testHighestMaxIops = 1000L;
+        seenException = false;
+         try {
+            diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                    10L, null, false, false, false, true, null, null, null, null, null, null, null, null, testHighestMinIops, testHighestMaxIops, null);
+        }catch (InvalidParameterValueException e) {
+            Assert.assertTrue("Incorrect exception raised", e.toString().contains("highestminiops must be less than highestmaxiops"));
+            seenException = true;
+        }
+        Assert.assertTrue("Expected to raise an exception, but no exception was raised", seenException);
+
+        //non positive value for highestMinIops
+        testHighestMinIops = -1L;
+        testHighestMaxIops = 1000L;
+        seenException = false;
+         try {
+            diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                    10L, null, false, false, false, true, null, null, null, null, null, null, null, null, testHighestMinIops, testHighestMaxIops, null);
+        }catch (InvalidParameterValueException e) {
+            Assert.assertTrue("Incorrect exception raised", e.toString().contains("highestminiops/highestmaxiops value must be greater than 0"));
+            seenException = true;
+        }
+        Assert.assertTrue("Expected to raise an exception, but no exception was raised", seenException);
+    }
+
+    @Test
+    public void testCreateDiskOfferingCustomIopsFixedSizeWithIopsGb(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+        DiskOfferingVO diskOfferingVO  = null;
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        Long testMinIopsPerGb = 10L;
+        Long testMaxIopsPerGb = 50L;
+        boolean seenException = false;
+
+        try {
+         diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                10L, null, false, false, false, true, null, null, null, null, null, null, testMinIopsPerGb, testMaxIopsPerGb, null, null, null);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue("Incorrect exception raised:" + e.toString(), e.toString().contains("Cannot set Min/Max IOPS/GB for a fixed size disk offering"));
+            seenException = true;
+        }
+        Assert.assertTrue("Expected to raise an exception, but no exception was raised", seenException);
+    }
+
+    @Test
+    public void testCreateDiskOfferingFixedIopsOrCustomIopsWithIopsGb(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+        DiskOfferingVO diskOfferingVO  = null;
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        Long testMinIopsPerGb = 10L;
+        Long testMaxIopsPerGb = 50L;
+        boolean seenException = false;
+
+        //fixed iops, custom size
+        try {
+         diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                null, null, true, false, false, null, 1000L, 5000L, null, null, null, null, testMinIopsPerGb, testMaxIopsPerGb, null, null, null);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue("Incorrect exception raised:" + e.toString(), e.toString().contains("Cannot set Min/Max IOPS/GB with either custom IOPS or fixed IOPS"));
+            seenException = true;
+        }
+        Assert.assertTrue("Expected to raise an exception, but no exception was raised", seenException);
+
+
+        //custom iops, custom size
+        seenException = false;
+        try {
+         diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                10L, null, true, false, false, true, null, null, null, null, null, null, testMinIopsPerGb, testMaxIopsPerGb, null, null, null);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue("Incorrect exception raised:" + e.toString(), e.toString().contains("Cannot set Min/Max IOPS/GB with either custom IOPS or fixed IOPS"));
+            seenException = true;
+        }
+        Assert.assertTrue("Expected to raise an exception, but no exception was raised", seenException);
+    }
+
+    @Test
+    public void testCreateDiskOfferingCustomSizeWithIopsGb(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+        DiskOfferingVO diskOfferingVO  = null;
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        Long testMinIopsPerGb = 10L;
+        Long testMaxIopsPerGb = 50L;
+        boolean seenException = false;
+
+        diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                null, null, true, false, false, null, null, null, null, null, null, null, testMinIopsPerGb, testMaxIopsPerGb, null, null, null);
+
+        Assert.assertNull(diskOfferingVO.getMinIops());
+        Assert.assertNull(diskOfferingVO.getMaxIops());
+        Assert.assertTrue(diskOfferingVO.isCustomized());
+        Assert.assertNull(diskOfferingVO.isCustomizedIops());
+        Assert.assertEquals(testMinIopsPerGb, diskOfferingVO.getMinIopsPerGb());
+        Assert.assertEquals(testMaxIopsPerGb, diskOfferingVO.getMaxIopsPerGb());
+        Assert.assertNull(diskOfferingVO.getHighestMinIops());
+        Assert.assertNull(diskOfferingVO.getHighestMaxIops());
+    }
+
+    @Test
+    public void testCreateDiskOfferingCustomSizeWithIopsGbWithHighest(){
+        configurationMgr._accountDao = _accountDao;
+        configurationMgr._userDao = _userDao;
+        configurationMgr._diskOfferingDao = _diskOfferingDao;
+        DiskOfferingVO diskOfferingVO  = null;
+        UserVO userVO = Mockito.mock(UserVO.class);
+        AccountVO accountVO = Mockito.mock(AccountVO.class);
+        when(accountVO.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+
+        when(configurationMgr._userDao.findById(anyLong())).thenReturn(userVO);
+        when(configurationMgr._accountDao.findById(anyLong())).thenReturn(accountVO);
+        when(configurationMgr._diskOfferingDao.persist(any(DiskOfferingVO.class))).then(returnsFirstArg());
+
+        Long testMinIopsPerGb = 10L;
+        Long testMaxIopsPerGb = 50L;
+        Long testHighestMinIops = 500L;
+        Long testHighestMaxIops = 1000L;
+
+        diskOfferingVO = configurationMgr.createDiskOffering(1L, 1L, "test-vol", "test-description", Storage.ProvisioningType.THIN.toString(),
+                null, null, true, false, false, null, null, null, null, null, null, null, testMinIopsPerGb, testMaxIopsPerGb, testHighestMinIops, testHighestMaxIops, null);
+
+        Assert.assertNull(diskOfferingVO.getMinIops());
+        Assert.assertNull(diskOfferingVO.getMaxIops());
+        Assert.assertTrue(diskOfferingVO.isCustomized());
+        Assert.assertNull(diskOfferingVO.isCustomizedIops());
+        Assert.assertEquals(testMinIopsPerGb, diskOfferingVO.getMinIopsPerGb());
+        Assert.assertEquals(testMaxIopsPerGb, diskOfferingVO.getMaxIopsPerGb());
+        Assert.assertEquals(testHighestMinIops, diskOfferingVO.getHighestMinIops());
+        Assert.assertEquals(testHighestMaxIops, diskOfferingVO.getHighestMaxIops());
     }
 }

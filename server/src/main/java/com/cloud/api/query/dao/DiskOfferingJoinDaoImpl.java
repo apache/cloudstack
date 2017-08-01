@@ -16,14 +16,6 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.util.List;
-
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -31,6 +23,11 @@ import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, Long> implements DiskOfferingJoinDao {
@@ -62,6 +59,10 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setDiskSize(offering.getDiskSize() / (1024 * 1024 * 1024));
         diskOfferingResponse.setMinIops(offering.getMinIops());
         diskOfferingResponse.setMaxIops(offering.getMaxIops());
+        diskOfferingResponse.setMinIopsPerGb(offering.getMinIopsPerGb());
+        diskOfferingResponse.setMaxIopsPerGb(offering.getMaxIopsPerGb());
+        diskOfferingResponse.setHighestMinIops(offering.getHighestMinIops());
+        diskOfferingResponse.setHighestMaxIops(offering.getHighestMaxIops());
 
         diskOfferingResponse.setDomain(offering.getDomainName());
         diskOfferingResponse.setDomainId(offering.getDomainUuid());

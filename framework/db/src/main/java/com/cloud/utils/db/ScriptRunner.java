@@ -20,6 +20,8 @@
  */
 package com.cloud.utils.db;
 
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
@@ -29,8 +31,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.apache.log4j.Logger;
-
 /**
  * Tool to run database scripts
  */
@@ -38,6 +38,7 @@ public class ScriptRunner {
     private static Logger s_logger = Logger.getLogger(ScriptRunner.class);
 
     private static final String DEFAULT_DELIMITER = ";";
+    private static final String CHANGE_DELIMITER_STMT = "DELIMITER ";
 
     private Connection connection;
 
@@ -128,6 +129,12 @@ public class ScriptRunner {
                     // Do nothing
                 } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("#")) {
                     // Do nothing
+                } else if (trimmedLine.startsWith(CHANGE_DELIMITER_STMT)) {
+                    String[] res = trimmedLine.split(CHANGE_DELIMITER_STMT, 2);
+                    if (res.length == 2) {
+                        String newDelimiter = res[1];
+                        setDelimiter(newDelimiter, fullLineDelimiter);
+                    }
                 } else if (!fullLineDelimiter && trimmedLine.endsWith(getDelimiter()) || fullLineDelimiter && trimmedLine.equals(getDelimiter())) {
                     command.append(line.substring(0, line.lastIndexOf(getDelimiter())));
                     command.append(" ");

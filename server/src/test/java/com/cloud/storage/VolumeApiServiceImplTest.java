@@ -16,19 +16,26 @@
 // under the License.
 package com.cloud.storage;
 
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -38,14 +45,11 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.configuration.Resource;
-import com.cloud.host.dao.HostDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -58,11 +62,11 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.Assert;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -73,6 +77,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static junit.framework.TestCase.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -123,6 +128,10 @@ public class VolumeApiServiceImplTest {
     AccountDao _accountDao;
     @Mock
     HostDao _hostDao;
+    @Mock
+    DiskOfferingDao _diskOfferingDao;
+    @Mock
+    ConfigurationManager _configMgr;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
@@ -145,6 +154,8 @@ public class VolumeApiServiceImplTest {
         _svc._resourceLimitMgr = _resourceLimitMgr;
         _svc._accountDao = _accountDao;
         _svc._hostDao = _hostDao;
+        _svc._diskOfferingDao = _diskOfferingDao;
+        _svc._configMgr = _configMgr;
         _svc._gson = GsonHelper.getGsonLogger();
 
         // mock caller context
@@ -486,6 +497,256 @@ public class VolumeApiServiceImplTest {
         }
     }
 
+    @Test
+    public void testResizeVolumeFromFixedSizeToCustomSize() throws NoSuchFieldException, IllegalAccessException {
+        ResizeVolumeCmd resizeVolumeCmd = Mockito.mock(ResizeVolumeCmd.class);
+        when(resizeVolumeCmd.getNewDiskOfferingId()).thenReturn(2L);
+        when(resizeVolumeCmd.getEntityId()).thenReturn(1L);
+        when(resizeVolumeCmd.getSize()).thenReturn(10L);
+
+        VolumeVO volumeVO = new VolumeVO(Volume.Type.DATADISK, "test-vol", 1, 1, 1, 1, Storage.ProvisioningType.THIN,
+                10L, null, null, null);
+        Field IdField = VolumeVO.class.getDeclaredField("id");
+        IdField.setAccessible(true);
+        IdField.set(volumeVO, 1L);
+
+        Field maxVolSizeField = _svc.getClass().getDeclaredField("_maxVolumeSizeInGb");
+        maxVolSizeField.setAccessible(true);
+        maxVolSizeField.setLong(_svc, 2 * 1024);
+
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(1L,"fixed-size","fixed-size", Storage.ProvisioningType.THIN,
+                10L, "", false, false, null, null, null);
+        DiskOfferingVO newDiskOfferingVO = new DiskOfferingVO(1L, "custom-size", "custom-size", Storage.ProvisioningType.THIN,
+                0L, "", true, false, null, null, null);
+
+        VolumeVO newVolume = null;
+
+        when(_svc._volsDao.findById(1L)).thenReturn(volumeVO);
+        when(_svc._volsDao.getHypervisorType(1L)).thenReturn(HypervisorType.XenServer);
+        when(_svc._volsDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+
+        when(_svc._vmSnapshotDao.findByVm(anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
+
+        when(_svc._diskOfferingDao.findById(1L)).thenReturn(diskOfferingVO);
+        when(_svc._diskOfferingDao.findById(2L)).thenReturn(newDiskOfferingVO);
+        doNothing().when(_svc._configMgr).checkDiskOfferingAccess(any(Account.class), any(DiskOffering.class));
+
+        try {
+            newVolume = _svc.resizeVolume(resizeVolumeCmd);
+            Assert.assertEquals(Long.valueOf(2L), newVolume.getDiskOfferingId());
+        } catch (ResourceAllocationException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testResizeVolumeFromCustomSizeFixedIopsToFixedSize() throws NoSuchFieldException, IllegalAccessException {
+        ResizeVolumeCmd resizeVolumeCmd = Mockito.mock(ResizeVolumeCmd.class);
+        when(resizeVolumeCmd.getNewDiskOfferingId()).thenReturn(2L);
+        when(resizeVolumeCmd.getEntityId()).thenReturn(1L);
+        when(resizeVolumeCmd.getSize()).thenReturn(10L);
+
+        VolumeVO volumeVO = new VolumeVO(Volume.Type.DATADISK, "test-vol", 1, 1, 1, 1, Storage.ProvisioningType.THIN,
+                10L, null, null, null);
+        Field IdField = VolumeVO.class.getDeclaredField("id");
+        IdField.setAccessible(true);
+        IdField.set(volumeVO, 1L);
+
+        Field maxVolSizeField = _svc.getClass().getDeclaredField("_maxVolumeSizeInGb");
+        maxVolSizeField.setAccessible(true);
+        maxVolSizeField.setLong(_svc, 2 * 1024);
+
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(1L,"custom-size-fixed-iops","custom-size-fixed-iops",
+                Storage.ProvisioningType.THIN, 0L, "", true, false, 100L, 200L, null);
+        DiskOfferingVO newDiskOfferingVO = new DiskOfferingVO(1L, "fixed-size", "fixed-size", Storage.ProvisioningType.THIN,
+                0L, "", true, false, null, null, null);
+
+        VolumeVO newVolume = null;
+
+        when(_svc._volsDao.findById(1L)).thenReturn(volumeVO);
+        when(_svc._volsDao.getHypervisorType(1L)).thenReturn(HypervisorType.XenServer);
+        when(_svc._volsDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+
+        when(_svc._vmSnapshotDao.findByVm(anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
+
+        when(_svc._diskOfferingDao.findById(1L)).thenReturn(diskOfferingVO);
+        when(_svc._diskOfferingDao.findById(2L)).thenReturn(newDiskOfferingVO);
+        doNothing().when(_svc._configMgr).checkDiskOfferingAccess(any(Account.class), any(DiskOffering.class));
+
+        try {
+            newVolume = _svc.resizeVolume(resizeVolumeCmd);
+            Assert.assertEquals(Long.valueOf(2L), newVolume.getDiskOfferingId());
+        } catch (ResourceAllocationException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testResizeVolumeFromFixedSizeFixedIopsToCustomSizeIopsPerGb() throws NoSuchFieldException, IllegalAccessException {
+        Long newSize = 20L * 1024 * 1024 * 1024;
+        Long newSizeGb = 20L;
+        Long minIopsPerGb = 10L;
+        Long maxIopsPerGb = 20L;
+        Long newMinIops = newSizeGb * minIopsPerGb;
+        Long newMaxIops = newSizeGb * maxIopsPerGb;
+
+        ResizeVolumeCmd resizeVolumeCmd = Mockito.mock(ResizeVolumeCmd.class);
+        when(resizeVolumeCmd.getNewDiskOfferingId()).thenReturn(2L);
+        when(resizeVolumeCmd.getEntityId()).thenReturn(1L);
+        when(resizeVolumeCmd.getSize()).thenReturn(newSizeGb);
+
+        VolumeVO volumeVO = new VolumeVO(Volume.Type.DATADISK, "test-vol", 1, 1, 1, 1, Storage.ProvisioningType.THIN,
+                10L, 100L, 200L, null);
+        Field IdField = VolumeVO.class.getDeclaredField("id");
+        IdField.setAccessible(true);
+        IdField.set(volumeVO, 1L);
+
+        Field maxVolSizeField = _svc.getClass().getDeclaredField("_maxVolumeSizeInGb");
+        maxVolSizeField.setAccessible(true);
+        maxVolSizeField.setLong(_svc, 2 * 1024);
+
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(1L,"fixed-size-fixed-iops","fixed-size-fixed-iops",
+                Storage.ProvisioningType.THIN, 10L, "", false, false, 100L, 200L, null);
+        DiskOfferingVO newDiskOfferingVO = new DiskOfferingVO(1L, "custom-size-iopspergb", "custom-size-iopspergb", Storage.ProvisioningType.THIN,
+                0L, "", true, false, null, null, null);
+        newDiskOfferingVO.setMinIopsPerGb(10L);
+        newDiskOfferingVO.setMaxIopsPerGb(20L);
+
+        VolumeVO newVolume;
+
+        when(_svc._volsDao.findById(1L)).thenReturn(volumeVO);
+        when(_svc._volsDao.getHypervisorType(1L)).thenReturn(HypervisorType.XenServer);
+        when(_svc._volsDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+
+        when(_svc._vmSnapshotDao.findByVm(anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
+
+        when(_svc._diskOfferingDao.findById(1L)).thenReturn(diskOfferingVO);
+        when(_svc._diskOfferingDao.findById(2L)).thenReturn(newDiskOfferingVO);
+        doNothing().when(_svc._configMgr).checkDiskOfferingAccess(any(Account.class), any(DiskOffering.class));
+
+        try {
+            newVolume = _svc.resizeVolume(resizeVolumeCmd);
+            Assert.assertEquals(newMinIops, newVolume.getMinIops());
+            Assert.assertEquals(newMaxIops, newVolume.getMaxIops());
+            Assert.assertEquals(newSize, newVolume.getSize());
+            Assert.assertEquals(Volume.State.Allocated, newVolume.getState());
+        } catch (ResourceAllocationException e) {
+            fail(e.getMessage());
+        }
+
+    }
+
+    @Test
+    public void testResizeVolumeFromCustomSizeIopsPerGbToFixedSizeFixedIops() throws NoSuchFieldException, IllegalAccessException {
+        Long newSize = 20L * 1024 * 1024 * 1024;
+        Long newSizeGb = 20L;
+        Long newMinIops = 500L;
+        Long newMaxIops = 600L;
+
+        ResizeVolumeCmd resizeVolumeCmd = Mockito.mock(ResizeVolumeCmd.class);
+        when(resizeVolumeCmd.getNewDiskOfferingId()).thenReturn(2L);
+        when(resizeVolumeCmd.getEntityId()).thenReturn(1L);
+
+        VolumeVO volumeVO = new VolumeVO(Volume.Type.DATADISK, "test-vol", 1, 1, 1, 1, Storage.ProvisioningType.THIN,
+                newSize, 100L, 200L, null);
+        Field IdField = VolumeVO.class.getDeclaredField("id");
+        IdField.setAccessible(true);
+        IdField.set(volumeVO, 1L);
+
+        Field maxVolSizeField = _svc.getClass().getDeclaredField("_maxVolumeSizeInGb");
+        maxVolSizeField.setAccessible(true);
+        maxVolSizeField.setLong(_svc, 2 * 1024); // 2 TB max vol size
+
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(1L, "custom-size-iopspergb", "custom-size-iopspergb", Storage.ProvisioningType.THIN,
+                0L, "", true, false, null, null, null);
+        diskOfferingVO.setMinIopsPerGb(10L);
+        diskOfferingVO.setMaxIopsPerGb(20L);
+
+        DiskOfferingVO newDiskOfferingVO = new DiskOfferingVO(1L,"fixed-size-fixed-iops","fixed-size-fixed-iops",
+                Storage.ProvisioningType.THIN, newSize, "", false, false, newMinIops, newMaxIops, null);
+
+        VolumeVO newVolume;
+
+        when(_svc._volsDao.findById(1L)).thenReturn(volumeVO);
+        when(_svc._volsDao.getHypervisorType(1L)).thenReturn(HypervisorType.XenServer);
+        when(_svc._volsDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+
+        when(_svc._vmSnapshotDao.findByVm(anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
+
+        when(_svc._diskOfferingDao.findById(1L)).thenReturn(diskOfferingVO);
+        when(_svc._diskOfferingDao.findById(2L)).thenReturn(newDiskOfferingVO);
+        doNothing().when(_svc._configMgr).checkDiskOfferingAccess(any(Account.class), any(DiskOffering.class));
+
+        try {
+            newVolume = _svc.resizeVolume(resizeVolumeCmd);
+            Assert.assertEquals(newMinIops, newVolume.getMinIops());
+            Assert.assertEquals(newMaxIops, newVolume.getMaxIops());
+            Assert.assertEquals(newSize, newVolume.getSize());
+            Assert.assertEquals(Volume.State.Allocated, newVolume.getState());
+        } catch (ResourceAllocationException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testResizeVolumeFromCustomSizeIopsPerGbToCustomSizeIopsPerGb() throws NoSuchFieldException, IllegalAccessException {
+        Long oldSize = 10L * 1024 * 1024 * 1024;
+        Long oldSizeGb = 10L;
+        Long oldMinIopsPerGb = 10L;
+        Long oldMaxIopsPerGb = 30L;
+
+        Long newSize = 10L * 1024 * 1024 * 1024;
+        Long newSizeGb = 10L;
+        Long newMinIopsPerGb = 20L;
+        Long newMaxIopsPerGb = 50L;
+
+        ResizeVolumeCmd resizeVolumeCmd = Mockito.mock(ResizeVolumeCmd.class);
+        when(resizeVolumeCmd.getNewDiskOfferingId()).thenReturn(2L);
+        when(resizeVolumeCmd.getEntityId()).thenReturn(1L);
+
+        VolumeVO volumeVO = new VolumeVO(Volume.Type.DATADISK, "test-vol", 1, 1, 1, 1, Storage.ProvisioningType.THIN,
+                oldSize, oldSizeGb * oldMinIopsPerGb, oldSizeGb * oldMaxIopsPerGb, null);
+
+        Field IdField = VolumeVO.class.getDeclaredField("id");
+        IdField.setAccessible(true);
+        IdField.set(volumeVO, 1L);
+
+        Field maxVolSizeField = _svc.getClass().getDeclaredField("_maxVolumeSizeInGb");
+        maxVolSizeField.setAccessible(true);
+        maxVolSizeField.setLong(_svc, 2 * 1024); // 2 TB max vol size
+
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(1L, "custom-size-iopspergb-old", "custom-size-iopspergb-old", Storage.ProvisioningType.THIN,
+                0L, "", true, false, null, null, null);
+        diskOfferingVO.setMinIopsPerGb(oldMinIopsPerGb);
+        diskOfferingVO.setMaxIopsPerGb(oldMaxIopsPerGb);
+
+        DiskOfferingVO newDiskOfferingVO = new DiskOfferingVO(1L,"custom-size-iopspergb-new","custom-size-iopspergb-new",
+                Storage.ProvisioningType.THIN, newSize, "", false, false, null, null, null);
+        newDiskOfferingVO.setMinIopsPerGb(newMinIopsPerGb);
+        newDiskOfferingVO.setMaxIopsPerGb(newMaxIopsPerGb);
+
+        VolumeVO newVolume;
+
+        when(_svc._volsDao.findById(1L)).thenReturn(volumeVO);
+        when(_svc._volsDao.getHypervisorType(1L)).thenReturn(HypervisorType.XenServer);
+        when(_svc._volsDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+
+        when(_svc._vmSnapshotDao.findByVm(anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
+
+        when(_svc._diskOfferingDao.findById(1L)).thenReturn(diskOfferingVO);
+        when(_svc._diskOfferingDao.findById(2L)).thenReturn(newDiskOfferingVO);
+        doNothing().when(_svc._configMgr).checkDiskOfferingAccess(any(Account.class), any(DiskOffering.class));
+
+        try {
+            newVolume = _svc.resizeVolume(resizeVolumeCmd);
+            Assert.assertEquals(new Long(newMinIopsPerGb * newSizeGb), newVolume.getMinIops());
+            Assert.assertEquals(new Long(newMaxIopsPerGb * newSizeGb), newVolume.getMaxIops());
+            Assert.assertEquals(newSize, newVolume.getSize());
+            Assert.assertEquals(Volume.State.Allocated, newVolume.getState());
+        } catch (ResourceAllocationException e) {
+            fail(e.getMessage());
+        }
+    }
 
     @After
     public void tearDown() {

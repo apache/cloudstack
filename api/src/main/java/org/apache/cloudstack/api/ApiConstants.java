@@ -698,6 +698,10 @@ public class ApiConstants {
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
     public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";
+    public static final String MIN_IOPS_PER_GB = "miniopspergb";
+    public static final String MAX_IOPS_PER_GB = "maxiopspergb";
+    public static final String HIGHEST_MIN_IOPS = "highestminiops";
+    public static final String HIGHEST_MAX_IOPS = "highestmaxiops";
 
     public static final String ZONE_ID_LIST = "zoneids";
     public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";

@@ -367,6 +367,22 @@ cloudStack.docs = {
         desc: 'Appears only if Custom IOPS is not selected. Define the maximum volume IOPS.',
         externalLink: ''
     },
+    helpDiskOfferingHighestMinIops: {
+        desc: 'The highest minIOPS setting that can be set by the user for this offering. Applicable for custom IOPS and rate based IOPS',
+        externalLink: ''
+    },
+    helpDiskOfferingHighestMaxIops: {
+        desc: 'The highest maxIOPS setting that can be set by the user for this offering. Applicable for custom IOPS and rate based IOPS',
+        externalLink: ''
+    },
+    helpDiskOfferingMinIopsPerGb: {
+        desc: 'Rate at which min IOPS changes with size of the volume. minIops = minIopsPerGb  * volumeSize. Applicable for custom size disk offerings',
+        externalLink: ''
+    },
+    helpDiskOfferingMaxIopsPerGb: {
+        desc: 'Rate at which max IOPS changes with size of the volume. maxIops = maxIopsPerGb  * volumeSize. Applicable for custom size disk offerings',
+        externalLink: ''
+    },
     helpDiskOfferingHypervisorSnapshotReserve: {
         desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using XenServer or VMware) (Ex. The value 25 means 25%.)).'
     },

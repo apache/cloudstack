@@ -98,6 +98,18 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "max iops of the disk offering")
     private Long maxIops;
 
+    @Parameter(name = ApiConstants.MIN_IOPS_PER_GB, type = CommandType.LONG, required = false, description = "IOPS/GB rate for min IOPS. miniops = size * miniopspergb")
+    private Long minIopsPerGb;
+
+    @Parameter(name = ApiConstants.MAX_IOPS_PER_GB, type = CommandType.LONG, required = false, description = "IOPS/GB rate for max IOPS. maxiops = size * maxiopspergb")
+    private Long maxIopsPerGb;
+
+    @Parameter(name = ApiConstants.HIGHEST_MIN_IOPS, type = CommandType.LONG, required = false, description = "Highest Min IOPS value that is allowed for this offering")
+    private Long highestMinIops;
+
+    @Parameter(name = ApiConstants.HIGHEST_MAX_IOPS, type = CommandType.LONG, required = false, description = "Highest Max IOPS value that is allowed for this offering")
+    private Long highestMaxIops;
+
     @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
             type = CommandType.INTEGER,
             required = false,
@@ -176,6 +188,21 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return hypervisorSnapshotReserve;
     }
 
+    public Long getMinIopsPerGb() {
+        return minIopsPerGb;
+    }
+
+    public Long getMaxIopsPerGb() {
+        return maxIopsPerGb;
+    }
+
+    public Long getHighestMinIops() {
+        return highestMinIops;
+    }
+
+    public Long getHighestMaxIops() {
+        return highestMaxIops;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

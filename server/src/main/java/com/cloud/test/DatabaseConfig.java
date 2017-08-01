@@ -16,27 +16,6 @@
 // under the License.
 package com.cloud.test;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
 import com.cloud.host.Status;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
@@ -52,7 +31,6 @@ import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NfsUtils;
-import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.w3c.dom.Document;
@@ -61,6 +39,28 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.apache.cloudstack.utils.security.DigestHelper;
+
 
 public class DatabaseConfig {
     private static final Logger s_logger = Logger.getLogger(DatabaseConfig.class.getName());
@@ -1021,6 +1021,18 @@ public class DatabaseConfig {
         Long iopsWriteRate = Long.parseLong(_currentObjectParams.get("iopsWriteRate"));
         if (iopsWriteRate != null && (iopsWriteRate > 0))
             diskOffering.setIopsWriteRate(iopsWriteRate);
+        Long minIopsPerGb = Long.parseLong(_currentObjectParams.get("minIopsPerGb"));
+        if (minIopsPerGb > 0)
+            diskOffering.setMinIopsPerGb(minIopsPerGb);
+        Long maxIopsPerGb = Long.parseLong(_currentObjectParams.get("maxIopsPerGb"));
+        if (maxIopsPerGb > 0)
+            diskOffering.setMaxIopsPerGb(maxIopsPerGb);
+        Long highestMinIops = Long.parseLong(_currentObjectParams.get("highestMinIops"));
+        if (highestMinIops > 0)
+            diskOffering.setHighestMinIops(highestMinIops);
+        Long highestMaxIops = Long.parseLong(_currentObjectParams.get("highestMaxIops"));
+        if (highestMaxIops > 0)
+            diskOffering.setHighestMaxIops(highestMaxIops);
 
         DiskOfferingDaoImpl offering = ComponentContext.inject(DiskOfferingDaoImpl.class);
         try {
