@@ -16,13 +16,6 @@
 // under the License.
 package com.cloud.network.guru;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -63,6 +56,12 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.util.List;
 
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
@@ -85,7 +84,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     public ExternalGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("GRE"), new IsolationMethod("L3"), new IsolationMethod("VLAN")};
     }
 
     @Override

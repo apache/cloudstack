@@ -56,7 +56,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NuageVspDeviceVO;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -332,7 +331,7 @@ public class NuageVspElementTest extends NuageTest {
         when(context.getAccount()).thenReturn(acc);
 
         PhysicalNetworkVO physNet = mock(PhysicalNetworkVO.class);
-        when(physNet.getIsolationMethods()).thenReturn(Lists.newArrayList(PhysicalNetwork.IsolationMethod.VSP.name()));
+        when(physNet.getIsolationMethods()).thenReturn(Lists.newArrayList("VSP"));
         when(physNet.getId()).thenReturn(NETWORK_ID);
         when(_physicalNetworkDao.listByZone(NETWORK_ID)).thenReturn(Lists.newArrayList(physNet));
 

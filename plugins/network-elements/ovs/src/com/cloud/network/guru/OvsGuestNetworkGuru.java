@@ -16,14 +16,6 @@
 // under the License.
 package com.cloud.network.guru;
 
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.VpcDao;
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -45,12 +37,19 @@ import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.ovs.OvsTunnelManager;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
 
 @Component
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
@@ -66,8 +65,8 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 
     OvsGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.GRE,
-            IsolationMethod.L3, IsolationMethod.VLAN};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("GRE"),
+            new IsolationMethod("L3"), new IsolationMethod("VLAN")};
     }
 
     @Override
