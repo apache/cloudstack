@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
+import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = AddAnnotationCmd.APINAME, description = "add an annotation.", responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
@@ -74,8 +75,6 @@ public class AddAnnotationCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        // for now all annotations are belong to us
-        return Account.ACCOUNT_ID_SYSTEM;
-        // we would of course query the owner of the actual entitytype/entityuuid to return the right account
+        return CallContext.current().getCallingAccount().getAccountId();
     }
 }
