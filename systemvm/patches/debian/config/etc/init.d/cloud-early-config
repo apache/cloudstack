@@ -1032,6 +1032,7 @@ EOF
   enable_irqbalance 1
   enable_vpc_rpsrfs 1
   enable_svc cloud 0
+  enable_svc cloud-passwd-srvr 1
   disable_rpfilter
   enable_fwding 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
