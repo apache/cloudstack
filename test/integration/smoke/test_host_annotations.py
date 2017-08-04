@@ -159,3 +159,20 @@ class TestHostAnnotations(cloudstackTestCase):
         self.addAnnotation("annotation1")
         self.removeAnnotation(self.added_annotations[-1].annotation.id)
         del self.added_annotations[-1]
+
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_05_add_annotation_for_invvalid_entityType(self):
+        cmd = addAnnotation.addAnnotationCmd()
+        cmd.entityid = self.host.id
+        cmd.entitytype = "BLA"
+        cmd.annotation = annotation
+
+        try:
+            self.apiclient.addAnnotation(cmd)
+        except CloudstackAPIException as f:
+            log.debug("error message %s" % f)
+        else:
+            self.fail("AddAnnotation is allowed for on an unknown entityType")
+
+        return self.added_annotations[-1]
