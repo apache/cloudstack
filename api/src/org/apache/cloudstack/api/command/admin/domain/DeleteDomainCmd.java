@@ -18,8 +18,7 @@ package org.apache.cloudstack.api.command.admin.domain;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,13 +29,15 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteDomain", description = "Deletes a specified domain", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
+        RoleType.Admin, RoleType.DomainAdmin })
 public class DeleteDomainCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
     private static final String s_name = "deletedomainresponse";
@@ -49,8 +50,8 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.CLEANUP,
-               type = CommandType.BOOLEAN,
-               description = "true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
+            type = CommandType.BOOLEAN,
+            description = "true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
     @Inject
