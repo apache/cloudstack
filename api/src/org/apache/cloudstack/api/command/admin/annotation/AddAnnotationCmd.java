@@ -21,7 +21,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
 import com.google.common.base.Preconditions;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -63,6 +62,7 @@ public class AddAnnotationCmd extends BaseCmd {
             throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
         Preconditions.checkNotNull(entityUuid,"I have to have an entity to set an annotation on!");
+        Preconditions.checkState(null != getEntityType(),(java.lang.String)"'%s' is ot a valid EntityType to put annotations on", entityType);
         AnnotationResponse annotationResponse = annotationService.addAnnotation(this);
         annotationResponse.setResponseName(getCommandName());
         this.setResponseObject(annotationResponse);
