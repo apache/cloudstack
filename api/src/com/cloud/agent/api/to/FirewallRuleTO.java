@@ -48,6 +48,7 @@ public class FirewallRuleTO implements InternalIdentity {
     boolean revoked;
     boolean alreadyAdded;
     private List<String> sourceCidrList;
+    private List<String> destCidrList;
     FirewallRule.Purpose purpose;
     private Integer icmpType;
     private Integer icmpCode;
@@ -170,6 +171,7 @@ public class FirewallRuleTO implements InternalIdentity {
             rule.getSourceCidrList(),
             rule.getIcmpType(),
             rule.getIcmpCode());
+        this.destCidrList = rule.getDestinationCidrList();
         this.trafficType = trafficType;
         this.defaultEgressPolicy = defaultEgressPolicy;
     }
@@ -255,6 +257,10 @@ public class FirewallRuleTO implements InternalIdentity {
 
     public List<String> getSourceCidrList() {
         return sourceCidrList;
+    }
+
+    public List<String> getDestCidrList(){
+        return destCidrList;
     }
 
     public boolean isAlreadyAdded() {

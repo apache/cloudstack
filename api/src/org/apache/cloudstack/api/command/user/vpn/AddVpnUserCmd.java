@@ -124,7 +124,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
             }
         }catch (Exception ex) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user due to resource unavailable");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
 
         VpnUsersResponse vpnResponse = new VpnUsersResponse();

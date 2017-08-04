@@ -1289,9 +1289,8 @@
                                     desc: '',
                                     preFilter: function(args) {
                                         if (args.context.volumes[0].hypervisor == "XenServer") {
-                                            if (isAdmin()) {
-                                                args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
-                                            }
+                                            args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+
                                         }
                                     },
                                     fields: {
@@ -1706,6 +1705,11 @@
                                         if (maxIops != null && maxIops.length > 0) {
                                             array1.push("&maxiops=" + todb(maxIops));
                                         }
+                                    }
+                                    //if original disk size  > new disk size
+                                    if ((args.context.volumes[0].type == "ROOT")
+                                    && (args.context.volumes[0].size > (newSize * (1024 * 1024 * 1024)))) {
+                                        return args.response.error('message.volume.root.shrink.disk.size');
                                     }
 
 

@@ -30,6 +30,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -127,6 +128,8 @@ public class FirstFitPlannerTest {
     ConfigDepotImpl configDepot;
     @Inject
     ScopedConfigStorage scopedStorage;
+    @Inject
+    HostDao hostDao;
 
     private static long domainId = 1L;
     long dataCenterId = 1L;
@@ -190,6 +193,33 @@ public class FirstFitPlannerTest {
 
         List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
         assertTrue("Reordered cluster list have clusters exceeding threshold", (!clusterList.containsAll(clustersCrossingThreshold)));
+    }
+
+    @Test
+    public void checkClusterListBasedOnHostTag() throws InsufficientServerCapacityException {
+        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        ExcludeList avoids = mock(ExcludeList.class);
+        initializeForTest(vmProfile, plan, avoids);
+        List<Long> matchingClusters = initializeForClusterListBasedOnHostTag(vmProfile.getServiceOffering());
+
+        List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
+
+        assertTrue("Reordered cluster list have clusters which has hosts with specified host tag on offering", (clusterList.containsAll(matchingClusters)));
+        assertTrue("Reordered cluster list does not have clusters which dont have hosts with matching host tag on offering", (!clusterList.contains(2L)));
+    }
+
+    private List<Long> initializeForClusterListBasedOnHostTag(ServiceOffering offering) {
+
+
+        when(offering.getHostTag()).thenReturn("hosttag1");
+        initializeForClusterThresholdDisabled();
+        List<Long> matchingClusters = new ArrayList<>();
+        matchingClusters.add(3L);
+        matchingClusters.add(5L);
+        when(hostDao.listClustersByHostTag("hosttag1")).thenReturn(matchingClusters);
+
+        return matchingClusters;
     }
 
     @Test

@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "تغير خصائص العنصر",
     "confirm.enable.s3": "فضلا قم بتعبئة البيانات القادمة لتمكين التخزين S3 للذاكرة الثانوية.",
     "confirm.enable.swift": "Please fill in the following information to enable support for Swift",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Error could not change your password because LDAP is enabled.",
+    "error.could.not.change.your.password.because.non.native.user": "Error could not change your password because LDAP is enabled.",
     "error.could.not.enable.zone": "Could not enable zone",
     "error.installWizard.message": "Something went wrong; you may go back and correct any errors",
     "error.invalid.username.password": "Invalid username or password",

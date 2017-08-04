@@ -1032,6 +1032,7 @@ EOF
   enable_irqbalance 1
   enable_vpc_rpsrfs 1
   enable_svc cloud 0
+  enable_svc cloud-passwd-srvr 1
   disable_rpfilter
   enable_fwding 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
@@ -1139,6 +1140,27 @@ getPublicIp() {
   echo $public_ip
 }
 
+setup_ntp() {
+    log_it "Setting up NTP"
+    NTP_CONF_FILE="/etc/ntp.conf"
+    if [ -f $NTP_CONF_FILE ]
+    then
+        IFS=',' read -a server_list <<< "$NTP_SERVER_LIST"
+        for (( iterator=${#server_list[@]}-1 ; iterator>=0 ; iterator-- ))
+        do
+            server=$(echo ${server_list[iterator]} | tr -d '\r')
+            PATTERN="server $server"
+            if grep -q "^$PATTERN$" $NTP_CONF_FILE ; then
+                sed -i "/^$PATTERN$/d" $NTP_CONF_FILE
+            fi
+            sed -i "0,/^server/s//$PATTERN\nserver/" $NTP_CONF_FILE
+        done
+        service ntp restart
+    else
+        log_it "NTP configuration file not found"
+    fi
+}
+
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
   sysctl vm.min_free_kbytes=8192
@@ -1191,6 +1213,7 @@ CORS
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
   rm /etc/logrotate.d/cloud
+  setup_ntp
 }
 
 setup_console_proxy() {
@@ -1512,6 +1535,9 @@ for i in $CMDLINE
         ;;
       advert_int)
         ADVERT_INT=$VALUE
+        ;;
+      ntpserverlist)
+        NTP_SERVER_LIST=$VALUE
         ;;
     esac
 done

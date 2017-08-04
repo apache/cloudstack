@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "Propriedades do item alteradas",
     "confirm.enable.s3": "Por favor, preencha as informações abaixo para habilitar suporte o Storage Secundário fornecido por S3",
     "confirm.enable.swift": "Por favor, preencha as informações abaixo para habilitar suporte ao Swift",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Erro: a nuvem não alterou sua senha porque o LDAP está ativo.",
+    "error.could.not.change.your.password.because.non.native.user": "Erro: a nuvem não alterou sua senha porque o LDAP está ativo.",
     "error.could.not.enable.zone": "Não foi possível habilitar a zona",
     "error.installWizard.message": "Alguma coisa está errada; você pode voltar e corrigir quaisquer erros",
     "error.invalid.username.password": "Usuário ou senha inválidos",

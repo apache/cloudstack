@@ -60,6 +60,9 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -114,6 +117,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.storage.dao.VolumeDetailsDao;
+
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -141,6 +146,8 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     VMTemplatePoolDao _tmpltPoolDao;
     @Inject
+    SnapshotDataStoreDao _snapshotStoreDao;
+    @Inject
     VolumeDao _volumeDao;
     @Inject
     EndPointSelector _epSelector;
@@ -154,6 +161,10 @@ public class VolumeServiceImpl implements VolumeService {
     private ManagementService mgr;
     @Inject
     private ClusterDao clusterDao;
+    @Inject
+    private VolumeDetailsDao _volumeDetailsDao;
+
+    private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
     public VolumeServiceImpl() {
     }
@@ -387,6 +398,28 @@ public class VolumeServiceImpl implements VolumeService {
                 if (canVolumeBeRemoved(vo.getId())) {
                     s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
                     volDao.remove(vo.getId());
+                }
+
+                SnapshotDataStoreVO snapStoreVo = _snapshotStoreDao.findByVolume(vo.getId(), DataStoreRole.Primary);
+
+                if (snapStoreVo != null) {
+                    long storagePoolId = snapStoreVo.getDataStoreId();
+                    StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
+
+                    if (storagePoolVO.isManaged()) {
+                        DataStore primaryDataStore = dataStoreMgr.getPrimaryDataStore(storagePoolId);
+                        Map<String, String> mapCapabilities = primaryDataStore.getDriver().getCapabilities();
+
+                        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+                        Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+                        if (!supportsStorageSystemSnapshots) {
+                            _snapshotStoreDao.remove(snapStoreVo.getId());
+                        }
+                    }
+                    else {
+                        _snapshotStoreDao.remove(snapStoreVo.getId());
+                    }
                 }
             } else {
                 vo.processEvent(Event.OperationFailed);
@@ -1178,7 +1211,8 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             DataObject volumeOnStore = store.create(volume);
             volumeOnStore.processEvent(Event.CreateOnlyRequested);
-            snapshot.processEvent(Event.CopyingRequested);
+            _volumeDetailsDao.addDetail(volume.getId(), SNAPSHOT_ID, Long.toString(snapshot.getId()), false);
+
             CreateVolumeFromBaseImageContext<VolumeApiResult> context =
                     new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, volume, store, volumeOnStore, future, snapshot);
             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
@@ -1214,7 +1248,8 @@ public class VolumeServiceImpl implements VolumeService {
             } else {
                 volume.processEvent(event);
             }
-            snapshot.processEvent(event);
+            _volumeDetailsDao.removeDetail(volume.getId(), SNAPSHOT_ID);
+
         } catch (Exception e) {
             s_logger.debug("create volume from snapshot failed", e);
             apiResult.setResult(e.toString());

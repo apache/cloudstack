@@ -57,7 +57,7 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
                 }
             } catch (Exception ex) {
                 s_logger.info("[ignored]"
-                        + "error during clicking test on template: " + e.getLocalizedMessage());
+                        + "error during clicking test on template: " + ex.getLocalizedMessage());
             }
 
             for (int second = 0;; second++) {

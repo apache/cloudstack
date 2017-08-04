@@ -19,6 +19,20 @@
 
 package com.cloud.util;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
@@ -57,9 +71,10 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
 import net.nuage.vsp.acs.client.api.model.VspAddressRange;
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
 import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
 import net.nuage.vsp.acs.client.api.model.VspDomain;
 import net.nuage.vsp.acs.client.api.model.VspDomainCleanUp;
@@ -68,18 +83,6 @@ import net.nuage.vsp.acs.client.api.model.VspNic;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 import net.nuage.vsp.acs.client.api.model.VspVm;
 import net.nuage.vsp.acs.client.common.model.Pair;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class NuageVspEntityBuilder {
     private static final Logger s_logger = Logger.getLogger(NuageVspEntityBuilder.class);
@@ -380,23 +383,28 @@ public class NuageVspEntityBuilder {
         return vspNicBuilder.build();
     }
 
-    public VspStaticNat buildVspStaticNat(Boolean forRevoke, IPAddressVO staticNatIp, VlanVO staticNatVlan, NicVO nic) {
+    public VspStaticNat buildVspStaticNat(Boolean forRevoke, IPAddressVO staticNatIp, VlanVO staticNatVlan, VspNic vspNic) {
         VspStaticNat.Builder vspStaticNatBuilder = new VspStaticNat.Builder()
                 .ipUuid(staticNatIp.getUuid())
                 .ipAddress(staticNatIp.getAddress().addr())
                 .revoke(forRevoke)
                 .oneToOneNat(staticNatIp.isOneToOneNat())
+                .state(getEnumValue(staticNatIp.getState(), VspStaticNat.State.class))
                 .vlanUuid(staticNatVlan.getUuid())
                 .vlanGateway(staticNatVlan.getVlanGateway())
                 .vlanNetmask(staticNatVlan.getVlanNetmask())
                 .vlanUnderlay(NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, staticNatVlan));
 
-        if (nic != null) {
-            VspNic vspNic = buildVspNic(nic);
+        if (vspNic != null) {
             vspStaticNatBuilder.nic(vspNic);
         }
 
         return vspStaticNatBuilder.build();
+    }
+
+    public VspStaticNat buildVspStaticNat(Boolean forRevoke, IPAddressVO staticNatIp, VlanVO staticNatVlan, NicVO nic) {
+        VspNic vspNic = (nic != null) ?buildVspNic(nic) : null;
+        return buildVspStaticNat(forRevoke, staticNatIp, staticNatVlan, vspNic);
     }
 
     public VspAclRule buildVspAclRule(FirewallRule firewallRule, Network network) {
@@ -505,5 +513,21 @@ public class NuageVspEntityBuilder {
         }
 
         return vspDhcpDomainBuilder.build();
+    }
+
+    private <E extends Enum<E>> E getEnumValue(Enum cloudstackValue, Class<E> target) {
+        try {
+            return Enum.valueOf(target, cloudstackValue.name());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private <E extends Enum<E>> E getEnumValue(Enum cloudstackValue, E defaultValue) {
+        try {
+            return Enum.valueOf(defaultValue.getDeclaringClass(), cloudstackValue.name());
+        } catch (IllegalArgumentException e) {
+            return defaultValue;
+        }
     }
 }

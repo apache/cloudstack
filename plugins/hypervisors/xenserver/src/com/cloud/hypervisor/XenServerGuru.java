@@ -18,6 +18,7 @@ package com.cloud.hypervisor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -25,6 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
+import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -71,6 +73,8 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
     private VolumeDataFactory _volFactory;
     @Inject
     private UserVmDao _userVmDao;
+    @Inject
+    GuestOsDetailsDao _guestOsDetailsDao;
 
     private static final ConfigKey<Integer> MaxNumberOfVCPUSPerVM = new ConfigKey<Integer>("Advanced", Integer.class, "xen.vm.vcpu.max", "16",
             "Maximum number of VCPUs that VM can get in XenServer.", true, ConfigKey.Scope.Cluster);
@@ -99,6 +103,11 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
 
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
+
+        Map<String, String> guestOsDetails = _guestOsDetailsDao.listDetailsKeyPairs(vm.getVirtualMachine().getGuestOSId());
+
+        to.setGuestOsDetails(guestOsDetails);
+
         to.setOs(guestOS.getDisplayName());
         HostVO host = hostDao.findById(vm.getVirtualMachine().getHostId());
         GuestOSHypervisorVO guestOsMapping = null;

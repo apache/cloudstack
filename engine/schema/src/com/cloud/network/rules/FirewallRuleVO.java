@@ -110,11 +110,23 @@ public class FirewallRuleVO implements FirewallRule {
     @Transient
     List<String> sourceCidrs;
 
+    @Transient
+    List<String> destinationCidrs;
+
     @Column(name = "uuid")
     String uuid;
 
     public void setSourceCidrList(List<String> sourceCidrs) {
         this.sourceCidrs = sourceCidrs;
+    }
+
+    public void setDestinationCidrsList(List<String> destinationCidrs){
+        this.destinationCidrs = destinationCidrs;
+    }
+
+    @Override
+    public List<String> getDestinationCidrList(){
+        return destinationCidrs;
     }
 
     @Override
@@ -213,6 +225,9 @@ public class FirewallRuleVO implements FirewallRule {
         this.icmpType = icmpType;
         this.sourceCidrs = sourceCidrs;
 
+        this.destinationCidrs = null;
+
+
         if (related != null) {
             assert (purpose == Purpose.Firewall) : "related field can be set for rule of purpose " + Purpose.Firewall + " only";
         }
@@ -224,7 +239,7 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
     public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId,
-            Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related, TrafficType trafficType, FirewallRuleType type) {
+            Purpose purpose, List<String> sourceCidrs, List<String> destinationCidrs, Integer icmpCode, Integer icmpType, Long related, TrafficType trafficType, FirewallRuleType type) {
         this(xId, ipAddressId, portStart, portEnd, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, trafficType);
         this.type = type;
     }
@@ -232,6 +247,13 @@ public class FirewallRuleVO implements FirewallRule {
     public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose,
             List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
         this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, null);
+    }
+
+
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId,
+                          Purpose purpose, List<String> sourceCidrs, List<String> destCidrs, Integer icmpCode, Integer icmpType, Long related, TrafficType trafficType) {
+        this(xId,ipAddressId, portStart, portEnd, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, trafficType);
+        this.destinationCidrs = destCidrs;
     }
 
     @Override

@@ -20,7 +20,7 @@ var dictionary = {
     "changed.item.properties": "Changed item properties",
     "confirm.enable.s3": "Please fill in the following information to enable support for S3-backed Secondary Storage",
     "confirm.enable.swift": "Si us plau ompliu la següent informació per habilitar el suport per a Swift",
-    "error.could.not.change.your.password.because.ldap.is.enabled": "Error could not change your password because LDAP is enabled.",
+    "error.could.not.change.your.password.because.non.native.user": "Error could not change your password because LDAP is enabled.",
     "error.could.not.enable.zone": "Could not enable zone",
     "error.installWizard.message": "Quelcom ha fallat, vostè pot tornar enrere i corregir els errors detalls suggerime",
     "error.invalid.username.password": "Invalid username or password",

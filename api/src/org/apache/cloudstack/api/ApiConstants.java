@@ -48,6 +48,7 @@ public class ApiConstants {
     public static final String CIDR = "cidr";
     public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
+    public static final String DEST_CIDR_LIST = "destcidrlist";
     public static final String CLEANUP = "cleanup";
     public static final String MAKEREDUNDANTE = "makeredundant";
     public static final String CLUSTER_ID = "clusterid";
@@ -652,7 +653,11 @@ public class ApiConstants {
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
     public static final String VIRTUAL_SIZE = "virtualsize";
+    public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
+    public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";
 
+    public static final String ZONE_ID_LIST = "zoneids";
+    public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";
     public static final String ADMIN = "admin";
 
     public enum HostDetails {
@@ -661,5 +666,9 @@ public class ApiConstants {
 
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp;
+    }
+
+    public enum DomainDetails {
+        all, resource, min;
     }
 }

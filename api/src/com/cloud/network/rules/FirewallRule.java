@@ -79,6 +79,8 @@ public interface FirewallRule extends ControlledEntity, Identity, InternalIdenti
 
     List<String> getSourceCidrList();
 
+    List<String> getDestinationCidrList();
+
     Long getRelated();
 
     FirewallRuleType getType();

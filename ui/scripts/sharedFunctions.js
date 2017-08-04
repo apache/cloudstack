@@ -932,7 +932,6 @@ cloudStack.preFilter = {
                 args.$form.find('.form-item[rel=isPublic]').hide();
             }
             args.$form.find('.form-item[rel=isFeatured]').hide();
-            args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
         }
     },
     addLoadBalancerDevice: function(args) { //add netscaler device OR add F5 device
@@ -1226,6 +1225,8 @@ cloudStack.converters = {
                 return _l('label.secondary.storage.vm');
             case 19:
                 return _l('label.gpu');
+            case 90:
+                return _l('label.num.cpu.cores');
         }
     },
 
@@ -2354,3 +2355,13 @@ $.validator.addMethod("ipv46cidr", function(value, element) {
 
     return false;
 }, "The specified IPv4/IPv6 CIDR is invalid.");
+
+
+$.validator.addMethod("allzonesonly", function(value, element){
+
+    if ((value.indexOf("-1") != -1) &&(value.length > 1))
+        return false;
+    return true;
+
+},
+"All Zones cannot be combined with any other zone");

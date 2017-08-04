@@ -44,6 +44,7 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -65,6 +66,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -96,6 +98,8 @@ import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.events.EventBus;
@@ -150,6 +154,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.lang.reflect.Type;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -180,13 +185,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
-public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
+public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
     private static boolean encodeApiResponse = false;
-    private boolean enableSecureCookie = false;
-    private String jsonContentType = HttpUtils.JSON_CONTENT_TYPE;
 
     /**
      * Non-printable ASCII characters - numbers 0 to 31 and 127 decimal
@@ -227,6 +230,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     private static ExecutorService s_executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
             "ApiServer"));
+
+    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<Boolean>("Advanced", Boolean.class, "enable.secure.session.cookie", "false",
+            "Session cookie is marked as secure if this is enabled. Secure cookies only work when HTTPS is used.", false);
+
+    static final ConfigKey<String> JSONcontentType = new ConfigKey<String>(String.class, "json.content.type", "Advanced", "application/json; charset=UTF-8",
+            "Http response content type for .js files (default is text/javascript)", false, ConfigKey.Scope.Global, null);
     @Inject
     private MessageBus messageBus;
 
@@ -366,14 +375,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         setEncodeApiResponse(Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key())));
-        final String jsonType = configDao.getValue(Config.JSONDefaultContentType.key());
-        if (jsonType != null) {
-            jsonContentType = jsonType;
-        }
-        final Boolean enableSecureSessionCookie = Boolean.valueOf(configDao.getValue(Config.EnableSecureSessionCookie.key()));
-        if (enableSecureSessionCookie != null) {
-            enableSecureCookie = enableSecureSessionCookie;
-        }
 
         if (apiPort != null) {
             final ListenerThread listenerThread = new ListenerThread(this, apiPort);
@@ -430,8 +431,27 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (!(responseType.equals(HttpUtils.RESPONSE_TYPE_JSON) || responseType.equals(HttpUtils.RESPONSE_TYPE_XML))) {
                 responseType = HttpUtils.RESPONSE_TYPE_XML;
             }
-
             try {
+                //verify that parameter is legit for passing via admin port
+                String[] command = (String[]) parameterMap.get("command");
+                if (command != null) {
+                    Class<?> cmdClass = getCmdClass(command[0]);
+                    if (cmdClass != null) {
+                        List<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass, BaseCmd.class);
+                        for (Field field : fields) {
+                            Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
+                            if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
+                                continue;
+                            }
+                            Object paramObj = parameterMap.get(parameterAnnotation.name());
+                            if (paramObj != null) {
+                                if (!parameterAnnotation.acceptedOnAdminPort()) {
+                                    throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Parameter " + parameterAnnotation.name() + " can't be passed through the API integration port");
+                                }
+                            }
+                        }
+                    }
+                }
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
@@ -1143,7 +1163,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final BasicHttpEntity body = new BasicHttpEntity();
             if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
                 // JSON response
-                body.setContentType(getJSONContentType());
+                body.setContentType(JSONcontentType.value());
                 if (responseText == null) {
                     body.setContent(new ByteArrayInputStream("{ \"error\" : { \"description\" : \"Internal Server Error\" } }".getBytes(HttpUtils.UTF_8)));
                 }
@@ -1161,6 +1181,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         } catch (final Exception ex) {
             s_logger.error("error!", ex);
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ApiServer.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { EnableSecureSessionCookie, JSONcontentType };
     }
 
     // FIXME: the following two threads are copied from
@@ -1366,13 +1396,4 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         ApiServer.encodeApiResponse = encodeApiResponse;
     }
 
-    @Override
-    public boolean isSecureSessionCookieEnabled() {
-        return enableSecureCookie;
-    }
-
-    @Override
-    public String getJSONContentType() {
-        return jsonContentType;
-    }
 }

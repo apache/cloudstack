@@ -111,6 +111,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -128,7 +130,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 @Component
-public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements SnapshotManager, SnapshotApiService {
+public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements SnapshotManager, SnapshotApiService, Configurable {
     private static final Logger s_logger = Logger.getLogger(SnapshotManagerImpl.class);
     @Inject
     VMTemplateDao _templateDao;
@@ -1176,10 +1178,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
 
-        Type.HOURLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
-        Type.DAILY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.daily"), DAILYMAX));
-        Type.WEEKLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.weekly"), WEEKLYMAX));
-        Type.MONTHLY.setMax(NumbersUtil.parseInt(_configDao.getValue("snapshot.max.monthly"), MONTHLYMAX));
+        Type.HOURLY.setMax(SnapshotHourlyMax.value());
+        Type.DAILY.setMax(SnapshotDailyMax.value());
+        Type.WEEKLY.setMax(SnapshotWeeklyMax.value());
+        Type.MONTHLY.setMax(SnapshotMonthlyMax.value());
         _totalRetries = NumbersUtil.parseInt(_configDao.getValue("total.retries"), 4);
         _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
 
@@ -1190,6 +1192,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public boolean start() {
+        //destroy snapshots in destroying state
+        List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Destroying);
+        for (SnapshotVO snapshotVO : snapshots) {
+            try {
+                if (!deleteSnapshot(snapshotVO.getId())) {
+                    s_logger.debug("Failed to delete snapshot in destroying state with id " + snapshotVO.getUuid());
+                }
+            } catch (Exception e) {
+                s_logger.debug("Failed to delete snapshot in destroying state with id " + snapshotVO.getUuid());
+            }
+        }
         return true;
     }
 
@@ -1319,5 +1332,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
 
+    @Override
+    public String getConfigComponentName() {
+        return SnapshotManager.class.getSimpleName();
+    }
 
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection}; }
 }

@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.EnumSet;
 import java.util.List;
 
 
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
@@ -49,7 +51,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
     }
 
     @Override
-    public DomainResponse newDomainResponse(ResponseView view, DomainJoinVO domain) {
+    public DomainResponse newDomainResponse(ResponseView view, EnumSet<DomainDetails> details, DomainJoinVO domain) {
         DomainResponse domainResponse = new DomainResponse();
         domainResponse.setDomainName(domain.getName());
         domainResponse.setId(domain.getUuid());
@@ -72,17 +74,19 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         domainResponse.setState(domain.getState().toString());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
 
-        boolean fullView = (view == ResponseView.Full && domain.getId() == Domain.ROOT_DOMAIN);
-        setResourceLimits(domain, fullView, domainResponse);
+        if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
+            boolean fullView = (view == ResponseView.Full && domain.getId() == Domain.ROOT_DOMAIN);
+            setResourceLimits(domain, fullView, domainResponse);
 
-        //get resource limits for projects
-        long projectLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getProjectLimit(), fullView, ResourceType.project, domain.getId());
-        String projectLimitDisplay = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
-        long projectTotal = (domain.getProjectTotal() == null) ? 0 : domain.getProjectTotal();
-        String projectAvail = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit - projectTotal);
-        domainResponse.setProjectLimit(projectLimitDisplay);
-        domainResponse.setProjectTotal(projectTotal);
-        domainResponse.setProjectAvailable(projectAvail);
+            //get resource limits for projects
+            long projectLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getProjectLimit(), fullView, ResourceType.project, domain.getId());
+            String projectLimitDisplay = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
+            long projectTotal = (domain.getProjectTotal() == null) ? 0 : domain.getProjectTotal();
+            String projectAvail = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit - projectTotal);
+            domainResponse.setProjectLimit(projectLimitDisplay);
+            domainResponse.setProjectTotal(projectTotal);
+            domainResponse.setProjectAvailable(projectAvail);
+        }
 
         domainResponse.setObjectName("domain");
 

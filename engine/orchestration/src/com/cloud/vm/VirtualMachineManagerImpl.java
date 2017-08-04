@@ -236,6 +236,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected UserVmDao _userVmDao;
     @Inject
+    protected UserVmService _userVmService;
+    @Inject
     protected CapacityManager _capacityMgr;
     @Inject
     protected NicDao _nicsDao;
@@ -404,7 +406,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 try {
-                    _networkMgr.allocate(vmProfile, auxiliaryNetworks);
+                    if (!vmProfile.getBootArgs().contains("ExternalLoadBalancerVm"))
+                        _networkMgr.allocate(vmProfile, auxiliaryNetworks);
                 } catch (final ConcurrentOperationException e) {
                     throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
                 }
@@ -1075,8 +1078,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
-
-                            final StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+                            StopCommand stopCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+                            stopCmd.setControlIp(getControlNicIpForVM(vm));
+                            final StopCommand cmd = stopCmd;
                             final Answer answer = _agentMgr.easySend(destHostId, cmd);
                             if (answer != null && answer instanceof StopAnswer) {
                                 final StopAnswer stopAns = (StopAnswer)answer;
@@ -1281,7 +1285,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
-        final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
+        StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
+        stpCmd.setControlIp(getControlNicIpForVM(vm));
+        final StopCommand stop = stpCmd;
         try {
             Answer answer = null;
             if(vm.getHostId() != null) {
@@ -1549,7 +1555,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         vmGuru.prepareStop(profile);
 
-        final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+        final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false, cleanUpEvenIfUnableToStop);
+        stop.setControlIp(getControlNicIpForVM(vm));
 
         boolean stopped = false;
         Answer answer = null;
@@ -2298,8 +2305,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         work.setResourceId(destHostId);
         work = _workDao.persist(work);
 
+
         // Put the vm in migrating state.
         vm.setLastHostId(srcHostId);
+        vm.setPodIdToDeployIn(destHost.getPodId());
         moveVmToMigratingState(vm, destHostId, work);
 
         boolean migrated = false;
@@ -2376,6 +2385,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         "Migrate Command failed.  Please check logs.");
                 try {
                     _agentMgr.send(destHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                    vm.setPodIdToDeployIn(srcHost.getPodId());
                     stateTransitTo(vm, Event.OperationFailed, srcHostId);
                 } catch (final AgentUnavailableException e) {
                     s_logger.warn("Looks like the destination Host is unavailable for cleanup.", e);
@@ -2680,12 +2690,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Command cleanup(final VirtualMachine vm) {
-        return new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+        StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+        cmd.setControlIp(getControlNicIpForVM(vm));
+        return cmd;
     }
 
+    private String getControlNicIpForVM(VirtualMachine vm) {
+        if (vm.getType() == VirtualMachine.Type.ConsoleProxy || vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
+            NicVO nic = _nicsDao.getControlNicForVM(vm.getId());
+            return nic.getIPv4Address();
+        } else if (vm.getType() == VirtualMachine.Type.DomainRouter) return vm.getPrivateIpAddress();
+        else return null;
+    }
     public Command cleanup(final String vmName) {
-        return new StopCommand(vmName, getExecuteInSequence(null), false);
+        VirtualMachine vm = _vmDao.findVMByInstanceName(vmName);
 
+        StopCommand cmd = new StopCommand(vmName, getExecuteInSequence(null), false);
+        cmd.setControlIp(getControlNicIpForVM(vm));
+        return cmd;
     }
 
 
@@ -3617,6 +3639,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO router = _vmDao.findById(vm.getId());
 
         if (router.getState() == State.Running) {
+            // collect vm network statistics before unplug a nic
+            UserVmVO userVm = _userVmDao.findById(vm.getId());
+            if (userVm != null && userVm.getType() == VirtualMachine.Type.User) {
+                _userVmService.collectVmNetworkStatistics(userVm);
+            }
             try {
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 final UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());

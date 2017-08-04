@@ -89,6 +89,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
@@ -1734,6 +1735,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        final String lastIp = cmd.getAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP);
         Connect conn;
 
 
@@ -1770,9 +1772,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
 
-                if (numOfIps == 1 && !ip.isAdd()) {
-                    vifHotUnPlug(conn, routerName, ip.getVifMacAddress());
-                    networkUsage(routerIp, "deleteVif", "eth" + nicNum);
+                if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
+                    // in isolated network eth2 is the default public interface. We don't want to delete it.
+                    if (nicNum != 2) {
+                        vifHotUnPlug(conn, routerName, ip.getVifMacAddress());
+                        networkUsage(routerIp, "deleteVif", "eth" + nicNum);
+                    }
                 }
             }
 
@@ -2795,7 +2800,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
             s_logger.debug(vmDef);
-            msg = stopVM(conn, vmName);
+            msg = stopVM(conn, vmName, false);
             msg = startVM(conn, vmName, vmDef);
             return null;
         } catch (final LibvirtException e) {
@@ -2817,7 +2822,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return msg;
     }
 
-    public String stopVM(final Connect conn, final String vmName) {
+    public String stopVM(final Connect conn, final String vmName, final boolean forceStop) {
         DomainState state = null;
         Domain dm = null;
 
@@ -2838,9 +2843,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         s_logger.debug("Try to stop the vm at first");
-        String ret = stopVM(conn, vmName, false);
+        if (forceStop) {
+            return stopVMInternal(conn, vmName, true);
+        }
+        String ret = stopVMInternal(conn, vmName, false);
         if (ret == Script.ERR_TIMEOUT) {
-            ret = stopVM(conn, vmName, true);
+            ret = stopVMInternal(conn, vmName, true);
         } else if (ret != null) {
             /*
              * There is a race condition between libvirt and qemu: libvirt
@@ -2873,7 +2881,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             if (state != DomainState.VIR_DOMAIN_SHUTOFF) {
                 s_logger.debug("Try to destroy the vm");
-                ret = stopVM(conn, vmName, true);
+                ret = stopVMInternal(conn, vmName, true);
                 if (ret != null) {
                     return ret;
                 }
@@ -2883,7 +2891,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    protected String stopVM(final Connect conn, final String vmName, final boolean force) {
+    protected String stopVMInternal(final Connect conn, final String vmName, final boolean force) {
         Domain dm = null;
         try {
             dm = conn.domainLookupByName(vmName);
@@ -3107,6 +3115,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return command.execute();
     }
 
+    public List<VmNetworkStatsEntry> getVmNetworkStat(Connect conn, String vmName) throws LibvirtException {
+        Domain dm = null;
+        try {
+            dm = getDomain(conn, vmName);
+
+            List<VmNetworkStatsEntry> stats = new ArrayList<VmNetworkStatsEntry>();
+
+            List<InterfaceDef> nics = getInterfaces(conn, vmName);
+
+            for (InterfaceDef nic : nics) {
+                DomainInterfaceStats nicStats = dm.interfaceStats(nic.getDevName());
+                String macAddress = nic.getMacAddress();
+                VmNetworkStatsEntry stat = new VmNetworkStatsEntry(vmName, macAddress, nicStats.tx_bytes, nicStats.rx_bytes);
+                stats.add(stat);
+            }
+
+            return stats;
+        } finally {
+            if (dm != null) {
+                dm.free();
+            }
+        }
+    }
+
     public List<VmDiskStatsEntry> getVmDiskStat(final Connect conn, final String vmName) throws LibvirtException {
         Domain dm = null;
         try {
@@ -3217,6 +3249,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             long bytes_rd = 0;
             long bytes_wr = 0;
             for (final DiskDef disk : disks) {
+                if (disk.getDeviceType() == DeviceType.CDROM || disk.getDeviceType() == DeviceType.FLOPPY) {
+                    continue;
+                }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
                 io_rd += blockStats.rd_req;
                 io_wr += blockStats.wr_req;

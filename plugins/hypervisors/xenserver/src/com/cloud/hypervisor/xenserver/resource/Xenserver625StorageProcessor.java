@@ -99,7 +99,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         PBD pbd = null;
 
         try {
-            final String srname = hypervisorResource.getHost().getUuid() + path.trim();
+            final String srname = path.trim();
             synchronized (srname.intern()) {
                 final Set<SR> srs = SR.getByNameLabel(conn, srname);
                 if (srs != null && !srs.isEmpty()) {
@@ -348,6 +348,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
                 dvdi = Types.toVDI(task, conn);
+                ssSR.scan(conn);
                 // copied = true;
             } finally {
                 if (task != null) {
@@ -486,6 +487,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     hypervisorResource.checkForSuccess(conn, task);
                     final VDI backedVdi = Types.toVDI(task, conn);
                     snapshotBackupUuid = backedVdi.getUuid(conn);
+                    snapshotSr.scan(conn);
                     physicalSize = backedVdi.getPhysicalUtilisation(conn);
 
                     if (destStore instanceof SwiftTO) {
@@ -571,6 +573,9 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             } else {
                 newSnapshot.setParentSnapshotPath(prevBackupUuid);
             }
+            s_logger.info("New snapshot details: " + newSnapshot.toString());
+            s_logger.info("New snapshot physical utilization: "+physicalSize);
+
             return new CopyCmdAnswer(newSnapshot);
         } catch (final Types.XenAPIException e) {
             details = "BackupSnapshot Failed due to " + e.toString();

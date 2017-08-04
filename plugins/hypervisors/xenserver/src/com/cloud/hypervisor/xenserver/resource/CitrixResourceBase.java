@@ -86,6 +86,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshHelper;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.Bond;
@@ -595,6 +596,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final Connection conn = getConnection();
         final String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         final String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        final String lastIp = cmd.getAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP);
+
         try {
             final IpAddressTO[] ips = cmd.getIpAddresses();
             final int ipsCount = ips.length;
@@ -625,8 +628,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 // there is only one ip in this public vlan and removing it, so
                 // remove the nic
-                if (ipsCount == 1 && !ip.isAdd()) {
-                    removeVif = true;
+                if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(lastIp, "true") && !ip.isAdd()) {
+                    final VIF correctVif = getCorrectVif(conn, router, network);
+                    // in isolated network eth2 is the default public interface. We don't want to delete it.
+                    if (correctVif != null && !correctVif.getDevice(conn).equals("2")) {
+                        removeVif = true;
+                    }
                 }
 
                 if (removeVif) {
@@ -634,6 +641,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     // Determine the correct VIF on DomR to
                     // associate/disassociate the
                     // IP address with
+
                     final VIF correctVif = getCorrectVif(conn, router, network);
                     if (correctVif != null) {
                         network = correctVif.getNetwork(conn);
@@ -1265,10 +1273,28 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // be the minumum of
         // recommended value for that template and capacity remaining on host
 
+        long recommendedMemoryMin = 0l;
+        long recommendedMemoryMax = 0l;
+
+        Map<String,String> guestOsDetails = vmSpec.getGuestOsDetails();
+
+        if(guestOsDetails != null){
+            if(guestOsDetails.containsKey("xenserver.dynamicMin")){
+                recommendedMemoryMin = Long.valueOf(guestOsDetails.get("xenserver.dynamicMin")).longValue();
+            }
+
+            if(guestOsDetails.containsKey("xenserver.dynamicMax")){
+                recommendedMemoryMax = Long.valueOf(guestOsDetails.get("xenserver.dynamicMax")).longValue();
+            }
+
+        }
+
+
+
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             // scaling is allowed
-            vmr.memoryStaticMin = getStaticMin(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
-            vmr.memoryStaticMax = getStaticMax(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
+            vmr.memoryStaticMin = getStaticMin(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam(),recommendedMemoryMin);
+            vmr.memoryStaticMax = getStaticMax(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam(),recommendedMemoryMax);
             vmr.memoryDynamicMin = vmSpec.getMinRam();
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
             if (guestOsTypeName.toLowerCase().contains("windows")) {
@@ -1294,6 +1320,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
+        vmr.xenstoreData.clear();
+        //Add xenstore data for the NetscalerVM
+        if(vmSpec.getType()== VirtualMachine.Type.NetScalerVm) {
+            NicTO mgmtNic = vmSpec.getNics()[0];
+            if(mgmtNic != null ) {
+                Map<String, String> xenstoreData = new HashMap<String, String>(3);
+                xenstoreData.put("vm-data/ip", mgmtNic.getIp().toString().trim());
+                xenstoreData.put("vm-data/gateway", mgmtNic.getGateway().toString().trim());
+                xenstoreData.put("vm-data/netmask", mgmtNic.getNetmask().toString().trim());
+                vmr.xenstoreData = xenstoreData;
+            }
+        }
 
         final VM vm = VM.create(conn, vmr);
         if (s_logger.isDebugEnabled()) {
@@ -1304,8 +1342,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         final Integer speed = vmSpec.getMinSpeed();
         if (speed != null) {
-
-            int cpuWeight = _maxWeight; // cpu_weight
+        int cpuWeight = _maxWeight; // cpu_weight
             int utilization = 0; // max CPU cap, default is unlimited
 
             // weight based allocation, CPU weight is calculated per VCPU
@@ -3087,8 +3124,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return ressr;
     }
 
-    private long getStaticMax(final String os, final boolean b, final long dynamicMinRam, final long dynamicMaxRam) {
-        final long recommendedValue = CitrixHelper.getXenServerStaticMax(os, b);
+    private long getStaticMax(final String os, final boolean b, final long dynamicMinRam, final long dynamicMaxRam, final long recommendedValue) {
         if (recommendedValue == 0) {
             s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
             return dynamicMaxRam;
@@ -3106,8 +3142,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return staticMax;
     }
 
-    private long getStaticMin(final String os, final boolean b, final long dynamicMinRam, final long dynamicMaxRam) {
-        final long recommendedValue = CitrixHelper.getXenServerStaticMin(os, b);
+    private long getStaticMin(final String os, final boolean b, final long dynamicMinRam, final long dynamicMaxRam, final long recommendedValue) {
         if (recommendedValue == 0) {
             s_logger.warn("No recommended value found for dynamic min");
             return dynamicMinRam;
@@ -4908,10 +4943,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    public void shutdownVM(final Connection conn, final VM vm, final String vmName) throws XmlRpcException {
+    public void shutdownVM(final Connection conn, final VM vm, final String vmName, final boolean forcedStop) throws XmlRpcException {
         Task task = null;
         try {
-            task = vm.cleanShutdownAsync(conn);
+            if (forcedStop) {
+                task = vm.hardShutdownAsync(conn);
+            } else {
+                task = vm.cleanShutdownAsync(conn);
+            }
+
             try {
                 // poll every 1 seconds , timeout after 10 minutes
                 waitForTask(conn, task, 1000, 10 * 60 * 1000);
@@ -4924,7 +4964,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new CloudRuntimeException("Shutdown VM catch HandleInvalid and VM is not in HALTED state");
             }
         } catch (final XenAPIException e) {
-            s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.getUuid() + ") due to " + e.toString());
+            s_logger.debug("Unable to shutdown VM(" + vmName + ") with force=" + forcedStop + " on host(" + _host.getUuid() + ") due to " + e.toString());
             try {
                 VmPowerState state = vm.getPowerState(conn);
                 if (state == VmPowerState.RUNNING) {
@@ -5206,7 +5246,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         //Remove the folder before creating it.
 
         try {
-            deleteLocalFolder("/tmp/"+isoPath);
+            deleteLocalFolder("/tmp/" + isoPath);
         } catch (final IOException e) {
             s_logger.debug("Failed to delete the exiting config drive for vm "+vmName+ " "+ e.getMessage());
         } catch (final Exception e) {

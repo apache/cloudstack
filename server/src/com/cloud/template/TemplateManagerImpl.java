@@ -33,7 +33,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.ImageStoreUploadMonitorImpl;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.EnumUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -177,9 +181,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.EnumUtils;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -780,7 +781,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long templateId = cmd.getId();
         Long userId = CallContext.current().getCallingUserId();
         Long sourceZoneId = cmd.getSourceZoneId();
-        Long destZoneId = cmd.getDestinationZoneId();
+        List<Long> destZoneIds = cmd.getDestinationZoneIds();
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify parameters
@@ -789,28 +790,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template with id");
         }
 
-        DataStore srcSecStore = null;
         if (sourceZoneId != null) {
-            // template is on zone-wide secondary storage
-            srcSecStore = getImageStore(sourceZoneId, templateId);
-        } else {
-            // template is on region store
-            srcSecStore = getImageStore(templateId);
-        }
-
-        if (srcSecStore == null) {
-            throw new InvalidParameterValueException("There is no template " + templateId + " ready on image store.");
-        }
-
-        if (template.isCrossZones()) {
-            // sync template from cache store to region store if it is not there, for cases where we are going to migrate existing NFS to S3.
-            _tmpltSvr.syncTemplateToRegionStore(templateId, srcSecStore);
-            s_logger.debug("Template " + templateId + " is cross-zone, don't need to copy");
-            return template;
-        }
-
-        if (sourceZoneId != null) {
-            if (sourceZoneId.equals(destZoneId)) {
+            if (destZoneIds!= null && destZoneIds.contains(sourceZoneId)) {
                 throw new InvalidParameterValueException("Please specify different source and destination zones.");
             }
 
@@ -820,31 +801,101 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        DataCenterVO dstZone = _dcDao.findById(destZoneId);
-        if (dstZone == null) {
-            throw new InvalidParameterValueException("Please specify a valid destination zone.");
-        }
+        Map<Long, DataCenterVO> dataCenterVOs = new HashMap();
 
-        DataStore dstSecStore = getImageStore(destZoneId, templateId);
-        if (dstSecStore != null) {
-            s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecStore.getName() + " in zone " + destZoneId + " , don't need to copy");
-            return template;
+        for (Long destZoneId: destZoneIds) {
+            DataCenterVO dstZone = _dcDao.findById(destZoneId);
+            if (dstZone == null) {
+                throw new InvalidParameterValueException("Please specify a valid destination zone.");
+            }
+            dataCenterVOs.put(destZoneId, dstZone);
         }
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
-        boolean success = copy(userId, template, srcSecStore, dstZone);
+        List<String> failedZones = new ArrayList<>();
 
-        if (success) {
-            // increase resource count
-            long accountId = template.getAccountId();
-            if (template.getSize() != null) {
-                _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
+        boolean success = false;
+        if (template.getHypervisorType() == HypervisorType.BareMetal) {
+            if (template.isCrossZones()) {
+                s_logger.debug("Template " + templateId + " is cross-zone, don't need to copy");
+                return template;
+            }
+            for (Long destZoneId: destZoneIds) {
+                if (!addTemplateToZone(template, destZoneId, sourceZoneId)) {
+                    failedZones.add(dataCenterVOs.get(destZoneId).getName());
+                }
+            }
+        } else {
+            DataStore srcSecStore = null;
+            if (sourceZoneId != null) {
+                // template is on zone-wide secondary storage
+                srcSecStore = getImageStore(sourceZoneId, templateId);
+            } else {
+                // template is on region store
+                srcSecStore = getImageStore(templateId);
+            }
+
+            if (srcSecStore == null) {
+                throw new InvalidParameterValueException("There is no template " + templateId + " ready on image store.");
+            }
+
+            if (template.isCrossZones()) {
+                // sync template from cache store to region store if it is not there, for cases where we are going to migrate existing NFS to S3.
+                _tmpltSvr.syncTemplateToRegionStore(templateId, srcSecStore);
+                s_logger.debug("Template " + templateId + " is cross-zone, don't need to copy");
+                return template;
+            }
+            for (Long destZoneId : destZoneIds) {
+                DataStore dstSecStore = getImageStore(destZoneId, templateId);
+                if (dstSecStore != null) {
+                    s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecStore.getName() +
+                            " in zone " + destZoneId + " , don't need to copy");
+                    continue;
+                }
+                if (!copy(userId, template, srcSecStore, dataCenterVOs.get(destZoneId))) {
+                    failedZones.add(dataCenterVOs.get(destZoneId).getName());
+                }
+                else{
+                    if (template.getSize() != null) {
+                        // increase resource count
+                        long accountId = template.getAccountId();
+                        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
+                    }
+                }
+            }
+
+
+        }
+
+        if ((destZoneIds != null) && (destZoneIds.size() > failedZones.size())){
+            if (!failedZones.isEmpty()) {
+                s_logger.debug("There were failures when copying template to zones: " +
+                        StringUtils.listToCsvTags(failedZones));
             }
             return template;
         } else {
             throw new CloudRuntimeException("Failed to copy template");
         }
+    }
+
+    private boolean addTemplateToZone(VMTemplateVO template, long dstZoneId, long sourceZoneid) throws ResourceAllocationException{
+        long tmpltId = template.getId();
+        DataCenterVO dstZone = _dcDao.findById(dstZoneId);
+        DataCenterVO sourceZone = _dcDao.findById(sourceZoneid);
+
+        AccountVO account = _accountDao.findById(template.getAccountId());
+
+
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
+
+        try {
+            _tmpltDao.addTemplateToZone(template, dstZoneId);
+            return true;
+        } catch (Exception ex) {
+            s_logger.debug("failed to copy template from Zone: " + sourceZone.getUuid() + " to Zone: " + dstZone.getUuid());
+        }
+        return false;
     }
 
     @Override

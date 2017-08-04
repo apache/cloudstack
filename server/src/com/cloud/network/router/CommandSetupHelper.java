@@ -84,6 +84,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -108,8 +109,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -174,8 +173,6 @@ public class CommandSetupHelper {
     private VlanDao _vlanDao;
     @Inject
     private IPAddressDao _ipAddressDao;
-    @Inject
-    private GuestOSDao _guestOSDao;
 
     @Inject
     private RouterControlHelper _routerControlHelper;
@@ -219,12 +216,6 @@ public class CommandSetupHelper {
                 _networkModel.getExecuteInSeqNtwkElmtCmd());
 
         String gatewayIp = nic.getIPv4Gateway();
-        if (!nic.isDefaultNic()) {
-            final GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
-            if (guestOS == null || !guestOS.getDisplayName().toLowerCase().contains("windows")) {
-                gatewayIp = "0.0.0.0";
-            }
-        }
 
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
 
@@ -450,6 +441,7 @@ public class CommandSetupHelper {
             }
             for (final FirewallRule rule : rules) {
                 _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
+                _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
                     final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
@@ -845,12 +837,37 @@ public class CommandSetupHelper {
                 associatedWithNetworkId = ipAddrList.get(0).getNetworkId();
             }
 
+            // for network if the ips does not have any rules, then only last ip
+            List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(associatedWithNetworkId, null);
+
+            int ipsWithrules = 0;
+            int ipsStaticNat = 0;
+            for (IPAddressVO ip : userIps) {
+                if ( _rulesDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active) > 0){
+                    ipsWithrules++;
+                }
+
+                // check onetoonenat and also check if the ip "add":false. If there are 2 PF rules remove and
+                // 1 static nat rule add
+                if (ip.isOneToOneNat() && ip.getRuleState() == null) {
+                    ipsStaticNat++;
+                }
+            }
+
             final IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(associatedWithNetworkId, router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+
+            // if there is 1 static nat then it will be checked for remove at the resource
+            if (ipsWithrules == 0 && ipsStaticNat == 0) {
+                // there is only one ip address for the network.
+                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
+            } else {
+                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "false");
+            }
 
             cmds.addCommand(ipAssocCommand, cmd);
         }

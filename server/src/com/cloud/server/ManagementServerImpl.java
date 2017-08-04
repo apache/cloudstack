@@ -48,8 +48,10 @@ import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.address.AcquirePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.AssociateIPAddrCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.ListPublicIpAddressesCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.affinitygroup.UpdateVMAffinityGroupCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.alert.GenerateAlertCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
@@ -220,6 +222,7 @@ import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserCmd;
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
@@ -519,6 +522,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -795,6 +799,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ServiceOfferingDao _offeringDao;
     @Inject
     private DeploymentPlanningManager _dpMgr;
+    @Inject
+    private GuestOsDetailsDao _guestOsDetailsDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -2098,12 +2104,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("The specified Guest OS name : " + displayName + " already exists. Please specify a unique name");
         }
 
+        s_logger.debug("GuestOSDetails");
         final GuestOSVO guestOsVo = new GuestOSVO();
         guestOsVo.setCategoryId(categoryId.longValue());
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
         guestOsVo.setIsUserDefined(true);
-        return _guestOSDao.persist(guestOsVo);
+        final GuestOS guestOsPersisted = _guestOSDao.persist(guestOsVo);
+
+        if(cmd.getDetails() != null && !cmd.getDetails().isEmpty()){
+            Map<String, String> detailsMap = cmd.getDetails();
+            for(Object key: detailsMap.keySet()){
+                _guestOsDetailsDao.addDetail(guestOsPersisted.getId(),(String) key,detailsMap.get((String) key), false);
+            }
+        }
+
+        return guestOsPersisted;
     }
 
     @Override
@@ -2127,6 +2143,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (!guestOsHandle.getIsUserDefined()) {
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
+        }
+
+        if(cmd.getDetails() != null && !cmd.getDetails().isEmpty()){
+            Map<String, String> detailsMap = cmd.getDetails();
+            for(Object key: detailsMap.keySet()){
+                _guestOsDetailsDao.addDetail(id,(String) key,detailsMap.get((String) key), false);
+            }
         }
 
         //Check if update is needed
@@ -2270,79 +2293,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return new Pair<String, Integer>(null, -1);
-    }
-
-    @Override
-    @DB
-    public DomainVO updateDomain(final UpdateDomainCmd cmd) {
-        final Long domainId = cmd.getId();
-        final String domainName = cmd.getDomainName();
-        final String networkDomain = cmd.getNetworkDomain();
-
-        // check if domain exists in the system
-        final DomainVO domain = _domainDao.findById(domainId);
-        if (domain == null) {
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
-            ex.addProxyObject(domainId.toString(), "domainId");
-            throw ex;
-        } else if (domain.getParent() == null && domainName != null) {
-            // check if domain is ROOT domain - and deny to edit it with the new
-            // name
-            throw new InvalidParameterValueException("ROOT domain can not be edited with a new name");
-        }
-
-        final Account caller = getCaller();
-        _accountMgr.checkAccess(caller, domain);
-
-        // domain name is unique under the parent domain
-        if (domainName != null) {
-            final SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
-            sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
-            sc.addAnd("parent", SearchCriteria.Op.EQ, domain.getParent());
-            final List<DomainVO> domains = _domainDao.search(sc, null);
-
-            final boolean sameDomain = domains.size() == 1 && domains.get(0).getId() == domainId;
-
-            if (!domains.isEmpty() && !sameDomain) {
-                final InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName
-                        + "' since it already exists in the system");
-                ex.addProxyObject(domain.getUuid(), "domainId");
-                throw ex;
-            }
-        }
-
-        // validate network domain
-        if (networkDomain != null && !networkDomain.isEmpty()) {
-            if (!NetUtils.verifyDomainName(networkDomain)) {
-                throw new InvalidParameterValueException(
-                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
-            }
-        }
-
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(final TransactionStatus status) {
-                if (domainName != null) {
-                    final String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
-                    updateDomainChildren(domain, updatedDomainPath);
-                    domain.setName(domainName);
-                    domain.setPath(updatedDomainPath);
-                }
-
-                if (networkDomain != null) {
-                    if (networkDomain.isEmpty()) {
-                        domain.setNetworkDomain(null);
-                    } else {
-                        domain.setNetworkDomain(networkDomain);
-                    }
-                }
-                _domainDao.update(domainId, domain);
-            }
-        });
-
-        return _domainDao.findById(domainId);
-
     }
 
     private String getUpdatedDomainPath(final String oldPath, final String newName) {
@@ -2555,6 +2505,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (final SummedCapacity summedCapacity : summedCapacities) {
             final CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(),summedCapacity.getPodId(), summedCapacity.getClusterId(), summedCapacity.getUsedCapacity()
                     + summedCapacity.getReservedCapacity(), summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
+            capacity.setAllocatedCapacity(summedCapacity.getAllocatedCapacity());
             capacities.add(capacity);
         }
 
@@ -3069,6 +3020,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ConfigureOutOfBandManagementCmd.class);
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
+        cmdList.add(GetUserKeysCmd.class);
+
+        cmdList.add(AcquirePodIpCmdByAdmin.class);
+        cmdList.add(ReleasePodIpCmdByAdmin.class);
 
         return cmdList;
     }
@@ -3629,7 +3584,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long domainId = cmd.getDomainId();
         final Long projectId = cmd.getProjectId();
 
-        final Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
+        Account owner = null;
+        try {
+            owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
+        } catch (InvalidParameterValueException ex) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && accountName != null && domainId != null) {
+                owner = _accountDao.findAccountIncludingRemoved(accountName, domainId);
+            }
+            if (owner == null) {
+                throw ex;
+            }
+        }
 
         final SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s == null) {
