@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -64,6 +65,9 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotScheduler {
@@ -87,6 +91,12 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     protected ApiDispatcher _dispatcher;
     @Inject
     protected AccountDao _acctDao;
+    @Inject
+    protected SnapshotApiService _snapshotService;
+    @Inject
+    protected VMSnapshotDao _vmSnapshotDao;
+    @Inject
+    protected VMSnapshotManager _vmSnaphostManager;
 
     protected AsyncJobDispatcher _asyncDispatcher;
 
@@ -153,6 +163,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         } finally {
             scanLock.releaseRef();
         }
+
+        try {
+            deleteExpiredVMSnapshots();
+        }
+        catch (Exception e) {
+            s_logger.warn("Error in expiring vm snapshots", e);
+        }
     }
 
     private void checkStatusOfCurrentlyExecutingSnapshots() {
@@ -215,6 +232,27 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     // But if it remains in this state, the current snapshot will not get executed.
                     // And it will remain in stasis.
                     break;
+            }
+        }
+    }
+
+    @DB
+    protected void deleteExpiredVMSnapshots() {
+        Date now = new Date();
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.listAll();
+        for (VMSnapshotVO vmSnapshot : vmSnapshots) {
+            long accountId = vmSnapshot.getAccountId();
+            int expiration_interval_hours = VMSnapshotManager.VMSnapshotExpireInterval.valueIn(accountId);
+            if (expiration_interval_hours < 0 ) {
+                continue;
+            }
+            Date creationTime = vmSnapshot.getCreated();
+            long diffInHours = TimeUnit.MILLISECONDS.toHours(now.getTime() - creationTime.getTime());
+            if (diffInHours >= expiration_interval_hours) {
+                if (s_logger.isDebugEnabled()){
+                    s_logger.debug("Deleting expired VM snapshot id: " + vmSnapshot.getId());
+                }
+                _vmSnaphostManager.deleteVMSnapshot(vmSnapshot.getId());
             }
         }
     }
