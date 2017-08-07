@@ -240,7 +240,6 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_initrddir}
-mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/profile.d
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d
 
@@ -300,7 +299,6 @@ install -D client/target/pythonlibs/jasypt-1.9.2.jar ${RPM_BUILD_ROOT}%{_datadir
 
 install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
-install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 
@@ -523,7 +521,6 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %dir %attr(0770,cloud,cloud) %{_localstatedir}/%{name}/management
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/management
-%config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
 %config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
