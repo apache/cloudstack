@@ -638,7 +638,7 @@
                   </filterchain>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/conf">
-                  <fileset dir="${basedir}/tomcatconf">
+                  <fileset dir="${basedir}/conf">
                     <include name="*.in"/>
                   </fileset>
                   <globmapper from="*.in" to="*"/>
@@ -649,7 +649,7 @@
                   </filterchain>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/conf">
-                  <fileset dir="${basedir}/tomcatconf">
+                  <fileset dir="${basedir}/conf">
                     <exclude name="*.in"/>
                   </fileset>
                 </copy>
