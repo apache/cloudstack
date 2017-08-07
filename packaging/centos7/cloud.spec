@@ -481,13 +481,8 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
-%{_datadir}/%{name}-management/webapps
-%{_datadir}/%{name}-management/bin
 %{_datadir}/%{name}-management/conf
-%{_datadir}/%{name}-management/lib
 %{_datadir}/%{name}-management/logs
-%{_datadir}/%{name}-management/temp
-%{_datadir}/%{name}-management/work
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
