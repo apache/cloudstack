@@ -120,11 +120,10 @@
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
     <cs.batik.version>1.8</cs.batik.version>
     <cs.servicemix.version>2.3.4_1</cs.servicemix.version>
-    <cs.jetty.version>9.2.20.v20161216</cs.jetty.version>
     <cs.cxf.version>3.1.4</cs.cxf.version>
     <cs.groovy.version>2.4.7</cs.groovy.version>
     <cs.nitro.version>10.1</cs.nitro.version>
-    <cs.jetty.version>9.2.22.v20170606</cs.jetty.version><!-- Java 7+ -->
+    <cs.jetty.version>9.2.22.v20170606</cs.jetty.version>
   </properties>
 
   <distributionManagement>
