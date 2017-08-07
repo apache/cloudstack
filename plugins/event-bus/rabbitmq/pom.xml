@@ -31,7 +31,7 @@
     <dependency>
     <groupId>com.rabbitmq</groupId>
       <artifactId>amqp-client</artifactId>
-        <version>3.6.6</version>
+        <version>5.0.0</version>
     </dependency>
     <dependency>
     <groupId>org.apache.cloudstack</groupId>

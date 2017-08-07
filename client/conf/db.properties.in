@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,16 +16,16 @@
 # under the License.
 
 # management server clustering parameters, change cluster.node.IP to the machine IP address
-# in which the management server(Tomcat) is running
+# in which the management server is running
 cluster.node.IP=127.0.0.1
 cluster.servlet.port=9090
 region.id=1
 
 # CloudStack database settings
-db.cloud.username=cloud
-db.cloud.password=ENC(vlzQjmqOV4s5q7n+S1OMbA==)
-db.cloud.host=localhost
-db.cloud.driver=jdbc:mysql
+db.cloud.username=@DBUSER@
+db.cloud.password=@DBPW@
+db.cloud.host=@DBHOST@
+db.cloud.driver=@DBDRIVER@
 db.cloud.port=3306
 db.cloud.name=cloud
 
@@ -47,18 +47,16 @@ db.cloud.keyStore=
 db.cloud.keyStorePassword=
 db.cloud.trustStore=
 db.cloud.trustStorePassword=
-db.cloud.keyStorePassphrase=vmops.com
 
 # Encryption Settings
-db.cloud.encryption.type=file
-db.cloud.encrypt.secret=ENC(zaGuSF5a4KyWayn2t0yyjDa0HjdToVtZ)
+db.cloud.encryption.type=none
+db.cloud.encrypt.secret=
 
 # usage database settings
-db.usage.password=ENC(cQEcN5aVucSYK+WUkPjDcw==)
-db.usage.username=cloud
-db.usage.host=localhost
-# It's not guaranteed that using a different DB provider than the one from the regular cloud DB will work
-db.usage.driver=jdbc:mysql
+db.usage.username=@DBUSER@
+db.usage.password=@DBPW@
+db.usage.host=@DBHOST@
+db.usage.driver=@DBDRIVER@
 db.usage.port=3306
 db.usage.name=cloud_usage
 
@@ -69,11 +67,10 @@ db.usage.maxWait=10000
 db.usage.url.params=
 
 # Simulator database settings
-db.simulator.username=cloud
-db.simulator.password=cloud
-db.simulator.host=localhost
-# It's not guaranteed that using a different DB provider than the one from the regular cloud DB will work
-db.simulator.driver=jdbc:mysql
+db.simulator.username=@DBUSER@
+db.simulator.password=@DBPW@
+db.simulator.host=@DBHOST@
+db.simulator.driver=@DBDRIVER@
 db.simulator.port=3306
 db.simulator.name=simulator
 db.simulator.maxActive=250

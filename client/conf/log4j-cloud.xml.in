@@ -38,7 +38,7 @@ under the License.
          <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
       </layout>
    </appender>
-   
+
    <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="DEBUG"/>
@@ -111,11 +111,11 @@ under the License.
    <category name="com.cloud">
      <priority value="DEBUG"/>
    </category>
-   
+
    <category name="org.apache.cloudstack">
      <priority value="DEBUG"/>
    </category>
-   
+
    <category name="org.apache.cloudstack">
       <priority value="DEBUG"/>
    </category>
@@ -123,7 +123,7 @@ under the License.
    <category name="com.cloud.utils.nio">
      <priority value="INFO"/>
    </category>
-   
+
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
       <priority value="INFO"/>
@@ -136,19 +136,19 @@ under the License.
    <category name="org.apache.cloudstack.api.command">
       <priority value="TRACE"/>
    </category>
-   
+
    <category name="org">
       <priority value="INFO"/>
    </category>
-   
+
    <category name="org.springframework">
       <priority value="WARN"/>
    </category>
-   
+
    <category name="org.apache.cloudstack.spring.module.context.ResourceApplicationContext">
       <priority value="WARN"/>
    </category>
-   
+
    <category name="net">
      <priority value="INFO"/>
    </category>

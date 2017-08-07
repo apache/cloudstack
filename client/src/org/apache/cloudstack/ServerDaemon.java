@@ -18,175 +18,240 @@
 //
 package org.apache.cloudstack;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.URL;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.servlet.DispatcherType;
+
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.eclipse.jetty.jmx.MBeanContainer;
-import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.ForwardedRequestCustomizer;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.NCSARequestLog;
-import org.eclipse.jetty.server.NetworkTrafficServerConnector;
 import org.eclipse.jetty.server.RequestLog;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
+import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlets.GzipFilter;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.util.thread.ThreadPool;
-import org.eclipse.jetty.webapp.Configuration;
+import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.lang.management.ManagementFactory;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import com.cloud.utils.PropertiesUtil;
+import com.google.common.base.Strings;
 
 /***
- * Daemon server class to start the embedded server, either through JSVC or directly inside a JAR.
- * Parameter to configure the jetty server are:
- * - jetty.port: to start jetty on the specific port (default: 8080)
- * - jetty.host: to bind to specific interface (default: null = all)
- * - jetty.requestlog: path to log file for requests (default: request.log)
+ * The ServerDaemon class implements the embedded server, it can be started either
+ * using JSVC or directly from the JAR along with additional jars not shaded in the uber-jar.
+ * Configuration parameters are read from server.properties file available on the classpath.
  */
 public class ServerDaemon implements Daemon {
-    private static final Logger logger = LoggerFactory.getLogger(ServerDaemon.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ServerDaemon.class);
     private static final String WEB_XML = "META-INF/webapp/WEB-INF/web.xml";
-    private static final String REQUEST_LOG = "request.log";
 
-    private Server jettyServer;
-    private int port;
-    private String bindInterface;
-    private String requestLogFile;
+    /////////////////////////////////////////////////////
+    /////////////// Server Properties ///////////////////
+    /////////////////////////////////////////////////////
+
+    private static final String BIND_INTERFACE = "bind.interface";
+    private static final String CONTEXT_PATH = "context.path";
+    private static final String HTTP_PORT = "http.port";
+    private static final String HTTPS_ENABLE = "https.enable";
+    private static final String HTTPS_PORT = "https.port";
+    private static final String KEYSTORE_FILE = "https.keystore";
+    private static final String KEYSTORE_PASSWORD = "https.keystore.password";
+    private static final String WEBAPP_DIR = "webapp.dir";
+    private static final String ACCESS_LOG = "access.log";
+
+    ////////////////////////////////////////////////////////
+    /////////////// Server Configuration ///////////////////
+    ////////////////////////////////////////////////////////
+
+    private Server server;
+
+    private int httpPort = 8080;
+    private int httpsPort = 8443;
+    private boolean httpsEnable = false;
+    private String accessLogFile = "access.log";
+    private String bindInterface = "";
+    private String contextPath = "/client";
+    private String keystoreFile;
+    private String keystorePassword;
     private String webAppLocation;
 
-    public static void main(String... anArgs) throws Exception {
-        ServerDaemon csServer = new ServerDaemon();
-        csServer.init(null);
-        csServer.start();
-        csServer.join();
+    //////////////////////////////////////////////////
+    /////////////// Public methods ///////////////////
+    //////////////////////////////////////////////////
+
+    public static void main(final String... anArgs) throws Exception {
+        final ServerDaemon daemon = new ServerDaemon();
+        daemon.init(null);
+        daemon.start();
     }
 
     @Override
-    public void init(DaemonContext context) {
-        Properties props = System.getProperties();
-        setPort(Integer.parseInt(props.getProperty("port", "8080")));
-        setBindInterface(props.getProperty("host"));
-        setWebAppLocation(props.getProperty("webapp"));
-        setRequestLogFile(props.getProperty("requestlog", REQUEST_LOG));
-        StringBuilder sb = new StringBuilder("Initializing server daemon on ");
-        sb.append(bindInterface == null ? "*" : bindInterface);
-        sb.append(":");
-        sb.append(port);
-        logger.info(sb.toString());
+    public void init(final DaemonContext context) {
+        final File confFile = PropertiesUtil.findConfigFile("server.properties");
+        if (confFile == null) {
+            LOG.warn(String.format("Server configuration file not found. Initializing server daemon on %s:%s, with https.enabled=%s, https.port=%s, context.path=%s",
+                    bindInterface, httpPort, httpsEnable, httpsPort, contextPath));
+            return;
+        }
+
+        LOG.info("Server configuration file found: " + confFile.getAbsolutePath());
+
+        try {
+            final Properties properties = PropertiesUtil.loadFromFile(confFile);
+            if (properties == null) {
+                return;
+            }
+            setBindInterface(properties.getProperty(BIND_INTERFACE, ""));
+            setContextPath(properties.getProperty(CONTEXT_PATH, "/client"));
+            setHttpPort(Integer.valueOf(properties.getProperty(HTTP_PORT, "8080")));
+            setHttpsEnable(Boolean.valueOf(properties.getProperty(HTTPS_ENABLE, "false")));
+            setHttpsPort(Integer.valueOf(properties.getProperty(HTTPS_PORT, "8443")));
+            setKeystoreFile(properties.getProperty(KEYSTORE_FILE));
+            setKeystorePassword(properties.getProperty(KEYSTORE_PASSWORD));
+            setWebAppLocation(properties.getProperty(WEBAPP_DIR));
+            setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
+        } catch (final IOException e) {
+            LOG.warn("Failed to load configuration from server.properties file", e);
+        }
+        LOG.info(String.format("Initializing server daemon on %s:%s, with https.enabled=%s, https.port=%s, context.path=%s",
+                bindInterface, httpPort, httpsEnable, httpsPort, contextPath));
     }
 
     @Override
     public void start() throws Exception {
-        jettyServer = new Server(createThreadPool());
+        // Thread pool
+        final QueuedThreadPool threadPool = new QueuedThreadPool();
+        threadPool.setMinThreads(10);
+        threadPool.setMaxThreads(500);
+
+        // Jetty Server
+        server = new Server(threadPool);
+
+        // Setup Scheduler
+        server.addBean(new ScheduledExecutorScheduler());
 
         // Setup JMX
-        MBeanContainer mbeanContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
-        jettyServer.addBean(mbeanContainer);
+        final MBeanContainer mbeanContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
+        server.addBean(mbeanContainer);
 
-        NetworkTrafficServerConnector connector = createConnector();
-        jettyServer.addConnector(connector);
+        // HTTP config
+        final HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.addCustomizer( new ForwardedRequestCustomizer() );
+        httpConfig.setSecureScheme("https");
+        httpConfig.setSecurePort(httpsPort);
+        httpConfig.setOutputBufferSize(32768);
+        httpConfig.setRequestHeaderSize(8192);
+        httpConfig.setResponseHeaderSize(8192);
+        httpConfig.setSendServerVersion(false);
+        httpConfig.setSendDateHeader(false);
 
-        // This webapp will use jsps and jstl. We need to enable the
-        // AnnotationConfiguration in order to correctly
-        // set up the jsp container
-        Configuration.ClassList classlist = Configuration.ClassList
-                .setServerDefault( jettyServer );
-        classlist.addBefore(
-                "org.eclipse.jetty.webapp.JettyWebXmlConfiguration",
-                "org.eclipse.jetty.annotations.AnnotationConfiguration" );
+        // HTTP Connector
+        final ServerConnector httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
+        httpConnector.setPort(httpPort);
+        httpConnector.setHost(bindInterface);
+        httpConnector.setIdleTimeout(30000);
+        server.addConnector(httpConnector);
 
+        // Setup handlers
+        server.setHandler(createHandlers());
 
+        // Extra config options
+        server.setStopAtShutdown(true);
 
-        jettyServer.setHandler(createHandlers());
-        jettyServer.setStopAtShutdown(true);
+        // Configure SSL
+        if (httpsEnable && !Strings.isNullOrEmpty(keystoreFile) && new File(keystoreFile).exists()) {
+            // SSL Context
+            final SslContextFactory sslContextFactory = new SslContextFactory();
+            // Define keystore path and passwords
+            sslContextFactory.setKeyStorePath(keystoreFile);
+            sslContextFactory.setKeyStorePassword(keystorePassword);
+            sslContextFactory.setKeyManagerPassword(keystorePassword);
 
-        jettyServer.start();
-    }
+            // HTTPS config
+            final HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
+            httpsConfig.addCustomizer(new SecureRequestCustomizer());
 
-    public void join() throws InterruptedException {
-        jettyServer.join();
+            // HTTPS connector
+            final ServerConnector sslConnector = new ServerConnector(server,
+                    new SslConnectionFactory(sslContextFactory, "http/1.1"),
+                    new HttpConnectionFactory(httpsConfig));
+            sslConnector.setPort(httpsPort);
+            sslConnector.setHost(bindInterface);
+            server.addConnector(sslConnector);
+        }
+
+        server.start();
+        server.join();
     }
 
     @Override
     public void stop() throws Exception {
-        jettyServer.stop();
+        server.stop();
     }
 
     @Override
     public void destroy() {
-        jettyServer.destroy();
+        server.destroy();
     }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    public void setBindInterface(String bindInterface) {
-        this.bindInterface = bindInterface;
-    }
-
-    public void setRequestLogFile(String requestLogFile) {
-        this.requestLogFile = requestLogFile;
-    }
-
-    public void setWebAppLocation(String webAppLocation) {
-        this.webAppLocation = webAppLocation;
-    }
-
-    private ThreadPool createThreadPool() {
-        QueuedThreadPool threadPool = new QueuedThreadPool();
-        threadPool.setMinThreads(10);
-        threadPool.setMaxThreads(100);
-        return threadPool;
-    }
-
-    private NetworkTrafficServerConnector createConnector() {
-        NetworkTrafficServerConnector connector = new NetworkTrafficServerConnector(jettyServer);
-        connector.setPort(port);
-        connector.setHost(bindInterface);
-        return connector;
-    }
+    ///////////////////////////////////////////////////
+    /////////////// Private methods ///////////////////
+    ///////////////////////////////////////////////////
 
     private HandlerCollection createHandlers() {
-        WebAppContext webapp = new WebAppContext();
-        webapp.setContextPath("/client");
+        final WebAppContext webApp = new WebAppContext();
+        webApp.setContextPath(contextPath);
+        webApp.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
 
-        if (webAppLocation == null) {
-            webapp.setWar(getShadedWarUrl());
+        final FilterHolder filter = webApp.addFilter(GzipFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        final Map<String, String> params = new HashMap<>();
+        params.put("mimeTypes", "text/html,text/xml,text/css,text/plain,text/javascript,application/javascript,application/json,application/xml");
+        params.put("methods", "GET,POST");
+        params.put("deflateCompressionLevel", "9");
+        filter.setInitParameters(params);
+
+        if (Strings.isNullOrEmpty(webAppLocation)) {
+            webApp.setWar(getShadedWarUrl());
         } else {
-            webapp.setWar(webAppLocation);
+            webApp.setWar(webAppLocation);
         }
 
-        List<Handler> handlers = new ArrayList<>();
-        handlers.add(webapp);
-
-        HandlerList contexts = new HandlerList();
-        contexts.setHandlers(handlers.toArray(new Handler[0]));
-
-        RequestLogHandler log = new RequestLogHandler();
+        final RequestLogHandler log = new RequestLogHandler();
         log.setRequestLog(createRequestLog());
 
-        HandlerCollection result = new HandlerCollection();
-        result.setHandlers(new Handler[]{log, contexts});
+        final HandlerCollection handlerCollection = new HandlerCollection();
+        handlerCollection.addHandler(log);
+        handlerCollection.addHandler(webApp);
 
-        return result;
+        return handlerCollection;
     }
 
     private RequestLog createRequestLog() {
-        NCSARequestLog log = new NCSARequestLog();
-        File logPath = new File(requestLogFile);
-        File parentFile = logPath.getParentFile();
+        final NCSARequestLog log = new NCSARequestLog();
+        final File logPath = new File(accessLogFile);
+        final File parentFile = logPath.getParentFile();
         if (parentFile != null) {
             parentFile.mkdirs();
         }
-
         log.setFilename(logPath.getPath());
         log.setAppend(true);
         log.setLogTimeZone("GMT");
@@ -199,7 +264,47 @@ public class ServerDaemon implements Daemon {
     }
 
     private String getShadedWarUrl() {
-        String urlStr = getResource(WEB_XML).toString();
+        final String urlStr = getResource(WEB_XML).toString();
         return urlStr.substring(0, urlStr.length() - 15);
+    }
+
+    ///////////////////////////////////////////
+    /////////////// Setters ///////////////////
+    ///////////////////////////////////////////
+
+    public void setBindInterface(String bindInterface) {
+        this.bindInterface = bindInterface;
+    }
+
+    public void setHttpPort(int httpPort) {
+        this.httpPort = httpPort;
+    }
+
+    public void setHttpsPort(int httpsPort) {
+        this.httpsPort = httpsPort;
+    }
+
+    public void setContextPath(String contextPath) {
+        this.contextPath = contextPath;
+    }
+
+    public void setHttpsEnable(boolean httpsEnable) {
+        this.httpsEnable = httpsEnable;
+    }
+
+    public void setKeystoreFile(String keystoreFile) {
+        this.keystoreFile = keystoreFile;
+    }
+
+    public void setKeystorePassword(String keystorePassword) {
+        this.keystorePassword = keystorePassword;
+    }
+
+    public void setAccessLogFile(String accessLogFile) {
+        this.accessLogFile = accessLogFile;
+    }
+
+    public void setWebAppLocation(String webAppLocation) {
+        this.webAppLocation = webAppLocation;
     }
 }

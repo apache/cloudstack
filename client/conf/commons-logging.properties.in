@@ -17,9 +17,9 @@
 # under the License.
 #
 
-# This is the logging properties that goes to the war, there are two logging conf kept at the 
+# This is the logging properties that goes to the war, there are two logging conf kept at the
 # svn, one for developement (one at src/test-resources) and other for producation
- 
+
 # Uncomment the next line to disable all logging.
 #org.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog
 

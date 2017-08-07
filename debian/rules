@@ -13,7 +13,7 @@ override_dh_auto_configure:
 	echo VERSION=${VERSION} >> replace.properties.tmp
 
 override_dh_auto_build:
-	mvn -T C1.5 clean package -Psystemvm,developer -Dsystemvm \
+	mvn clean package -Psystemvm,developer -Dsystemvm \
 	    -Dcs.replace.properties=replace.properties.tmp \
 	    -Dmaven.repo.local=$(HOME)/.m2/repository \
 	     ${ACS_BUILD_OPTS}
@@ -66,23 +66,19 @@ override_dh_auto_install:
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
-	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/lib
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management
-	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management/work
-	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management/temp
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/ipallocator
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/mnt
 	cp -r client/target/utilities/scripts/db/* $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/
+	cp -r client/target/classes/META-INF/webapp $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
-	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/
-	# To have a uniq name across versions for the startup script
-	ln -s cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/cloud-management-server.jar
-	cp client/target/bcprov-jdk15on-1.55.jar $(DESTDIR)/usr/share/$(PACKAGE)-management/
-	# To make jetty happy from the 1st line of log
-	ln -s log4j-cloud.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/log4j.xml
+	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/cloudstack-$(VERSION).jar
+	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 
 	# nast hack for a couple of configuration files
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
@@ -95,12 +91,10 @@ override_dh_auto_install:
 	# This should all be in /etc/cloudstack/management
 	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/conf
 	ln -s ../../../var/log/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/logs
-	ln -s ../../../var/cache/$(PACKAGE)/management/temp $(DESTDIR)/usr/share/$(PACKAGE)-management/temp
-	ln -s ../../../var/cache/$(PACKAGE)/management/work $(DESTDIR)/usr/share/$(PACKAGE)-management/work
 
 	install -d -m0755 debian/$(PACKAGE)-management/lib/systemd/system
-	install -m0644 packaging/systemd/$(PACKAGE)-management.service.ubuntu debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
-	install -m0644 packaging/systemd/$(PACKAGE)-management.default.ubuntu $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
+	install -m0644 packaging/systemd/$(PACKAGE)-management.service debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
+	install -m0644 packaging/systemd/$(PACKAGE)-management.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
 
 	# cloudstack-common
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-common
@@ -154,6 +148,9 @@ override_dh_installinit:
 
 override_dh_systemd_enable:
 	dh_systemd_enable -pcloudstack-management -pcloudstack-agent -pcloudstack-usage
+
+override_dh_strip_nondeterminism:
+	# Disable dh_strip_nondeterminism to speed up the build
 
 override_dh_installdocs:
 	dh_installdocs -A tools/whisker/LICENSE tools/whisker/NOTICE INSTALL.md

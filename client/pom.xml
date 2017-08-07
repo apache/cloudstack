@@ -38,11 +38,11 @@
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-servlet</artifactId>
+      <artifactId>jetty-servlets</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-servlets</artifactId>
+      <artifactId>jetty-webapp</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
@@ -53,14 +53,6 @@
       <artifactId>jetty-util</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-webapp</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-annotations</artifactId>
-    </dependency>
-    <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <scope>runtime</scope>
@@ -69,43 +61,36 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-spring-module</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-spring-lifecycle</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-solidfire</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-cloudbyte</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-acl-static-role-based</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-acl-dynamic-role-based</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -116,175 +101,146 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-dedicated-resources</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-api-limit-account-based</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-api-discovery</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-user-authenticator-ldap</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-user-authenticator-md5</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-user-authenticator-pbkdf2</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-user-authenticator-plaintext</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-user-authenticator-saml2</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-user-authenticator-sha256salted</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-metrics</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-nvp</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-contrail</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-palo-alto</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-netscaler</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
-    <groupId>org.apache.cloudstack</groupId>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-ovs</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-elb</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-bigswitch</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-ssp</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-internallb</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-vxlan</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-opendaylight</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-vcs</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-vsp</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-xenserver</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-baremetal</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-ovm3</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
       <exclusions>
         <exclusion>
           <groupId>org.mortbay.jetty</groupId>
@@ -296,55 +252,46 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-allocator-random</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-planner-user-dispersing</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
        <artifactId>cloud-plugin-planner-skip-heurestics</artifactId>
        <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-planner-user-concentrated-pod</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-planner-implicit-dedication</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-explicit-dedication</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-host-allocator-random</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-outofbandmanagement-driver-ipmitool</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -355,19 +302,16 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-mom-rabbitmq</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-mom-inmemory</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-mom-kafka</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -378,151 +322,126 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-ipc</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-quota</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-rest</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-api</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-components-api</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-network</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-orchestration</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-schema</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage-cache</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-controller-secondary-storage</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage-image</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage-datamotion</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage-snapshot</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage-volume</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-default</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-image-default</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-image-s3</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-image-swift</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-syslog-alerts</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-snmp-alerts</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-host-anti-affinity</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-plugin-api-solidfire-intg-test</artifactId>
         <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-globodns</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-database-quota</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -573,12 +492,22 @@
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-maven-plugin</artifactId>
         <version>${cs.jetty.version}</version>
-         <dependencies>
+        <dependencies>
           <!-- specify the dependent jdbc driver here -->
           <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>${cs.mysql.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>${cs.bcprov.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>${cs.bcprov.version}</version>
           </dependency>
         </dependencies>
         <configuration>
@@ -591,14 +520,13 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <webXml>${project.build.directory}/generated-webapp/WEB-INF/web.xml</webXml>
-          <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
+          <webXml>${project.build.directory}/classes/META-INF/webapp/WEB-INF/web.xml</webXml>
+          <webAppSourceDirectory>${project.build.directory}/classes/META-INF/webapp/</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
-            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+            <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/common;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
             <webInfIncludeJarPattern>.*/cloud.*jar$|.*/classes/.*</webInfIncludeJarPattern>
           </webAppConfig>
-          
           <systemProperties>
               <systemProperty>
                  <name>log4j.configuration</name>
@@ -618,12 +546,12 @@
             </goals>
             <configuration>
               <target>
-                <copy todir="${project.build.directory}/classes/scripts">
+                <copy todir="${project.build.directory}/common/scripts">
                   <fileset dir="${basedir}/../scripts"/>
                 </copy>
                 <!-- CLOUDSTACK-1304 -->
                 <chmod perm="755"
-                  file="${project.build.directory}/classes/scripts/**" type="both"/>
+                  file="${project.build.directory}/common/scripts/**" type="both"/>
                 <copy todir="${project.build.directory}/classes/META-INF/webapp/WEB-INF/">
                   <fileset dir="${basedir}/WEB-INF/">
                     <include name="web.xml"/>
@@ -665,7 +593,7 @@
                   </filterchain>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/conf">
-                  <fileset dir="${basedir}/tomcatconf">
+                  <fileset dir="${basedir}/conf">
                     <include name="*.in"/>
                   </fileset>
                   <globmapper from="*.in" to="*"/>
@@ -676,7 +604,7 @@
                   </filterchain>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/conf">
-                  <fileset dir="${basedir}/tomcatconf">
+                  <fileset dir="${basedir}/conf">
                     <exclude name="*.in"/>
                   </fileset>
                 </copy>
@@ -693,7 +621,7 @@
               <target if="${noredist}">
                 <echo>test</echo>
                 <replaceregexp
-                  file="${basedir}/target/generated-webapp/WEB-INF/classes/environment.properties"
+                  file="${basedir}/target/conf/environment.properties"
                   match="cloud-stack-components-specification=.*"
                   replace="cloud-stack-components-specification=components-nonoss.xml" byline="true"
                 />
@@ -708,11 +636,11 @@
             </goals>
             <configuration>
               <target if="${noredist}">
-                <replaceregexp file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
+                <replaceregexp file="${basedir}/target/classes/META-INF/webapp/WEB-INF/web.xml"
                   match="classpath:componentContext.xml"
                   replace="classpath:nonossComponentContext.xml" byline="true"/>
                 <copy overwrite="true"
-                  todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
+                  todir="${basedir}/target/common/scripts">
                   <fileset dir="${basedir}/../plugins/network-elements/cisco-vnmc/scripts">
                     <include name="**/*"/>
                   </fileset>
@@ -746,7 +674,13 @@
                   <groupId>org.bouncycastle</groupId>
                   <artifactId>bcprov-jdk15on</artifactId>
                   <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
+                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.bouncycastle</groupId>
+                  <artifactId>bcpkix-jdk15on</artifactId>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
                 </artifactItem>
               </artifactItems>
             </configuration>
@@ -783,7 +717,18 @@
                 </includes>
                 <excludes>
                   <exclude>junit:junit</exclude>
+                  <exclude>com.tngtech.java:junit-dataprovider</exclude>
+                  <exclude>org.mockito:mockito-all</exclude>
+                  <exclude>org.hamcrest:hamcrest-all</exclude>
+                  <exclude>org.powermock:powermock-module-junit4</exclude>
+                  <exclude>org.powermock:powermock-api-mockito</exclude>
+                  <exclude>org.springframework:spring-test</exclude>
+                  <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
+                  <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>
+                  <exclude>org.apache.geronimo.specs:geronimo-javamail_1.4_spec</exclude>
                   <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
+                  <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
+                  <exclude>mysql:mysql-connector-java</exclude>
                 </excludes>
               </artifactSet>
               <transformers>
@@ -809,6 +754,7 @@
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
                     <exclude>META-INF/MANIFEST.MF</exclude>
+                    <exclude>META-INF/maven/**</exclude>
                   </excludes>
                 </filter>
               </filters>
@@ -850,7 +796,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
+                    <copy todir="${basedir}/target/common/vms">
                       <fileset dir="${basedir}/../systemvm/dist">
                         <include name="systemvm.zip"/>
                         <include name="systemvm.iso"/>
@@ -928,7 +874,6 @@
                       <get src="http://downloads.sourceforge.net/sevenzip/7z920-x64.msi" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="https://www.python.org/ftp/python/2.7.6/python-2.7.6.amd64.msi" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="http://dev.mysql.com/get/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" dest="target" verbose="false" usetimestamp="true"/>
-                      <get src="http://mirror.sdunix.com/apache/tomcat/tomcat-6/v6.0.39/bin/apache-tomcat-6.0.39.exe" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="http://downloads.sourceforge.net/project/cdrtoolswin/1.0/Binaries/CDR-Tools.exe?r=&amp;ts=1398764640&amp;use_mirror=kaz" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="https://bootstrap.pypa.io/ez_setup.py" dest="target" verbose="false" usetimestamp="true"/>
                     </target>

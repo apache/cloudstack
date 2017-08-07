@@ -19,23 +19,20 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
     version="2.5">
-   
-    <context-param>  
-      <param-name>log4jConfigLocation</param-name>  
-      <param-value>classpath:log4j-cloud.xml</param-value>  
-    </context-param>  
-    <listener>  
-      <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>  
-    </listener>  
-    
-	<listener>
-      <listener-class>org.apache.cloudstack.spring.module.web.CloudStackContextLoaderListener</listener-class>
-	</listener>
+
     <context-param>
-        <param-name>contextConfigLocation</param-name>    
-        <param-value>classpath:META-INF/cloudstack/webApplicationContext.xml</param-value>    
+        <param-name>log4jConfigLocation</param-name>
+        <param-value>classpath:log4j-cloud.xml</param-value>
     </context-param>
-          
+
+    <listener>
+        <listener-class>org.apache.cloudstack.spring.module.web.CloudStackContextLoaderListener</listener-class>
+    </listener>
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:META-INF/cloudstack/webApplicationContext.xml</param-value>
+    </context-param>
+
     <servlet>
         <servlet-name>cloudStartupServlet</servlet-name>
         <servlet-class>com.cloud.servlet.CloudStartupServlet</servlet-class>
@@ -47,40 +44,26 @@
         <servlet-class>com.cloud.api.ApiServlet</servlet-class>
         <load-on-startup>5</load-on-startup>
     </servlet>
-    
+
     <servlet>
         <servlet-name>consoleServlet</servlet-name>
         <servlet-class>com.cloud.servlet.ConsoleProxyServlet</servlet-class>
         <load-on-startup>6</load-on-startup>
     </servlet>
-	
 
-    <servlet>
-        <servlet-name>staticResources</servlet-name>
-        <servlet-class>com.cloud.servlet.StaticResourceServlet</servlet-class>
-    </servlet>
- 
     <servlet-mapping>
          <servlet-name>apiServlet</servlet-name>
          <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
-    
-    <servlet-mapping>   
-         <servlet-name>consoleServlet</servlet-name>   
-         <url-pattern>/console</url-pattern> 
-    </servlet-mapping>
-	
 
     <servlet-mapping>
-        <servlet-name>staticResources</servlet-name>
-        <url-pattern>*.css</url-pattern>
-        <url-pattern>*.html</url-pattern>
-        <url-pattern>*.js</url-pattern>
+         <servlet-name>consoleServlet</servlet-name>
+         <url-pattern>/console</url-pattern>
     </servlet-mapping>
 
     <error-page>
-      <exception-type>java.lang.Exception</exception-type>
-      <location>/error.html</location>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/error.html</location>
     </error-page>
 
 </web-app>

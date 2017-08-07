@@ -42,6 +42,7 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -126,6 +127,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     private OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     private HAConfigDao haConfigDao;
+    @Inject
+    private CAManager caService;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -511,7 +514,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     ch1.socket().setKeepAlive(true);
                     ch1.socket().setSoTimeout(60 * 1000);
                     try {
-                        SSLContext sslContext = Link.initClientSSLContext();
+                        SSLContext sslContext = Link.initManagementSSLContext(caService);
                         sslEngine = sslContext.createSSLEngine(ip, port);
                         sslEngine.setUseClientMode(true);
                         sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));

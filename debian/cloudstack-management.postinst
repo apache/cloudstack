@@ -29,8 +29,6 @@ if [ "$1" = configure ]; then
     rm -fr /var/cache/cloudstack/management/work/*
 
     for i in /var/cache/cloudstack/management \
-        /var/cache/cloudstack/management/work \
-        /var/cache/cloudstack/management/temp \
         /var/log/cloudstack/management \
         /var/lib/cloudstack/management
     do
@@ -57,6 +55,9 @@ if [ "$1" = configure ]; then
 
     chmod 0640 ${CONFDIR}/${DBPROPS}
     chgrp cloud ${CONFDIR}/${DBPROPS}
+    chown -R cloud:cloud /var/log/cloudstack/management
+
+    ln -s ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j.xml
 
     # Add jdbc MySQL driver settings to db.properties if not present
     grep -s -q "db.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}

@@ -19,12 +19,6 @@
 
 package org.apache.cloudstack.utils.security;
 
-import java.io.File;
-import java.io.IOException;
-
-import com.cloud.utils.script.Script;
-import com.google.common.base.Strings;
-
 public class KeyStoreUtils {
 
     public static String defaultTmpKeyStoreFile = "/tmp/tmp.jks";
@@ -44,27 +38,4 @@ public class KeyStoreUtils {
 
     public static String sshMode = "ssh";
     public static String agentMode = "agent";
-
-    public static void copyKeystore(final String keystorePath, final String tmpKeystorePath) throws IOException {
-        if (Strings.isNullOrEmpty(keystorePath) || Strings.isNullOrEmpty(tmpKeystorePath)) {
-            throw new IOException("Invalid keystore path provided");
-        }
-        try {
-            final Script script = new Script(true, "cp", 5000, null);
-            script.add("-f");
-            script.add(tmpKeystorePath);
-            script.add(keystorePath);
-            final String result = script.execute();
-            if (result != null) {
-                throw new IOException("Failed to execute cp to copy keystore file to mgmt server conf location");
-            }
-        } catch (final Exception e) {
-            throw new IOException("Failed to create keystore file: " + keystorePath, e);
-        }
-        try {
-            new File(tmpKeystorePath).delete();
-        } catch (Exception ignored) {
-        }
-    }
-
 }
