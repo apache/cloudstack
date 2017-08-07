@@ -18,6 +18,7 @@
 
 . /etc/default/cloud-passwd-srvr
 addr=$1;
+ENABLED=1
 while [ "$ENABLED" == "1" ]
 do
     python /opt/cloud/bin/passwd_server_ip.py $addr >/dev/null 2>/dev/null
