@@ -44,7 +44,6 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-1.8.0-openjdk-devel
-BuildRequires: tomcat => 7.0
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,7 +58,6 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat => 7.0
 Requires: java => 1.8.0
 Requires: python
 Requires: bash
@@ -168,7 +166,6 @@ Apache CloudStack Marvin integration tests
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
 Requires: mysql-connector-java
-Requires: tomcat => 7.0
 Group: System Environmnet/Libraries
 %description mysql-ha
 Apache CloudStack Balancing Strategy for MySQL
@@ -240,16 +237,9 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
 
-# Specific for tomcat
-mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-ln -sf /usr/share/tomcat/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+# Setup Jetty
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-ln -sf /usr/share/tomcat/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
-ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
-ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
-
-/bin/touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management/catalina.out
 
 install -D client/target/utilities/bin/cloud-migrate-databases ${RPM_BUILD_ROOT}%{_bindir}/%{name}-migrate-databases
 install -D client/target/utilities/bin/cloud-set-guest-password ${RPM_BUILD_ROOT}%{_bindir}/%{name}-set-guest-password
@@ -262,15 +252,18 @@ install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
-cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
+cp -r client/target/cloud-client-ui-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
+ln -s cloud-client-ui-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cloud-management-server.jar
+cp client/target/bcprov-jdk15on-1.55.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
+ln -s log4j-cloud.xml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/log4j.xml
 
 # Don't package the scripts in the management webapp
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
 for name in db.properties log4j-cloud.xml server7-nonssl.xml server7-ssl.xml \
-            commons-logging.properties catalina.policy catalina.properties classpath.conf \
-            tomcat-users.xml web.xml environment.properties java.security.ciphers
+            commons-logging.properties classpath.conf \
+            web.xml environment.properties java.security.ciphers
 do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
@@ -278,9 +271,6 @@ done
 
 ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
     ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
-
-mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/context.xml \
-    ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.2.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.2.jar
@@ -291,12 +281,9 @@ install -D packaging/systemd/cloudstack-management.service ${RPM_BUILD_ROOT}%{_u
 install -D packaging/systemd/cloudstack-management.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-management
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
-install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
+#install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 
 chmod 440 ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
-chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
-chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost
-chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
@@ -477,28 +464,19 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 #No default permission as the permission setup is complex
 %files management
 %defattr(-,root,root,-)
-%dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina
-%dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina/localhost
-%dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
 %dir %{_datadir}/%{name}-management
 %dir %attr(0770,root,cloud) %{_localstatedir}/%{name}/mnt
 %dir %attr(0770,cloud,cloud) %{_localstatedir}/%{name}/management
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management
-%dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/work
-%dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/management
 %config(noreplace) %{_sysconfdir}/default/%{name}-management
 %config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %{_sysconfdir}/security/limits.d/cloud
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
-%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/server7-nonssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server7-ssl.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
@@ -530,8 +508,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
-%attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
-%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
+#%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
