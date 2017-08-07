@@ -17,7 +17,6 @@
 
 /etc/cloudstack/management/ehcache.xml
 /etc/cloudstack/management/db.properties
-/etc/cloudstack/management/web.xml
 /etc/cloudstack/management/environment.properties
 /etc/cloudstack/management/java.security.ciphers
 /etc/cloudstack/management/log4j-cloud.xml
@@ -26,8 +25,6 @@
 /etc/security/limits.d/cloudstack-limits.conf
 /etc/sudoers.d/cloudstack
 /var/cache/cloudstack/management
-/var/cache/cloudstack/management/work
-/var/cache/cloudstack/management/temp
 /var/log/cloudstack/management
 /var/lib/cloudstack/mnt
 /var/lib/cloudstack/management

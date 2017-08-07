@@ -29,8 +29,6 @@ if [ "$1" = configure ]; then
     rm -fr /var/cache/cloudstack/management/work/*
 
     for i in /var/cache/cloudstack/management \
-        /var/cache/cloudstack/management/work \
-        /var/cache/cloudstack/management/temp \
         /var/log/cloudstack/management \
         /var/lib/cloudstack/management
     do
