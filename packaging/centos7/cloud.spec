@@ -231,7 +231,6 @@ cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_RO
 
 # Management
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
-mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
@@ -265,12 +264,8 @@ for name in db.properties log4j-cloud.xml server7-nonssl.xml server7-ssl.xml \
             commons-logging.properties classpath.conf \
             web.xml environment.properties java.security.ciphers
 do
-  mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
-    ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
+  cp client/target/conf/$name ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
-
-ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
-    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.2.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.2.jar
