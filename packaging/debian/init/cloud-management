@@ -42,7 +42,8 @@ GROUP="cloud"
 UBER_JAR="$MANAGEMENT_HOME/cloud-management-server.jar"
 BOOTSTRAP_CLASS="org.apache.cloudstack.ServerDaemon"
 MANAGEMENT_PID="/var/run/$NAME.pid"
-JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$MANAGEMENT_HOME/bcprov-jdk15on-1.55.jar:$MANAGEMENT_CONFIG:/usr/share/$NAME/setup:$MANAGEMENT_HOME:$UBER_JAR"
+JARS=$(ls $MANAGEMENT_HOME/lib/*.jar | tr '\n' ':' | sed s'/.$//')
+JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$JARS:$MANAGEMENT_CONFIG:/usr/share/$NAME/setup:$MANAGEMENT_HOME:$UBER_JAR"
 
 
 # We have to explicitly set the HOME variable to the homedir from the user "cloud"

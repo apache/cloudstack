@@ -44,6 +44,8 @@ SHUTDOWN_VERBOSE="false"
 
 CLOUDSTACK_PID="/var/run/cloudstack-management.pid"
 
-CLASSPATH=/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/cloudstack-management:/usr/share/cloudstack-management/bcprov-jdk15on-1.55.jar:/usr/share/cloudstack-management/cloud-management-server.jar
+JARS=$(ls /usr/share/cloudstack-management/lib/*.jar | tr '\n' ':' | sed s'/.$//')
+
+CLASSPATH="/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/cloudstack-management:/usr/share/cloudstack-management/cloud-management-server.jar:$JARS"
 
 BOOTSTRAP_CLASS=org.apache.cloudstack.ServerDaemon

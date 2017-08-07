@@ -66,7 +66,8 @@ override_dh_auto_install:
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
-	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/lib
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management/work
@@ -77,10 +78,8 @@ override_dh_auto_install:
 	cp -r client/target/utilities/scripts/db/* $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
-	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/
-	# To have a uniq name across versions for the startup script
-	ln -s cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/cloud-management-server.jar
-	cp client/target/bcprov-jdk15on-1.55.jar $(DESTDIR)/usr/share/$(PACKAGE)-management/
+	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/cloud-management-server.jar
+	cp client/target/bcprov-jdk15on-1.55.jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 	# To make jetty happy from the 1st line of log
 	ln -s log4j-cloud.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/log4j.xml
 
