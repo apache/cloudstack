@@ -59,6 +59,9 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-1.8.0-openjdk
+Requires: jsvc
+Requires: jakarta-commons-daemon
+Requires: jakarta-commons-daemon-jsvc
 Requires: python
 Requires: bash
 Requires: bzip2

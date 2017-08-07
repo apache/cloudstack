@@ -39,6 +39,8 @@ PROG="jsvc"
 DAEMON="/usr/bin/jsvc"
 USER=cloud
 
+export HOME="/var/cloudstack/management"
+
 unset OPTIONS
 [ -r /etc/sysconfig/default/"$SHORTNAME" ] && source /etc/sysconfig/default/"$SHORTNAME"
 
@@ -68,7 +70,7 @@ setJavaHome() {
 
 setJavaHome
 
-JARS=$(ls /usr/share/cloudstack-management/lib/\*.jar | tr '\n' ':' | sed s'/.$//')
+JARS=$(ls /usr/share/cloudstack-management/lib/*.jar | tr '\n' ':' | sed s'/.$//')
 CLASSPATH="/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/cloudstack-management:/usr/share/cloudstack-management/cloud-management-server.jar:$JARS"
 
 if [ -r "/etc/cloudstack/management/cloudmanagementserver.keystore" ] ; then
@@ -93,7 +95,7 @@ start() {
     echo -n "Starting $PROGNAME" "$SHORTNAME"
 
     if daemon --pidfile $PIDFILE $DAEMON -home "$JAVA_HOME" -cp "$CLASSPATH" -pidfile "$PIDFILE" -user "$USER" \
-      -errfile $LOGDIR/cloudstack-management.err -outfile $LOGDIR/cloudstack-management.out $JAVA_OPTS $CLASS
+      -errfile $LOGDIR/cloudstack-management.err $JAVA_OPTS $CLASS
         RETVAL=$?
     then
         rc=0
