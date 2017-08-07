@@ -17,13 +17,9 @@
 
 package org.apache.cloudstack.ca.provider;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
-import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
@@ -66,13 +62,10 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
 import com.cloud.certificate.dao.CrlDao;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.nio.Link;
 import com.google.common.base.Strings;
 
 public final class RootCAProvider extends AdapterBase implements CAProvider, Configurable {
@@ -84,6 +77,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     private static KeyPair caKeyPair = null;
     private static X509Certificate caCertificate = null;
+    private static KeyStore managementKeyStore = null;
 
     @Inject
     private ConfigurationDao configDao;
@@ -165,7 +159,6 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
                 subject, CAManager.CertSignatureAlgorithm.value(),
                 validityDays, domainNames, ipAddresses);
         return new Certificate(clientCertificate, null, Collections.singletonList(caCertificate));
-
     }
 
     ////////////////////////////////////////////////////////
@@ -211,15 +204,11 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     /////////////// Root CA Trust Management ///////////////////
     ////////////////////////////////////////////////////////////
 
-    private char[] getCaKeyStorePassphrase() {
-        return KeyStoreUtils.defaultKeystorePassphrase;
-    }
-
     private KeyStore getCaKeyStore() throws CertificateException, NoSuchAlgorithmException, IOException, KeyStoreException {
         final KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
         if (caKeyPair != null && caCertificate != null) {
-            ks.setKeyEntry(caAlias, caKeyPair.getPrivate(), getCaKeyStorePassphrase(), new X509Certificate[]{caCertificate});
+            ks.setKeyEntry(caAlias, caKeyPair.getPrivate(), getKeyStorePassphrase(), new X509Certificate[]{caCertificate});
         } else {
             return null;
         }
@@ -232,7 +221,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 
         final KeyStore ks = getCaKeyStore();
-        kmf.init(ks, getCaKeyStorePassphrase());
+        kmf.init(ks, getKeyStorePassphrase());
         tmf.init(ks);
 
         final boolean authStrictness = rootCAAuthStrictness.value();
@@ -245,81 +234,23 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         return sslEngine;
     }
 
-    //////////////////////////////////////////////////
-    /////////////// Root CA Config ///////////////////
-    //////////////////////////////////////////////////
-
-    private int getCaValidityDays() {
-        return 365 * caValidityYears;
+    @Override
+    public KeyStore getManagementKeyStore() throws KeyStoreException {
+        return managementKeyStore;
     }
 
-    private char[] findKeyStorePassphrase() {
-        char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
-        final String configuredPassphrase = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
-        if (configuredPassphrase != null) {
-            passphrase = configuredPassphrase.toCharArray();
-        }
-        return passphrase;
-    }
-
-    private boolean createManagementServerKeystore(final String keyStoreFilePath, final char[] passphrase) {
-        final Certificate managementServerCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()),
-                Collections.singletonList(NetUtils.getDefaultHostIp()), getCaValidityDays());
-        if (managementServerCertificate == null || managementServerCertificate.getPrivateKey() == null) {
-            throw new CloudRuntimeException("Failed to generate certificate and setup management server keystore");
-        }
-        LOG.info("Creating new management server certificate and keystore");
-        try {
-            final KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(null, null);
-            keyStore.setCertificateEntry(caAlias, caCertificate);
-            keyStore.setKeyEntry(managementAlias, managementServerCertificate.getPrivateKey(), passphrase,
-                    new X509Certificate[]{managementServerCertificate.getClientCertificate(), caCertificate});
-            final String tmpFile = KeyStoreUtils.defaultTmpKeyStoreFile;
-            final FileOutputStream stream = new FileOutputStream(tmpFile);
-            keyStore.store(stream, passphrase);
-            stream.close();
-            KeyStoreUtils.copyKeystore(keyStoreFilePath, tmpFile);
-            LOG.debug("Saved default root CA (server) keystore file at:" + keyStoreFilePath);
-        } catch (final CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException  e) {
-            LOG.error("Failed to save root CA (server) keystore due to exception: ", e);
-            return false;
-        }
-        return true;
-    }
-
-    private boolean checkManagementServerKeystore() {
-        final File confFile = PropertiesUtil.findConfigFile("db.properties");
-        if (confFile == null) {
-            return false;
-        }
-        final char[] passphrase = findKeyStorePassphrase();
-        final String keystorePath = confFile.getParent() + "/" + KeyStoreUtils.defaultKeystoreFile;
-        final File keystoreFile = new File(keystorePath);
-        if (keystoreFile.exists()) {
-            try {
-                final KeyStore msKeystore = Link.loadKeyStore(new FileInputStream(keystorePath), passphrase);
-                try {
-                    final java.security.cert.Certificate[] msCertificates = msKeystore.getCertificateChain(managementAlias);
-                    if (msCertificates != null && msCertificates.length > 1) {
-                        msCertificates[0].verify(caKeyPair.getPublic());
-                        ((X509Certificate)msCertificates[0]).checkValidity();
-                        return true;
-                    }
-                } catch (final CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
-                    LOG.info("Renewing management server keystore, current certificate has expired");
-                    return createManagementServerKeystore(keystoreFile.getAbsolutePath(), passphrase);
-                }
-            } catch (final GeneralSecurityException | IOException e) {
-                LOG.error("Failed to read current management server keystore, renewing keystore!");
-            }
-        }
-        return createManagementServerKeystore(keystoreFile.getAbsolutePath(), passphrase);
+    @Override
+    public char[] getKeyStorePassphrase() {
+        return KeyStoreUtils.defaultKeystorePassphrase;
     }
 
     /////////////////////////////////////////////////
     /////////////// Root CA Setup ///////////////////
     /////////////////////////////////////////////////
+
+    private int getCaValidityDays() {
+        return 365 * caValidityYears;
+    }
 
     private boolean saveNewRootCAKeypair() {
         try {
@@ -384,6 +315,29 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         return caCertificate != null;
     }
 
+    private boolean loadManagementKeyStore() {
+        if (managementKeyStore != null) {
+            return true;
+        }
+        final Certificate serverCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()),
+                Collections.singletonList(NetUtils.getDefaultHostIp()), getCaValidityDays());
+        if (serverCertificate == null || serverCertificate.getPrivateKey() == null) {
+            throw new CloudRuntimeException("Failed to generate management server certificate and load management server keystore");
+        }
+        LOG.info("Creating new management server certificate and keystore");
+        try {
+            managementKeyStore = KeyStore.getInstance("JKS");
+            managementKeyStore.load(null, null);
+            managementKeyStore.setCertificateEntry(caAlias, caCertificate);
+            managementKeyStore.setKeyEntry(managementAlias, serverCertificate.getPrivateKey(), getKeyStorePassphrase(),
+                    new X509Certificate[]{serverCertificate.getClientCertificate(), caCertificate});
+        } catch (final CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException  e) {
+            LOG.error("Failed to load root CA management-server keystore due to exception: ", e);
+            return false;
+        }
+        return managementKeyStore != null;
+    }
+
     private boolean setupCA() {
         if (!loadRootCAKeyPair() && !saveNewRootCAKeypair()) {
             LOG.error("Failed to save and load root CA keypair");
@@ -393,7 +347,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             LOG.error("Failed to save and load root CA certificate");
             return false;
         }
-        if (!checkManagementServerKeystore()) {
+        if (!loadManagementKeyStore()) {
             LOG.error("Failed to check and configure management server keystore");
             return false;
         }
@@ -402,7 +356,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     @Override
     public boolean start() {
-        return loadRootCAKeyPair() && loadRootCAKeyPair() && checkManagementServerKeystore();
+        return loadRootCAKeyPair() && loadRootCAKeyPair() && loadManagementKeyStore();
     }
 
     @Override

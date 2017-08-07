@@ -31,9 +31,6 @@
       org.springframework.web.context.ContextLoaderListener
     </listener-class>
   </listener>
-  <listener>
-    <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
-  </listener>
   <servlet>
     <display-name>CXF Servlet</display-name>
     <servlet-name>CXFServlet</servlet-name>

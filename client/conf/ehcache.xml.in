@@ -23,7 +23,7 @@ under the License.
     CacheManager Configuration
     ==========================
     An ehcache.xml corresponds to a single CacheManager.
-    
+
     See instructions below or the ehcache schema (ehcache.xsd) on how to configure.
 
     System property tokens can be specified in this file which are replaced when the configuration is loaded.
@@ -143,7 +143,7 @@ under the License.
 
     The hostname is the hostname of the remote CacheManager peer. The port is the listening
     port of the RMICacheManagerPeerListener of the remote CacheManager peer.
-    
+
     Configuring JGroups replication:
     <cacheManagerPeerProviderFactory class="net.sf.ehcache.distribution.jgroups.JGroupsCacheManagerPeerProviderFactory"
                                      properties="connect=UDP(mcast_addr=231.12.21.132;mcast_port=45566;ip_ttl=32;
@@ -160,7 +160,7 @@ under the License.
             />
      The only property necessay is the connect String used by jgroups to configure itself. Refer to the Jgroups documentation for explanation
      of all the protocols. The example above uses UDP multicast. If the connect property is not specified the default JGroups connection will be
-     used.       
+     used.
 
     -->
     <cacheManagerPeerProviderFactory
@@ -266,7 +266,7 @@ under the License.
     to this area and then asynchronously written to disk. The default size is 30MB.
     Each spool buffer is used only by its cache. If you get OutOfMemory errors consider
     lowering this value. To improve DiskStore performance consider increasing it. Trace level
-    logging in the DiskStore will show if put back ups are occurring. 
+    logging in the DiskStore will show if put back ups are occurring.
 
     memoryStoreEvictionPolicy:
     Policy would be enforced upon reaching the maxElementsInMemory limit. Default
@@ -332,9 +332,9 @@ under the License.
 	For the Jgroups replication this is done with:
 	<cacheEventListenerFactory class="net.sf.ehcache.distribution.jgroups.JGroupsCacheReplicatorFactory"
                             properties="replicateAsynchronously=true, replicatePuts=true,
- 							replicateUpdates=true, replicateUpdatesViaCopy=false,
- 							replicateRemovals=true,asynchronousReplicationIntervalMillis=1000"/>
-    This listener supports the same property than the RMICacheReplicationFactory. 
+							replicateUpdates=true, replicateUpdatesViaCopy=false,
+							replicateRemovals=true,asynchronousReplicationIntervalMillis=1000"/>
+    This listener supports the same property than the RMICacheReplicationFactory.
 
     Cluster Bootstrapping
 
@@ -435,7 +435,7 @@ under the License.
     disk cache, which in this configuration will go to wherever java.io.tmp is
     defined on your system. On a standard Linux system this will be /tmp"
     -->
-    <!-- 
+    <!--
     <cache name="sampleCache1"
            maxElementsInMemory="10000"
            maxElementsOnDisk="1000"
@@ -455,7 +455,7 @@ under the License.
     is also the maximum cache size. Note that when a cache is eternal, timeToLive and
     timeToIdle are not used and do not need to be specified.
     -->
-    <!-- 
+    <!--
     <cache name="sampleCache2"
            maxElementsInMemory="1000"
            eternal="true"
@@ -470,7 +470,7 @@ under the License.
     persistent between cache and VM restarts. The disk expiry thread interval is set to 10
     minutes, overriding the default of 2 minutes.
     -->
-    <!-- 
+    <!--
     <cache name="sampleCache3"
            maxElementsInMemory="500"
            eternal="false"
@@ -489,7 +489,7 @@ under the License.
     This cache replicates using defaults.
     It also bootstraps from the cluster, using default properties.
     -->
-    <!-- 
+    <!--
     <cache name="sampleDistributedCache1"
            maxElementsInMemory="10"
            eternal="false"
@@ -509,7 +509,7 @@ under the License.
     This cache replicates using specific properties.
     It only replicates updates and does so synchronously via copy
     -->
-    <!-- 
+    <!--
     <cache name="sampleDistributedCache2"
            maxElementsInMemory="10"
            eternal="false"
@@ -529,7 +529,7 @@ under the License.
     This cache replicates using defaults except that the asynchronous replication
     interval is set to 200ms.
     -->
-    <!-- 
+    <!--
     <cache name="sampleDistributedCache3"
            maxElementsInMemory="10"
            eternal="false"

@@ -24,8 +24,6 @@ class globalEnv:
         self.noStart = False
         #myCloud/Agent/Console
         self.agentMode = None
-        #Tomcat6/Tomcat7
-        self.svrConf = None
         #debug
         self.debug = False
         #management server IP

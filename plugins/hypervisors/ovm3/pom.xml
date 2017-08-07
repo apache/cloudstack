@@ -28,11 +28,6 @@
   </parent>
   <dependencies>
     <dependency>
-      <groupId>xml-apis</groupId>
-      <artifactId>xml-apis</artifactId>
-      <version>${cs.xml-apis.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.xmlrpc</groupId>
       <artifactId>xmlrpc-client</artifactId>
       <version>${cs.xmlrpc.version}</version>

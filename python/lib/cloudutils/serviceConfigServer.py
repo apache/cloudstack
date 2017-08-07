@@ -71,95 +71,20 @@ class cloudManagementConfig(serviceCfgBase):
             #add DNAT 443 to 8250
             if not bash("iptables-save |grep PREROUTING | grep 8250").isSuccess():
                 bash("iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8250 ")
-
-            #generate keystore
-            keyPath = "/var/cloudstack/management/web.keystore"
-            if not os.path.exists(keyPath):
-                cmd = bash("keytool -genkey -keystore %s -storepass \"cloud.com\" -keypass \"cloud.com\" -validity 3650 -dname cn=\"Cloudstack User\",ou=\"mycloud.cloud.com\",o=\"mycloud.cloud.com\",c=\"Unknown\""%keyPath)
-
-                if not cmd.isSuccess():
-                    raise CloudInternalException(cmd.getErrMsg())
-            if not self.syscfg.env.svrConf == "Tomcat7":
-                cfo = configFileOps("/etc/cloudstack/management/tomcat6.conf", self)
-                cfo.add_lines("JAVA_OPTS+=\" -Djavax.net.ssl.trustStore=%s \""%keyPath)
         elif self.syscfg.env.svrMode == "HttpsServer":
-            if self.syscfg.env.svrConf == "Tomcat7":
-                if not os.path.exists("/etc/cloudstack/management/server7-ssl.xml"):
-                    raise CloudRuntimeException("Cannot find /etc/cloudstack/management/server7-ssl.xml, https enable failed")
-                if os.path.exists("/etc/cloudstack/management/server.xml"):
-                    bash("rm -f /etc/cloudstack/management/server.xml")
-                bash("ln -s /etc/cloudstack/management/server7-ssl.xml /etc/cloudstack/management/server.xml")
-                if os.path.exists("/usr/share/tomcat7/bin"):
-                    bash("rm -f /usr/share/cloudstack-management/bin")
-                    bash("ln -s /usr/share/tomcat7/bin /usr/share/cloudstack-management/bin")
-                if os.path.exists("/usr/share/tomcat7/lib"):
-                    bash("rm -f /usr/share/cloudstack-management/lib")
-                    bash("ln -s /usr/share/tomcat7/lib /usr/share/cloudstack-management/lib")
-            else:
-                if not os.path.exists("/etc/cloudstack/management/server-ssl.xml") or not os.path.exists("/etc/cloudstack/management/tomcat6-ssl.conf"):
-                    raise CloudRuntimeException("Cannot find /etc/cloudstack/management/server-ssl.xml or /etc/cloudstack/management/tomcat6-ssl.conf, https enable failed")
-                if os.path.exists("/etc/cloudstack/management/server.xml"):
-                    bash("rm -f /etc/cloudstack/management/server.xml")
-                if os.path.exists("/etc/cloudstack/management/tomcat6.conf"):
-                    bash("rm -f /etc/cloudstack/management/tomcat6.conf")
-                bash("ln -s /etc/cloudstack/management/server-ssl.xml /etc/cloudstack/management/server.xml")
-                bash("ln -s /etc/cloudstack/management/tomcat6-ssl.conf /etc/cloudstack/management/tomcat6.conf")
-                if os.path.exists("/usr/share/tomcat6/bin"):
-                    bash("rm -f /usr/share/cloudstack-management/bin")
-                    bash("ln -s /usr/share/tomcat6/bin /usr/share/cloudstack-management/bin")
-                if os.path.exists("/usr/share/tomcat6/lib"):
-                    bash("rm -f /usr/share/cloudstack-management/lib")
-                    bash("ln -s /usr/share/tomcat6/lib /usr/share/cloudstack-management/lib")
-            if not bash("iptables-save |grep PREROUTING | grep 6443").isSuccess():
-                bash("iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 6443")
-        else:
-            if self.syscfg.env.svrConf == "Tomcat7":
-                if not os.path.exists("/etc/cloudstack/management/server7-nonssl.xml"):
-                    raise CloudRuntimeException("Cannot find /etc/cloudstack/management/server7-nonssl.xml, https enable failed")
-                if os.path.exists("/etc/cloudstack/management/server.xml"):
-                    bash("rm -f /etc/cloudstack/management/server.xml")
-                bash("ln -s /etc/cloudstack/management/server7-nonssl.xml /etc/cloudstack/management/server.xml")
-                if os.path.exists("/usr/share/tomcat7/bin"):
-                    bash("rm -f /usr/share/cloudstack-management/bin")
-                    bash("ln -s /usr/share/tomcat7/bin /usr/share/cloudstack-management/bin")
-                if os.path.exists("/usr/share/tomcat7/lib"):
-                    bash("rm -f /usr/share/cloudstack-management/lib")
-                    bash("ln -s /usr/share/tomcat7/lib /usr/share/cloudstack-management/lib")
-            else:
-                if not os.path.exists("/etc/cloudstack/management/server-nonssl.xml") or not os.path.exists("/etc/cloudstack/management/tomcat6-nonssl.conf"):
-                    raise CloudRuntimeException("Cannot find /etc/cloudstack/management/server-nonssl.xml or /etc/cloudstack/management/tomcat6-nonssl.conf, https enable failed")
-                if os.path.exists("/etc/cloudstack/management/server.xml"):
-                    bash("rm -f /etc/cloudstack/management/server.xml")
-                if os.path.exists("/etc/cloudstack/management/tomcat6.conf"):
-                    bash("rm -f /etc/cloudstack/management/tomcat6.conf")
-                bash("ln -s /etc/cloudstack/management/server-nonssl.xml /etc/cloudstack/management/server.xml")
-                bash("ln -s /etc/cloudstack/management/tomcat6-nonssl.conf /etc/cloudstack/management/tomcat6.conf")
-                if os.path.exists("/usr/share/tomcat6/bin"):
-                    bash("rm -f /usr/share/cloudstack-management/bin")
-                    bash("ln -s /usr/share/tomcat6/bin /usr/share/cloudstack-management/bin")
-                if os.path.exists("/usr/share/tomcat6/lib"):
-                    bash("rm -f /usr/share/cloudstack-management/lib")
-                    bash("ln -s /usr/share/tomcat6/lib /usr/share/cloudstack-management/lib")
+            if not bash("iptables-save |grep PREROUTING | grep 8443").isSuccess():
+                bash("iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443")
         bash("touch /var/run/cloudstack-management.pid")
         bash("chown cloud.cloud /var/run/cloudstack-management.pid")
-        #distro like sl 6.1 needs this folder, or tomcat6 failed to start
         checkHostName()
+        bash("mkdir -p /var/lib/cloudstack/")
         bash("chown cloud:cloud -R /var/lib/cloudstack/")
-        bash("chmod +x -R /usr/share/cloudstack-management/webapps/client/WEB-INF/classes/scripts/")
         #set max process per account is unlimited
         if os.path.exists("/etc/security/limits.conf"):
             cfo = configFileOps("/etc/security/limits.conf")
             cfo.add_lines("cloud soft nproc -1\n")
             cfo.add_lines("cloud hard nproc -1\n")
             cfo.save()
-
-        try:
-            if self.syscfg.env.svrConf == "Tomcat7":
-                self.syscfg.svo.disableService("tomcat")
-            else:
-                self.syscfg.svo.disableService("tomcat6")
-        except:
-            pass
 
         if self.syscfg.env.noStart == False:
             self.syscfg.svo.stopService("cloudstack-management")

@@ -49,7 +49,7 @@ import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.db.DbProperties;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  */
@@ -365,6 +365,12 @@ public class Link {
         _connection.scheduleTask(task);
     }
 
+    public static KeyStore loadKeyStore(final InputStream stream, final char[] passphrase) throws GeneralSecurityException, IOException {
+        final KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(stream, passphrase);
+        return ks;
+    }
+
     public static SSLEngine initServerSSLEngine(final CAService caService, final String clientAddress) throws GeneralSecurityException, IOException {
         final SSLContext sslContext = SSLUtils.getSSLContext();
         if (caService != null) {
@@ -381,15 +387,26 @@ public class Link {
         return sslContext.createSSLEngine();
     }
 
-    public static KeyStore loadKeyStore(final InputStream stream, final char[] passphrase) throws GeneralSecurityException, IOException {
-        final KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(stream, passphrase);
-        return ks;
+    public static SSLContext initManagementSSLContext(final CAService caService) throws GeneralSecurityException, IOException {
+        if (caService == null) {
+            throw new CloudRuntimeException("CAService is not available to load/get management server keystore");
+        }
+        final KeyStore ks = caService.getManagementKeyStore();
+        char[] passphrase = caService.getKeyStorePassphrase();
+
+        final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ks);
+        final TrustManager[] tms = tmf.getTrustManagers();
+
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
+
+        final SSLContext sslContext = SSLUtils.getSSLContext();
+        sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
+        return sslContext;
     }
 
     public static SSLContext initClientSSLContext() throws GeneralSecurityException, IOException {
-        final SSLContext sslContext = SSLUtils.getSSLContext();
-
         char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
         File confFile = PropertiesUtil.findConfigFile("agent.properties");
         if (confFile != null) {
@@ -397,14 +414,6 @@ public class Link {
             final String pass = PropertiesUtil.loadFromFile(confFile).getProperty(KeyStoreUtils.passphrasePropertyName);
             if (pass != null) {
                 passphrase = pass.toCharArray();
-            }
-        } else {
-            confFile = PropertiesUtil.findConfigFile("db.properties");
-            if (confFile != null) {
-                final String pass = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
-                if (pass != null) {
-                    passphrase = pass.toCharArray();
-                }
             }
         }
 
@@ -435,12 +444,9 @@ public class Link {
 
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
+
+        final SSLContext sslContext = SSLUtils.getSSLContext();
         sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
-
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("SSL: SSLcontext has been initialized");
-        }
-
         return sslContext;
     }
 

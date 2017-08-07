@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# /etc/init.d/tomcat6 -- startup script for the Tomcat 6 servlet engine
+# /etc/init.d/cloudstack-management -- startup script for CloudStack
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -26,24 +26,18 @@
 # Should-Stop:       $named
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start Tomcat (CloudStack).
-# Description:       Start the Tomcat servlet engine that runs the CloudStack Management Server.
+# Short-Description: Start CloudStack.
+# Description:       Start the CloudStack Management Server.
 ### END INIT INFO
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 NAME=cloudstack-management
-DESC="CloudStack-specific Tomcat servlet engine"
+DESC="CloudStack Management Server"
 DAEMON=/usr/bin/jsvc
-MANAGEMENT_HOME=/usr/share/$NAME
-MANAGEMENT_CONFIG="/etc/cloudstack/management"
-JVM_TMP=/tmp/$NAME-temp
+DEFAULT=/etc/default/$NAME
 USER="cloud"
 GROUP="cloud"
-UBER_JAR="$MANAGEMENT_HOME/cloud-management-server.jar"
-BOOTSTRAP_CLASS="org.apache.cloudstack.ServerDaemon"
-MANAGEMENT_PID="/var/run/$NAME.pid"
-JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$MANAGEMENT_HOME/bcprov-jdk15on-1.55.jar:$MANAGEMENT_CONFIG:/usr/share/$NAME/setup:$MANAGEMENT_HOME:$UBER_JAR"
-
+CLOUDSTACK_PID="/var/run/$NAME.pid"
 
 # We have to explicitly set the HOME variable to the homedir from the user "cloud"
 # This is because various scripts run by the management server read the HOME variable
@@ -54,8 +48,7 @@ if [ `id -u` -ne 0 ]; then
 	echo "You need root privileges to run this script"
 	exit 1
 fi
- 
-# Make sure tomcat is started with system locale
+
 if [ -r /etc/default/locale ]; then
 	. /etc/default/locale
 	export LANG
@@ -63,9 +56,6 @@ fi
 
 . /lib/lsb/init-functions
 . /etc/default/rcS
-
-
-# The following variables can be overwritten in $DEFAULT
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not
 # defined in $DEFAULT)
@@ -79,44 +69,15 @@ for jdir in $JDK_DIRS; do
 done
 export JAVA_HOME
 
-# Directory for per-instance configuration files and webapps
-CATALINA_BASE=/usr/share/cloudstack-management
-
-# Use the Java security manager? (yes/no)
-TOMCAT6_SECURITY=no
-
-# Default Java options
-# Set java.awt.headless=true if JAVA_OPTS is not set so the
-# Xalan XSL transformer can work without X11 display on JDK 1.4+
-# It also looks like the default heap size of 64M is not enough for most cases
-# so the maximum heap size is set to 128M
-if [ -z "$JAVA_OPTS" ]; then
-	JAVA_OPTS="-Djava.awt.headless=true -Xmx128M"
-fi
-
-# End of variables that can be overwritten in $DEFAULT
-
 # overwrite settings from default file
 if [ -f "$DEFAULT" ]; then
 	. "$DEFAULT"
 fi
 
-if [ ! -f "$CATALINA_HOME/bin/bootstrap.jar" ]; then
-	log_failure_msg "$NAME is not installed"
-	exit 1
-fi
+JARS=$(ls /usr/share/cloudstack-management/lib/*.jar | tr '\n' ':' | sed s'/.$//')
+CLASSPATH="$JARS:$CLASSPATH"
 
 [ -f "$DAEMON" ] || exit 0
-[ -r "$UBER_JAR" ] || exit 0
-[ -d "$MANAGEMENT_CONFIG" ] || exit 0
-
-JAVA_OPTS="$JAVA_OPTS -Djava.io.tmpdir=$JVM_TMP"
-
-# Load extra arguments from java-opts.conf if any
-if [ -r "$MANAGEMENT_CONFIG/java-opts.conf" ]; then
-	JAVA_EXTRA_OPTS=$(cat $MANAGEMENT_CONFIG/java-opts.conf)
-	JAVA_OPTS="$JAVA_OPTS $JAVA_EXTRA_OPTS"
-fi
 
 # Look for Java Secure Sockets Extension (JSSE) JARs
 if [ -z "${JSSE_HOME}" -a -r "${JAVA_HOME}/jre/lib/jsse.jar" ]; then
@@ -132,23 +93,16 @@ case "$1" in
 	fi
 
 	log_daemon_msg "Starting $DESC" "$NAME"
-	if start-stop-daemon --test --start --quiet --pidfile "$MANAGEMENT_PID" \
+	if start-stop-daemon --test --start --quiet --pidfile "$CLOUDSTACK_PID" \
 		--user $USER --startas "$JAVA_HOME/bin/java"; then
-
-		# Remove / recreate JVM_TMP directory
-		rm -rf "$JVM_TMP"
-		mkdir "$JVM_TMP" || {
-			log_failure_msg "could not create JVM temporary directory"
-			exit 1
-		}
 
 		# fix storage issues on nfs mounts
 		umask 000
-		start-stop-daemon --start --quiet --pidfile "$MANAGEMENT_PID" \
+		start-stop-daemon --start --quiet --pidfile "$CLOUDSTACK_PID" \
 		--user $USER --group $GROUP --exec $DAEMON -- -user "$USER" -server \
-		-home "$JAVA_HOME" -cp "$JSVC_CLASSPATH" \
-		-outfile SYSLOG -errfile SYSLOG \
-		-pidfile "$MANAGEMENT_PID" $JAVA_OPTS "$BOOTSTRAP_CLASS"
+		-home "$JAVA_HOME" -cp "$CLASSPATH" \
+		-outfile SYSLOG -errfile $LOGDIR/$NAME.err \
+		-pidfile "$CLOUDSTACK_PID" $JAVA_OPTS "$BOOTSTRAP_CLASS"
 		log_end_msg $?
 	else
 		log_progress_msg "(already running)"
@@ -157,18 +111,17 @@ case "$1" in
 	;;
   stop)
 	log_daemon_msg "Stopping $DESC" "$NAME"
-	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile "$MANAGEMENT_PID"
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile "$CLOUDSTACK_PID"
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
-	[ "$RETVAL" = 0 ] && rm -rf "$JVM_TMP"
 	log_end_msg 0
 	;;
    status)
-        if start-stop-daemon --test --start --pidfile "$$MANAGEMENT_PID" \
+        if start-stop-daemon --test --start --pidfile "$CLOUDSTACK_PID" \
 		--user $USER --startas "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 
-		if [ -f "$$MANAGEMENT_PID" ]; then
+		if [ -f "$CLOUDSTACK_PID" ]; then
 		    log_success_msg "$DESC is not running, but pid file exists."
 			exit 1
 		else
@@ -176,11 +129,11 @@ case "$1" in
 			exit 3
 		fi
 	else
-		log_success_msg "$DESC is running with pid `cat $$MANAGEMENT_PID`"
+		log_success_msg "$DESC is running with pid `cat $CLOUDSTACK_PID`"
 	fi
         ;;
   restart|force-reload)
-        if start-stop-daemon --test --stop --pidfile "$$MANAGEMENT_PID" \
+        if start-stop-daemon --test --stop --pidfile "$CLOUDSTACK_PID" \
 		--user $USER --startas "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 		$0 stop
@@ -188,13 +141,6 @@ case "$1" in
 	fi
 	$0 start
 	;;
-  try-restart)
-        if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
-		>/dev/null; then
-		$0 start
-	fi
-        ;;
   *)
 	log_success_msg "Usage: $0 {start|stop|restart|try-restart|force-reload|status}"
 	exit 1

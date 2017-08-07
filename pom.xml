@@ -33,11 +33,11 @@
   <version>4.11.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
-  <description>Apache CloudStack is an IaaS (“Infrastructure as a Service”) cloud orchestration platform.</description>
+  <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</developerConnection>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/cloudstack.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/cloudstack.git</developerConnection>
   </scm>
   <issueManagement>
     <system>jira</system>
@@ -51,34 +51,33 @@
 
     <cs.log4j.version>1.2.17</cs.log4j.version>
     <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
-    <cs.cglib.version>3.2.4</cs.cglib.version>
+    <cs.cglib.version>3.2.5</cs.cglib.version>
     <cs.dbcp.version>1.4</cs.dbcp.version>
     <cs.pool.version>1.6</cs.pool.version>
     <cs.codec.version>1.10</cs.codec.version>
     <cs.configuration.version>1.10</cs.configuration.version>
-    <cs.collections.version>3.2.2</cs.collections.version>
     <cs.logging.version>1.1.1</cs.logging.version>
     <cs.discovery.version>0.5</cs.discovery.version>
     <cs.ejb.version>3.0</cs.ejb.version>
     <!-- do not forget to also upgrade hamcrest library with junit -->
     <cs.junit.version>4.12</cs.junit.version>
     <cs.hamcrest.version>1.3</cs.hamcrest.version>
-    <cs.junit.dataprovider.version>1.12.0</cs.junit.dataprovider.version>
-    <cs.bcprov.version>1.57</cs.bcprov.version>
+    <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
+    <cs.bcprov.version>1.58</cs.bcprov.version>
     <cs.jsch.version>0.1.54</cs.jsch.version>
-    <cs.jpa.version>2.1.1</cs.jpa.version>
+    <cs.jpa.version>2.2.0</cs.jpa.version>
     <cs.jasypt.version>1.9.2</cs.jasypt.version>
-    <cs.trilead.version>1.0.0-build220</cs.trilead.version>
+    <cs.trilead.version>1.0.0-build221</cs.trilead.version>
     <cs.ehcache.version>2.6.11</cs.ehcache.version>
     <cs.gson.version>1.7.2</cs.gson.version>
     <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-    <cs.guava.version>20.0</cs.guava.version>
+    <cs.guava.version>23.2-jre</cs.guava.version>
     <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
-    <cs.httpclient.version>4.5.2</cs.httpclient.version>
-    <cs.httpcore.version>4.4.5</cs.httpcore.version>
+    <cs.httpclient.version>4.5.3</cs.httpclient.version>
+    <cs.httpcore.version>4.4.8</cs.httpcore.version>
     <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
     <cs.mysql.version>5.1.34</cs.mysql.version>
-    <cs.xstream.version>1.4.9</cs.xstream.version>
+    <cs.xstream.version>1.4.10</cs.xstream.version>
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
     <cs.mail.version>1.5.0-b01</cs.mail.version>
     <cs.axis.version>1.4</cs.axis.version>
@@ -86,24 +85,24 @@
     <cs.rampart.version>1.5.1</cs.rampart.version>
     <cs.axiom.version>1.2.8</cs.axiom.version>
     <cs.neethi.version>2.0.4</cs.neethi.version>
-    <cs.servlet.version>3.1.0</cs.servlet.version>
+    <cs.servlet.version>4.0.0</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>6.0</cs.vmware.api.version>
-    <org.springframework.version>4.3.4.RELEASE</org.springframework.version>
+    <org.springframework.version>5.0.0.RELEASE</org.springframework.version>
     <cs.mockito.version>1.10.19</cs.mockito.version>
     <cs.powermock.version>1.6.4</cs.powermock.version>
-    <cs.aws.sdk.version>1.11.61</cs.aws.sdk.version>
-    <cs.jackson.version>2.7.1</cs.jackson.version>
+    <cs.aws.sdk.version>1.11.213</cs.aws.sdk.version>
+    <cs.jackson.version>2.9.2</cs.jackson.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-lang3.version>3.4</cs.commons-lang3.version>
     <cs.commons-io.version>2.5</cs.commons-io.version>
-    <cs.commons-fileupload.version>1.3.2</cs.commons-fileupload.version>
-    <cs.commons-collections.version>3.2.2</cs.commons-collections.version>
-    <cs.commons-validator.version>1.5.1</cs.commons-validator.version>
-    <cs.reflections.version>0.9.10</cs.reflections.version>
-    <cs.javassist.version>3.18.2-GA</cs.javassist.version>
+    <cs.commons-fileupload.version>1.3.3</cs.commons-fileupload.version>
+    <cs.commons-collections.version>4.1</cs.commons-collections.version>
+    <cs.commons-validator.version>1.6</cs.commons-validator.version>
+    <cs.reflections.version>0.9.11</cs.reflections.version>
+    <cs.javassist.version>3.22.0-GA</cs.javassist.version>
     <cs.java-ipv6.version>0.16</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
@@ -118,14 +117,13 @@
     <cs.opensaml.version>2.6.4</cs.opensaml.version>
     <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
-    <cs.batik.version>1.8</cs.batik.version>
-    <cs.servicemix.version>2.3.4_1</cs.servicemix.version>
-    <cs.jetty.version>9.2.20.v20161216</cs.jetty.version>
-    <cs.cxf.version>3.1.4</cs.cxf.version>
-    <cs.groovy.version>2.4.7</cs.groovy.version>
+    <cs.batik.version>1.9.1</cs.batik.version>
+    <cs.servicemix.version>2.5.7_1</cs.servicemix.version>
+    <cs.cxf.version>3.2.0</cs.cxf.version>
+    <cs.groovy.version>2.4.12</cs.groovy.version>
     <cs.nitro.version>10.1</cs.nitro.version>
     <cs.wiremock.version>2.8.0</cs.wiremock.version>
-    <cs.jetty.version>9.2.22.v20170606</cs.jetty.version><!-- Java 7+ -->
+    <cs.jetty.version>9.2.22.v20170606</cs.jetty.version>
   </properties>
 
   <distributionManagement>
@@ -248,8 +246,8 @@
         <version>${cs.batik.version}</version>
       </dependency>
       <dependency>
-        <groupId>commons-collections</groupId>
-        <artifactId>commons-collections</artifactId>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-collections4</artifactId>
         <version>${cs.commons-collections.version}</version>
       </dependency>
       <dependency>
@@ -326,7 +324,12 @@
       </dependency>
       <dependency>
         <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk</artifactId>
+        <artifactId>aws-java-sdk-core</artifactId>
+        <version>${cs.aws.sdk.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-s3</artifactId>
         <version>${cs.aws.sdk.version}</version>
       </dependency>
       <dependency>
@@ -444,12 +447,12 @@
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjtools</artifactId>
-        <version>1.8.10</version>
+        <version>1.8.11</version>
       </dependency>
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjweaver</artifactId>
-        <version>1.8.10</version>
+        <version>1.8.11</version>
       </dependency>
       <dependency>
         <groupId>org.apache.axis</groupId>
@@ -488,11 +491,6 @@
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-servlet</artifactId>
-        <version>${cs.jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-servlets</artifactId>
         <version>${cs.jetty.version}</version>
       </dependency>
@@ -509,11 +507,6 @@
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-util</artifactId>
-        <version>${cs.jetty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-annotations</artifactId>
         <version>${cs.jetty.version}</version>
       </dependency>
     </dependencies>
@@ -824,11 +817,6 @@
           </configuration>
         </plugin>
         <plugin>
-          <groupId>org.apache.tomcat.maven</groupId>
-          <artifactId>tomcat7-maven-plugin</artifactId>
-          <version>2.2</version>
-        </plugin>
-        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-antrun-plugin</artifactId>
           <version>1.8</version>
@@ -997,6 +985,7 @@
           <version>2.5</version>
           <configuration>
             <archive>
+              <addMavenDescriptor>false</addMavenDescriptor>
               <manifest>
                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                 <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>

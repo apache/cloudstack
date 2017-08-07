@@ -15,4 +15,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
-. /etc/rc.d/init.d/tomcat6 start
+# The binding interface for the management server
+bind.interface=
+
+# The service context path where URL requests should be served
+context.path=/client
+
+# The HTTP port to be used by the management server
+http.port=8080
+
+# Options to configure and enable HTTPS on management server
+#
+# For management server to pickup these configuration settings, the configured
+# keystore file should exists and be readable by the management server.
+https.enable=false
+https.port=8443
+# The keystore and manager passwords are assumed to be same.
+https.keystore=/etc/cloudstack/management/cloud.jks
+https.keystore.password=vmops.com
+
+# The path to webapp directory
+webapp.dir=/usr/share/cloudstack-management/webapp
+
+# The path to access log file
+access.log=/var/log/cloudstack/management/access.log

@@ -15,7 +15,7 @@ was tested against a CentOS 6.5 x86_64 setup.
 Install tools and dependencies used for development:
 
     $ yum install git ant ant-devel java-1.6.0-openjdk java-1.6.0-openjdk-devel
-    mysql mysql-server tomcat6 mkisofs gcc python MySQL-python openssh-clients wget
+    mysql mysql-server mkisofs gcc python MySQL-python openssh-clients wget
 
     # yum -y update
     # yum -y install java-1.7.0-openjdk
@@ -124,7 +124,6 @@ To create debs install the following extra packages:
 
     # apt-get -y install python-mysqldb
     # apt-get -y install debhelper
-    # apt-get -y install tomcat6
 
 Then:
 
@@ -138,7 +137,6 @@ All the deb packages will be located one level down.
 To create rpms, install the following extra packages:
 
     # yum -y install rpm-build
-    # yum -y install tomcat6
     # yum -y install ws-commons-util
     # yum -y instal gcc
     # yum -y install glibc-devel
