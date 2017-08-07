@@ -99,8 +99,8 @@ override_dh_auto_install:
 	ln -s ../../../var/cache/$(PACKAGE)/management/work $(DESTDIR)/usr/share/$(PACKAGE)-management/work
 
 	install -d -m0755 debian/$(PACKAGE)-management/lib/systemd/system
-	install -m0644 packaging/systemd/$(PACKAGE)-management.service.ubuntu debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
-	install -m0644 packaging/systemd/$(PACKAGE)-management.default.ubuntu $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
+	install -m0644 packaging/systemd/$(PACKAGE)-management.service debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
+	install -m0644 packaging/systemd/$(PACKAGE)-management.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
 
 	# cloudstack-common
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-common
