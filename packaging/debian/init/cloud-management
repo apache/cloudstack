@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# /etc/init.d/tomcat6 -- startup script for the Tomcat 6 servlet engine
+# /etc/init.d/cloudstack-management -- startup script for the Tomcat 6 servlet engine
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -32,7 +32,7 @@
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 NAME=cloudstack-management
-DESC="CloudStack-specific Tomcat servlet engine"
+DESC="CloudStack Management Server"
 DAEMON=/usr/bin/jsvc
 MANAGEMENT_HOME=/usr/share/$NAME
 MANAGEMENT_CONFIG="/etc/cloudstack/management"
@@ -82,9 +82,6 @@ export JAVA_HOME
 
 # Directory for per-instance configuration files and webapps
 CATALINA_BASE=/usr/share/cloudstack-management
-
-# Use the Java security manager? (yes/no)
-TOMCAT6_SECURITY=no
 
 # Default Java options
 # Set java.awt.headless=true if JAVA_OPTS is not set so the
