@@ -24,13 +24,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
 import com.cloud.consoleproxy.util.Logger;
+import org.eclipse.jetty.http.HttpURI;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
-public class ConsoleProxyResourceHandler implements HttpHandler {
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class ConsoleProxyResourceHandler extends AbstractHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyResourceHandler.class);
 
     static Map<String, String> s_mimeTypes;
@@ -54,36 +57,14 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
         s_validResourceFolders.put("js", "");
         s_validResourceFolders.put("css", "");
         s_validResourceFolders.put("html", "");
+        s_validResourceFolders.put("noVNC", "");
     }
 
     public ConsoleProxyResourceHandler() {
     }
 
-    @Override
-    public void handle(HttpExchange t) throws IOException {
-        try {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Resource Handler " + t.getRequestURI());
-
-            long startTick = System.currentTimeMillis();
-
-            doHandle(t);
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug(t.getRequestURI() + " Process time " + (System.currentTimeMillis() - startTick) + " ms");
-        } catch (IOException e) {
-            throw e;
-        } catch (Throwable e) {
-            s_logger.error("Unexpected exception, ", e);
-            t.sendResponseHeaders(500, -1);     // server error
-        } finally {
-            t.close();
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void doHandle(HttpExchange t) throws Exception {
-        String path = t.getRequestURI().getPath();
+    private  void doHandle(Request request, HttpServletResponse httpServletResponse) throws Exception {
+        String path = (new HttpURI(request.getRequestURI())).getPath();
 
         if (s_logger.isInfoEnabled())
             s_logger.info("Get resource request for " + path);
@@ -93,26 +74,23 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
         i = path.lastIndexOf(".");
         String extension = (i == -1) ? "" : path.substring(i + 1);
         String contentType = getContentType(extension);
-
         if (!validatePath(filepath)) {
             if (s_logger.isInfoEnabled())
                 s_logger.info("Resource access is forbidden, uri: " + path);
 
-            t.sendResponseHeaders(403, -1);     // forbidden
+            httpServletResponse.setStatus(403);     // forbidden
             return;
         }
-
         File f = new File("./" + filepath);
         if (f.exists()) {
             long lastModified = f.lastModified();
-            String ifModifiedSince = t.getRequestHeaders().getFirst("If-Modified-Since");
+            String ifModifiedSince = request.getHeader("If-Modified-Since");
             if (ifModifiedSince != null) {
                 long d = Date.parse(ifModifiedSince);
                 if (d + 1000 >= lastModified) {
-                    Headers hds = t.getResponseHeaders();
-                    hds.set("Content-Type", contentType);
-                    t.sendResponseHeaders(304, -1);
-
+                    // copying all old header to new response
+                    httpServletResponse.setHeader("Content-Type", contentType);
+                    httpServletResponse.setStatus(304);
                     if (s_logger.isInfoEnabled())
                         s_logger.info("Sent 304 file has not been " + "modified since " + ifModifiedSince);
                     return;
@@ -120,18 +98,17 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
             }
 
             long length = f.length();
-            Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", contentType);
-            hds.set("Last-Modified", new Date(lastModified).toGMTString());
-            t.sendResponseHeaders(200, length);
-            responseFileContent(t, f);
+            httpServletResponse.setHeader("Content-Type", contentType);
+            httpServletResponse.setHeader("Last-Modified", new Date(lastModified).toGMTString());
+            httpServletResponse.setStatus(200);
+            responseFileContent(httpServletResponse, f);
 
             if (s_logger.isInfoEnabled())
                 s_logger.info("Sent file " + path + " with content type " + contentType);
         } else {
             if (s_logger.isInfoEnabled())
                 s_logger.info("file does not exist" + path);
-            t.sendResponseHeaders(404, -1);
+            httpServletResponse.setStatus(404);
         }
     }
 
@@ -143,8 +120,8 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
         return "application/octet-stream";
     }
 
-    private static void responseFileContent(HttpExchange t, File f) throws Exception {
-        try(OutputStream os = t.getResponseBody();
+    private static void responseFileContent(HttpServletResponse httpServletResponse, File f) throws Exception {
+        try(OutputStream os = httpServletResponse.getOutputStream();
         FileInputStream fis = new FileInputStream(f);) {
             while (true) {
                 byte[] b = new byte[8192];
@@ -177,5 +154,27 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
 
     private static boolean isValidResourceFolder(String name) {
         return s_validResourceFolders.containsKey(name);
+    }
+
+    @Override
+    public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
+        try {
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Resource Handler " + request.getRequestURI());
+
+            long startTick = System.currentTimeMillis();
+
+            doHandle(request,httpServletResponse);
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug(request.getRequestURI() + " Process time " + (System.currentTimeMillis() - startTick) + " ms");
+        } catch (IOException e) {
+            throw e;
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception, ", e);
+            httpServletResponse.setStatus(500);     // server error
+        } finally {
+            request.setHandled(true);
+        }
     }
 }

@@ -197,7 +197,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 
         int key = ajaxImageCache.putImage(imgBits);
         StringBuffer sb = new StringBuffer();
-        sb.append("/ajaximg?token=").append(clientToken);
+        sb.append("/ajaximg/?token=").append(clientToken);
         sb.append("&key=").append(key);
         sb.append("&ts=").append(System.currentTimeMillis());
 
@@ -212,7 +212,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         }
 
         StringBuffer sb = new StringBuffer();
-        sb.append("/ajax?token=").append(clientToken).append("&sess=").append(ajaxSessionId);
+        sb.append("/ajax/?token=").append(clientToken).append("&sess=").append(ajaxSessionId);
         return sb.toString();
     }
 

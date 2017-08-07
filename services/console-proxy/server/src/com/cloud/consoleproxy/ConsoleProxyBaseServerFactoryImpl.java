@@ -17,13 +17,9 @@
 package com.cloud.consoleproxy;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-
 import javax.net.ssl.SSLServerSocket;
-
-import com.sun.net.httpserver.HttpServer;
-
 import com.cloud.consoleproxy.util.Logger;
+import org.eclipse.jetty.server.Server;
 
 public class ConsoleProxyBaseServerFactoryImpl implements ConsoleProxyServerFactory {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyBaseServerFactoryImpl.class);
@@ -33,10 +29,9 @@ public class ConsoleProxyBaseServerFactoryImpl implements ConsoleProxyServerFact
     }
 
     @Override
-    public HttpServer createHttpServerInstance(int port) throws IOException {
-        if (s_logger.isInfoEnabled())
-            s_logger.info("create HTTP server instance at port: " + port);
-        return HttpServer.create(new InetSocketAddress(port), 5);
+    public Server createHttpServerInstance(int port) throws IOException {
+        Server webServer = new Server(port);
+        return webServer;
     }
 
     @Override

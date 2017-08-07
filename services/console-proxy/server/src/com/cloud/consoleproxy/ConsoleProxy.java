@@ -41,6 +41,10 @@ import com.sun.net.httpserver.HttpServer;
 
 import com.cloud.consoleproxy.util.Logger;
 import com.cloud.utils.PropertiesUtil;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 
 /**
  *
@@ -345,27 +349,6 @@ public class ConsoleProxy {
         cthread.start();
     }
 
-    private static void startupHttpMain() {
-        try {
-            ConsoleProxyServerFactory factory = getHttpServerFactory();
-            if (factory == null) {
-                s_logger.error("Unable to load HTTP server factory");
-                System.exit(1);
-            }
-
-            HttpServer server = factory.createHttpServerInstance(httpListenPort);
-            server.createContext("/getscreen", new ConsoleProxyThumbnailHandler());
-            server.createContext("/resource/", new ConsoleProxyResourceHandler());
-            server.createContext("/ajax", new ConsoleProxyAjaxHandler());
-            server.createContext("/ajaximg", new ConsoleProxyAjaxImageHandler());
-            server.setExecutor(new ThreadExecutor()); // creates a default executor
-            server.start();
-        } catch (Exception e) {
-            s_logger.error(e.getMessage(), e);
-            System.exit(1);
-        }
-    }
-
     private static void startupHttpCmdPort() {
         try {
             s_logger.info("Listening for HTTP CMDs on port " + httpCmdListenPort);
@@ -379,7 +362,61 @@ public class ConsoleProxy {
         }
     }
 
-    public static void main(String[] argv) {
+    private static void startupHttpMain() {
+        try {
+            ConsoleProxyServerFactory factory = getHttpServerFactory();
+            if (factory == null) {
+                s_logger.error("Unable to load HTTP server factory");
+                System.exit(1);
+            }
+            Server webServer = factory.
+                    createHttpServerInstance(httpListenPort);
+            Handler[] handlerList =  new Handler[6];
+            ContextHandler contextHandlerForScreen = new ContextHandler();
+            contextHandlerForScreen.setContextPath("/getscreen/");
+            contextHandlerForScreen.setHandler(new ConsoleProxyThumbnailHandler());
+            handlerList[0] = contextHandlerForScreen;
+
+            ContextHandler contextHandlerForResources = new ContextHandler();
+            contextHandlerForScreen.setContextPath("/resource/");
+            contextHandlerForScreen.setHandler(new ConsoleProxyResourceHandler());
+            handlerList[1] = contextHandlerForResources;
+
+
+            ContextHandler contextHandlerForAjax = new ContextHandler();
+            contextHandlerForAjax.setContextPath("/ajax/");
+            contextHandlerForAjax.setHandler(new ConsoleProxyAjaxHandler());
+            handlerList[2] = contextHandlerForAjax;
+
+
+            ContextHandler contextHandlerForAjaxImage = new ContextHandler();
+            contextHandlerForAjaxImage.setContextPath("/ajaximg/");
+            contextHandlerForAjaxImage.setHandler(new ConsoleProxyAjaxImageHandler());
+            handlerList[3] = contextHandlerForAjaxImage;
+
+
+            ContextHandler contextHandlerForNoVnc = new ContextHandler();
+            contextHandlerForNoVnc.setContextPath("/novnc/");
+            contextHandlerForNoVnc.setHandler(new NoVncConsoleHandler());
+            handlerList[4] = contextHandlerForNoVnc;
+
+
+            ContextHandler contextHandlerForWebSockify = new ContextHandler();
+            contextHandlerForWebSockify.setContextPath("/websockify/");
+            contextHandlerForWebSockify.setHandler(new WebSocketHandlerForNovnc());
+            handlerList[5] = contextHandlerForWebSockify;
+
+            ContextHandlerCollection contexts = new ContextHandlerCollection();
+            contexts.setHandlers(handlerList);
+            webServer.setHandler(contexts);
+            webServer.start();
+        } catch (Exception e) {
+            s_logger.error(" could not start webserver at " + httpListenPort, e);
+            throw new RuntimeException("could not start webserver at " + httpListenPort);
+        }
+    }
+
+    public static void main(String[] argv) throws Exception {
         standaloneStart = true;
         configLog4j();
         Logger.setFactory(new ConsoleProxyLoggerFactory());

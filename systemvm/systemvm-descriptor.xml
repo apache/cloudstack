@@ -84,6 +84,24 @@
       </includes>
     </fileSet>
     <fileSet>
+      <directory>noVNC</directory>
+      <outputDirectory>noVNC</outputDirectory>
+      <directoryMode>555</directoryMode>
+      <fileMode>555</fileMode>
+      <includes>
+        <include>*</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>noVNC/include</directory>
+      <outputDirectory>noVNC/include</outputDirectory>
+      <directoryMode>555</directoryMode>
+      <fileMode>555</fileMode>
+      <includes>
+        <include>*</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>ui</directory>
       <outputDirectory>ui</outputDirectory>
       <directoryMode>555</directoryMode>

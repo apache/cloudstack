@@ -23,46 +23,47 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
-
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
 import com.cloud.consoleproxy.util.Logger;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
-public class ConsoleProxyAjaxImageHandler implements HttpHandler {
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class ConsoleProxyAjaxImageHandler extends AbstractHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxImageHandler.class);
 
     @Override
-    public void handle(HttpExchange t) throws IOException {
+    public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
         try {
             if (s_logger.isDebugEnabled())
-                s_logger.debug("AjaxImageHandler " + t.getRequestURI());
+                s_logger.debug("AjaxImageHandler " + request.getRequestURI());
 
             long startTick = System.currentTimeMillis();
 
-            doHandle(t);
+            doHandle(request, httpServletResponse);
 
             if (s_logger.isDebugEnabled())
-                s_logger.debug(t.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
+                s_logger.debug(request.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
         } catch (IOException e) {
             throw e;
         } catch (IllegalArgumentException e) {
             s_logger.warn("Exception, ", e);
-            t.sendResponseHeaders(400, -1);     // bad request
+            httpServletResponse.setStatus(400);     // bad request
         } catch (OutOfMemoryError e) {
             s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
             System.exit(1);
         } catch (Throwable e) {
             s_logger.error("Unexpected exception, ", e);
-            t.sendResponseHeaders(500, -1);     // server error
+            httpServletResponse.setStatus(500);
         } finally {
-            t.close();
+            request.setHandled(true);
         }
     }
 
-    private void doHandle(HttpExchange t) throws Exception, IllegalArgumentException {
-        String queries = t.getRequestURI().getQuery();
+    private void doHandle(Request request, HttpServletResponse httpServletResponse) throws Exception, IllegalArgumentException {
+        String queries = request.getUri().getQuery();
         Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(queries);
 
         String host = queryMap.get("host");
@@ -118,7 +119,6 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
         param.setClientTunnelSession(console_host_session);
 
         ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(param);
-
         if (key == 0) {
             Image scaledImage = viewer.getClientScaledImage(width, height);
             BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
@@ -127,12 +127,11 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
             ByteArrayOutputStream bos = new ByteArrayOutputStream(8196);
             javax.imageio.ImageIO.write(bufferedImage, "jpg", bos);
             byte[] bs = bos.toByteArray();
-            Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", "image/jpeg");
-            hds.set("Cache-Control", "no-cache");
-            hds.set("Cache-Control", "no-store");
-            t.sendResponseHeaders(200, bs.length);
-            OutputStream os = t.getResponseBody();
+            httpServletResponse.addHeader("Content-Type", "image/jpeg");
+            httpServletResponse.addHeader("Cache-Control", "no-cache");
+            httpServletResponse.addHeader("Cache-Control", "no-store");
+            httpServletResponse.setStatus(200);
+            OutputStream os = httpServletResponse.getOutputStream();
             os.write(bs);
             os.close();
         } else {
@@ -140,11 +139,10 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
             byte[] img = imageCache.getImage(key);
 
             if (img != null) {
-                Headers hds = t.getResponseHeaders();
-                hds.set("Content-Type", "image/jpeg");
-                t.sendResponseHeaders(200, img.length);
+                httpServletResponse.setHeader("Content-Type", "image/jpeg");
+                httpServletResponse.setStatus(200);
 
-                OutputStream os = t.getResponseBody();
+                OutputStream os = httpServletResponse.getOutputStream();
                 try {
                     os.write(img, 0, img.length);
                 } finally {
@@ -153,7 +151,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
             } else {
                 if (s_logger.isInfoEnabled())
                     s_logger.info("Image has already been swept out, key: " + key);
-                t.sendResponseHeaders(404, -1);
+                httpServletResponse.setStatus(404);
             }
         }
     }

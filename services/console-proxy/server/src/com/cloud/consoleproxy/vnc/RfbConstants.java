@@ -23,6 +23,7 @@ public interface RfbConstants {
     public static final String RFB_PROTOCOL_VERSION_MAJOR = "RFB 003.";
     // public static final String VNC_PROTOCOL_VERSION_MINOR = "003";
     public static final String VNC_PROTOCOL_VERSION_MINOR = "003";
+    public static final String RFB_WEBSCOKETS = RFB_PROTOCOL_VERSION_MAJOR + "008";
     public static final String RFB_PROTOCOL_VERSION = RFB_PROTOCOL_VERSION_MAJOR + VNC_PROTOCOL_VERSION_MINOR;
 
     /**

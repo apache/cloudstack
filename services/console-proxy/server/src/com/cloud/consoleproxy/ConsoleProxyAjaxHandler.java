@@ -20,53 +20,52 @@ import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
 import com.cloud.consoleproxy.util.Logger;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
-public class ConsoleProxyAjaxHandler implements HttpHandler {
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class ConsoleProxyAjaxHandler extends AbstractHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxHandler.class);
 
     public ConsoleProxyAjaxHandler() {
     }
 
     @Override
-    public void handle(HttpExchange t) throws IOException {
+    public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
         try {
             if (s_logger.isTraceEnabled())
-                s_logger.trace("AjaxHandler " + t.getRequestURI());
+                s_logger.trace("AjaxHandler " + request.getRequestURI());
 
             long startTick = System.currentTimeMillis();
 
-            doHandle(t);
+            doHandle(request, httpServletResponse);
 
             if (s_logger.isTraceEnabled())
-                s_logger.trace(t.getRequestURI() + " process time " + (System.currentTimeMillis() - startTick) + " ms");
+                s_logger.trace(request.getRequestURI() + " process time " + (System.currentTimeMillis() - startTick) + " ms");
         } catch (IOException e) {
             throw e;
         } catch (IllegalArgumentException e) {
             s_logger.warn("Exception, ", e);
-            t.sendResponseHeaders(400, -1);     // bad request
+            httpServletResponse.setStatus(400);
         } catch (Throwable e) {
             s_logger.error("Unexpected exception, ", e);
-            t.sendResponseHeaders(500, -1);     // server error
+            httpServletResponse.setStatus(500);
         } finally {
-            t.close();
+            request.setHandled(true);
         }
     }
 
-    private void doHandle(HttpExchange t) throws Exception, IllegalArgumentException {
-        String queries = t.getRequestURI().getQuery();
+    private void doHandle(Request request, HttpServletResponse response) throws Exception, IllegalArgumentException {
+        String queries = request.getUri().getQuery();
         if (s_logger.isTraceEnabled())
             s_logger.trace("Handle AJAX request: " + queries);
 
@@ -143,14 +142,14 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
 
             String[] content =
-                new String[] {"<html><head></head><body>", "<div id=\"main_panel\" tabindex=\"1\">",
-                    "<p>Access is denied for the console session. Please close the window and retry again</p>", "</div></body></html>"};
+                    new String[] {"<html><head></head><body>", "<div id=\"main_panel\" tabindex=\"1\">",
+                            "<p>Access is denied for the console session. Please close the window and retry again</p>", "</div></body></html>"};
 
             StringBuffer sb = new StringBuffer();
             for (int i = 0; i < content.length; i++)
                 sb.append(content[i]);
 
-            sendResponse(t, "text/html", sb.toString());
+            sendResponse(response, "text/html", sb.toString());
             return;
         }
 
@@ -158,41 +157,39 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             if (ajaxSessionId != 0 && ajaxSessionId == viewer.getAjaxSessionId()) {
                 if (event == 7) {
                     // client send over an event bag
-                    InputStream is = t.getRequestBody();
-                    handleClientEventBag(viewer, convertStreamToString(is, true));
+                    handleClientEventBag(viewer, convertStreamToString(request.getReader(), true));
                 } else {
                     handleClientEvent(viewer, event, queryMap);
                 }
-                sendResponse(t, "text/html", "OK");
+                sendResponse(response, "text/html", "OK");
             } else {
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("Ajax request comes from a different session, id in request: " + ajaxSessionId + ", id in viewer: " + viewer.getAjaxSessionId());
 
-                sendResponse(t, "text/html", "Invalid ajax client session id");
+                sendResponse(response, "text/html", "Invalid ajax client session id");
             }
         } else {
             if (ajaxSessionId != 0 && ajaxSessionId != viewer.getAjaxSessionId()) {
                 s_logger.info("Ajax request comes from a different session, id in request: " + ajaxSessionId + ", id in viewer: " + viewer.getAjaxSessionId());
-                handleClientKickoff(t, viewer);
+                handleClientKickoff(response, viewer);
             } else if (ajaxSessionId == 0) {
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("Ajax request indicates a fresh client start");
 
                 String title = queryMap.get("t");
                 String guest = queryMap.get("guest");
-                handleClientStart(t, viewer, title != null ? title : "", guest);
+                handleClientStart(response, viewer, title != null ? title : "", guest);
             } else {
 
                 if (s_logger.isTraceEnabled())
                     s_logger.trace("Ajax request indicates client update");
 
-                handleClientUpdate(t, viewer);
+                handleClientUpdate(response, viewer);
             }
         }
     }
 
-    private static String convertStreamToString(InputStream is, boolean closeStreamAfterRead) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    private static String convertStreamToString(BufferedReader reader, boolean closeStreamAfterRead) {
         StringBuilder sb = new StringBuilder();
         String line = null;
         try {
@@ -203,18 +200,16 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             s_logger.warn("Exception while reading request body: ", e);
         } finally {
             if (closeStreamAfterRead) {
-                closeAutoCloseable(is, "error closing stream after read");
+                closeAutoCloseable(reader, "error closing stream after read");
             }
         }
         return sb.toString();
     }
 
-    private void sendResponse(HttpExchange t, String contentType, String response) throws IOException {
-        Headers hds = t.getResponseHeaders();
-        hds.set("Content-Type", contentType);
-
-        t.sendResponseHeaders(200, response.length());
-        OutputStream os = t.getResponseBody();
+    private void sendResponse(HttpServletResponse httpServletResponse, String contentType, String response) throws IOException {
+        httpServletResponse.setHeader("Content-Type", contentType);
+        httpServletResponse.setStatus(200);
+        OutputStream os = httpServletResponse.getOutputStream();
         try {
             os.write(response.getBytes());
         } finally {
@@ -367,10 +362,10 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         }
     }
 
-    private void handleClientKickoff(HttpExchange t, ConsoleProxyClient viewer) throws IOException {
+    private void handleClientKickoff(HttpServletResponse httpServletResponse, ConsoleProxyClient viewer) throws IOException {
         String response = viewer.onAjaxClientKickoff();
-        t.sendResponseHeaders(200, response.length());
-        OutputStream os = t.getResponseBody();
+        httpServletResponse.setStatus(200);
+        OutputStream os = httpServletResponse.getOutputStream();
         try {
             os.write(response.getBytes());
         } finally {
@@ -378,17 +373,15 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         }
     }
 
-    private void handleClientStart(HttpExchange t, ConsoleProxyClient viewer, String title, String guest) throws IOException {
-        List<String> languages = t.getRequestHeaders().get("Accept-Language");
+    private void handleClientStart(HttpServletResponse httpServletResponse, ConsoleProxyClient viewer, String title, String guest) throws IOException {
+        List<String> languages = (List<String>) httpServletResponse.getHeaders("Accept-Language");
         String response = viewer.onAjaxClientStart(title, languages, guest);
+        httpServletResponse.setHeader("Content-Type", "text/html");
+        httpServletResponse.setHeader("Cache-Control", "no-cache");
+        httpServletResponse.setHeader("Cache-Control", "no-store");
+        httpServletResponse.setStatus(200);
 
-        Headers hds = t.getResponseHeaders();
-        hds.set("Content-Type", "text/html");
-        hds.set("Cache-Control", "no-cache");
-        hds.set("Cache-Control", "no-store");
-        t.sendResponseHeaders(200, response.length());
-
-        OutputStream os = t.getResponseBody();
+        OutputStream os = httpServletResponse.getOutputStream();
         try {
             os.write(response.getBytes());
         } finally {
@@ -396,14 +389,12 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         }
     }
 
-    private void handleClientUpdate(HttpExchange t, ConsoleProxyClient viewer) throws IOException {
+    private void handleClientUpdate(HttpServletResponse httpServletResponse, ConsoleProxyClient viewer) throws IOException {
         String response = viewer.onAjaxClientUpdate();
+        httpServletResponse.setHeader("Content-Type", "text/javascript");
+        httpServletResponse.setStatus(200);
 
-        Headers hds = t.getResponseHeaders();
-        hds.set("Content-Type", "text/javascript");
-        t.sendResponseHeaders(200, response.length());
-
-        OutputStream os = t.getResponseBody();
+        OutputStream os = httpServletResponse.getOutputStream();
         try {
             os.write(response.getBytes());
         } finally {

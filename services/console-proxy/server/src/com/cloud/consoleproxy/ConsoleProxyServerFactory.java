@@ -17,15 +17,13 @@
 package com.cloud.consoleproxy;
 
 import java.io.IOException;
-
 import javax.net.ssl.SSLServerSocket;
-
-import com.sun.net.httpserver.HttpServer;
+import org.eclipse.jetty.server.Server;
 
 public interface ConsoleProxyServerFactory {
     void init(byte[] ksBits, String ksPassword);
 
-    HttpServer createHttpServerInstance(int port) throws IOException;
+    Server createHttpServerInstance(int port) throws IOException;
 
     SSLServerSocket createSSLServerSocket(int port) throws IOException;
 }

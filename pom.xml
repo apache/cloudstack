@@ -929,6 +929,9 @@
               <exclude>systemvm/conf/environment.properties</exclude>
               <exclude>systemvm/js/jquery.js</exclude>
               <exclude>systemvm/js/jquery.flot.navigate.js</exclude>
+              <exclude>systemvm/noVNC/novnc.html</exclude>
+              <exclude>systemvm/noVNC/include/*js</exclude>
+              <exclude>systemvm/noVNC/include/*css</exclude>
               <exclude>systemvm/patches/debian/systemvm.vmx</exclude>
               <exclude>systemvm/patches/debian/config/root/.ssh/authorized_keys</exclude>
               <exclude>systemvm/patches/debian/config/etc/apache2/httpd.conf</exclude>

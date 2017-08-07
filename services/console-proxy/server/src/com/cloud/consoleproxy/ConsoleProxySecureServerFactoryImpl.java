@@ -16,28 +16,30 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
-
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.security.KeyStore;
 
 public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFactory {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxySecureServerFactoryImpl.class);
-
+    private static final int httpPort = 80;
     private SSLContext sslContext = null;
+    private SslContextFactory sslContextFactory;
 
     public ConsoleProxySecureServerFactoryImpl() {
     }
@@ -56,7 +58,10 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
 
                 KeyStore ks = KeyStore.getInstance("JKS");
                 ks.load(new ByteArrayInputStream(ksBits), passphrase);
-
+                sslContextFactory = new SslContextFactory();
+                sslContextFactory.setKeyStore(ks);
+                sslContextFactory.setKeyStorePassword(String.valueOf(passphrase));
+                sslContextFactory.setKeyManagerPassword(String.valueOf(passphrase));
                 KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
                 kmf.init(ks, passphrase);
                 s_logger.info("Key manager factory is initialized");
@@ -76,34 +81,32 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
     }
 
     @Override
-    public HttpServer createHttpServerInstance(int port) throws IOException {
-        try {
-            HttpsServer server = HttpsServer.create(new InetSocketAddress(port), 5);
-            server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
-                @Override
-                public void configure(HttpsParameters params) {
+    public Server createHttpServerInstance(int port) throws IOException {
+        Server server = new Server(port);
+        // HTTP Configuration
+        HttpConfiguration http = new HttpConfiguration();
+        http.addCustomizer(new SecureRequestCustomizer());
 
-                    // get the remote address if needed
-                    InetSocketAddress remote = params.getClientAddress();
-                    SSLContext c = getSSLContext();
+        // Configuration for HTTPS redirect
+        http.setSecurePort(port);
+        http.setSecureScheme("https");
+        ServerConnector connector = new ServerConnector(server);
+        connector.addConnectionFactory(new HttpConnectionFactory(http));
+        // Setting HTTP port
+        connector.setPort(httpPort);
 
-                    // get the default parameters
-                    SSLParameters sslparams = c.getDefaultSSLParameters();
+        // HTTPS configuration
+        HttpConfiguration https = new HttpConfiguration();
+        https.addCustomizer(new SecureRequestCustomizer());
 
-                    params.setSSLParameters(sslparams);
-                    params.setProtocols(SSLUtils.getRecommendedProtocols());
-                    params.setCipherSuites(SSLUtils.getRecommendedCiphers());
-                    // statement above could throw IAE if any params invalid.
-                    // eg. if app has a UI and parameters supplied by a user.
-                }
-            });
+        // Configuring the connector
+        ServerConnector sslConnector = new ServerConnector(server,
+                new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(https));
+        sslConnector.setPort(port);
 
-            s_logger.info("create HTTPS server instance on port: " + port);
-            return server;
-        } catch (Exception ioe) {
-            s_logger.error(ioe.toString(), ioe);
-        }
-        return null;
+        // Setting HTTP and HTTPS connectors
+        server.setConnectors(new Connector[]{connector, sslConnector});
+        return server;
     }
 
     @Override
@@ -112,9 +115,8 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
             SSLServerSocket srvSock = null;
             SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
             srvSock = (SSLServerSocket)ssf.createServerSocket(port);
-            srvSock.setEnabledProtocols(SSLUtils.getRecommendedProtocols());
-            srvSock.setEnabledCipherSuites(SSLUtils.getRecommendedCiphers());
-
+            srvSock.setEnabledProtocols(SSLUtils.getSupportedProtocols(srvSock.getEnabledProtocols()));
+            srvSock.setEnabledCipherSuites(SSLUtils.getSupportedProtocols(srvSock.getEnabledCipherSuites()));
             s_logger.info("create SSL server socket on port: " + port);
             return srvSock;
         } catch (Exception ioe) {

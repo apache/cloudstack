@@ -27,47 +27,52 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
 import com.cloud.consoleproxy.util.Logger;
+import org.eclipse.jetty.http.HttpURI;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
-public class ConsoleProxyThumbnailHandler implements HttpHandler {
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class ConsoleProxyThumbnailHandler extends AbstractHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyThumbnailHandler.class);
 
     public ConsoleProxyThumbnailHandler() {
     }
 
     @Override
-    @SuppressWarnings("access")
-    public void handle(HttpExchange t) throws IOException {
+    public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
         try {
-            Thread.currentThread().setName("JPG Thread " + Thread.currentThread().getId() + " " + t.getRemoteAddress());
+            Thread.currentThread().setName("JPG Thread " + Thread.currentThread().getId() + " " + request.getRemoteAddr());
 
             if (s_logger.isDebugEnabled())
-                s_logger.debug("ScreenHandler " + t.getRequestURI());
+                s_logger.debug("ScreenHandler " + request.getRequestURI());
 
             long startTick = System.currentTimeMillis();
-            doHandle(t);
+            doHandle(request, httpServletResponse);
 
             if (s_logger.isDebugEnabled())
-                s_logger.debug(t.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
-        } catch (IllegalArgumentException e) {
-            String response = "Bad query string";
-            s_logger.error(response + ", request URI : " + t.getRequestURI());
-            t.sendResponseHeaders(200, response.length());
-            OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
+                s_logger.debug(request.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
+        }catch (IllegalArgumentException e) {
+            String responseString = "Bad query string";
+            s_logger.error(responseString + ", request URI : " + request.getRequestURI());
+
+            httpServletResponse.setStatus(200);
+            OutputStream os = httpServletResponse.getOutputStream();
+            os.write(responseString.getBytes());
             os.close();
+
+            request.setHandled(true);
         } catch (OutOfMemoryError e) {
             s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+            request.setHandled(true);
             System.exit(1);
         } catch (Throwable e) {
             s_logger.error("Unexpected exception while handing thumbnail request, ", e);
-
-            String queries = t.getRequestURI().getQuery();
+            HttpURI httpURI = new HttpURI(request.getRequestURI());
+            String queries = httpURI.getQuery();
             Map<String, String> queryMap = getQueryMap(queries);
             int width = 0;
             int height = 0;
@@ -86,23 +91,20 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             ByteArrayOutputStream bos = new ByteArrayOutputStream(8196);
             javax.imageio.ImageIO.write(img, "jpg", bos);
             byte[] bs = bos.toByteArray();
-            Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", "image/jpeg");
-            hds.set("Cache-Control", "no-cache");
-            hds.set("Cache-Control", "no-store");
-            t.sendResponseHeaders(200, bs.length);
-            OutputStream os = t.getResponseBody();
-            os.write(bs);
-            os.close();
-            s_logger.error("Cannot get console, sent error JPG response for " + t.getRequestURI());
+            httpServletResponse.setHeader("Content-Type", "image/jpeg");
+            httpServletResponse.setHeader("Cache-Control", "no-cache");
+            httpServletResponse.setHeader("Cache-Control", "no-store");
+
+            httpServletResponse.getOutputStream().write(bs);
+            request.setHandled(true);
+            s_logger.error("Cannot get console, sent error JPG response for " + request.getRequestURI());
             return;
         } finally {
-            t.close();
+            request.setHandled(true);
         }
     }
-
-    private void doHandle(HttpExchange t) throws Exception, IllegalArgumentException {
-        String queries = t.getRequestURI().getQuery();
+    private void doHandle(Request request, HttpServletResponse httpServletResponse) throws Exception, IllegalArgumentException {
+        String queries = request.getUri().getQuery();
         Map<String, String> queryMap = getQueryMap(queries);
         int width = 0;
         int height = 0;
@@ -148,12 +150,11 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             ByteArrayOutputStream bos = new ByteArrayOutputStream(8196);
             javax.imageio.ImageIO.write(img, "jpg", bos);
             byte[] bs = bos.toByteArray();
-            Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", "image/jpeg");
-            hds.set("Cache-Control", "no-cache");
-            hds.set("Cache-Control", "no-store");
-            t.sendResponseHeaders(200, bs.length);
-            OutputStream os = t.getResponseBody();
+            httpServletResponse.setHeader("Content-Type", "image/jpeg");
+            httpServletResponse.setHeader("Cache-Control", "no-cache");
+            httpServletResponse.setHeader("Cache-Control", "no-store");
+            httpServletResponse.setStatus(200);
+            OutputStream os = httpServletResponse.getOutputStream();
             os.write(bs);
             os.close();
 
@@ -170,12 +171,11 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             ByteArrayOutputStream bos = new ByteArrayOutputStream(8196);
             javax.imageio.ImageIO.write(bufferedImage, "jpg", bos);
             byte[] bs = bos.toByteArray();
-            Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", "image/jpeg");
-            hds.set("Cache-Control", "no-cache");
-            hds.set("Cache-Control", "no-store");
-            t.sendResponseHeaders(200, bs.length);
-            OutputStream os = t.getResponseBody();
+            httpServletResponse.setHeader("Content-Type", "image/jpeg");
+            httpServletResponse.setHeader("Cache-Control", "no-cache");
+            httpServletResponse.setHeader("Cache-Control", "no-store");
+            httpServletResponse.setStatus(200);
+            OutputStream os = httpServletResponse.getOutputStream();
             os.write(bs);
             os.close();
         }
