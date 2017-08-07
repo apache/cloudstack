@@ -292,8 +292,10 @@ cp client/target/bcprov-jdk15on-1.55.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ma
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties log4j-cloud.xml server-ssl.xml server-nonssl.xml commons-logging.properties \
-            classpath.conf web.xml environment.properties java.security.ciphers; do
+cp client/target/classes/META-INF/webapp/WEB-INF/web.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/
+
+for name in db.properties log4j-cloud.xml commons-logging.properties environment.properties java.security.ciphers
+do
   cp client/target/conf/$name ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
 
@@ -529,9 +531,6 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
