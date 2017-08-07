@@ -37,5 +37,13 @@ public interface AnnotationService {
         EntityType(String tableName) {
             this.tableName = tableName;
         }
+        static public boolean contains(String representation) {
+            try {
+                /* EntityType tiep = */ valueOf(representation);
+                return true;
+            } catch (IllegalArgumentException iae) {
+                return false;
+            }
+        }
     }
 }
