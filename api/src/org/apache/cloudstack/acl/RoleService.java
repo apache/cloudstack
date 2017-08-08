@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.acl;
 
+import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.List;
@@ -36,13 +37,14 @@ public interface RoleService {
     RolePermission findRolePermission(final Long id);
     RolePermission findRolePermissionByUuid(final String uuid);
 
-    RolePermission createRolePermission(final Role role, final Rule rule, final RolePermission.Permission permission, final String description);
+    RolePermission createRolePermission(final Role role, final Rule rule, final Permission permission, final String description);
     /**
      * updateRolePermission updates the order/position of an role permission
      * @param role The role whose permissions needs to be re-ordered
      * @param newOrder The new list of ordered role permissions
      */
     boolean updateRolePermission(final Role role, final List<RolePermission> newOrder);
+    boolean updateRolePermission(final Role role, final RolePermission rolePermission, final Permission permission);
     boolean deleteRolePermission(final RolePermission rolePermission);
 
     List<Role> listRoles();

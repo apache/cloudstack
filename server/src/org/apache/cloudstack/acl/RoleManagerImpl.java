@@ -205,6 +205,12 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
+    public boolean updateRolePermission(Role role, RolePermission rolePermission, RolePermission.Permission permission) {
+        checkCallerAccess();
+        return role != null && rolePermissionsDao.update(role, rolePermission, permission);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_DELETE, eventDescription = "deleting Role Permission")
     public boolean deleteRolePermission(final RolePermission rolePermission) {
         checkCallerAccess();

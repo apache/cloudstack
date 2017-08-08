@@ -20,6 +20,7 @@ package org.apache.cloudstack.acl.dao;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.acl.RolePermissionVO;
 
 import java.util.List;
@@ -39,6 +40,15 @@ public interface RolePermissionsDao extends GenericDao<RolePermissionVO, Long> {
      * @return returns true on success
      */
     boolean update(final Role role, final List<RolePermission> newOrder);
+
+    /**
+     * Updates existing role permission
+     * @param role role of which rule belongs
+     * @param rolePermission role permission
+     * @param permission permission
+     * @return true on success, false if not
+     */
+    boolean update(final Role role, final RolePermission rolePermission, final Permission permission);
 
     /**
      * Returns ordered linked-list of role permission for a given role

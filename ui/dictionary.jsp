@@ -1103,6 +1103,7 @@ dictionary = {
 'label.edit.role': '<fmt:message key="label.edit.role" />',
 'label.delete.role': '<fmt:message key="label.delete.role" />',
 'message.role.ordering.fail': '<fmt:message key="message.role.ordering.fail" />',
+'message.role.update.fail': '<fmt:message key="message.role.update.fail" />',
 'label.root.disk.controller': '<fmt:message key="label.root.disk.controller" />',
 'label.root.disk.offering': '<fmt:message key="label.root.disk.offering" />',
 };
