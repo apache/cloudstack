@@ -223,6 +223,7 @@ class CsDevice:
         """
         Configure Reverse Path Filtering
         """
+        logging.debug("Enabled rp_filter for %s interface" % self.dev)
         filename = "/proc/sys/net/ipv4/conf/%s/rp_filter" % self.dev
         CsHelper.updatefile(filename, "1\n", "w")
 
