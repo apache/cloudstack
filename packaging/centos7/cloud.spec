@@ -262,7 +262,7 @@ cp client/target/bcprov-jdk15on-1.55.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ma
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-cp client/target/classes/META-INF/webapp/WEB-INF/web.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/
+cp client/target/classes/META-INF/webapp/WEB-INF/web.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 
 for name in db.properties log4j-cloud.xml commons-logging.properties environment.properties java.security.ciphers
 do
@@ -473,13 +473,13 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %config(noreplace) %{_sysconfdir}/security/limits.d/cloud
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/log4j.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %attr(0755,root,root) %{_unitdir}/%{name}-management.service
 %attr(0755,cloud,cloud) %{_localstatedir}/run/%{name}-management.pid
-
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
 %{_datadir}/%{name}-management/conf
