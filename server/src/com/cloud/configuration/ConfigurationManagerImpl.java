@@ -34,13 +34,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.base.MoreObjects;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -72,6 +65,7 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -86,11 +80,15 @@ import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -221,7 +219,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
@@ -5061,6 +5059,32 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, systemOnly);
 
         return _networkOfferingDao.search(sc, searchFilter);
+    }
+
+     @Override
+     @DB
+     public boolean releaseDomainSpecificVirtualRanges(final long domainId) {
+        final List<DomainVlanMapVO> maps = _domainVlanMapDao.listDomainVlanMapsByDomain(domainId);
+        if (CollectionUtils.isNotEmpty(maps)) {
+            try {
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(final TransactionStatus status) {
+                        for (DomainVlanMapVO map : maps) {
+                            if (!releasePublicIpRange(map.getVlanDbId(), _accountMgr.getSystemUser().getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM))) {
+                                throw new CloudRuntimeException("Failed to release domain specific virtual ip ranges for domain id=" + domainId);
+                            }
+                        }
+                    }
+                });
+            } catch (final CloudRuntimeException e) {
+                s_logger.error(e);
+                return false;
+            }
+        } else {
+            s_logger.trace("Domain id=" + domainId + " has no domain specific virtual ip ranges, nothing to release");
+        }
+        return true;
     }
 
     @Override
