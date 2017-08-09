@@ -140,7 +140,7 @@ public class DomainVO implements Domain {
     }
 
     public void setAccountId(long accountId) {
-        this. accountId= accountId;
+        this.accountId = accountId;
     }
 
     @Override
