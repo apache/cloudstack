@@ -26,11 +26,19 @@
             tags: elem.tags
         };
 
+        if (typeof elem.icmptype != 'undefined') {
+             var icmptype = elem.icmptype.toString()
+        }
+
+        if (typeof elem.icmpcode != 'undefined') {
+             var icmpcode = elem.icmpcode.toString()
+        }
+
         if (elemData.startport == 0 && elemData.endport) {
             elemData.startport = '0';
-        } else if (elem.icmptype && elem.icmpcode) {
-            elemData.startport = elem.icmptype;
-            elemData.endport = elem.icmpcode;
+        } else if (icmptype && icmpcode) {
+            elemData.startport = icmptype;
+            elemData.endport = icmpcode;
         }
 
         return elemData;
