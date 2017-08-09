@@ -135,6 +135,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
@@ -173,7 +174,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
+public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler, Configurable {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
     public static final String VM_WORK_JOB_HANDLER = VolumeApiServiceImpl.class.getSimpleName();
 
@@ -259,6 +260,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
+
+    static final ConfigKey<Boolean> ValidateURLExistence =
+            new ConfigKey<Boolean>(
+                    "Advanced",
+                    Boolean.class,
+                    "validate.url.existence",
+                    "true",
+                    "Whether url of the given volume during upload needs to be validated for existence",
+                    false,
+                    ConfigKey.Scope.Zone);
+
 
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
@@ -403,8 +415,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("File:// type urls are currently unsupported");
             }
             UriUtils.validateUrl(format, url);
-        // check URL existence
-        UriUtils.checkUrlExistence(url);
+
+            // check URL existence
+            if(ValidateURLExistence.value()) {
+                UriUtils.checkUrlExistence(url);
+            }
             // Check that the resource limit for secondary storage won't be exceeded
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
         } else {
@@ -3066,4 +3081,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return workJob;
     }
+
+    @Override
+    public String getConfigComponentName() {
+        return VolumeApiService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { ValidateURLExistence};
+    }
+
 }
