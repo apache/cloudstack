@@ -103,6 +103,10 @@ public class DomainVO implements Domain {
         return id;
     }
 
+    public void setId(long id) {
+        this.id = id;
+    }
+
     @Override
     public Long getParent() {
         return parent;
@@ -133,6 +137,10 @@ public class DomainVO implements Domain {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
     }
 
     @Override
