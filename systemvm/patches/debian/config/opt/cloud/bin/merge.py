@@ -23,6 +23,7 @@ import logging
 import cs_ip
 import cs_guestnetwork
 import cs_cmdline
+import cs_vmp
 import cs_network_acl
 import cs_firewallrules
 import cs_loadbalancer
@@ -34,6 +35,8 @@ import cs_site2sitevpn
 import cs_remoteaccessvpn
 import cs_vpnusers
 import cs_staticroutes
+
+from pprint import pprint
 
 
 class DataBag:
@@ -47,28 +50,29 @@ class DataBag:
         data = self.bdata
         if not os.path.exists(self.DPATH):
             os.makedirs(self.DPATH)
-        self.fpath = self.DPATH + '/' + self.key + '.json'
+        self.fpath = os.path.join(self.DPATH, self.key + '.json')
+
         try:
-            handle = open(self.fpath)
+            with open(self.fpath, 'r') as _fh:
+                logging.debug("Loading data bag type %s", self.key)
+                data = json.load(_fh)
         except IOError:
             logging.debug("Creating data bag type %s", self.key)
             data.update({"id": self.key})
-        else:
-            logging.debug("Loading data bag type %s",  self.key)
-            data = json.load(handle)
-            handle.close()
-        self.dbag = data
+        finally:
+            self.dbag = data
 
     def save(self, dbag):
         try:
-            handle = open(self.fpath, 'w')
+            with open(self.fpath, 'w') as _fh:
+                logging.debug("Writing data bag type %s", self.key)
+                json.dump(
+                    dbag, _fh,
+                    sort_keys=True,
+                    indent=2
+                )
         except IOError:
             logging.error("Could not write data bag %s", self.key)
-        else:
-            logging.debug("Writing data bag type %s", self.key)
-            logging.debug(dbag)
-        jsono = json.dumps(dbag, indent=4, sort_keys=True)
-        handle.write(jsono)
 
     def getDataBag(self):
         return self.dbag
@@ -102,6 +106,8 @@ class updateDataBag:
             dbag = self.processGuestNetwork(self.db.getDataBag())
         elif self.qFile.type == 'cmdline':
             dbag = self.processCL(self.db.getDataBag())
+        elif self.qFile.type == 'vmpassword':
+            dbag = self.processVMpassword(self.db.getDataBag())
         elif self.qFile.type == 'networkacl':
             dbag = self.process_network_acl(self.db.getDataBag())
         elif self.qFile.type == 'firewallrules':
@@ -182,6 +188,9 @@ class updateDataBag:
 
     def process_staticroutes(self, dbag):
         return cs_staticroutes.merge(dbag, self.qFile.data)
+
+    def processVMpassword(self, dbag):
+        return cs_vmp.merge(dbag, self.qFile.data)
 
     def processForwardingRules(self, dbag):
         # to be used by both staticnat and portforwarding
@@ -267,21 +276,13 @@ class QueueFile:
     fileName = ''
     configCache = "/var/cache/cloud"
     keep = True
-    do_merge = True
     data = {}
-
-    def update_databag(self):
-        if self.do_merge:
-            logging.info("Merging because do_merge is %s" % self.do_merge)
-            updateDataBag(self)
-        else:
-            logging.info("Not merging because do_merge is %s" % self.do_merge)
 
     def load(self, data):
         if data is not None:
             self.data = data
             self.type = self.data["type"]
-            self.update_databag()
+            proc = updateDataBag(self)
             return
         fn = self.configCache + '/' + self.fileName
         try:
@@ -296,7 +297,7 @@ class QueueFile:
                 self.__moveFile(fn, self.configCache + "/processed")
             else:
                 os.remove(fn)
-            self.update_databag()
+            proc = updateDataBag(self)
 
     def setFile(self, name):
         self.fileName = name

@@ -34,13 +34,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.base.MoreObjects;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -72,6 +65,7 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -86,11 +80,15 @@ import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -221,7 +219,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
@@ -2054,7 +2052,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if(!allowNetworkRate) {
                 throw new InvalidParameterValueException("Network rate can be specified only for non-System offering and system offerings having \"domainrouter\" systemvmtype");
             }
-            if(cmd.getNetworkRate().intValue() < 1) {
+            if(cmd.getNetworkRate().intValue() < 0) {
                 throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the network rate value more than 0");
             }
         }
@@ -3917,7 +3915,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
-
+        String servicePackageuuid = cmd.getServicePackageId();
         // Verify traffic type
         for (final TrafficType tType : TrafficType.values()) {
             if (tType.name().equalsIgnoreCase(trafficTypeString)) {
@@ -4293,6 +4291,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<NetworkOffering.Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive) {
 
+        String servicePackageUuid;
+        String spDescription = null;
+        if (details == null) {
+            servicePackageUuid = null;
+        } else {
+            servicePackageUuid = details.get(NetworkOffering.Detail.servicepackageuuid);
+            spDescription = details.get(NetworkOffering.Detail.servicepackagedescription);
+        }
+
+
         final String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         final int multicastRate = multicastRateStr == null ? 10 : Integer.parseInt(multicastRateStr);
         tags = StringUtils.cleanupTags(tags);
@@ -4451,9 +4459,35 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             offeringFinal.setServiceOfferingId(serviceOfferingId);
         }
 
+        //Set Service package id
+        offeringFinal.setServicePackage(servicePackageUuid);
         // validate the details
         if (details != null) {
             validateNtwkOffDetails(details, serviceProviderMap);
+        }
+
+        boolean vpcOff = false;
+        boolean nsOff = false;
+
+        if (serviceProviderMap != null && spDescription != null) {
+            for (final Network.Service service : serviceProviderMap.keySet()) {
+                final Set<Provider> providers = serviceProviderMap.get(service);
+                if (providers != null && !providers.isEmpty()) {
+                    for (final Network.Provider provider : providers) {
+                        if (provider == Provider.VPCVirtualRouter) {
+                            vpcOff = true;
+                        }
+                        if (provider == Provider.Netscaler) {
+                            nsOff = true;
+                        }
+                    }
+                }
+            }
+            if(vpcOff && nsOff) {
+                if(!(spDescription.equalsIgnoreCase("A NetScalerVPX is dedicated per network.") || spDescription.contains("dedicated NetScaler"))) {
+                    throw new InvalidParameterValueException("Only NetScaler Service Pacakge with Dedicated Device Mode is Supported in VPC Type Guest Network");
+                }
+            }
         }
 
         return Transaction.execute(new TransactionCallback<NetworkOfferingVO>() {
@@ -4778,6 +4812,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return vpcProvider || nuageVpcProvider;
     }
 
+    @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_DELETE, eventDescription = "deleting network offering")
     public boolean deleteNetworkOffering(final DeleteNetworkOfferingCmd cmd) {
@@ -5024,6 +5059,32 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, systemOnly);
 
         return _networkOfferingDao.search(sc, searchFilter);
+    }
+
+     @Override
+     @DB
+     public boolean releaseDomainSpecificVirtualRanges(final long domainId) {
+        final List<DomainVlanMapVO> maps = _domainVlanMapDao.listDomainVlanMapsByDomain(domainId);
+        if (CollectionUtils.isNotEmpty(maps)) {
+            try {
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(final TransactionStatus status) {
+                        for (DomainVlanMapVO map : maps) {
+                            if (!releasePublicIpRange(map.getVlanDbId(), _accountMgr.getSystemUser().getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM))) {
+                                throw new CloudRuntimeException("Failed to release domain specific virtual ip ranges for domain id=" + domainId);
+                            }
+                        }
+                    }
+                });
+            } catch (final CloudRuntimeException e) {
+                s_logger.error(e);
+                return false;
+            }
+        } else {
+            s_logger.trace("Domain id=" + domainId + " has no domain specific virtual ip ranges, nothing to release");
+        }
+        return true;
     }
 
     @Override

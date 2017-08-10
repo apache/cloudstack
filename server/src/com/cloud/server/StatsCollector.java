@@ -20,7 +20,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -34,19 +33,12 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
-import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -54,6 +46,10 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
 import org.apache.cloudstack.utils.graphite.GraphiteException;
+import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -62,9 +58,13 @@ import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.host.Host;
@@ -103,7 +103,9 @@ import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -117,11 +119,13 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.MacAddress;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -130,7 +134,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  *
  */
 @Component
-public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable {
+public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable {
 
     public static enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite");
@@ -148,6 +152,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
 
+    static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
+            "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
+    static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
+            "Minimal interval (in seconds) to report vm disk statistics. If vm.disk.stats.interval is smaller than this, use this to report vm disk statistics.", false);
+    static final ConfigKey<Integer> vmNetworkStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval", "0",
+            "Interval (in seconds) to report vm network statistics (for Shared networks). Vm network statistics will be disabled if this is set to 0 or less than 0.", false);
+    static final ConfigKey<Integer> vmNetworkStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval.min", "300",
+            "Minimal Interval (in seconds) to report vm network statistics (for Shared networks). If vm.network.stats.interval is smaller than this, use this to report vm network statistics.", false);
+
     private static StatsCollector s_instance = null;
 
     private ScheduledExecutorService _executor = null;
@@ -157,8 +170,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private UserVmManager _userVmMgr;
     @Inject
     private HostDao _hostDao;
-    @Inject
-    private OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     private UserVmDao _userVmDao;
     @Inject
@@ -176,8 +187,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
-    private OutOfBandManagementService outOfBandManagementService;
-    @Inject
     private ConfigurationDao _configDao;
     @Inject
     private EndPointSelector _epSelector;
@@ -185,6 +194,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private VmDiskStatisticsDao _vmDiskStatsDao;
     @Inject
     private ManagementServerHostDao _msHostDao;
+    @Inject
+    private UserStatisticsDao _userStatsDao;
+    @Inject
+    private NicDao _nicDao;
+    @Inject
+    private VlanDao _vlanDao;
     @Inject
     private AutoScaleVmGroupDao _asGroupDao;
     @Inject
@@ -219,12 +234,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
     long hostStatsInterval = -1L;
-    long hostOutOfBandManagementStatsInterval = -1L;
     long hostAndVmStatsInterval = -1L;
     long storageStatsInterval = -1L;
     long volumeStatsInterval = -1L;
     long autoScaleStatsInterval = -1L;
-    int vmDiskStatsInterval = 0;
+
     List<Long> hostIds = null;
     private double _imageStoreCapacityThreshold = 0.90;
 
@@ -265,13 +279,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private void init(Map<String, String> configs) {
         _executor = Executors.newScheduledThreadPool(6, new NamedThreadFactory("StatsCollector"));
 
-        hostOutOfBandManagementStatsInterval = OutOfBandManagementService.SyncThreadInterval.value();
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), 60000L);
         hostAndVmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), 60000L);
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), 60000L);
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), -1L);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), 60000L);
-        vmDiskStatsInterval = NumbersUtil.parseInt(configs.get("vm.disk.stats.interval"), 0);
 
         /* URI to send statistics to. Currently only Graphite is supported */
         String externalStatsUri = configs.get("stats.output.uri");
@@ -313,10 +325,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             _executor.scheduleWithFixedDelay(new HostCollector(), 15000L, hostStatsInterval, TimeUnit.MILLISECONDS);
         }
 
-        if (hostOutOfBandManagementStatsInterval > 0) {
-            _executor.scheduleWithFixedDelay(new HostOutOfBandManagementStatsCollector(), 15000L, hostOutOfBandManagementStatsInterval, TimeUnit.MILLISECONDS);
-        }
-
         if (hostAndVmStatsInterval > 0) {
             _executor.scheduleWithFixedDelay(new VmStatsCollector(), 15000L, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
         }
@@ -329,14 +337,31 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             _executor.scheduleWithFixedDelay(new AutoScaleMonitor(), 15000L, autoScaleStatsInterval, TimeUnit.MILLISECONDS);
         }
 
-        if (vmDiskStatsInterval > 0) {
-            if (vmDiskStatsInterval < 300)
-                vmDiskStatsInterval = 300;
-            _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsInterval, vmDiskStatsInterval, TimeUnit.SECONDS);
+        if (vmDiskStatsInterval.value() > 0) {
+            if (vmDiskStatsInterval.value() < vmDiskStatsIntervalMin.value()) {
+                s_logger.debug("vm.disk.stats.interval - " + vmDiskStatsInterval.value() + " is smaller than vm.disk.stats.interval.min - " + vmDiskStatsIntervalMin.value() + ", so use vm.disk.stats.interval.min");
+                _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsIntervalMin.value(), vmDiskStatsIntervalMin.value(), TimeUnit.SECONDS);
+            } else {
+                _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsInterval.value(), vmDiskStatsInterval.value(), TimeUnit.SECONDS);
+            }
+        } else {
+            s_logger.debug("vm.disk.stats.interval - " + vmDiskStatsInterval.value() + " is 0 or less than 0, so not scheduling the vm disk stats thread");
+        }
+
+        if (vmNetworkStatsInterval.value() > 0) {
+            if (vmNetworkStatsInterval.value() < vmNetworkStatsIntervalMin.value()) {
+                s_logger.debug("vm.network.stats.interval - " + vmNetworkStatsInterval.value() + " is smaller than vm.network.stats.interval.min - " + vmNetworkStatsIntervalMin.value() + ", so use vm.network.stats.interval.min");
+                _executor.scheduleAtFixedRate(new VmNetworkStatsTask(), vmNetworkStatsIntervalMin.value(), vmNetworkStatsIntervalMin.value(), TimeUnit.SECONDS);
+            } else {
+                _executor.scheduleAtFixedRate(new VmNetworkStatsTask(), vmNetworkStatsInterval.value(), vmNetworkStatsInterval.value(), TimeUnit.SECONDS);
+            }
+        } else {
+            s_logger.debug("vm.network.stats.interval - " + vmNetworkStatsInterval.value() + " is 0 or less than 0, so not scheduling the vm network stats thread");
         }
 
         //Schedule disk stats update task
         _diskStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DiskStatsUpdater"));
+
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         _usageAggregationRange = NumbersUtil.parseInt(aggregationRange, 1440);
         _usageTimeZone = configs.get("usage.aggregation.timezone");
@@ -396,6 +421,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.SecondaryStorageVM.toString());
                 sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.ExternalFirewall.toString());
                 sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.ExternalLoadBalancer.toString());
+                sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.NetScalerControlCenter.toString());
                 sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.L2Networking.toString());
                 sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.BaremetalDhcp.toString());
                 sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.BaremetalPxe.toString());
@@ -435,41 +461,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-    class HostOutOfBandManagementStatsCollector extends ManagedContextRunnable {
-        @Override
-        protected void runInContext() {
-            try {
-                s_logger.debug("HostOutOfBandManagementStatsCollector is running...");
-                List<OutOfBandManagementVO> outOfBandManagementHosts = outOfBandManagementDao.findAllByManagementServer(ManagementServerNode.getManagementServerId());
-                if (outOfBandManagementHosts == null) {
-                    return;
-                }
-                for (OutOfBandManagement outOfBandManagementHost : outOfBandManagementHosts) {
-                    Host host = _hostDao.findById(outOfBandManagementHost.getHostId());
-                    if (host == null) {
-                        continue;
-                    }
-                    if (outOfBandManagementService.isOutOfBandManagementEnabled(host)) {
-                        outOfBandManagementService.submitBackgroundPowerSyncTask(host);
-                    } else if (outOfBandManagementHost.getPowerState() != OutOfBandManagement.PowerState.Disabled) {
-                        if (outOfBandManagementService.transitionPowerStateToDisabled(Collections.singletonList(host))) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Out-of-band management was disabled in zone/cluster/host, disabled power state for host id:" + host.getId());
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable t) {
-                s_logger.error("Error trying to retrieve host out-of-band management stats", t);
-            }
-        }
-    }
-
     class VmStatsCollector extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
             try {
-                s_logger.debug("VmStatsCollector is running...");
+                s_logger.trace("VmStatsCollector is running...");
 
                 SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
                 sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
@@ -640,11 +636,20 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     class VmDiskStatsTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
+            //Check for ownership
+            //msHost in UP state with min id should run the job
+            ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+            if(msHost == null || (msHost.getMsid() != mgmtSrvrId)){
+                s_logger.debug("Skipping collect vm disk stats from hosts");
+                return;
+            }
             // collect the vm disk statistics(total) from hypervisor. added by weizhou, 2013.03.
             try {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
+                        s_logger.debug("VmDiskStatsTask is running...");
+
                         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
                         sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
                         sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance,
@@ -758,6 +763,126 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 });
             } catch (Exception e) {
                 s_logger.warn("Error while collecting vm disk stats from hosts", e);
+            }
+        }
+    }
+
+    class VmNetworkStatsTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            //Check for ownership
+            //msHost in UP state with min id should run the job
+            ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+            if(msHost == null || (msHost.getMsid() != mgmtSrvrId)){
+                s_logger.debug("Skipping collect vm network stats from hosts");
+                return;
+            }
+            // collect the vm network statistics(total) from hypervisor
+            try {
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        s_logger.debug("VmNetworkStatsTask is running...");
+
+                        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+                        sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
+                        sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
+                        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
+                        List<HostVO> hosts = _hostDao.search(sc, null);
+
+                        for (HostVO host : hosts)
+                        {
+                            List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
+                            List<Long> vmIds = new ArrayList<Long>();
+
+                            for (UserVmVO vm : vms) {
+                                if (vm.getType() == VirtualMachine.Type.User) // user vm
+                                    vmIds.add(vm.getId());
+                            }
+
+                            HashMap<Long, List<VmNetworkStatsEntry>> vmNetworkStatsById = _userVmMgr.getVmNetworkStatistics(host.getId(), host.getName(), vmIds);
+                            if (vmNetworkStatsById == null)
+                                continue;
+
+                            Set<Long> vmIdSet = vmNetworkStatsById.keySet();
+                            for(Long vmId : vmIdSet)
+                            {
+                                List<VmNetworkStatsEntry> vmNetworkStats = vmNetworkStatsById.get(vmId);
+                                if (vmNetworkStats == null)
+                                    continue;
+                                UserVmVO userVm = _userVmDao.findById(vmId);
+                                if (userVm == null) {
+                                    s_logger.debug("Cannot find uservm with id: " + vmId + " , continue");
+                                    continue;
+                                }
+                                s_logger.debug("Now we are updating the user_statistics table for VM: " + userVm.getInstanceName() + " after collecting vm network statistics from host: " + host.getName());
+                                for (VmNetworkStatsEntry vmNetworkStat:vmNetworkStats) {
+                                    SearchCriteria<NicVO> sc_nic = _nicDao.createSearchCriteria();
+                                    sc_nic.addAnd("macAddress", SearchCriteria.Op.EQ, vmNetworkStat.getMacAddress());
+                                    NicVO nic = _nicDao.search(sc_nic, null).get(0);
+                                    List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(nic.getNetworkId());
+                                    if (vlan == null || vlan.size() == 0 || vlan.get(0).getVlanType() != VlanType.DirectAttached)
+                                        continue; // only get network statistics for DirectAttached network (shared networks in Basic zone and Advanced zone with/without SG)
+                                    UserStatisticsVO previousvmNetworkStats = _userStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(), nic.getIPv4Address(), vmId, "UserVm");
+                                    if (previousvmNetworkStats == null) {
+                                        previousvmNetworkStats = new UserStatisticsVO(userVm.getAccountId(), userVm.getDataCenterId(),nic.getIPv4Address(), vmId, "UserVm", nic.getNetworkId());
+                                        _userStatsDao.persist(previousvmNetworkStats);
+                                    }
+                                    UserStatisticsVO vmNetworkStat_lock = _userStatsDao.lock(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(), nic.getIPv4Address(), vmId, "UserVm");
+
+                                    if ((vmNetworkStat.getBytesSent() == 0) && (vmNetworkStat.getBytesReceived() == 0)) {
+                                        s_logger.debug("bytes sent and received are all 0. Not updating user_statistics");
+                                        continue;
+                                    }
+
+                                    if (vmNetworkStat_lock == null) {
+                                        s_logger.warn("unable to find vm network stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()+ " and nicId:" + nic.getId());
+                                        continue;
+                                    }
+
+                                    if (previousvmNetworkStats != null
+                                            && ((previousvmNetworkStats.getCurrentBytesSent() != vmNetworkStat_lock.getCurrentBytesSent())
+                                            || (previousvmNetworkStats.getCurrentBytesReceived() != vmNetworkStat_lock.getCurrentBytesReceived()))) {
+                                        s_logger.debug("vm network stats changed from the time GetNmNetworkStatsCommand was sent. " +
+                                                "Ignoring current answer. Host: " + host.getName()  + " . VM: " + vmNetworkStat.getVmName() +
+                                                " Sent(Bytes): " + vmNetworkStat.getBytesSent() + " Received(Bytes): " + vmNetworkStat.getBytesReceived());
+                                        continue;
+                                    }
+
+                                    if (vmNetworkStat_lock.getCurrentBytesSent() > vmNetworkStat.getBytesSent()) {
+                                        if (s_logger.isDebugEnabled()) {
+                                            s_logger.debug("Sent # of bytes that's less than the last one.  " +
+                                                    "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmNetworkStat.getVmName() +
+                                                    " Reported: " + vmNetworkStat.getBytesSent() + " Stored: " + vmNetworkStat_lock.getCurrentBytesSent());
+                                        }
+                                        vmNetworkStat_lock.setNetBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
+                                    }
+                                    vmNetworkStat_lock.setCurrentBytesSent(vmNetworkStat.getBytesSent());
+
+                                    if (vmNetworkStat_lock.getCurrentBytesReceived() > vmNetworkStat.getBytesReceived()) {
+                                        if (s_logger.isDebugEnabled()) {
+                                            s_logger.debug("Received # of bytes that's less than the last one.  " +
+                                                    "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmNetworkStat.getVmName() +
+                                                    " Reported: " + vmNetworkStat.getBytesReceived() + " Stored: " + vmNetworkStat_lock.getCurrentBytesReceived());
+                                        }
+                                        vmNetworkStat_lock.setNetBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
+                                    }
+                                    vmNetworkStat_lock.setCurrentBytesReceived(vmNetworkStat.getBytesReceived());
+
+                                    if (! _dailyOrHourly) {
+                                        //update agg bytes
+                                        vmNetworkStat_lock.setAggBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
+                                        vmNetworkStat_lock.setAggBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
+                                    }
+
+                                    _userStatsDao.update(vmNetworkStat_lock.getId(), vmNetworkStat_lock);
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                s_logger.warn("Error while collecting vm network stats from hosts", e);
             }
         }
     }
@@ -1128,5 +1253,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     public StorageStats getStoragePoolStats(long id) {
         return _storagePoolStats.get(id);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return this.getClass().getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin };
     }
 }

@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.offerings.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
@@ -32,6 +34,7 @@ import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingDetailsVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -189,4 +192,33 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         return vo;
     }
 
+    @Override
+    public List<Long> listNetworkOfferingID() {
+        final SearchCriteria<NetworkOfferingVO> sc_1 = createSearchCriteria();
+        final Filter searchFilter_1 = new Filter(NetworkOfferingVO.class, "created", false, null, null);
+        sc_1.addAnd("servicePackageUuid", SearchCriteria.Op.NEQ, null);
+        sc_1.addAnd("removed", SearchCriteria.Op.EQ, null);
+        List<NetworkOfferingVO> set_of_servicePackageUuid = this.search(sc_1, searchFilter_1);
+        List<Long> id_set = new ArrayList<Long>();
+        for (NetworkOfferingVO node : set_of_servicePackageUuid) {
+            if (node.getServicePackage() != null && !node.getServicePackage().isEmpty()) {
+                id_set.add(node.getId());
+            }
+        }
+        return id_set;
+    }
+
+    @Override
+    public boolean isUsingServicePackage(String uuid) {
+        final SearchCriteria<NetworkOfferingVO> sc = createSearchCriteria();
+        final Filter searchFilter= new Filter(NetworkOfferingVO.class, "created", false, null, null);
+        sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
+        sc.addAnd("servicePackageUuid", SearchCriteria.Op.EQ, uuid);
+        List<NetworkOfferingVO> list = this.search(sc, searchFilter);
+
+        if(CollectionUtils.isNotEmpty(list))
+            return true;
+
+        return false;
+    }
 }

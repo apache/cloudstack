@@ -16,21 +16,20 @@
 // under the License.
 package org.apache.cloudstack.solidfire;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
-import org.springframework.stereotype.Component;
-
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountDetailVO;
+import com.cloud.user.AccountDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
+import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
 
 @Component
 public class SolidFireIntegrationTestManagerImpl implements SolidFireIntegrationTestManager {
@@ -47,6 +46,9 @@ public class SolidFireIntegrationTestManagerImpl implements SolidFireIntegration
         long storagePoolId = util.getStoragePoolIdForStoragePoolUuid(storagePoolUuid);
 
         AccountDetailVO accountDetail = accountDetailsDao.findDetail(csAccountId, SolidFireUtil.getAccountKey(storagePoolId));
+        if (accountDetail == null){
+            throw new CloudRuntimeException("Unable to find SF account for storage " + storagePoolUuid + " for CS account " + csAccountUuid);
+        }
         String sfAccountId = accountDetail.getValue();
 
         return Long.parseLong(sfAccountId);

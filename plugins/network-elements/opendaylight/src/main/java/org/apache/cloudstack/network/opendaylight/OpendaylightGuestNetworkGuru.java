@@ -19,26 +19,6 @@
 
 package org.apache.cloudstack.network.opendaylight;
 
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.network.opendaylight.agent.commands.AddHypervisorCommand;
-import org.apache.cloudstack.network.opendaylight.agent.commands.ConfigureNetworkCommand;
-import org.apache.cloudstack.network.opendaylight.agent.commands.ConfigurePortCommand;
-import org.apache.cloudstack.network.opendaylight.agent.commands.DestroyNetworkCommand;
-import org.apache.cloudstack.network.opendaylight.agent.commands.DestroyPortCommand;
-import org.apache.cloudstack.network.opendaylight.agent.responses.AddHypervisorAnswer;
-import org.apache.cloudstack.network.opendaylight.agent.responses.ConfigureNetworkAnswer;
-import org.apache.cloudstack.network.opendaylight.agent.responses.ConfigurePortAnswer;
-import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyNetworkAnswer;
-import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyPortAnswer;
-import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerMappingDao;
-import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerVO;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -68,6 +48,23 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.network.opendaylight.agent.commands.AddHypervisorCommand;
+import org.apache.cloudstack.network.opendaylight.agent.commands.ConfigureNetworkCommand;
+import org.apache.cloudstack.network.opendaylight.agent.commands.ConfigurePortCommand;
+import org.apache.cloudstack.network.opendaylight.agent.commands.DestroyNetworkCommand;
+import org.apache.cloudstack.network.opendaylight.agent.commands.DestroyPortCommand;
+import org.apache.cloudstack.network.opendaylight.agent.responses.AddHypervisorAnswer;
+import org.apache.cloudstack.network.opendaylight.agent.responses.ConfigureNetworkAnswer;
+import org.apache.cloudstack.network.opendaylight.agent.responses.ConfigurePortAnswer;
+import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyNetworkAnswer;
+import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyPortAnswer;
+import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerMappingDao;
+import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerVO;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.util.List;
+import java.util.UUID;
 
 public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(OpendaylightGuestNetworkGuru.class);
@@ -86,7 +83,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
     NetworkDao networkDao;
 
     public OpendaylightGuestNetworkGuru() {
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.ODL};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("ODL")};
     }
 
     @Override

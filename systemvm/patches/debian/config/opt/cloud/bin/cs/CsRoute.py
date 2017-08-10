@@ -63,7 +63,7 @@ class CsRoute:
         table = self.get_tablename(dev)
         logging.info("Adding route: dev " + dev + " table: " +
                      table + " network: " + address + " if not present")
-        cmd = "dev %s table %s %s" % (dev, table, address)
+        cmd = "dev %s table %s throw %s proto static" % (dev, table, address)
         self.set_route(cmd)
 
     def set_route(self, cmd, method="add"):

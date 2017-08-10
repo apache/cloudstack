@@ -232,7 +232,10 @@ class CodeGenerator(object):
 
         for cmdName in self.cmdsName:
             body += self.space
-            body += 'def %s(self, command, method="GET"):\n' % cmdName
+            if cmdName in ["login", "logout"]:
+                body += 'def %s(self, command, method="POST"):\n' % cmdName
+            else:
+                body += 'def %s(self, command, method="GET"):\n' % cmdName
             body += self.space + self.space
             body += 'response = %sResponse()\n' % cmdName
             body += self.space + self.space

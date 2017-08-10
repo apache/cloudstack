@@ -139,6 +139,8 @@ import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
+import com.cloud.agent.api.GetVmNetworkStatsAnswer;
+import com.cloud.agent.api.GetVmNetworkStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -407,6 +409,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((GetHostStatsCommand)cmd);
             } else if (clz == GetVmStatsCommand.class) {
                 answer = execute((GetVmStatsCommand)cmd);
+            } else if (clz == GetVmNetworkStatsCommand.class) {
+                answer = execute((GetVmNetworkStatsCommand) cmd);
             } else if (clz == GetVmDiskStatsCommand.class) {
                 answer = execute((GetVmDiskStatsCommand)cmd);
             } else if (clz == CheckHealthCommand.class) {
@@ -2022,6 +2026,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
             configCustomExtraOption(extraOptions, vmSpec);
 
+            // config for NCC
+            VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
+            if (vmType.equals(VirtualMachine.Type.NetScalerVm)) {
+                NicTO mgmtNic = vmSpec.getNics()[0];
+                OptionValue option = new OptionValue();
+                option.setKey("machine.id");
+                option.setValue("ip=" + mgmtNic.getIp() + "&netmask=" + mgmtNic.getNetmask() + "&gateway=" + mgmtNic.getGateway());
+                extraOptions.add(option);
+            }
+
             // config VNC
             String keyboardLayout = null;
             if (vmSpec.getDetails() != null)
@@ -2107,9 +2121,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private String appendFileType(String path, String fileType) {
+        if (path.toLowerCase().endsWith(fileType.toLowerCase())) {
+            return path;
+        }
+
+        return path + fileType;
+    }
+
     private void resizeRootDisk(VirtualMachineMO vmMo, DiskTO rootDiskTO, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception
     {
-        Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, rootDiskTO.getPath() + ".vmdk");
+        Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), ".vmdk"));
         assert(vdisk != null);
 
         Long reqSize=((VolumeObjectTO)rootDiskTO.getData()).getSize()/1024;
@@ -3188,6 +3210,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new GetVmDiskStatsAnswer(cmd, null, null, null);
     }
 
+    protected Answer execute(GetVmNetworkStatsCommand cmd) {
+        return new GetVmNetworkStatsAnswer(cmd, null, null, null);
+    }
+
     protected Answer execute(CheckHealthCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource CheckHealthCommand: " + _gson.toJson(cmd));
@@ -3606,7 +3632,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morDsAtSource);
-                Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, volume.getPath() + ".vmdk");
+                Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volume.getPath(), ".vmdk"));
                 String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
                 if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                     vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
@@ -3779,7 +3805,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             DatastoreMO targetDsMo = new DatastoreMO(srcHyperHost.getContext(), morDs);
             String fullVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(targetDsMo, vmName, volumePath + ".vmdk");
-            Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, volumePath + ".vmdk");
+            Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volumePath, ".vmdk"));
             String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
             if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                 vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);

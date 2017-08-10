@@ -114,10 +114,6 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
             'ping.timeout', '1.5');
 
-INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
-            VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'outofbandmanagement.sync.interval', '1000');
-
 -- Enable dynamic RBAC by default for fresh deployments
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'RoleService',

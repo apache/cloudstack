@@ -45,6 +45,10 @@ public class LoadBalancerTO {
     boolean revoked;
     boolean alreadyAdded;
     boolean inline;
+    String srcIpVlan;
+    String srcIpGateway;
+    String srcIpNetmask;
+    Long networkId;
     DestinationTO[] destinations;
     private StickinessPolicyTO[] stickinessPolicies;
     private HealthCheckPolicyTO[] healthCheckPolicies;
@@ -80,6 +84,15 @@ public class LoadBalancerTO {
             List<LbDestination> argDestinations, List<LbStickinessPolicy> stickinessPolicies) {
 
         this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, argDestinations, stickinessPolicies, null, null, null);
+    }
+
+    public LoadBalancerTO(String id, List<DestinationTO> destinations) {
+        this.uuid = id;
+        int i = 0;
+        this.destinations = new DestinationTO[destinations.size()];
+        for (DestinationTO destination : destinations) {
+            this.destinations[i++] = new DestinationTO(destination.getDestIp(), destination.getDestPort(), destination.getMonitorState());
+        }
     }
 
     public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
@@ -194,21 +207,53 @@ public class LoadBalancerTO {
         return this.sslCert;
     }
 
+    public String getSrcIpVlan() {
+        return srcIpVlan;
+    }
+
+    public void setSrcIpVlan(String srcIpVlan) {
+        this.srcIpVlan = srcIpVlan;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    public void setNetworkId(long id) {
+        this.networkId = id;
+    }
+
+    public String getSrcIpGateway() {
+        return srcIpGateway;
+    }
+
+    public void setSrcIpGateway(String srcIpGateway) {
+        this.srcIpGateway = srcIpGateway;
+    }
+
+    public String getSrcIpNetmask() {
+        return srcIpNetmask;
+    }
+
+    public void setSrcIpNetmask(String srcIpNetmask) {
+        this.srcIpNetmask = srcIpNetmask;
+    }
+
     public static class StickinessPolicyTO {
-        private String _methodName;
-        private List<Pair<String, String>> _paramsList;
+        private String methodName;
+        private List<Pair<String, String>> params;
 
         public String getMethodName() {
-            return _methodName;
+            return methodName;
         }
 
         public List<Pair<String, String>> getParams() {
-            return _paramsList;
+            return params;
         }
 
         public StickinessPolicyTO(String methodName, List<Pair<String, String>> paramsList) {
-            this._methodName = methodName;
-            this._paramsList = paramsList;
+            this.methodName = methodName;
+            this.params = paramsList;
         }
     }
 
@@ -219,7 +264,7 @@ public class LoadBalancerTO {
         private int healthcheckInterval;
         private int healthcheckThresshold;
         private int unhealthThresshold;
-        private boolean revoke = false;
+        private boolean revoked = false;
 
         public HealthCheckPolicyTO(String pingPath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold,
                 boolean revoke) {
@@ -230,7 +275,7 @@ public class LoadBalancerTO {
             this.healthcheckInterval = healthcheckInterval;
             this.healthcheckThresshold = healthcheckThresshold;
             this.unhealthThresshold = unhealthThresshold;
-            this.revoke = revoke;
+            this.revoked = revoke;
         }
 
         public HealthCheckPolicyTO() {
@@ -262,11 +307,11 @@ public class LoadBalancerTO {
         }
 
         public void setRevoke(boolean revoke) {
-            this.revoke = revoke;
+            this.revoked = revoke;
         }
 
         public boolean isRevoked() {
-            return revoke;
+            return revoked;
         }
 
     }
@@ -283,6 +328,12 @@ public class LoadBalancerTO {
             this.destPort = destPort;
             this.revoked = revoked;
             this.alreadyAdded = alreadyAdded;
+        }
+
+        public DestinationTO(String destIp, int destPort, String monitorState) {
+            this.destIp = destIp;
+            this.destPort = destPort;
+            this.monitorState = monitorState;
         }
 
         protected DestinationTO() {

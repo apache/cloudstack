@@ -391,6 +391,10 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_LB_DEVICE_DELETE = "PHYSICAL.LOADBALANCER.DELETE";
     public static final String EVENT_EXTERNAL_LB_DEVICE_CONFIGURE = "PHYSICAL.LOADBALANCER.CONFIGURE";
 
+    // external NCC device events
+    public static final String EVENT_EXTERNAL_NCC_DEVICE_ADD = "PHYSICAL.NCC.ADD";
+    public static final String EVENT_EXTERNAL_NCC_DEVICE_DELETE = "PHYSICAL.NCC.DELETE";
+
     // external switch management device events (E.g.: Cisco Nexus 1000v Virtual Supervisor Module.
     public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ADD = "SWITCH.MGMT.ADD";
     public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE = "SWITCH.MGMT.DELETE";
@@ -544,6 +548,14 @@ public class EventTypes {
 
     //Usage related events
     public static final String EVENT_USAGE_REMOVE_USAGE_RECORDS = "USAGE.REMOVE.USAGE.RECORDS";
+
+    // Netscaler Service Package events
+    public static final String EVENT_NETSCALER_SERVICEPACKAGE_ADD = "NETSCALER.SERVICEPACKAGE.ADD";
+    public static final String EVENT_NETSCALER_SERVICEPACKAGE_DELETE = "NETSCALER.SERVICEPACKAGE.DELETE";
+
+    public static final String EVENT_NETSCALER_VM_START = "NETSCALERVM.START";
+    public static final String EVENT_NETSCALER_VM_STOP = "NETSCALERVM.STOP";
+
 
     static {
 
@@ -918,6 +930,10 @@ public class EventTypes {
 
         //Usage
         entityEventDetails.put(EVENT_USAGE_REMOVE_USAGE_RECORDS, Usage.class);
+        // Netscaler Service Packages
+        entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_ADD, "NETSCALER.SERVICEPACKAGE.CREATE");
+        entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_DELETE, "NETSCALER.SERVICEPACKAGE.DELETE");
+
     }
 
     public static String getEntityForEvent(String eventName) {

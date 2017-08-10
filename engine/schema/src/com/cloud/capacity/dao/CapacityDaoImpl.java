@@ -187,6 +187,17 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             +
             "from op_host_capacity capacity where cluster_id = ? and capacity_type = ?;";
 
+    private static final String LIST_ALLOCATED_CAPACITY_GROUP_BY_CAPACITY_AND_ZONE = "SELECT v.data_center_id, SUM(cpu) AS cpucore, " +
+                "SUM(cpu * speed) AS cpu, SUM(ram_size * 1024 * 1024) AS memory " +
+                "FROM (SELECT vi.data_center_id, (CASE WHEN ISNULL(service_offering.cpu) THEN custom_cpu.value ELSE service_offering.cpu end) AS cpu, " +
+                "(CASE WHEN ISNULL(service_offering.speed) THEN custom_speed.value ELSE service_offering.speed end) AS speed, " +
+                "(CASE WHEN ISNULL(service_offering.ram_size) THEN custom_ram_size.value ELSE service_offering.ram_size end) AS ram_size " +
+                "FROM (((vm_instance vi LEFT JOIN service_offering ON(((vi.service_offering_id = service_offering.id))) " +
+                "LEFT JOIN user_vm_details custom_cpu ON(((custom_cpu.vm_id = vi.id) AND (custom_cpu.name = 'CpuNumber')))) " +
+                "LEFT JOIN user_vm_details custom_speed ON(((custom_speed.vm_id = vi.id) AND (custom_speed.name = 'CpuSpeed')))) " +
+                "LEFT JOIN user_vm_details custom_ram_size ON(((custom_ram_size.vm_id = vi.id) AND (custom_ram_size.name = 'memory')))) " +
+                "WHERE ISNULL(vi.removed) AND vi.state NOT IN ('Destroyed', 'Error', 'Expunging')";
+
     public CapacityDaoImpl() {
         _hostIdTypeSearch = createSearchBuilder();
         _hostIdTypeSearch.and("hostId", _hostIdTypeSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
@@ -407,6 +418,33 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         PreparedStatement pstmt = null;
         List<SummedCapacity> results = new ArrayList<SummedCapacity>();
 
+        StringBuilder allocatedSql = new StringBuilder(LIST_ALLOCATED_CAPACITY_GROUP_BY_CAPACITY_AND_ZONE);
+
+        HashMap<Long, Long> sumCpuCore  = new HashMap<Long, Long>();
+        HashMap<Long, Long> sumCpu = new HashMap<Long, Long>();
+        HashMap<Long, Long> sumMemory = new HashMap<Long, Long>();
+        if (zoneId != null){
+            allocatedSql.append(" AND vi.data_center_id = ?");
+        }
+        allocatedSql.append(" ) AS v GROUP BY v.data_center_id");
+        try {
+            if (podId == null && clusterId == null) {
+                // add allocated capacity of zone in result
+                pstmt = txn.prepareAutoCloseStatement(allocatedSql.toString());
+                if (zoneId != null){
+                    pstmt.setLong(1, zoneId);
+                }
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    sumCpuCore.put(rs.getLong(1), rs.getLong(2));
+                    sumCpu.put(rs.getLong(1), rs.getLong(3));
+                    sumMemory.put(rs.getLong(1), rs.getLong(4));
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + allocatedSql, e);
+        }
+
         StringBuilder sql = new StringBuilder(LIST_CAPACITY_GROUP_BY_CAPACITY_PART1);
         List<Long> resourceIdList = new ArrayList<Long>();
 
@@ -427,7 +465,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             resourceIdList.add(capacityType.longValue());
         }
 
-        sql.append(LIST_CAPACITY_GROUP_BY_CAPACITY_DATA_CENTER_POD_CLUSTER);
+        if (podId == null && clusterId == null) {
+            sql.append(" GROUP BY capacity_type, data_center_id");
+        } else {
+            sql.append(LIST_CAPACITY_GROUP_BY_CAPACITY_DATA_CENTER_POD_CLUSTER);
+        }
 
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
@@ -438,6 +480,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
 
+                Long capacityZoneId = rs.getLong(6);
                 Long capacityPodId = null;
                 Long capacityClusterId = null;
 
@@ -450,6 +493,16 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                         (short)rs.getLong(5), rs.getLong(6),
                         capacityPodId, capacityClusterId);
 
+                if (podId == null && clusterId == null) {
+                    Short sumCapacityType = summedCapacity.getCapacityType();
+                    if (sumCapacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
+                        summedCapacity.setAllocatedCapacity(sumMemory.get(capacityZoneId));
+                    } else if (sumCapacityType == CapacityVO.CAPACITY_TYPE_CPU) {
+                        summedCapacity.setAllocatedCapacity(sumCpu.get(capacityZoneId));
+                    } else if (sumCapacityType == CapacityVO.CAPACITY_TYPE_CPU_CORE) {
+                        summedCapacity.setAllocatedCapacity(sumCpuCore.get(capacityZoneId));
+                    }
+                }
                 results.add(summedCapacity);
             }
             HashMap<String, SummedCapacity> capacityMap = new HashMap<String, SummedCapacity>();
@@ -460,7 +513,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                 }
                 else {
                     // sum the values based on the zoneId.
-                    key=String.valueOf(result.getDataCenterId())+String.valueOf(result.getCapacityType());
+                    key=String.valueOf(result.getDataCenterId()) + "-" + String.valueOf(result.getCapacityType());
                 }
                 SummedCapacity tempCapacity=null;
                 if (capacityMap.containsKey(key)) {
@@ -589,6 +642,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     public static class SummedCapacity {
+        public Long sumAllocated;
         public long sumUsed;
         public long sumReserved;
         public long sumTotal;
@@ -678,6 +732,12 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
         public void setClusterId(Long clusterId) {
             this.clusterId=clusterId;
+        }
+        public Long getAllocatedCapacity() {
+            return sumAllocated;
+        }
+        public void setAllocatedCapacity(Long sumAllocated) {
+            this.sumAllocated = sumAllocated;
         }
     }
 

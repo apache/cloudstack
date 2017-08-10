@@ -483,5 +483,9 @@ public interface UserVmService {
      */
     public boolean isDisplayResourceEnabled(Long vmId);
 
+    void collectVmDiskStatistics(UserVm userVm);
+
+    void collectVmNetworkStatistics (UserVm userVm);
+
     List<Long> bulkDeployVirtualMachine(BulkDeployVMCmd cmd) throws ResourceAllocationException;
 }

@@ -456,7 +456,16 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#deleteAccountSpecificVirtualRanges(long)
+     * @see com.cloud.configuration.ConfigurationManager#releaseDomainSpecificVirtualRanges(long)
+     */
+    @Override
+    public boolean releaseDomainSpecificVirtualRanges(long domainId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationManager#releaseAccountSpecificVirtualRanges(long)
      */
     @Override
     public boolean releaseAccountSpecificVirtualRanges(long accountId) {
