@@ -497,16 +497,6 @@ disable_rpfilter_domR() {
   echo "1" > /proc/sys/net/ipv4/conf/lo/rp_filter
 }
 
-enable_svc() {
-  local svc=$1
-  local enabled=$2
-
-  log_it "Enable service ${svc} = $enabled"
-  local cfg=/etc/default/${svc}
-  [ -f $cfg ] && sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg && return
-}
-
-
 enable_irqbalance() {
   local enabled=$1
   local proc=0
@@ -803,6 +793,7 @@ setup_sshd(){
   [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
   sed -i "/3922/s/eth./$eth/" /etc/iptables/rules.v4
   sed -i "/3922/s/eth./$eth/" /etc/iptables/rules
+  systemctl restart sshd
 }
 
 
@@ -935,11 +926,9 @@ setup_router() {
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
 
-  enable_svc dnsmasq 1
-  enable_svc haproxy 1
+  systemctl enable dnsmasq haproxy cloud-passwd-srvr
+  systemctl restart dnsmasq haproxy cloud-passwd-srvr
   enable_irqbalance 1
-  enable_svc cloud-passwd-srvr 1
-  enable_svc cloud 0
   disable_rpfilter_domR
   enable_fwding 1
   enable_rpsrfs 1
@@ -1028,12 +1017,9 @@ EOF
 
   setup_vpc_apache2
 
-  enable_svc dnsmasq 1
-  enable_svc haproxy 1
+  systemctl enable dnsmasq haproxy cloud-passwd-srvr
   enable_irqbalance 1
   enable_vpc_rpsrfs 1
-  enable_svc cloud 0
-  enable_svc cloud-passwd-srvr 1
   disable_rpfilter
   enable_fwding 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
@@ -1061,6 +1047,8 @@ EOF
   fi
   load_modules
 
+  systemctl restart dnsmasq haproxy cloud-passwd-srvr
+
   #setup hourly logrotate
   mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
 
@@ -1078,11 +1066,9 @@ setup_dhcpsrvr() {
   [ $ETH0_IP ] && echo "$ETH0_IP $NAME" >> /etc/hosts
   [ $ETH0_IP6 ] && echo "$ETH0_IP6 $NAME" >> /etc/hosts
 
-  enable_svc dnsmasq 1
-  enable_svc haproxy 0
+  systemctl enable dnsmasq cloud-passwd-srvr
+  systemctl restart dnsmasq cloud-passwd-srvr
   enable_irqbalance 0
-  enable_svc cloud-passwd-srvr 1
-  enable_svc cloud 0
   enable_fwding 0
   systemctl disable nfs-common
 
@@ -1156,7 +1142,7 @@ setup_ntp() {
             fi
             sed -i "0,/^server/s//$PATTERN\nserver/" $NTP_CONF_FILE
         done
-        service ntp restart
+        systemctl restart ntp
     else
         log_it "NTP configuration file not found"
     fi
@@ -1204,15 +1190,12 @@ Header always set Access-Control-Allow-Methods "POST, OPTIONS"
 Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
 CORS
 
-  service apache2 restart
-
   disable_rpfilter
   enable_fwding 0
-  enable_svc haproxy 0
+  systemctl disable haproxy dnsmasq cloud-passwd-srvr
+  systemctl enable cloud apache2
+  systemctl restart cloud apache2
   enable_irqbalance 0
-  enable_svc dnsmasq 0
-  enable_svc cloud-passwd-srvr 0
-  enable_svc cloud 1
   rm /etc/logrotate.d/cloud
   setup_ntp
 }
@@ -1233,13 +1216,10 @@ setup_console_proxy() {
     setup_sshd $ETH0_IP "eth0"
   fi
 
+  systemctl enable cloud
   disable_rpfilter
   enable_fwding 0
-  enable_svc haproxy 0
   enable_irqbalance 0
-  enable_svc dnsmasq 0
-  enable_svc cloud-passwd-srvr 0
-  enable_svc cloud 1
   systemctl disable nfs-common
   rm /etc/logrotate.d/cloud
 }
@@ -1263,11 +1243,7 @@ setup_elbvm() {
   fi
   
   enable_fwding 0
-  enable_svc haproxy 0
   enable_irqbalance 0
-  enable_svc dnsmasq 0
-  enable_svc cloud-passwd-srvr 0
-  enable_svc cloud 0
   systemctl disable nfs-common
   systemctl disable portmap
 }
@@ -1286,11 +1262,8 @@ setup_ilbvm() {
   setup_sshd $ETH1_IP "eth1"
   
   enable_fwding 0
-  enable_svc haproxy 1
+  systemctl enable haproxy
   enable_irqbalance 1
-  enable_svc dnsmasq 0
-  enable_svc cloud-passwd-srvr 0
-  enable_svc cloud 0
   systemctl disable nfs-common
   systemctl disable portmap
 }

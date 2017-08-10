@@ -36,10 +36,10 @@ function install_cloud_scripts() {
   rsync -av ./cloud_scripts/ /
   chmod +x /opt/cloud/bin/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
-    /etc/init.d/{cloud,cloud-early-config,cloud-passwd-srvr,postinit} \
+    /etc/init.d/{cloud-early-config,cloud-passwd-srvr,postinit} \
     /etc/profile.d/cloud.sh
 
-  cat > /lib/systemd/system/cloud-early-config.service << EOF
+  cat > /etc/systemd/system/cloud-early-config.service << EOF
 [Unit]
 Description=cloud-early-config: configure according to cmdline
 DefaultDependencies=no
@@ -57,7 +57,7 @@ TimeoutStartSec=5min
 
 EOF
 
-  cat > /lib/systemd/system/cloud.service << EOF
+  cat > /etc/systemd/system/cloud.service << EOF
 [Unit]
 Description=cloud: startup cloud service
 After=cloud-early-config.service network.target local-fs.target
@@ -66,14 +66,14 @@ After=cloud-early-config.service network.target local-fs.target
 WantedBy=multi-user.target
 
 [Service]
-Type=forking
-ExecStart=/etc/init.d/cloud start
-ExecStop=/etc/init.d/cloud stop
-RemainAfterExit=true
-TimeoutStartSec=5min
+Type=simple
+WorkingDirectory=/usr/local/cloud/systemvm
+ExecStart=/usr/local/cloud/systemvm/_run.sh
+Restart=always
+RestartSec=5
 EOF
 
-  cat > /lib/systemd/system/cloud-passwd-srvr.service << EOF
+  cat > /etc/systemd/system/cloud-passwd-srvr.service << EOF
 [Unit]
 Description=cloud-passwd-srvr: cloud password server
 After=network.target local-fs.target
@@ -89,7 +89,7 @@ RemainAfterExit=true
 TimeoutStartSec=5min
 EOF
 
-  cat > /lib/systemd/system/postinit.service << EOF
+  cat > /etc/systemd/system/postinit.service << EOF
 [Unit]
 Description=cloud post-init service
 After=cloud-early-config.service network.target local-fs.target
@@ -143,6 +143,8 @@ function configure_services() {
   systemctl disable x11-common
   systemctl disable console-setup
   systemctl disable haproxy
+  systemctl disable apache2
+  systemctl disable dnsmasq
 
   # Hyperv kvp daemon - 64bit only
   local arch=`dpkg --print-architecture`
