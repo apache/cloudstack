@@ -2180,6 +2180,7 @@ var dictionary = {
     "message.restart.vpc": "请确认您确实要重新启动 VPC",
     "message.restart.vpc.remark": "请确定您要重启VPC  <p><small><i> 警告: 重启非冗余的VPC将会导致网络中断,直至VPC重启完成</i>.</small></p>",
     "message.restoreVM": "是否要还原此 VM?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
     "message.security.group.usage": "(<strong>按住 Ctrl 键并单击鼠标</strong>可选择所有适用的安全组)",
     "message.select.a.zone": "一个资源域通常与一个数据中心相对应。多个资源域可以提供物理隔离和冗余，有助于使云更加可靠。",

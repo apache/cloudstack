@@ -2176,6 +2176,7 @@ var dictionary = {
     "message.restart.vpc": "Bitte bestätigen Sie, dass Sie den VPC neu starten möchten",
     "message.restart.vpc.remark": "Bitte bestätigen Sie, dass Sie die VPC neu starten möchten <p>small><i>Hinweis: Ein nicht-redundante VPC redundant zu machen wird eine Bereinigung erzwingen. Die Netzwerke werden dadurch einige Minuten nicht verfügbar sein</i>.</small></p>",
     "message.restoreVM": "Möchten Sie die VM wiederherstellen?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "Die Neuordnung der Regelberechtigungen wurde abgebrochen, es sind Änderungen eingetreten während Sie an der Liste Arbeiten durchgeführt haben. Bitte versuchen Sie es erneut.",
     "message.security.group.usage": "(Verwenden Sie <strong>Ctrl-click</strong> um alle passenden Sicherheits Gruppen auszuwählen)",
     "message.select.a.zone": "Eine Zone steht typischerweise für ein einzelnes Rechenzentrum. Mehrere Zonen helfen dabei, die Cloud zuverlässiger zu machen durch physikalische Isolation und Redundanz.",
