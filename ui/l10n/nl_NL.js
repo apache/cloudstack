@@ -2176,6 +2176,7 @@ var dictionary = {
     "message.restart.vpc": "Bevestig dat u deze VPC wilt herstarten",
     "message.restart.vpc.remark": "Bevestig altublieft dat U de VPC wilt herstarten <p><small><i>Opmerking: Een niet-redundante VPC redundant maken zal opschonen forceren. De netwerken zullen enige tijd niet beschikbaar zijn</i>.</small></p>",
     "message.restoreVM": "Wilt u de VM herstellen?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
     "message.security.group.usage": "(Gebruik <strong>Ctrl-klik</strong> om meerdere security groups te selecteren)",
     "message.select.a.zone": "Een zone correspondeert meestal met een enkel datacenter. Meerdere zones maken de cloud betrouwbaarder door fysiek isolatie en redunatie te verzorgen.",

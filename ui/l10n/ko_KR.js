@@ -2176,6 +2176,7 @@ var dictionary = {
     "message.restart.vpc": "VPC를 재시작하시겠습니까?",
     "message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><small><i>Remark: making a non-redundant VPC redundant will force a clean up. The networks will not be available for a couple of minutes</i>.</small></p>",
     "message.restoreVM": "Do you want to restore the VM ?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
     "message.security.group.usage": "(해당하는 보안 그룹을 모두 선택하려면 <strong>Ctrl 키를 누르면서 클릭</strong>해 주십시오)",
     "message.select.a.zone": "Zone은 원래 단일 데이터 센터에 해당합니다. 복수 Zone을 설정하고 물리적으로 분리하는 방법으로 클라우드의 신뢰성을 높일 수 있습니다.",

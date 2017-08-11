@@ -2176,6 +2176,7 @@ var dictionary = {
     "message.restart.vpc": "Подтвердите, что вы действительно хотите перезапустить VPC",
     "message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><small><i>Remark: making a non-redundant VPC redundant will force a clean up. The networks will not be available for a couple of minutes</i>.</small></p>",
     "message.restoreVM": "Do you want to restore the VM ?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
     "message.security.group.usage": "(Используйте <strong>Ctrl-click</strong> для выбора всех применимых security groups)",
     "message.select.a.zone": "Зона обычно соответствует единичному центру обработки данных. Несколько зон помогают создавать более надежные облака, обеспечивая физическую изоляцию и избыточность.",

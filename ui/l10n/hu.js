@@ -2176,6 +2176,7 @@ var dictionary = {
     "message.restart.vpc": "Erősítsd meg, hogy újra akarod indítani a VPC-t!",
     "message.restart.vpc.remark": "Erősítsd meg, hogy újra akarod indítani a VPC-t! <p><small><i>Megjegyzés: egy nem redundáns VPC redundánssá tétele takarítást tesz szükségessé. A hálózatok nem lesznek elérhetőek egy pár percig.</i>.</small></p>",
     "message.restoreVM": "Helyre akarod állítani a VM-et?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
     "message.security.group.usage": "(A <strong>Ctrl-kattintás</strong> használatával tudod az összes alkalmazható biztonsági csoportot kiválasztani)",
     "message.select.a.zone": "Egy zóna tipikusan egy adatközpontnak felel meg. Több zóna segíthet a felhőt megbízhatóbbá tenni fizikai izolációval és redundanciával.",
