@@ -27,6 +27,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.WeakHashMap;
 
+import org.apache.cloudstack.framework.ca.CAService;
 import org.apache.log4j.Logger;
 
 public class NioServer extends NioConnection {
@@ -37,8 +38,9 @@ public class NioServer extends NioConnection {
 
     protected WeakHashMap<InetSocketAddress, Link> _links;
 
-    public NioServer(String name, int port, int workers, HandlerFactory factory) {
+    public NioServer(final String name, final int port, final int workers, final HandlerFactory factory, final CAService caService) {
         super(name, port, workers, factory);
+        setCAService(caService);
         _localAddr = null;
         _links = new WeakHashMap<InetSocketAddress, Link>(1024);
     }
@@ -72,12 +74,12 @@ public class NioServer extends NioConnection {
     }
 
     @Override
-    protected void registerLink(InetSocketAddress addr, Link link) {
+    protected void registerLink(final InetSocketAddress addr, final Link link) {
         _links.put(addr, link);
     }
 
     @Override
-    protected void unregisterLink(InetSocketAddress saddr) {
+    protected void unregisterLink(final InetSocketAddress saddr) {
         _links.remove(saddr);
     }
 
@@ -90,8 +92,8 @@ public class NioServer extends NioConnection {
      * @param data
      * @return null if not sent.  attach object in link if sent.
      */
-    public Object send(InetSocketAddress saddr, byte[] data) throws ClosedChannelException {
-        Link link = _links.get(saddr);
+    public Object send(final InetSocketAddress saddr, final byte[] data) throws ClosedChannelException {
+        final Link link = _links.get(saddr);
         if (link == null) {
             return null;
         }

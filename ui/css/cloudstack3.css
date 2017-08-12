@@ -12415,6 +12415,33 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -70px -1311px;
 }
 
+/*CA Cert*/
+.cacert-download {
+  display: inline-block;
+  position: relative;
+  height: 30px;
+  float: right;
+  cursor: pointer;
+  position: absolute;
+  left: 1175px;
+  top: 20px;
+}
+
+.cacert-download .icon {
+  display: inline-block;
+  float: left;
+  display: block;
+  width: 32px;
+  height: 30px;
+  background: url(../images/sprites.png) -142px -348px;
+  position: absolute;
+}
+
+.cacert-download:hover .icon,
+.cacert-download.active .icon {
+  background-position: -368px -348px;
+}
+
 /*Action icons*/
 .action.edit .icon {
   background-position: 1px -1px;

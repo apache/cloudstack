@@ -38,16 +38,16 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -105,6 +105,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
+import com.cloud.utils.exception.NioConnectionException;
+import com.cloud.utils.exception.TaskExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.nio.HandlerFactory;
@@ -135,6 +137,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected int _monitorId = 0;
     private final Lock _agentStatusLock = new ReentrantLock();
 
+    @Inject
+    protected CAManager caService;
     @Inject
     protected EntityManager _entityMgr;
 
@@ -222,7 +226,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         //allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
 
-        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this);
+        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this, caService);
         s_logger.info("Listening on " + Port.value() + " with " + Workers.value() + " workers");
 
         // executes all agent commands other than cron and ping
@@ -587,7 +591,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         startDirectlyConnectedHosts();
 
         if (_connection != null) {
-            _connection.start();
+            try {
+                _connection.start();
+            } catch (final NioConnectionException e) {
+                s_logger.error("Error when connecting to the NioServer!", e);
+            }
         }
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
@@ -783,6 +791,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
                 }
             }
+            caService.purgeHostCertificate(host);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -1288,7 +1297,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         @Override
-        protected void doTask(final Task task) throws Exception {
+        protected void doTask(final Task task) throws TaskExecutionException {
             TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             try {
                 final Type type = task.getType();
@@ -1304,6 +1313,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     } catch (final UnsupportedVersionException e) {
                         s_logger.warn(e.getMessage());
                         // upgradeAgent(task.getLink(), data, e.getReason());
+                    } catch (final ClassNotFoundException e) {
+                        final String message = String.format("Exception occured when executing taks! Error '%s'", e.getMessage());
+                        s_logger.error(message);
+                        throw new TaskExecutionException(message, e);
                     }
                 } else if (type == Task.Type.CONNECT) {
                 } else if (type == Task.Type.DISCONNECT) {

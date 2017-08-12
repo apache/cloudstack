@@ -513,3 +513,18 @@ CREATE VIEW `cloud`.`host_view` AS
             LEFT JOIN
         `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`;
 -- End Of Annotations specific changes
+
+-- CA framework changes
+DELETE from `cloud`.`configuration` where name='ssl.keystore';
+
+-- Certificate Revocation List
+CREATE TABLE IF NOT EXISTS `cloud`.`crl` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `serial` varchar(255) UNIQUE NOT NULL COMMENT 'certificate\'s serial number as hex string',
+  `cn` varchar(255) COMMENT 'certificate\'s common name',
+  `revoker_uuid` varchar(40) COMMENT 'revoker user account uuid',
+  `revoked` datetime COMMENT 'date of revocation',
+  PRIMARY KEY (`id`),
+  KEY (`serial`),
+  UNIQUE KEY (`serial`, `cn`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

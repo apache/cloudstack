@@ -67,6 +67,7 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_SYNC = new AlertType((short)27, "ALERT.TYPE.SYNC", true);
         public static final AlertType ALERT_TYPE_OOBM_AUTH_ERROR = new AlertType((short)29, "ALERT.OOBM.AUTHERROR", true);
         public static final AlertType ALERT_TYPE_HA_ACTION = new AlertType((short)30, "ALERT.HA.ACTION", true);
+        public static final AlertType ALERT_TYPE_CA_CERT = new AlertType((short)31, "ALERT.CA.CERT", true);
 
         public short getType() {
             return type;

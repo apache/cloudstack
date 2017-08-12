@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Spy;
@@ -40,41 +35,6 @@ public class ConfigurationServerImplTest {
         return false;
       }
     };
-
-    final static String TEST = "the quick brown fox jumped over the lazy dog";
-
-    @Test(expected = IOException.class)
-    public void testGetBase64KeystoreNoSuchFile() throws IOException {
-        ConfigurationServerImpl.getBase64Keystore("notexisting" + System.currentTimeMillis());
-    }
-
-    @Test(expected = IOException.class)
-    public void testGetBase64KeystoreTooBigFile() throws IOException {
-        File temp = File.createTempFile("keystore", "");
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < 1000; i++) {
-            builder.append("way too long...\n");
-        }
-        FileUtils.writeStringToFile(temp, builder.toString());
-        try {
-            ConfigurationServerImpl.getBase64Keystore(temp.getPath());
-        } finally {
-            temp.delete();
-        }
-    }
-
-    @Test
-    public void testGetBase64Keystore() throws IOException {
-        File temp = File.createTempFile("keystore", "");
-        try {
-            FileUtils.writeStringToFile(temp, Base64.encodeBase64String(TEST.getBytes()));
-            final String keystore = ConfigurationServerImpl.getBase64Keystore(temp.getPath());
-            // let's decode it to make sure it makes sense
-            Base64.decodeBase64(keystore);
-        } finally {
-            temp.delete();
-        }
-    }
 
     @Test
     public void testWindowsScript() {

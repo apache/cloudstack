@@ -592,9 +592,6 @@
                         <Component Id="cmp6001B626D853C4E4FAB8511246B8D2B4" Guid="{DB90C42E-A2DC-4742-8BC8-49AF7556E7D1}">
                             <File Id="fil5A0CF0340938B7ACC3B69C1353BDC625" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\classpath.conf" />
                         </Component>
-                        <Component Id="cmp71D36BFB6B214FAAD323C31A1CE3BC19" Guid="{EF4C61E1-F77E-4E4D-80EA-131511E0804E}">
-                            <File Id="fil44B623C422B90349A635A113C5F4D417" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\cloudmanagementserver.keystore" />
-                        </Component>
                         <Component Id="cmp68E096BB729948107692341D8202CC5A" Guid="{0D5D3AF3-0BC0-48EE-ABA3-AF07535169BF}">
                             <File Id="fil3E9BCB1A8CB8F8415FE3E71B65A94878" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\context.xml" />
                         </Component>

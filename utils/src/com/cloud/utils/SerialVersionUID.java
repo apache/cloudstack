@@ -66,4 +66,6 @@ public interface SerialVersionUID {
     public static final long UnableDeleteHostException = Base | 0x29;
     public static final long AffinityConflictException = Base | 0x2a;
     public static final long JobCancellationException = Base | 0x2b;
+    public static final long NioConnectionException = Base | 0x2c;
+    public static final long TaskExecutionException = Base | 0x2d;
 }

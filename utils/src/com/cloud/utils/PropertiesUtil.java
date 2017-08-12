@@ -180,4 +180,17 @@ public class PropertiesUtil {
             IOUtils.closeQuietly(stream);
         }
     }
+
+    public static Properties getProperties(final File file) {
+        final Properties properties = new Properties();
+        if (file == null || !file.exists()) {
+            return properties;
+        }
+        try {
+            PropertiesUtil.loadFromFile(properties, file);
+        } catch (final IOException ex) {
+            s_logger.error("Unable to load properties from file: " + file.getAbsolutePath() + ", due to :", ex);
+        }
+        return properties;
+    }
 }

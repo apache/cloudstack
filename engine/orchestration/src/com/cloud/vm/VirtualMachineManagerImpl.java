@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,15 +39,15 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -68,6 +69,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -96,6 +98,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.NicTO;
@@ -204,6 +207,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.google.common.base.Strings;
 
 @Local(value = VirtualMachineManager.class)
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
@@ -275,6 +279,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected VGPUTypesDao _vgpuTypesDao;
     @Inject
     protected EntityManager _entityMgr;
+    @Inject
+    protected CAManager caManager;
 
     @Inject
     ConfigDepot _configDepot;
@@ -1004,7 +1010,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 
-
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
                     work = _workDao.findById(work.getId());
@@ -1045,6 +1050,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             startedVm = vm;
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Start completed for VM " + vm);
+                            }
+                            final Host vmHost = _hostDao.findById(destHostId);
+                            if (vmHost != null && (VirtualMachine.Type.ConsoleProxy.equals(vm.getType()) ||
+                                    VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) && caManager.canProvisionCertificates()) {
+                                final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
+                                final String csr = caManager.generateKeyStoreAndCsr(vmHost, sshAccessDetails);
+                                if (!Strings.isNullOrEmpty(csr)) {
+                                    final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+                                    ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
+                                    final Certificate certificate = caManager.issueCertificate(csr, Arrays.asList(vm.getHostName(), vm.getInstanceName()), new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
+                                    final boolean result = caManager.deployCertificate(vmHost, certificate, false, sshAccessDetails);
+                                    if (!result) {
+                                        s_logger.error("Failed to setup certificate for system vm: " + vm.getInstanceName());
+                                    }
+                                } else {
+                                    s_logger.error("Failed to setup keystore and generate CSR for system vm: " + vm.getInstanceName());
+                                }
+
                             }
                             return;
                         } else {

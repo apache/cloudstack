@@ -47,9 +47,6 @@ if [ "$1" = configure ]; then
                 cp -a $OLDCONFDIR/$FILE $NEWCONFDIR/$FILE
             fi
         done
-        if [ -f "$OLDCONFDIR/cloud.keystore" ]; then
-            cp -a $OLDCONFDIR/cloud.keystore $NEWCONFDIR/cloudmanagementserver.keystore
-        fi
     fi
 
     chmod 0640 /etc/cloudstack/management/db.properties

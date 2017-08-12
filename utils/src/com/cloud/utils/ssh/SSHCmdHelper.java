@@ -22,13 +22,53 @@ package com.cloud.utils.ssh;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Strings;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Session;
 
 public class SSHCmdHelper {
     private static final Logger s_logger = Logger.getLogger(SSHCmdHelper.class);
+
+    public static class SSHCmdResult {
+        private int returnCode = -1;
+        private String stdOut;
+        private String stdErr;
+
+        public SSHCmdResult(final int returnCode, final String stdOut, final String stdErr) {
+            this.returnCode = returnCode;
+            this.stdOut = stdOut;
+            this.stdErr = stdErr;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("SSH cmd result: return code=%d, stdout=%s, stderr=%s",
+                    getReturnCode(), getStdOut().split("-----BEGIN")[0], getStdErr());
+        }
+
+        public boolean isSuccess() {
+            return returnCode == 0;
+        }
+
+        public int getReturnCode() {
+            return returnCode;
+        }
+
+        public void setReturnCode(int returnCode) {
+            this.returnCode = returnCode;
+        }
+
+        public String getStdOut() {
+            return stdOut;
+        }
+
+        public String getStdErr() {
+            return stdErr;
+        }
+    }
 
     public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, String username, String password) {
         return acquireAuthorizedConnection(ip, 22, username, password);
@@ -63,36 +103,41 @@ public class SSHCmdHelper {
     public static boolean sshExecuteCmd(com.trilead.ssh2.Connection sshConnection, String cmd, int nTimes) {
         for (int i = 0; i < nTimes; i++) {
             try {
-                if (sshExecuteCmdOneShot(sshConnection, cmd))
+                final SSHCmdResult result = sshExecuteCmdOneShot(sshConnection, cmd);
+                if (result.isSuccess()) {
                     return true;
-            } catch (SshException e) {
+                }
+            } catch (SshException ignored) {
                 continue;
             }
         }
         return false;
     }
 
-    public static int sshExecuteCmdWithExitCode(com.trilead.ssh2.Connection sshConnection, String cmd) {
-        return sshExecuteCmdWithExitCode(sshConnection, cmd, 3);
-    }
-
-    public static int sshExecuteCmdWithExitCode(com.trilead.ssh2.Connection sshConnection, String cmd, int nTimes) {
+    public static SSHCmdResult sshExecuteCmdWithResult(com.trilead.ssh2.Connection sshConnection, String cmd, int nTimes) {
         for (int i = 0; i < nTimes; i++) {
             try {
-                return sshExecuteCmdOneShotWithExitCode(sshConnection, cmd);
-            } catch (SshException e) {
+                final SSHCmdResult result = sshExecuteCmdOneShot(sshConnection, cmd);
+                if (result.isSuccess()) {
+                    return result;
+                }
+            } catch (SshException ignored) {
                 continue;
             }
         }
-        return -1;
+        return new SSHCmdResult(-1, null, null);
     }
 
     public static boolean sshExecuteCmd(com.trilead.ssh2.Connection sshConnection, String cmd) {
         return sshExecuteCmd(sshConnection, cmd, 3);
     }
 
-    public static int sshExecuteCmdOneShotWithExitCode(com.trilead.ssh2.Connection sshConnection, String cmd) throws SshException {
-        s_logger.debug("Executing cmd: " + cmd);
+    public static SSHCmdResult sshExecuteCmdWithResult(com.trilead.ssh2.Connection sshConnection, String cmd) {
+        return sshExecuteCmdWithResult(sshConnection, cmd, 3);
+    }
+
+    public static SSHCmdResult sshExecuteCmdOneShot(com.trilead.ssh2.Connection sshConnection, String cmd) throws SshException {
+        s_logger.debug("Executing cmd: " + cmd.split(KeyStoreUtils.defaultKeystoreFile)[0]);
         Session sshSession = null;
         try {
             sshSession = sshConnection.openSession();
@@ -110,7 +155,8 @@ public class SSHCmdHelper {
             InputStream stderr = sshSession.getStderr();
 
             byte[] buffer = new byte[8192];
-            StringBuffer sbResult = new StringBuffer();
+            StringBuffer sbStdoutResult = new StringBuffer();
+            StringBuffer sbStdErrResult = new StringBuffer();
 
             int currentReadBytes = 0;
             while (true) {
@@ -143,27 +189,30 @@ public class SSHCmdHelper {
 
                 while (stdout.available() > 0) {
                     currentReadBytes = stdout.read(buffer);
-                    sbResult.append(new String(buffer, 0, currentReadBytes));
+                    sbStdoutResult.append(new String(buffer, 0, currentReadBytes));
                 }
 
                 while (stderr.available() > 0) {
                     currentReadBytes = stderr.read(buffer);
-                    sbResult.append(new String(buffer, 0, currentReadBytes));
+                    sbStdErrResult.append(new String(buffer, 0, currentReadBytes));
                 }
             }
 
-            String result = sbResult.toString();
-            if (result != null && !result.isEmpty())
-                s_logger.debug(cmd + " output:" + result);
+            final SSHCmdResult result = new SSHCmdResult(-1, sbStdoutResult.toString(), sbStdErrResult.toString());
+            if (!Strings.isNullOrEmpty(result.getStdOut()) || !Strings.isNullOrEmpty(result.getStdErr())) {
+                s_logger.debug("SSH command: " + cmd.split(KeyStoreUtils.defaultKeystoreFile)[0] + "\nSSH command output:" + result.getStdOut().split("-----BEGIN")[0] + "\n" + result.getStdErr());
+            }
+
             // exit status delivery might get delayed
             for(int i = 0 ; i<10 ; i++ ) {
                 Integer status = sshSession.getExitStatus();
                 if( status != null ) {
-                    return status;
+                    result.setReturnCode(status);
+                    return result;
                 }
                 Thread.sleep(100);
             }
-            return -1;
+            return result;
         } catch (Exception e) {
             s_logger.debug("Ssh executed failed", e);
             throw new SshException("Ssh executed failed " + e.getMessage());
@@ -171,9 +220,5 @@ public class SSHCmdHelper {
             if (sshSession != null)
                 sshSession.close();
         }
-    }
-
-    public static boolean sshExecuteCmdOneShot(com.trilead.ssh2.Connection sshConnection, String cmd) throws SshException {
-        return sshExecuteCmdOneShotWithExitCode(sshConnection, cmd) == 0;
     }
 }
