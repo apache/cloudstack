@@ -2858,8 +2858,8 @@
                                         $.ajax({
                                             url: createURL("listInternalLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                                             success: function (json) {
-                                                var items = json.listinternallbvmssresponse.internalloadbalancervm ?
-                                                json.listinternallbvmssresponse.internalloadbalancervm:[];
+                                                var items = json.listinternallbvmsresponse.internalloadbalancervm ?
+                                                json.listinternallbvmsresponse.internalloadbalancervm:[];
 
                                                 $(items).map(function (index, item) {
                                                     routers.push(item);
@@ -2869,8 +2869,8 @@
                                                 $.ajax({
                                                     url: createURL("listInternalLoadBalancerVMs&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     success: function (json) {
-                                                        var items = json.listinternallbvmssresponse.internalloadbalancervm ?
-                                                        json.listinternallbvmssresponse.internalloadbalancervm:[];
+                                                        var items = json.listinternallbvmsresponse.internalloadbalancervm ?
+                                                        json.listinternallbvmsresponse.internalloadbalancervm:[];
 
                                                         $(items).map(function (index, item) {
                                                             routers.push(item);
@@ -3028,7 +3028,7 @@
                                                                             dataType: "json",
                                                                             async: false,
                                                                             success: function (json) {
-                                                                                var items = json.listinternallbvmssresponse.internalloadbalancervm;
+                                                                                var items = json.listinternallbvmsresponse.internalloadbalancervm;
                                                                                 if (items != null && items.length > 0) {
                                                                                     return items[0];
                                                                                 }
@@ -3161,7 +3161,7 @@
                                                         dataType: 'json',
                                                         async: true,
                                                         success: function (json) {
-                                                            var jsonObj = json.listinternallbvmssresponse.internalloadbalancervm[0];
+                                                            var jsonObj = json.listinternallbvmsresponse.internalloadbalancervm[0];
                                                             addExtraPropertiesToRouterInstanceObject(jsonObj);
                                                             args.response.success({
                                                                 actionFilter: internallbinstanceActionfilter,
@@ -3213,7 +3213,7 @@
                                                         dataType: 'json',
                                                         async: true,
                                                         success: function (json) {
-                                                            var jsonObj = json.listinternallbvmssresponse.internalloadbalancervm[0].nic;
+                                                            var jsonObj = json.listinternallbvmsresponse.internalloadbalancervm[0].nic;
 
                                                             args.response.success({
                                                                 actionFilter: internallbinstanceActionfilter,
