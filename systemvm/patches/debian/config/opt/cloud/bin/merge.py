@@ -151,7 +151,7 @@ class updateDataBag:
         dp['add'] = d['add']
         dp['one_to_one_nat'] = False
         dp['gateway'] = d['router_guest_gateway']
-        dp['nic_dev_id'] = d['device'][3]
+        dp['nic_dev_id'] = d['device'][3:]
         dp['nw_type'] = 'guest'
         dp = PrivateGatewayHack.update_network_type_for_privategateway(dbag, dp)
         qf = QueueFile()
