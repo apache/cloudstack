@@ -219,7 +219,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     AccountDao _accountDao;
     @Inject
-    final DataCenterDao _dcDao = null;
+    DataCenterDao _dcDao = null;
     @Inject
     VMTemplateDao _templateDao;
     @Inject
