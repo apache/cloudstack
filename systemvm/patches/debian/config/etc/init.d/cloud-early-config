@@ -485,9 +485,27 @@ disable_rpfilter_domR() {
       done
   fi
   log_it "cloud: Enabling rp_filter on Non-public interfaces(eth0,eth1,lo)"
-  echo "1" > /proc/sys/net/ipv4/conf/eth0/rp_filter
-  echo "1" > /proc/sys/net/ipv4/conf/eth1/rp_filter
-  echo "1" > /proc/sys/net/ipv4/conf/lo/rp_filter
+  sed -i '/net.ipv4.conf.\(lo\|eth0\|eth1\).rp_filter.*/d' /etc/sysctl.conf
+  echo "net.ipv4.conf.lo.rp_filter = 1" >> /etc/sysctl.conf
+  echo "net.ipv4.conf.eth0.rp_filter = 1" >> /etc/sysctl.conf
+  echo "net.ipv4.conf.eth1.rp_filter = 1" >> /etc/sysctl.conf
+  echo "1" > /proc/sys/net/ipv4/conf/lo/rp_filter   || true
+  echo "1" > /proc/sys/net/ipv4/conf/eth0/rp_filter || true
+  echo "1" > /proc/sys/net/ipv4/conf/eth1/rp_filter || true
+}
+
+disable_rpfilter_vpc_domR() {
+  log_it "disable rpfilter for vpc default nics"
+  sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf
+
+  log_it "cloud: Enabling rp_filter on Non-public interfaces(eth0,eth2,lo)"
+  sed -i '/net.ipv4.conf.\(lo\|eth0\|eth2\).rp_filter.*/d' /etc/sysctl.conf
+  echo "net.ipv4.conf.lo.rp_filter = 1" >> /etc/sysctl.conf
+  echo "net.ipv4.conf.eth0.rp_filter = 1" >> /etc/sysctl.conf
+  echo "net.ipv4.conf.eth2.rp_filter = 1" >> /etc/sysctl.conf
+  echo "1" > /proc/sys/net/ipv4/conf/lo/rp_filter   || true
+  echo "1" > /proc/sys/net/ipv4/conf/eth0/rp_filter || true
+  echo "1" > /proc/sys/net/ipv4/conf/eth2/rp_filter || true
 }
 
 enable_svc() {
@@ -954,8 +972,6 @@ setup_router() {
   
 }
 
-
-
 setup_vpcrouter() {
   log_it "Setting up VPC virtual router system vm"
 
@@ -1026,7 +1042,7 @@ EOF
   enable_irqbalance 1
   enable_vpc_rpsrfs 1
   enable_svc cloud 0
-  disable_rpfilter
+  disable_rpfilter_vpc_domR
   enable_fwding 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
