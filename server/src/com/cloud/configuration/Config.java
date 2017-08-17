@@ -1930,7 +1930,7 @@ public enum Config {
             NetworkOrchestrationService.class,
             Integer.class,
             "router.aggregation.command.each.timeout",
-            "3",
+            "600",
             "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
             null),
 
