@@ -35,7 +35,6 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -65,6 +64,7 @@ import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
@@ -132,7 +132,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     /////////////// Root CA Private Methods ///////////////////
     ///////////////////////////////////////////////////////////
 
-    private Certificate generateCertificate(final List<String> domainNames, final List<String> ipAddresses, final int validityDays) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, CertificateException, SignatureException, IOException {
+    private Certificate generateCertificate(final List<String> domainNames, final List<String> ipAddresses, final int validityDays) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, CertificateException, SignatureException, IOException, OperatorCreationException {
         if (domainNames == null || domainNames.size() < 1 || Strings.isNullOrEmpty(domainNames.get(0))) {
             throw new CloudRuntimeException("No domain name is specified, cannot generate certificate");
         }
@@ -151,7 +151,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         return new Certificate(clientCertificate, keyPair.getPrivate(), Collections.singletonList(caCertificate));
     }
 
-    private Certificate generateCertificateUsingCsr(final String csr, final List<String> domainNames, final List<String> ipAddresses, final int validityDays) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, CertificateException, SignatureException, IOException {
+    private Certificate generateCertificateUsingCsr(final String csr, final List<String> domainNames, final List<String> ipAddresses, final int validityDays) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, CertificateException, SignatureException, IOException, OperatorCreationException {
         PemObject pemObject = null;
 
         try {
@@ -197,7 +197,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     public Certificate issueCertificate(final List<String> domainNames, final List<String> ipAddresses, final int validityDays) {
         try {
             return generateCertificate(domainNames, ipAddresses, validityDays);
-        } catch (final CertificateException | IOException | SignatureException | NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException e) {
+        } catch (final CertificateException | IOException | SignatureException | NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException | OperatorCreationException e) {
             LOG.error("Failed to create client certificate, due to: ", e);
             throw new CloudRuntimeException("Failed to generate certificate due to:" + e.getMessage());
         }
@@ -207,7 +207,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     public Certificate issueCertificate(final String csr, final List<String> domainNames, final List<String> ipAddresses, final int validityDays) {
         try {
             return generateCertificateUsingCsr(csr, domainNames, ipAddresses, validityDays);
-        } catch (final CertificateException | IOException | SignatureException | NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException e) {
+        } catch (final CertificateException | IOException | SignatureException | NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException | OperatorCreationException e) {
             LOG.error("Failed to generate certificate from CSR: ", e);
             throw new CloudRuntimeException("Failed to generate certificate using CSR due to:" + e.getMessage());
         }
@@ -470,7 +470,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             if (!configDao.update(rootCACertificate.key(), rootCACertificate.category(), CertUtils.x509CertificateToPem(rootCaCertificate))) {
                 LOG.error("Failed to update RootCA public/x509 certificate");
             }
-        } catch (final NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException | IOException e) {
+        } catch (final CertificateException | NoSuchAlgorithmException | NoSuchProviderException | SignatureException | InvalidKeyException | OperatorCreationException | IOException e) {
             LOG.error("Failed to generate RootCA certificate from private/public keys due to exception:", e);
             return false;
         }
@@ -505,7 +505,6 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     }
 
     private boolean setupCA() {
-        Security.addProvider(new BouncyCastleProvider());
         if (!loadRootCAKeyPair() && !saveNewRootCAKeypair()) {
             LOG.error("Failed to save and load root CA keypair");
             return false;
@@ -518,25 +517,33 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             LOG.error("Failed to check and configure management server keystore");
             return false;
         }
-        return false;
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        return loadRootCAKeyPair() && loadRootCAKeyPair() && checkManagementServerKeystore();
     }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        final GlobalLock caLock = GlobalLock.getInternLock("Root.CAProvider.Configure.Lock");
+        Security.addProvider(new BouncyCastleProvider());
+        final GlobalLock caLock = GlobalLock.getInternLock("RootCAProviderSetup");
         try {
-            if (caLock.lock(60)) {
+            if (caLock.lock(5 * 60)) {
                 try {
                     return setupCA();
                 } finally {
                     caLock.unlock();
                 }
+            } else {
+                LOG.error("Failed to grab lock and setup CA, startup method will try to load the CA certificate and keypair.");
             }
         } finally {
             caLock.releaseRef();
         }
-        return false;
+        return true;
     }
 
     ///////////////////////////////////////////////////////

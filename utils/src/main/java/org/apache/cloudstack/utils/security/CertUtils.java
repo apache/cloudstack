@@ -34,7 +34,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -48,20 +47,32 @@ import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v1CertificateBuilder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.x509.X509V1CertificateGenerator;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
+import org.bouncycastle.util.io.pem.PemReader;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import com.google.common.base.Strings;
+
+//import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 
 public class CertUtils {
 
@@ -74,7 +85,7 @@ public class CertUtils {
         return keyPairGenerator.generateKeyPair();
     }
 
-    private static KeyFactory getKeyFactory() {
+    public static KeyFactory getKeyFactory() {
         KeyFactory keyFactory = null;
         try {
             Security.addProvider(new BouncyCastleProvider());
@@ -85,15 +96,16 @@ public class CertUtils {
         return keyFactory;
     }
 
-    public static X509Certificate pemToX509Certificate(final String pem) throws IOException {
-        final PEMReader pr = new PEMReader(new StringReader(pem));
-        return (X509Certificate) pr.readObject();
+    public static X509Certificate pemToX509Certificate(final String pem) throws CertificateException, IOException {
+        final PEMParser pemParser = new PEMParser(new StringReader(pem));
+        return new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder) pemParser.readObject());
     }
 
     public static String x509CertificateToPem(final X509Certificate cert) throws IOException {
         final StringWriter sw = new StringWriter();
-        try (final PEMWriter pw = new PEMWriter(sw)) {
+        try (final JcaPEMWriter pw = new JcaPEMWriter(sw)) {
             pw.writeObject(cert);
+            pw.flush();
         }
         return sw.toString();
     }
@@ -110,7 +122,7 @@ public class CertUtils {
     }
 
     public static PrivateKey pemToPrivateKey(final String pem) throws InvalidKeySpecException, IOException {
-        final PEMReader pr = new PEMReader(new StringReader(pem));
+        final PemReader pr = new PemReader(new StringReader(pem));
         final PemObject pemObject = pr.readPemObject();
         final KeyFactory keyFactory = getKeyFactory();
         return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(pemObject.getContent()));
@@ -119,14 +131,14 @@ public class CertUtils {
     public static String privateKeyToPem(final PrivateKey key) throws IOException {
         final PemObject pemObject = new PemObject("RSA PRIVATE KEY", key.getEncoded());
         final StringWriter sw = new StringWriter();
-        try (final PEMWriter pw = new PEMWriter(sw)) {
+        try (final PemWriter pw = new PemWriter(sw)) {
             pw.writeObject(pemObject);
         }
         return sw.toString();
     }
 
     public static PublicKey pemToPublicKey(final String pem) throws InvalidKeySpecException, IOException {
-        final PEMReader pr = new PEMReader(new StringReader(pem));
+        final PemReader pr = new PemReader(new StringReader(pem));
         final PemObject pemObject = pr.readPemObject();
         final KeyFactory keyFactory = getKeyFactory();
         return keyFactory.generatePublic(new X509EncodedKeySpec(pemObject.getContent()));
@@ -135,7 +147,7 @@ public class CertUtils {
     public static String publicKeyToPem(final PublicKey key) throws IOException {
         final PemObject pemObject = new PemObject("PUBLIC KEY", key.getEncoded());
         final StringWriter sw = new StringWriter();
-        try (final PEMWriter pw = new PEMWriter(sw)) {
+        try (final PemWriter pw = new PemWriter(sw)) {
             pw.writeObject(pemObject);
         }
         return sw.toString();
@@ -146,48 +158,53 @@ public class CertUtils {
     }
 
     public static X509Certificate generateV1Certificate(final KeyPair keyPair,
-                                                        final String subjectDN,
-                                                        final String issuerDN,
+                                                        final String subject,
+                                                        final String issuer,
                                                         final int validityYears,
-                                                        final String signatureAlgorithm) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
+                                                        final String signatureAlgorithm) throws CertificateException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException, InvalidKeyException, OperatorCreationException {
         final DateTime now = DateTime.now(DateTimeZone.UTC);
-        final X500Principal subjectDn = new X500Principal(subjectDN);
-        final X500Principal issuerDn = new X500Principal(issuerDN);
-        final X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
-        certGen.setSerialNumber(generateRandomBigInt());
-        certGen.setSubjectDN(subjectDn);
-        certGen.setIssuerDN(issuerDn);
-        certGen.setNotBefore(now.minusDays(1).toDate());
-        certGen.setNotAfter(now.plusYears(validityYears).toDate());
-        certGen.setPublicKey(keyPair.getPublic());
-        certGen.setSignatureAlgorithm(signatureAlgorithm);
-        return certGen.generate(keyPair.getPrivate(), "BC");
+        final X509v1CertificateBuilder certBuilder = new JcaX509v1CertificateBuilder(
+                new X500Name(issuer),
+                generateRandomBigInt(),
+                now.minusDays(1).toDate(),
+                now.plusYears(validityYears).toDate(),
+                new X500Name(subject),
+                keyPair.getPublic());
+        final ContentSigner signer = new JcaContentSignerBuilder(signatureAlgorithm).setProvider("BC").build(keyPair.getPrivate());
+        final X509CertificateHolder certHolder = certBuilder.build(signer);
+        return new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
     }
 
     public static X509Certificate generateV3Certificate(final X509Certificate caCert,
                                                         final PrivateKey caPrivateKey,
                                                         final PublicKey clientPublicKey,
-                                                        final String subjectDN,
+                                                        final String subject,
                                                         final String signatureAlgorithm,
                                                         final int validityDays,
                                                         final List<String> dnsNames,
-                                                        final List<String> publicIPAddresses) throws IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, InvalidKeyException, SignatureException {
+                                                        final List<String> publicIPAddresses) throws IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, InvalidKeyException, SignatureException, OperatorCreationException {
+
         final DateTime now = DateTime.now(DateTimeZone.UTC);
         final BigInteger serial = generateRandomBigInt();
-        final X500Principal subject = new X500Principal(subjectDN);
+        final X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+                caCert,
+                serial,
+                now.minusHours(12).toDate(),
+                now.plusDays(validityDays).toDate(),
+                new X500Principal(subject),
+                clientPublicKey);
 
-        final X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();;
-        certGen.setSerialNumber(serial);
-        certGen.setIssuerDN(caCert.getSubjectX500Principal());
-        certGen.setSubjectDN(subject);
-        certGen.setNotBefore(now.minusHours(12).toDate());
-        certGen.setNotAfter(now.plusDays(validityDays).toDate());
-        certGen.setPublicKey(clientPublicKey);
-        certGen.setSignatureAlgorithm(signatureAlgorithm);
-        certGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
-                new AuthorityKeyIdentifierStructure(caCert));
-        certGen.addExtension(X509Extensions.SubjectKeyIdentifier, false,
-                new SubjectKeyIdentifierStructure(clientPublicKey));
+        final JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+
+        certBuilder.addExtension(
+                Extension.subjectKeyIdentifier,
+                false,
+                extUtils.createSubjectKeyIdentifier(clientPublicKey));
+
+        certBuilder.addExtension(
+                Extension.authorityKeyIdentifier,
+                false,
+                extUtils.createAuthorityKeyIdentifier(caCert));
 
         final List<ASN1Encodable> subjectAlternativeNames = new ArrayList<ASN1Encodable>();
         if (publicIPAddresses != null) {
@@ -207,13 +224,17 @@ public class CertUtils {
             }
         }
         if (subjectAlternativeNames.size() > 0) {
-            final DERSequence subjectAlternativeNamesExtension = new DERSequence(
-                    subjectAlternativeNames.toArray(new ASN1Encodable[subjectAlternativeNames.size()]));
-            certGen.addExtension(X509Extensions.SubjectAlternativeName, false,
-                    subjectAlternativeNamesExtension);
+            final GeneralNames subjectAltNames = GeneralNames.getInstance(new DERSequence(subjectAlternativeNames.toArray(new ASN1Encodable[] {})));
+            certBuilder.addExtension(
+                    Extension.subjectAlternativeName,
+                    false,
+                    subjectAltNames);
         }
-        final X509Certificate certificate = certGen.generate(caPrivateKey, "BC");
-        certificate.verify(caCert.getPublicKey());
-        return certificate;
+
+        final ContentSigner signer = new JcaContentSignerBuilder(signatureAlgorithm).setProvider("BC").build(caPrivateKey);
+        final X509CertificateHolder certHolder = certBuilder.build(signer);
+        final X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
+        cert.verify(caCert.getPublicKey());
+        return cert;
     }
 }

@@ -98,7 +98,7 @@ public class CertUtilsTest {
 
         clientCert.verify(caKeyPair.getPublic());
         Assert.assertEquals(clientCert.getIssuerDN(), caCertificate.getIssuerDN());
-        Assert.assertEquals(clientCert.getSigAlgName(), "SHA256WithRSAEncryption");
+        Assert.assertEquals(clientCert.getSigAlgName(), "SHA256WITHRSA");
         Assert.assertArrayEquals(clientCert.getPublicKey().getEncoded(), clientKeyPair.getPublic().getEncoded());
         Assert.assertNotNull(clientCert.getSubjectAlternativeNames());
 

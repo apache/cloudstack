@@ -36,14 +36,13 @@ class TestCARootProvider(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-
-        cls._cleanup = []
+        cls.cleanup = []
 
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
