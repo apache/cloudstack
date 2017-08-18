@@ -16786,6 +16786,10 @@
                                                     id: 'ipmitool',
                                                     description: 'ipmitool - ipmitool based shell driver'
                                                 });
+                                                items.push({
+                                                    id: 'nestedcloudstack',
+                                                    description: 'nested-cloudstack - controls host that is a VM in a parent cloudstack (testing purposes only)'
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });

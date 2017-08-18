@@ -241,3 +241,6 @@ CREATE VIEW `cloud`.`host_view` AS
             left join
         `cloud`.`ha_config` ON ha_config.resource_id=host.id
             and ha_config.resource_type='Host';
+
+-- Out-of-band management driver for nested-cloudstack
+ALTER TABLE `cloud`.`oobm` MODIFY COLUMN port VARCHAR(255);
