@@ -64,6 +64,7 @@ env:
              smoke/test_non_contigiousvlan"
 
     - TESTS="smoke/test_outofbandmanagement
+             smoke/test_outofbandmanagement_nestedplugin
              smoke/test_over_provisioning
              smoke/test_password_server
              smoke/test_portable_publicip
