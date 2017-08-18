@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.agent;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +37,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.ca.SetupCertificateAnswer;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.slf4j.MDC;
 
@@ -68,6 +76,7 @@ import com.cloud.utils.nio.NioConnection;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.google.common.base.Strings;
 
 /**
  * @config
@@ -126,6 +135,9 @@ public class Agent implements HandlerFactory, IAgentControl {
     private final ThreadPoolExecutor _ugentTaskPool;
     ExecutorService _executor;
 
+    private String _keystoreSetupPath;
+    private String _keystoreCertImportPath;
+
     // for simulator use only
     public Agent(final IAgentShell shell) {
         _shell = shell;
@@ -166,7 +178,8 @@ public class Agent implements HandlerFactory, IAgentControl {
             throw new ConfigurationException("Unable to configure " + _resource.getName());
         }
 
-        _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
+        final String host = _shell.getHost();
+        _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
 
         // ((NioClient)_connection).setBindAddress(_shell.getPrivateIp());
 
@@ -182,7 +195,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                         "agentRequest-Handler"));
 
         s_logger.info("Agent [id = " + (_id != null ? _id : "new") + " : type = " + getResourceName() + " : zone = " + _shell.getZone() + " : pod = " + _shell.getPod() +
-                " : workers = " + _shell.getWorkers() + " : host = " + _shell.getHost() + " : port = " + _shell.getPort());
+                " : workers = " + _shell.getWorkers() + " : host = " + host + " : port = " + _shell.getPort());
     }
 
     public String getVersion() {
@@ -222,6 +235,16 @@ public class Agent implements HandlerFactory, IAgentControl {
         if (!_resource.start()) {
             s_logger.error("Unable to start the resource: " + _resource.getName());
             throw new CloudRuntimeException("Unable to start the resource: " + _resource.getName());
+        }
+
+        _keystoreSetupPath = Script.findScript("scripts/util/", KeyStoreUtils.keyStoreSetupScript);
+        if (_keystoreSetupPath == null) {
+            throw new CloudRuntimeException(String.format("Unable to find the '%s' script", KeyStoreUtils.keyStoreSetupScript));
+        }
+
+        _keystoreCertImportPath = Script.findScript("scripts/util/", KeyStoreUtils.keyStoreImportScript);
+        if (_keystoreCertImportPath == null) {
+            throw new CloudRuntimeException(String.format("Unable to find the '%s' script", KeyStoreUtils.keyStoreImportScript));
         }
 
         try {
@@ -408,14 +431,20 @@ public class Agent implements HandlerFactory, IAgentControl {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         }
 
-        _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
         do {
+            _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
             s_logger.info("Reconnecting...");
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
                 s_logger.warn("NIO Connection Exception  " + e);
                 s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
+                _connection.stop();
+                try {
+                    _connection.cleanUp();
+                } catch (final IOException ex) {
+                    s_logger.warn("Fail to clean up old connection. " + ex);
+                }
             }
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         } while (!_connection.isStartup());
@@ -464,7 +493,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
             for (int i = 0; i < cmds.length; i++) {
                 final Command cmd = cmds[i];
-                Answer answer;
+                Answer answer = null;
                 try {
                     if (cmd.getContextParam("logid") != null) {
                         MDC.put("logcontextid", cmd.getContextParam("logid"));
@@ -515,7 +544,10 @@ public class Agent implements HandlerFactory, IAgentControl {
                             s_logger.warn("No handler found to process cmd: " + cmd.toString());
                             answer = new AgentControlAnswer(cmd);
                         }
-
+                    } else if (cmd instanceof SetupKeyStoreCommand && ((SetupKeyStoreCommand) cmd).isHandleByAgent()) {
+                        answer = setupAgentKeystore((SetupKeyStoreCommand) cmd);
+                    } else if (cmd instanceof SetupCertificateCommand && ((SetupCertificateCommand) cmd).isHandleByAgent()) {
+                        answer = setupAgentCertificate((SetupCertificateCommand) cmd);
                     } else {
                         if (cmd instanceof ReadyCommand) {
                             processReadyCommand(cmd);
@@ -563,6 +595,86 @@ public class Agent implements HandlerFactory, IAgentControl {
                 }
             }
         }
+    }
+
+    public Answer setupAgentKeystore(final SetupKeyStoreCommand cmd) {
+        final String keyStorePassword = cmd.getKeystorePassword();
+        final long validityDays = cmd.getValidityDays();
+
+        s_logger.debug("Setting up agent keystore file and generating CSR");
+
+        final File agentFile = PropertiesUtil.findConfigFile("agent.properties");
+        if (agentFile == null) {
+            return new Answer(cmd, false, "Failed to find agent.properties file");
+        }
+        final String keyStoreFile = agentFile.getParent() + KeyStoreUtils.defaultKeystoreFile;
+        final String csrFile = agentFile.getParent() + KeyStoreUtils.defaultCsrFile;
+
+        String storedPassword = _shell.getPersistentProperty(null, KeyStoreUtils.passphrasePropertyName);
+        if (Strings.isNullOrEmpty(storedPassword)) {
+            storedPassword = keyStorePassword;
+            _shell.setPersistentProperty(null, KeyStoreUtils.passphrasePropertyName, storedPassword);
+        }
+
+        Script script = new Script(_keystoreSetupPath, 60000, s_logger);
+        script.add(agentFile.getAbsolutePath());
+        script.add(keyStoreFile);
+        script.add(storedPassword);
+        script.add(String.valueOf(validityDays));
+        script.add(csrFile);
+        String result = script.execute();
+        if (result != null) {
+            throw new CloudRuntimeException("Unable to setup keystore file");
+        }
+
+        final String csrString;
+        try {
+            csrString = FileUtils.readFileToString(new File(csrFile), Charset.defaultCharset());
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Unable to read generated CSR file", e);
+        }
+        return new SetupKeystoreAnswer(csrString);
+    }
+
+    private Answer setupAgentCertificate(final SetupCertificateCommand cmd) {
+        final String certificate = cmd.getCertificate();
+        final String privateKey = cmd.getPrivateKey();
+        final String caCertificates = cmd.getCaCertificates();
+
+        s_logger.debug("Importing received certificate to agent's keystore");
+
+        final File agentFile = PropertiesUtil.findConfigFile("agent.properties");
+        if (agentFile == null) {
+            return new Answer(cmd, false, "Failed to find agent.properties file");
+        }
+        final String keyStoreFile = agentFile.getParent() + KeyStoreUtils.defaultKeystoreFile;
+        final String certFile = agentFile.getParent() + KeyStoreUtils.defaultCertFile;
+        final String privateKeyFile = agentFile.getParent() + KeyStoreUtils.defaultPrivateKeyFile;
+        final String caCertFile = agentFile.getParent() + KeyStoreUtils.defaultCaCertFile;
+
+        try {
+            FileUtils.writeStringToFile(new File(certFile), certificate, Charset.defaultCharset());
+            FileUtils.writeStringToFile(new File(caCertFile), caCertificates, Charset.defaultCharset());
+            s_logger.debug("Saved received client certificate to: " + certFile);
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Unable to save received agent client and ca certificates", e);
+        }
+
+        Script script = new Script(_keystoreCertImportPath, 60000, s_logger);
+        script.add(agentFile.getAbsolutePath());
+        script.add(keyStoreFile);
+        script.add(KeyStoreUtils.agentMode);
+        script.add(certFile);
+        script.add("");
+        script.add(caCertFile);
+        script.add("");
+        script.add(privateKeyFile);
+        script.add(privateKey);
+        String result = script.execute();
+        if (result != null) {
+            throw new CloudRuntimeException("Unable to import certificate into keystore file");
+        }
+        return new SetupCertificateAnswer(true);
     }
 
     public void processResponse(final Response response, final Link link) {

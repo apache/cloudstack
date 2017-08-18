@@ -312,4 +312,9 @@
         <property name="orderConfigDefault" value="IPMITOOL" />
     </bean>
 
+    <bean id="caProvidersRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="orderConfigDefault" value="RootCAProvider" />
+    </bean>
+
 </beans>

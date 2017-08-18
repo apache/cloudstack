@@ -98,6 +98,8 @@ public interface NetworkOrchestrationService {
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
 
+    Map<String, String> getSystemVMAccessDetails(VirtualMachine vm);
+
     Pair<? extends NetworkGuru, ? extends Network> implementNetwork(long networkId, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 

@@ -45,6 +45,12 @@ public class BackgroundPollManagerImplTest {
             didIRun = true;
             counter++;
         }
+
+        @Override
+        public Long getDelay() {
+            return null;
+        }
+
     }
 
     @Before
