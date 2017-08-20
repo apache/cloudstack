@@ -1710,17 +1710,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         deleteVMSnapshots(vm, expunge);
 
-        // reload the vm object from db
-        vm = _vmDao.findByUuid(vmUuid);
-        try {
-            if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
-                s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-                throw new CloudRuntimeException("Unable to destroy " + vm);
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+            public void doInTransactionWithoutResult(final TransactionStatus status) throws CloudRuntimeException {
+                VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+                try {
+                    if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+                        s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
+                        throw new CloudRuntimeException("Unable to destroy " + vm);
+                    }
+                } catch (final NoTransitionException e) {
+                    s_logger.debug(e.getMessage());
+                    throw new CloudRuntimeException("Unable to destroy " + vm, e);
+                }
             }
-        } catch (final NoTransitionException e) {
-            s_logger.debug(e.getMessage());
-            throw new CloudRuntimeException("Unable to destroy " + vm, e);
-        }
+        });
     }
 
     /**
