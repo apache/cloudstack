@@ -406,6 +406,7 @@ AjaxViewer.KEY_DOWN = 5;
 AjaxViewer.KEY_UP = 6;
 AjaxViewer.EVENT_BAG = 7;
 AjaxViewer.MOUSE_DBLCLK = 8;
+AjaxViewer.MOUSE_SCROLL = 9;
 
 // use java AWT key modifier masks 
 AjaxViewer.SHIFT_KEY_MASK = 64;
@@ -617,7 +618,6 @@ AjaxViewer.prototype = {
 		var img = $(this.img); 
 		this.fullImage = fullImage;
 		this.imgUrl=imageUrl;
-		this.imageLoaded = false;
 
 		img.attr('src', imageUrl).load(function() {
 			ajaxViewer.imageLoaded = true;
@@ -1230,6 +1230,23 @@ AjaxViewer.prototype = {
 			e.stopPropagation();
 			return false;
 		});
+
+		target.bind('mousewheel DOMMouseScroll',function(e) {
+			if(!ajaxViewer.ptInPanel(e.pageX, e.pageY))
+				return true;
+
+			var modifiers = ajaxViewer.getKeyModifiers(e);
+			var sd = e.originalEvent.detail/3;
+
+			var pt = ajaxViewer.pageToPanel(e.clientX, e.clientY);
+
+
+			ajaxViewer.onMouseScroll(pt.x, pt.y, sd, modifiers);
+			ajaxViewer.onMouseScroll(pt.x, pt.y, 0, modifiers);
+
+			e.stopPropagation();
+			return false;
+		});
 		
 		// disable browser right-click context menu
 		target.bind("contextmenu", function() { return false; });
@@ -1346,6 +1363,11 @@ AjaxViewer.prototype = {
 	onMouseDblClick: function(x, y, whichButton, modifiers) {
 		this.sendMouseEvent(AjaxViewer.MOUSE_DBLCLK, x, y, whichButton, modifiers);
 	},
+
+	onMouseScroll: function(x, y, whichButton, modifiers) {
+		this.sendMouseEvent(AjaxViewer.MOUSE_SCROLL, x, y, whichButton, modifiers);
+	},
+
 	
 	onKeyPress: function(code, modifiers) {
 		g_logger.log(Logger.LEVEL_WARN, "RAW KEYBOARD EVENT. KEY-PRESS: " + code + ", modifers: " + modifiers);
