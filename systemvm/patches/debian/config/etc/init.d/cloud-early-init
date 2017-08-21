@@ -3,8 +3,8 @@
 # Provides:          cloud-early-init
 # Required-Start:    mountkernfs $local_fs
 # Required-Stop:     $local_fs
-# Should-Start:      
-# Should-Stop:       
+# Should-Start:
+# Should-Stop:
 # Default-Start:     S
 # Default-Stop:      0 6
 # Short-Description: configure according to cmdline
@@ -28,23 +28,26 @@
 
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
-[ -f /usr/sbin/hv_kvp_daemon ] && /usr/sbin/hv_kvp_daemon
+###[ -f /usr/sbin/hv_kvp_daemon ] && /usr/sbin/hv_kvp_daemon
 
 # Fix haproxy directory issue
-mkdir -p /var/lib/haproxy
+### mkdir -p /var/lib/haproxy
 
 # Clear boot up flag, it would be created by rc.local after boot up done
-rm -f /var/cache/cloud/boot_up_done
+###rm -f /var/cache/cloud/boot_up_done
 
-[ -x /sbin/ifup ] || exit 0
+###[ -x /sbin/ifup ] || exit 0
 
+# Keep this include, req for patchsystemvm
 . /lib/lsb/init-functions
 
+# Keep
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
   log_action_msg "$@"
 }
 
+# Keep
 hypervisor() {
   [ -d /proc/xen ] && mount -t xenfs none /proc/xen
   [ -d /proc/xen ] && echo "xen-domU" && return 0
@@ -61,76 +64,77 @@ hypervisor() {
 
 }
 
-get_boot_params() {
-  local EXTRA_MOUNT=/media/extra
-  local hyp=$(hypervisor)
-  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
-
-  case $hyp in
-     xen-domU|xen-hvm)
-          cat /proc/cmdline > /var/cache/cloud/cmdline
-          sed -i "s/%/ /g" /var/cache/cloud/cmdline
-          ;;
-     kvm)
-          VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
-
-          if [ -z "$VPORT" ]; then
-            log_it "No suitable VirtIO port was found in /dev/virtio-ports" && exit 2
-          fi
-
-          if [ ! -e "$VPORT" ]; then
-            log_it "${VPORT} not loaded, perhaps guest kernel is too old." && exit 2
-          fi
-
-	      local factor=2
-	      local progress=1
-		  for i in {1..5}
-		  do
-	        while read line; do
-	          if [[ $line == cmdline:* ]]; then
-	            cmd=${line//cmdline:/}
-                echo $cmd > /var/cache/cloud/cmdline
-	          elif [[ $line == pubkey:* ]]; then
-	            pubkey=${line//pubkey:/}
-	            echo $pubkey > /var/cache/cloud/authorized_keys
-	            echo $pubkey > /root/.ssh/authorized_keys
-              fi
-	        done < $VPORT
-	        # In case of reboot we do not send the boot args again.
-	        # So, no need to wait for them, as the boot args are already set at startup
-	        if [ -s /var/cache/cloud/cmdline  ]
-	        then
-              log_it "Found a non empty cmdline file. Will now exit the loop and proceed with configuration."
-              break;
-            fi
-            sleep ${progress}s
-            progress=$[ progress * factor ]
-		  done
-          chmod go-rwx /root/.ssh/authorized_keys
-          ;;
-     vmware)
-          vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
-          ;;
-     virtualpc|hyperv)
-          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
-          #waiting for the hv_kvp_daemon to start up
-          #sleep  need to fix the race condition of hv_kvp_daemon and cloud-early-config
-          sleep 5
-          cp -f /var/opt/hyperv/.kvp_pool_0 /var/cache/cloud/cmdline
-          cat /dev/null > /var/opt/hyperv/.kvp_pool_0
-          ;;
-     virtualbox)
-          # Virtualbox is used to test the virtual router
-          # get the commandline from a dmistring  (yes, hacky!)
-          dmidecode | grep cmdline | sed 's/^.*cmdline://' > /var/cache/cloud/cmdline
-          RV=$?
-          if [ $RV -ne 0 ] ; then
-            log_it "Failed to get cmdline from a virtualbox dmi property"
-          fi
-          ;;
-  esac
-
-}
+# TBC
+# get_boot_params() {
+#   local EXTRA_MOUNT=/media/extra
+#   local hyp=$(hypervisor)
+#   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
+#
+#   case $hyp in
+#      xen-domU|xen-hvm)
+#           cat /proc/cmdline > /var/cache/cloud/cmdline
+#           sed -i "s/%/ /g" /var/cache/cloud/cmdline
+#           ;;
+#      kvm)
+#           VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
+#
+#           if [ -z "$VPORT" ]; then
+#             log_it "No suitable VirtIO port was found in /dev/virtio-ports" && exit 2
+#           fi
+#
+#           if [ ! -e "$VPORT" ]; then
+#             log_it "${VPORT} not loaded, perhaps guest kernel is too old." && exit 2
+#           fi
+#
+# 	      local factor=2
+# 	      local progress=1
+# 		  for i in {1..5}
+# 		  do
+# 	        while read line; do
+# 	          if [[ $line == cmdline:* ]]; then
+# 	            cmd=${line//cmdline:/}
+#                 echo $cmd > /var/cache/cloud/cmdline
+# 	          elif [[ $line == pubkey:* ]]; then
+# 	            pubkey=${line//pubkey:/}
+# 	            echo $pubkey > /var/cache/cloud/authorized_keys
+# 	            echo $pubkey > /root/.ssh/authorized_keys
+#               fi
+# 	        done < $VPORT
+# 	        # In case of reboot we do not send the boot args again.
+# 	        # So, no need to wait for them, as the boot args are already set at startup
+# 	        if [ -s /var/cache/cloud/cmdline  ]
+# 	        then
+#               log_it "Found a non empty cmdline file. Will now exit the loop and proceed with configuration."
+#               break;
+#             fi
+#             sleep ${progress}s
+#             progress=$[ progress * factor ]
+# 		  done
+#           chmod go-rwx /root/.ssh/authorized_keys
+#           ;;
+#      vmware)
+#           vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline
+#           ;;
+#      virtualpc|hyperv)
+#           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
+#           #waiting for the hv_kvp_daemon to start up
+#           #sleep  need to fix the race condition of hv_kvp_daemon and cloud-early-config
+#           sleep 5
+#           cp -f /var/opt/hyperv/.kvp_pool_0 /var/cache/cloud/cmdline
+#           cat /dev/null > /var/opt/hyperv/.kvp_pool_0
+#           ;;
+#      virtualbox)
+#           # Virtualbox is used to test the virtual router
+#           # get the commandline from a dmistring  (yes, hacky!)
+#           dmidecode | grep cmdline | sed 's/^.*cmdline://' > /var/cache/cloud/cmdline
+#           RV=$?
+#           if [ $RV -ne 0 ] ; then
+#             log_it "Failed to get cmdline from a virtualbox dmi property"
+#           fi
+#           ;;
+#   esac
+#
+# }
 
 patch() {
   local PATCH_MOUNT=/media/cdrom
@@ -162,7 +166,7 @@ patch() {
     [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
     local newmd5=
     [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
- 
+
    if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
     then
       shouldpatch=true
@@ -170,13 +174,13 @@ patch() {
       tar xzf $patchfile -C /
       echo ${newmd5} > ${md5file}
     fi
-    log_it "Patching  cloud service"
+    log_it "cloud-early-init patching cloud service"
     hyperVisor=$(hypervisor)
     /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT $hyperVisor
     umount $PATCH_MOUNT
 
-# removing reboot for the moment    
-#    if [ "$shouldpatch" == "true" ] 
+#### removing reboot for the moment
+#    if [ "$shouldpatch" == "true" ]
 #    then
 #      log_it "Rebooting system since we patched init scripts"
 #      sync
@@ -184,6 +188,7 @@ patch() {
 #      reboot
 #    fi
   fi
+  #Keep in for now
   if [ -f /mnt/cmdline ]; then
     cat /mnt/cmdline > /var/cache/cloud/cmdline
   fi
@@ -192,203 +197,205 @@ patch() {
 
 start() {
   # Clear /tmp for file lock
-  rm -f /tmp/*.lock
-  rm -f /tmp/rrouter_bumped
+  ###rm -f /tmp/*.lock
+  ###rm -f /tmp/rrouter_bumped
   local hyp=$(hypervisor)
-  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
-  log_it "Detected that we are running inside $hyp guest"
-  get_boot_params
+  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of cloud-early-init" && exit 10
+  log_it "Detected that we are running inside $hyp guest during cloud-early-init."
+  ###get_boot_params
   patch
-    if [ "$hyp" == "hyperv" ]; then
+  if [ "$hyp" == "hyperv" ]; then
     # eject the systemvm.iso
      eject
   fi
   return 0
 }
 
-disable_hvc
+### command not found
+# disable_hvc
+#
 
-parse_cmd_line() {
-CMDLINE=$(cat /var/cache/cloud/cmdline)
-TYPE="unknown"
-BOOTPROTO="static"
-DISABLE_RP_FILTER="false"
-STORAGE_IP=""
-STORAGE_NETMASK=""
-STORAGE_CIDR=""
-VM_PASSWORD=""
+### Will be done in early-config
+# parse_cmd_line() {
+# CMDLINE=$(cat /var/cache/cloud/cmdline)
+# TYPE="unknown"
+# BOOTPROTO="static"
+# DISABLE_RP_FILTER="false"
+# STORAGE_IP=""
+# STORAGE_NETMASK=""
+# STORAGE_CIDR=""
+# VM_PASSWORD=""
 
-CHEF_TMP_FILE=/tmp/cmdline.json
-COMMA="\t"
-echo -e "{\n\"type\": \"cmdline\"," > ${CHEF_TMP_FILE}
-echo -e "\n\"cmd_line\": {" >> ${CHEF_TMP_FILE}
+# CHEF_TMP_FILE=/tmp/cmdline.json
+# COMMA="\t"
+# echo -e "{\n\"type\": \"cmdline\"," > ${CHEF_TMP_FILE}
+# echo -e "\n\"cmd_line\": {" >> ${CHEF_TMP_FILE}
 
-for i in $CMDLINE
-  do
-    # search for foo=bar pattern and cut out foo
-    KEY=$(echo $i | cut -d= -f1)
-    VALUE=$(echo $i | cut -d= -f2)
-    echo -en ${COMMA} >> ${CHEF_TMP_FILE}
-    # Two lines so values do not accidently interpretted as escapes!!
-    echo -n \"${KEY}\"': '\"${VALUE}\" >> ${CHEF_TMP_FILE}
-    COMMA=",\n\t"
-    case $KEY in 
-      disable_rp_filter)
-          DISABLE_RP_FILTER=$VALUE
-          ;;
-      eth0ip)
-          ETH0_IP=$VALUE
-          ;;
-      eth1ip)
-          ETH1_IP=$VALUE
-          ;;
-      eth2ip)
-          ETH2_IP=$VALUE
-          ;;
-      host)
-          MGMT_HOST=$VALUE
-          ;;
-      gateway)
-          GW=$VALUE
-          ;;
-      ip6gateway)
-          IP6GW=$VALUE
-          ;;
-      eth0mask)
-          ETH0_MASK=$VALUE
-          ;;
-      eth1mask)
-          ETH1_MASK=$VALUE
-          ;;
-      eth2mask)
-          ETH2_MASK=$VALUE
-          ;;
-      eth0ip6)
-          ETH0_IP6=$VALUE
-          ;;
-      eth0ip6prelen)
-          ETH0_IP6_PRELEN=$VALUE
-          ;;
-      internaldns1)
-          internalNS1=$VALUE
-          ;;
-      internaldns2)
-          internalNS2=$VALUE
-          ;;
-      dns1)
-          NS1=$VALUE
-          ;;
-      dns2)
-          NS2=$VALUE
-          ;;
-      ip6dns1)
-          IP6_NS1=$VALUE
-          ;;
-      ip6dns2)
-          IP6_NS2=$VALUE
-          ;;
-      domain)
-          DOMAIN=$VALUE
-          ;;
-      dnssearchorder)
-          DNS_SEARCH_ORDER=$VALUE
-          ;;
-      useextdns)
-        USE_EXTERNAL_DNS=$VALUE
-          ;;
-      mgmtcidr)
-          MGMTNET=$VALUE
-          ;;
-      localgw)
-          LOCAL_GW=$VALUE
-          ;;
-      template)
-        TEMPLATE=$VALUE
-      	;;
-      sshonguest)
-        SSHONGUEST=$VALUE
-        ;;
-      name)
-	    NAME=$VALUE
-	    ;;
-      dhcprange)
-        DHCP_RANGE=$(echo $VALUE | tr ':' ',')
-      	;;
-      bootproto)
-        BOOTPROTO=$VALUE 
-      	;;
-      type)
-        TYPE=$VALUE	
-	    ;;
-      defaultroute)
-        DEFAULTROUTE=$VALUE	
-	;;
-      redundant_router)
-        RROUTER=$VALUE
-        ;;
-      guestgw)
-        GUEST_GW=$VALUE
-        ;;
-      guestbrd)
-        GUEST_BRD=$VALUE
-        ;;
-      guestcidrsize)
-        GUEST_CIDR_SIZE=$VALUE
-        ;;
-      router_pr)
-        ROUTER_PR=$VALUE
-        ;;
-      extra_pubnics)
-        EXTRA_PUBNICS=$VALUE
-        ;;
-      nic_macs)
-        NIC_MACS=$VALUE
-        ;;
-      mtu)
-        MTU=$VALUE
-        ;;
-      storageip)
-        STORAGE_IP=$VALUE
-        ;;
-      storagenetmask)
-        STORAGE_NETMASK=$VALUE
-        ;;
-      storagecidr)
-        STORAGE_CIDR=$VALUE
-        ;;
-      vmpassword)
-        VM_PASSWORD=$VALUE
-        ;;
-      vpccidr)
-        VPCCIDR=$VALUE
-        ;;
-      cidrsize)
-        CIDR_SIZE=$VALUE
-        ;;
-      advert_int)
-        ADVERT_INT=$VALUE
-        ;;
-      ntpserverlist)
-        NTP_SERVER_LIST=$VALUE
-        ;;
-    esac
-done
-echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
-if [ "$TYPE" != "unknown" ]
-then
-	mv ${CHEF_TMP_FILE} /var/cache/cloud/cmd_line.json
-fi
-
-[ $ETH0_IP ] && LOCAL_ADDRS=$ETH0_IP
-[ $ETH0_IP6 ] && LOCAL_ADDRS=$ETH0_IP6
-[ $ETH0_IP ] && [ $ETH0_IP6 ] && LOCAL_ADDRS="$ETH0_IP,$ETH0_IP6"
-}
+# for i in $CMDLINE
+#   do
+#     # search for foo=bar pattern and cut out foo
+#     KEY=$(echo $i | cut -d= -f1)
+#     VALUE=$(echo $i | cut -d= -f2)
+#     echo -en ${COMMA} >> ${CHEF_TMP_FILE}
+#     # Two lines so values do not accidently interpretted as escapes!!
+#     echo -n \"${KEY}\"': '\"${VALUE}\" >> ${CHEF_TMP_FILE}
+#     COMMA=",\n\t"
+#     case $KEY in
+#       disable_rp_filter)
+#           DISABLE_RP_FILTER=$VALUE
+#           ;;
+#       eth0ip)
+#           ETH0_IP=$VALUE
+#           ;;
+#       eth1ip)
+#           ETH1_IP=$VALUE
+#           ;;
+#       eth2ip)
+#           ETH2_IP=$VALUE
+#           ;;
+#       host)
+#           MGMT_HOST=$VALUE
+#           ;;
+#       gateway)
+#           GW=$VALUE
+#           ;;
+#       ip6gateway)
+#           IP6GW=$VALUE
+#           ;;
+#       eth0mask)
+#           ETH0_MASK=$VALUE
+#           ;;
+#       eth1mask)
+#           ETH1_MASK=$VALUE
+#           ;;
+#       eth2mask)
+#           ETH2_MASK=$VALUE
+#           ;;
+#       eth0ip6)
+#           ETH0_IP6=$VALUE
+#           ;;
+#       eth0ip6prelen)
+#           ETH0_IP6_PRELEN=$VALUE
+#           ;;
+#       internaldns1)
+#           internalNS1=$VALUE
+#           ;;
+#       internaldns2)
+#           internalNS2=$VALUE
+#           ;;
+#       dns1)
+#           NS1=$VALUE
+#           ;;
+#       dns2)
+#           NS2=$VALUE
+#           ;;
+#       ip6dns1)
+#           IP6_NS1=$VALUE
+#           ;;
+#       ip6dns2)
+#           IP6_NS2=$VALUE
+#           ;;
+#       domain)
+#           DOMAIN=$VALUE
+#           ;;
+#       dnssearchorder)
+#           DNS_SEARCH_ORDER=$VALUE
+#           ;;
+#       useextdns)
+#         USE_EXTERNAL_DNS=$VALUE
+#           ;;
+#       mgmtcidr)
+#           MGMTNET=$VALUE
+#           ;;
+#       localgw)
+#           LOCAL_GW=$VALUE
+#           ;;
+#       template)
+#         TEMPLATE=$VALUE
+#       	;;
+#       sshonguest)
+#         SSHONGUEST=$VALUE
+#         ;;
+#       name)
+# 	    NAME=$VALUE
+# 	    ;;
+#       dhcprange)
+#         DHCP_RANGE=$(echo $VALUE | tr ':' ',')
+#       	;;
+#       bootproto)
+#         BOOTPROTO=$VALUE
+#       	;;
+#       type)
+#         TYPE=$VALUE
+# 	    ;;
+#       defaultroute)
+#         DEFAULTROUTE=$VALUE
+# 	;;
+#       redundant_router)
+#         RROUTER=$VALUE
+#         ;;
+#       guestgw)
+#         GUEST_GW=$VALUE
+#         ;;
+#       guestbrd)
+#         GUEST_BRD=$VALUE
+#         ;;
+#       guestcidrsize)
+#         GUEST_CIDR_SIZE=$VALUE
+#         ;;
+#       router_pr)
+#         ROUTER_PR=$VALUE
+#         ;;
+#       extra_pubnics)
+#         EXTRA_PUBNICS=$VALUE
+#         ;;
+#       nic_macs)
+#         NIC_MACS=$VALUE
+#         ;;
+#       mtu)
+#         MTU=$VALUE
+#         ;;
+#       storageip)
+#         STORAGE_IP=$VALUE
+#         ;;
+#       storagenetmask)
+#         STORAGE_NETMASK=$VALUE
+#         ;;
+#       storagecidr)
+#         STORAGE_CIDR=$VALUE
+#         ;;
+#       vmpassword)
+#         VM_PASSWORD=$VALUE
+#         ;;
+#       vpccidr)
+#         VPCCIDR=$VALUE
+#         ;;
+#       cidrsize)
+#         CIDR_SIZE=$VALUE
+#         ;;
+#       advert_int)
+#         ADVERT_INT=$VALUE
+#         ;;
+#       ntpserverlist)
+#         NTP_SERVER_LIST=$VALUE
+#         ;;
+#     esac
+# done
+# echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
+# if [ "$TYPE" != "unknown" ]
+# then
+# 	mv ${CHEF_TMP_FILE} /var/cache/cloud/cmd_line.json
+# fi
+#
+# [ $ETH0_IP ] && LOCAL_ADDRS=$ETH0_IP
+# [ $ETH0_IP6 ] && LOCAL_ADDRS=$ETH0_IP6
+# [ $ETH0_IP ] && [ $ETH0_IP6 ] && LOCAL_ADDRS="$ETH0_IP,$ETH0_IP6"
+# }
 
 case "$1" in
 start)
-
-	log_action_begin_msg "Executing cloud-early-config"
-        log_it "Executing cloud-early-config"
+	log_action_begin_msg "Executing cloud-early-init."
+  log_it "Executing cloud-early-init."
 	if start; then
 	    log_action_end_msg $?
 	else
@@ -397,25 +404,15 @@ start)
 	;;
 
 stop)
-	log_action_begin_msg "Stopping cloud-early-config"
-        #Override old system's interface setting
-        setup_default;
+	log_action_begin_msg "Stopping cloud-early-init."
+  log_it "Stopping cloud-early-init."
+  # #Override old system's interface setting
+  # setup_default;
 	log_action_end_msg 0
 	;;
 
-force-reload|restart)
-
-	log_warning_msg "Running $0  is deprecated because it may not enable again some interfaces"
-	log_action_begin_msg "Executing cloud-early-config"
-	if start; then
-	    log_action_end_msg $?
-	else
-	    log_action_end_msg $?
-	fi
-	;;
-
 *)
-	echo "Usage: /etc/init.d/cloud-early-config {start|stop}"
+	echo "Usage: /etc/init.d/cloud-early-init {start|stop}."
 	exit 1
 	;;
 esac
