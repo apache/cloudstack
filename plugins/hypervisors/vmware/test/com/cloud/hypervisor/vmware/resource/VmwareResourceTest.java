@@ -58,11 +58,13 @@ import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
@@ -213,6 +215,38 @@ public class VmwareResourceTest {
 
         _resource.execute(cmd);
         verify(_resource).execute(cmd);
+    }
+
+    @Test
+    public void testGenerateMacSequence() {
+        final NicTO nicTo1 = new NicTO();
+        nicTo1.setMac("01:23:45:67:89:AB");
+        nicTo1.setDeviceId(1);
+
+        final NicTO nicTo2 = new NicTO();
+        nicTo2.setMac("02:00:65:b5:00:03");
+        nicTo2.setDeviceId(0);
+
+        //final NicTO [] nicTOs = {nicTO1, nicTO2, nicTO3};
+        //final NicTO[] nics = new NicTO[]{nic};
+        final NicTO[] nics = new NicTO[] {nicTo1, nicTo2};
+
+        String macSequence = _resource.generateMacSequence(nics);
+        assertEquals(macSequence, "02:00:65:b5:00:03|01:23:45:67:89:AB");
+    }
+
+    @Test
+    public void testReplaceNicsMacSequenceInBootArgs() {
+        String bootArgs = "nic_macs=02:00:65:b5:00:03|7C02:00:4f:1b:00:15|7C1e:00:54:00:00:0f|7C02:00:35:fa:00:11|7C02:00:47:40:00:12";
+        doReturn(bootArgs).when(vmSpec).getBootArgs();
+
+        String oldMacSequence = "7C02:00:35:fa:00:11|7C02:00:47:40:00:12";
+        String newMacSequence = "7C02:00:0c:1d:00:1d|7C02:00:68:0f:00:1e";
+
+        String updatedBootArgs = _resource.replaceNicsMacSequenceInBootArgs(oldMacSequence, newMacSequence, vmSpec);
+
+        String newBootArgs = "nic_macs=02:00:65:b5:00:03|7C02:00:4f:1b:00:15|7C1e:00:54:00:00:0f|7C02:00:0c:1d:00:1d|7C02:00:68:0f:00:1e";
+        assertEquals(newBootArgs, updatedBootArgs);
     }
 
     @Test
