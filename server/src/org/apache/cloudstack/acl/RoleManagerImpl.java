@@ -16,19 +16,14 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.ListUtils;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionStatus;
-import com.google.common.base.Strings;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.acl.dao.RolePermissionsDao;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -45,13 +40,18 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.ListUtils;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
+import com.google.common.base.Strings;
 
 @Local(value = {RoleService.class})
 public class RoleManagerImpl extends ManagerBase implements RoleService, Configurable, PluggableService {
@@ -78,8 +78,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public boolean isEnabled() {
-        File apiCmdFile = PropertiesUtil.findConfigFile(PropertiesUtil.getDefaultApiCommandsFileName());
-        return RoleService.EnableDynamicApiChecker.value() && (apiCmdFile == null || !apiCmdFile.exists());
+        return RoleService.EnableDynamicApiChecker.value();
     }
 
     @Override
