@@ -16,6 +16,28 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -116,6 +138,7 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -130,29 +153,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
-
-import javax.naming.ConfigurationException;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
@@ -1311,46 +1311,25 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             parent += File.separator;
         }
         String absoluteTemplatePath = parent + relativeTemplatePath;
-        MessageDigest digest;
-        String checksum = null;
+        String algorithm = cmd.getAlgorithm();
         File f = new File(absoluteTemplatePath);
-        InputStream is = null;
-        byte[] buffer = new byte[8192];
-        int read = 0;
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("parent path " + parent + " relative template path " + relativeTemplatePath);
         }
+        String checksum = null;
 
-        try {
-            digest = MessageDigest.getInstance("MD5");
-            is = new FileInputStream(f);
-            while ((read = is.read(buffer)) > 0) {
-                digest.update(buffer, 0, read);
-            }
-            byte[] md5sum = digest.digest();
-            BigInteger bigInt = new BigInteger(1, md5sum);
-            checksum = bigInt.toString(16);
+        try (InputStream is = new FileInputStream(f);){
+            checksum = DigestHelper.digest(algorithm, is).toString();
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully calculated checksum for file " + absoluteTemplatePath + " - " + checksum);
             }
 
         } catch (IOException e) {
-            String logMsg = "Unable to process file for MD5 - " + absoluteTemplatePath;
+            String logMsg = "Unable to process file for " + algorithm + " - " + absoluteTemplatePath;
             s_logger.error(logMsg);
             return new Answer(cmd, false, checksum);
         } catch (NoSuchAlgorithmException e) {
             return new Answer(cmd, false, checksum);
-        } finally {
-            try {
-                if (is != null) {
-                    is.close();
-                }
-            } catch (IOException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Could not close the file " + absoluteTemplatePath);
-                }
-                return new Answer(cmd, false, checksum);
-            }
         }
 
         return new Answer(cmd, true, checksum);
@@ -3048,4 +3027,5 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         return cmd;
     }
+
 }
