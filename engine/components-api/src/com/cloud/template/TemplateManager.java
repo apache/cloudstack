@@ -108,7 +108,7 @@ public interface TemplateManager {
 
     DataStore getImageStore(String storeUuid, Long zoneId);
 
-    String getChecksum(DataStore store, String templatePath);
+    String getChecksum(DataStore store, String templatePath, String algorithm);
 
     List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId);
 

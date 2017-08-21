@@ -16,13 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
-import static com.cloud.utils.S3Utils.mputFile;
-import static com.cloud.utils.S3Utils.putFile;
-import static com.cloud.utils.StringUtils.join;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -32,11 +25,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,34 +37,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
-
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-
-import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.template.DownloadManager;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
-import org.apache.cloudstack.storage.template.UploadManager;
-import org.apache.cloudstack.storage.template.UploadManagerImpl;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -135,6 +99,38 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.log4j.Logger;
+
+import static com.cloud.utils.S3Utils.mputFile;
+import static com.cloud.utils.S3Utils.putFile;
+import static com.cloud.utils.StringUtils.join;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
@@ -654,7 +650,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private String determineS3TemplateNameFromKey(String key) {
-        return StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR);
+        return substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR);
     }
 
     @SuppressWarnings("unchecked")
@@ -663,7 +659,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected Long determineS3VolumeIdFromKey(String key) {
-        return Long.parseLong(StringUtils.substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR));
+        return Long.parseLong(substringAfterLast(StringUtils.substringBeforeLast(key, S3Utils.SEPARATOR), S3Utils.SEPARATOR));
     }
 
     private String determineStorageTemplatePath(final String storagePath, String dataPath) {
@@ -1096,16 +1092,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteDirectory(s3, bucket, path);
-                return new Answer(cmd, true, String.format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
+                return new Answer(cmd, true, format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
                 final String errorMessage =
-                        String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                        format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
         } else if (dstore instanceof SwiftTO) {
             String path = cmd.getDirectory();
-            String volumeId = StringUtils.substringAfterLast(path, "/"); // assuming
+            String volumeId = substringAfterLast(path, "/"); // assuming
             // that
             // the
             // filename
@@ -1146,46 +1142,24 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             parent += File.separator;
         }
         String absoluteTemplatePath = parent + relativeTemplatePath;
-        MessageDigest digest;
-        String checksum = null;
+        String algorithm = cmd.getAlgorithm();
         File f = new File(absoluteTemplatePath);
-        InputStream is = null;
-        byte[] buffer = new byte[8192];
-        int read = 0;
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("parent path " + parent + " relative template path " + relativeTemplatePath);
         }
+        String checksum = null;
 
-        try {
-            digest = MessageDigest.getInstance("MD5");
-            is = new FileInputStream(f);
-            while ((read = is.read(buffer)) > 0) {
-                digest.update(buffer, 0, read);
-            }
-            byte[] md5sum = digest.digest();
-            BigInteger bigInt = new BigInteger(1, md5sum);
-            checksum = bigInt.toString(16);
+        try (InputStream is = new FileInputStream(f);){
+            checksum = DigestHelper.digest(algorithm, is).toString();
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully calculated checksum for file " + absoluteTemplatePath + " - " + checksum);
             }
-
         } catch (IOException e) {
-            String logMsg = "Unable to process file for MD5 - " + absoluteTemplatePath;
+            String logMsg = "Unable to process file for " + algorithm + " - " + absoluteTemplatePath;
             s_logger.error(logMsg);
             return new Answer(cmd, false, checksum);
         } catch (NoSuchAlgorithmException e) {
             return new Answer(cmd, false, checksum);
-        } finally {
-            try {
-                if (is != null) {
-                    is.close();
-                }
-            } catch (IOException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Could not close the file " + absoluteTemplatePath);
-                }
-                return new Answer(cmd, false, checksum);
-            }
         }
 
         return new Answer(cmd, true, checksum);
@@ -1330,10 +1304,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteObject(s3, bucket, path);
-                return new Answer(cmd, true, String.format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
+                return new Answer(cmd, true, format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
                 final String errorMessage =
-                        String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                        format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -1689,10 +1663,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteDirectory(s3, bucket, path);
-                return new Answer(cmd, true, String.format("Deleted template %1$s from bucket %2$s.", path, bucket));
+                return new Answer(cmd, true, format("Deleted template %1$s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
                 final String errorMessage =
-                        String.format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                        format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -1793,16 +1767,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteDirectory(s3, bucket, path);
-                return new Answer(cmd, true, String.format("Deleted volume %1%s from bucket %2$s.", path, bucket));
+                return new Answer(cmd, true, format("Deleted volume %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete volume %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                final String errorMessage = format("Failed to delete volume %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
         } else if (dstore instanceof SwiftTO) {
             Long volumeId = obj.getId();
             String path = obj.getPath();
-            String filename = StringUtils.substringAfterLast(path, "/"); // assuming
+            String filename = substringAfterLast(path, "/"); // assuming
             // that
             // the
             // filename
