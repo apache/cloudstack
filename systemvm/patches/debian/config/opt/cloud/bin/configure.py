@@ -892,7 +892,7 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["filter", "", fw7])
 
     def forward_vpc(self, rule):
-        fw_prerout_rule = "-A PREROUTING -d %s/32 -i %s" % (rule["public_ip"], self.getDeviceByIp(rule['public_ip']))
+        fw_prerout_rule = "-A PREROUTING -d %s/32 " % (rule["public_ip"])
         if not rule["protocol"] == "any":
             fw_prerout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
         if not rule["public_ports"] == "any":
