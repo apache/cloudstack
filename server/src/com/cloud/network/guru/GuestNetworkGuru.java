@@ -376,7 +376,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 }
 
                 nic.setIPv4Address(guestIp);
-                nic.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
+                nic.setIPv4Netmask(NetUtils.cidr2Netmask(_networkModel.getValidNetworkCidr(network)));
 
                 nic.setIPv4Dns1(dc.getDns1());
                 nic.setIPv4Dns2(dc.getDns2());
