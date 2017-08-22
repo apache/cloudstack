@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api.command.admin.domain;
 
 import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,7 +31,8 @@ import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 
 @APICommand(name = "createDomain", description = "Creates a domain", responseObject = DomainResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+ requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
+        RoleType.Admin, RoleType.DomainAdmin })
 public class CreateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDomainCmd.class.getName());
 
@@ -45,9 +46,9 @@ public class CreateDomainCmd extends BaseCmd {
     private String domainName;
 
     @Parameter(name = ApiConstants.PARENT_DOMAIN_ID,
-               type = CommandType.UUID,
-               entityType = DomainResponse.class,
-               description = "assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
     private Long parentDomainId;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for networks in the domain")
