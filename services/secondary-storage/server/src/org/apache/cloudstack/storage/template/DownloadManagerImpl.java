@@ -337,12 +337,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             // The QCOW2 is the only format with a header,
             // and as such can be easily read.
 
-            try {
-                InputStream inputStream = td.getS3ObjectInputStream();
-
+            try (InputStream inputStream = td.getS3ObjectInputStream();) {
                 dnld.setTemplatesize(QCOW2Utils.getVirtualSize(inputStream));
-
-                inputStream.close();
             }
             catch (IOException e) {
                 result = "Couldn't read QCOW2 virtual size. Error: " + e.getMessage();
