@@ -16,23 +16,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
- 
+
 
 # $Id: patchsystemvm.sh 10800 2010-07-16 13:48:39Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x/java/scripts/vm/hypervisor/xenserver/prepsystemvm.sh $
 
 #set -x
 logfile="/var/log/patchsystemvm.log"
+printf "Starting patchsystemvm.sh\n" >>$logfile
+
 # To use existing console proxy .zip-based package file
 patch_console_proxy() {
    local patchfile=$1
+   printf "Patching console proxy VM\n" >>$logfile
    rm /usr/local/cloud/systemvm -rf
    mkdir -p /usr/local/cloud/systemvm
-   echo "All" | unzip $patchfile -d /usr/local/cloud/systemvm >$logfile 2>&1
+   echo "All" | unzip $patchfile -d /usr/local/cloud/systemvm >>$logfile 2>&1
    find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
    return 0
 }
 
 consoleproxy_svcs() {
+   printf "Configuring console proxy services\n" >>$logfile
    chkconfig cloud on
    chkconfig postinit on
    chkconfig cloud-passwd-srvr off
@@ -50,6 +54,7 @@ consoleproxy_svcs() {
 }
 
 secstorage_svcs() {
+   printf "Configuring SSVM services\n" >>$logfile
    chkconfig cloud on
    chkconfig postinit on
    chkconfig cloud-passwd-srvr off
@@ -67,10 +72,11 @@ secstorage_svcs() {
 }
 
 routing_svcs() {
+   printf "Configuring VR services\n" >>$logfile
    grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
    RROUTER=$?
    chkconfig cloud off
-   chkconfig haproxy on ; 
+   chkconfig haproxy on ;
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
@@ -78,6 +84,7 @@ routing_svcs() {
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
    if [ $RROUTER -eq 0 ]
    then
+       printf "Configuring redundant VR services\n" >>$logfile
        chkconfig dnsmasq off
        chkconfig cloud-passwd-srvr off
        chkconfig keepalived on
@@ -86,6 +93,7 @@ routing_svcs() {
        echo "keepalived conntrackd postinit" >> /var/cache/cloud/enabled_svcs
        echo "dnsmasq cloud-passwd-srvr" >> /var/cache/cloud/disabled_svcs
    else
+       printf "Configuring non-redundant VR services\n" >>$logfile
        chkconfig dnsmasq on
        chkconfig cloud-passwd-srvr on
        chkconfig keepalived off
@@ -96,9 +104,10 @@ routing_svcs() {
 }
 
 dhcpsrvr_svcs() {
+   printf "Configuring DHCP services\n" >>$logfile
    chkconfig cloud off
-   chkconfig cloud-passwd-srvr on ; 
-   chkconfig haproxy off ; 
+   chkconfig cloud-passwd-srvr on ;
+   chkconfig haproxy off ;
    chkconfig dnsmasq on
    chkconfig ssh on
    chkconfig nfs-common off
@@ -110,8 +119,9 @@ dhcpsrvr_svcs() {
 }
 
 elbvm_svcs() {
+   printf "Configuring external load balancing VM services\n" >>$logfile
    chkconfig cloud off
-   chkconfig haproxy on ; 
+   chkconfig haproxy on ;
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
@@ -123,8 +133,9 @@ elbvm_svcs() {
 
 
 ilbvm_svcs() {
+   printf "Configuring internal load balancing VM services\n" >>$logfile
    chkconfig cloud off
-   chkconfig haproxy on ; 
+   chkconfig haproxy on ;
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
@@ -135,6 +146,7 @@ ilbvm_svcs() {
 }
 
 enable_pcihotplug() {
+   printf "Configuring PCI hot plug\n" >>$logfile
    sed -i -e "/acpiphp/d" /etc/modules
    sed -i -e "/pci_hotplug/d" /etc/modules
    echo acpiphp >> /etc/modules
@@ -142,6 +154,7 @@ enable_pcihotplug() {
 }
 
 enable_serial_console() {
+   printf "Enabling serial console\n" >>$logfile
    sed -i -e "/^serial.*/d" /boot/grub/grub.conf
    sed -i -e "/^terminal.*/d" /boot/grub/grub.conf
    sed -i -e "/^default.*/a\serial --unit=0 --speed=115200 --parity=no --stop=1" /boot/grub/grub.conf
@@ -153,6 +166,9 @@ enable_serial_console() {
 
 
 CMDLINE=$(cat /var/cache/cloud/cmdline)
+printf "CMDLINE passed to system VM patch process:\n" >>$logfile
+printf "\n $CMDLINE \n\n" >> $logfile
+
 TYPE="router"
 PATCH_MOUNT=$1
 Hypervisor=$2
@@ -173,10 +189,11 @@ done
 
 if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f ${PATCH_MOUNT}/systemvm.zip ]
 then
+  printf "Patching ${TYPE}\n" >>$logfile
   patch_console_proxy ${PATCH_MOUNT}/systemvm.zip
   if [ $? -gt 0 ]
   then
-    printf "Failed to apply patch systemvm\n" >$logfile
+    printf "Failed to apply patch systemvm\n" >>$logfile
     exit 5
   fi
 fi
@@ -187,26 +204,29 @@ echo "" > /root/.ssh/known_hosts
 
 if [ "$Hypervisor" == "kvm" ]
 then
+   printf "Enabling PCI hotplug and serial console for KVM\n" >>$logfile
    enable_pcihotplug
    enable_serial_console
 fi
 
 if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ]
 then
+  printf "Updating ${TYPE} services\n" >>$logfile
   routing_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute routing_svcs\n" >$logfile
+    printf "Failed to execute routing_svcs\n" >>$logfile
     exit 6
   fi
 fi
 
 if [ "$TYPE" == "dhcpsrvr" ]
 then
+  printf "Updating ${TYPE} services\n" >>$logfile
   dhcpsrvr_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute dhcpsrvr_svcs\n" >$logfile
+    printf "Failed to execute dhcpsrvr_svcs\n" >>$logfile
     exit 6
   fi
 fi
@@ -214,40 +234,44 @@ fi
 
 if [ "$TYPE" == "consoleproxy" ]
 then
+  printf "Updating ${TYPE} services\n" >>$logfile
   consoleproxy_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute consoleproxy_svcs\n" >$logfile
+    printf "Failed to execute consoleproxy_svcs\n" >>$logfile
     exit 7
   fi
 fi
 
 if [ "$TYPE" == "secstorage" ]
 then
+  printf "Updating ${TYPE}\n services" >>$logfile
   secstorage_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute secstorage_svcs\n" >$logfile
+    printf "Failed to execute secstorage_svcs\n" >>$logfile
     exit 8
   fi
 fi
 
 if [ "$TYPE" == "elbvm" ]
 then
+  printf "Updating ${TYPE}\n services" >>$logfile
   elbvm_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute elbvm svcs\n" >$logfile
+    printf "Failed to execute elbvm svcs\n" >>$logfile
     exit 9
   fi
 fi
 
 if [ "$TYPE" == "ilbvm" ]
 then
+  printf "Updating ${TYPE}\n services" >>$logfile
   ilbvm_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute ilbvm svcs\n" >$logfile
+    printf "Failed to execute ilbvm svcs\n" >>$logfile
     exit 9
   fi
 fi
