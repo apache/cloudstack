@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DigestHelper {
 
@@ -46,13 +48,13 @@ public class DigestHelper {
         return result.equals(toCheckAgainst);
     }
 
-    public static String getPaddedDigest(String algorithm, int paddingLength, String inputString) throws NoSuchAlgorithmException {
+    public static String getPaddedDigest(String algorithm, String inputString) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         String checksum;
         digest.reset();
         BigInteger pwInt = new BigInteger(1, digest.digest(inputString.getBytes()));
         String pwStr = pwInt.toString(16);
-        int padding = paddingLength - pwStr.length();
+        int padding = paddingLengths.get(algorithm) - pwStr.length();
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < padding; i++) {
             sb.append('0'); // make sure the MD5 password is 32 digits long
@@ -60,5 +62,18 @@ public class DigestHelper {
         sb.append(pwStr);
         checksum = sb.toString();
         return checksum;
+    }
+
+    static final Map<String, Integer> paddingLengths = creatPaddingLengths();
+
+    private static final Map<String, Integer> creatPaddingLengths() {
+        Map<String, Integer> map = new HashMap<>();
+        map.put("MD5", 32);
+        map.put("SHA-1", 40);
+        map.put("SHA-224", 56);
+        map.put("SHA-256", 64);
+        map.put("SHA-384", 96);
+        map.put("SHA-512", 128);
+        return map;
     }
 }
