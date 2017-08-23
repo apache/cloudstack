@@ -254,8 +254,10 @@ public class Agent implements HandlerFactory, IAgentControl {
             s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
         }
         while (!_connection.isStartup()) {
+            final String host = _shell.getHost();
             _shell.getBackoffAlgorithm().waitBeforeRetry();
-            _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
+            _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
+            s_logger.info("Connecting to host:" + host);
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
@@ -431,9 +433,10 @@ public class Agent implements HandlerFactory, IAgentControl {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         }
 
+        final String host = _shell.getHost();
         do {
-            _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
-            s_logger.info("Reconnecting...");
+            _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
+            s_logger.info("Reconnecting to host:" + host);
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
@@ -493,7 +496,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
             for (int i = 0; i < cmds.length; i++) {
                 final Command cmd = cmds[i];
-                Answer answer = null;
+                Answer answer;
                 try {
                     if (cmd.getContextParam("logid") != null) {
                         MDC.put("logcontextid", cmd.getContextParam("logid"));
@@ -607,8 +610,8 @@ public class Agent implements HandlerFactory, IAgentControl {
         if (agentFile == null) {
             return new Answer(cmd, false, "Failed to find agent.properties file");
         }
-        final String keyStoreFile = agentFile.getParent() + KeyStoreUtils.defaultKeystoreFile;
-        final String csrFile = agentFile.getParent() + KeyStoreUtils.defaultCsrFile;
+        final String keyStoreFile = agentFile.getParent() + "/" + KeyStoreUtils.defaultKeystoreFile;
+        final String csrFile = agentFile.getParent() + "/" + KeyStoreUtils.defaultCsrFile;
 
         String storedPassword = _shell.getPersistentProperty(null, KeyStoreUtils.passphrasePropertyName);
         if (Strings.isNullOrEmpty(storedPassword)) {
@@ -647,10 +650,10 @@ public class Agent implements HandlerFactory, IAgentControl {
         if (agentFile == null) {
             return new Answer(cmd, false, "Failed to find agent.properties file");
         }
-        final String keyStoreFile = agentFile.getParent() + KeyStoreUtils.defaultKeystoreFile;
-        final String certFile = agentFile.getParent() + KeyStoreUtils.defaultCertFile;
-        final String privateKeyFile = agentFile.getParent() + KeyStoreUtils.defaultPrivateKeyFile;
-        final String caCertFile = agentFile.getParent() + KeyStoreUtils.defaultCaCertFile;
+        final String keyStoreFile = agentFile.getParent() + "/" + KeyStoreUtils.defaultKeystoreFile;
+        final String certFile = agentFile.getParent() + "/" + KeyStoreUtils.defaultCertFile;
+        final String privateKeyFile = agentFile.getParent() + "/" + KeyStoreUtils.defaultPrivateKeyFile;
+        final String caCertFile = agentFile.getParent() + "/" + KeyStoreUtils.defaultCaCertFile;
 
         try {
             FileUtils.writeStringToFile(new File(certFile), certificate, Charset.defaultCharset());

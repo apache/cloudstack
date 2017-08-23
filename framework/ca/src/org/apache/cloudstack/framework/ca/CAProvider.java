@@ -31,7 +31,7 @@ public interface CAProvider {
 
     /**
      * Method returns capability of the plugin to participate in certificate issuance, revocation and provisioning
-     * @return
+     * @return returns true when CA provider can do certificate lifecycle tasks
      */
     boolean canProvisionCertificates();
 
@@ -46,7 +46,7 @@ public interface CAProvider {
      * @param domainNames
      * @param ipAddresses
      * @param validityDays
-     * @return
+     * @return returns issued certificate
      */
     Certificate issueCertificate(final List<String> domainNames, final List<String> ipAddresses, final int validityDays);
 
@@ -56,7 +56,7 @@ public interface CAProvider {
      * @param domainNames
      * @param ipAddresses
      * @param validityDays
-     * @return
+     * @return returns issued certificate using provided CSR and other options
      */
     Certificate issueCertificate(final String csr, final List<String> domainNames, final List<String> ipAddresses, final int validityDays);
 
@@ -73,7 +73,7 @@ public interface CAProvider {
      * @param sslContext The SSL context used while accepting a client connection
      * @param remoteAddress
      * @param certMap
-     * @return
+     * @return returns created SSL engine instance
      * @throws GeneralSecurityException
      * @throws IOException
      */
@@ -81,13 +81,13 @@ public interface CAProvider {
 
     /**
      * Returns the unique name of the provider
-     * @return
+     * @return returns provider name
      */
     String getProviderName();
 
     /**
      * Returns description about the CA provider plugin
-     * @return
+     * @return returns description
      */
     String getDescription();
 }

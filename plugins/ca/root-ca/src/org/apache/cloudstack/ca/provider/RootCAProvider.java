@@ -36,8 +36,6 @@ import java.security.Security;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
@@ -51,7 +49,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.ca.CAProvider;
@@ -222,117 +219,6 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     /////////////// Root CA Trust Management ///////////////////
     ////////////////////////////////////////////////////////////
 
-    public static final class RootCACustomTrustManager implements X509TrustManager {
-        private String clientAddress = "Unknown";
-        private boolean authStrictness = true;
-        private boolean allowExpiredCertificate = true;
-        private CrlDao crlDao;
-        private X509Certificate caCertificate;
-        private Map<String, X509Certificate> activeCertMap;
-
-        public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final Map<String, X509Certificate> activeCertMap, final X509Certificate caCertificate, final CrlDao crlDao) {
-            if (!Strings.isNullOrEmpty(clientAddress)) {
-                this.clientAddress = clientAddress.replace("/", "").split(":")[0];
-            }
-            this.authStrictness = authStrictness;
-            this.allowExpiredCertificate = allowExpiredCertificate;
-            this.activeCertMap = activeCertMap;
-            this.caCertificate = caCertificate;
-            this.crlDao = crlDao;
-        }
-
-        private void printCertificateChain(final X509Certificate[] certificates, final String s) throws CertificateException {
-            if (certificates == null) {
-                return;
-            }
-            final StringBuilder builder = new StringBuilder();
-            builder.append("A client/agent attempting connection from address=").append(clientAddress).append(" has presented these certificate(s):");
-            int counter = 1;
-            for (final X509Certificate certificate: certificates) {
-                builder.append("\nCertificate [").append(counter++).append("] :");
-                builder.append(String.format("\n Serial: %x", certificate.getSerialNumber()));
-                builder.append("\n  Not Before:" + certificate.getNotBefore());
-                builder.append("\n  Not After:" + certificate.getNotAfter());
-                builder.append("\n  Signature Algorithm:" + certificate.getSigAlgName());
-                builder.append("\n  Version:" + certificate.getVersion());
-                builder.append("\n  Subject DN:" + certificate.getSubjectDN());
-                builder.append("\n  Issuer DN:" + certificate.getIssuerDN());
-                builder.append("\n  Alternative Names:" + certificate.getSubjectAlternativeNames());
-            }
-            LOG.debug(builder.toString());
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] certificates, final String s) throws CertificateException {
-            if (LOG.isDebugEnabled()) {
-                printCertificateChain(certificates, s);
-            }
-            if (!authStrictness) {
-                return;
-            }
-            if (certificates == null || certificates.length < 1 || certificates[0] == null) {
-                throw new CertificateException("In strict auth mode, certificate(s) are expected from client:" + clientAddress);
-            }
-            final X509Certificate primaryClientCertificate = certificates[0];
-
-            // Revocation check
-            final BigInteger serialNumber = primaryClientCertificate.getSerialNumber();
-            if (serialNumber == null || crlDao.findBySerial(serialNumber) != null) {
-                final String errorMsg = String.format("Client is using revoked certificate of serial=%x, subject=%s from address=%s",
-                        primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
-                LOG.error(errorMsg);
-                throw new CertificateException(errorMsg);
-            }
-
-            // Validity check
-            if (!allowExpiredCertificate) {
-                try {
-                    primaryClientCertificate.checkValidity();
-                } catch (final CertificateExpiredException | CertificateNotYetValidException e) {
-                    final String errorMsg = String.format("Client certificate has expired with serial=%x, subject=%s from address=%s",
-                            primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
-                    LOG.error(errorMsg);
-                    throw new CertificateException(errorMsg);                }
-            }
-
-            // Ownership check
-            boolean certMatchesOwnership = false;
-            if (primaryClientCertificate.getSubjectAlternativeNames() != null) {
-                for (final List<?> list : primaryClientCertificate.getSubjectAlternativeNames()) {
-                    if (list != null && list.size() == 2 && list.get(1) instanceof String) {
-                        final String alternativeName = (String) list.get(1);
-                        if (clientAddress.equals(alternativeName)) {
-                            certMatchesOwnership = true;
-                        }
-                    }
-                }
-            }
-            if (!certMatchesOwnership) {
-                final String errorMsg = "Certificate ownership verification failed for client: " + clientAddress;
-                LOG.error(errorMsg);
-                throw new CertificateException(errorMsg);
-            }
-            if (activeCertMap != null && !Strings.isNullOrEmpty(clientAddress)) {
-                activeCertMap.put(clientAddress, primaryClientCertificate);
-            }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Client/agent connection from ip=" + clientAddress + " has been validated and trusted.");
-            }
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            if (!authStrictness) {
-                return null;
-            }
-            return new X509Certificate[]{caCertificate};
-        }
-    }
-
     private char[] getCaKeyStorePassphrase() {
         return KeyStoreUtils.defaultKeystorePassphrase;
     }
@@ -412,7 +298,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             return false;
         }
         final char[] passphrase = findKeyStorePassphrase();
-        final String keystorePath = confFile.getParent() + KeyStoreUtils.defaultKeystoreFile;
+        final String keystorePath = confFile.getParent() + "/" + KeyStoreUtils.defaultKeystoreFile;
         final File keystoreFile = new File(keystorePath);
         if (keystoreFile.exists()) {
             try {

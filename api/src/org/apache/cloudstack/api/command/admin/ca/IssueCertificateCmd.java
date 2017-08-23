@@ -44,8 +44,8 @@ import com.google.common.base.Strings;
 @APICommand(name = IssueCertificateCmd.APINAME,
         description = "Issues a client certificate using configured or provided CA plugin",
         responseObject = CertificateResponse.class,
-        requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false,
+        requestHasSensitiveInfo = true,
+        responseHasSensitiveInfo = true,
         since = "4.11.0",
         authorized = {RoleType.Admin})
 public class IssueCertificateCmd extends BaseAsyncCmd {

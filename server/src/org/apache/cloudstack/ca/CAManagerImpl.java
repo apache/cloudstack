@@ -95,13 +95,14 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
     private List<CAProvider> caProviders;
 
     private CAProvider getConfiguredCaProvider() {
-        if (configuredCaProvider == null && caProviderMap.containsKey(CAProviderPlugin.value())) {
+        if (configuredCaProvider != null) {
+            return configuredCaProvider;
+        }
+        if (caProviderMap.containsKey(CAProviderPlugin.value()) && caProviderMap.get(CAProviderPlugin.value()) != null) {
             configuredCaProvider = caProviderMap.get(CAProviderPlugin.value());
+            return configuredCaProvider;
         }
-        if (configuredCaProvider == null) {
-            throw new CloudRuntimeException("Failed to find default configured CA provider plugin");
-        }
-        return configuredCaProvider;
+        throw new CloudRuntimeException("Failed to find default configured CA provider plugin");
     }
 
     private CAProvider getCAProvider(final String provider) {

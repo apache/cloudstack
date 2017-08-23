@@ -1095,7 +1095,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 } else {
                                     s_logger.error("Failed to setup keystore and generate CSR for system vm: " + vm.getInstanceName());
                                 }
-
                             }
                             return;
                         } else {

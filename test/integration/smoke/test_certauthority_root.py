@@ -25,7 +25,13 @@ from marvin.lib.common import *
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from OpenSSL.crypto import load_publickey, FILETYPE_PEM, verify, X509
+from OpenSSL.crypto import FILETYPE_PEM, verify, X509
+
+PUBKEY_VERIFY=True
+try:
+    from OpenSSL.crypto import load_publickey
+except ImportError:
+    PUBKEY_VERIFY=False
 
 
 class TestCARootProvider(cloudstackTestCase):
@@ -131,6 +137,9 @@ class TestCARootProvider(cloudstackTestCase):
             self.assertTrue(address in map(lambda x: str(x), altNames.value.get_values_for_type(x509.IPAddress)))
 
         # Validate certificate against CA public key
+        global PUBKEY_VERIFY
+        if not PUBKEY_VERIFY:
+            return
         caCert =  x509.load_pem_x509_certificate(str(self.getCaCertificate()), default_backend())
         x = X509()
         x.set_pubkey(load_publickey(FILETYPE_PEM, str(caCert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))))
@@ -158,6 +167,9 @@ class TestCARootProvider(cloudstackTestCase):
         self.assertEqual(cert.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value, 'v-1-VM')
 
         # Validate certificate against CA public key
+        global PUBKEY_VERIFY
+        if not PUBKEY_VERIFY:
+            return
         caCert =  x509.load_pem_x509_certificate(str(self.getCaCertificate()), default_backend())
         x = X509()
         x.set_pubkey(load_publickey(FILETYPE_PEM, str(caCert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))))

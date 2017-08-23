@@ -410,8 +410,7 @@ public class Link {
 
         InputStream stream = null;
         if (confFile != null) {
-            final String confPath = confFile.getParent();
-            final String keystorePath = confPath + KeyStoreUtils.defaultKeystoreFile;
+            final String keystorePath = confFile.getParent() + "/" + KeyStoreUtils.defaultKeystoreFile;
             if (new File(keystorePath).exists()) {
                 stream = new FileInputStream(keystorePath);
             }

@@ -28,11 +28,11 @@ import com.google.common.base.Strings;
 public class KeyStoreUtils {
 
     public static String defaultTmpKeyStoreFile = "/tmp/tmp.jks";
-    public static String defaultKeystoreFile = "/cloud.jks";
-    public static String defaultPrivateKeyFile = "/cloud.key";
-    public static String defaultCsrFile = "/cloud.csr";
-    public static String defaultCertFile = "/cloud.crt";
-    public static String defaultCaCertFile = "/cloud.ca.crt";
+    public static String defaultKeystoreFile = "cloud.jks";
+    public static String defaultPrivateKeyFile = "cloud.key";
+    public static String defaultCsrFile = "cloud.csr";
+    public static String defaultCertFile = "cloud.crt";
+    public static String defaultCaCertFile = "cloud.ca.crt";
     public static char[] defaultKeystorePassphrase = "vmops.com".toCharArray();
 
     public static String certNewlineEncoder = "^";

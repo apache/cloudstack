@@ -108,12 +108,13 @@ public class AgentShell implements IAgentShell, Daemon {
 
     @Override
     public String getHost() {
-        String[] hosts = _host.split(",");
+        final String[] hosts = _host.split(",");
         if (_hostCounter >= hosts.length) {
             _hostCounter = 0;
         }
-        s_logger.info("Connecting to host: " + hosts[_hostCounter % hosts.length]);
-        return hosts[_hostCounter++ % hosts.length];
+        final String host = hosts[_hostCounter % hosts.length];
+        _hostCounter++;
+        return host;
     }
 
     public void setHost(final String host) {

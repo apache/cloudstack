@@ -52,7 +52,7 @@ public class PropertiesStorage implements StorageComponent {
     @Override
     public synchronized void persist(String key, String value) {
         if (!loadFromFile(_file)) {
-            s_logger.warn("Failed to load changes and then write to them");
+            s_logger.error("Failed to load changes and then write to them");
         }
         _properties.setProperty(key, value);
         FileOutputStream output = null;

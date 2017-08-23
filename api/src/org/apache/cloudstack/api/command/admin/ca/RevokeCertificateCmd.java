@@ -39,7 +39,7 @@ import com.google.common.base.Strings;
 @APICommand(name = RevokeCertificateCmd.APINAME,
         description = "Revokes certificate using configured CA plugin",
         responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false,
+        requestHasSensitiveInfo = true,
         responseHasSensitiveInfo = false,
         since = "4.11.0",
         authorized = {RoleType.Admin})
