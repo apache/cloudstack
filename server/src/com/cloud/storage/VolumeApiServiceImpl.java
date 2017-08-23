@@ -219,7 +219,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     AccountDao _accountDao;
     @Inject
-    final DataCenterDao _dcDao = null;
+    DataCenterDao _dcDao = null;
     @Inject
     VMTemplateDao _templateDao;
     @Inject
@@ -1479,11 +1479,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         Account owner = _accountDao.findById(volumeToAttach.getAccountId());
 
-        try {
-            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumeToAttach.getSize());
-        } catch (ResourceAllocationException e) {
-            s_logger.error("primary storage resource limit check failed", e);
-            throw new InvalidParameterValueException(e.getMessage());
+        if(!(volumeToAttach.getState() == Volume.State.Allocated || volumeToAttach.getState() == Volume.State.Ready)){
+            try {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumeToAttach.getSize());
+            } catch (ResourceAllocationException e) {
+                s_logger.error("primary storage resource limit check failed", e);
+                throw new InvalidParameterValueException(e.getMessage());
+            }
         }
 
         HypervisorType rootDiskHyperType = vm.getHypervisorType();
