@@ -1323,7 +1323,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully calculated checksum for file " + absoluteTemplatePath + " - " + checksum);
             }
-
         } catch (IOException e) {
             String logMsg = "Unable to process file for " + algorithm + " - " + absoluteTemplatePath;
             s_logger.error(logMsg);
