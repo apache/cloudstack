@@ -421,11 +421,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         scr.add("-n", templateFilename);
 
         scr.add("-t", resourcePath);
-        scr.add("-f", td.getDownloadLocalPath()); // this is the temporary
-        // template file downloaded
-        if (dnld.getChecksum() != null && dnld.getChecksum().length() > 1) {
-            scr.add("-c", dnld.getChecksum());
-        }
+        scr.add("-f", td.getDownloadLocalPath()); // this is the temporary template file downloaded
         scr.add("-u"); // cleanup
         String result;
         result = scr.execute();
@@ -851,17 +847,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             result.put(tInfo.getTemplateName(), tInfo);
             s_logger.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
         }
-        /*
-        for (String tmplt : isoTmplts) {
-            String tmp[];
-            tmp = tmplt.split("/");
-            String tmpltName = tmp[tmp.length - 2];
-            tmplt = tmplt.substring(tmplt.lastIndexOf("iso/"));
-            TemplateInfo tInfo = new TemplateInfo(tmpltName, tmplt, false);
-            s_logger.debug("Added iso template name: " + tmpltName + ", path: " + tmplt);
-            result.put(tmpltName, tInfo);
-        }
-         */
         return result;
     }
 
