@@ -3619,8 +3619,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 _vmDao.persist(vm);
                 for (String key : customParameters.keySet()) {
-                    //handle double byte strings.
-                    vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
+                    if( key.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) ||
+                            key.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) ||
+                            key.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
+                        // handle double byte strings.
+                        vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
+                    } else {
+                        vm.setDetail(key, customParameters.get(key));
+                    }
                 }
                 vm.setDetail("deployvm", "true");
                 _vmDao.saveDetails(vm);
@@ -4587,7 +4593,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if(!serviceOffering.isDynamic()) {
             for(String detail: cmd.getDetails().keySet()) {
-                if(detail.equalsIgnoreCase("cpuNumber") || detail.equalsIgnoreCase("cpuSpeed") || detail.equalsIgnoreCase("memory")) {
+                if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
                     throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
                 }
             }
