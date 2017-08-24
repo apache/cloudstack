@@ -16,16 +16,12 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade2210to2211 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade2210to2211.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -43,13 +39,14 @@ public class Upgrade2210to2211 implements DbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-2210to2211.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-2210to2211.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-2210to2211.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(script)};
+        return new InputStream[] {script};
     }
 
     @Override
@@ -57,7 +54,7 @@ public class Upgrade2210to2211 implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
+    public InputStream[] getCleanupScripts() {
         return null;
     }
 

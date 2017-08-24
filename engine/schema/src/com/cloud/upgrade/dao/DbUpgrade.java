@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 
 public interface DbUpgrade {
@@ -30,16 +30,12 @@ public interface DbUpgrade {
      * @return the script to prepare the database schema for the
      * data migration step.
      */
-    File[] getPrepareScripts();
+    InputStream[] getPrepareScripts();
 
     /**
      * Performs the actual data migration.
      */
     void performDataMigration(Connection conn);
 
-    /**
-     *
-     * @return
-     */
-    File[] getCleanupScripts();
+    InputStream[] getCleanupScripts();
 }

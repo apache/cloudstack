@@ -584,7 +584,7 @@
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/utilities/scripts/db">
                   <fileset dir="${basedir}/../setup/db">
-                    <include name="**/*"/>
+                    <include name="*"/>
                   </fileset>
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
