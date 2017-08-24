@@ -16,6 +16,13 @@
 // under the License.
 package org.apache.cloudstack.annotation;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -26,10 +33,6 @@ import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @since 4.11
@@ -48,6 +51,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ANNOTATION_CREATE, eventDescription = "creating an annotation on an entity")
     public AnnotationResponse addAnnotation(AddAnnotationCmd addAnnotationCmd) {
         return addAnnotation(addAnnotationCmd.getAnnotation(), addAnnotationCmd.getEntityType(), addAnnotationCmd.getEntityUuid());
     }
@@ -62,7 +66,9 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         return createAnnotationResponse(annotation);
     }
 
-    @Override public AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd) {
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ANNOTATION_REMOVE, eventDescription = "removing an annotation on an entity")
+    public AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd) {
         String uuid = removeAnnotationCmd.getUuid();
         if(LOGGER.isDebugEnabled()) {
             LOGGER.debug("marking annotation removed: " + uuid);
