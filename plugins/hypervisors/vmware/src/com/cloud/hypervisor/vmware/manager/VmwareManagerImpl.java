@@ -134,6 +134,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private static final long SECONDS_PER_MINUTE = 60;
     private static final int STARTUP_DELAY = 60000;                 // 60 seconds
     private static final long DEFAULT_HOST_SCAN_INTERVAL = 600000;     // every 10 minutes
+
+    private static final int DEFAULT_PORTS_PER_DV_PORT_GROUP_VSPHERE4_x = 256;
+    private static final int DEFAULT_PORTS_PER_DV_PORT_GROUP = 8;
+
     private long _hostScanInterval = DEFAULT_HOST_SCAN_INTERVAL;
     private int _timeout;
 
@@ -180,7 +184,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private StorageLayer _storage;
     private final String _privateNetworkVSwitchName = "vSwitch0";
 
-    private int _portsPerDvPortGroup = 256;
+    private int _portsPerDvPortGroup = DEFAULT_PORTS_PER_DV_PORT_GROUP;
     private boolean _fullCloneFlag;
     private boolean _instanceNameFlag;
     private String _serviceConsoleName;
@@ -266,8 +270,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         } else {
             _instanceNameFlag = Boolean.parseBoolean(value);
         }
-
-        _portsPerDvPortGroup = NumbersUtil.parseInt(_configDao.getValue(Config.VmwarePortsPerDVPortGroup.key()), _portsPerDvPortGroup);
 
         _serviceConsoleName = _configDao.getValue(Config.VmwareServiceConsole.key());
         if (_serviceConsoleName == null) {
@@ -387,8 +389,17 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan, null);
         }
         else {
+            int portsPerDvPortGroup = _portsPerDvPortGroup;
+            AboutInfo about = hostMo.getHostAboutInfo();
+            if (about != null) {
+                String version = about.getApiVersion();
+                if (version != null && (version.equals("4.0") || version.equals("4.1")) && _portsPerDvPortGroup < DEFAULT_PORTS_PER_DV_PORT_GROUP_VSPHERE4_x) {
+                    portsPerDvPortGroup = DEFAULT_PORTS_PER_DV_PORT_GROUP_VSPHERE4_x;
+                }
+            }
+
             HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, null, 180000,
-                    vsType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, null);
+                    vsType, portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, null);
         }
     }
 
