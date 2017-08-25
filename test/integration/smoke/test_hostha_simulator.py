@@ -23,8 +23,6 @@ from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
-import random
-
 from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 
 import random
@@ -35,7 +33,7 @@ import time
 
 
 class TestHostHA(cloudstackTestCase):
-    """ Test cases for host HA using Simulator host(s)
+    """ Test host-ha business logic using Simulator
     """
 
     def setUp(self):
@@ -61,8 +59,12 @@ class TestHostHA(cloudstackTestCase):
 
         self.cleanup = []
 
+
     def tearDown(self):
         try:
+            host = self.getHost()
+            self.configureAndDisableHostHa(host.id)
+            self.host = None
             self.dbclient.execute("delete from mshost_peer where peer_runid=%s" % self.getFakeMsRunId())
             self.dbclient.execute("delete from mshost where runid=%s" % self.getFakeMsRunId())
             self.dbclient.execute("delete from cluster_details where name='resourceHAEnabled'")
@@ -73,11 +75,14 @@ class TestHostHA(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+
     def getFakeMsId(self):
         return self.fakeMsId
 
+
     def getFakeMsRunId(self):
         return self.fakeMsId * 1000
+
 
     def getHost(self, hostId=None):
         if self.host and hostId is None:
@@ -90,10 +95,13 @@ class TestHostHA(cloudstackTestCase):
             resourcestate='Enabled',
             id=hostId
         )
+
         if response and len(response) > 0:
+            random.shuffle(response)
             self.host = response[0]
             return self.host
-        raise self.skipTest("No simulator hosts found, skipping host-ha test")
+        raise self.skipTest("No suitable hosts found, skipping host-ha test")
+
 
     def getHostHaConfigCmd(self, provider='simulatorhaprovider'):
         cmd = configureHAForHost.configureHAForHostCmd()
@@ -101,15 +109,24 @@ class TestHostHA(cloudstackTestCase):
         cmd.hostid = self.getHost().id
         return cmd
 
+
     def getHostHaEnableCmd(self):
         cmd = enableHAForHost.enableHAForHostCmd()
         cmd.hostid = self.getHost().id
         return cmd
 
+
     def getHostHaDisableCmd(self):
         cmd = disableHAForHost.disableHAForHostCmd()
         cmd.hostid = self.getHost().id
         return cmd
+
+
+    def getListHostHAResources(self):
+        cmd = listHostHAResources.listHostHAResourcesCmd()
+        cmd.hostid = self.getHost().id
+        return cmd
+
 
     def configureAndEnableHostHa(self, initialize=True):
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
@@ -117,6 +134,7 @@ class TestHostHA(cloudstackTestCase):
         self.assertEqual(response.haenable, True)
         if initialize:
             self.configureSimulatorHAProviderState(True, True, True, False)
+
 
     def configureAndDisableHostHa(self, hostId):
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
@@ -126,12 +144,14 @@ class TestHostHA(cloudstackTestCase):
         self.assertEqual(response.hostid, cmd.hostid)
         self.assertEqual(response.haenable, False)
 
+
     def enableHostHa(self, hostId):
         cmd = self.getHostHaEnableCmd()
         cmd.hostid = hostId
         response = self.apiclient.enableHAForHost(cmd)
         self.assertEqual(response.hostid, cmd.hostid)
         self.assertEqual(response.haenable, True)
+
 
     def configureSimulatorHAProviderState(self, health, activity, recover, fence):
         cmd = configureSimulatorHAProviderState.configureSimulatorHAProviderStateCmd()
@@ -143,24 +163,28 @@ class TestHostHA(cloudstackTestCase):
         response = self.apiclient.configureSimulatorHAProviderState(cmd)
         self.assertEqual(response.success, 'true')
 
+
     def getSimulatorHAStateTransitions(self, hostId):
         cmd = listSimulatorHAStateTransitions.listSimulatorHAStateTransitionsCmd()
         cmd.hostid = hostId
         return self.apiclient.listSimulatorHAStateTransitions(cmd)
 
+
     def checkSyncToState(self, state, interval=5000):
         def checkForStateSync(expectedState):
             response = self.getHost(hostId=self.getHost().id).hostha
+            print("checkForStateSync:: response=%s, expected=%s" % (response, expectedState))
             return response.hastate == expectedState, None
 
         sync_interval = 1 + int(interval) / 1000
-        res, _ = wait_until(sync_interval, 50, checkForStateSync, state)
+        res, _ = wait_until(sync_interval, 100, checkForStateSync, state)
         if not res:
             self.fail("Failed to get host.hastate synced to expected state:" + state)
         response = self.getHost(hostId=self.getHost().id).hostha
         self.assertEqual(response.hastate, state)
 
-    def get_non_configured_ha_host(self):
+
+    def getNonConfiguredHaHost(self):
         response = list_hosts(
             self.apiclient,
             type='Routing'
@@ -171,12 +195,13 @@ class TestHostHA(cloudstackTestCase):
             else:
                 return None
 
+
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_hostha_enable_feature_without_setting_provider(self):
         """
             Tests Enable HA without setting the provider, Exception is thrown
         """
-        host = self.get_non_configured_ha_host()
+        host = self.getNonConfiguredHaHost()
 
         if host is None:
             cloudstackTestCase.skipTest(self, "There is no non configured hosts. Skipping test.")
@@ -190,6 +215,7 @@ class TestHostHA(cloudstackTestCase):
             pass
         else:
             self.fail("Expected an exception to be thrown, failing")
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_ha_list_providers(self):
@@ -206,6 +232,7 @@ class TestHostHA(cloudstackTestCase):
         response = self.apiclient.listHostHAProviders(cmd)[0]
         self.assertEqual(response.haprovider, 'KVMHAProvider')
 
+
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_hostha_configure_invalid_provider(self):
         """
@@ -220,6 +247,7 @@ class TestHostHA(cloudstackTestCase):
         else:
             self.fail("Expected an exception to be thrown, failing")
 
+
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_hostha_configure_default_driver(self):
         """
@@ -229,6 +257,7 @@ class TestHostHA(cloudstackTestCase):
         response = self.apiclient.configureHAForHost(cmd)
         self.assertEqual(response.hostid, cmd.hostid)
         self.assertEqual(response.haprovider, cmd.provider.lower())
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_ha_enable_feature_invalid(self):
@@ -257,6 +286,7 @@ class TestHostHA(cloudstackTestCase):
             pass
         else:
             self.fail("Expected an exception to be thrown, failing")
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_ha_disable_feature_invalid(self):
@@ -287,6 +317,7 @@ class TestHostHA(cloudstackTestCase):
         else:
             self.fail("Expected an exception to be thrown, failing")
 
+
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_hostha_enable_feature_valid(self):
         """
@@ -297,6 +328,7 @@ class TestHostHA(cloudstackTestCase):
         response = self.apiclient.enableHAForHost(cmd)
         self.assertEqual(response.hostid, cmd.hostid)
         self.assertEqual(response.haenable, True)
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_hostha_disable_feature_valid(self):
@@ -312,15 +344,16 @@ class TestHostHA(cloudstackTestCase):
         response = self.getHost(hostId=cmd.hostid).hostha
         self.assertEqual(response.hastate, 'Disabled')
 
+
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_ha_enabledisable_across_clusterzones(self):
+    def test_ha_configure_enabledisable_across_clusterzones(self):
         """
             Tests ha enable/disable feature at cluster and zone level
             Zone > Cluster > Host
         """
+        host = self.getHost()
         self.configureAndEnableHostHa()
 
-        host = self.getHost()
         self.checkSyncToState('Available')
         response = self.getHost(hostId=host.id).hostha
         self.assertTrue(response.hastate == 'Available')
@@ -366,12 +399,16 @@ class TestHostHA(cloudstackTestCase):
         # Check state sync
         self.checkSyncToState('Available')
 
+
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_ha_multiple_mgmt_server_ownership(self):
         """
             Tests ha resource ownership expiry across multi-mgmt server
         """
-        self.configureAndEnableHostHa()
+        host = self.getHost()
+        self.configureAndDisableHostHa(host.id)
+        self.configureSimulatorHAProviderState(True, True, True, False)
+        self.configureAndEnableHostHa(False)
 
         cloudstackVersion = Configurations.listCapabilities(self.apiclient).cloudstackversion
 
@@ -435,23 +472,34 @@ class TestHostHA(cloudstackTestCase):
         newOwnerId = result[0][0]
         self.assertTrue(newOwnerId in currentMsHosts)
 
+
     def checkFSMTransition(self, transition, event, haState, prevHaState, hasActiviyCounter, hasRecoveryCounter):
+        print("checkFSMTransition:: transition=%s, event=%s, state=%s" % (transition, event, haState))
         self.assertEqual(transition.event, event)
         self.assertEqual(transition.hastate, haState)
         self.assertEqual(transition.prevhastate, prevHaState)
-        if hasActiviyCounter:
+
+        if hasActiviyCounter is None:
+            pass
+        elif hasActiviyCounter:
             self.assertTrue(transition.activitycounter > 0)
         else:
             self.assertEqual(transition.activitycounter, 0)
-        if hasRecoveryCounter:
+
+        if hasRecoveryCounter is None:
+            pass
+        elif hasRecoveryCounter:
             self.assertTrue(transition.recoverycounter > 0)
         else:
             self.assertEqual(transition.recoverycounter, 0)
 
+
     def findFSMTransitionToState(self, state, host):
         transitions = self.getSimulatorHAStateTransitions(host.id)
         if not transitions:
+            print("findFSMTransition:: no transitions returned")
             return False, (None, None, None)
+
         previousTransition = None
         stateTransition = None
         nextTransition = None
@@ -463,9 +511,12 @@ class TestHostHA(cloudstackTestCase):
                 stateTransition = transition
             if not stateTransition:
                 previousTransition = transition
+
+        print("findFSMTransition:: prev=%s, cur=%s, next=%s, find state=%s" % (previousTransition, stateTransition, nextTransition, state))
         if stateTransition:
             return True, (previousTransition, stateTransition, nextTransition,)
         return False, (previousTransition, stateTransition, nextTransition,)
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_ha_verify_fsm_available(self):
@@ -479,11 +530,12 @@ class TestHostHA(cloudstackTestCase):
         self.configureSimulatorHAProviderState(True, True, True, False)
         self.configureAndEnableHostHa(False)
 
-        res, (_, T, _) = wait_until(2, 50, self.findFSMTransitionToState, 'available', host)
+        res, (_, T, _) = wait_until(3, 20, self.findFSMTransitionToState, 'available', host)
         if not res:
             self.fail("FSM did not transition to available state")
 
         self.checkFSMTransition(T, 'enabled', 'available', 'disabled', False, False)
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_ha_verify_fsm_degraded(self):
@@ -494,26 +546,26 @@ class TestHostHA(cloudstackTestCase):
             Available->Suspect<->Checking->Degraded->Available
         """
         host = self.getHost()
+        self.configureAndDisableHostHa(host.id)
         self.configureSimulatorHAProviderState(False, True, True, False)
         self.configureAndEnableHostHa(False)
 
         # Initial health check failure
-        res, (_, T, _) = wait_until(2, 50, self.findFSMTransitionToState, 'suspect', host)
+        res, (_, T, _) = wait_until(3, 50, self.findFSMTransitionToState, 'suspect', host)
         if not res:
             self.fail("FSM did not transition to suspect state")
 
         self.checkFSMTransition(T, 'healthcheckfailed', 'suspect', 'available', False, False)
 
         # Check transition to Degraded
-        res, (prevT, T, nextT) = wait_until(2, 50, self.findFSMTransitionToState, 'degraded', host)
+        res, (prevT, T, _) = wait_until(3, 100, self.findFSMTransitionToState, 'degraded', host)
         if not res:
             self.fail("FSM did not transition to degraded state")
 
         if prevT:
             self.checkFSMTransition(prevT, 'performactivitycheck', 'checking', 'suspect', True, False)
         self.checkFSMTransition(T, 'activitycheckfailureunderthresholdratio', 'degraded', 'checking', True, False)
-        if nextT:
-            self.checkFSMTransition(nextT, 'periodicrecheckresourceactivity', 'suspect', 'degraded', False, False)
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_ha_verify_fsm_recovering(self):
@@ -524,36 +576,33 @@ class TestHostHA(cloudstackTestCase):
             Available->Suspect<->Checking->Recovering->Recovered<-retry-loop->->Fencing
         """
         host = self.getHost()
+        self.configureAndDisableHostHa(host.id)
         self.configureSimulatorHAProviderState(False, False, True, False)
         self.configureAndEnableHostHa(False)
 
         # Initial health check failure
-        res, (_, T, _) = wait_until(2, 50, self.findFSMTransitionToState, 'suspect', host)
+        res, (_, T, _) = wait_until(3, 50, self.findFSMTransitionToState, 'suspect', host)
         if not res:
             self.fail("FSM did not transition to suspect state")
 
         self.checkFSMTransition(T, 'healthcheckfailed', 'suspect', 'available', False, False)
 
         # Check transition to recovering
-        res, (prevT, T, nextT) = wait_until(2, 100, self.findFSMTransitionToState, 'recovering', host)
+        res, (prevT, T, _) = wait_until(3, 100, self.findFSMTransitionToState, 'recovering', host)
         if not res:
             self.fail("FSM did not transition to recovering state")
 
         if prevT:
             self.checkFSMTransition(prevT, 'performactivitycheck', 'checking', 'suspect', True, False)
         self.checkFSMTransition(T, 'activitycheckfailureoverthresholdratio', 'recovering', 'checking', True, False)
-        if nextT:
-            self.checkFSMTransition(nextT, 'recovered', 'recovered', 'recovering', False, True)
 
         # Check transition to fencing due to recovery attempts exceeded
-        res, (prevT, T, nextT) = wait_until(2, 100, self.findFSMTransitionToState, 'fencing', host)
+        res, (_, T, _) = wait_until(3, 100, self.findFSMTransitionToState, 'fencing', host)
         if not res:
             self.fail("FSM did not transition to fencing state")
 
-        if prevT:
-            self.checkFSMTransition(prevT, 'activitycheckfailureoverthresholdratio', 'recovering', 'checking', True,
-                                    True)
-        self.checkFSMTransition(T, 'recoveryoperationthresholdexceeded', 'fencing', 'recovering', False, True)
+        self.checkFSMTransition(T, 'recoveryoperationthresholdexceeded', 'fencing', 'recovering', None, True)
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_ha_verify_fsm_fenced(self):
@@ -568,14 +617,12 @@ class TestHostHA(cloudstackTestCase):
         self.configureAndEnableHostHa(False)
 
         # Check for transition to fenced
-        res, (prevT, T, _) = wait_until(2, 100, self.findFSMTransitionToState, 'fenced', host)
+        res, (prevT, T, _) = wait_until(3, 100, self.findFSMTransitionToState, 'fenced', host)
         if not res:
             self.fail("FSM did not transition to fenced state")
 
         self.checkFSMTransition(prevT, 'recoveryoperationthresholdexceeded', 'fencing', 'recovering', False, True)
         self.checkFSMTransition(T, 'fenced', 'fenced', 'fencing', False, False)
-
-        # TODO: add test case for HA vm reboot checks
 
         # Simulate manual recovery of host and cancel maintenance mode
         self.configureSimulatorHAProviderState(True, True, True, False)
@@ -584,12 +631,12 @@ class TestHostHA(cloudstackTestCase):
         self.apiclient.cancelHostMaintenance(cancelCmd)
 
         # Check for transition to available after manual recovery
-        res, (prevT, T, _) = wait_until(2, 100, self.findFSMTransitionToState, 'available', host)
+        res, (prevT, T, _) = wait_until(3, 50, self.findFSMTransitionToState, 'available', host)
         if not res:
             self.fail("FSM did not transition to available state")
 
-        self.checkFSMTransition(prevT, 'healthcheckpassed', 'ineligible', 'fenced', False, False)
         self.checkFSMTransition(T, 'eligible', 'available', 'ineligible', False, False)
+
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_configure_ha_provider_invalid(self):
@@ -623,6 +670,7 @@ class TestHostHA(cloudstackTestCase):
         else:
             self.fail("Expected an exception to be thrown, failing")
 
+
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_configure_ha_provider_valid(self):
         """
@@ -654,3 +702,75 @@ class TestHostHA(cloudstackTestCase):
         # Check the response contains the set provider and hostID
         self.assertEqual(response.haprovider, conf_ha_cmd.provider)
         self.assertEqual(response.hostid, conf_ha_cmd.hostid)
+
+
+    def getHaProvider(self, host):
+        cmd = listHostHAProviders.listHostHAProvidersCmd()
+        cmd.hypervisor = host.hypervisor
+        response = self.apiclient.listHostHAProviders(cmd)
+        return response[0].haprovider
+
+
+    def configureHaProvider(self):
+        cmd = self.getHostHaConfigCmd(self.getHaProvider(self.getHost()))
+        return self.apiclient.configureHAForHost(cmd)
+
+
+    @attr(tags=["advanced",
+                "advancedns",
+                "smoke",
+                "basic",
+                "sg"],
+          required_hardware="false")
+    def test_list_ha_for_host(self):
+        """
+            Test that verifies the listHAForHost API
+        """
+        self.configureHaProvider()
+        db_count = self.dbclient.execute("SELECT count(*) FROM cloud.ha_config")
+
+        cmd = self.getListHostHAResources()
+        del cmd.hostid
+        response = self.apiclient.listHostHAResources(cmd)
+
+        self.assertEqual(db_count[0][0], len(response))
+
+
+    @attr(tags=["advanced",
+                "advancedns",
+                "smoke",
+                "basic",
+                "sg"],
+          required_hardware="false")
+    def test_list_ha_for_host_valid(self):
+        """
+            Valid test for listing a specific host HA resources
+        """
+
+        self.configureHaProvider()
+        cmd = self.getListHostHAResources()
+        response = self.apiclient.listHostHAResources(cmd)
+        self.assertEqual(response[0].hostid, cmd.hostid)
+
+
+    @attr(tags=["advanced",
+                "advancedns",
+                "smoke",
+                "basic",
+                "sg"],
+          required_hardware="false")
+    def test_list_ha_for_host_invalid(self):
+        """
+            Test that listHostHAResources is returning exception when called with invalid data
+        """
+
+        self.configureHaProvider()
+        cmd = self.getListHostHAResources()
+        cmd.hostid = "someinvalidvalue"
+
+        try:
+            response = self.apiclient.listHostHAResources(cmd)
+        except Exception:
+            pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")

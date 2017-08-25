@@ -43,10 +43,9 @@ env:
              smoke/test_disk_offerings
              smoke/test_dynamicroles
              smoke/test_global_settings
-             smoke/test_guest_vlan_range
-             smoke/test_ha_for_host
-             smoke/test_ha_kvm_agent
-             smoke/test_ha_kvm
+             smoke/test_guest_vlan_range"
+
+    - TESTS="smoke/test_hostha_kvm
              smoke/test_hostha_simulator
              smoke/test_hosts
              smoke/test_internal_lb
@@ -61,9 +60,8 @@ env:
              smoke/test_network_acl
              smoke/test_nic
              smoke/test_nic_adapter_type
-             smoke/test_non_contigiousvlan"
-
-    - TESTS="smoke/test_outofbandmanagement
+             smoke/test_non_contigiousvlan
+             smoke/test_outofbandmanagement
              smoke/test_outofbandmanagement_nestedplugin
              smoke/test_over_provisioning
              smoke/test_password_server
@@ -71,8 +69,9 @@ env:
              smoke/test_primary_storage
              smoke/test_privategw_acl
              smoke/test_public_ip_range
-             smoke/test_pvlan
-             smoke/test_regions
+             smoke/test_pvlan"
+
+    - TESTS="smoke/test_regions
              smoke/test_reset_vm_on_reboot
              smoke/test_resource_detail
              smoke/test_router_dhcphosts

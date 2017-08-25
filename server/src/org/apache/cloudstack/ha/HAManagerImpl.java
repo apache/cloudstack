@@ -156,7 +156,9 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             if (result) {
                 final String message = String.format("Transitioned host HA state from:%s to:%s due to event:%s for the host id:%d",
                         currentHAState, nextState, event, haConfig.getResourceId());
-                LOG.debug(message);
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace(message);
+                }
                 if (nextState == HAConfig.HAState.Recovering || nextState == HAConfig.HAState.Fencing || nextState == HAConfig.HAState.Fenced) {
                     ActionEventUtils.onActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                             Domain.ROOT_DOMAIN, EventTypes.EVENT_HA_STATE_TRANSITION, message);
@@ -475,7 +477,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
     public void onManagementNodeIsolated() {
     }
 
-    private boolean processHAStateChange(final HAConfig haConfig, final boolean status) {
+    private boolean processHAStateChange(final HAConfig haConfig, final HAConfig.HAState newState, final boolean status) {
         if (!status || !checkHAOwnership(haConfig)) {
             return false;
         }
@@ -493,14 +495,14 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         final HAResourceCounter counter = getHACounter(haConfig.getResourceId(), haConfig.getResourceType());
 
         // Perform activity checks
-        if (haConfig.getState() == HAConfig.HAState.Checking) {
+        if (newState == HAConfig.HAState.Checking) {
             final ActivityCheckTask job = ComponentContext.inject(new ActivityCheckTask(resource, haProvider, haConfig,
                     HAProviderConfig.ActivityCheckTimeout, activityCheckExecutor, counter.getSuspectTimeStamp()));
             activityCheckExecutor.submit(job);
         }
 
         // Attempt recovery
-        if (haConfig.getState() == HAConfig.HAState.Recovering) {
+        if (newState == HAConfig.HAState.Recovering) {
             if (counter.getRecoveryCounter() >= (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource))) {
                 return false;
             }
@@ -511,7 +513,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         }
 
         // Fencing
-        if (haConfig.getState() == HAConfig.HAState.Fencing) {
+        if (newState == HAConfig.HAState.Fencing) {
             final FenceTask task = ComponentContext.inject(new FenceTask(resource, haProvider, haConfig,
                     HAProviderConfig.FenceTimeout, fenceExecutor));
             final Future<Boolean> fenceFuture = fenceExecutor.submit(task);
@@ -528,7 +530,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         if (LOG.isTraceEnabled()) {
             LOG.trace("HA state pre-transition:: new state=" + newState + ", old state=" + oldState + ", for resource id=" + haConfig.getResourceId() + ", status=" + status + ", ha config state=" + haConfig.getState());
         }
-        return processHAStateChange(haConfig, status);
+        if (status && haConfig.getState() != newState) {
+            LOG.warn("HA state pre-transition:: HA state is not equal to transition state, HA state=" + haConfig.getState() + ", new state=" + newState);
+        }
+        return processHAStateChange(haConfig, newState, status);
     }
 
     @Override
@@ -536,7 +541,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         if (LOG.isTraceEnabled()) {
             LOG.trace("HA state post-transition:: new state=" + transition.getToState() + ", old state=" + transition.getCurrentState() + ", for resource id=" + haConfig.getResourceId() + ", status=" + status + ", ha config state=" + haConfig.getState());
         }
-        return processHAStateChange(haConfig, status);
+        if (status && haConfig.getState() != transition.getToState()) {
+            LOG.warn("HA state post-transition:: HA state is not equal to transition state, HA state=" + haConfig.getState() + ", new state=" + transition.getToState());
+        }
+        return processHAStateChange(haConfig, transition.getToState(), status);
     }
 
     ///////////////////////////////////////////////////
@@ -696,6 +704,11 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             } catch (Throwable t) {
                 LOG.error("Error trying to perform health checks in HA manager", t);
             }
+        }
+
+        @Override
+        public Long getDelay() {
+            return null;
         }
     }
 }
