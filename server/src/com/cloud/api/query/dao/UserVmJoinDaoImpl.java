@@ -362,48 +362,48 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             NicResponse nicResponse = new NicResponse();
             // The numbered comments are to keep track of the data returned from here and ApiResponseHelper.createNicResponse()
             // the data can't be identical but some tidying up/unifying might be possible
-/*1: nicUuid*/
+            /*1: nicUuid*/
             nicResponse.setId(uvo.getNicUuid());
-/*2: networkUuid*/
+            /*2: networkUuid*/
             nicResponse.setNetworkid(uvo.getNetworkUuid());
-/*3: vmId makes no sense on a nested nic object */
+            /*3: vmId makes no sense on a nested nic object so it is ommited here */
 
             if (uvo.getTrafficType() != null) {
-/*4: trafficType*/
+            /*4: trafficType*/
                 nicResponse.setTrafficType(uvo.getTrafficType().toString());
             }
             if (uvo.getGuestType() != null) {
-/*5: guestType*/
+                /*5: guestType*/
                 nicResponse.setType(uvo.getGuestType().toString());
             }
-/*6: ipAddress*/
+            /*6: ipAddress*/
             nicResponse.setIpaddress(uvo.getIpAddress());
-/*7: gateway*/
+            /*7: gateway*/
             nicResponse.setGateway(uvo.getGateway());
-/*8: netmask*/
+            /*8: netmask*/
             nicResponse.setNetmask(uvo.getNetmask());
-/*9: networkName*/
+            /*9: networkName*/
             nicResponse.setNetworkName(uvo.getNetworkName());
-/*10: macAddress*/
+            /*10: macAddress*/
             nicResponse.setMacAddress(uvo.getMacAddress());
-/*11: IPv6Address*/
+            /*11: IPv6Address*/
             nicResponse.setIp6Address(uvo.getIp6Address());
-/*12: IPv6Gateway*/
+            /*12: IPv6Gateway*/
             nicResponse.setIp6Gateway(uvo.getIp6Gateway());
-/*13: IPv6Cidr*/
+            /*13: IPv6Cidr*/
             nicResponse.setIp6Cidr(uvo.getIp6Cidr());
-/*14: deviceId*/
+            /*14: deviceId*/
 // where do we find           nicResponse.setDeviceId(
 // this is probably not String.valueOf(uvo.getNicId())); as this is a db-id
-/*15: broadcastURI*/
+            /*15: broadcastURI*/
             if (uvo.getBroadcastUri() != null) {
                 nicResponse.setBroadcastUri(uvo.getBroadcastUri().toString());
             }
-/*16: isolationURI*/
+            /*16: isolationURI*/
             if (uvo.getIsolationUri() != null) {
                 nicResponse.setIsolationUri(uvo.getIsolationUri().toString());
             }
-/*17: default*/
+            /*17: default*/
             nicResponse.setIsDefault(uvo.isDefaultNic());
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
             if (secondaryIps != null) {
