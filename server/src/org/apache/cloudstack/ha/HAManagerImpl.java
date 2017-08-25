@@ -17,32 +17,20 @@
 
 package org.apache.cloudstack.ha;
 
-import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHost;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterDetailVO;
-import com.cloud.dc.dao.DataCenterDetailsDao;
-import com.cloud.domain.Domain;
-import com.cloud.event.ActionEvent;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
-import com.cloud.ha.Investigator;
-import com.cloud.host.Host;
-import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
-import com.cloud.org.Cluster;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.ha.ConfigureHAForHostCmd;
@@ -71,20 +59,36 @@ import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import com.cloud.cluster.ClusterManagerListener;
+import com.cloud.cluster.ManagementServerHost;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterDetailVO;
+import com.cloud.dc.dao.DataCenterDetailsDao;
+import com.cloud.domain.Domain;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.ha.Investigator;
+import com.cloud.host.Host;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.org.Cluster;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 
-public final class HAManagerImpl extends ManagerBase implements HAManager, ClusterManagerListener, PluggableService, Configurable {
+public final class HAManagerImpl extends ManagerBase implements HAManager, ClusterManagerListener, PluggableService, Configurable, StateListener<HAConfig.HAState, HAConfig.Event, HAConfig> {
     public static final Logger LOG = Logger.getLogger(HAManagerImpl.class);
 
     @Inject
@@ -307,7 +311,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                     LOG.debug("HA: Agent is available/suspect/checking Up " + host.getId());
                 }
                 return Status.Down;
-            } else if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Recovered || haConfig.getState() == HAConfig.HAState.Fencing) {
+            } else if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Fencing) {
                 if (LOG.isDebugEnabled()){
                     LOG.debug("HA: Agent is disconnected " + host.getId());
                 }
@@ -455,23 +459,84 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         return cmdList;
     }
 
-    //////////////////////////////////////////////////////////////////
-    //////////////// Clustered Manager Listeners /////////////////////
-    //////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
+    //////////////// Event Listeners /////////////////////
+    //////////////////////////////////////////////////////
 
     @Override
     public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
-
     }
 
     @Override
     public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
-
     }
 
     @Override
     public void onManagementNodeIsolated() {
+    }
 
+    private boolean processHAStateChange(final HAConfig haConfig, final boolean status) {
+        if (!status || !checkHAOwnership(haConfig)) {
+            return false;
+        }
+
+        final HAResource resource = validateAndFindHAResource(haConfig);
+        if (resource == null) {
+            return false;
+        }
+
+        final HAProvider<HAResource> haProvider = validateAndFindHAProvider(haConfig, resource);
+        if (haProvider == null) {
+            return false;
+        }
+
+        final HAResourceCounter counter = getHACounter(haConfig.getResourceId(), haConfig.getResourceType());
+
+        // Perform activity checks
+        if (haConfig.getState() == HAConfig.HAState.Checking) {
+            final ActivityCheckTask job = ComponentContext.inject(new ActivityCheckTask(resource, haProvider, haConfig,
+                    HAProviderConfig.ActivityCheckTimeout, activityCheckExecutor, counter.getSuspectTimeStamp()));
+            activityCheckExecutor.submit(job);
+        }
+
+        // Attempt recovery
+        if (haConfig.getState() == HAConfig.HAState.Recovering) {
+            if (counter.getRecoveryCounter() >= (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource))) {
+                return false;
+            }
+            final RecoveryTask task = ComponentContext.inject(new RecoveryTask(resource, haProvider, haConfig,
+                    HAProviderConfig.RecoveryTimeout, recoveryExecutor));
+            final Future<Boolean> recoveryFuture = recoveryExecutor.submit(task);
+            counter.setRecoveryFuture(recoveryFuture);
+        }
+
+        // Fencing
+        if (haConfig.getState() == HAConfig.HAState.Fencing) {
+            final FenceTask task = ComponentContext.inject(new FenceTask(resource, haProvider, haConfig,
+                    HAProviderConfig.FenceTimeout, fenceExecutor));
+            final Future<Boolean> fenceFuture = fenceExecutor.submit(task);
+            counter.setFenceFuture(fenceFuture);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean preStateTransitionEvent(final HAConfig.HAState oldState, final HAConfig.Event event, final HAConfig.HAState newState, final HAConfig haConfig, final boolean status, final Object opaque) {
+        if (oldState != newState || newState == HAConfig.HAState.Suspect || newState == HAConfig.HAState.Checking) {
+            return false;
+        }
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("HA state pre-transition:: new state=" + newState + ", old state=" + oldState + ", for resource id=" + haConfig.getResourceId() + ", status=" + status + ", ha config state=" + haConfig.getState());
+        }
+        return processHAStateChange(haConfig, status);
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(final StateMachine2.Transition<HAConfig.HAState, HAConfig.Event> transition, final HAConfig haConfig, final boolean status, final Object opaque) {
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("HA state post-transition:: new state=" + transition.getToState() + ", old state=" + transition.getCurrentState() + ", for resource id=" + haConfig.getResourceId() + ", status=" + status + ", ha config state=" + haConfig.getState());
+        }
+        return processHAStateChange(haConfig, status);
     }
 
     ///////////////////////////////////////////////////
@@ -523,10 +588,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<Runnable>(fenceOperationQueueSize, true), new ThreadPoolExecutor.CallerRunsPolicy());
 
-        pollManager.submitTask(new HealthCheckPollTask());
-        pollManager.submitTask(new ActivityCheckPollTask());
-        pollManager.submitTask(new RecoveryPollTask());
-        pollManager.submitTask(new FencingPollTask());
+        pollManager.submitTask(new HAManagerBgPollTask());
+        HAConfig.HAState.getStateMachine().registerListener(this);
 
         LOG.debug("HA manager has been configured");
         return true;
@@ -559,7 +622,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
     //////////////// Poll Tasks /////////////////////
     /////////////////////////////////////////////////
 
-    private final class HealthCheckPollTask extends ManagedContextRunnable implements BackgroundPollTask {
+    private final class HAManagerBgPollTask extends ManagedContextRunnable implements BackgroundPollTask {
         @Override
         protected void runInContext() {
             try {
@@ -582,6 +645,19 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                         continue;
                     }
 
+                    switch (haConfig.getState()) {
+                        case Available:
+                        case Suspect:
+                        case Degraded:
+                        case Fenced:
+                            final HealthCheckTask task = ComponentContext.inject(new HealthCheckTask(resource, haProvider, haConfig,
+                                    HAProviderConfig.HealthCheckTimeout, healthCheckExecutor));
+                            healthCheckExecutor.submit(task);
+                            break;
+                    default:
+                        break;
+                    }
+
                     final HAResourceCounter counter = getHACounter(haConfig.getResourceId(), haConfig.getResourceType());
 
                     if (haConfig.getState() == HAConfig.HAState.Suspect) {
@@ -596,148 +672,29 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                         }
                     }
 
-                    switch (haConfig.getState()) {
-                        case Available:
-                        case Suspect:
-                        case Degraded:
-                        case Fenced:
-                            final HealthCheckTask task = ComponentContext.inject(new HealthCheckTask(resource, haProvider, haConfig,
-                                    HAProviderConfig.HealthCheckTimeout, healthCheckExecutor));
-                            healthCheckExecutor.submit(task);
-                            break;
-                    default:
-                        break;
+                    if (haConfig.getState() == HAConfig.HAState.Recovering) {
+                        if (counter.getRecoveryCounter() >= (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource))) {
+                            transitionHAState(HAConfig.Event.RecoveryOperationThresholdExceeded, haConfig);
+                        } else {
+                            transitionHAState(HAConfig.Event.RetryRecovery, haConfig);
+                        }
+                    }
+
+                    if (haConfig.getState() == HAConfig.HAState.Recovered) {
+                        counter.markRecoveryStarted();
+                        if (counter.canExitRecovery((Long)(haProvider.getConfigValue(HAProviderConfig.RecoveryWaitTimeout, resource)))) {
+                            if (transitionHAState(HAConfig.Event.RecoveryWaitPeriodTimeout, haConfig)) {
+                                counter.markRecoveryCompleted();
+                            }
+                        }
+                    }
+
+                    if (haConfig.getState() == HAConfig.HAState.Fencing && counter.canAttemptFencing()) {
+                        transitionHAState(HAConfig.Event.RetryFencing, haConfig);
                     }
                 }
             } catch (Throwable t) {
                 LOG.error("Error trying to perform health checks in HA manager", t);
-            }
-        }
-    }
-
-    private final class ActivityCheckPollTask extends ManagedContextRunnable implements BackgroundPollTask {
-        @Override
-        protected void runInContext() {
-            try {
-                if (LOG.isTraceEnabled()) {
-                    LOG.trace("HA activity check task is running...");
-                }
-                final List<HAConfig> haConfigList = new ArrayList<HAConfig>(haConfigDao.listAll());
-                for (final HAConfig haConfig : haConfigList) {
-                    if (!checkHAOwnership(haConfig)) {
-                        continue;
-                    }
-
-                    final HAResource resource = validateAndFindHAResource(haConfig);
-                    if (resource == null) {
-                        continue;
-                    }
-
-                    final HAProvider<HAResource> haProvider = validateAndFindHAProvider(haConfig, resource);
-                    if (haProvider == null) {
-                        continue;
-                    }
-
-                    if (haConfig.getState() == HAConfig.HAState.Checking) {
-                        final HAResourceCounter counter = getHACounter(haConfig.getResourceId(), haConfig.getResourceType());
-                        final ActivityCheckTask job = ComponentContext.inject(new ActivityCheckTask(resource, haProvider, haConfig,
-                                HAProviderConfig.ActivityCheckTimeout, activityCheckExecutor, counter.getSuspectTimeStamp()));
-                        activityCheckExecutor.submit(job);
-                    }
-                }
-            } catch (Throwable t) {
-                LOG.error("Error trying to perform activity checks in HA manager", t);
-            }
-        }
-    }
-
-    private final class RecoveryPollTask extends ManagedContextRunnable implements BackgroundPollTask {
-        @Override
-        protected void runInContext() {
-            try {
-                if (LOG.isTraceEnabled()) {
-                    LOG.trace("HA recovery task is running...");
-                }
-                final List<HAConfig> haConfigList = new ArrayList<HAConfig>(haConfigDao.listAll());
-                for (final HAConfig haConfig : haConfigList) {
-                    if (!checkHAOwnership(haConfig)) {
-                        continue;
-                    }
-
-                    final HAResource resource = validateAndFindHAResource(haConfig);
-                    if (resource == null) {
-                        continue;
-                    }
-
-                    final HAProvider<HAResource> haProvider = validateAndFindHAProvider(haConfig, resource);
-                    if (haProvider == null) {
-                        continue;
-                    }
-
-                    final HAResourceCounter counter = getHACounter(haConfig.getResourceId(), haConfig.getResourceType());
-                    if (haConfig.getState() == HAConfig.HAState.Recovering) {
-                        if (counter.canAttemptRecovery()) {
-                            if (counter.getRecoveryCounter() >= (Long)(haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource))) {
-                                transitionHAState(HAConfig.Event.RecoveryOperationThresholdExceeded, haConfig);
-                                continue;
-                            }
-
-                            final RecoveryTask task = ComponentContext.inject(new RecoveryTask(resource, haProvider, haConfig,
-                                    HAProviderConfig.RecoveryTimeout, recoveryExecutor));
-                            final Future<Boolean> recoveryFuture = recoveryExecutor.submit(task);
-                            counter.setRecoveryFuture(recoveryFuture);
-                            counter.incrRecoveryCounter();
-                        }
-                    }
-                    if (haConfig.getState() == HAConfig.HAState.Recovered) {
-                        counter.markRecoveryStarted();
-                        if (counter.canExitRecovery((Long)(haProvider.getConfigValue(HAProviderConfig.RecoveryWaitTimeout, resource)))) {
-                            transitionHAState(HAConfig.Event.RecoveryWaitPeriodTimeout, haConfig);
-                            counter.markRecoveryCompleted();
-                        }
-                    }
-                }
-            } catch (Throwable t) {
-                LOG.error("Error trying to perform recovery operation in HA manager", t);
-            }
-        }
-    }
-
-    private final class FencingPollTask extends ManagedContextRunnable implements BackgroundPollTask {
-        @Override
-        protected void runInContext() {
-            try {
-                if (LOG.isTraceEnabled()) {
-                    LOG.trace("HA fencing task is running...");
-                }
-                final List<HAConfig> haConfigList = new ArrayList<HAConfig>(haConfigDao.listAll());
-                for (final HAConfig haConfig : haConfigList) {
-                    if (!checkHAOwnership(haConfig)) {
-                        continue;
-                    }
-
-                    final HAResource resource = validateAndFindHAResource(haConfig);
-                    if (resource == null) {
-                        continue;
-                    }
-
-                    final HAProvider<HAResource> haProvider = validateAndFindHAProvider(haConfig, resource);
-                    if (haProvider == null) {
-                        continue;
-                    }
-
-                    final HAResourceCounter counter = getHACounter(haConfig.getResourceId(), haConfig.getResourceType());
-                    if (counter.lastFencingCompleted()) {
-                        if (haConfig.getState() == HAConfig.HAState.Fencing) {
-                            final FenceTask task = ComponentContext.inject(new FenceTask(resource, haProvider, haConfig,
-                                    HAProviderConfig.FenceTimeout, fenceExecutor));
-                            final Future<Boolean> fenceFuture = fenceExecutor.submit(task);
-                            counter.setFenceFuture(fenceFuture);
-                        }
-                    }
-                }
-            } catch (Throwable t) {
-                LOG.error("Error trying to perform fencing operation in HA manager", t);
             }
         }
     }

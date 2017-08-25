@@ -54,7 +54,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
             OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
             String result = cmd.execute(parser);
             s_logger.debug("KVMHAChecker pool: " + pool._poolIp);
-            s_logger.debug("KVMHAChecker reture: " + result);
+            s_logger.debug("KVMHAChecker result: " + result);
             s_logger.debug("KVMHAChecker parser: " + parser.getLine());
             if (result == null && parser.getLine().contains("> DEAD <")) {
                 s_logger.debug("read heartbeat failed: ");
