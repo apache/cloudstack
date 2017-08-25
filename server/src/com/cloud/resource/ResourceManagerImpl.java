@@ -2272,7 +2272,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
 
                 try {
-                    SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
+                    SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart || systemctl restart cloudstack-agent");
                     s_logger.debug("cloudstack-agent restart result: " + result.toString());
                 } catch (final SshException e) {
                     return false;

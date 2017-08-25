@@ -29,7 +29,7 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    cd nonoss && bash -x install-non-oss.sh && cd ..
    git clean -fdx .
    mvn -P developer,systemvm -Dsimulator -Dnoredist --projects='org.apache.cloudstack:cloudstack' org.apache.rat:apache-rat-plugin:0.12:check
-   mvn -P developer,systemvm -Dsimulator -Dnoredist clean install
+   mvn -q -B -P developer,systemvm -Dsimulator -Dnoredist clean install
 else
    mvn -Pdeveloper -Dsimulator clean install -DskipTests -T4 | egrep "Building|Tests|SUCCESS|FAILURE"
 fi

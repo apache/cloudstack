@@ -39,25 +39,61 @@ class TestHAKVM(cloudstackTestCase):
     """
 
     def setUp(self):
+        self.testClient = super(TestHAKVM, self).getClsTestClient()
         self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.services = self.testClient.getParsedTestDataConfig()
+        self.logger = logging.getLogger('TestHAKVM')
+
+        #Get Zone specifics
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.host = self.getHost()
         self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         self.mgtSvrDetails = self.config.__dict__["mgtSvr"][0].__dict__
-        self.fakeMsId = random.randint(10000, 99999) * random.randint(10, 20)
+        self.cluster_id = self.host.clusterid
 
         # Cleanup any existing configs
         self.dbclient.execute("delete from ha_config where resource_type='Host'")
-        self.host = self.getHost()
 
         # use random port for ipmisim
+        self.fakeMsId = random.randint(10000, 99999) * random.randint(10, 20)
         s = socket.socket()
         s.bind(('', 0))
         self.serverPort = s.getsockname()[1]
         s.close()
 
-        self.cleanup = []
+        # Set Cluster-level setting in order to run tests faster
+        self.updateConfiguration("kvm.ha.activity.check.failure.ratio", "0.6")
+        self.updateConfiguration("kvm.ha.activity.check.interval", "8")
+        self.updateConfiguration("kvm.ha.activity.check.max.attempts", "5")
+        self.updateConfiguration("kvm.ha.activity.check.timeout", "30")
+        self.updateConfiguration("kvm.ha.degraded.max.period", "30")
+        self.updateConfiguration("kvm.ha.fence.timeout", "30")
+        self.updateConfiguration("kvm.ha.health.check.timeout", "30")
+        self.updateConfiguration("kvm.ha.recover.failure.threshold", "2")
+        self.updateConfiguration("kvm.ha.recover.timeout", "30")
+        self.updateConfiguration("kvm.ha.recover.wait.period", "30")
+
+        self.service_offering = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offerings"]["hasmall"]
+        )
+
+        self.template = get_template(
+            self.apiclient,
+            self.zone.id,
+            self.services["ostype"]
+        )
+
+        self.cleanup = [self.service_offering]
+
+    def updateConfiguration(self, name, value):
+        cmd = updateConfiguration.updateConfigurationCmd()
+        cmd.name = name
+        cmd.value = value
+        cmd.clusterid = self.cluster_id
+        self.apiclient.updateConfiguration(cmd)
 
     def getFakeMsId(self):
         return self.fakeMsId
@@ -66,6 +102,7 @@ class TestHAKVM(cloudstackTestCase):
         return self.fakeMsId * 1000
 
     def tearDown(self):
+        self.host = None
         try:
             self.dbclient.execute("delete from mshost_peer where peer_runid=%s" % self.getFakeMsRunId())
             self.dbclient.execute("delete from mshost where runid=%s" % self.getFakeMsRunId())
@@ -96,37 +133,23 @@ class TestHAKVM(cloudstackTestCase):
                 continue
         self.fail(self)
 
-    def getHost(self):
-        response = list_hosts(
-            self.apiclient,
-            type='Routing',
-            resourcestate='Enabled'
-        )
-        if response and len(response) > 0:
-            self.host = response[0]
-            return self.host
-        raise self.skipTest("No KVM hosts found, skipping host-ha test")
-
     def getHost(self, hostId=None):
 
         response = list_hosts(
             self.apiclient,
             type='Routing',
+            hypervisor='kvm',
             id=hostId
         )
+        # Check if more than one kvm hosts are available in order to successfully configure host-ha
         if response and len(response) > 0:
             self.host = response[0]
             return self.host
-        raise self.skipTest("No KVM hosts found, skipping host-ha test")
+        raise self.skipTest("Not enough KVM hosts found, skipping host-ha test")
 
     def getHostHaConfigCmd(self, provider='kvmhaprovider'):
         cmd = configureHAForHost.configureHAForHostCmd()
         cmd.provider = provider
-        cmd.hostid = self.getHost().id
-        return cmd
-
-    def getHostHaEnableCmd(self):
-        cmd = enableHAForHost.enableHAForHostCmd()
         cmd.hostid = self.getHost().id
         return cmd
 
@@ -136,11 +159,11 @@ class TestHAKVM(cloudstackTestCase):
         return cmd
 
     def configureAndEnableHostHa(self, initialize=True):
+        #Adding sleep between configuring and enabling
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
+        time.sleep(1)
         response = self.apiclient.enableHAForHost(self.getHostHaEnableCmd())
         self.assertEqual(response.haenable, True)
-        if initialize:
-            self.configureKVMHAProviderState(True, True, True, False)
 
     def configureAndDisableHostHa(self, hostId):
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
@@ -158,205 +181,48 @@ class TestHAKVM(cloudstackTestCase):
         self.assertEqual(response.haenable, True)
         return response
 
-    def configureKVMHAProviderState(self, health, activity, recover, fence):
-        cmd = configureHAForHost.configureHAForHostCmd()
-        cmd.hostid = self.getHost().id
-        cmd.health = health
-        cmd.activity = activity
-        cmd.recover = recover
-        cmd.fence = fence
-        response = self.apiclient.configureKVMHAProviderState(cmd)
-        self.assertEqual(response.success, 'true')
+    def disableAgent(self):
+        SshClient(self.host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
+            ("systemctl disable cloudstack-agent || chkconfig cloudstack-agent off")
 
-    def checkSyncToState(self, state, interval=5000):
-        def checkForStateSync(expectedState):
-            response = self.getHost(hostId=self.getHost().id).hostha
-            return response.hastate == expectedState, None
+    def resetHost(self):
+        SshClient(self.host.ipaddress, port=22, user=self.hostConfig["username"],
+                  passwd=self.hostConfig["password"]).execute \
+            ("reboot")
 
-        sync_interval = 1 + int(interval) / 1000
-        res, _ = wait_until(sync_interval, 10, checkForStateSync, state)
+    def enableAgent(self):
+        SshClient(self.host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
+            ("systemctl enable cloudstack-agent || chkconfig cloudstack-agent on")
+
+    def waitUntilHostInState(self, state="Available", interval=3):
+        def checkForState(expectedState):
+            response = self.getHost()
+            print("checkForState:: expected=%s, actual=%s" % (state, response.hostha))
+            return response.hostha.hastate == expectedState, None
+
+        res, _ = wait_until(interval, 200, checkForState, state)
         if not res:
-            self.fail("Failed to get host.hastate synced to expected state:" + state)
-        response = self.getHost(hostId=self.getHost().id).hostha
-        self.assertEqual(response.hastate, state)
+            self.fail("Failed to see host ha state in :" + state)
 
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_hostha_configure_invalid_provider(self):
-            """
-                Tests host-ha configuration with invalid driver
-            """
-            cmd = self.getHostHaConfigCmd()
-            cmd.provider = 'randomDriverThatDoesNotExist'
-            try:
-                response = self.apiclient.configureHAForHost(cmd)
-            except Exception:
-                pass
-            else:
-                self.fail("Expected an exception to be thrown, failing")
+    def deployVM(self):
+        vm = VirtualMachine.create(
+            self.apiclient,
+            services=self.services["virtual_machine"],
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id,
+            hostid = self.host.id,
+            method="POST"
+        )
 
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_hostha_configure_default_driver(self):
-        """
-           Tests host-ha configuration with valid data
-        """
-        cmd = self.getHostHaConfigCmd()
-        response = self.apiclient.configureHAForHost(cmd)
-        self.assertEqual(response.hostid, cmd.hostid)
-        self.assertEqual(response.haprovider, cmd.provider.lower())
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_ha_enable_feature_invalid(self):
-            """
-                Tests ha feature enable command with invalid options
-            """
-            cmd = self.getHostHaEnableCmd()
-            cmd.hostid = -1
-            try:
-                response = self.apiclient.enableHAForHost(cmd)
-            except Exception:
-                pass
-            else:
-                self.fail("Expected an exception to be thrown, failing")
-
-            try:
-                cmd = enableHAForCluster.enableHAForClusterCmd()
-                response = self.apiclient.enableHAForCluster(cmd)
-            except Exception:
-                pass
-            else:
-                self.fail("Expected an exception to be thrown, failing")
-
-            try:
-                cmd = enableHAForZone.enableHAForZoneCmd()
-                response = self.apiclient.enableHAForZone(cmd)
-            except Exception:
-                pass
-            else:
-                self.fail("Expected an exception to be thrown, failing")
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_ha_disable_feature_invalid(self):
-        """
-            Tests ha feature disable command with invalid options
-        """
-        cmd = self.getHostHaDisableCmd()
-        cmd.hostid = -1
-        try:
-            response = self.apiclient.disableHAForHost(cmd)
-        except Exception:
-            pass
-        else:
-            self.fail("Expected an exception to be thrown, failing")
-
-        try:
-            cmd = disableHAForCluster.disableHAForClusterCmd()
-            response = self.apiclient.disableHAForCluster(cmd)
-        except Exception:
-            pass
-        else:
-            self.fail("Expected an exception to be thrown, failing")
-
-        try:
-            cmd = disableHAForZone.disableHAForZoneCmd()
-            response = self.apiclient.disableHAForZone(cmd)
-        except Exception:
-            pass
-        else:
-            self.fail("Expected an exception to be thrown, failing")
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_hostha_enable_feature_valid(self):
-        """
-            Tests host-ha enable feature with valid options
-        """
-        self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        cmd = self.getHostHaEnableCmd()
-        response = self.apiclient.enableHAForHost(cmd)
-        self.assertEqual(response.hostid, cmd.hostid)
-        self.assertEqual(response.haenable, True)
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_hostha_disable_feature_valid(self):
-        """
-            Tests host-ha disable feature with valid options
-        """
-        self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        cmd = self.getHostHaDisableCmd()
-        response = self.apiclient.disableHAForHost(cmd)
-        self.assertEqual(response.hostid, cmd.hostid)
-        self.assertEqual(response.haenable, False)
-
-        response = self.getHost(hostId=cmd.hostid).hostha
-        self.assertEqual(response.hastate, 'Disabled')
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_configure_ha_provider_invalid(self):
-        """
-            Tests configure HA Provider with invalid provider options
-        """
-
-        # Enable ha for host
-        self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        cmd = self.getHostHaEnableCmd()
-        response = self.apiclient.enableHAForHost(cmd)
-        self.assertEqual(response.hostid, cmd.hostid)
-        self.assertEqual(response.haenable, True)
-
-        host = self.getHost(response.hostid)
-
-        # Setup wrong configuration for the host
-        conf_ha_cmd = configureHAForHost.configureHAForHostCmd()
-        if host.hypervisor.lower() in "simulator":
-            conf_ha_cmd.provider = "kvmhaprovider"
-        if host.hypervisor.lower() in "kvm":
-            conf_ha_cmd.provider = "simulatorhaprovider"
-
-        conf_ha_cmd.hostid = cmd.hostid
-
-        # Call the configure HA provider API with not supported provider for HA
-        try:
-            self.apiclient.configureHAForHost(conf_ha_cmd)
-        except Exception:
-            pass
-        else:
-            self.fail("Expected an exception to be thrown, failing")
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_configure_ha_provider_valid(self):
-        """
-            Tests configure HA Provider with valid provider options
-        """
-
-        # Enable ha for host
-        self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        cmd = self.getHostHaEnableCmd()
-        response = self.apiclient.enableHAForHost(cmd)
-        self.assertEqual(response.hostid, cmd.hostid)
-        self.assertEqual(response.haenable, True)
-
-        host = self.getHost(response.hostid)
-
-        # Setup configuration for the host
-        conf_ha_cmd = configureHAForHost.configureHAForHostCmd()
-        if host.hypervisor.lower() in "kvm":
-            conf_ha_cmd.provider = "kvmhaprovider"
-        if host.hypervisor.lower() in "simulator":
-            conf_ha_cmd.provider = "simulatorhaprovider"
-
-        conf_ha_cmd.hostid = cmd.hostid
-
-        # Call the configure HA provider API with not supported provider for HA
-        response = self.apiclient.configureHAForHost(conf_ha_cmd)
-
-        # Check the response contains the set provider and hostID
-        self.assertEqual(response.haprovider, conf_ha_cmd.provider)
-        self.assertEqual(response.hostid, conf_ha_cmd.hostid)
+        self.cleanup.append(vm)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_disable_oobm_ha_state_ineligible(self):
         """
             Tests that when HA is enabled for a host, if oobm is disabled HA State should turn into Ineligible
         """
+        self.logger.debug("Starting test_disable_oobm_ha_state_ineligible")
 
         # Enable ha for host
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
@@ -385,59 +251,20 @@ class TestHAKVM(cloudstackTestCase):
         """
             Tests host-ha configuration with valid data
         """
+        self.logger.debug("Starting test_hostha_configure_default_driver")
+
         cmd = self.getHostHaConfigCmd()
         response = self.apiclient.configureHAForHost(cmd)
         self.assertEqual(response.hostid, cmd.hostid)
         self.assertEqual(response.haprovider, cmd.provider.lower())
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_enable_ha_when_host_powerstate_on(self):
-        """
-            Tests that when HA is enabled for a host, if oobm state is on HA State should turn into Available
-        """
-
-        self.configureAndStartIpmiServer()
-
-        self.assertIssueCommandState('ON', 'On')
-
-        self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        cmd = self.getHostHaEnableCmd()
-        response = self.apiclient.enableHAForHost(cmd)
-        self.assertEqual(response.hostid, cmd.hostid)
-        self.assertEqual(response.haenable, True)
-
-        # Verify HA State is Available
-        self.check_host_transition_to_available()
-
-        response = self.getHost()
-        if response.hostha.hastate is not "Available":
-            print response
-
-        self.assertEqual(response.hostha.hastate, "Available")
-
-        self.stopIpmiServer()
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_hostha_enable_feature_without_setting_provider(self):
-        """
-            Tests Enable HA without setting the provider, Exception is thrown
-        """
-        host = self.get_non_configured_ha_host()
-        cmd = self.getHostHaEnableCmd()
-        cmd.hostid = host.id
-
-        try:
-            self.apiclient.enableHAForHost(cmd)
-        except Exception as e:
-            pass
-        else:
-            self.fail("Expected an exception to be thrown, failing")
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="treu")
     def test_hostha_enable_ha_when_host_disabled(self):
         """
             Tests Enable HA when host is disconnected, should be Ineligible
         """
+        self.logger.debug("Starting test_hostha_enable_ha_when_host_disabled")
+
         # Enable HA
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaEnableCmd()
@@ -461,46 +288,45 @@ class TestHAKVM(cloudstackTestCase):
         self.enableHost(self.host.id)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_hostha_enable_ha_when_host_inMaintenance(self):
+    def test_hostha_enable_ha_when_host_in_maintenance(self):
         """
             Tests Enable HA when host is in Maintenance mode, should be Ineligible
         """
-
-        host = self.getHost()
+        self.logger.debug("Starting test_hostha_enable_ha_when_host_in_maintenance")
 
         # Enable HA
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaEnableCmd()
-        cmd.hostid = host.id
+        cmd.hostid = self.host.id
         enable = self.apiclient.enableHAForHost(cmd)
         self.assertEqual(enable.hostid, cmd.hostid)
         self.assertEqual(enable.haenable, True)
 
         # Prepare for maintenance Host
-        self.setHostToMaintanance(host.id)
+        self.setHostToMaintanance(self.host.id)
 
         # Check HA State
         try:
-            response = self.getHost(host.id)
+            response = self.getHost(self.host.id)
             self.assertEqual(response.hostha.hastate, "Ineligible")
         except Exception as e:
-            self.cancelMaintenance(host.id)
+            self.cancelMaintenance()
             self.fail(e)
 
         # Enable Host
-        self.cancelMaintenance(host.id)
+        self.cancelMaintenance()
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_hostha_enable_ha_when_host_disconected(self):
         """
             Tests Enable HA when host is disconnected, should be Ineligible
         """
-        host = self.getHost()
+        self.logger.debug("Starting test_hostha_enable_ha_when_host_disconected")
 
         # Enable HA
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaEnableCmd()
-        cmd.hostid = host.id
+        cmd.hostid = self.host.id
         enable = self.apiclient.enableHAForHost(cmd)
         self.assertEqual(enable.hostid, cmd.hostid)
         self.assertEqual(enable.haenable, True)
@@ -525,13 +351,13 @@ class TestHAKVM(cloudstackTestCase):
         """
             Tests HA Provider should be possible to be removed when HA is enabled
         """
+        self.logger.debug("Starting test_remove_ha_provider_not_possible")
 
-        host = self.getHost()
 
         # Enable HA
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaEnableCmd()
-        cmd.hostid = host.id
+        cmd.hostid = self.host.id
         enable = self.apiclient.enableHAForHost(cmd)
         self.assertEqual(enable.hostid, cmd.hostid)
         self.assertEqual(enable.haenable, True)
@@ -542,6 +368,134 @@ class TestHAKVM(cloudstackTestCase):
             pass
         else:
             self.fail("Expected an exception to be thrown, failing")
+
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_ha_kvm_host_degraded(self):
+        """
+            Tests degraded HA state when agent is stopped/killed
+        """
+
+        self.configureAndStartIpmiServer()
+        self.assertIssueCommandState('ON', 'On')
+        self.configureAndEnableHostHa()
+
+        self.deployVM()
+
+        # Start with the available state
+        self.waitUntilHostInState("Available")
+
+        # SSH into the KVM Host and executes kill -9 of the agent
+        self.stopAgent()
+
+        # Check if host would go into Suspect state
+        try:
+            self.waitUntilHostInState("Suspect")
+        except Exception as e:
+            self.startAgent()
+            raise Exception("Warning: Exception during test execution : %s" % e)
+
+        # Checks if the host would turn into Degraded
+        try:
+            self.waitUntilHostInState("Degraded")
+        except Exception as e:
+            self.startAgent()
+            raise Exception("Warning: Exception during test execution : %s" % e)
+
+        self.startAgent()
+        self.waitUntilHostInState("Available")
+
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_ha_kvm_host_recovering(self):
+        """
+            Tests recovery and fencing HA state transitions
+        """
+        self.configureAndStartIpmiServer()
+        self.assertIssueCommandState('ON', 'On')
+        self.configureAndEnableHostHa()
+
+        self.deployVM()
+
+        # Start with the available state
+        self.waitUntilHostInState("Available")
+
+        # Kill host by triggering a fault
+        self.killAgent()
+        self.disableAgent()
+        self.resetHost()
+
+        # Check if host would go into Suspect state
+        try:
+            self.waitUntilHostInState("Suspect")
+        except Exception as e:
+            self.startAgent()
+            raise Exception("Warning: Exception during test execution : %s" % e)
+
+        # Checks if the host would turn into Recovered
+        try:
+            self.waitUntilHostInState("Recovered")
+        except Exception as e:
+            self.startAgent()
+            raise Exception("Warning: Exception during test execution : %s" % e)
+
+        self.enableAgent()
+        self.startAgent()
+        self.waitUntilHostInState("Available")
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_ha_kvm_host_fencing(self):
+        """
+            Tests fencing/fenced HA state when host crashes
+        """
+        self.logger.debug("Starting test_ha_kvm_host_fencing")
+
+        self.configureAndStartIpmiServer()
+        self.assertIssueCommandState('ON', 'On')
+        self.configureAndEnableHostHa()
+
+        self.deployVM()
+
+        # Start with the available state
+        self.waitUntilHostInState("Available")
+
+        # Fail oobm commands
+        cmd = self.getOobmConfigCmd()
+        cmd.address = "1.1.1.1"
+        self.apiclient.configureOutOfBandManagement(cmd)
+
+        # Kill host by triggering a fault
+        self.killAgent()
+        self.disableAgent()
+        self.resetHost()
+
+        # Check if host would go into Suspect state
+        try:
+            self.waitUntilHostInState("Suspect")
+        except Exception as e:
+            self.startAgent()
+            raise Exception("Warning: Exception during test execution : %s" % e)
+
+        # Checks if the host would turn into Fencing
+        try:
+            self.waitUntilHostInState("Fencing")
+        except Exception as e:
+            self.startAgent()
+            raise Exception("Warning: Exception during test execution : %s" % e)
+
+        # Allow oobm commands to work now
+        self.configureAndEnableOobm()
+
+        # Checks if the host would turn into Fenced
+        try:
+            self.waitUntilHostInState("Fenced")
+        except Exception as e:
+            self.startAgent()
+            raise Exception("Warning: Exception during test execution : %s" % e)
+
+        self.enableAgent()
+        self.startAgent()
+        self.cancelMaintenance()
+        self.waitUntilHostInState("Available")
 
     def configureAndStartIpmiServer(self, power_state=None):
         """
@@ -657,7 +611,18 @@ class TestHAKVM(cloudstackTestCase):
         host = self.getHost()
         SshClient(host=host.ipaddress, port=22, user=self.hostConfig["username"],
                   passwd=self.hostConfig["password"]).execute \
-            ("service cloudstack-agent start")
+            ("systemctl start cloudstack-agent || service cloudstack-agent start")
+
+    def stopAgent(self):
+        host = self.getHost()
+        SshClient(host=host.ipaddress, port=22, user=self.hostConfig["username"],
+                  passwd=self.hostConfig["password"]).execute \
+            ("systemctl stop cloudstack-agent || service cloudstack-agent stop")
+
+    def killAgent(self):
+        host = self.getHost()
+        SshClient(host=host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
+            ("kill -9 $(ps aux | grep 'cloudstack-agent' | awk '{print $2}')")
 
     def disableHost(self, id):
 
@@ -686,15 +651,9 @@ class TestHAKVM(cloudstackTestCase):
 
         self.assertEqual(response.resourcestate, "PrepareForMaintenance")
 
-    def cancelMaintenance(self, id):
+    def cancelMaintenance(self):
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
-        cmd.id = id
-
+        cmd.id = self.host.id
         response = self.apiclient.cancelHostMaintenance(cmd)
 
         self.assertEqual(response.resourcestate, "Enabled")
-
-    def killAgent(self):
-        host = self.getHost()
-        SshClient(host=host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
-            ("kill $(ps aux | grep 'cloudstack-agent' | awk '{print $2}')")
