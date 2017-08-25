@@ -72,6 +72,9 @@ public class SimulatorHAProvider extends HAAbstractHostProvider implements HAPro
 
     @Override
     public boolean isEligible(final Host host) {
+        if (host == null) {
+            return false;
+        }
         final SimulatorHAState haState = hostHAStateMap.get(host.getId());
         return !isInMaintenanceMode(host) && !isDisabled(host) && haState != null
                 && Hypervisor.HypervisorType.Simulator.equals(host.getHypervisorType());

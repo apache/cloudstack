@@ -17,12 +17,11 @@
 
 package org.apache.cloudstack.ha.provider;
 
-import com.cloud.utils.component.Adapter;
-
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.ha.HAResource;
 import org.joda.time.DateTime;
 
-import org.apache.cloudstack.ha.HAResource;
+import com.cloud.utils.component.Adapter;
 
 public interface HAProvider<R extends HAResource> extends Adapter {
 
@@ -57,7 +56,9 @@ public interface HAProvider<R extends HAResource> extends Adapter {
 
     boolean fence(R r) throws HAFenceException;
 
-    void setFenced(R r);
+    void fenceSubResources(R r);
+
+    void enableMaintenance(R r);
 
     void sendAlert(R r, HAConfig.HAState nextState);
 
