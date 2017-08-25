@@ -18,6 +18,21 @@ package com.cloud.api;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.tags.dao.ResourceTagDao;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+
+import javax.inject.Inject;
+
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -3593,6 +3608,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    /**
+     * The resulting Response attempts to be in line with what is returned from
+     * @see com.cloud.api.query.dao.UserVmJoinDaoImpl#setUserVmResponse(ResponseView, UserVmResponse, UserVmJoinVO)
+     */
     @Override
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
@@ -3601,6 +3620,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVmJoinVO userVm = _entityMgr.findById(UserVmJoinVO.class, result.getInstanceId());
         List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOs = _nicExtraDhcpOptionDao.listByNicId(result.getId());
 
+        // The numbered comments are to keep track of the data returned from here and UserVmJoinDaoImpl.setUserVmResponse()
+        // the data can't be identical but some tidying up/unifying might be possible
 /*1: nicUuid*/
         response.setId(result.getUuid());
 /*2: networkUuid*/
