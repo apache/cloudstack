@@ -376,7 +376,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         File originalTemplate = new File(td.getDownloadLocalPath());
         ChecksumValue oldValue = new ChecksumValue(dnld.getChecksum());
         ChecksumValue newValue = computeCheckSum(oldValue.getAlgorithm(), originalTemplate);
-        if(! oldValue.equals(newValue)) {
+        if(StringUtils.isNotBlank(dnld.getChecksum()) && ! oldValue.equals(newValue)) {
             return "checksum \"" + newValue +"\" didn't match the given value, \"" + oldValue + "\"";
         }
         String checksum = newValue.getChecksum();
