@@ -86,9 +86,11 @@ patch() {
    if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
     then
       shouldpatch=true
-      log_it "Patching  scripts oldmd5=$oldmd5 newmd5=$newmd5"
+      log_it "Patching scripts oldmd5=$oldmd5 newmd5=$newmd5"
       tar xzf $patchfile -C /
       echo ${newmd5} > ${md5file}
+    else
+      log_it "Scripts up to date oldmd5=$oldmd5 newmd5=$newmd5"
     fi
     log_it "cloud-early-init patching cloud service"
     hyperVisor=$(hypervisor)
@@ -96,7 +98,6 @@ patch() {
     umount $PATCH_MOUNT
 
     # Historical reboot removed due to cloud-early-init now running before services started
-
   fi
 
   if [ -f /mnt/cmdline ]; then
