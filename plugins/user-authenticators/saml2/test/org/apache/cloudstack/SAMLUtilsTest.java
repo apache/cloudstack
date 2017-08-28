@@ -19,15 +19,17 @@
 
 package org.apache.cloudstack;
 
-import junit.framework.TestCase;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 import org.apache.cloudstack.saml.SAMLUtils;
+import org.apache.cloudstack.utils.security.CertUtils;
 import org.junit.Test;
 import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.saml2.core.LogoutRequest;
 
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import junit.framework.TestCase;
 
 public class SAMLUtilsTest extends TestCase {
 
@@ -60,13 +62,13 @@ public class SAMLUtilsTest extends TestCase {
 
     @Test
     public void testX509Helpers() throws Exception {
-        KeyPair keyPair = SAMLUtils.generateRandomKeyPair();
+        KeyPair keyPair = CertUtils.generateRandomKeyPair(4096);
 
-        String privateKeyString = SAMLUtils.savePrivateKey(keyPair.getPrivate());
-        String publicKeyString = SAMLUtils.savePublicKey(keyPair.getPublic());
+        String privateKeyString = CertUtils.privateKeyToPem(keyPair.getPrivate());
+        String publicKeyString = CertUtils.publicKeyToPem(keyPair.getPublic());
 
-        PrivateKey privateKey = SAMLUtils.loadPrivateKey(privateKeyString);
-        PublicKey publicKey = SAMLUtils.loadPublicKey(publicKeyString);
+        PrivateKey privateKey = CertUtils.pemToPrivateKey(privateKeyString);
+        PublicKey publicKey = CertUtils.pemToPublicKey(publicKeyString);
 
         assertTrue(privateKey.equals(keyPair.getPrivate()));
         assertTrue(publicKey.equals(keyPair.getPublic()));

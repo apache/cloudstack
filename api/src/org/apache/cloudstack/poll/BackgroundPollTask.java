@@ -18,4 +18,10 @@
 package org.apache.cloudstack.poll;
 
 public interface BackgroundPollTask extends Runnable {
+    /**
+     * Returns delay in milliseconds between two rounds
+     * When it returns null a default value is used
+     * @return
+     */
+    Long getDelay();
 }

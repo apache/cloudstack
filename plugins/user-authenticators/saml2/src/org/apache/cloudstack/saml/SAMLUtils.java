@@ -19,14 +19,41 @@
 
 package org.apache.cloudstack.saml;
 
-import com.cloud.utils.HttpUtils;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.FactoryConfigurationError;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
+import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.x509.X509V1CertificateGenerator;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLVersion;
@@ -63,41 +90,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.security.auth.x500.X500Principal;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.FactoryConfigurationError;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.List;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
+import com.cloud.utils.HttpUtils;
 
 public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
@@ -271,89 +264,10 @@ public class SAMLUtils {
         return url;
     }
 
-    public static KeyFactory getKeyFactory() {
-        KeyFactory keyFactory = null;
-        try {
-            Security.addProvider(new BouncyCastleProvider());
-            keyFactory = KeyFactory.getInstance("RSA", "BC");
-        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
-        }
-        return keyFactory;
-    }
-
-    public static String savePublicKey(PublicKey key) {
-        try {
-            KeyFactory keyFactory = SAMLUtils.getKeyFactory();
-            if (keyFactory == null) return null;
-            X509EncodedKeySpec spec = keyFactory.getKeySpec(key, X509EncodedKeySpec.class);
-            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
-        } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
-        }
-        return null;
-    }
-
-    public static String savePrivateKey(PrivateKey key) {
-        try {
-            KeyFactory keyFactory = SAMLUtils.getKeyFactory();
-            if (keyFactory == null) return null;
-            PKCS8EncodedKeySpec spec = keyFactory.getKeySpec(key,
-                    PKCS8EncodedKeySpec.class);
-            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
-        } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
-        }
-        return null;
-    }
-
-    public static PublicKey loadPublicKey(String publicKey) {
-        byte[] sigBytes = org.bouncycastle.util.encoders.Base64.decode(publicKey);
-        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(sigBytes);
-        KeyFactory keyFact = SAMLUtils.getKeyFactory();
-        if (keyFact == null)
-            return null;
-        try {
-            return keyFact.generatePublic(x509KeySpec);
-        } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
-        }
-        return null;
-    }
-
-    public static PrivateKey loadPrivateKey(String privateKey) {
-        byte[] sigBytes = org.bouncycastle.util.encoders.Base64.decode(privateKey);
-        PKCS8EncodedKeySpec pkscs8KeySpec = new PKCS8EncodedKeySpec(sigBytes);
-        KeyFactory keyFact = SAMLUtils.getKeyFactory();
-        if (keyFact == null)
-            return null;
-        try {
-            return keyFact.generatePrivate(pkscs8KeySpec);
-        } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
-        }
-        return null;
-    }
-
-    public static KeyPair generateRandomKeyPair() throws NoSuchProviderException, NoSuchAlgorithmException {
-        Security.addProvider(new BouncyCastleProvider());
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
-        keyPairGenerator.initialize(4096, new SecureRandom());
-        return keyPairGenerator.generateKeyPair();
-    }
-
-    public static X509Certificate generateRandomX509Certificate(KeyPair keyPair) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
-        DateTime now = DateTime.now(DateTimeZone.UTC);
-        X500Principal dnName = new X500Principal("CN=ApacheCloudStack");
-        X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
-        certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
-        certGen.setSubjectDN(dnName);
-        certGen.setIssuerDN(dnName);
-        certGen.setNotBefore(now.minusDays(1).toDate());
-        certGen.setNotAfter(now.plusYears(3).toDate());
-        certGen.setPublicKey(keyPair.getPublic());
-        certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
-        return certGen.generate(keyPair.getPrivate(), "BC");
+    public static X509Certificate generateRandomX509Certificate(KeyPair keyPair) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, SignatureException, InvalidKeyException, OperatorCreationException {
+        return CertUtils.generateV1Certificate(keyPair,
+                "CN=ApacheCloudStack", "CN=ApacheCloudStack",
+                3, "SHA256WithRSA");
     }
 
     public static void setupSamlUserCookies(final LoginCmdResponse loginResponse, final HttpServletResponse resp) throws IOException {

@@ -23,8 +23,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,17 +34,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -54,6 +46,9 @@ import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -117,7 +112,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.nio.Link;
 import com.cloud.utils.script.Script;
 
 public class ConfigurationServerImpl extends ManagerBase implements ConfigurationServer {
@@ -305,9 +299,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
         // Update resource count if needed
         updateResourceCount();
-
-        // keystore for SSL/TLS connection
-        updateSSLKeystore();
 
         // store the public and private keys in the database
         updateKeyPairs();
@@ -541,117 +532,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
             String uuid = UUID.randomUUID().toString();
             _configDao.update(Config.CloudIdentifier.key(), Config.CloudIdentifier.getCategory(), uuid);
-        }
-    }
-
-    static String getBase64Keystore(String keystorePath) throws IOException {
-        byte[] storeBytes = FileUtils.readFileToByteArray(new File(keystorePath));
-        if (storeBytes.length > 3000) { // Base64 codec would enlarge data by 1/3, and we have 4094 bytes in database entry at most
-            throw new IOException("KeyStore is too big for database! Length " + storeBytes.length);
-        }
-
-        return new String(Base64.encodeBase64(storeBytes));
-    }
-
-    private void generateDefaultKeystore(String keystorePath) throws IOException {
-        String cn = "Cloudstack User";
-        String ou;
-
-        try {
-            ou = InetAddress.getLocalHost().getCanonicalHostName();
-            String[] group = ou.split("\\.");
-
-            // Simple check to see if we got IP Address...
-            boolean isIPAddress = Pattern.matches("[0-9]$", group[group.length - 1]);
-            if (isIPAddress) {
-                ou = "cloud.com"; // leaving this example reference to cloud.com as it has no real world relevance
-            } else {
-                ou = group[group.length - 1];
-                for (int i = group.length - 2; i >= 0 && i >= group.length - 3; i--)
-                    ou = group[i] + "." + ou;
-            }
-        } catch (UnknownHostException ex) {
-            s_logger.info("Fail to get user's domain name. Would use cloud.com. ", ex);
-            ou = "cloud.com"; // leaving this example reference to cloud.com as it has no real world relevance
-        }
-
-        String o = ou;
-        String c = "Unknown";
-        String dname = "cn=\"" + cn + "\",ou=\"" + ou + "\",o=\"" + o + "\",c=\"" + c + "\"";
-        Script script = new Script(true, "keytool", 5000, null);
-        script.add("-genkey");
-        script.add("-keystore", keystorePath);
-        script.add("-storepass", "vmops.com");
-        script.add("-keypass", "vmops.com");
-        script.add("-keyalg", "RSA");
-        script.add("-validity", "3650");
-        script.add("-dname", dname);
-        String result = script.execute();
-        if (result != null) {
-            throw new IOException("Fail to generate certificate!: " + result);
-        }
-    }
-
-    protected void updateSSLKeystore() {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Processing updateSSLKeyStore");
-        }
-
-        String dbString = _configDao.getValue("ssl.keystore");
-
-        File confFile = PropertiesUtil.findConfigFile("db.properties");
-        String confPath = null;
-        String keystorePath = null;
-        File keystoreFile = null;
-
-        if (null != confFile) {
-            confPath = confFile.getParent();
-            keystorePath = confPath + Link.keystoreFile;
-            keystoreFile = new File(keystorePath);
-        }
-
-        boolean dbExisted = (dbString != null && !dbString.isEmpty());
-
-        s_logger.info("SSL keystore located at " + keystorePath);
-        try {
-            if (!dbExisted && null != confFile) {
-                if (!keystoreFile.exists()) {
-                    generateDefaultKeystore(keystorePath);
-                    s_logger.info("Generated SSL keystore.");
-                }
-                String base64Keystore = getBase64Keystore(keystorePath);
-                ConfigurationVO configVO =
-                        new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", base64Keystore,
-                                "SSL Keystore for the management servers");
-                _configDao.persist(configVO);
-                s_logger.info("Stored SSL keystore to database.");
-            } else { // !keystoreFile.exists() and dbExisted
-                // Export keystore to local file
-                byte[] storeBytes = Base64.decodeBase64(dbString);
-                String tmpKeystorePath = "/tmp/tmpkey";
-                try (
-                        FileOutputStream fo = new FileOutputStream(tmpKeystorePath);
-                    ) {
-                    fo.write(storeBytes);
-                    Script script = new Script(true, "cp", 5000, null);
-                    script.add("-f");
-                    script.add(tmpKeystorePath);
-
-                    //There is a chance, although small, that the keystorePath is null. In that case, do not add it to the script.
-                    if (null != keystorePath) {
-                        script.add(keystorePath);
-                    }
-                    String result = script.execute();
-                    if (result != null) {
-                        throw new IOException();
-                    }
-                } catch (Exception e) {
-                    throw new IOException("Fail to create keystore file!", e);
-                }
-                s_logger.info("Stored database keystore to local.");
-            }
-        } catch (Exception ex) {
-            s_logger.warn("Would use fail-safe keystore to continue.", ex);
         }
     }
 

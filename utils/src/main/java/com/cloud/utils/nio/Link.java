@@ -19,20 +19,6 @@
 
 package com.cloud.utils.nio;
 
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.db.DbProperties;
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.log4j.Logger;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,7 +30,26 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+
+import org.apache.cloudstack.framework.ca.CAService;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.db.DbProperties;
 
 /**
  */
@@ -62,7 +67,6 @@ public class Link {
     private boolean _gotFollowingPacket;
 
     private SSLEngine _sslEngine;
-    public static final String keystoreFile = "/cloudmanagementserver.keystore";
 
     public Link(InetSocketAddress addr, NioConnection connection) {
         _addr = addr;
@@ -96,49 +100,6 @@ public class Link {
     public void setSSLEngine(SSLEngine sslEngine) {
         _sslEngine = sslEngine;
     }
-
-    /**
-     * No user, so comment it out.
-     *
-     * Static methods for reading from a channel in case
-     * you need to add a client that doesn't require nio.
-     * @param ch channel to read from.
-     * @param bytebuffer to use.
-     * @return bytes read
-     * @throws IOException if not read to completion.
-    public static byte[] read(SocketChannel ch, ByteBuffer buff) throws IOException {
-        synchronized(buff) {
-            buff.clear();
-            buff.limit(4);
-
-            while (buff.hasRemaining()) {
-                if (ch.read(buff) == -1) {
-                    throw new IOException("Connection closed with -1 on reading size.");
-                }
-            }
-
-            buff.flip();
-
-            int length = buff.getInt();
-            ByteArrayOutputStream output = new ByteArrayOutputStream(length);
-            WritableByteChannel outCh = Channels.newChannel(output);
-
-            int count = 0;
-            while (count < length) {
-                buff.clear();
-                int read = ch.read(buff);
-                if (read < 0) {
-                    throw new IOException("Connection closed with -1 on reading data.");
-                }
-                count += read;
-                buff.flip();
-                outCh.write(buff);
-            }
-
-            return output.toByteArray();
-        }
-    }
-     */
 
     private static void doWrite(SocketChannel ch, ByteBuffer[] buffers, SSLEngine sslEngine) throws IOException {
         SSLSession sslSession = sslEngine.getSession();
@@ -404,44 +365,78 @@ public class Link {
         _connection.scheduleTask(task);
     }
 
-    public static SSLContext initSSLContext(boolean isClient) throws GeneralSecurityException, IOException {
-        InputStream stream;
-        SSLContext sslContext = null;
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        KeyStore ks = KeyStore.getInstance("JKS");
-        TrustManager[] tms;
+    public static SSLEngine initServerSSLEngine(final CAService caService, final String clientAddress) throws GeneralSecurityException, IOException {
+        final SSLContext sslContext = SSLUtils.getSSLContext();
+        if (caService != null) {
+            return caService.createSSLEngine(sslContext, clientAddress);
+        }
+        s_logger.error("CA service is not configured, by-passing CA manager to create SSL engine");
+        char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
+        final KeyStore ks = loadKeyStore(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
+        tmf.init(ks);
+        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+        return sslContext.createSSLEngine();
+    }
 
-        File confFile = PropertiesUtil.findConfigFile("db.properties");
-        if (null != confFile && !isClient) {
-            final String pass = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
-            char[] passphrase = "vmops.com".toCharArray();
+    public static KeyStore loadKeyStore(final InputStream stream, final char[] passphrase) throws GeneralSecurityException, IOException {
+        final KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(stream, passphrase);
+        return ks;
+    }
+
+    public static SSLContext initClientSSLContext() throws GeneralSecurityException, IOException {
+        final SSLContext sslContext = SSLUtils.getSSLContext();
+
+        char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
+        File confFile = PropertiesUtil.findConfigFile("agent.properties");
+        if (confFile != null) {
+            s_logger.info("Conf file found: " + confFile.getAbsolutePath());
+            final String pass = PropertiesUtil.loadFromFile(confFile).getProperty(KeyStoreUtils.passphrasePropertyName);
             if (pass != null) {
                 passphrase = pass.toCharArray();
             }
-            String confPath = confFile.getParent();
-            String keystorePath = confPath + keystoreFile;
-            if (new File(keystorePath).exists()) {
-                stream = new FileInputStream(keystorePath);
-            } else {
-                s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
-                stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
-                passphrase = "vmops.com".toCharArray();
-            }
-            ks.load(stream, passphrase);
-            stream.close();
-            kmf.init(ks, passphrase);
-            tmf.init(ks);
-            tms = tmf.getTrustManagers();
         } else {
-            ks.load(null, null);
-            kmf.init(ks, null);
-            tms = new TrustManager[1];
-            tms[0] = new TrustAllManager();
+            confFile = PropertiesUtil.findConfigFile("db.properties");
+            if (confFile != null) {
+                final String pass = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
+                if (pass != null) {
+                    passphrase = pass.toCharArray();
+                }
+            }
         }
 
-        sslContext = SSLUtils.getSSLContext();
-        sslContext.init(kmf.getKeyManagers(), tms, null);
+        InputStream stream = null;
+        if (confFile != null) {
+            final String keystorePath = confFile.getParent() + "/" + KeyStoreUtils.defaultKeystoreFile;
+            if (new File(keystorePath).exists()) {
+                stream = new FileInputStream(keystorePath);
+            }
+        }
+
+        final KeyStore ks = loadKeyStore(stream, passphrase);
+        final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ks);
+        TrustManager[] tms;
+        if (stream != null) {
+            // This enforces a two-way SSL authentication
+            tms = tmf.getTrustManagers();
+        } else {
+            // This enforces a one-way SSL authentication
+            tms = new TrustManager[]{new TrustAllManager()};
+            s_logger.warn("Failed to load keystore, using trust all manager");
+        }
+
+        if (stream != null) {
+            stream.close();
+        }
+
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
+        sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
+
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("SSL: SSLcontext has been initialized");
         }
@@ -498,8 +493,9 @@ public class Link {
         try {
             result = sslEngine.unwrap(peerNetData, peerAppData);
             peerNetData.compact();
-        } catch (SSLException sslException) {
-            s_logger.error("SSL error occurred while processing unwrap data: " + sslException.getMessage());
+        } catch (final SSLException sslException) {
+            s_logger.error(String.format("SSL error caught during unwrap data: %s, for local address=%s, remote address=%s. The client may have invalid ca-certificates.",
+                    sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
             return true;
         }
@@ -539,8 +535,9 @@ public class Link {
         SSLEngineResult result = null;
         try {
             result = sslEngine.wrap(myAppData, myNetData);
-        } catch (SSLException sslException) {
-            s_logger.error("SSL error occurred while processing wrap data: " + sslException.getMessage());
+        } catch (final SSLException sslException) {
+            s_logger.error(String.format("SSL error caught during wrap data: %s, for local address=%s, remote address=%s.",
+                    sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
             return true;
         }

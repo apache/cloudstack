@@ -27,3 +27,6 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value,
 
 -- Enable dynamic RBAC by default for fresh deployments
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value) VALUES ('Advanced', 'DEFAULT', 'RoleService', 'dynamic.apichecker.enabled', 'true');
+
+-- Enable RootCA auth strictness for fresh deployments
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value) VALUES ('Advanced', 'DEFAULT', 'RootCAProvider', 'ca.plugin.root.auth.strictness', 'true');
