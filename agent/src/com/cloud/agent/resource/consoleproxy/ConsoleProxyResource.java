@@ -32,11 +32,8 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -64,6 +61,7 @@ import com.cloud.resource.ServerResourceBase;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
+import com.google.gson.Gson;
 
 /**
  *
@@ -240,9 +238,11 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         _proxyVmId = NumbersUtil.parseLong(value, 0);
 
         if (_localgw != null) {
-            String mgmtHost = (String)params.get("host");
+            String mgmtHosts = (String)params.get("host");
             if (_eth1ip != null) {
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                for (final String mgmtHost : mgmtHosts.split(",")) {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                }
                 String internalDns1 = (String) params.get("internaldns1");
                 if (internalDns1 == null) {
                     s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");

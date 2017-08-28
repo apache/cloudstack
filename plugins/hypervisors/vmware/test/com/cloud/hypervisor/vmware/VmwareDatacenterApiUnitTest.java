@@ -17,48 +17,8 @@
 
 package com.cloud.hypervisor.vmware;
 
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import com.cloud.user.User;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import com.cloud.agent.AgentManager;
+import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -89,15 +49,58 @@ import com.cloud.org.Managed.ManagedState;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.ImageStoreDetailsUtil;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -445,6 +448,36 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public ImageStoreDetailsDao imageStoreDetailsDao() {
             return Mockito.mock(ImageStoreDetailsDao.class);
+        }
+
+        @Bean
+        public VMTemplatePoolDao templateDataStoreDao() {
+            return Mockito.mock(VMTemplatePoolDao.class);
+        }
+
+        @Bean
+        public TemplateJoinDao templateDao() {
+            return Mockito.mock(TemplateJoinDao.class);
+        }
+
+        @Bean
+        public VMInstanceDao vmInstanceDao() {
+            return Mockito.mock(VMInstanceDao.class);
+        }
+
+        @Bean
+        public UserVmCloneSettingDao cloneSettingDao() {
+            return Mockito.mock(UserVmCloneSettingDao.class);
+        }
+
+        @Bean
+        public PrimaryDataStoreDao primaryStorageDao() {
+            return Mockito.mock(PrimaryDataStoreDao.class);
+        }
+
+        @Bean
+        public TemplateManager templateManager() {
+            return Mockito.mock(TemplateManager.class);
         }
 
         public static class Library implements TypeFilter {

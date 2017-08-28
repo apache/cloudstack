@@ -2176,6 +2176,7 @@ var dictionary = {
     "message.restart.vpc": "Confirmer le redémarrage du VPC",
     "message.restart.vpc.remark": "Veuillez confirmer que vous voulez redémarrer le VPC <p><small><i>Note : transformer un VPC non-redondant en VPC redondant va forcer un nettoyage du routeur. Le réseau associé ne sera pas disponible durant quelques minutes</i>.</small></p>",
     "message.restoreVM": "Voulez-vous restaurer la VM ?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "La réorganisation des règles d'autorisations a été abandonnée car la liste a changé pendant que vous apportez des modifications. Veuillez réessayer.",
     "message.security.group.usage": "(Utilisez <strong>Ctrl-clic</strong> pour sélectionner les groupes de sécurité visés)",
     "message.select.a.zone": "Une zone correspond typiquement à un seul centre de données. Des zones multiples peuvent permettre de rendre votre cloud plus fiable en apportant une isolation physique et de la redondance.",

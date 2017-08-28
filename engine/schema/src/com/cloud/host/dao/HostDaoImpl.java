@@ -89,6 +89,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> DcPrivateIpAddressSearch;
     protected SearchBuilder<HostVO> DcStorageIpAddressSearch;
     protected SearchBuilder<HostVO> PublicIpAddressSearch;
+    protected SearchBuilder<HostVO> AnyIpAddressSearch;
 
     protected SearchBuilder<HostVO> GuidSearch;
     protected SearchBuilder<HostVO> DcSearch;
@@ -215,6 +216,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         PublicIpAddressSearch = createSearchBuilder();
         PublicIpAddressSearch.and("publicIpAddress", PublicIpAddressSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
         PublicIpAddressSearch.done();
+
+        AnyIpAddressSearch = createSearchBuilder();
+        AnyIpAddressSearch.or("publicIpAddress", AnyIpAddressSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        AnyIpAddressSearch.or("privateIpAddress", AnyIpAddressSearch.entity().getPrivateIpAddress(), SearchCriteria.Op.EQ);
+        AnyIpAddressSearch.done();
 
         GuidSearch = createSearchBuilder();
         GuidSearch.and("guid", GuidSearch.entity().getGuid(), SearchCriteria.Op.EQ);
@@ -377,6 +383,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ClustersForHostsNotOwnedByAnyMSSearch.and("resource", ClustersForHostsNotOwnedByAnyMSSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         ClustersForHostsNotOwnedByAnyMSSearch.and("cluster", ClustersForHostsNotOwnedByAnyMSSearch.entity().getClusterId(), SearchCriteria.Op.NNULL);
         ClustersForHostsNotOwnedByAnyMSSearch.and("server", ClustersForHostsNotOwnedByAnyMSSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
+
+        ClusterManagedSearch = _clusterDao.createSearchBuilder();
+        ClusterManagedSearch.and("managed", ClusterManagedSearch.entity().getManagedState(), SearchCriteria.Op.EQ);
+        ClustersForHostsNotOwnedByAnyMSSearch.join("ClusterManagedSearch", ClusterManagedSearch, ClusterManagedSearch.entity().getId(), ClustersForHostsNotOwnedByAnyMSSearch.entity().getClusterId(), JoinType.INNER);
+
         ClustersForHostsNotOwnedByAnyMSSearch.done();
 
         AllClustersSearch = _clusterDao.createSearchBuilder(Long.class);
@@ -501,6 +512,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
      */
     private List<Long> findClustersForHostsNotOwnedByAnyManagementServer() {
         SearchCriteria<Long> sc = ClustersForHostsNotOwnedByAnyMSSearch.create();
+        sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
 
         List<Long> clusters = customSearch(sc, null);
         return clusters;
@@ -1112,6 +1124,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return findOneBy(sc);
     }
 
+    @Override
+    public HostVO findByIp(final String ipAddress) {
+        SearchCriteria<HostVO> sc = AnyIpAddressSearch.create();
+        sc.setParameters("publicIpAddress", ipAddress);
+        sc.setParameters("privateIpAddress", ipAddress);
+        return findOneBy(sc);
+    }
 
     @Override
     public List<HostVO> findHypervisorHostInCluster(long clusterId) {

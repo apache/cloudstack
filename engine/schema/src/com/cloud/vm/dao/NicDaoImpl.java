@@ -45,6 +45,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private SearchBuilder<NicVO> NonReleasedSearch;
     private GenericSearchBuilder<NicVO, Integer> deviceIdSearch;
     private GenericSearchBuilder<NicVO, Integer> CountByForStartingVms;
+    private SearchBuilder<NicVO> PeerRouterSearch;
 
     @Inject
     VMInstanceDao _vmDao;
@@ -94,6 +95,12 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         join1.and("state", join1.entity().getState(), Op.EQ);
         CountByForStartingVms.join("vm", join1, CountByForStartingVms.entity().getInstanceId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
         CountByForStartingVms.done();
+
+        PeerRouterSearch = createSearchBuilder();
+        PeerRouterSearch.and("instanceId", PeerRouterSearch.entity().getInstanceId(), Op.NEQ);
+        PeerRouterSearch.and("macAddress", PeerRouterSearch.entity().getMacAddress(), Op.EQ);
+        PeerRouterSearch.and("vmType", PeerRouterSearch.entity().getVmType(), Op.EQ);
+        PeerRouterSearch.done();
     }
 
     @Override
@@ -310,6 +317,19 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setJoinParameters("vm", "state", VirtualMachine.State.Starting);
         List<Integer> results = customSearch(sc, null);
         return results.get(0);
+    }
+
+    @Override
+    public Long getPeerRouterId(String publicMacAddress, final long routerId) {
+        final SearchCriteria<NicVO> sc = PeerRouterSearch.create();
+        sc.setParameters("instanceId", routerId);
+        sc.setParameters("macAddress", publicMacAddress);
+        sc.setParameters("vmType", VirtualMachine.Type.DomainRouter);
+        NicVO nicVo = findOneBy(sc);
+        if (nicVo != null) {
+            return nicVo.getInstanceId();
+        }
+        return null;
     }
 
     @Override

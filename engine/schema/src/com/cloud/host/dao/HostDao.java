@@ -101,4 +101,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listClustersByHostTag(String hostTagOnOffering);
 
     List<HostVO> listByType(Type type);
+
+    HostVO findByIp(String ip);
 }

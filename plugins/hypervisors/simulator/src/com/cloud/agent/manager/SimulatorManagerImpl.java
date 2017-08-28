@@ -26,6 +26,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -280,6 +282,10 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockAgentMgr.checkHealth((CheckHealthCommand)cmd);
                 } else if (cmd instanceof PingTestCommand) {
                     answer = _mockAgentMgr.pingTest((PingTestCommand)cmd);
+                } else if (cmd instanceof SetupKeyStoreCommand) {
+                    answer = _mockAgentMgr.setupKeyStore((SetupKeyStoreCommand)cmd);
+                } else if (cmd instanceof SetupCertificateCommand) {
+                    answer = _mockAgentMgr.setupCertificate((SetupCertificateCommand)cmd);
                 } else if (cmd instanceof PrepareForMigrationCommand) {
                     answer = _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand)cmd);
                 } else if (cmd instanceof MigrateCommand) {

@@ -56,7 +56,7 @@ public class NioClient extends NioConnection {
             _clientConnection.connect(peerAddr);
             _clientConnection.configureBlocking(false);
 
-            final SSLContext sslContext = Link.initSSLContext(true);
+            final SSLContext sslContext = Link.initClientSSLContext();
             SSLEngine sslEngine = sslContext.createSSLEngine(_host, _port);
             sslEngine.setUseClientMode(true);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));

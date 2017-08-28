@@ -23,6 +23,7 @@ log_it() {
   echo "$(date) patchsystemvm.sh $@" >> $logfile
 }
 
+
 # To use existing console proxy .zip-based package file
 patch_console_proxy() {
    local patchfile=$1

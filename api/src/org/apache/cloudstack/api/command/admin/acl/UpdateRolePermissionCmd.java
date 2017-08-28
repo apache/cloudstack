@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.acl;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
@@ -51,9 +52,17 @@ public class UpdateRolePermissionCmd extends BaseCmd {
             description = "ID of the role", validations = {ApiArgValidator.PositiveNumber})
     private Long roleId;
 
-    @Parameter(name = ApiConstants.RULE_ORDER, type = CommandType.LIST, collectionType = CommandType.UUID, required = true, entityType = RolePermissionResponse.class,
+    @Parameter(name = ApiConstants.RULE_ORDER, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = RolePermissionResponse.class,
             description = "The parent role permission uuid, use 0 to move this rule at the top of the list")
     private List<Long> rulePermissionOrder;
+
+    @Parameter(name = ApiConstants.RULE_ID, type = CommandType.UUID, entityType = RolePermissionResponse.class,
+            description = "Role permission rule id", since="4.11")
+    private Long ruleId;
+
+    @Parameter(name = ApiConstants.PERMISSION, type = CommandType.STRING,
+            description = "Rule permission, can be: allow or deny", since="4.11")
+    private String rulePermission;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -65,6 +74,21 @@ public class UpdateRolePermissionCmd extends BaseCmd {
 
     public List<Long> getRulePermissionOrder() {
         return rulePermissionOrder;
+    }
+
+    public Long getRuleId() {
+        return ruleId;
+    }
+
+    public Permission getRulePermission() {
+        if (this.rulePermission == null) {
+            return null;
+        }
+        if (!this.rulePermission.equalsIgnoreCase(Permission.ALLOW.toString()) &&
+                !this.rulePermission.equalsIgnoreCase(Permission.DENY.toString())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Values for permission parameter should be: allow or deny");
+        }
+        return rulePermission.equalsIgnoreCase(Permission.ALLOW.toString()) ? Permission.ALLOW : Permission.DENY;
     }
 
     /////////////////////////////////////////////////////
@@ -84,19 +108,35 @@ public class UpdateRolePermissionCmd extends BaseCmd {
     @Override
     public void execute() {
         final Role role = roleService.findRole(getRoleId());
+        boolean result = false;
         if (role == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
         }
-        CallContext.current().setEventDetails("Reordering permissions for role id: " + role.getId());
-        final List<RolePermission> rolePermissionsOrder = new ArrayList<>();
-        for (Long rolePermissionId : getRulePermissionOrder()) {
-            final RolePermission rolePermission = roleService.findRolePermission(rolePermissionId);
-            if (rolePermission == null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Provided role permission(s) do not exist");
+        if (getRulePermissionOrder() != null) {
+            if (getRuleId() != null || getRulePermission() != null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameters permission and ruleid must be mutually exclusive with ruleorder");
             }
-            rolePermissionsOrder.add(rolePermission);
+            CallContext.current().setEventDetails("Reordering permissions for role id: " + role.getId());
+            final List<RolePermission> rolePermissionsOrder = new ArrayList<>();
+            for (Long rolePermissionId : getRulePermissionOrder()) {
+                final RolePermission rolePermission = roleService.findRolePermission(rolePermissionId);
+                if (rolePermission == null) {
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Provided role permission(s) do not exist");
+                }
+                rolePermissionsOrder.add(rolePermission);
+            }
+            result = roleService.updateRolePermission(role, rolePermissionsOrder);
+        } else if (getRuleId() != null && getRulePermission() != null) {
+            if (getRulePermissionOrder() != null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameters permission and ruleid must be mutually exclusive with ruleorder");
+            }
+            RolePermission rolePermission = roleService.findRolePermission(getRuleId());
+            if (rolePermission == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid rule id provided");
+            }
+            CallContext.current().setEventDetails("Updating permission for rule id: " + getRuleId() + " to: " + getRulePermission().toString());
+            result = roleService.updateRolePermission(role, rolePermission, getRulePermission());
         }
-        boolean result = roleService.updateRolePermission(role, rolePermissionsOrder);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         setResponseObject(response);

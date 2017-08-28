@@ -771,7 +771,9 @@
         } else if (isDomainAdmin()) {
             if (args.context.domains[0].id != g_domainid) {
                 allowedActions.push("edit"); //merge updateResourceLimit into edit
+                allowedActions.push("delete");
             }
+            allowedActions.push("create");
         }
         allowedActions.push("updateResourceCount");
         return allowedActions;

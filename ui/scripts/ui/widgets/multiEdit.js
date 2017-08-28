@@ -31,6 +31,7 @@
             var $item = $('<div>').addClass('data-item');
             var multiRule = data;
             var reorder = options.reorder;
+            var selectPermission = options.selectPermission;
 
             $item.append($('<table>').append($('<tbody>')));
             $tr = $('<tr>').appendTo($item.find('tbody'));
@@ -189,10 +190,34 @@
                                 return $(this).val() == data[fieldName];
                             });
 
-                        var matchingValue = $matchingOption.size() ?
-                            $matchingOption.html() : data[fieldName];
+                        if (selectPermission) {
+                            // Wrap div to get its html code
+                            selectedOptionHtml = $matchingOption.clone().wrap('<div>').parent().html();
+                            // Get html code from not matching option
+                            $matchingSelect.find('option').each(
+                                function() {
+                                    if ($(this).val() != data[fieldName]){
+                                        selectedOptionHtml += $(this).clone().wrap('<div>').parent().html();
+                                    }
+                                }
+                            );
+                            $select = $('<select>');
+                            $select.html(selectedOptionHtml);
+                            $select.change(function(event) {
+                                selectPermission.action({
+                                    roleid: data['roleid'],
+                                    ruleid: data['id'],
+                                    permission: $(this).val()
+                                });
+                            });
+                            $td.append($select);
+                        }
+                        else {
+                            var matchingValue = $matchingOption.size() ?
+                                $matchingOption.html() : data[fieldName];
 
-                        $td.append($('<span>').html(_s(matchingValue)));
+                            $td.append($('<span>').html(_s(matchingValue)));
+                        }
                     } else if (field.addButton && !options.noSelect) {
                         if (options.multipleAdd) {
                             $addButton.click(function() {
@@ -862,6 +887,7 @@
         var actionPreFilter = args.actionPreFilter;
         var readOnlyCheck = args.readOnlyCheck;
         var reorder = args.reorder;
+        var selectPermission = args.selectPermission;
 
         var $thead = $('<tr>').appendTo(
             $('<thead>').appendTo($inputTable)
@@ -1197,7 +1223,8 @@
                                     preFilter: actionPreFilter,
                                     listView: listView,
                                     tags: tags,
-                                    reorder: reorder
+                                    reorder: reorder,
+                                    selectPermission: selectPermission
                                 }
                             ).appendTo($dataBody);
                         });

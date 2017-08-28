@@ -20,7 +20,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -34,15 +33,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
-import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -56,6 +46,10 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
 import org.apache.cloudstack.utils.graphite.GraphiteException;
+import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -177,8 +171,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Inject
     private HostDao _hostDao;
     @Inject
-    private OutOfBandManagementDao outOfBandManagementDao;
-    @Inject
     private UserVmDao _userVmDao;
     @Inject
     private VolumeDao _volsDao;
@@ -194,8 +186,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private DataStoreManager _dataStoreMgr;
     @Inject
     private ResourceManager _resourceMgr;
-    @Inject
-    private OutOfBandManagementService outOfBandManagementService;
     @Inject
     private ConfigurationDao _configDao;
     @Inject
@@ -244,7 +234,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
     long hostStatsInterval = -1L;
-    long hostOutOfBandManagementStatsInterval = -1L;
     long hostAndVmStatsInterval = -1L;
     long storageStatsInterval = -1L;
     long volumeStatsInterval = -1L;
@@ -290,7 +279,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private void init(Map<String, String> configs) {
         _executor = Executors.newScheduledThreadPool(6, new NamedThreadFactory("StatsCollector"));
 
-        hostOutOfBandManagementStatsInterval = OutOfBandManagementService.SyncThreadInterval.value();
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), 60000L);
         hostAndVmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), 60000L);
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), 60000L);
@@ -335,10 +323,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         if (hostStatsInterval > 0) {
             _executor.scheduleWithFixedDelay(new HostCollector(), 15000L, hostStatsInterval, TimeUnit.MILLISECONDS);
-        }
-
-        if (hostOutOfBandManagementStatsInterval > 0) {
-            _executor.scheduleWithFixedDelay(new HostOutOfBandManagementStatsCollector(), 15000L, hostOutOfBandManagementStatsInterval, TimeUnit.MILLISECONDS);
         }
 
         if (hostAndVmStatsInterval > 0) {
@@ -473,36 +457,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 hostIds = _hostGpuGroupsDao.listHostIds();
             } catch (Throwable t) {
                 s_logger.error("Error trying to retrieve host stats", t);
-            }
-        }
-    }
-
-    class HostOutOfBandManagementStatsCollector extends ManagedContextRunnable {
-        @Override
-        protected void runInContext() {
-            try {
-                s_logger.trace("HostOutOfBandManagementStatsCollector is running...");
-                List<OutOfBandManagementVO> outOfBandManagementHosts = outOfBandManagementDao.findAllByManagementServer(ManagementServerNode.getManagementServerId());
-                if (outOfBandManagementHosts == null) {
-                    return;
-                }
-                for (OutOfBandManagement outOfBandManagementHost : outOfBandManagementHosts) {
-                    Host host = _hostDao.findById(outOfBandManagementHost.getHostId());
-                    if (host == null) {
-                        continue;
-                    }
-                    if (outOfBandManagementService.isOutOfBandManagementEnabled(host)) {
-                        outOfBandManagementService.submitBackgroundPowerSyncTask(host);
-                    } else if (outOfBandManagementHost.getPowerState() != OutOfBandManagement.PowerState.Disabled) {
-                        if (outOfBandManagementService.transitionPowerStateToDisabled(Collections.singletonList(host))) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Out-of-band management was disabled in zone/cluster/host, disabled power state for host id:" + host.getId());
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable t) {
-                s_logger.error("Error trying to retrieve host out-of-band management stats", t);
             }
         }
     }

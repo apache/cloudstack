@@ -381,8 +381,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (!username.matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
             throw new InvalidParameterValueException("Username has to be begin with an alphabet have 3-64 characters including alphabets, numbers and the set '@.-_'");
         }
-        if (!password.matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,31}$")) {
-            throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@#+=.-_'");
+        if (!password.matches("^[a-zA-Z0-9][a-zA-Z0-9@+=._-]{2,31}$")) {
+            throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@+=.-_'");
         }
 
         return Transaction.execute(new TransactionCallback<VpnUser>() {

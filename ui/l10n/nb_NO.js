@@ -2176,6 +2176,7 @@ var dictionary = {
     "message.restart.vpc": "Vennligst bekreft at du ønsker å restarte VPC",
     "message.restart.vpc.remark": "Vennligst bekreft du at du vil restarte VPC <p><small><i>Merk: Å gjøre en ikke reduntant VPC redundant vil tvinge en opprydning. Nettverkene vil ikke være tilgjengelig i noen minutter</i>.</small></p>",
     "message.restoreVM": "Vil du gjenopprette denne VMen?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
     "message.security.group.usage": "(Bruk <strong>Ctrl-klikk</strong> for å velge alle aktuelle sikkerhetsgrupper)",
     "message.select.a.zone": "En sone er typisk sett på som et datasenter. Multiple soner gir  CloudStack bedre pålitelighet gjennom isolasjon og redundans.",

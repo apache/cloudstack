@@ -51,6 +51,9 @@ public class PropertiesStorage implements StorageComponent {
 
     @Override
     public synchronized void persist(String key, String value) {
+        if (!loadFromFile(_file)) {
+            s_logger.error("Failed to load changes and then write to them");
+        }
         _properties.setProperty(key, value);
         FileOutputStream output = null;
         try {
@@ -63,6 +66,20 @@ public class PropertiesStorage implements StorageComponent {
         } finally {
             IOUtils.closeQuietly(output);
         }
+    }
+
+    private synchronized boolean loadFromFile(final File file) {
+        try {
+            PropertiesUtil.loadFromFile(_properties, file);
+            _file = file;
+        } catch (FileNotFoundException e) {
+            s_logger.error("How did we get here? ", e);
+            return false;
+        } catch (IOException e) {
+            s_logger.error("IOException: ", e);
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -86,17 +103,7 @@ public class PropertiesStorage implements StorageComponent {
                 return false;
             }
         }
-        try {
-            PropertiesUtil.loadFromFile(_properties, file);
-            _file = file;
-        } catch (FileNotFoundException e) {
-            s_logger.error("How did we get here? ", e);
-            return false;
-        } catch (IOException e) {
-            s_logger.error("IOException: ", e);
-            return false;
-        }
-        return true;
+        return loadFromFile(file);
     }
 
     @Override

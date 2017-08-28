@@ -16,6 +16,14 @@
 // under the License.
 package com.cloud.event;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.usage.Usage;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -54,10 +62,10 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.server.ResourceTag;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
@@ -66,13 +74,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.usage.Usage;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class EventTypes {
 
@@ -175,6 +176,11 @@ public class EventTypes {
     public static final String EVENT_ROLE_PERMISSION_CREATE = "ROLE.PERMISSION.CREATE";
     public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
     public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
+
+    // CA events
+    public static final String EVENT_CA_CERTIFICATE_ISSUE = "CA.CERTIFICATE.ISSUE";
+    public static final String EVENT_CA_CERTIFICATE_REVOKE = "CA.CERTIFICATE.REVOKE";
+    public static final String EVENT_CA_CERTIFICATE_PROVISION = "CA.CERTIFICATE.PROVISION";
 
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";

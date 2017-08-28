@@ -663,6 +663,12 @@ class CsRemoteAccessVpn(CsDataBag):
             #Enable remote access vpn
             if vpnconfig['create']:
                 logging.debug("Enabling  remote access vpn  on "+ public_ip)
+
+                dev = CsHelper.get_device(public_ip)
+                if dev == "":
+                        logging.error("Request for ipsec to %s not possible because ip is not configured", public_ip)
+                        continue
+
                 CsHelper.start_if_stopped("ipsec")
                 self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
                 logging.debug("Remote accessvpn  data bag %s",  self.dbag)
@@ -886,7 +892,7 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["filter", "", fw7])
 
     def forward_vpc(self, rule):
-        fw_prerout_rule = "-A PREROUTING -d %s/32 -i %s" % (rule["public_ip"], self.getDeviceByIp(rule['public_ip']))
+        fw_prerout_rule = "-A PREROUTING -d %s/32 " % (rule["public_ip"])
         if not rule["protocol"] == "any":
             fw_prerout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
         if not rule["public_ports"] == "any":
@@ -922,12 +928,13 @@ class CsForwardingRules(CsDataBag):
         device = self.getDeviceByIp(rule["public_ip"])
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
+
         self.fw.append(["mangle", "",
-                        "-A PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark 0x%s/0xffffffff" % \
-                        (rule["internal_ip"], device[len("eth"):])])
-        self.fw.append(["mangle", "",
-                        "-A PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
+                        "-I PREROUTING -s %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
                         rule["internal_ip"]])
+        self.fw.append(["mangle", "",
+                        "-I PREROUTING -s %s/32 -m state --state NEW -j MARK --set-xmark 0x%s/0xffffffff" % \
+                        (rule["internal_ip"], device[len("eth"):])])
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",

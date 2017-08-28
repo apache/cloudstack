@@ -2180,6 +2180,7 @@ var dictionary = {
     "message.restart.vpc": "VPC を再起動してもよろしいですか?",
     "message.restart.vpc.remark": "VPC を再起動してもよろしいですか? <p><small><i>注意: 非冗長 VPC の冗長化は強制的にクリーンアップされます.  また、ネットワークは数分間利用出来なくなります</i>.</small></p>",
     "message.restoreVM": "VM を復元してもよろしいですか?",
+    "message.role.update.fail": "Failed updating rule permission",
     "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
     "message.security.group.usage": "(該当するセキュリティ グループをすべて選択するには、<strong>Ctrl キーを押しながらクリック</strong>してください)",
     "message.select.a.zone": "ゾーンは通常、単一のデータセンターに相当します。複数のゾーンを設定し、物理的に分離して冗長性を持たせることにより、クラウドの信頼性を高めます。",

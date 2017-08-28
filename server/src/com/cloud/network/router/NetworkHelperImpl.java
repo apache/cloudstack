@@ -743,7 +743,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
                 gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
                 gatewayNic.setMode(guestNetwork.getMode());
-                final String gatewayCidr = guestNetwork.getCidr();
+                final String gatewayCidr = _networkModel.getValidNetworkCidr(guestNetwork);
                 gatewayNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
             } else {
                 gatewayNic.setDefaultNic(true);

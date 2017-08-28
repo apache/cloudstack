@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,12 +40,14 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -97,6 +100,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.NicTO;
@@ -205,6 +209,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.google.common.base.Strings;
 
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
@@ -284,7 +289,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected UserVmDetailsDao _vmDetailsDao;
     @Inject
-    ServiceOfferingDao _serviceOfferingDao = null;
+    protected ServiceOfferingDao _serviceOfferingDao = null;
+    @Inject
+    protected CAManager caManager;
 
     @Inject
     ConfigDepot _configDepot;
@@ -1023,7 +1030,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 
-
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
                     work = _workDao.findById(work.getId());
@@ -1072,6 +1078,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             startedVm = vm;
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Start completed for VM " + vm);
+                            }
+                            final Host vmHost = _hostDao.findById(destHostId);
+                            if (vmHost != null && (VirtualMachine.Type.ConsoleProxy.equals(vm.getType()) ||
+                                    VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) && caManager.canProvisionCertificates()) {
+                                final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
+                                final String csr = caManager.generateKeyStoreAndCsr(vmHost, sshAccessDetails);
+                                if (!Strings.isNullOrEmpty(csr)) {
+                                    final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+                                    ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
+                                    final Certificate certificate = caManager.issueCertificate(csr, Arrays.asList(vm.getHostName(), vm.getInstanceName()), new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
+                                    final boolean result = caManager.deployCertificate(vmHost, certificate, false, sshAccessDetails);
+                                    if (!result) {
+                                        s_logger.error("Failed to setup certificate for system vm: " + vm.getInstanceName());
+                                    }
+                                } else {
+                                    s_logger.error("Failed to setup keystore and generate CSR for system vm: " + vm.getInstanceName());
+                                }
                             }
                             return;
                         } else {
@@ -1710,17 +1733,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         deleteVMSnapshots(vm, expunge);
 
-        // reload the vm object from db
-        vm = _vmDao.findByUuid(vmUuid);
-        try {
-            if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
-                s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-                throw new CloudRuntimeException("Unable to destroy " + vm);
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+            public void doInTransactionWithoutResult(final TransactionStatus status) throws CloudRuntimeException {
+                VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+                try {
+                    if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+                        s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
+                        throw new CloudRuntimeException("Unable to destroy " + vm);
+                    }
+                } catch (final NoTransitionException e) {
+                    s_logger.debug(e.getMessage());
+                    throw new CloudRuntimeException("Unable to destroy " + vm, e);
+                }
             }
-        } catch (final NoTransitionException e) {
-            s_logger.debug(e.getMessage());
-            throw new CloudRuntimeException("Unable to destroy " + vm, e);
-        }
+        });
     }
 
     /**

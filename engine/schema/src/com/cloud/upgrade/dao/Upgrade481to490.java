@@ -17,13 +17,6 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.db.ScriptRunner;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.log4j.Logger;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -31,7 +24,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
+
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.db.ScriptRunner;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class Upgrade481to490 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade481to490.class);
@@ -115,23 +114,19 @@ public class Upgrade481to490 implements DbUpgrade {
 
         migrateAccountsToDefaultRoles(conn);
 
-        final Map<String, String> apiMap = PropertiesUtil.processConfigFile(new String[] { PropertiesUtil.getDefaultApiCommandsFileName() });
-        if (apiMap == null || apiMap.isEmpty()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("The commands.properties file and default role permissions were not found. " +
-                        "Assuming new installation, configuring default role-api mappings.");
-            }
-            String script = Script.findScript("", "db/create-default-role-api-mappings.sql");
-            if (script == null) {
-                s_logger.error("Unable to find default role-api mapping sql file, please configure api per role manually");
-                return;
-            }
-            try(final FileReader reader = new FileReader(new File(script))) {
-                ScriptRunner runner = new ScriptRunner(conn, false, true);
-                runner.runScript(reader);
-            } catch (SQLException | IOException e) {
-                s_logger.error("Unable to insert default api-role mappings from file: " + script + ". Please configure api per role manually, giving up!", e);
-            }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Configuring default role-api mappings, use migrate-dynamicroles.py instead if you want to migrate rules from an existing commands.properties file");
+        }
+        String script = Script.findScript("", "db/create-default-role-api-mappings.sql");
+        if (script == null) {
+            s_logger.error("Unable to find default role-api mapping sql file, please configure api per role manually");
+            return;
+        }
+        try(final FileReader reader = new FileReader(new File(script))) {
+            ScriptRunner runner = new ScriptRunner(conn, false, true);
+            runner.runScript(reader);
+        } catch (SQLException | IOException e) {
+            s_logger.error("Unable to insert default api-role mappings from file: " + script + ". Please configure api per role manually, giving up!", e);
         }
     }
 

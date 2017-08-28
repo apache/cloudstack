@@ -297,6 +297,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.storage.snapshot.SnapshotApiService;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -487,6 +488,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected VMNetworkMapDao _vmNetworkMapDao;
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    @Inject
+    private SnapshotApiService _snapshotService;
 
     protected ScheduledExecutorService _executor = null;
     protected ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -5386,7 +5389,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             //snapshots: mark these removed in db
             List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdIncludingRemoved(volume.getId());
             for (SnapshotVO snapshot : snapshots) {
-                _snapshotDao.remove(snapshot.getId());
+                    boolean result = _snapshotService.deleteSnapshot(snapshot.getId());
+                    if (result) {
+                        s_logger.info("Snapshot id: " + snapshot.getId() + " delete successfully ");
+                    } else {
+                        s_logger.error("Unable to delete Snapshot id: " + snapshot.getId());
+                    }
             }
         }
 

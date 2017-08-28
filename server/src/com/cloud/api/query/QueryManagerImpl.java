@@ -3092,6 +3092,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
+
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null,
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
                 cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl,
@@ -3147,13 +3148,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }
-            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (!template.isPublicTemplate() && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
                 Account template_acc = _accountMgr.getAccount(template.getAccountId());
                 DomainVO domain = _domainDao.findById(template_acc.getDomainId());
                 _accountMgr.checkAccess(caller, domain);
+            }
 
-
-            }// if template is not public, perform permission check here
+            // if template is not public, perform permission check here
             else if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 _accountMgr.checkAccess(caller, null, false, template);
             }
@@ -3355,7 +3356,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (showRemovedTmpl) {
             uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
         } else {
-            sc.addAnd("templateState", SearchCriteria.Op.IN, new State[]{State.Active, State.NotUploaded, State.UploadInProgress});
+            sc.addAnd("templateState", SearchCriteria.Op.IN, new State[]{State.Active, State.UploadAbandoned, State.UploadError, State.NotUploaded, State.UploadInProgress});
             uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
         }
 

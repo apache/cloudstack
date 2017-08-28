@@ -16,13 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.guru;
 
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.network.element.SspElement;
-import org.apache.cloudstack.network.element.SspManager;
-
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -40,6 +33,11 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.network.element.SspElement;
+import org.apache.cloudstack.network.element.SspManager;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 /**
  * Stratosphere SDN Platform NetworkGuru
@@ -56,7 +54,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     public SspGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.SSP};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("SSP")};
     }
 
     @Override

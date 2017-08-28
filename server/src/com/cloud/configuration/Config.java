@@ -182,14 +182,6 @@ public enum Config {
             "3600",
             "Timeout (in seconds) to synchronize storage pool operations.",
             null),
-    StorageTemplateCleanupEnabled(
-            "Storage",
-            ManagementServer.class,
-            Boolean.class,
-            "storage.template.cleanup.enabled",
-            "true",
-            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled",
-            null),
     PrimaryStorageDownloadWait(
             "Storage",
             TemplateManager.class,
@@ -1927,7 +1919,7 @@ public enum Config {
             NetworkOrchestrationService.class,
             Integer.class,
             "router.aggregation.command.each.timeout",
-            "3",
+            "600",
             "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
             null),
 
