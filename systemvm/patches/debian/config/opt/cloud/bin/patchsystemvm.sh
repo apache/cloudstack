@@ -146,7 +146,7 @@ ilbvm_svcs() {
 }
 
 enable_pcihotplug() {
-   log_it "Configuring PCI hot plug\"
+   log_it "Configuring PCI hot plug"
    sed -i -e "/acpiphp/d" /etc/modules
    sed -i -e "/pci_hotplug/d" /etc/modules
    echo acpiphp >> /etc/modules
