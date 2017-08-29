@@ -1,11 +1,11 @@
-#!/bin/bash 
+#!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          cloud-passwd-srvr
-# Required-Start:    mountkernfs $local_fs cloud-early-config iptables-persistent
+# Required-Start:    mountkernfs $local_fs cloud-early-init iptables-persistent
 # Required-Stop:     $local_fs
-# Should-Start:      
-# Should-Stop:       
-# Default-Start:     
+# Should-Start:
+# Should-Stop:
+# Default-Start:
 # Default-Stop:      0 6
 # Short-Description: Web server that sends passwords to User VMs
 ### END INIT INFO
@@ -74,7 +74,7 @@ remove_iptables_rules()
 }
 
 start() {
-  [ "$ENABLED" != 0 ]  || exit 0 
+  [ "$ENABLED" != 0 ]  || exit 0
   pid=$(getpid)
   [ "$pid" != "" ] && echo "Password server is already running (pid=$pid)" && return 0
   add_iptables_rules
