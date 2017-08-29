@@ -372,7 +372,10 @@ CREATE VIEW `cloud`.`volume_view` AS
         async_job.account_id job_account_id,
         host_pod_ref.id pod_id,
         host_pod_ref.uuid pod_uuid,
-        host_pod_ref.name pod_name
+        host_pod_ref.name pod_name,
+        resource_tag_account.account_name tag_account_name,
+        resource_tag_domain.uuid tag_domain_uuid,
+        resource_tag_domain.name tag_domain_name
     from
         `cloud`.`volumes`
             inner join
@@ -407,5 +410,8 @@ CREATE VIEW `cloud`.`volume_view` AS
             left join
         `cloud`.`async_job` ON async_job.instance_id = volumes.id
             and async_job.instance_type = 'Volume'
-            and async_job.job_status = 0;
-
+            and async_job.job_status = 0
+            left join
+        `cloud`.`account` resource_tag_account ON resource_tag_account.id = resource_tags.account_id
+            left join
+        `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
