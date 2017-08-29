@@ -4793,7 +4793,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // Now apply pagination
             final List<? extends NetworkOffering> wPagination = StringUtils.applyPagination(supportedOfferings, cmd.getStartIndex(), cmd.getPageSizeVal());
             if (wPagination != null) {
-                final Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>(wPagination, offerings.size());
+                final Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>(wPagination, supportedOfferings.size());
                 return listWPagination;
             }
             return new Pair<List<? extends NetworkOffering>, Integer>(supportedOfferings, supportedOfferings.size());
