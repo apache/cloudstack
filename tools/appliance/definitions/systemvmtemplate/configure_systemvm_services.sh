@@ -41,8 +41,9 @@ function install_cloud_scripts() {
 
   chkconfig --add cloud-early-init
   chkconfig cloud-early-init on
-  chkconfig --add cloud-early-config
-  chkconfig cloud-early-config on
+  # Testing serialized cloud-early-init and cloud-early-config
+  # chkconfig --add cloud-early-config
+  # chkconfig cloud-early-config on
   chkconfig --add cloud-passwd-srvr
   chkconfig cloud-passwd-srvr off
   chkconfig --add cloud

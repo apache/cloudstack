@@ -142,4 +142,8 @@ stop)
 	;;
 esac
 
+# Serialize cloud-early-init and cloud-early-config
+log_it "Calling cloud-early-config."
+/etc/init.d/cloud-early-config start
+
 exit 0

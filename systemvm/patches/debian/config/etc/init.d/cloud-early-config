@@ -3,8 +3,8 @@
 # Provides:          cloud-early-config
 # Required-Start:    mountkernfs $local_fs cloud-early-init
 # Required-Stop:     $local_fs cloud-early-init
-# Should-Start:      
-# Should-Stop:       
+# Should-Start:
+# Should-Stop:
 # Default-Start:     S
 # Default-Stop:      0 6
 # Short-Description: configure according to cmdline
@@ -52,11 +52,11 @@ init_interfaces_orderby_macs() {
     total_nics=${#macs[@]}
     interface_file=${2:-"/etc/network/interfaces"}
     rule_file=${3:-"/etc/udev/rules.d/70-persistent-net.rules"}
-    
+
     echo -n "auto lo" > $interface_file
     for((i=0; i<total_nics; i++))
     do
-        if [[ $i < 3 ]] 
+        if [[ $i < 3 ]]
         then
            echo -n " eth$i" >> $interface_file
         fi
@@ -70,7 +70,7 @@ EOF
     echo "" > $rule_file
     for((i=0; i < ${#macs[@]}; i++))
     do
-        echo "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${macs[$i]}\", NAME=\"eth$i\"" >> $rule_file 
+        echo "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${macs[$i]}\", NAME=\"eth$i\"" >> $rule_file
     done
 }
 
@@ -151,7 +151,7 @@ get_boot_params() {
           chmod go-rwx /root/.ssh/authorized_keys
           ;;
      vmware)
-          vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
+          vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline
           ;;
      virtualpc|hyperv)
           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
@@ -204,7 +204,7 @@ patch() {
     [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
     local newmd5=
     [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
- 
+
    if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
     then
       shouldpatch=true
@@ -216,8 +216,8 @@ patch() {
     hyperVisor=$(hypervisor)
     /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT $hyperVisor
     umount $PATCH_MOUNT
-    
-    if [ "$shouldpatch" == "true" ] 
+
+    if [ "$shouldpatch" == "true" ]
     then
       log_it "Rebooting system since we patched init scripts"
       sync
@@ -355,7 +355,7 @@ setup_interface() {
   local mask=$3
   local gw=$4
   local force=$5
-  local intf=eth${intfnum} 
+  local intf=eth${intfnum}
   local bootproto="static"
 
 
@@ -449,7 +449,7 @@ enable_fwding() {
 disable_rpfilter() {
   log_it "cloud: disable rp_filter"
   log_it "disable rpfilter"
-  sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
+  sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf
 }
 
 get_public_vif_list() {
@@ -461,32 +461,32 @@ get_public_vif_list() {
       vif_list="$vif_list $vif";
     fi
   done
-  
+
   echo $vif_list
 }
 
 disable_rpfilter_domR() {
   log_it "cloud: Tuning rp_filter on public interfaces"
-  
+
   VIF_LIST=$(get_public_vif_list)
   log_it "rpfilter public interfaces :  $VIF_LIST"
   if [ "$DISABLE_RP_FILTER" == "true" ]
   then
       log_it "cloud: disable rp_filter on public interfaces"
-      sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
+      sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf
       echo "0" > /proc/sys/net/ipv4/conf/default/rp_filter
       for vif in $VIF_LIST; do
          log_it "cloud: disable rp_filter on public interface: $vif"
-         sed -i "s/net.ipv4.conf.$vif.rp_filter.*$/net.ipv4.conf.$vif.rp_filter = 0/" /etc/sysctl.conf 
+         sed -i "s/net.ipv4.conf.$vif.rp_filter.*$/net.ipv4.conf.$vif.rp_filter = 0/" /etc/sysctl.conf
          echo "0" > /proc/sys/net/ipv4/conf/$vif/rp_filter
       done
   else
       log_it "cloud: enable rp_filter on public interfaces"
-      sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 1/" /etc/sysctl.conf 
+      sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 1/" /etc/sysctl.conf
       echo "1" > /proc/sys/net/ipv4/conf/default/rp_filter
       for vif in $VIF_LIST; do
          log_it "cloud: enable rp_filter on public interface: $vif"
-         sed -i "s/net.ipv4.conf.$vif.rp_filter.*$/net.ipv4.conf.$vif.rp_filter = 1/" /etc/sysctl.conf 
+         sed -i "s/net.ipv4.conf.$vif.rp_filter.*$/net.ipv4.conf.$vif.rp_filter = 1/" /etc/sysctl.conf
          echo "1" > /proc/sys/net/ipv4/conf/$vif/rp_filter
       done
   fi
@@ -593,11 +593,11 @@ setup_common() {
   then
   	setup_interface "2" $ETH2_IP $ETH2_MASK $GW
   fi
-   
+
   echo $NAME > /etc/hostname
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
   hostname $NAME
-  
+
   #Nameserver
   sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
   sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
@@ -606,7 +606,7 @@ setup_common() {
     echo "nameserver $internalNS1" > /etc/dnsmasq-resolv.conf
     echo "nameserver $internalNS1" > /etc/resolv.conf
   fi
-  
+
   if [ -n "$internalNS2" ]
   then
     echo "nameserver $internalNS2" >> /etc/dnsmasq-resolv.conf
@@ -617,7 +617,7 @@ setup_common() {
     echo "nameserver $NS1" >> /etc/dnsmasq-resolv.conf
     echo "nameserver $NS1" >> /etc/resolv.conf
   fi
-  
+
   if [ -n "$NS2" ]
   then
     echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
@@ -652,7 +652,7 @@ setup_common() {
     ip route add default via $GW dev $gwdev
 
   fi
- 
+
   # a hacking way to activate vSwitch under VMware
   ping -n -c 3 $GW &
   sleep 3
@@ -667,7 +667,7 @@ setup_common() {
       ping -n -c 3 $MGMT_GW &
       sleep 3
       pkill ping
-  
+
   fi
 
   local hyp=$(hypervisor)
@@ -689,7 +689,7 @@ setup_dnsmasq() {
 
   #get the template
   cp /etc/dnsmasq.conf.tmpl /etc/dnsmasq.conf
-  
+
   if [ -n "$DOMAIN" ]
   then
         #send domain name to dhcp clients
@@ -699,17 +699,17 @@ setup_dnsmasq() {
         #answer all local domain queries
         sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
   fi
-  
+
   if [ -n  "$DNS_SEARCH_ORDER" ]
   then
       sed -i -e "/^[#]*dhcp-option.*=119.*$/d" /etc/dnsmasq.conf
       echo "dhcp-option-force=119,$DNS_SEARCH_ORDER" >> /etc/dnsmasq.conf
       # set the domain search order as a space seprated list for option 15
       DNS_SEARCH_ORDER=$(echo $DNS_SEARCH_ORDER | sed 's/,/ /g')
-      #send domain name to dhcp clients 
+      #send domain name to dhcp clients
       sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\""$DNS_SEARCH_ORDER"\"/ /etc/dnsmasq.conf
   fi
-  
+
   if [ $DHCP_RANGE ]
   then
     sed -i -e "s/^dhcp-range_ip4=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
@@ -880,11 +880,11 @@ setup_router() {
 
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
-  
+
   if [ -n "$ETH2_IP" ]
   then
       setup_common eth0 eth1 eth2
-      
+
       if [ -n "$EXTRA_PUBNICS" ]
       then
         for((i = 3; i < 3 + $EXTRA_PUBNICS; i++))
@@ -902,13 +902,13 @@ setup_router() {
         done
       fi
   fi
- 
-  # Moved to Cs Python code 
+
+  # Moved to Cs Python code
   #if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
   #then
     #setup_redundant_router
   #fi
-  
+
   log_it "Checking udev NIC assignment order changes"
   if [ "$NIC_MACS" != "" ]
   then
@@ -916,7 +916,7 @@ setup_router() {
     newmd5=$(md5sum "/tmp/udev-rules" | awk '{print $1}')
     rm /tmp/interfaces
     rm /tmp/udev-rules
-    
+
     if [ "$oldmd5" != "$newmd5" ]
     then
       log_it "udev NIC assignment requires reboot to take effect"
@@ -925,7 +925,7 @@ setup_router() {
       reboot
     fi
   fi
-  
+
   setup_aesni
   setup_dnsmasq
   setup_apache2 $ETH0_IP
@@ -957,10 +957,8 @@ setup_router() {
 
   #setup hourly logrotate
   mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
-  
+
 }
-
-
 
 setup_vpcrouter() {
   log_it "Setting up VPC virtual router system vm"
@@ -974,11 +972,11 @@ auto lo eth0
 iface lo inet loopback
 EOF
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW
-   
+
   echo $NAME > /etc/hostname
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
   hostname $NAME
-  
+
   #Nameserver
   sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
   sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
@@ -987,7 +985,7 @@ EOF
     echo "nameserver $internalNS1" > /etc/dnsmasq-resolv.conf
     echo "nameserver $internalNS1" > /etc/resolv.conf
   fi
-  
+
   if [ -n "$internalNS2" ]
   then
     echo "nameserver $internalNS2" >> /etc/dnsmasq-resolv.conf
@@ -998,7 +996,7 @@ EOF
     echo "nameserver $NS1" >> /etc/dnsmasq-resolv.conf
     echo "nameserver $NS1" >> /etc/resolv.conf
   fi
-  
+
   if [ -n "$NS2" ]
   then
     echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
@@ -1009,7 +1007,7 @@ EOF
      if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ];
      then
          ip route add $MGMTNET via $LOCAL_GW dev eth0
-         
+
           # a hacking way to activate vSwitch under VMware
          ping -n -c 3 $LOCAL_GW &
          sleep 3
@@ -1065,8 +1063,6 @@ EOF
 
 }
 
-
-
 setup_dhcpsrvr() {
   log_it "Setting up dhcp server system vm"
   setup_common eth0 eth1
@@ -1108,10 +1104,10 @@ setup_storage_network() {
 		log_it "Incompleted parameters STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR. Cannot setup storage network"
 		return
 	fi
-	
+
 	echo "" >> /etc/network/interfaces
 	echo "auto eth3" >> /etc/network/interfaces
-	
+
 	setup_interface "3" "$STORAGE_IP" "$STORAGE_NETMASK"
     [ -n "$MTU" ] && ifconfig eth3 mtu $MTU && echo "  mtu $MTU" >> /etc/network/interfaces
 	#ip route add "$STORAGE_CIDR" via "$STORAGE_IP"
@@ -1260,7 +1256,7 @@ setup_elbvm() {
   else
     setup_sshd $ETH1_IP "eth1"
   fi
-  
+
   enable_fwding 0
   enable_svc haproxy 0
   enable_irqbalance 0
@@ -1283,7 +1279,7 @@ setup_ilbvm() {
   cp /etc/iptables/iptables-ilbvm /etc/iptables/rules.v4
   cp /etc/iptables/iptables-ilbvm /etc/iptables/rules
   setup_sshd $ETH1_IP "eth1"
-  
+
   enable_fwding 0
   enable_svc haproxy 1
   enable_irqbalance 1
@@ -1321,7 +1317,7 @@ start() {
   patch_log4j
   parse_cmd_line
   change_password
-  case $TYPE in 
+  case $TYPE in
      router)
          [ "$NAME" == "" ] && NAME=router
          setup_router
@@ -1400,7 +1396,7 @@ for i in $CMDLINE
     # Two lines so values do not accidently interpretted as escapes!!
     echo -n \"${KEY}\"': '\"${VALUE}\" >> ${CHEF_TMP_FILE}
     COMMA=",\n\t"
-    case $KEY in 
+    case $KEY in
       disable_rp_filter)
           DISABLE_RP_FILTER=$VALUE
           ;;
@@ -1483,13 +1479,13 @@ for i in $CMDLINE
         DHCP_RANGE=$(echo $VALUE | tr ':' ',')
       	;;
       bootproto)
-        BOOTPROTO=$VALUE 
+        BOOTPROTO=$VALUE
       	;;
       type)
-        TYPE=$VALUE	
+        TYPE=$VALUE
 	    ;;
       defaultroute)
-        DEFAULTROUTE=$VALUE	
+        DEFAULTROUTE=$VALUE
 	;;
       redundant_router)
         RROUTER=$VALUE
@@ -1556,7 +1552,7 @@ case "$1" in
 start)
 
 	log_action_begin_msg "Executing cloud-early-config"
-        log_it "Executing cloud-early-config"
+  log_it "Executing cloud-early-config"
 	if start; then
 	    log_action_end_msg $?
 	else
