@@ -222,6 +222,12 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
                   "%s" % GetDetailExceptionInfo(e)
             return PASS
 
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_05_create_template_with_no_checksum(self):
+        self.test_template.checksum = None
+        template = self.registerTemplate(self.test_template)
+        self.download(self.apiclient, template.id)
+
     def registerTemplate(self, cmd):
         temp = self.apiclient.registerTemplate(cmd)[0]
         self.cleanup.append(temp)
