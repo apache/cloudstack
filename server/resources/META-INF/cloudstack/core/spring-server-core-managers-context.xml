@@ -87,7 +87,9 @@
         <property name="networkElements" value="#{networkElementsRegistry.registered}" />
     </bean>
 
+
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
+
 
     <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
 
@@ -277,4 +279,10 @@
     </bean>
     <bean id="certServiceImpl" class="org.apache.cloudstack.network.ssl.CertServiceImpl" />
     <bean id="imageStoreUploadMonitorImpl" class="com.cloud.storage.ImageStoreUploadMonitorImpl" />
+
+    <!-- the new CA manager -->
+    <bean id="caManager" class="org.apache.cloudstack.ca.CAManagerImpl">
+        <property name="caProviders" value="#{caProvidersRegistry.registered}" />
+    </bean>
+
 </beans>

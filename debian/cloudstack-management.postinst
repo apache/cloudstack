@@ -50,9 +50,6 @@ if [ "$1" = configure ]; then
                 cp -a $OLDCONFDIR/$FILE $NEWCONFDIR/$FILE
             fi
         done
-        if [ -f "$OLDCONFDIR/cloud.keystore" ]; then
-            cp -a $OLDCONFDIR/cloud.keystore $NEWCONFDIR/cloudmanagementserver.keystore
-        fi
     fi
 
     CONFDIR="/etc/cloudstack/management"

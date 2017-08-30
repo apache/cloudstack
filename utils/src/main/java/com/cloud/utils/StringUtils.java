@@ -21,10 +21,12 @@ package com.cloud.utils;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -319,5 +321,11 @@ public class StringUtils {
             listOfChunks.add(originalList.subList(originalList.size() - originalList.size() % chunkSize, originalList.size()));
         }
         return listOfChunks;
+    }
+
+    public static String shuffleCSVList(final String csvList) {
+        List<String> list = csvTagsToList(csvList);
+        Collections.shuffle(list, new Random(System.nanoTime()));
+        return join(list, ",");
     }
 }

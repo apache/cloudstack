@@ -28,8 +28,8 @@ JASPER_HOME="/usr/share/cloudstack-management"
 CATALINA_TMPDIR="/usr/share/cloudstack-management/temp"
 
 
-if [ -r "/etc/cloudstack/management/cloudmanagementserver.keystore" ] ; then
-  JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m -Djavax.net.ssl.trustStore=/etc/cloudstack/management/cloudmanagementserver.keystore -Djavax.net.ssl.trustStorePassword=vmops.com "
+if [ -r "/etc/cloudstack/management/cloud.jks" ] ; then
+  JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m -Djavax.net.ssl.trustStore=/etc/cloudstack/management/cloud.jks -Djavax.net.ssl.trustStorePassword=vmops.com "
 else
   JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m"
 fi

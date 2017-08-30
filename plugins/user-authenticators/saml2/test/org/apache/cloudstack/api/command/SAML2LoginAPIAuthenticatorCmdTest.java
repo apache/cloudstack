@@ -21,12 +21,16 @@ package org.apache.cloudstack.api.command;
 
 import static org.junit.Assert.assertFalse;
 
-import com.cloud.domain.Domain;
-import com.cloud.user.AccountService;
-import com.cloud.user.DomainManager;
-import com.cloud.user.UserAccountVO;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.HttpUtils;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
@@ -36,6 +40,7 @@ import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLPluginConstants;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
 import org.apache.cloudstack.saml.SAMLUtils;
+import org.apache.cloudstack.utils.security.CertUtils;
 import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.Test;
@@ -64,16 +69,12 @@ import org.opensaml.saml2.core.impl.StatusBuilder;
 import org.opensaml.saml2.core.impl.StatusCodeBuilder;
 import org.opensaml.saml2.core.impl.SubjectBuilder;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import java.lang.reflect.Field;
-import java.security.KeyPair;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
-import java.net.InetAddress;
+import com.cloud.domain.Domain;
+import com.cloud.user.AccountService;
+import com.cloud.user.DomainManager;
+import com.cloud.user.UserAccountVO;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.utils.HttpUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SAML2LoginAPIAuthenticatorCmdTest {
@@ -158,7 +159,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         userAccountDaoField.setAccessible(true);
         userAccountDaoField.set(cmd, userAccountDao);
 
-        KeyPair kp = SAMLUtils.generateRandomKeyPair();
+        KeyPair kp = CertUtils.generateRandomKeyPair(4096);
         X509Certificate cert = SAMLUtils.generateRandomX509Certificate(kp);
 
         SAMLProviderMetadata providerMetadata = new SAMLProviderMetadata();

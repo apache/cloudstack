@@ -31,7 +31,10 @@ import java.util.regex.PatternSyntaxException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.user.AccountManager;
+import org.apache.cloudstack.ca.SetupCertificateAnswer;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -62,6 +65,7 @@ import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.simulator.dao.MockVMDao;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -457,6 +461,24 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     @Override
     public Answer pingTest(PingTestCommand cmd) {
         return new Answer(cmd);
+    }
+
+    @Override
+    public Answer setupKeyStore(SetupKeyStoreCommand cmd) {
+        return new SetupKeystoreAnswer(
+                "-----BEGIN CERTIFICATE REQUEST-----\n" +
+                "MIIBHjCByQIBADBkMQswCQYDVQQGEwJJTjELMAkGA1UECAwCSFIxETAPBgNVBAcM\n" +
+                "CEd1cnVncmFtMQ8wDQYDVQQKDAZBcGFjaGUxEzARBgNVBAsMCkNsb3VkU3RhY2sx\n" +
+                "DzANBgNVBAMMBnYtMS1WTTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQD46KFWKYrJ\n" +
+                "F43Y1oqWUfrl4mj4Qm05Bgsi6nuigZv7ufiAKK0nO4iJKdRa2hFMUvBi2/bU3IyY\n" +
+                "Nvg7cdJsn4K9AgMBAAGgADANBgkqhkiG9w0BAQUFAANBAIta9glu/ZSjA/ncyXix\n" +
+                "yDOyAKmXXxsRIsdrEuIzakUuJS7C8IG0FjUbDyIaiwWQa5x+Lt4oMqCmpNqRzaGP\n" +
+                "fOo=\n" + "-----END CERTIFICATE REQUEST-----");
+    }
+
+    @Override
+    public Answer setupCertificate(SetupCertificateCommand cmd) {
+        return new SetupCertificateAnswer(true);
     }
 
     @Override

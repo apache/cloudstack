@@ -499,12 +499,6 @@ else
     echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
 fi
 
-if [ -f "%{_sysconfdir}/cloud.rpmsave/management/cloud.keystore" ]; then
-    cp -p %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
-    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
-    mv %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore.rpmsave
-fi
-
 %preun agent
 /sbin/service cloudstack-agent stop || true
 if [ "$1" == "0" ] ; then

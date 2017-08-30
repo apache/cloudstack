@@ -182,14 +182,6 @@ public enum Config {
             "3600",
             "Timeout (in seconds) to synchronize storage pool operations.",
             null),
-    StorageTemplateCleanupEnabled(
-            "Storage",
-            ManagementServer.class,
-            Boolean.class,
-            "storage.template.cleanup.enabled",
-            "true",
-            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled",
-            null),
     PrimaryStorageDownloadWait(
             "Storage",
             TemplateManager.class,
