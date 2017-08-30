@@ -1369,6 +1369,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (task.type == VolumeTaskType.NOP) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
                 vol = task.volume;
+                // For a zone-wide managed storage, it is possible that the VM can be started in another
+                // cluster. In that case make sure that the volume in in the right access group cluster.
+                if (pool.isManaged()) {
+                    long oldHostId = vm.getVirtualMachine().getLastHostId();
+                    long hostId = vm.getVirtualMachine().getHostId();
+                    if (oldHostId != hostId) {
+                        Host oldHost = _hostDao.findById(oldHostId);
+                        Host host = _hostDao.findById(hostId);
+                        DataStore storagePool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+
+                        volService.revokeAccess(volFactory.getVolume(vol.getId()), oldHost, storagePool);
+                        volService.grantAccess(volFactory.getVolume(vol.getId()), host, storagePool);
+                    }
+                }
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
                 vol = migrateVolume(task.volume, pool);
