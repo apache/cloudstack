@@ -44,6 +44,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.network.router.NetworkHelper;
 
 @Configuration
 @ComponentScan(basePackageClasses = {NetUtils.class},
@@ -59,6 +60,11 @@ public class ElementChildTestConfiguration {
         @Bean
         public DomainRouterDao domainRouterDao() {
             return Mockito.mock(DomainRouterDao.class);
+        }
+
+        @Bean
+        public NetworkHelper networkHelper() {
+            return Mockito.mock(NetworkHelper.class);
         }
 
         @Bean
