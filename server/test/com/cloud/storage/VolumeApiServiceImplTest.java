@@ -392,7 +392,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void testTakeSnapshotF2() throws ResourceAllocationException {
         when(_volFactory.getVolume(anyLong())).thenReturn(volumeInfoMock);
-        when(volumeInfoMock.getState()).thenReturn(Volume.State.Ready);
+        when(volumeInfoMock.getState()).thenReturn(Volume.State.Snapshotting);
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
         when(volumeInfoMock.getPoolId()).thenReturn(1L);
         when (volService.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
