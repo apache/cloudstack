@@ -53,13 +53,13 @@ import java.util.Properties;
 public class ServerDaemon implements Daemon {
     private static final Logger logger = LoggerFactory.getLogger(ServerDaemon.class);
     private static final String WEB_XML = "META-INF/webapp/WEB-INF/web.xml";
-    private static final String PROJECT_RELATIVE_PATH_TO_WEBAPP = "src/main/webapp";
     private static final String REQUEST_LOG = "request.log";
 
     private Server jettyServer;
     private int port;
     private String bindInterface;
     private String requestLogFile;
+    private String webAppLocation;
 
     public static void main(String... anArgs) throws Exception {
         ServerDaemon csServer = new ServerDaemon();
@@ -71,9 +71,10 @@ public class ServerDaemon implements Daemon {
     @Override
     public void init(DaemonContext context) {
         Properties props = System.getProperties();
-        setPort(Integer.parseInt(props.getProperty("jetty.port", "8080")));
-        setBindInterface(props.getProperty("jetty.host"));
-        setRequestLogFile(props.getProperty("jetty.requestlog", REQUEST_LOG));
+        setPort(Integer.parseInt(props.getProperty("port", "8080")));
+        setBindInterface(props.getProperty("host"));
+        setWebAppLocation(props.getProperty("webapp"));
+        setRequestLogFile(props.getProperty("requestlog", REQUEST_LOG));
         StringBuilder sb = new StringBuilder("Initializing server daemon on ");
         sb.append(bindInterface == null ? "*" : bindInterface);
         sb.append(":");
@@ -135,6 +136,10 @@ public class ServerDaemon implements Daemon {
         this.requestLogFile = requestLogFile;
     }
 
+    public void setWebAppLocation(String webAppLocation) {
+        this.webAppLocation = webAppLocation;
+    }
+
     private ThreadPool createThreadPool() {
         QueuedThreadPool threadPool = new QueuedThreadPool();
         threadPool.setMinThreads(10);
@@ -153,10 +158,10 @@ public class ServerDaemon implements Daemon {
         WebAppContext webapp = new WebAppContext();
         webapp.setContextPath("/client");
 
-        if (isRunningInShadedJar()) {
+        if (webAppLocation == null) {
             webapp.setWar(getShadedWarUrl());
         } else {
-            webapp.setWar(PROJECT_RELATIVE_PATH_TO_WEBAPP);
+            webapp.setWar(webAppLocation);
         }
 
         List<Handler> handlers = new ArrayList<>();
@@ -187,11 +192,6 @@ public class ServerDaemon implements Daemon {
         log.setLogTimeZone("GMT");
         log.setLogLatency(true);
         return log;
-    }
-
-
-    private boolean isRunningInShadedJar() {
-        return true;
     }
 
     private URL getResource(String aResource) {
