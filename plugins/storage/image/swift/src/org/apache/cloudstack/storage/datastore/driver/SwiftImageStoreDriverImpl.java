@@ -68,7 +68,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     public DataStoreTO getStoreTO(DataStore store) {
         ImageStoreImpl imgStore = (ImageStoreImpl)store;
         Map<String, String> details = _imageStoreDetailsDao.getDetails(imgStore.getId());
-        return new SwiftTO(imgStore.getId(), imgStore.getUri(), details.get(ApiConstants.ACCOUNT), details.get(ApiConstants.USERNAME), details.get(ApiConstants.KEY));
+        return new SwiftTO(imgStore.getId(), imgStore.getUri(), details.get(ApiConstants.ACCOUNT), details.get(ApiConstants.USERNAME), details.get(ApiConstants.KEY), details.get(ApiConstants.STORAGE_POLICY));
     }
 
     @Override
