@@ -165,7 +165,7 @@ patch() {
     log_it "Patching cloud service"
     hyperVisor=$(hypervisor)
     /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT $hyperVisor
-    log_it "Unmounting %PATCH_MOUNT"
+    log_it "Unmounting $PATCH_MOUNT"
     umount $PATCH_MOUNT
 
     # Historical reboot removed due to cloud-early-init now running before services started

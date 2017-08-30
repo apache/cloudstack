@@ -23,11 +23,10 @@ log_it() {
   echo "$(date) patchsystemvm.sh $@" >> $logfile
 }
 
-
 # To use existing console proxy .zip-based package file
 patch_console_proxy() {
    local patchfile=$1
-   log_it "Patching console proxy VM"
+   log_it "Patching CPVM/SSVM with cloud agent jars from $patchfile"
    rm /usr/local/cloud/systemvm -rf
    mkdir -p /usr/local/cloud/systemvm
    log_it "Patching /usr/local/cloud/systemvm:"
@@ -189,7 +188,7 @@ done
 
 if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f ${PATCH_MOUNT}/systemvm.zip ]
 then
-  log_it "Patching ${TYPE}"
+  log_it "Patching ${TYPE}."
   patch_console_proxy ${PATCH_MOUNT}/systemvm.zip
   if [ $? -gt 0 ]
   then

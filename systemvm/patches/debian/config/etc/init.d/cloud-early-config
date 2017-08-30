@@ -207,7 +207,7 @@ patch() {
    if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
     then
       shouldpatch=true
-      log_it "Patching  scripts oldmd5=$oldmd5 newmd5=$newmd5"
+      log_it "Patching  scripts oldmd5=$oldmd5 newmd5=$newmd5 with $patchfile"
       tar xzf $patchfile -C /
       echo ${newmd5} > ${md5file}
     fi
@@ -932,7 +932,6 @@ setup_router() {
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
-
   enable_svc dnsmasq 1
   enable_svc haproxy 1
   enable_irqbalance 1
@@ -1312,7 +1311,7 @@ start() {
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
   log_it "Detected that we are running inside $hyp guest"
   get_boot_params
-  patch
+  # patch - removed since this was done by cloud-early-init
   patch_log4j
   parse_cmd_line
   change_password
