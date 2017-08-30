@@ -43,7 +43,7 @@ rm -f /var/cache/cloud/boot_up_done
 . /lib/lsb/init-functions
 
 log_it() {
-  echo "$(date) $@" >> /var/log/cloud.log
+  echo "$(date) cloud-early-config $@" >> /var/log/cloud.log
   log_action_msg "$@"
 }
 
@@ -182,7 +182,6 @@ patch() {
   local shouldpatch=false
   local cdrom_dev=
   mkdir -p $PATCH_MOUNT
-
 
   if [ -e /dev/xvdd ]; then
        cdrom_dev=/dev/xvdd

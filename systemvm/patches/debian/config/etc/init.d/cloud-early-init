@@ -32,7 +32,7 @@ PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 . /lib/lsb/init-functions
 
 log_it() {
-  echo "$(date) $@" >> /var/log/cloud.log
+  echo "$(date) cloud-early-init $@" >> /var/log/cloud.log
   log_action_msg "$@"
 }
 
@@ -52,6 +52,77 @@ hypervisor() {
 
 }
 
+get_boot_params() {
+  local EXTRA_MOUNT=/media/extra
+  local hyp=$(hypervisor)
+  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
+
+  case $hyp in
+     xen-domU|xen-hvm)
+          cat /proc/cmdline > /var/cache/cloud/cmdline
+          sed -i "s/%/ /g" /var/cache/cloud/cmdline
+          ;;
+     kvm)
+          VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
+
+          if [ -z "$VPORT" ]; then
+            log_it "No suitable VirtIO port was found in /dev/virtio-ports" && exit 2
+          fi
+
+          if [ ! -e "$VPORT" ]; then
+            log_it "${VPORT} not loaded, perhaps guest kernel is too old." && exit 2
+          fi
+
+	      local factor=2
+	      local progress=1
+		  for i in {1..5}
+		  do
+	        while read line; do
+	          if [[ $line == cmdline:* ]]; then
+	            cmd=${line//cmdline:/}
+                echo $cmd > /var/cache/cloud/cmdline
+	          elif [[ $line == pubkey:* ]]; then
+	            pubkey=${line//pubkey:/}
+	            echo $pubkey > /var/cache/cloud/authorized_keys
+	            echo $pubkey > /root/.ssh/authorized_keys
+              fi
+	        done < $VPORT
+	        # In case of reboot we do not send the boot args again.
+	        # So, no need to wait for them, as the boot args are already set at startup
+	        if [ -s /var/cache/cloud/cmdline  ]
+	        then
+              log_it "Found a non empty cmdline file. Will now exit the loop and proceed with configuration."
+              break;
+            fi
+            sleep ${progress}s
+            progress=$[ progress * factor ]
+		  done
+          chmod go-rwx /root/.ssh/authorized_keys
+          ;;
+     vmware)
+          vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline
+          ;;
+     virtualpc|hyperv)
+          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
+          #waiting for the hv_kvp_daemon to start up
+          #sleep  need to fix the race condition of hv_kvp_daemon and cloud-early-config
+          sleep 5
+          cp -f /var/opt/hyperv/.kvp_pool_0 /var/cache/cloud/cmdline
+          cat /dev/null > /var/opt/hyperv/.kvp_pool_0
+          ;;
+     virtualbox)
+          # Virtualbox is used to test the virtual router
+          # get the commandline from a dmistring  (yes, hacky!)
+          dmidecode | grep cmdline | sed 's/^.*cmdline://' > /var/cache/cloud/cmdline
+          RV=$?
+          if [ $RV -ne 0 ] ; then
+            log_it "Failed to get cmdline from a virtualbox dmi property"
+          fi
+          ;;
+  esac
+
+}
+
 patch() {
   local PATCH_MOUNT=/media/cdrom
   local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
@@ -60,7 +131,6 @@ patch() {
   local shouldpatch=false
   local cdrom_dev=
   mkdir -p $PATCH_MOUNT
-
 
   if [ -e /dev/xvdd ]; then
        cdrom_dev=/dev/xvdd
@@ -92,12 +162,14 @@ patch() {
     else
       log_it "Scripts up to date oldmd5=$oldmd5 newmd5=$newmd5"
     fi
-    log_it "cloud-early-init patching cloud service"
+    log_it "Patching cloud service"
     hyperVisor=$(hypervisor)
     /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT $hyperVisor
+    log_it "Unmounting %PATCH_MOUNT"
     umount $PATCH_MOUNT
 
     # Historical reboot removed due to cloud-early-init now running before services started
+
   fi
 
   if [ -f /mnt/cmdline ]; then
@@ -110,7 +182,8 @@ start() {
 
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of cloud-early-init" && exit 10
-  log_it "Detected that we are running inside $hyp guest during cloud-early-init."
+  log_it "Detected that we are running inside $hyp guest."
+  get_boot_params
   patch
   if [ "$hyp" == "hyperv" ]; then
     # eject the systemvm.iso
