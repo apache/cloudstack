@@ -25,7 +25,6 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
-import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -36,12 +35,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.S3.ClientOptions;
-import com.cloud.utils.storage.encoding.DecodedDataObject;
-import com.cloud.utils.storage.encoding.DecodedDataStore;
-import com.cloud.utils.storage.encoding.Decoder;
 import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -52,8 +46,6 @@ import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -68,7 +60,6 @@ import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
-import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -475,15 +466,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected SR getSRByNameLabel(final Connection conn, final String nameLabel) throws BadServerResponse, XenAPIException, XmlRpcException {
-        final Set<SR> srs = SR.getByNameLabel(conn, nameLabel);
-        if (srs.size() != 1) {
-            throw new CloudRuntimeException("storage uuid: " + nameLabel + " is not unique");
-        }
-        final SR poolsr = srs.iterator().next();
-        return poolsr;
-    }
-
     protected VDI createVdi(final Connection conn, final String vdiName, final SR sr, final long size) throws BadServerResponse, XenAPIException, XmlRpcException {
         final VDI.Record vdir = new VDI.Record();
         vdir.nameLabel = vdiName;
@@ -576,161 +558,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
             errorMsg = e.toString();
         }
         return new Answer(null, false, errorMsg);
-    }
-
-    protected SR getNfsSR(final Connection conn, final StorageFilerTO pool) {
-        final Map<String, String> deviceConfig = new HashMap<String, String>();
-        try {
-            final String server = pool.getHost();
-            String serverpath = pool.getPath();
-            serverpath = serverpath.replace("//", "/");
-            final Set<SR> srs = SR.getAll(conn);
-            for (final SR sr : srs) {
-                if (!SRType.NFS.equals(sr.getType(conn))) {
-                    continue;
-                }
-
-                final Set<PBD> pbds = sr.getPBDs(conn);
-                if (pbds.isEmpty()) {
-                    continue;
-                }
-
-                final PBD pbd = pbds.iterator().next();
-
-                final Map<String, String> dc = pbd.getDeviceConfig(conn);
-
-                if (dc == null) {
-                    continue;
-                }
-
-                if (dc.get("server") == null) {
-                    continue;
-                }
-
-                if (dc.get("serverpath") == null) {
-                    continue;
-                }
-
-                if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
-                    throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:" + dc.get("serverpath") +
-                            " for pool " + pool.getUuid() + "on host:" + hypervisorResource.getHost().getUuid());
-                }
-
-            }
-            deviceConfig.put("server", server);
-            deviceConfig.put("serverpath", serverpath);
-            final Host host = Host.getByUuid(conn, hypervisorResource.getHost().getUuid());
-            final Map<String, String> smConfig = new HashMap<String, String>();
-            smConfig.put("nosubdir", "true");
-            final SR sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), Long.toString(pool.getId()), SRType.NFS.toString(), "user", true, smConfig);
-            sr.scan(conn);
-            return sr;
-        } catch (final XenAPIException e) {
-            throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
-        } catch (final XmlRpcException e) {
-            throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
-        }
-    }
-
-    protected Answer directDownloadHttpTemplate(final CopyCommand cmd, final DecodedDataObject srcObj, final DecodedDataObject destObj) {
-        final Connection conn = hypervisorResource.getConnection();
-        SR poolsr = null;
-        VDI vdi = null;
-        boolean result = false;
-        try {
-            if (destObj.getPath() == null) {
-                //need to create volume at first
-
-            }
-            vdi = VDI.getByUuid(conn, destObj.getPath());
-            if (vdi == null) {
-                throw new CloudRuntimeException("can't find volume: " + destObj.getPath());
-            }
-            final String destStoreUuid = destObj.getStore().getUuid();
-            final Set<SR> srs = SR.getByNameLabel(conn, destStoreUuid);
-            if (srs.size() != 1) {
-                throw new CloudRuntimeException("storage uuid: " + destStoreUuid + " is not unique");
-            }
-            poolsr = srs.iterator().next();
-            final VDI.Record vdir = vdi.getRecord(conn);
-            final String vdiLocation = vdir.location;
-            String pbdLocation = null;
-            if (destObj.getStore().getScheme().equalsIgnoreCase(DataStoreProtocol.NFS.toString())) {
-                pbdLocation = "/run/sr-mount/" + poolsr.getUuid(conn);
-            } else {
-                final Set<PBD> pbds = poolsr.getPBDs(conn);
-                if (pbds.size() != 1) {
-                    throw new CloudRuntimeException("Don't how to handle multiple pbds:" + pbds.size() + " for sr: " + poolsr.getUuid(conn));
-                }
-                final PBD pbd = pbds.iterator().next();
-                final Map<String, String> deviceCfg = pbd.getDeviceConfig(conn);
-                pbdLocation = deviceCfg.get("location");
-            }
-            if (pbdLocation == null) {
-                throw new CloudRuntimeException("Can't get pbd location");
-            }
-
-            final String vdiPath = pbdLocation + "/" + vdiLocation + ".vhd";
-            //download a url into vdipath
-            //downloadHttpToLocalFile(vdiPath, template.getPath());
-            hypervisorResource.callHostPlugin(conn, "storagePlugin", "downloadTemplateFromUrl", "destPath", vdiPath, "srcUrl", srcObj.getPath());
-            result = true;
-            //return new CopyCmdAnswer(cmd, vdi.getUuid(conn));
-        } catch (final BadServerResponse e) {
-            s_logger.debug("Failed to download template", e);
-        } catch (final XenAPIException e) {
-            s_logger.debug("Failed to download template", e);
-        } catch (final XmlRpcException e) {
-            s_logger.debug("Failed to download template", e);
-        } catch (final Exception e) {
-            s_logger.debug("Failed to download template", e);
-        } finally {
-            if (!result && vdi != null) {
-                try {
-                    vdi.destroy(conn);
-                } catch (final BadServerResponse e) {
-                    s_logger.debug("Failed to cleanup newly created vdi");
-                } catch (final XenAPIException e) {
-                    s_logger.debug("Failed to cleanup newly created vdi");
-                } catch (final XmlRpcException e) {
-                    s_logger.debug("Failed to cleanup newly created vdi");
-                }
-            }
-        }
-        return new Answer(cmd, false, "Failed to download template");
-    }
-
-    protected Answer execute(final AttachPrimaryDataStoreCmd cmd) {
-        final String dataStoreUri = cmd.getDataStore();
-        final Connection conn = hypervisorResource.getConnection();
-        try {
-            final DecodedDataObject obj = Decoder.decode(dataStoreUri);
-
-            final DecodedDataStore store = obj.getStore();
-
-            final SR sr = hypervisorResource.getStorageRepository(conn, store.getUuid());
-            hypervisorResource.setupHeartbeatSr(conn, sr, false);
-            final long capacity = sr.getPhysicalSize(conn);
-            final long available = capacity - sr.getPhysicalUtilisation(conn);
-            if (capacity == -1) {
-                final String msg = "Pool capacity is -1! pool: ";
-                s_logger.warn(msg);
-                return new Answer(cmd, false, msg);
-            }
-            final AttachPrimaryDataStoreAnswer answer = new AttachPrimaryDataStoreAnswer(cmd);
-            answer.setCapacity(capacity);
-            answer.setUuid(sr.getUuid(conn));
-            answer.setAvailable(available);
-            return answer;
-        } catch (final XenAPIException e) {
-            final String msg = "AttachPrimaryDataStoreCmd add XenAPIException:" + e.toString();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
-        } catch (final Exception e) {
-            final String msg = "AttachPrimaryDataStoreCmd failed:" + e.getMessage();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
-        }
     }
 
     protected boolean IsISCSI(final String type) {
@@ -1072,7 +899,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
         return new CopyCmdAnswer("unsupported protocol");
     }
 
-    boolean swiftUpload(final Connection conn, final SwiftTO swift, final String container, final String ldir, final String lfilename, final Boolean isISCSI, final int wait) {
+    private boolean swiftUpload(final Connection conn, final SwiftTO swift, final String container, final String ldir, final String lfilename, final Boolean isISCSI,
+            final int wait) {
         String result = null;
         try {
             result =
@@ -1097,7 +925,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
         return result;
     }
 
-    public String swiftBackupSnapshot(final Connection conn, final SwiftTO swift, final String srUuid, final String snapshotUuid, final String container, final Boolean isISCSI, final int wait) {
+    protected String swiftBackupSnapshot(final Connection conn, final SwiftTO swift, final String srUuid, final String snapshotUuid, final String container, final Boolean isISCSI,
+            final int wait) {
         String lfilename;
         String ldir;
         if (isISCSI) {
@@ -1141,7 +970,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     }
 
-    protected Long getSnapshotSize(final Connection conn, final String primaryStorageSRUuid, final String snapshotUuid, final Boolean isISCSI, final int wait) {
+    private Long getSnapshotSize(final Connection conn, final String primaryStorageSRUuid, final String snapshotUuid, final Boolean isISCSI, final int wait) {
         final String physicalSize = hypervisorResource.callHostPluginAsync(conn, "vmopsSnapshot", "getSnapshotSize", wait,
                 "primaryStorageSRUuid", primaryStorageSRUuid, "snapshotUuid", snapshotUuid, "isISCSI", isISCSI.toString());
         if (physicalSize == null || physicalSize.isEmpty()) {
@@ -1151,7 +980,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected String backupSnapshot(final Connection conn, final String primaryStorageSRUuid, final String localMountPoint, final String path, final String secondaryStorageMountPath,
+    private String backupSnapshot(final Connection conn, final String primaryStorageSRUuid, final String localMountPoint, final String path, final String secondaryStorageMountPath,
             final String snapshotUuid, String prevBackupUuid, final Boolean isISCSI, final int wait) {
         String backupSnapshotUuid = null;
 
