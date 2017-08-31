@@ -528,6 +528,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     bufferWriter.write("\n");
                     long size = _storage.getSize(destFileFullPath);
                     bufferWriter.write("size=" + size);
+                    bufferWriter.close();
+                    writer.close();
 
                     /**
                      * Snapshots might be in either QCOW2 or RAW image format
