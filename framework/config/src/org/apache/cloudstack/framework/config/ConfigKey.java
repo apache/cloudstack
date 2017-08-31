@@ -140,7 +140,8 @@ public class ConfigKey<T> {
     public T value() {
         if (_value == null || isDynamic()) {
             ConfigurationVO vo = s_depot != null ? s_depot.global().findById(key()) : null;
-            _value = valueOf((vo != null && vo.getValue() != null) ? vo.getValue() : defaultValue());
+            final String value = (vo != null && vo.getValue() != null) ? vo.getValue() : defaultValue();
+            _value = ((value == null) ? (T)defaultValue() : valueOf(value));
         }
 
         return _value;
