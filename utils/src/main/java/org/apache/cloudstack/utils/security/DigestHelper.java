@@ -37,7 +37,7 @@ public class DigestHelper {
         byte[] md5sum = digest.digest();
         // TODO make sure this is valid for all types of checksums !?!
         BigInteger bigInt = new BigInteger(1, md5sum);
-        checksum = new ChecksumValue(digest.getAlgorithm(), bigInt.toString(16));
+        checksum = new ChecksumValue(digest.getAlgorithm(), getPaddedDigestString(digest,bigInt));
         return checksum;
     }
 
@@ -53,8 +53,14 @@ public class DigestHelper {
         String checksum;
         digest.reset();
         BigInteger pwInt = new BigInteger(1, digest.digest(inputString.getBytes()));
+        return getPaddedDigestString(digest, pwInt);
+    }
+
+    private static String getPaddedDigestString(MessageDigest digest, BigInteger pwInt) {
+        String checksum;
         String pwStr = pwInt.toString(16);
-        int padding = paddingLengths.get(algorithm) - pwStr.length();
+        // we have half byte string representation, so
+        int padding = 2*digest.getDigestLength() - pwStr.length();
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < padding; i++) {
             sb.append('0'); // make sure the MD5 password is 32 digits long
