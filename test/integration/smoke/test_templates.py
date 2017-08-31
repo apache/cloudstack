@@ -115,7 +115,7 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
             self.test_template.format = "QCOW2"
             self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
             self.md5 = "ada77653dcf1e59495a9e1ac670ad95f"
-            self.sha256 = "efc03633f2b8f5db08acbcc5dc1be9028572dfd8f1c6c8ea663f0ef94b458c5"
+            self.sha256 = "0efc03633f2b8f5db08acbcc5dc1be9028572dfd8f1c6c8ea663f0ef94b458c5"
 
         if "vmware" in self.hypervisor.lower():
             self.test_template = registerTemplate.registerTemplateCmd()

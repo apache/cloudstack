@@ -17,8 +17,10 @@
 """ BVT tests for Templates ISO
 """
 # Import Local Modules
+from marvin.cloudstackException import GetDetailExceptionInfo
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.cloudstackAPI import listZones, updateIso, extractIso, updateIsoPermissions, copyIso, deleteIso
+from marvin.cloudstackAPI import listZones, updateIso, extractIso, updateIsoPermissions, copyIso, deleteIso,\
+    registerIso,listOsTypes
 from marvin.lib.utils import cleanup_resources, random_gen, get_hypervisor_type,validateList
 from marvin.lib.base import Account, Iso
 from marvin.lib.common import (get_domain,
@@ -606,3 +608,165 @@ class TestISO(cloudstackTestCase):
         self.get_iso_details("vmware-tools.iso")
         self.get_iso_details("xs-tools.iso")
         return
+
+
+class TestCreateISOWithChecksum(cloudstackTestCase):
+    def setUp(self):
+        self.testClient = super(TestCreateISOWithChecksum, self).getClsTestClient()
+        self.apiclient = self.testClient.getApiClient()
+        self.cleanup = []
+
+        self.unsupportedHypervisor = False
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            # Template creation from root volume is not supported in LXC
+            self.unsupportedHypervisor = True
+            return
+
+        # Get Zone, Domain and templates
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+
+        # Setup default create iso attributes
+        self.iso = registerIso.registerIsoCmd()
+        self.iso.checksum = "{SHA-1}" + "e16f703b5d6cb6dd2c448d956be63fcbee7d79ea"
+        self.iso.zoneid = self.zone.id
+        self.iso.name = 'test-tynyCore-iso'
+        self.iso.displaytext = 'test-tynyCore-iso'
+        self.iso.url = "http://dl.openvm.eu/cloudstack/iso/TinyCore-8.0.iso"
+        self.iso.ostypeid = self.getOsType("Other Linux (64-bit)")
+        self.md5 = "f7fee34a73a7f8e3adb30778c7c32c51"
+        self.sha256 = "069a22f7cc15b34cd39f6dd61ef0cf99ff47a1a92942772c30f50988746517f7"
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                            %s" % self.hypervisor)
+        return
+
+    def tearDown(self):
+        try:
+            # Clean up the created templates
+            for temp in self.cleanup:
+                cmd = deleteIso.deleteIsoCmd()
+                cmd.id = temp.id
+                cmd.zoneid = self.zone.id
+                self.apiclient.deleteIso(cmd)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_01_create_iso_with_checksum_sha1(self):
+        iso = self.registerIso(self.iso)
+        self.download(self.apiclient, iso.id)
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_02_create_iso_with_checksum_sha256(self):
+        self.iso.checksum = "{SHA-256}" + self.sha256
+        iso = self.registerIso(self.iso)
+        self.download(self.apiclient, iso.id)
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_03_create_iso_with_checksum_md5(self):
+        self.iso.checksum = "{md5}" + self.md5
+        iso = self.registerIso(self.iso)
+        self.download(self.apiclient, iso.id)
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_01_1_create_iso_with_checksum_sha1_negative(self):
+        self.iso.checksum = "{sha-1}" + "someInvalidValue"
+        iso = self.registerIso(self.iso)
+
+        try:
+            self.download(self.apiclient, iso.id)
+        except Exception as e:
+            print "Negative Test Passed - Exception Occurred Under iso download " \
+                  "%s" % GetDetailExceptionInfo(e)
+        else:
+            self.fail("Negative Test Failed - Exception DID NOT Occurred Under iso download ")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_02_1_create_iso_with_checksum_sha256_negative(self):
+        self.iso.checksum = "{SHA-256}" + "someInvalidValue"
+        iso = self.registerIso(self.iso)
+
+        try:
+            self.download(self.apiclient, iso.id)
+        except Exception as e:
+            print "Negative Test Passed - Exception Occurred Under iso download " \
+                  "%s" % GetDetailExceptionInfo(e)
+        else:
+            self.fail("Negative Test Failed - Exception DID NOT Occurred Under iso download ")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_03_1_create_iso_with_checksum_md5_negative(self):
+        self.iso.checksum = "{md5}" + "someInvalidValue"
+        iso = self.registerIso(self.iso)
+
+        try:
+            self.download(self.apiclient, iso.id)
+        except Exception as e:
+            print "Negative Test Passed - Exception Occurred Under iso download " \
+                  "%s" % GetDetailExceptionInfo(e)
+        else:
+            self.fail("Negative Test Failed - Exception DID NOT Occurred Under iso download ")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_04_create_iso_with_no_checksum(self):
+        self.iso.checksum = None
+        iso = self.registerIso(self.iso)
+        self.download(self.apiclient, iso.id)
+
+    def registerIso(self, cmd):
+        iso = self.apiclient.registerIso(cmd)[0]
+        self.cleanup.append(iso)
+        return iso
+
+    def getOsType(self, param):
+        cmd = listOsTypes.listOsTypesCmd()
+        cmd.description = param
+        return self.apiclient.listOsTypes(cmd)[0].id
+
+    def download(self, apiclient, iso_id, retries=12, interval=5):
+        """Check if template download will finish in 1 minute"""
+        while retries > -1:
+            time.sleep(interval)
+            iso_response = Iso.list(
+                apiclient,
+                id=iso_id
+            )
+
+            if isinstance(iso_response, list):
+                iso = iso_response[0]
+                if not hasattr(iso, 'status') or not iso or not iso.status:
+                    retries = retries - 1
+                    continue
+
+                # If iso is ready,
+                # iso.status = Download Complete
+                # Downloading - x% Downloaded
+                # if Failed
+                # Error - Any other string
+                if 'Failed' in iso.status:
+                    raise Exception(
+                        "Failed to download iso: status - %s" %
+                        iso.status)
+
+                elif iso.status == 'Successfully Installed' and iso.isready:
+                    return
+
+                elif 'Downloaded' in iso.status:
+                    retries = retries - 1
+                    continue
+
+                elif 'Installing' not in iso.status:
+                    if retries >= 0:
+                        retries = retries - 1
+                        continue
+                    raise Exception(
+                        "Error in downloading iso: status - %s" %
+                        iso.status)
+
+            else:
+                retries = retries - 1
+        raise Exception("Template download failed exception.")
