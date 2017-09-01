@@ -86,6 +86,7 @@ class TestHAKVM(cloudstackTestCase):
             self.services["ostype"]
         )
 
+        self.configureAndDisableHostHa()
         self.cleanup = [self.service_offering]
 
     def updateConfiguration(self, name, value):
@@ -102,6 +103,7 @@ class TestHAKVM(cloudstackTestCase):
         return self.fakeMsId * 1000
 
     def tearDown(self):
+        self.configureAndDisableHostHa()
         self.host = None
         try:
             self.dbclient.execute("delete from mshost_peer where peer_runid=%s" % self.getFakeMsRunId())
@@ -120,21 +122,10 @@ class TestHAKVM(cloudstackTestCase):
 
     def getHostHaEnableCmd(self):
         cmd = enableHAForHost.enableHAForHostCmd()
-        cmd.hostid = self.getHost().id
+        cmd.hostid = self.host.id
         return cmd
 
-    def check_host_transition_to_available(self):
-        t_end = time.time() + 90
-        while time.time() < t_end:
-            host = self.getHost()
-            if host.hostha.hastate == "Available":
-                return
-            else:
-                continue
-        self.fail(self)
-
     def getHost(self, hostId=None):
-
         response = list_hosts(
             self.apiclient,
             type='Routing',
@@ -150,25 +141,24 @@ class TestHAKVM(cloudstackTestCase):
     def getHostHaConfigCmd(self, provider='kvmhaprovider'):
         cmd = configureHAForHost.configureHAForHostCmd()
         cmd.provider = provider
-        cmd.hostid = self.getHost().id
+        cmd.hostid = self.host.id
         return cmd
 
     def getHostHaDisableCmd(self):
         cmd = disableHAForHost.disableHAForHostCmd()
-        cmd.hostid = self.getHost().id
+        cmd.hostid = self.host.id
         return cmd
 
-    def configureAndEnableHostHa(self, initialize=True):
+    def configureAndEnableHostHa(self):
         #Adding sleep between configuring and enabling
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        time.sleep(1)
         response = self.apiclient.enableHAForHost(self.getHostHaEnableCmd())
         self.assertEqual(response.haenable, True)
 
-    def configureAndDisableHostHa(self, hostId):
+    def configureAndDisableHostHa(self):
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaDisableCmd()
-        cmd.hostid = hostId
+        cmd.hostid = self.host.id
         response = self.apiclient.disableHAForHost(cmd)
         self.assertEqual(response.hostid, cmd.hostid)
         self.assertEqual(response.haenable, False)
@@ -196,7 +186,7 @@ class TestHAKVM(cloudstackTestCase):
 
     def waitUntilHostInState(self, state="Available", interval=3):
         def checkForState(expectedState):
-            response = self.getHost()
+            response = self.getHost(self.host.id)
             print("checkForState:: expected=%s, actual=%s" % (state, response.hostha))
             return response.hostha.hastate == expectedState, None
 
@@ -205,17 +195,19 @@ class TestHAKVM(cloudstackTestCase):
             self.fail("Failed to see host ha state in :" + state)
 
     def deployVM(self):
-        vm = VirtualMachine.create(
-            self.apiclient,
-            services=self.services["virtual_machine"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            zoneid=self.zone.id,
-            hostid = self.host.id,
-            method="POST"
-        )
-
-        self.cleanup.append(vm)
+        try:
+            vm = VirtualMachine.create(
+                self.apiclient,
+                services=self.services["virtual_machine"],
+                serviceofferingid=self.service_offering.id,
+                templateid=self.template.id,
+                zoneid=self.zone.id,
+                hostid = self.host.id,
+                method="POST"
+            )
+            self.cleanup.append(vm)
+        except Exception as e:
+            raise self.skipTest("Failed to deploy VM, skipping kvm host-ha test case")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_disable_oobm_ha_state_ineligible(self):
@@ -225,26 +217,21 @@ class TestHAKVM(cloudstackTestCase):
         self.logger.debug("Starting test_disable_oobm_ha_state_ineligible")
 
         # Enable ha for host
-        self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        cmd = self.getHostHaEnableCmd()
-        response = self.apiclient.enableHAForHost(cmd)
-        self.assertEqual(response.hostid, cmd.hostid)
-        self.assertEqual(response.haenable, True)
+        self.configureAndEnableHostHa()
 
         # Disable OOBM
         self.apiclient.configureOutOfBandManagement(self.getOobmConfigCmd())
         oobm_cmd = self.getOobmDisableCmd()
-        oobm_cmd.hostid = cmd.hostid
+        oobm_cmd.hostid = self.host.id
         response = self.apiclient.disableOutOfBandManagementForHost(oobm_cmd)
         self.assertEqual(response.hostid, oobm_cmd.hostid)
         self.assertEqual(response.enabled, False)
 
-        response = self.getHost(hostId=cmd.hostid).outofbandmanagement
+        response = self.getHost(hostId=self.host.id).outofbandmanagement
         self.assertEqual(response.powerstate, 'Disabled')
 
         # Verify HA State is Ineligeble
-        response = self.getHost(hostId=cmd.hostid).hostha
-        self.assertEqual(response.hastate, "Ineligible")
+        self.waitUntilHostInState("Ineligible")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_hostha_configure_default_driver(self):
@@ -266,20 +253,14 @@ class TestHAKVM(cloudstackTestCase):
         self.logger.debug("Starting test_hostha_enable_ha_when_host_disabled")
 
         # Enable HA
-        self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        cmd = self.getHostHaEnableCmd()
-        cmd.hostid = self.host.id
-        enable = self.apiclient.enableHAForHost(cmd)
-        self.assertEqual(enable.hostid, cmd.hostid)
-        self.assertEqual(enable.haenable, True)
+        self.configureAndEnableHostHa()
 
         # Disable Host
         self.disableHost(self.host.id)
 
         # Check HA State
         try:
-            response = self.getHost(self.host.id)
-            self.assertEqual(response.hostha.hastate, "Ineligible")
+            self.waitUntilHostInState("Ineligible")
         except Exception as e:
             self.enableHost(self.host.id)
             self.fail(e)
@@ -295,20 +276,14 @@ class TestHAKVM(cloudstackTestCase):
         self.logger.debug("Starting test_hostha_enable_ha_when_host_in_maintenance")
 
         # Enable HA
-        self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
-        cmd = self.getHostHaEnableCmd()
-        cmd.hostid = self.host.id
-        enable = self.apiclient.enableHAForHost(cmd)
-        self.assertEqual(enable.hostid, cmd.hostid)
-        self.assertEqual(enable.haenable, True)
+        self.configureAndEnableHostHa()
 
         # Prepare for maintenance Host
         self.setHostToMaintanance(self.host.id)
 
         # Check HA State
         try:
-            response = self.getHost(self.host.id)
-            self.assertEqual(response.hostha.hastate, "Ineligible")
+            self.waitUntilHostInState("Ineligible")
         except Exception as e:
             self.cancelMaintenance()
             self.fail(e)
@@ -336,9 +311,7 @@ class TestHAKVM(cloudstackTestCase):
 
         # Check HA State
         try:
-            time.sleep(1)
-            response = self.getHost(self.host.id)
-            self.assertEqual(response.hostha.hastate, "Ineligible")
+            self.waitUntilHostInState("Ineligible")
         except Exception as e:
             self.startAgent()
             self.fail(e)
@@ -370,7 +343,7 @@ class TestHAKVM(cloudstackTestCase):
             self.fail("Expected an exception to be thrown, failing")
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_ha_kvm_host_degraded(self):
+    def test_hostha_kvm_host_degraded(self):
         """
             Tests degraded HA state when agent is stopped/killed
         """
@@ -406,10 +379,11 @@ class TestHAKVM(cloudstackTestCase):
 
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_ha_kvm_host_recovering(self):
+    def test_hostha_kvm_host_recovering(self):
         """
             Tests recovery and fencing HA state transitions
         """
+
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
         self.configureAndEnableHostHa()
@@ -443,11 +417,12 @@ class TestHAKVM(cloudstackTestCase):
         self.waitUntilHostInState("Available")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_ha_kvm_host_fencing(self):
+    def test_hostha_kvm_host_fencing(self):
         """
             Tests fencing/fenced HA state when host crashes
         """
         self.logger.debug("Starting test_ha_kvm_host_fencing")
+
 
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
@@ -540,7 +515,7 @@ class TestHAKVM(cloudstackTestCase):
 
     def getOobmIssueActionCmd(self):
         cmd = issueOutOfBandManagementPowerAction.issueOutOfBandManagementPowerActionCmd()
-        cmd.hostid = self.getHost().id
+        cmd.hostid = self.host.id
         cmd.action = 'STATUS'
         return cmd
 
@@ -559,12 +534,12 @@ class TestHAKVM(cloudstackTestCase):
 
     def getOobmEnableCmd(self):
         cmd = enableOutOfBandManagementForHost.enableOutOfBandManagementForHostCmd()
-        cmd.hostid = self.getHost().id
+        cmd.hostid = self.host.id
         return cmd
 
     def getOobmDisableCmd(self):
         cmd = disableOutOfBandManagementForHost.disableOutOfBandManagementForHostCmd()
-        cmd.hostid = self.getHost().id
+        cmd.hostid = self.host.id
         return cmd
 
     def getIpmiServerPort(self):
@@ -577,7 +552,7 @@ class TestHAKVM(cloudstackTestCase):
         cmd.port = self.getIpmiServerPort()
         cmd.username = 'admin'
         cmd.password = 'password'
-        cmd.hostid = self.getHost().id
+        cmd.hostid = self.host.id
         return cmd
 
     def getIpmiServerIp(self):
@@ -608,39 +583,31 @@ class TestHAKVM(cloudstackTestCase):
         return response[0]
 
     def startAgent(self):
-        host = self.getHost()
-        SshClient(host=host.ipaddress, port=22, user=self.hostConfig["username"],
+        SshClient(host=self.host.ipaddress, port=22, user=self.hostConfig["username"],
                   passwd=self.hostConfig["password"]).execute \
             ("systemctl start cloudstack-agent || service cloudstack-agent start")
 
     def stopAgent(self):
-        host = self.getHost()
-        SshClient(host=host.ipaddress, port=22, user=self.hostConfig["username"],
+        SshClient(host=self.host.ipaddress, port=22, user=self.hostConfig["username"],
                   passwd=self.hostConfig["password"]).execute \
             ("systemctl stop cloudstack-agent || service cloudstack-agent stop")
 
     def killAgent(self):
-        host = self.getHost()
-        SshClient(host=host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
+        SshClient(host=self.host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
             ("kill -9 $(ps aux | grep 'cloudstack-agent' | awk '{print $2}')")
 
     def disableHost(self, id):
-
         cmd = updateHost.updateHostCmd()
         cmd.id = id
         cmd.allocationstate = "Disable"
-
         response = self.apiclient.updateHost(cmd)
-
         self.assertEqual(response.resourcestate, "Disabled")
 
     def enableHost(self, id):
         cmd = updateHost.updateHostCmd()
         cmd.id = id
         cmd.allocationstate = "Enable"
-
         response = self.apiclient.updateHost(cmd)
-
         self.assertEqual(response.resourcestate, "Enabled")
 
     def setHostToMaintanance(self, id):
