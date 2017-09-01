@@ -542,7 +542,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltSvr.syncTemplateToRegionStore(templateId, tmpltStore);
 
         TemplateInfo templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
-        String extractUrl = tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
+        String extractUrl = tmpltStore.createEntityExtractUrl(templateObject.getInstallPath(), template.getFormat(), templateObject);
         tmpltStoreRef.setExtractUrl(extractUrl);
         tmpltStoreRef.setExtractUrlCreated(DateUtil.now());
         _tmplStoreDao.update(tmpltStoreRef.getId(), tmpltStoreRef);
