@@ -71,7 +71,7 @@ public abstract class HAAbstractHostProvider extends AdapterBase implements HAPr
     }
 
     @Override
-    public void setFenced(final Host r) {
+    public void fenceSubResources(final Host r) {
         if (r.getState() != Status.Down) {
             try {
                 LOG.debug("Trying to disconnect the host without investigation and scheduling HA for the VMs on host id=" + r.getId());
@@ -80,11 +80,15 @@ public abstract class HAAbstractHostProvider extends AdapterBase implements HAPr
             } catch (Exception e) {
                 LOG.error("Failed to disconnect host and schedule HA restart of VMs after fencing the host: ", e);
             }
-            try {
-                resourceManager.resourceStateTransitTo(r, ResourceState.Event.InternalEnterMaintenance, ManagementServerNode.getManagementServerId());
-            } catch (NoTransitionException e) {
-                LOG.error("Failed to put host in maintenance mode after host-ha fencing and scheduling VM-HA: ", e);
-            }
+        }
+    }
+
+    @Override
+    public void enableMaintenance(final Host r) {
+        try {
+            resourceManager.resourceStateTransitTo(r, ResourceState.Event.InternalEnterMaintenance, ManagementServerNode.getManagementServerId());
+        } catch (NoTransitionException e) {
+            LOG.error("Failed to put host in maintenance mode after host-ha fencing and scheduling VM-HA: ", e);
         }
     }
 

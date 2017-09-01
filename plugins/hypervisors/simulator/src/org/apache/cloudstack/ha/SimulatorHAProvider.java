@@ -72,6 +72,9 @@ public class SimulatorHAProvider extends HAAbstractHostProvider implements HAPro
 
     @Override
     public boolean isEligible(final Host host) {
+        if (host == null) {
+            return false;
+        }
         final SimulatorHAState haState = hostHAStateMap.get(host.getId());
         return !isInMaintenanceMode(host) && !isDisabled(host) && haState != null
                 && Hypervisor.HypervisorType.Simulator.equals(host.getHypervisorType());
@@ -130,15 +133,8 @@ public class SimulatorHAProvider extends HAAbstractHostProvider implements HAPro
         }
     }
 
-    @Override
-    public boolean preStateTransitionEvent(final HAConfig.HAState oldState, final HAConfig.Event event,
-                                           final HAConfig.HAState newState, final HAConfig vo, final boolean status, final Object opaque) {
-        return false;
-    }
-
-    @Override
-    public boolean postStateTransitionEvent(final StateMachine2.Transition<HAConfig.HAState, HAConfig.Event> transition,
-                                            final HAConfig vo, final boolean status, final Object opaque) {
+    private boolean addStateTransition(final HAConfig vo, final boolean status,
+                                       final HAConfig.HAState oldState, final HAConfig.HAState newState, final HAConfig.Event event) {
         if (vo.getResourceType() != HAResource.ResourceType.Host) {
             return false;
         }
@@ -147,6 +143,18 @@ public class SimulatorHAProvider extends HAAbstractHostProvider implements HAPro
             return false;
         }
         final HAResourceCounter counter = haManager.getHACounter(vo.getResourceId(), vo.getResourceType());
-        return haState.addStateTransition(transition.getToState(), transition.getCurrentState(), transition.getEvent(), counter);
+        return haState.addStateTransition(newState, oldState, event, counter);
+    }
+
+    @Override
+    public boolean preStateTransitionEvent(final HAConfig.HAState oldState, final HAConfig.Event event,
+                                           final HAConfig.HAState newState, final HAConfig vo, final boolean status, final Object opaque) {
+        return addStateTransition(vo, status, oldState, newState, event);
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(final StateMachine2.Transition<HAConfig.HAState, HAConfig.Event> transition,
+                                            final HAConfig vo, final boolean status, final Object opaque) {
+        return addStateTransition(vo, status, transition.getCurrentState(), transition.getToState(), transition.getEvent());
     }
 }
