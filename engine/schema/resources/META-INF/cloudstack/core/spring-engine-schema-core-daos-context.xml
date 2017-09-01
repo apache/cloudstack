@@ -273,6 +273,7 @@
   <bean id="storagePoolTagsDaoImpl" class="com.cloud.storage.dao.StoragePoolTagsDaoImpl" />
   <bean id="hostTagDaoImpl" class="com.cloud.api.query.dao.HostTagDaoImpl" />
   <bean id="storagePoolWorkDaoImpl" class="com.cloud.storage.dao.StoragePoolWorkDaoImpl" />
+  <bean id="templatePrimaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDaoImpl" />
   <bean id="uploadDaoImpl" class="com.cloud.storage.dao.UploadDaoImpl" />
   <bean id="usageDaoImpl" class="com.cloud.usage.dao.UsageDaoImpl" />
   <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />

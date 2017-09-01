@@ -16,6 +16,43 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.rmi.RemoteException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.log4j.Logger;
+
+import com.vmware.vim25.AboutInfo;
+import com.vmware.vim25.ManagedObjectReference;
+
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -24,7 +61,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
@@ -67,9 +103,9 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -77,9 +113,6 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -94,48 +127,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.dao.UserVmCloneSettingDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.vmware.vim25.AboutInfo;
-import com.vmware.vim25.ManagedObjectReference;
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
 
     private static final long SECONDS_PER_MINUTE = 60;
+    private static final int STARTUP_DELAY = 60000;                 // 60 seconds
+    private static final long DEFAULT_HOST_SCAN_INTERVAL = 600000;     // every 10 minutes
+    private long _hostScanInterval = DEFAULT_HOST_SCAN_INTERVAL;
     private int _timeout;
 
     private String _instance;
@@ -176,18 +175,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private ClusterManager _clusterMgr;
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
-    @Inject
-    private PrimaryDataStoreDao primaryStorageDao;
-    @Inject
-    private VMTemplatePoolDao templateDataStoreDao;
-    @Inject
-    private TemplateJoinDao templateDao;
-    @Inject
-    private VMInstanceDao vmInstanceDao;
-    @Inject
-    private UserVmCloneSettingDao cloneSettingDao;
-    @Inject
-    private TemplateManager templateManager;
 
     private String _mountParent;
     private StorageLayer _storage;
@@ -209,14 +196,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private final String _dataDiskController = DiskControllerType.osdefault.toString();
 
-    private final Map<String, String> _storageMounts = new HashMap<>();
+    private final Map<String, String> _storageMounts = new HashMap<String, String>();
 
     private final Random _rand = new Random(System.currentTimeMillis());
 
-    private static ScheduledExecutorService templateCleanupScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-FullyClonedTemplateCheck"));;
-
     private final VmwareStorageManager _storageMgr;
     private final GlobalLock _exclusiveOpLock = GlobalLock.getInternLock("vmware.exclusive.op");
+
+    private final ScheduledExecutorService _hostScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-Host-Scan"));
 
     public VmwareManagerImpl() {
         _storageMgr = new VmwareStorageManagerImpl(this);
@@ -229,7 +216,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs};
     }
 
     @Override
@@ -326,6 +313,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         s_logger.info("Additional VNC port allocation range is settled at " + _additionalPortRangeStart + " to " + (_additionalPortRangeStart + _additionalPortRangeSize));
 
+        value = _configDao.getValue("vmware.host.scan.interval");
+        _hostScanInterval = NumbersUtil.parseLong(value, DEFAULT_HOST_SCAN_INTERVAL);
+        s_logger.info("VmwareManagerImpl config - vmware.host.scan.interval: " + _hostScanInterval);
+
         ((VmwareStorageManagerImpl)_storageMgr).configure(params);
 
         _agentMgr.registerForHostEvents(this, true, true, true);
@@ -336,20 +327,21 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public boolean start() {
-// Do not run empty task        _hostScanScheduler.scheduleAtFixedRate(getHostScanTask(), STARTUP_DELAY, _hostScanInterval, TimeUnit.MILLISECONDS);
-// but implement it first!
+        _hostScanScheduler.scheduleAtFixedRate(getHostScanTask(), STARTUP_DELAY, _hostScanInterval, TimeUnit.MILLISECONDS);
 
-        startTemplateCleanJobSchedule();
         startupCleanup(_mountParent);
-
-        s_logger.info("start done");
         return true;
     }
 
     @Override
     public boolean stop() {
-        s_logger.info("shutting down scheduled tasks");
-        templateCleanupScheduler.shutdown();
+        _hostScanScheduler.shutdownNow();
+        try {
+            _hostScanScheduler.awaitTermination(3000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            s_logger.debug("[ignored] interupted while stopping<:/.");
+        }
+
         shutdownCleanup();
         return true;
     }
@@ -676,6 +668,19 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
         }
         return keyFile;
+    }
+
+    private Runnable getHostScanTask() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                // TODO scan vSphere for newly added hosts.
+                // we are going to both support adding host from CloudStack UI and
+                // adding host via vSphere server
+                //
+                // will implement host scanning later
+            }
+        };
     }
 
     @Override
@@ -1283,55 +1288,4 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
-    private void startTemplateCleanJobSchedule() {
-        if(s_logger.isDebugEnabled()) {
-            s_logger.debug("checking to see if we should schedule a job to search for fully cloned templates to clean-up");
-        }
-        if(StorageManager.StorageCleanupEnabled.value() &&
-                StorageManager.TemplateCleanupEnabled.value() &&
-                templateCleanupInterval.value() > 0) {
-            try {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("scheduling job to search for fully cloned templates to clean-up once per " + templateCleanupInterval.value() + " minutes.");
-                }
-//                    futureTemplateCleanup =
-                Runnable task = getCleanupFullyClonedTemplatesTask();
-                templateCleanupScheduler.scheduleAtFixedRate(task,
-                        templateCleanupInterval.value(),
-                        templateCleanupInterval.value(),
-                        TimeUnit.MINUTES);
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("scheduled job to search for fully cloned templates to clean-up.");
-                }
-            } catch (RejectedExecutionException ree) {
-                s_logger.error("job to search for fully cloned templates cannot be scheduled");
-                s_logger.debug("job to search for fully cloned templates cannot be scheduled;", ree);
-            } catch (NullPointerException npe) {
-                s_logger.error("job to search for fully cloned templates is invalid");
-                s_logger.debug("job to search for fully cloned templates is invalid;", npe);
-            } catch (IllegalArgumentException iae) {
-                s_logger.error("job to search for fully cloned templates is scheduled at invalid intervals");
-                s_logger.debug("job to search for fully cloned templates is scheduled at invalid intervals;", iae);
-            } catch (Exception e) {
-                s_logger.error("job to search for fully cloned templates failed for unknown reasons");
-                s_logger.debug("job to search for fully cloned templates failed for unknown reasons;", e);
-            }
-        }
-    }
-
-    /**
-     * This task is to cleanup templates from primary storage that are otherwise not cleaned by the {@link com.cloud.storage.StorageManagerImpl.StorageGarbageCollector}.
-     * it is called at regular intervals when storage.template.cleanup.enabled == true
-     * It collect all templates that
-     * - are deleted from cloudstack
-     * - when vmware.create.full.clone == true and the entries for VMs having volumes on the primary storage in db table “user_vm_clone_setting” reads 'full'
-     */
-    private Runnable getCleanupFullyClonedTemplatesTask() {
-        return new CleanupFullyClonedTemplatesTask(primaryStorageDao,
-                templateDataStoreDao,
-                templateDao,
-                vmInstanceDao,
-                cloneSettingDao,
-                templateManager);
-    }
 }

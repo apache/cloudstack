@@ -50,8 +50,6 @@ public interface StorageManager extends StorageService {
             "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.", false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Boolean> StorageCleanupEnabled = new ConfigKey<Boolean>(Boolean.class, "storage.cleanup.enabled", "Advanced", "true",
             "Enables/disables the storage cleanup thread.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Boolean> TemplateCleanupEnabled = new ConfigKey<Boolean>(Boolean.class, "storage.template.cleanup.enabled", "Storage", "true",
-            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled", false, ConfigKey.Scope.Global, null);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool
