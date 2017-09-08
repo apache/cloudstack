@@ -320,8 +320,8 @@ class TestISO(cloudstackTestCase):
             "Check display text of updated ISO"
         )
         self.assertEqual(
-            iso_response.bootable,
-            self.services["bootable"],
+            str(iso_response.bootable).lower(),
+            str(self.services["bootable"]).lower(),
             "Check if image is bootable of updated ISO"
         )
 
@@ -473,14 +473,14 @@ class TestISO(cloudstackTestCase):
             "Check ISO ID"
         )
         self.assertEqual(
-            iso_response.ispublic,
-            self.services["ispublic"],
+            str(iso_response.ispublic).lower(),
+            str(self.services["ispublic"]).lower(),
             "Check ispublic permission of ISO"
         )
 
         self.assertEqual(
-            iso_response.isfeatured,
-            self.services["isfeatured"],
+            str(iso_response.isfeatured).lower(),
+            str(self.services["isfeatured"]).lower(),
             "Check isfeatured permission of ISO"
         )
         return
