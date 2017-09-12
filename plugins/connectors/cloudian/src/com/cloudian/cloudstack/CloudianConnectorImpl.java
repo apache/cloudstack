@@ -17,9 +17,15 @@
 
 package com.cloudian.cloudstack;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+
 import com.cloud.utils.component.ComponentLifecycleBase;
 
-public class CloudianConnectorImpl extends ComponentLifecycleBase implements CloudianConnector {
+public class CloudianConnectorImpl extends ComponentLifecycleBase implements CloudianConnector, Configurable {
 
     @Override
     public List<Class<?>> getCommands() {
@@ -27,4 +33,25 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         return cmdList;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return CloudianConnector.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {
+                CloudianConnectorEnabled,
+                CloudianAdminHost,
+                CloudianAdminPort,
+                CloudianAdminUser,
+                CloudianAdminPassword,
+                CloudianAdminProtocol,
+                CloudianValidateSSLSecurity,
+                CloudianCmcHost,
+                CloudianCmcPort,
+                CloudianCmcProtocol,
+                CloudianSsoKey
+        };
+    }
 }
