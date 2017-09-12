@@ -914,21 +914,22 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
        cls.services["template"] = cls.template.id
        cls.services["zoneid"] = cls.zone.id
-       
+       cls._cleanup = []
        cls.domain_admin_account = Account.create(
           cls.api_client,
           cls.services["domain_admin_account"],
           domainid=cls.domain.id,
           admin=True
        )
-
+       cls._cleanup.append(cls.domain_admin_account)
        cls.domain_api_client = cls.testClient.getUserApiClient(cls.domain_admin_account.name, cls.domain.name, 2)
 
        cls.account = Account.create(
           cls.api_client,
           cls.services["account"],
           domainid=cls.domain.id
-       )       
+       )
+       cls._cleanup.append(cls.account)
 
        cls.account_api_client = cls.testClient.getUserApiClient(cls.account.name, cls.domain.name, 0)
 
@@ -937,22 +938,24 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
           cls.services["account_not_in_project"],
           domainid=cls.domain.id
        )
+       cls._cleanup.append(cls.account_not_in_project)
 
        cls.account_not_in_project_api_client = cls.testClient.getUserApiClient(cls.account_not_in_project.name, cls.domain.name, 0)
-
+       cls._proj_toclean = []
        cls.project = Project.create(
           cls.api_client,
           cls.services["project"],
           account=cls.domain_admin_account.name,
           domainid=cls.domain_admin_account.domainid
        )
-       
+       cls._proj_toclean.append(cls.project)
        cls.project2 = Project.create(
           cls.api_client,
           cls.services["project2"],
           account=cls.domain_admin_account.name,
           domainid=cls.domain_admin_account.domainid
        )
+       cls._proj_toclean.append(cls.project2)
 
        cls.debug("Created project with ID: %s" % cls.project.id)
        cls.debug("Created project2 with ID: %s" % cls.project2.id)
@@ -969,7 +972,6 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
           domainid=cls.account.domainid
        )
        
-       cls._cleanup = []
        return
 
     def setUp(self):
@@ -988,8 +990,9 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
        try:
-          cls.domain.delete(cls.api_client, cleanup=True)
+          cleanup_resources(cls.api_client, cls._proj_toclean)
           cleanup_resources(cls.api_client, cls._cleanup)
+          cls.domain.delete(cls.api_client, cleanup=True)
        except Exception as e:
           raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -1076,6 +1079,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         if vm_failed:
            vm_failed.expunge(self.api_client)
 
+        wait_for_cleanup(self.api_client, ["expunge.delay", "expunge.interval"])
         self.cleanup.append(aff_grp)
 
 
