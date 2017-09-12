@@ -49,7 +49,7 @@ if [ -z "$SSHKEY_SERVER_IP" ]; then
      logger -t "cloud" "Unable to determine the password server, falling back to data-server"
      SSHKEY_SERVER_IP=data-server
 fi
- 
+
 logger -t "cloud" "Sending request to ssh key server at $SSHKEY_SERVER_IP"
 publickey=$(wget -q -t 3 -T 20 -O - http://$SSHKEY_SERVER_IP/latest/public-keys)
 if [ $? -eq 0 ]; then
@@ -67,7 +67,7 @@ if [ -z "$publickey" ]; then
     exit 1
 fi
 
-homedir=$(grep ^$user /etc/passwd|awk -F ":" '{print $6}')
+homedir=$(getent passwd $user|awk -F ":" '{print $6}')
 sshdir=$homedir/.ssh
 authorized=$sshdir/authorized_keys
 
