@@ -106,6 +106,7 @@
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
     <module>database/quota</module>
+    <module>connectors/cloudian</module>
   </modules>
 
   <dependencies>
