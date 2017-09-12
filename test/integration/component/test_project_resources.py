@@ -1151,13 +1151,13 @@ class TestPublicIpAddress(cloudstackTestCase):
                     )
         self.assertEqual(
                     fw_rules[0].startport,
-                    str(self.services["fw_rule"]["startport"]),
+                    self.services["fw_rule"]["startport"],
                     "Check start port of firewall rule"
                     )
 
         self.assertEqual(
                     fw_rules[0].endport,
-                    str(self.services["fw_rule"]["endport"]),
+                    self.services["fw_rule"]["endport"],
                     "Check end port of firewall rule"
                     )
 

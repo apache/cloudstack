@@ -263,12 +263,12 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive","simulator_only",tags=["advanced"],required_hardware="false")
     def test_21_disablePod(self):
 	"""
-	Disable Pod
+	    Disable Pod
         Validate that listPods() returns the  allocationstate as "Disabled"
 	"""
 	self.debug("Pod to be disabled: " + self.zone.id)
 	
-	podupdResp = self.pod.update(self.apiclient,allocationstate="Disabled")
+	podupdResp = self.pod.update(self.apiclient,allocationstate="Disabled",id=self.pod.id)
 
  	self.assertEqual(podupdResp.allocationstate,
                     "Disabled",
@@ -363,7 +363,7 @@ class TestOrganizationStates(cloudstackTestCase):
 	"""
 	self.debug("Pod to be enabled: " + self.zone.id)
 	
-	podupdResp = self.pod.update(self.apiclient,allocationstate="Enabled")
+	podupdResp = self.pod.update(self.apiclient,allocationstate="Enabled",id=self.pod.id)
 
  	self.assertEqual(podupdResp.allocationstate,
                     "Enabled",
@@ -386,7 +386,7 @@ class TestOrganizationStates(cloudstackTestCase):
 	"""
 	self.debug("Cluster to be disabled: " + self.cluster.id)
 	
-	clusterupdResp = self.cluster.update(self.apiclient,allocationstate="Disabled")
+	clusterupdResp = self.cluster.update(self.apiclient,allocationstate="Disabled",id=self.cluster.id)
 
  	self.assertEqual(clusterupdResp.allocationstate,
                     "Disabled",
@@ -481,7 +481,7 @@ class TestOrganizationStates(cloudstackTestCase):
 	"""
 	self.debug("Cluster to be enabled: " + self.cluster.id)
 	
-	clusterupdResp = self.cluster.update(self.apiclient,allocationstate="Enabled")
+	clusterupdResp = self.cluster.update(self.apiclient,allocationstate="Enabled",id=self.cluster.id)
 
  	self.assertEqual(clusterupdResp.allocationstate,
                     "Enabled",
@@ -501,17 +501,17 @@ class TestOrganizationStates(cloudstackTestCase):
 	Disable Host
         Validate that listHosts() returns the  allocationstate as "Disabled"
 	"""
-	self.debug("Host to be disabled: " + self.host.id)
+        self.debug("Host to be disabled: " + self.host.id)
 	
-	hostupdResp = Host.update(self.apiclient,id=self.host.id,allocationstate="Disable")
+        hostupdResp = Host.update(self.apiclient,id=self.host.id,allocationstate="Disable")
 
- 	self.assertEqual(hostupdResp.resourcestate,
+        self.assertEqual(hostupdResp.resourcestate,
                     "Disabled",
                     "Disabling Host did not set the alloctionstate to Disabled")
 
-	hostlistResp = Host.list(self.apiclient,id=self.host.id)
+        hostlistResp = Host.list(self.apiclient,id=self.host.id)
 
- 	self.assertEqual(hostlistResp[0].resourcestate,
+        self.assertEqual(hostlistResp[0].resourcestate,
                     "Disabled",
                     "Disabling Host did not set the alloctionstate to Disabled")
 
@@ -540,13 +540,16 @@ class TestOrganizationStates(cloudstackTestCase):
 	"""
         Validate that admin is allowed to deploy VM in a disabled host without passing hostId parameter
 	"""
-        vm = VirtualMachine.create(
+        try:
+            vm = VirtualMachine.create(
                     self.admin_apiclient,
                     {},
                     zoneid=self.zone.id,
                     serviceofferingid=self.serviceOffering.id,
                     templateid=self.template.id
                 )
+        except Exception:
+            raise self.fail("Failed to deploy VM, this issue was hit: https://issues.apache.org/jira/browse/CLOUDSTACK-7735")
 
  	self.assertEqual(vm.state,
                     "Running",
@@ -564,8 +567,10 @@ class TestOrganizationStates(cloudstackTestCase):
  	self.assertEqual(listResp[0].state,
                     VirtualMachine.STOPPED,
                     "Admin is not able to Stop Vm in a disabled Host! ")
-
-        self.vm_admin.start(self.admin_apiclient)
+        try:
+            self.vm_admin.start(self.admin_apiclient)
+        except Exception:
+            raise self.fail("Failed to deploy VM, this issue was hit: https://issues.apache.org/jira/browse/CLOUDSTACK-7735")
 
 	listResp = VirtualMachine.list(self.apiclient,id=self.vm_admin.id)
  	self.assertEqual(listResp[0].state,
@@ -601,8 +606,11 @@ class TestOrganizationStates(cloudstackTestCase):
  	self.assertEqual(listResp[0].state,
                     VirtualMachine.STOPPED,
                     "Regular user is not able to Stop Vm in a disabled Host! ")
+        try:
+            self.vm_user.start(self.user_apiclient)
+        except Exception:
+            raise self.fail("Failed to deploy VM, this issue was hit: https://issues.apache.org/jira/browse/CLOUDSTACK-7735")
 
-        self.vm_user.start(self.user_apiclient)
 	listResp = VirtualMachine.list(self.user_apiclient,id=self.vm_user.id)
 
  	self.assertEqual(listResp[0].state,
@@ -628,5 +636,4 @@ class TestOrganizationStates(cloudstackTestCase):
  	self.assertEqual(hostlistResp[0].resourcestate,
                     "Enabled",
                     "Enabling Host did not set the alloctionstate to Enabled")
-
 

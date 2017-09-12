@@ -88,6 +88,13 @@ test_data = {
         "cpuspeed": 256,  # in MHz
         "memory": 256,  # In MBs
     },
+    "service_offering_multiple_cores": {
+        "name": "Tiny Instance",
+        "displaytext": "Tiny Instance",
+        "cpunumber": 4,
+        "cpuspeed": 100,    # in MHz
+        "memory": 128,    # In MBs
+    },
     "service_offerings": {
         "tiny": {
             "name": "Tiny Instance",

@@ -2517,6 +2517,8 @@ class TestVPC(cloudstackTestCase):
             self.cleanup.append(vpnGw)
         except Exception as e:
             self.fail("Creating vpn customer gateway with hostname\
+            PR: https://github.com/apache/cloudstack/pull/955\
+            JIRA: https://issues.apache.org/jira/browse/CLOUDSTACK-8969\
                       Failed with error :%s" % e)
         vpn_cgw_res = VpnCustomerGateway.list(
             self.apiclient,
