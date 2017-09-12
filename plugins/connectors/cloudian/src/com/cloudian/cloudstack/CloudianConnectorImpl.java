@@ -72,7 +72,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             public void onPublishMessage(String senderAddress, String subject, Object args) {
                 Long accountId = (Long) args;
                 // TODO: remove/disable user in CMC
-                final Account account = accountDao.findById(accountId);
+                final Account account = accountDao.findByIdIncludingRemoved(accountId);
                 LOG.info("Removing account id=" + accountId + " with uuid=" + account.getUuid());
 
             }
