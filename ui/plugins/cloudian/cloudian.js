@@ -22,16 +22,13 @@
       title: 'Cloudian Storage',
       showOnNavigation: true,
       preFilter: function(args) {
-        return true;
         var pluginEnabled = false;
         $.ajax({
             url: createURL('cloudianIsEnabled'),
             async: false,
             success: function(json) {
-                pluginEnabled = json.cloudianisenabledresponse.success;
-            },
-            error: function(data) {
-                pluginEnabled = false;
+                console.log(json);
+                pluginEnabled = (json.cloudianisenabledresponse.success == 'true');
             }
         });
         return pluginEnabled;
@@ -43,7 +40,8 @@
             url: createURL('cloudianSsoLogin'),
             async: false,
             success: function(json) {
-                ssoUrl = json.cloudianssologinresponse.url;
+                console.log(json);
+                ssoUrl = json.cloudianssologinresponse.cloudianssologin.url;
                 //FIXME: post? maybe submit using a form?
                 var cmcWindow = window.open(ssoUrl, "CMCWindow");
                 cmcWindow.focus();

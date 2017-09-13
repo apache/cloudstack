@@ -28,6 +28,13 @@ public class CloudianSsoLoginResponse extends BaseResponse {
     @Param(description = "the sso redirect url")
     private String ssoRedirectUrl;
 
+    public CloudianSsoLoginResponse() {
+    }
+
+    public CloudianSsoLoginResponse(final String responseName) {
+        super.setResponseName(responseName);
+    }
+
     public String getSsoRedirectUrl() {
         return ssoRedirectUrl;
     }

@@ -58,7 +58,6 @@ public class CloudianIsEnabledCmd extends BaseCmd {
         final boolean isEnabled = !connector.isConnectorDisabled();
         final SuccessResponse response = new SuccessResponse();
         response.setSuccess(isEnabled);
-        response.setDisplayText(isEnabled ? "Cloudian Connector is enabled" : "Cloudian Connector is disabled");
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

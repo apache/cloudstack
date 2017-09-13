@@ -57,6 +57,7 @@ public class CloudianSsoLoginCmd extends BaseCmd {
         final CloudianSsoLoginResponse response = new CloudianSsoLoginResponse();
         response.setSsoRedirectUrl(connector.generateSsoUrl());
         response.setResponseName(getCommandName());
+        response.setObjectName(APINAME.toLowerCase());
         setResponseObject(response);
     }
 }
