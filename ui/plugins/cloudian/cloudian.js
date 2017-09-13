@@ -23,17 +23,21 @@
         form.action = url;
         form.method = 'POST';
         form.target = '_blank';
+        form.style.display = 'none';
+        console.log(url);
+        console.log(data);
         if (data) {
             for (var key in data) {
-                var input = document.createElement("textarea");
+                var input = document.createElement("input");
+                input.type = 'hidden';
                 input.name = key;
-                input.value = typeof data[key] === "object" ? JSON.stringify(data[key]) : data[key];
+                input.value = data[key];
                 form.appendChild(input);
             }
         }
-        form.style.display = 'none';
         document.body.appendChild(form);
         form.submit();
+        document.body.removeChild(form);
     };
 
     plugin.ui.addSection({
@@ -59,7 +63,10 @@
             success: function(json) {
                 var response = json.cloudianssologinresponse.cloudianssologin;
                 var url = response.url.split("?")[0];
-                var data = JSON.parse('{"' + decodeURI(response.url.split("?")[1].replace(/&/g, "\",\"").replace(/=/g,"\":\"")) + '"}');
+                var data = {};
+                $.each(response.url.split("?")[1].split("&"), function (idx, value) {
+                    data[value.split('=')[0]] = decodeURIComponent(value.split('=')[1]);
+                })
                 openInNewTab(url, data);
             },
             error: function(data) {
