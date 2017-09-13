@@ -61,7 +61,9 @@ env:
              smoke/test_nic
              smoke/test_nic_adapter_type
              smoke/test_non_contigiousvlan
-             smoke/test_outofbandmanagement
+             component/test_cpu_limits"
+
+    - TESTS="smoke/test_outofbandmanagement
              smoke/test_outofbandmanagement_nestedplugin
              smoke/test_over_provisioning
              smoke/test_password_server
@@ -96,7 +98,8 @@ env:
              smoke/misc/test_deploy_vm
              smoke/misc/test_escalations_templates
              smoke/misc/test_vm_ha
-             smoke/misc/test_vm_sync"
+             smoke/misc/test_vm_sync
+             component/test_project_resources"
 
     - TESTS="component/find_hosts_for_migration
              smoke/test_accounts
@@ -105,13 +108,15 @@ env:
              component/test_acl_listvm
              component/test_acl_listvolume
              component/test_acl_sharednetwork
-             component/test_acl_sharednetwork_deployVM-impersonationa
+             component/test_affinity_groups_projects"
+
+    - TESTS="component/test_acl_sharednetwork_deployVM-impersonation
              component/test_affinity_groups_projects
-             component/test_allocation_states
-             component/test_cpu_limits"
+             component/test_allocation_states"
+
+    - TESTS="component/test_cpu_domain_limits"
 
     - TESTS="component/test_cpu_max_limits
-             component/test_cpu_domain_limits
              component/test_cpu_project_limits
              component/test_deploy_vm_userdata_multi_nic
              component/test_egress_fw_rules
