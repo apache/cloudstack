@@ -17,10 +17,16 @@
 
 package com.cloudian.cloudstack;
 
+import static com.amazonaws.services.s3.internal.Constants.HMAC_SHA1_ALGORITHM;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -28,6 +34,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
@@ -40,6 +47,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloudian.cloudstack.api.CloudianIsEnabledCmd;
 import com.cloudian.cloudstack.api.CloudianSsoLoginCmd;
+import com.google.common.base.Strings;
 
 public class CloudianConnectorImpl extends ComponentLifecycleBase implements CloudianConnector, Configurable {
     private static final Logger LOG = Logger.getLogger(CloudianConnectorImpl.class);
@@ -58,11 +66,74 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         return !CloudianConnectorEnabled.value();
     }
 
+    /**
+     * Computes RFC 2104-compliant HMAC signature.
+     *
+     * @param data  The data to be signed.
+     * @param key   The signing key.
+     * @return The Base64-encoded RFC 2104-compliant HMAC signature.
+     */
+    public static String calculateRFC2104HMAC(String data, String key) {
+        try {
+            // get an hmac_sha1 key from the raw key bytes
+            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
+
+            // get an hmac_sha1 Mac instance and initialize with the signing key
+            Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+            mac.init(signingKey);
+
+            // compute the hmac on input data bytes
+            byte[] rawHmac = mac.doFinal(data.getBytes());
+
+            // return the base64-encode the hmac
+            return Base64.encodeBase64String(rawHmac);
+        } catch (Exception e) {
+            // LOG?
+        }
+        return null;
+    }
+
+    public static String genSSOParams(String userId, String groupId, String key) {
+        StringBuilder sts = new StringBuilder();
+        sts.append("user=");
+        sts.append(userId);
+        sts.append("&group=");
+        sts.append(groupId);
+        sts.append("&timestamp=");
+        sts.append(System.currentTimeMillis());
+
+        String signature = calculateRFC2104HMAC(sts.toString(), key);
+        if (Strings.isNullOrEmpty(signature)) {
+            return null;
+        }
+        sts.append("&signature=");
+        try {
+            sts.append(URLEncoder.encode(signature, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            return null;
+        }
+
+        sts.append("&redirect=");
+        if (groupId.equals("0")) {
+            sts.append("admin.htm");
+        } else {
+            sts.append("explorer.htm");
+        }
+
+        return sts.toString();
+    }
+
     @Override
     public String generateSsoUrl() {
         // add user/group in CMC if not available
         // return generated login url using sso shared key
-        return "https://cmc.hs.yadav.xyz:8443/Cloudian/ssosecurelogin.htm?user=admin&group=0&timestamp=1505293165230&signature=UbSDimMwSHkKrWgPDrdUpruA%2FGA%3D&redirect=admin.htm";
+
+        String ssoparams = genSSOParams("admin", "0", CloudianSsoKey.value());
+        if (ssoparams == null) {
+            return null;
+        }
+
+        return "https://cmc.hs.yadav.xyz:8443/Cloudian/ssosecurelogin.htm?" + ssoparams;
     }
 
     @Override

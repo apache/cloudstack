@@ -21,11 +21,14 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ServerApiException;
 
 import com.cloud.user.Account;
 import com.cloudian.cloudstack.CloudianConnector;
 import com.cloudian.cloudstack.response.CloudianSsoLoginResponse;
+import com.google.common.base.Strings;
 
 @APICommand(name = CloudianSsoLoginCmd.APINAME, description = "Generates single-sign-on login url for logged-in CloudStack user to access the Cloudian Management Console",
         responseObject = CloudianSsoLoginResponse.class,
@@ -54,8 +57,12 @@ public class CloudianSsoLoginCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        final String ssoUrl = connector.generateSsoUrl();
+        if (Strings.isNullOrEmpty(ssoUrl)) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate Cloudian single-sign on URL for the user");
+        }
         final CloudianSsoLoginResponse response = new CloudianSsoLoginResponse();
-        response.setSsoRedirectUrl(connector.generateSsoUrl());
+        response.setSsoRedirectUrl(ssoUrl);
         response.setResponseName(getCommandName());
         response.setObjectName(APINAME.toLowerCase());
         setResponseObject(response);
