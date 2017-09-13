@@ -117,6 +117,12 @@ env:
              component/test_cpu_domain_limits
              component/test_cpu_limits"
 
+    - TESTS="component/test_acl_sharednetwork_deployVM-impersonation
+             component/test_affinity_groups_projects
+             component/test_allocation_states"
+
+    - TESTS="component/test_cpu_domain_limits"
+
     - TESTS="component/test_cpu_max_limits
              component/test_acl_isolatednetwork
              component/test_cpu_project_limits
@@ -144,7 +150,7 @@ env:
              component/test_snapshots
              component/test_stopped_vm"
 
-    - TESTS="component/test_resource_limits"
+    - TESTS="component/test_project_resources"
 
     - TESTS="component/test_tags
              component/test_templates
