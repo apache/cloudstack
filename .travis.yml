@@ -100,13 +100,17 @@ env:
              component/test_acl_listvm
              component/test_acl_listvolume
              component/test_acl_sharednetwork
-             component/test_acl_sharednetwork_deployVM-impersonationa
              component/test_affinity_groups_projects
              component/test_allocation_states
              component/test_cpu_limits"
 
+    - TESTS="component/test_acl_sharednetwork_deployVM-impersonation
+             component/test_affinity_groups_projects
+             component/test_allocation_states"
+
+    - TESTS="component/test_cpu_domain_limits"
+
     - TESTS="component/test_cpu_max_limits
-             component/test_cpu_domain_limits
              component/test_cpu_project_limits
              component/test_deploy_vm_userdata_multi_nic
              component/test_egress_fw_rules
@@ -127,13 +131,12 @@ env:
              component/test_project_configs
              component/test_project_limits
              component/test_project_usage
-             component/test_project_resources
              component/test_regions
              component/test_regions_accounts
              component/test_routers
              component/test_snapshots"
 
-    - TESTS="component/test_resource_limits"
+    - TESTS="component/test_project_resources"
 
     - TESTS="component/test_stopped_vm
              component/test_tags
