@@ -38,9 +38,11 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloudian.cloudstack.api.CloudianIsEnabledCmd;
+import com.cloudian.cloudstack.api.CloudianSsoLoginCmd;
 
 public class CloudianConnectorImpl extends ComponentLifecycleBase implements CloudianConnector, Configurable {
-    public static final Logger LOG = Logger.getLogger(CloudianConnectorImpl.class);
+    private static final Logger LOG = Logger.getLogger(CloudianConnectorImpl.class);
 
     @Inject
     private AccountDao accountDao;
@@ -51,6 +53,59 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     @Inject
     private MessageBus messageBus;
 
+    @Override
+    public boolean isConnectorDisabled() {
+        return !CloudianConnectorEnabled.value();
+    }
+
+    @Override
+    public String generateSsoUrl() {
+        // add user/group in CMC if not available
+        // return generated login url using sso shared key
+        return null;
+    }
+
+    @Override
+    public boolean addGroup(final Domain domain) {
+        if (domain == null || isConnectorDisabled()) {
+            return false;
+        }
+        LOG.debug("Adding Cloudian group against domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
+
+        return false;
+    }
+
+    @Override
+    public boolean removeGroup(final Domain domain) {
+        if (domain == null || isConnectorDisabled()) {
+            return false;
+        }
+        LOG.debug("Removing Cloudian group against domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
+
+        return false;
+    }
+
+    @Override
+    public boolean addUserAccount(final Account account) {
+        if (account == null || isConnectorDisabled()) {
+            return false;
+        }
+        LOG.debug("Adding Cloudian user account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
+        final Domain domain = domainDao.findById(account.getId());
+
+        return false;
+    }
+
+    @Override
+    public boolean removeUserAccount(final Account account) {
+        if (account == null || isConnectorDisabled()) {
+            return false;
+        }
+        LOG.debug("Removing Cloudian user account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
+        final Domain domain = domainDao.findById(account.getId());
+
+        return false;
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -59,41 +114,34 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
-                Map<Long, Long> accountGroupMap = (Map<Long, Long>) args;
-                Long accountId = accountGroupMap.keySet().iterator().next();
-                // TODO: check and create user in CMC
+                final Map<Long, Long> accountGroupMap = (Map<Long, Long>) args;
+                final Long accountId = accountGroupMap.keySet().iterator().next();
                 final Account account = accountDao.findById(accountId);
-                LOG.info("Creating account id=" + accountId + " with uuid=" + account.getUuid());
+                addUserAccount(account);
             }
         });
 
         messageBus.subscribe(AccountManager.MESSAGE_REMOVE_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
-                Long accountId = (Long) args;
-                // TODO: remove/disable user in CMC
-                final Account account = accountDao.findByIdIncludingRemoved(accountId);
-                LOG.info("Removing account id=" + accountId + " with uuid=" + account.getUuid());
-
+                final Account account = accountDao.findByIdIncludingRemoved((Long) args);
+                removeUserAccount(account);
             }
         });
 
         messageBus.subscribe(DomainManager.MESSAGE_ADD_DOMAIN_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
-                Long domainId = (Long) args;
-                Domain domain = domainDao.findById(domainId);
-                // TODO: check and create group in CMC
-                LOG.info("Adding domain id=" + domainId + " with uuid=" + domain.getUuid());
+                final Domain domain = domainDao.findById((Long) args);
+                addGroup(domain);
             }
         });
 
         messageBus.subscribe(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
-                DomainVO domain = (DomainVO) args;
-                // TODO: remove/disable group in CMC
-                LOG.info("Removing domain id=" + domain.getId() + " with uuid=" + domain.getUuid());
+                final DomainVO domain = (DomainVO) args;
+                removeGroup(domain);
             }
         });
 
@@ -102,10 +150,12 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
 
     @Override
     public List<Class<?>> getCommands() {
-        List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        if (!CloudianConnectorEnabled.value()) {
+        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CloudianIsEnabledCmd.class);
+        if (isConnectorDisabled()) {
             return cmdList;
         }
+        cmdList.add(CloudianSsoLoginCmd.class);
         return cmdList;
     }
 

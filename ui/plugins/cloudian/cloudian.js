@@ -22,11 +22,35 @@
       title: 'Cloudian Storage',
       showOnNavigation: true,
       preFilter: function(args) {
-        // FIXME: show/hide plugin based on if plugin/connector is enabled?
         return true;
+        var pluginEnabled = false;
+        $.ajax({
+            url: createURL('cloudianIsEnabled'),
+            async: false,
+            success: function(json) {
+                pluginEnabled = json.cloudianisenabledresponse.success;
+            },
+            error: function(data) {
+                pluginEnabled = false;
+            }
+        });
+        return pluginEnabled;
       },
       show: function() {
-        return $('<div>').html('Cloudian Storage section');
+        var ssoUrl = '';
+        var description = 'Cloudian Storage should open in another window.';
+        $.ajax({
+            url: createURL('cloudianSsoLogin'),
+            async: false,
+            success: function(json) {
+                ssoUrl = json.cloudianssologinresponse.url;
+                // open new tab using http POST
+            },
+            error: function(data) {
+                description = 'Single-Sign-On failed for Cloudian Storage.';
+            }
+        });
+        return $('<div>').html(description);
       }
     });
   };

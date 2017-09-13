@@ -19,9 +19,12 @@ package com.cloudian.cloudstack;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
+import com.cloud.domain.Domain;
+import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
 
 public interface CloudianConnector extends PluggableService {
+
     ConfigKey<Boolean> CloudianConnectorEnabled = new ConfigKey<>("Advanced", Boolean.class, "cloudian.connector.enabled", "false",
             "If set to true, this enables the Cloudian Connector for CloudStack.", true);
 
@@ -55,4 +58,10 @@ public interface CloudianConnector extends PluggableService {
     ConfigKey<String> CloudianSsoKey = new ConfigKey<>("Advanced", String.class, "cloudian.sso.key", "ss0sh5r3dk3y",
             "The shared single sign-on key as configured in Cloudian CMC.", true);
 
+    boolean isConnectorDisabled();
+    String generateSsoUrl();
+    boolean addGroup(final Domain domain);
+    boolean removeGroup(final Domain domain);
+    boolean addUserAccount(final Account account);
+    boolean removeUserAccount(final Account account);
 }
