@@ -523,14 +523,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public Date startOfNextDay() {
-        Calendar c = Calendar.getInstance();
-        c.setTime(new Date());
-        c.add(Calendar.DATE, 1);
-        c.set(Calendar.HOUR, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        return c.getTime();
+        return startOfNextDay(new Date());
     }
 
 }
