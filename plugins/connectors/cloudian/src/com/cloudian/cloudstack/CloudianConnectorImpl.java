@@ -62,7 +62,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     public String generateSsoUrl() {
         // add user/group in CMC if not available
         // return generated login url using sso shared key
-        return "https://cmc.hs.yadav.xyz:8443/Cloudian/";
+        return "https://cmc.hs.yadav.xyz:8443/Cloudian/ssosecurelogin.htm?user=admin&group=0&timestamp=1505293165230&signature=UbSDimMwSHkKrWgPDrdUpruA%2FGA%3D&redirect=admin.htm";
     }
 
     @Override
