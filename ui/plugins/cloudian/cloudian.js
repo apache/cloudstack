@@ -44,7 +44,9 @@
             async: false,
             success: function(json) {
                 ssoUrl = json.cloudianssologinresponse.url;
-                // open new tab using http POST
+                //FIXME: post? maybe submit using a form?
+                var cmcWindow = window.open(ssoUrl, "CMCWindow");
+                cmcWindow.focus();
             },
             error: function(data) {
                 description = 'Single-Sign-On failed for Cloudian Storage.';
