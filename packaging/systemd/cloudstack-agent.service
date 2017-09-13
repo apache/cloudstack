@@ -18,8 +18,8 @@
 [Unit]
 Description=CloudStack Agent
 Documentation=http://www.cloudstack.org/
-Requires=libvirtd.service
-After=libvirtd.service
+Requires=libvirt-bin.service
+After=libvirt-bin.service
 
 [Service]
 Type=simple
