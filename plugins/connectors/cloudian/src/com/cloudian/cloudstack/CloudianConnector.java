@@ -40,11 +40,14 @@ public interface CloudianConnector extends PluggableService {
     ConfigKey<String> CloudianValidateSSLSecurity = new ConfigKey<>("Advanced", String.class, "cloudian.validate.ssl", "false",
             "When set to true, this will validate the SSL certificate when connecting to https/ssl enabled admin host.", true);
 
-    ConfigKey<String> CloudianAdminUser = new ConfigKey<>("Advanced", String.class, "cloudian.admin.user", "admin",
+    ConfigKey<String> CloudianAdminUser = new ConfigKey<>("Advanced", String.class, "cloudian.admin.user", "sysadmin",
             "The system admin user for accessing the Cloudian Admin server.", true);
 
     ConfigKey<String> CloudianAdminPassword = new ConfigKey<>("Advanced", String.class, "cloudian.admin.password", "public",
             "The system admin password for the Cloudian Admin server.", true);
+
+    ConfigKey<String> CloudianCmcAdminUser = new ConfigKey<>("Advanced", String.class, "cloudian.cmc.admin.user", "admin",
+            "The admin user name for accessing the Cloudian Management Console.", true);
 
     ConfigKey<String> CloudianCmcHost = new ConfigKey<>("Advanced", String.class, "cloudian.cmc.host", "cmc.cloudian.com",
             "The hostname of the Cloudian Management Console.", true);
