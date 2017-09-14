@@ -463,7 +463,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             FormatInfo info = processor.process(destPath, null, templateUuid);
 
             TemplateLocation loc = new TemplateLocation(_storage, destPath);
-            loc.create(1, true, templateUuid);
+            loc.create(destData.getId(), true, templateUuid);
             loc.addFormat(info);
             loc.save();
             TemplateProp prop = loc.getTemplateInfo();
@@ -553,7 +553,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
                     FormatInfo info = processor.process(destPath, null, templateName);
                     TemplateLocation loc = new TemplateLocation(_storage, destPath);
-                    loc.create(1, true, destData.getName());
+                    loc.create(destData.getId(), true, destData.getName());
                     loc.addFormat(info);
                     loc.save();
 
