@@ -117,8 +117,8 @@ class TestlistTemplatesDomainAdmin(cloudstackTestCase):
             status = validateList(listTemplateResponse)
             self.assertEquals(
                 PASS,
-                status[0],
-                "Template creation failed")
+                status[0])
+                #,"Template creation failed")
 
         listtemplate = Template.list(
             self.apiclient,

@@ -45,6 +45,8 @@ class TestHostHA(cloudstackTestCase):
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
+        self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+
         self.cleanup = []
         self.services = {
                             "service_offering": {
@@ -155,7 +157,8 @@ class TestHostHA(cloudstackTestCase):
     
     def checkHostDown(self, fromHostIp, testHostIp):
         try:
-            ssh = SshClient(fromHostIp, 22, "root", "password") 
+            ssh = SshClient(fromHostIp, 22, self.hostConfig["username"],
+                    self.hostConfig["password"])
             res = ssh.execute("ping -c 1 %s" % testHostIp)
             result = str(res)
             if result.count("100% packet loss") == 1:
@@ -168,7 +171,8 @@ class TestHostHA(cloudstackTestCase):
         
     def checkHostUp(self, fromHostIp, testHostIp):
         try:
-            ssh = SshClient(fromHostIp, 22, "root", "password") 
+            ssh = SshClient(fromHostIp, 22, self.hostConfig["username"],
+                    self.hostConfig["password"])
             res = ssh.execute("ping -c 1 %s" % testHostIp)
             result = str(res)
             if result.count(" 0% packet loss") == 1:
@@ -276,7 +280,8 @@ class TestHostHA(cloudstackTestCase):
             self.logger.debug("File %s not found" % srcFile)
             raise unittest.SkipTest("Script file %s required for HA not found" % srcFile);
             
-        ssh = SshClient(hostIp, 22, "root", "password")
+        ssh = SshClient(hostIp, 22, self.hostConfig["username"],
+                    self.hostConfig["password"])
         ssh.scp(srcFile, "/root/test_host_ha.sh")
         ssh.execute("nohup sh /root/test_host_ha.sh %s > /dev/null 2>&1 &\n" % timeout)
         return

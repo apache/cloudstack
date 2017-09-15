@@ -46,6 +46,7 @@ class TestVR(cloudstackTestCase):
             cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
         cls.services = cls.testClient.getParsedTestDataConfig()
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -173,8 +174,8 @@ class TestVR(cloudstackTestCase):
                 result = get_process_status(
                     host.ipaddress,
                     22,
-                    self.services["configurableData"]["host"]["username"],
-                    self.services["configurableData"]["host"]["password"],
+                    self.hostConfig["username"],
+                    self.hostConfig["password"],
                     router.linklocalip,
                     "lsmod | grep ftp"
                 )

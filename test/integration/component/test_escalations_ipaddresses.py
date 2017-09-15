@@ -2396,8 +2396,8 @@ class TestIpAddresses(cloudstackTestCase):
         # Creating expected and actual values dictionaries
         expected_dict = {
             "ipaddressid": associated_ipaddress.ipaddress.id,
-            "startport": "22",
-                         "endport": "2222",
+            "startport": 22,
+                         "endport": 2222,
                          "protocol": "tcp",
                          "cidrlist": "10.1.1.1/16"
         }

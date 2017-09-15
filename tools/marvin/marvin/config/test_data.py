@@ -1006,12 +1006,9 @@ test_data = {
         "cidrlist": '0.0.0.0/0',
     },
     "vpncustomergateway": {
-        "ipsecpsk": "secreatKey",
-        "ikepolicy": "aes128-sha1",
-        "ikelifetime": "86400",
-        "esppolicy": "aes128-sha1",
-        "epslifetime": "3600",
-        "dpd": "false"
+        "esppolicy": "3des-md5;modp1536",
+        "ikepolicy": "3des-md5;modp1536",
+        "ipsecpsk": "ipsecpsk"
     },
     "vlan_ip_range": {
         "startip": "",

@@ -2293,11 +2293,12 @@ class TestInstances(cloudstackTestCase):
         6. Issue "reset VM" command on CCP
         7. check disk sequence on hypervisor remains same and VM starts successfully
         """
+        if self.hypervisor.lower() in ['kvm', 'hyperv', 'lxc', 'vmware']:
+            self.skipTest(
+                "This test not applicable on existing hypervisor. Hence,\
+                        skipping the test")
         try:
-            if self.hypervisor.lower() in ['kvm', 'hyperv', 'lxc', 'vmware']:
-                self.skipTest(
-                    "This test not applicable on existing hypervisor. Hence,\
-                            skipping the test")
+
             template = Template.register(self.apiClient,
                                          self.services["Windows 7 (64-bit)"],
                                          zoneid=self.zone.id,
@@ -2469,7 +2470,6 @@ class TestInstances(cloudstackTestCase):
                 serviceofferingid=self.service_offering.id
 
             )
-            self.cleanup.append(virtual_machine)
             self.debug("creating an instance with template ID: %s" % self.template.id)
             vm_response = VirtualMachine.list(self.apiClient,
                                               id=virtual_machine.id,
@@ -2505,7 +2505,6 @@ class TestInstances(cloudstackTestCase):
                 domainid=self.account.domainid,
                 diskofferingid=disk_offering.id
             )
-            self.cleanup.append(volume)
             # Check List Volume response for newly created volume
             list_volume_response = Volume.list(
                 self.apiClient,

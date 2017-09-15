@@ -329,7 +329,7 @@ class TestNetworks_1(cloudstackTestCase):
         if self.hypervisor.lower() in ['hyperv']:
             raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # List VPC Offering
-        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true")
+        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true", name='Default VPC offering')
         if vpc_offs_list is None:
             self.fail("Default VPC offerings not found")
         else:
@@ -444,7 +444,7 @@ class TestNetworks_1(cloudstackTestCase):
         if self.hypervisor.lower() in ['hyperv']:
             raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # List VPC Offering
-        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true")
+        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true", name='Default VPC offering')
         if vpc_offs_list is None:
             self.fail("Default VPC offerings not found")
         else:
@@ -619,9 +619,8 @@ class TestNetworks_1(cloudstackTestCase):
         if self.hypervisor.lower() in ['hyperv']:
             raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # List VPC Offering
-        vpc_offs_list = VpcOffering.list(self.userapiclient,
-                                         isdefault="true",
-                                         )
+        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true", name='Default VPC offering')
+
         if vpc_offs_list is None:
             self.fail("Default VPC offerings not found")
         else:
@@ -1144,7 +1143,7 @@ class TestNetworks_1(cloudstackTestCase):
         if self.hypervisor.lower() in ['hyperv']:
             raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # List VPC Offering
-        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true")
+        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true", name='Default VPC offering')
         if vpc_offs_list is None:
             self.fail("Default VPC offerings not found")
         else:
@@ -1287,7 +1286,7 @@ class TestNetworks_1(cloudstackTestCase):
         if self.hypervisor.lower() in ['hyperv']:
             raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # List VPC Offering
-        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true")
+        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true", name='Default VPC offering')
         if vpc_offs_list is None:
             self.fail("Default VPC offerings not found")
         else:
@@ -1391,9 +1390,8 @@ class TestNetworks_1(cloudstackTestCase):
         if self.hypervisor.lower() in ['hyperv']:
             raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # List VPC Offering
-        vpc_offs_list = VpcOffering.list(self.userapiclient,
-                                         isdefault="true",
-                                         )
+        vpc_offs_list = VpcOffering.list(self.userapiclient, isdefault="true", name='Default VPC offering')
+
         if vpc_offs_list is None:
             self.fail("Default VPC offerings not found")
         else:
@@ -2146,7 +2144,7 @@ class TestNetworks_2(cloudstackTestCase):
         )
         # Verifying the details of the EgressFirewall Rule
         expected_dict = {
-            "cidrlist": self.test_data["ingress_rule"]["cidrlist"],
+            "cidrlist": self.zone.guestcidraddress,
             "id": egressfirewallrule_created.id,
             "networkid": egressfirewallrule_created.networkid,
             "protocol": self.test_data["ingress_rule"]["protocol"]

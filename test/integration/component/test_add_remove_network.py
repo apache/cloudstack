@@ -596,10 +596,12 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         self.debug("Trying to %s network in account %s to a vm in account %s, This should fail" %
                    (network.type, account.name, self.account.name))
 
-        with self.assertRaises(Exception) as e:
+        try:
             self.virtual_machine.add_nic(self.apiclient, network.id)
-            self.debug("Operation failed with exception %s" % e.exception)
-
+        except Exception:
+            pass
+        else:
+            self.fail("User was able to add NIC, test failed! This issue has been hit: CLOUDSTACK-10071")
         return
 
     @attr(tags = ["advanced", "dvs"])

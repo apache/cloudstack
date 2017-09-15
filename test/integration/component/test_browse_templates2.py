@@ -189,7 +189,7 @@ class TestBrowseUploadTemplate(cloudstackTestCase):
 
             #Destroy SSVM, and wait for new one to start
             self.destroy_ssvm()
-
+            wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
             #Verify that the template is cleaned up as part of sync-up during new SSVM start
             list_template_response=Template.list(
                                         self.apiclient,

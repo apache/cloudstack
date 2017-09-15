@@ -179,13 +179,13 @@ class TestTemplate(cloudstackTestCase):
         self.services["template"]["url"] = builtin_info[0] 
         self.services["template"]["hypervisor"] = builtin_info[1]     
         self.services["template"]["format"] = builtin_info[2]
-
+        temp = self.services["template"]
         self.debug("Registering a new template")
 
         # Register new template
         template = Template.register(
                                         self.apiclient,
-                                        self.services["template"],
+                                        temp,
                                         zoneid=self.zone.id,
                                         account=self.account.name,
                                         domainid=self.account.domainid,

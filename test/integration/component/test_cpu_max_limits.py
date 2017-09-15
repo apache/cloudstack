@@ -34,76 +34,25 @@ from marvin.lib.common import (get_domain,
                                         )
 from marvin.lib.utils import cleanup_resources
 
-class Services:
-    """Test resource limit services
-    """
-
-    def __init__(self):
-        self.services = {
-                        "account": {
-                                "email": "test@test.com",
-                                "firstname": "Test",
-                                "lastname": "User",
-                                "username": "resource",
-                                # Random characters are appended for unique
-                                # username
-                                "password": "password",
-                         },
-                         "service_offering": {
-                                "name": "Tiny Instance",
-                                "displaytext": "Tiny Instance",
-                                "cpunumber": 5,
-                                "cpuspeed": 100,    # in MHz
-                                "memory": 128,    # In MBs
-                        },
-                        "virtual_machine": {
-                                "displayname": "TestVM",
-                                "username": "root",
-                                "password": "password",
-                                "ssh_port": 22,
-                                "hypervisor": 'KVM',
-                                "privateport": 22,
-                                "publicport": 22,
-                                "protocol": 'TCP',
-                                },
-                         "network": {
-                                "name": "Test Network",
-                                "displaytext": "Test Network",
-                                "netmask": '255.255.255.0'
-                                },
-                         "project": {
-                                "name": "Project",
-                                "displaytext": "Test project",
-                                },
-                         "domain": {
-                                "name": "Domain",
-                                },
-                        "ostype": 'CentOS 5.3 (64-bit)',
-                        "sleep": 60,
-                        "timeout": 10,
-                        "mode": 'advanced',
-                        # Networking mode: Advanced, Basic
-                    }
-
 class TestMaxCPULimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestMaxCPULimits, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services["mode"] = cls.zone.networktype
+        cls.testdata["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.testdata["ostype"]
                             )
 
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls._cleanup = []
         return
@@ -143,7 +92,7 @@ class TestMaxCPULimits(cloudstackTestCase):
             if account:
                 vm = VirtualMachine.create(
                      api_client,
-                     self.services["virtual_machine"],
+                     self.testdata["virtual_machine"],
                      templateid=self.template.id,
                      accountid=account.name,
                      domainid=account.domainid,
@@ -152,7 +101,7 @@ class TestMaxCPULimits(cloudstackTestCase):
             elif project:
                 vm = VirtualMachine.create(
                      api_client,
-                     self.services["virtual_machine"],
+                     self.testdata["virtual_machine"],
                      templateid=self.template.id,
                      projectid=project.id,
                      networkids=networks,
@@ -171,13 +120,13 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         self.debug("Creating a domain under: %s" % self.domain.name)
         self.child_domain = Domain.create(self.apiclient,
-            services=self.services["domain"],
+            services=self.testdata["domain"],
             parentdomainid=self.domain.id)
 
         self.debug("domain crated with domain id %s" % self.child_domain.id)
 
         self.child_do_admin = Account.create(self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             admin=True,
             domainid=self.child_domain.id)
 
@@ -186,7 +135,7 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         # Create project as a domain admin
         self.project = Project.create(self.apiclient,
-            self.services["project"],
+            self.testdata["project"],
             account=self.child_do_admin.name,
             domainid=self.child_do_admin.domainid)
         # Cleanup created project at end of test
@@ -241,10 +190,12 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         self.debug("Creating service offering with 3 CPU cores")
 
-        self.services["service_offering"]["cpunumber"] = 3
+        so = self.testdata["service_offering"]
+        so["cpunumber"] = 3
+
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"]
+            so
         )
         # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
@@ -274,10 +225,9 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         self.debug("Creating service offering with 4 CPU cores")
 
-        self.services["service_offering"]["cpunumber"] = 4
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"]
+            self.testdata["service_offering_multiple_cores"]
         )
         # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
@@ -315,10 +265,11 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         self.debug("Creating service offering with 3 CPU cores")
 
-        self.services["service_offering"]["cpunumber"] = 3
+        so = self.testdata["service_offering"]
+        so["cpunumber"] = 3
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"]
+            so
         )
         # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
@@ -350,16 +301,15 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         self.debug("Creating service offering with 4 CPU cores")
 
-        self.services["service_offering"]["cpunumber"] = 4
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"]
+            self.testdata["service_offering_multiple_cores"]
         )
         # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
 
         self.debug("Setting up account and domain hierarchy")
-        self.setupAccounts(account_limit=6, domain_limit=6, project_limit=6)
+        self.setupAccounts(account_limit=5, domain_limit=5, project_limit=5)
 
         api_client_admin = self.testClient.getUserApiClient(
             UserName=self.child_do_admin.name,

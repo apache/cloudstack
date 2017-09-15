@@ -62,7 +62,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.hypervisor = self.testClient.getHypervisorInfo()
+        cls.hypervisor = testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ['lxc']:
             raise unittest.SkipTest("dynamic scaling feature is not supported on %s" % cls.hypervisor.lower())
 
