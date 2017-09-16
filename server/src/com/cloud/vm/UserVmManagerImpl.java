@@ -1136,6 +1136,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long vmId = cmd.getVmId();
         Long networkId = cmd.getNetworkId();
         String ipAddress = cmd.getIpAddress();
+        String macAddress = cmd.getMacAddress();
         Account caller = CallContext.current().getCallingAccount();
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
@@ -1166,12 +1167,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
         }
 
-        NicProfile profile = new NicProfile(null, null);
+        if(_nicDao.findByNetworkIdAndMacAddress(networkId, macAddress) != null) {
+            throw new CloudRuntimeException("A NIC with this MAC address exists for network: " + network.getUuid());
+        }
+
+        NicProfile profile = new NicProfile(ipAddress, null, macAddress);
         if (ipAddress != null) {
             if (!(NetUtils.isValidIp(ipAddress) || NetUtils.isValidIpv6(ipAddress))) {
                 throw new InvalidParameterValueException("Invalid format for IP address parameter: " + ipAddress);
             }
-            profile = new NicProfile(ipAddress, null);
         }
 
         // Perform permission check on VM
@@ -3363,17 +3367,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (requestedIpPair == null) {
                 requestedIpPair = new IpAddresses(null, null);
             } else {
-                _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+                _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair);
             }
 
-            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
 
             if (defaultNetworkNumber == 0) {
                 defaultNetworkNumber++;
                 // if user requested specific ip for default network, add it
                 if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
-                    _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                    _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps);
                     profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                } else if (defaultIps.getMacAddress() != null) {
+                    profile = new NicProfile(null, null, defaultIps.getMacAddress());
                 }
 
                 profile.setDefaultNic(true);
@@ -4625,10 +4631,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String ipAddress = cmd.getIpAddress();
         String ip6Address = cmd.getIp6Address();
+        String macAddress = cmd.getMacAddress();
         String name = cmd.getName();
         String displayName = cmd.getDisplayName();
         UserVm vm = null;
-        IpAddresses addrs = new IpAddresses(ipAddress, ip6Address);
+        IpAddresses addrs = new IpAddresses(ipAddress, ip6Address, macAddress);
         Long size = cmd.getSize();
         String group = cmd.getGroup();
         String userData = cmd.getUserData();
