@@ -181,8 +181,11 @@ public class StorageUsageParser {
                 usageDesc += "Snapshot ";
                 break;
         }
-        // Create the usage record
-        usageDesc += "Id:" + storageId + " Size:" + size + "VirtualSize:" + virtualSize;
+        //Create the usage record
+        usageDesc += "Id:" + storageId + " Size:" + size;
+        if (type != StorageTypes.SNAPSHOT) {
+            usageDesc += " VirtualSize:" + virtualSize;
+        }
 
         //ToDo: get zone id
         UsageVO usageRecord =
