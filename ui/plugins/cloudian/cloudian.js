@@ -56,21 +56,23 @@
         return pluginEnabled;
       },
       show: function() {
-        var description = 'Cloudian Storage should open in another window.';
+        var description = 'Cloudian management console should open in another window.';
         $.ajax({
             url: createURL('cloudianSsoLogin'),
             async: false,
             success: function(json) {
                 var response = json.cloudianssologinresponse.cloudianssologin;
-                var url = response.url.split("?")[0];
-                var data = {};
-                $.each(response.url.split("?")[1].split("&"), function (idx, value) {
-                    data[value.split('=')[0]] = decodeURIComponent(value.split('=')[1]);
-                })
-                openInNewTab(url, data);
+                var cmcWindow = window.open(response.url, "CMCWindow");
+                cmcWindow.focus();
+                //var url = response.url.split("?")[0];
+                //var data = {};
+                //$.each(response.url.split("?")[1].split("&"), function (idx, value) {
+                //    data[value.split('=')[0]] = decodeURIComponent(value.split('=')[1]);
+                //})
+                //openInNewTab(url, data);
             },
             error: function(data) {
-                description = 'Single-Sign-On failed for Cloudian Storage.';
+                description = 'Single-Sign-On failed for Cloudian management console.';
             }
         });
         return $('<div>').html(description);
