@@ -531,6 +531,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 // FIXME: Fix                    long checkPointId2 = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName2));
                 cmd.setContextParam("worker2", workerName2);
                 cmd.setContextParam("checkpoint2", String.valueOf(checkPointId2));
+                cmd.setContextParam("searchexludefolders", _vmwareMgr.s_vmwareSearchExcludeFolder.value());
             }
 
             return new Pair<Boolean, Long>(Boolean.TRUE, cmdTarget.first().getId());
