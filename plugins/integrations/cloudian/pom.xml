@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
   http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-plugin-connectors-cloudian</artifactId>
+  <artifactId>cloud-plugin-integrations-cloudian-connector</artifactId>
   <name>Apache CloudStack Plugin - Cloudian Connector</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
@@ -39,6 +39,10 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
     </dependency>
   </dependencies>
   <build>

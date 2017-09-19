@@ -394,7 +394,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-connectors-cloudian</artifactId>
+      <artifactId>cloud-plugin-integrations-cloudian-connector</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
