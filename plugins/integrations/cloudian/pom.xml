@@ -43,6 +43,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
+      <version>${cs.httpclient.version}</version>
     </dependency>
   </dependencies>
   <build>
