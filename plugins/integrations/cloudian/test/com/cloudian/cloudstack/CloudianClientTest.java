@@ -5,8 +5,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class CloudianClientTest {
+
+    private CloudianClient client;
+
     @Before
     public void setUp() throws Exception {
+        client = new CloudianClient("https://admin.hs.yadav.xyz:19443", "admin", "public", false);
     }
 
     @After
@@ -19,6 +23,7 @@ public class CloudianClientTest {
 
     @Test
     public void listUserAccount() throws Exception {
+        client.listUserAccount();
     }
 
     @Test
