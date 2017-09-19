@@ -18,8 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -28,8 +26,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCustomerGatewayVO, Long> implements Site2SiteCustomerGatewayDao {
-    private static final Logger s_logger = Logger.getLogger(Site2SiteCustomerGatewayDaoImpl.class);
-
     private final SearchBuilder<Site2SiteCustomerGatewayVO> AllFieldsSearch;
 
     protected Site2SiteCustomerGatewayDaoImpl() {
@@ -38,14 +34,6 @@ public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCus
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
-    }
-
-    @Override
-    public Site2SiteCustomerGatewayVO findByGatewayIpAndAccountId(String ip, long accountId) {
-        SearchCriteria<Site2SiteCustomerGatewayVO> sc = AllFieldsSearch.create();
-        sc.setParameters("gatewayIp", ip);
-        sc.setParameters("accountId", accountId);
-        return findOneBy(sc);
     }
 
     @Override
