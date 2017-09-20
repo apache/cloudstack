@@ -583,6 +583,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (network.getTrafficType() != TrafficType.Guest) {
             return false;
         }
+        if (listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+            return true; // do not check free IPs if there is no service in the network
+        }
         boolean hasFreeIps = true;
         if (network.getGuestType() == GuestType.Shared) {
             if (network.getGateway() != null) {
@@ -1823,6 +1826,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public Set<Long> getAvailableIps(Network network, String requestedIp) {
+        if (network.getCidr() == null) {
+            return null;
+        }
         String[] cidr = network.getCidr().split("/");
         List<String> ips = getUsedIpsInNetwork(network);
         Set<Long> usedIps = new TreeSet<Long>();

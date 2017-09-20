@@ -800,6 +800,10 @@
 
                         rootAdminAddGuestNetwork: $.extend({}, addGuestNetworkDialog.def, {
                             isHeader: true
+                        }),
+
+                        rootAdminAddL2Network: $.extend({}, addL2GuestNetwork.def, {
+                            isHeader: true
                         })
 
                     },
@@ -954,7 +958,8 @@
                             path: 'network.ipAddresses',
                             label: 'label.menu.ipaddresses',
                             preFilter: function(args) {
-                                if (args.context.networks[0].state == 'Destroyed')
+                                if (args.context.networks[0].state == 'Destroyed' ||
+                                    args.context.networks[0].type == 'L2')
                                     return false;
 
                                 return true;
@@ -970,6 +975,11 @@
                                     notification: function(args) {
                                         return 'label.edit.network.details';
                                     }
+                                },
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
                                 },
                                 action: function(args) {
                                     var data = {
@@ -1051,8 +1061,13 @@
                                 }
                             },
 
-                            'restart': {
+                            restart: {
                                 label: 'label.restart.network',
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
+                                },
                                 createForm: {
                                     title: 'label.restart.network',
                                     desc: 'message.restart.network',
@@ -1108,6 +1123,11 @@
 
                             remove: {
                                 label: 'label.action.delete.network',
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
+                                },
                                 messages: {
                                     confirm: function(args) {
                                         return 'message.action.delete.network';

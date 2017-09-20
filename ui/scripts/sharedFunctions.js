@@ -818,6 +818,263 @@ var addGuestNetworkDialog = {
     }
 }
 
+var addL2GuestNetwork = {
+    zoneObjs: [],
+    physicalNetworkObjs: [],
+    networkOfferingObjs: [],
+    def: {
+        label: 'label.add.l2.guest.network',
+
+        messages: {
+            notification: function(args) {
+                return 'label.add.l2.guest.network';
+            }
+        },
+
+        preFilter: function(args) {
+            if (isAdmin())
+                return true;
+            else
+                return false;
+        },
+
+        createForm: {
+            title: 'label.add.l2.guest.network',
+            fields: {
+                name: {
+                    label: 'label.name',
+                    validation: {
+                        required: true
+                    },
+                    docID: 'helpGuestNetworkName'
+                },
+                displayText: {
+                    label: 'label.display.text',
+                    validation: {
+                        required: true
+                    },
+                    docID: 'helpGuestNetworkDisplayText'
+                },
+                zoneId: {
+                    label: 'label.zone',
+                    validation: {
+                        required: true
+                    },
+                    docID: 'helpGuestNetworkZone',
+
+                    select: function(args) {
+                        $.ajax({
+                            url: createURL('listZones'),
+                            success: function(json) {
+                                var zones = $.grep(json.listzonesresponse.zone, function(zone) {
+                                    return (zone.networktype == 'Advanced' && zone.securitygroupsenabled != true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
+                                });
+
+                                args.response.success({
+                                    data: $.map(zones, function(zone) {
+                                        return {
+                                            id: zone.id,
+                                            description: zone.name
+                                        };
+                                    })
+                                });
+                            }
+                        });
+                    }
+                },
+                networkOfferingId: {
+                    label: 'label.network.offering',
+                    validation: {
+                        required: true
+                    },
+                    dependsOn: 'zoneId',
+                    docID: 'helpGuestNetworkNetworkOffering',
+                    select: function(args) {
+                        var data = {
+                            zoneid: args.zoneId,
+                            guestiptype: 'L2',
+                            state: 'Enabled'
+                        };
+
+                        if ('vpc' in args.context) { //from VPC section
+                            $.extend(data, {
+                                forVpc: true
+                            });
+                        }
+                        else { //from guest network section
+                            var vpcs;
+                            $.ajax({
+                                url: createURL('listVPCs'),
+                                data: {
+                                    listAll: true
+                                },
+                                async: false,
+                                success: function(json) {
+                                    vpcs = json.listvpcsresponse.vpc;
+                                }
+                            });
+                            if (vpcs == null || vpcs.length == 0) { //if there is no VPC in the system
+                                $.extend(data, {
+                                    forVpc: false
+                                });
+                            }
+                        }
+
+                        if(!isAdmin()) { //normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
+                            $.extend(data, {
+                                specifyvlan: false
+                            });
+                        }
+
+                        $.ajax({
+                            url: createURL('listNetworkOfferings'),
+                            data: data,
+                            success: function(json) {
+                                networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                args.$select.change(function() {
+                                    var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                                    var networkOffering = $.grep(
+                                        networkOfferingObjs, function(netoffer) {
+                                            return netoffer.id == args.$select.val();
+                                        }
+                                    )[0];
+
+                                    if (networkOffering.specifyvlan) {
+                                        $vlan.css('display', 'inline-block');
+                                    } else {
+                                        $vlan.hide();
+                                    }
+                                });
+
+                                args.response.success({
+                                    data: $.map(networkOfferingObjs, function(zone) {
+                                        return {
+                                            id: zone.id,
+                                            description: zone.name
+                                        };
+                                    })
+                                });
+                            }
+                        });
+                    }
+                },
+
+                vlan: {
+                    label: 'label.vlan',
+                    validation: {
+                        required: true
+                    },
+                    isHidden: true
+                },
+
+                domain: {
+                    label: 'label.domain',
+                    isHidden: function(args) {
+                        if (isAdmin() || isDomainAdmin())
+                            return false;
+                        else
+                            return true;
+                    },
+                    select: function(args) {
+                        if (isAdmin() || isDomainAdmin()) {
+                            $.ajax({
+                                url: createURL("listDomains&listAll=true"),
+                                success: function(json) {
+                                    var items = [];
+                                    items.push({
+                                        id: "",
+                                        description: ""
+                                    });
+                                    var domainObjs = json.listdomainsresponse.domain;
+                                    $(domainObjs).each(function() {
+                                        items.push({
+                                            id: this.id,
+                                            description: this.path
+                                        });
+                                    });
+                                    items.sort(function(a, b) {
+                                        return a.description.localeCompare(b.description);
+                                    });
+                                    args.response.success({
+                                        data: items
+                                    });
+                                }
+                            });
+                            args.$select.change(function() {
+                                var $form = $(this).closest('form');
+                                if ($(this).val() == "") {
+                                    $form.find('.form-item[rel=account]').hide();
+                                } else {
+                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                }
+                            });
+                        } else {
+                            args.response.success({
+                                data: null
+                            });
+                        }
+                    }
+                },
+                account: {
+                    label: 'label.account',
+                    validation: {
+                        required: true
+                    },
+                    isHidden: function(args) {
+                        if (isAdmin() || isDomainAdmin())
+                            return false;
+                        else
+                            return true;
+                    }
+                }
+            }
+        },
+
+        action: function(args) {
+            var dataObj = {
+                zoneId: args.data.zoneId,
+                name: args.data.name,
+                displayText: args.data.displayText,
+                networkOfferingId: args.data.networkOfferingId
+            };
+
+            if (args.$form.find('.form-item[rel=vlan]').css('display') != 'none') {
+                $.extend(dataObj, {
+                    vlan: args.data.vlan
+                });
+            }
+
+            if (args.data.domain != null && args.data.domain.length > 0) {
+                $.extend(dataObj, {
+                    domainid: args.data.domain
+                });
+                if (args.data.account != null && args.data.account.length > 0) {
+                    $.extend(dataObj, {
+                        account: args.data.account
+                    });
+                }
+            }
+
+            $.ajax({
+                url: createURL('createNetwork'),
+                data: dataObj,
+                success: function(json) {
+                    args.response.success({
+                        data: json.createnetworkresponse.network
+                    });
+                },
+                error: function(json) {
+                    args.response.error(parseXMLHttpResponse(json));
+                }
+            });
+        },
+        notification: {
+            poll: function(args) {
+                args.complete();
+            }
+        }
+    }
+}
 
     function isLdapEnabled() {
         var result;

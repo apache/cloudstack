@@ -338,6 +338,7 @@ var dictionary = {
     "label.add.isolated.guest.network": "Добавить изолированную гостевую сеть",
     "label.add.isolated.guest.network.with.sourcenat": "Add Isolated Guest Network with SourceNat",
     "label.add.isolated.network": "Добавить изолированную сеть",
+    "label.add.l2.guest.network":"Add L2 Guest Network",
     "label.add.ldap.account": "Добавить LDAP аккаунт",
     "label.add.list.name": "ACL List Name",
     "label.add.load.balancer": "Добавить балансировщик нагрузки",

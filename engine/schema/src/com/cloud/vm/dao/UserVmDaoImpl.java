@@ -29,6 +29,9 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -77,6 +80,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     // ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     @Inject
     ResourceTagDao _tagsDao;
+    @Inject
+    NetworkDao networkDao;
 
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT =
             "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
@@ -301,13 +306,16 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states) {
-        if (UserVmSearch == null) {
+        NetworkVO network = networkDao.findById(networkId);
+        if (UserVmSearch == null && network != null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
             nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-            nicSearch.and().op("ip4Address", nicSearch.entity().getIPv4Address(), SearchCriteria.Op.NNULL);
-            nicSearch.or("ip6Address", nicSearch.entity().getIPv6Address(), SearchCriteria.Op.NNULL);
-            nicSearch.cp();
+            if (!network.getGuestType().equals(Network.GuestType.L2)) {
+                nicSearch.and().op("ip4Address", nicSearch.entity().getIPv4Address(), SearchCriteria.Op.NNULL);
+                nicSearch.or("ip6Address", nicSearch.entity().getIPv6Address(), SearchCriteria.Op.NNULL);
+                nicSearch.cp();
+            }
 
             UserVmSearch = createSearchBuilder();
             UserVmSearch.and("states", UserVmSearch.entity().getState(), SearchCriteria.Op.IN);
