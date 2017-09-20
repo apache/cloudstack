@@ -17,139 +17,212 @@
 
 package com.cloudian.cloudstack;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.log4j.Logger;
 
-import com.amazonaws.util.json.JSONException;
-import com.amazonaws.util.json.JSONObject;
 import com.cloud.utils.nio.TrustAllManager;
+import com.cloudian.client.GroupInfo;
+import com.cloudian.client.UserInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CloudianClient {
     private static final Logger LOG = Logger.getLogger(CloudianClient.class);
 
     private final HttpClient httpClient;
     private final String baseUrl;
-    private final boolean validateSSLCertificate;
 
     public CloudianClient(final String baseUrl, final String username, final String password, final boolean validateSSlCertificate) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         this.baseUrl = baseUrl;
-        this.validateSSLCertificate = validateSSlCertificate;
 
         final UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
         final CredentialsProvider provider = new BasicCredentialsProvider();
         provider.setCredentials(AuthScope.ANY, credentials);
 
-        SSLContextBuilder builder = new SSLContextBuilder();
-        builder.loadTrustMaterial(null,  new TrustStrategy() {
-            public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-                return true;
-            }
-        });
-        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build());
+        if (!validateSSlCertificate) {
+            final SSLContextBuilder builder = new SSLContextBuilder();
+            builder.loadTrustMaterial(null,  new TrustStrategy() {
+                public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                    return true;
+                }
+            });
+            final SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build());
 
-        SSLContext sslcontext = SSLContexts.custom().useSSL().build();
-        sslcontext.init(null, new X509TrustManager[]{new TrustAllManager()}, new SecureRandom());
-        SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, NoopHostnameVerifier.INSTANCE);
+            final SSLContext sslcontext = SSLUtils.getSSLContext();
+            sslcontext.init(null, new X509TrustManager[]{new TrustAllManager()}, new SecureRandom());
+            final SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, NoopHostnameVerifier.INSTANCE);
 
-        this.httpClient = HttpClientBuilder.create()
-                .setDefaultCredentialsProvider(provider)
-                .setSSLSocketFactory(factory)
-                .build();
+            this.httpClient = HttpClientBuilder.create()
+                    .setDefaultCredentialsProvider(provider)
+                    .setSSLSocketFactory(factory)
+                    .build();
+        } else {
+            this.httpClient = HttpClientBuilder.create()
+                    .setDefaultCredentialsProvider(provider)
+                    .build();
+        }
     }
 
-    private void sendGET(final String path) throws IOException {
-        HttpResponse response = httpClient.execute(new HttpGet(baseUrl + path));
-        int statusCode = response.getStatusLine().getStatusCode();
+    private HttpResponse delete(final String path) throws IOException {
+        return httpClient.execute(new HttpDelete(baseUrl + path));
+    }
 
-        BufferedReader br = new BufferedReader(
-                new InputStreamReader((response.getEntity().getContent())));
+    private HttpResponse get(final String path) throws IOException {
+        return httpClient.execute(new HttpGet(baseUrl + path));
+    }
 
-        StringBuilder result = new StringBuilder();
-        String output;
-        while ((output = br.readLine()) != null) {
-            LOG.debug(output);
-            result.append(output);
-        }
+    private HttpResponse post(final String path, final Object item) throws IOException {
+        final ObjectMapper mapper = new ObjectMapper();
+        final String json = mapper.writeValueAsString(item);
+        final StringEntity entity = new StringEntity(json);
+        final HttpPost request = new HttpPost(baseUrl + path);
+        request.setHeader("Content-type", "application/json");
+        request.setEntity(entity);
+        return httpClient.execute(request);
+    }
+
+    private HttpResponse put(final String path, final Object item) throws IOException {
+        final ObjectMapper mapper = new ObjectMapper();
+        final String json = mapper.writeValueAsString(item);
+        final StringEntity entity = new StringEntity(json);
+        final HttpPut request = new HttpPut(baseUrl + path);
+        request.setHeader("Content-type", "application/json");
+        request.setEntity(entity);
+        return httpClient.execute(request);
+    }
+
+    public UserInfo addUser(final UserInfo user) {
         try {
-            JSONObject o = new JSONObject(result.toString());
-        } catch (JSONException e) {
-            e.printStackTrace();
+            final HttpResponse response = put("/user", user);
+            final ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response.getEntity().getContent(), UserInfo.class);
+        } catch (final IOException e) {
+            LOG.error("Failed to add Cloudian user due to:", e);
         }
+        return null;
     }
 
-    private void sendPOST() throws IOException {
-        HttpResponse response = httpClient.execute(new HttpPost(baseUrl));
-        int statusCode = response.getStatusLine().getStatusCode();
-
-    }
-
-    private void sendPUT() throws IOException {
-        HttpResponse response = httpClient.execute(new HttpPut(baseUrl));
-        int statusCode = response.getStatusLine().getStatusCode();
-    }
-
-    public boolean addUserAccount() {
-        return true;
-    }
-
-    public boolean listUserAccount() {
+    public UserInfo listUser(final String userId, final String groupId) {
         try {
-            sendGET("/user/list?groupId=0&userType=all&userStatus=all");
-        } catch (IOException e) {
-            e.printStackTrace();
+            final HttpResponse response = get(String.format("/user?userId=%s&groupId=%s", userId, groupId));
+            final ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response.getEntity().getContent(), UserInfo.class);
+        } catch (final IOException e) {
+            LOG.error("Failed to list Cloudian user due to:", e);
         }
-        return true;
+        return null;
     }
 
-    public boolean updateUserAccount() {
-        return true;
+    public List<UserInfo> listUsers(final String groupId) {
+        try {
+            final HttpResponse response = get(String.format("/user/list?groupId=%s&userType=all&userStatus=active", groupId));
+            final ObjectMapper mapper = new ObjectMapper();
+            return Arrays.asList(mapper.readValue(response.getEntity().getContent(), UserInfo[].class));
+        } catch (final IOException e) {
+            LOG.error("Failed to list Cloudian users due to:", e);
+        }
+        return null;
     }
 
-    public boolean removeUserAccount() {
-        return true;
+    public boolean updateUser(final UserInfo user) {
+        try {
+            final HttpResponse response = post("/user", user);
+            return response.getStatusLine().getStatusCode() == 200;
+        } catch (final IOException e) {
+            LOG.error("Failed to update Cloudian user due to:", e);
+        }
+        return false;
     }
 
-    public boolean addGroup() {
-        return true;
+    public boolean removeUser(final String userId, final String groupId) {
+        try {
+            final HttpResponse response = delete(String.format("/user?userId=%s&groupId=%s", userId, groupId));
+            return response.getStatusLine().getStatusCode() == 200;
+        } catch (final IOException e) {
+            LOG.error("Failed to remove Cloudian user due to:", e);
+        }
+        return false;
     }
 
-    public boolean listGroup() {
-        return true;
+    public GroupInfo addGroup(final GroupInfo group) {
+        try {
+            final HttpResponse response = put("/group", group);
+            final ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response.getEntity().getContent(), GroupInfo.class);
+        } catch (final IOException e) {
+            LOG.error("Failed to add Cloudian group due to:", e);
+        }
+        return null;
     }
 
-    public boolean updateGroup() {
-        return true;
+    public GroupInfo listGroup(final String groupId) {
+        try {
+            final HttpResponse response = get(String.format("/group?groupId=%s", groupId));
+            final ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response.getEntity().getContent(), GroupInfo.class);
+        } catch (final IOException e) {
+            LOG.error("Failed to list Cloudian group due to:", e);
+        }
+        return null;
     }
 
-    public boolean removeGroup() {
-        return true;
+    public List<GroupInfo> listGroups() {
+        try {
+            final HttpResponse response = get("/group/list");
+            final ObjectMapper mapper = new ObjectMapper();
+            return Arrays.asList(mapper.readValue(response.getEntity().getContent(), GroupInfo[].class));
+        } catch (final IOException e) {
+            LOG.error("Failed to list Cloudian groups due to:", e);
+        }
+        return null;
+    }
+
+    public boolean updateGroup(final GroupInfo group) {
+        try {
+            final HttpResponse response = post("/group", group);
+            return response.getStatusLine().getStatusCode() == 200;
+        } catch (final IOException e) {
+            LOG.error("Failed to remove group due to:", e);
+        }
+        return false;
+    }
+
+    public boolean removeGroup(final String groupId) {
+        try {
+            final HttpResponse response = delete(String.format("/group?groupId=%s", groupId));
+            return response.getStatusLine().getStatusCode() == 200;
+        } catch (final IOException e) {
+            LOG.error("Failed to remove group due to:", e);
+        }
+        return false;
     }
 
 }

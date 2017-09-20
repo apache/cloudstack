@@ -45,6 +45,11 @@
       <artifactId>httpclient</artifactId>
       <version>${cs.httpclient.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${cs.jackson.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
