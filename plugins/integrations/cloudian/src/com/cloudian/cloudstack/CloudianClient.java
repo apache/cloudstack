@@ -145,6 +145,9 @@ public class CloudianClient {
         try {
             final HttpResponse response = get(String.format("/user/list?groupId=%s&userType=all&userStatus=active", groupId));
             final ObjectMapper mapper = new ObjectMapper();
+            if (response.getEntity() == null || response.getEntity().getContent() == null) {
+                return null;
+            }
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), UserInfo[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian users due to:", e);
@@ -187,6 +190,9 @@ public class CloudianClient {
         try {
             final HttpResponse response = get(String.format("/group?groupId=%s", groupId));
             final ObjectMapper mapper = new ObjectMapper();
+            if (response.getEntity() == null || response.getEntity().getContent() == null) {
+                return null;
+            }
             return mapper.readValue(response.getEntity().getContent(), GroupInfo.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian group due to:", e);
