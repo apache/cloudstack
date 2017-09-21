@@ -69,7 +69,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
 
     private String getAdminBaseUrl() {
         return String.format("%s://%s:%s", CloudianAdminProtocol.value(),
-                CloudianAdminPort.value(), CloudianCmcPort.value());
+                CloudianAdminHost.value(), CloudianAdminPort.value());
     }
 
     @Override
