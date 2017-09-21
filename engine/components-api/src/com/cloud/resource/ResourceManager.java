@@ -99,6 +99,8 @@ public interface ResourceManager extends ResourceService {
 
     public List<HostVO> listAllHosts(final Host.Type type, final Long clusterId, final Long podId, final long dcId);
 
+    public List<HostVO> listAllUpHosts(Host.Type type, Long clusterId, Long podId, long dcId);
+
     public List<HostVO> listAllHostsInCluster(long clusterId);
 
     public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status);
