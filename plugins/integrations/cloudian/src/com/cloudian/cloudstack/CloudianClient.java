@@ -119,15 +119,14 @@ public class CloudianClient {
         return httpClient.execute(request);
     }
 
-    public UserInfo addUser(final UserInfo user) {
+    public boolean addUser(final UserInfo user) {
         try {
             final HttpResponse response = put("/user", user);
-            final ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(response.getEntity().getContent(), UserInfo.class);
+            return response.getStatusLine().getStatusCode() == 200;
         } catch (final IOException e) {
             LOG.error("Failed to add Cloudian user due to:", e);
         }
-        return null;
+        return false;
     }
 
     public UserInfo listUser(final String userId, final String groupId) {
@@ -178,15 +177,14 @@ public class CloudianClient {
         return false;
     }
 
-    public GroupInfo addGroup(final GroupInfo group) {
+    public boolean addGroup(final GroupInfo group) {
         try {
             final HttpResponse response = put("/group", group);
-            final ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(response.getEntity().getContent(), GroupInfo.class);
+            return response.getStatusLine().getStatusCode() == 200;
         } catch (final IOException e) {
             LOG.error("Failed to add Cloudian group due to:", e);
         }
-        return null;
+        return false;
     }
 
     public GroupInfo listGroup(final String groupId) {

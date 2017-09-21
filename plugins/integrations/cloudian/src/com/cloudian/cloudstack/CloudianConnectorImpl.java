@@ -112,8 +112,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         group.setGroupId(domain.getUuid());
         group.setGroupName(domain.getPath());
         group.setActive(true);
-        GroupInfo createdGroup = client.addGroup(group);
-        return createdGroup != null && createdGroup.getGroupId().equals(domain.getUuid());
+        return client.addGroup(group);
     }
 
     @Override
@@ -141,8 +140,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         user.setUserType(UserInfo.USER);
         user.setFullName(account.getAccountName());
         user.setActive(true);
-        UserInfo createdUser = client.addUser(user);
-        return createdUser != null && createdUser.getUserId().equals(account.getUuid());
+        return client.addUser(user);
     }
 
     @Override
