@@ -134,7 +134,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             return false;
         }
         LOG.debug("Adding Cloudian user account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
-        final Domain domain = domainDao.findById(account.getId());
+        final Domain domain = domainDao.findById(account.getDomainId());
         UserInfo user = new UserInfo();
         user.setActive(true);
         user.setUserId(account.getUuid());
@@ -150,7 +150,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             return false;
         }
         LOG.debug("Removing Cloudian user account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
-        final Domain domain = domainDao.findById(account.getId());
+        final Domain domain = domainDao.findById(account.getDomainId());
         return client.removeUser(account.getUuid(), domain.getUuid());
     }
 
