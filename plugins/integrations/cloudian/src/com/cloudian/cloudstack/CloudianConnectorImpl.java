@@ -17,6 +17,9 @@
 
 package com.cloudian.cloudstack;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,11 +43,15 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloudian.client.GroupInfo;
+import com.cloudian.client.UserInfo;
 import com.cloudian.cloudstack.api.CloudianIsEnabledCmd;
 import com.cloudian.cloudstack.api.CloudianSsoLoginCmd;
 
 public class CloudianConnectorImpl extends ComponentLifecycleBase implements CloudianConnector, Configurable {
     private static final Logger LOG = Logger.getLogger(CloudianConnectorImpl.class);
+
+    private CloudianClient client;
 
     @Inject
     private AccountDao accountDao;
@@ -60,10 +67,13 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         return !CloudianConnectorEnabled.value();
     }
 
+    private String getAdminBaseUrl() {
+        return String.format("%s://%s:%s", CloudianAdminProtocol.value(),
+                CloudianAdminPort.value(), CloudianCmcPort.value());
+    }
+
     @Override
     public String generateSsoUrl() {
-        // check and add user/group in CMC if not available
-
         final Account caller = CallContext.current().getCallingAccount();
         final Domain domain = domainDao.findById(caller.getDomainId());
 
@@ -73,6 +83,14 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         if (caller.getAccountName().equals("admin") && caller.getRoleId() == RoleType.Admin.getId()) {
             user = CloudianCmcAdminUser.value();
             group = "0";
+        } else {
+            if (client.listGroup(group) == null) {
+                addGroup(domain);
+            }
+
+            if (client.listUser(user, group) == null) {
+                addUserAccount(caller);
+            }
         }
 
         final String ssoParams = CloudianUtils.generateSSOUrlParams(user, group, CloudianSsoKey.value());
@@ -90,8 +108,12 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             return false;
         }
         LOG.debug("Adding Cloudian group against domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
-
-        return false;
+        GroupInfo group = new GroupInfo();
+        group.setActive(true);
+        group.setGroupId(domain.getUuid());
+        group.setGroupName(domain.getPath());
+        GroupInfo createdGroup = client.addGroup(group);
+        return createdGroup != null && createdGroup.getGroupId().equals(domain.getUuid());
     }
 
     @Override
@@ -100,8 +122,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             return false;
         }
         LOG.debug("Removing Cloudian group against domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
-
-        return false;
+        for (UserInfo user: client.listUsers(domain.getUuid())) {
+            client.removeUser(user.getUserId(), domain.getUuid());
+        }
+        return client.removeGroup(domain.getUuid());
     }
 
     @Override
@@ -111,8 +135,13 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         }
         LOG.debug("Adding Cloudian user account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
         final Domain domain = domainDao.findById(account.getId());
-
-        return false;
+        UserInfo user = new UserInfo();
+        user.setActive(true);
+        user.setUserId(account.getUuid());
+        user.setGroupId(domain.getUuid());
+        user.setFullName(account.getAccountName());
+        UserInfo createdUser = client.addUser(user);
+        return createdUser != null && createdUser.getUserId().equals(account.getUuid());
     }
 
     @Override
@@ -122,13 +151,19 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         }
         LOG.debug("Removing Cloudian user account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
         final Domain domain = domainDao.findById(account.getId());
-
-        return false;
+        return client.removeUser(account.getUuid(), domain.getUuid());
     }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
+        try {
+            client = new CloudianClient(getAdminBaseUrl(),
+                    CloudianAdminUser.value(), CloudianAdminPassword.value(),
+                    CloudianValidateSSLSecurity.value());
+        } catch (KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
+            e.printStackTrace();
+        }
 
         messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override

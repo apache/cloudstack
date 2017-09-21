@@ -37,7 +37,7 @@ public interface CloudianConnector extends PluggableService {
     ConfigKey<String> CloudianAdminProtocol = new ConfigKey<>("Advanced", String.class, "cloudian.admin.protocol", "https",
             "The protocol of the Cloudian Admin server.", true);
 
-    ConfigKey<String> CloudianValidateSSLSecurity = new ConfigKey<>("Advanced", String.class, "cloudian.validate.ssl", "false",
+    ConfigKey<Boolean> CloudianValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "cloudian.validate.ssl", "false",
             "When set to true, this will validate the SSL certificate when connecting to https/ssl enabled admin host.", true);
 
     ConfigKey<String> CloudianAdminUser = new ConfigKey<>("Advanced", String.class, "cloudian.admin.user", "sysadmin",
