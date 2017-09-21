@@ -80,6 +80,17 @@ CORS
   rm -f /etc/logrotate.d/cloud
 }
 
+import_jvm_cacerts(){
+ log_it "importing jvm keystore to realhostip keystore"
+ keyStore=/usr/local/cloud/systemvm/certs/realhostip.keystore
+ storepass="vmops.com"
+ java_home=$(readlink -f $(which java) | sed "s:/bin/java::")
+ java_keystore=$java_home/jre/lib/security/cacerts
+ java_store_pass="changeit"
+ keytool -importkeystore -srckeystore $java_keystore -srcstorepass $java_store_pass -destkeystore $keyStore -deststorepass $storepass -noprompt
+ log_it "import of jvm keystore to realhostip keystore completed"
+}
+
 secstorage_svcs
 if [ $? -gt 0 ]
 then
@@ -87,3 +98,4 @@ then
   exit 1
 fi
 setup_secstorage
+import_jvm_cacerts
