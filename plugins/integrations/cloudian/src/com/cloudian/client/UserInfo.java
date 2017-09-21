@@ -21,15 +21,18 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserInfo {
+    public static final String USER = "User";
+
     String userId;
     String groupId;
+    String userType;
     Boolean active;
     String fullName;
     String canonicalUserId;
 
     @Override
     public String toString() {
-        return String.format("User [id=%s, group id=%s, active=%s, name=%s]", userId, groupId, active, fullName);
+        return String.format("User [id=%s, group id=%s, type=%s, active=%s, name=%s]", userId, groupId, userType, active, fullName);
     }
 
     public String getUserId() {
@@ -46,6 +49,14 @@ public class UserInfo {
 
     public void setGroupId(String groupId) {
         this.groupId = groupId;
+    }
+
+    public String getUserType() {
+        return userType;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
     }
 
     public String getFullName() {

@@ -109,9 +109,9 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         }
         LOG.debug("Adding Cloudian group against domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
         GroupInfo group = new GroupInfo();
-        group.setActive(true);
         group.setGroupId(domain.getUuid());
         group.setGroupName(domain.getPath());
+        group.setActive(true);
         GroupInfo createdGroup = client.addGroup(group);
         return createdGroup != null && createdGroup.getGroupId().equals(domain.getUuid());
     }
@@ -136,10 +136,11 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         LOG.debug("Adding Cloudian user account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
         final Domain domain = domainDao.findById(account.getDomainId());
         UserInfo user = new UserInfo();
-        user.setActive(true);
         user.setUserId(account.getUuid());
         user.setGroupId(domain.getUuid());
+        user.setUserType(UserInfo.USER);
         user.setFullName(account.getAccountName());
+        user.setActive(true);
         UserInfo createdUser = client.addUser(user);
         return createdUser != null && createdUser.getUserId().equals(account.getUuid());
     }
