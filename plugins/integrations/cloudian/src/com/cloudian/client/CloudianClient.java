@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloudian.cloudstack;
+package com.cloudian.client;
 
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,6 +33,7 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -50,8 +52,6 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.nio.TrustAllManager;
-import com.cloudian.client.GroupInfo;
-import com.cloudian.client.UserInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CloudianClient {
@@ -119,10 +119,14 @@ public class CloudianClient {
         return httpClient.execute(request);
     }
 
+    ////////////////////////////////////////////////////////
+    //////////////// Public APIs: User /////////////////////
+    ////////////////////////////////////////////////////////
+
     public boolean addUser(final UserInfo user) {
         try {
             final HttpResponse response = put("/user", user);
-            return response.getStatusLine().getStatusCode() == 200;
+            return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to add Cloudian user due to:", e);
         }
@@ -154,13 +158,13 @@ public class CloudianClient {
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian users due to:", e);
         }
-        return null;
+        return new ArrayList<>();
     }
 
     public boolean updateUser(final UserInfo user) {
         try {
             final HttpResponse response = post("/user", user);
-            return response.getStatusLine().getStatusCode() == 200;
+            return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to update Cloudian user due to:", e);
         }
@@ -170,17 +174,21 @@ public class CloudianClient {
     public boolean removeUser(final String userId, final String groupId) {
         try {
             final HttpResponse response = delete(String.format("/user?userId=%s&groupId=%s", userId, groupId));
-            return response.getStatusLine().getStatusCode() == 200;
+            return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove Cloudian user due to:", e);
         }
         return false;
     }
 
+    /////////////////////////////////////////////////////////
+    //////////////// Public APIs: Group /////////////////////
+    /////////////////////////////////////////////////////////
+
     public boolean addGroup(final GroupInfo group) {
         try {
             final HttpResponse response = put("/group", group);
-            return response.getStatusLine().getStatusCode() == 200;
+            return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to add Cloudian group due to:", e);
         }
@@ -212,13 +220,13 @@ public class CloudianClient {
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian groups due to:", e);
         }
-        return null;
+        return new ArrayList<>();
     }
 
     public boolean updateGroup(final GroupInfo group) {
         try {
             final HttpResponse response = post("/group", group);
-            return response.getStatusLine().getStatusCode() == 200;
+            return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove group due to:", e);
         }
@@ -228,7 +236,7 @@ public class CloudianClient {
     public boolean removeGroup(final String groupId) {
         try {
             final HttpResponse response = delete(String.format("/group?groupId=%s", groupId));
-            return response.getStatusLine().getStatusCode() == 200;
+            return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove group due to:", e);
         }

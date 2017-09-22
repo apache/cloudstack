@@ -26,9 +26,9 @@ public class UserInfo {
     String userId;
     String groupId;
     String userType;
-    Boolean active;
     String fullName;
-    String canonicalUserId;
+    String emailAddr;
+    Boolean active;
 
     @Override
     public String toString() {
@@ -67,12 +67,12 @@ public class UserInfo {
         this.fullName = fullName;
     }
 
-    public String getCanonicalUserId() {
-        return canonicalUserId;
+    public String getEmailAddr() {
+        return emailAddr;
     }
 
-    public void setCanonicalUserId(String canonicalUserId) {
-        this.canonicalUserId = canonicalUserId;
+    public void setEmailAddr(String emailAddr) {
+        this.emailAddr = emailAddr;
     }
 
     public Boolean getActive() {
