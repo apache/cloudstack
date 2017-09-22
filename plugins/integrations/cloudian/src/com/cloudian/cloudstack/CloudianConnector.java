@@ -19,8 +19,6 @@ package com.cloudian.cloudstack;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
-import com.cloud.domain.Domain;
-import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
 
 public interface CloudianConnector extends PluggableService {
@@ -63,8 +61,4 @@ public interface CloudianConnector extends PluggableService {
 
     boolean isConnectorDisabled();
     String generateSsoUrl();
-    boolean addGroup(final Domain domain);
-    boolean removeGroup(final Domain domain);
-    boolean addUserAccount(final Account account);
-    boolean removeUserAccount(final Account account);
 }
