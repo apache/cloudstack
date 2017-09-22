@@ -45,6 +45,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloudian.client.CloudianClient;
 import com.cloudian.client.GroupInfo;
 import com.cloudian.client.UserInfo;
@@ -66,7 +67,9 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     @Inject
     private MessageBus messageBus;
 
-    private CloudianClient client;
+    /////////////////////////////////////////////////////
+    //////////////// Plugin Methods /////////////////////
+    /////////////////////////////////////////////////////
 
     private String getAdminUrl() {
         return String.format("%s://%s:%s", CloudianAdminProtocol.value(),
@@ -77,6 +80,98 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         return String.format("%s://%s:%s/Cloudian/ssosecurelogin.htm?", CloudianCmcProtocol.value(),
                 CloudianCmcHost.value(), CloudianCmcPort.value());
     }
+
+    private CloudianClient getClient() {
+        try {
+            return new CloudianClient(getAdminUrl(),
+                    CloudianAdminUser.value(), CloudianAdminPassword.value(),
+                    CloudianValidateSSLSecurity.value());
+        } catch (final KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
+            LOG.error("Failed to create Cloudian client due to: ", e);
+        }
+        throw new CloudRuntimeException("Failed to create and return Cloudian client instance");
+    }
+
+    private boolean addOrUpdateGroup(final Domain domain) {
+        if (domain == null || isConnectorDisabled()) {
+            return false;
+        }
+        final CloudianClient client = getClient();
+        final GroupInfo existingGroup = client.listGroup(domain.getUuid());
+        if (existingGroup != null) {
+            if (!existingGroup.getActive() || !existingGroup.getGroupName().equals(domain.getPath())) {
+                LOG.debug("Updating Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
+                existingGroup.setActive(true);
+                existingGroup.setGroupName(domain.getPath());
+                return client.updateGroup(existingGroup);
+            }
+            return true;
+        }
+
+        LOG.debug("Adding Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
+        final GroupInfo group = new GroupInfo();
+        group.setGroupId(domain.getUuid());
+        group.setGroupName(domain.getPath());
+        group.setActive(true);
+        return client.addGroup(group);
+    }
+
+    private boolean removeGroup(final Domain domain) {
+        if (domain == null || isConnectorDisabled()) {
+            return false;
+        }
+        final CloudianClient client = getClient();
+        LOG.debug("Removing Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
+        for (final UserInfo user: client.listUsers(domain.getUuid())) {
+            if (client.removeUser(user.getUserId(), domain.getUuid())) {
+                LOG.error(String.format("Failed to remove Cloudian user id=%s, while removing Cloudian group id=%s", user.getUserId(), domain.getUuid()));
+            }
+        }
+        return client.removeGroup(domain.getUuid());
+    }
+
+    private boolean addOrUpdateUserAccount(final Account account, final Domain domain) {
+        if (account == null || domain == null || isConnectorDisabled()) {
+            return false;
+        }
+        final User accountUser = userDao.listByAccount(account.getId()).get(0);
+        final CloudianClient client = getClient();
+        final UserInfo existingUser = client.listUser(account.getUuid(), domain.getUuid());
+        if (existingUser != null) {
+            if (!existingUser.getActive() || !existingUser.getFullName().equals(account.getAccountName())) {
+                LOG.debug("Updating Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
+                existingUser.setActive(true);
+                existingUser.setEmailAddr(accountUser.getEmail());
+                existingUser.setFullName(account.getAccountName());
+                return client.updateUser(existingUser);
+            }
+            return true;
+        }
+
+        LOG.debug("Adding Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
+        final UserInfo user = new UserInfo();
+        user.setUserId(account.getUuid());
+        user.setGroupId(domain.getUuid());
+        user.setFullName(account.getAccountName());
+        user.setEmailAddr(accountUser.getEmail());
+        user.setUserType(UserInfo.USER);
+        user.setActive(true);
+        return client.addUser(user);
+    }
+
+    private boolean removeUserAccount(final Account account) {
+        if (account == null || isConnectorDisabled()) {
+            return false;
+        }
+        final CloudianClient client = getClient();
+        final Domain domain = domainDao.findById(account.getDomainId());
+        LOG.debug("Removing Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
+        return client.removeUser(account.getUuid(), domain.getUuid());
+    }
+
+    //////////////////////////////////////////////////
+    //////////////// Plugin APIs /////////////////////
+    //////////////////////////////////////////////////
 
     @Override
     public boolean isConnectorDisabled() {
@@ -107,80 +202,6 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         return getCmcUrl() + ssoParams;
     }
 
-    private boolean addOrUpdateGroup(final Domain domain) {
-        if (domain == null || isConnectorDisabled()) {
-            return false;
-        }
-
-        final GroupInfo existingGroup = client.listGroup(domain.getUuid());
-        if (existingGroup != null) {
-            if (!existingGroup.getActive() || !existingGroup.getGroupName().equals(domain.getPath())) {
-                LOG.debug("Updating Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
-                existingGroup.setActive(true);
-                existingGroup.setGroupName(domain.getPath());
-                return client.updateGroup(existingGroup);
-            }
-            return true;
-        }
-
-        LOG.debug("Adding Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
-        final GroupInfo group = new GroupInfo();
-        group.setGroupId(domain.getUuid());
-        group.setGroupName(domain.getPath());
-        group.setActive(true);
-        return client.addGroup(group);
-    }
-
-    private boolean removeGroup(final Domain domain) {
-        if (domain == null || isConnectorDisabled()) {
-            return false;
-        }
-        LOG.debug("Removing Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
-        for (UserInfo user: client.listUsers(domain.getUuid())) {
-            client.removeUser(user.getUserId(), domain.getUuid());
-        }
-        return client.removeGroup(domain.getUuid());
-    }
-
-    private boolean addOrUpdateUserAccount(final Account account, final Domain domain) {
-        if (account == null || domain == null || isConnectorDisabled()) {
-            return false;
-        }
-
-        final User accountUser = userDao.listByAccount(account.getId()).get(0);
-
-        final UserInfo existingUser = client.listUser(account.getUuid(), domain.getUuid());
-        if (existingUser != null) {
-            if (!existingUser.getActive() || !existingUser.getFullName().equals(account.getAccountName())) {
-                LOG.debug("Updating Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
-                existingUser.setActive(true);
-                existingUser.setEmailAddr(accountUser.getEmail());
-                existingUser.setFullName(account.getAccountName());
-                return client.updateUser(existingUser);
-            }
-            return true;
-        }
-
-        LOG.debug("Adding Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
-        final UserInfo user = new UserInfo();
-        user.setUserId(account.getUuid());
-        user.setGroupId(domain.getUuid());
-        user.setFullName(account.getAccountName());
-        user.setEmailAddr(accountUser.getEmail());
-        user.setUserType(UserInfo.USER);
-        user.setActive(true);
-        return client.addUser(user);
-    }
-
-    private boolean removeUserAccount(final Account account) {
-        if (account == null || isConnectorDisabled()) {
-            return false;
-        }
-        LOG.debug("Removing Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
-        final Domain domain = domainDao.findById(account.getDomainId());
-        return client.removeUser(account.getUuid(), domain.getUuid());
-    }
-
     ///////////////////////////////////////////////////////////
     //////////////// Plugin Configuration /////////////////////
     ///////////////////////////////////////////////////////////
@@ -188,14 +209,6 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        try {
-            client = new CloudianClient(getAdminUrl(),
-                    CloudianAdminUser.value(), CloudianAdminPassword.value(),
-                    CloudianValidateSSLSecurity.value());
-        } catch (KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
-            e.printStackTrace();
-        }
-
         messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
