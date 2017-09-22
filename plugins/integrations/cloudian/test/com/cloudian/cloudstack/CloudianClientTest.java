@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cloudian.client.CloudianClient;
 import com.cloudian.client.GroupInfo;
 import com.cloudian.client.UserInfo;
 
