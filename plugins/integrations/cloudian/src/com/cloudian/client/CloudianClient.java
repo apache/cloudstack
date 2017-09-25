@@ -22,8 +22,6 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,17 +36,16 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.nio.TrustAllManager;
@@ -67,26 +64,26 @@ public class CloudianClient {
         final CredentialsProvider provider = new BasicCredentialsProvider();
         provider.setCredentials(AuthScope.ANY, credentials);
 
-        if (!validateSSlCertificate) {
-            final SSLContextBuilder builder = new SSLContextBuilder();
-            builder.loadTrustMaterial(null,  new TrustStrategy() {
-                public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-                    return true;
-                }
-            });
-            final SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build());
+        final int timeout = 15;
+        final RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout(timeout * 1000)
+                .setConnectionRequestTimeout(timeout * 1000)
+                .setSocketTimeout(timeout * 1000)
+                .build();
 
+        if (!validateSSlCertificate) {
             final SSLContext sslcontext = SSLUtils.getSSLContext();
             sslcontext.init(null, new X509TrustManager[]{new TrustAllManager()}, new SecureRandom());
             final SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, NoopHostnameVerifier.INSTANCE);
-
             this.httpClient = HttpClientBuilder.create()
                     .setDefaultCredentialsProvider(provider)
+                    .setDefaultRequestConfig(config)
                     .setSSLSocketFactory(factory)
                     .build();
         } else {
             this.httpClient = HttpClientBuilder.create()
                     .setDefaultCredentialsProvider(provider)
+                    .setDefaultRequestConfig(config)
                     .build();
         }
     }

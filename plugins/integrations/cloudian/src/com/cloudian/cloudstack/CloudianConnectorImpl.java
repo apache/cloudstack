@@ -210,6 +210,11 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
+
+        if (isConnectorDisabled()) {
+            return true;
+        }
+
         messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
