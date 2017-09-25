@@ -135,14 +135,15 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             return false;
         }
         final User accountUser = userDao.listByAccount(account.getId()).get(0);
+        final String fullName = String.format("%s %s (%s)", accountUser.getFirstname(), accountUser.getLastname(), account.getAccountName());
         final CloudianClient client = getClient();
         final UserInfo existingUser = client.listUser(account.getUuid(), domain.getUuid());
         if (existingUser != null) {
-            if (!existingUser.getActive() || !existingUser.getFullName().equals(account.getAccountName())) {
+            if (!existingUser.getActive() || !existingUser.getFullName().equals(fullName)) {
                 LOG.debug("Updating Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
                 existingUser.setActive(true);
                 existingUser.setEmailAddr(accountUser.getEmail());
-                existingUser.setFullName(account.getAccountName());
+                existingUser.setFullName(fullName);
                 return client.updateUser(existingUser);
             }
             return true;
@@ -152,7 +153,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         final UserInfo user = new UserInfo();
         user.setUserId(account.getUuid());
         user.setGroupId(domain.getUuid());
-        user.setFullName(account.getAccountName());
+        user.setFullName(fullName);
         user.setEmailAddr(accountUser.getEmail());
         user.setUserType(UserInfo.USER);
         user.setActive(true);
