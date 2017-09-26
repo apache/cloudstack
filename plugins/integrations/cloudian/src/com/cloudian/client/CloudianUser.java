@@ -20,7 +20,8 @@ package com.cloudian.client;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class UserInfo {
+public class CloudianUser {
+
     public static final String USER = "User";
 
     String userId;
@@ -32,7 +33,7 @@ public class UserInfo {
 
     @Override
     public String toString() {
-        return String.format("User [id=%s, group id=%s, type=%s, active=%s, name=%s]", userId, groupId, userType, active, fullName);
+        return String.format("Cloudian User [id=%s, group id=%s, type=%s, active=%s, name=%s]", userId, groupId, userType, active, fullName);
     }
 
     public String getUserId() {

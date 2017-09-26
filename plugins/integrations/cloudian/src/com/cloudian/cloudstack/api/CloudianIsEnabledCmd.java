@@ -22,13 +22,13 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.user.Account;
 import com.cloudian.cloudstack.CloudianConnector;
+import com.cloudian.cloudstack.response.CloudianEnabledResponse;
 
 @APICommand(name = CloudianIsEnabledCmd.APINAME, description = "Checks if the Cloudian Connector is enabled",
-        responseObject = SuccessResponse.class,
+        responseObject = CloudianEnabledResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.11.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
@@ -55,9 +55,10 @@ public class CloudianIsEnabledCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        final boolean isEnabled = !connector.isConnectorDisabled();
-        final SuccessResponse response = new SuccessResponse();
-        response.setSuccess(isEnabled);
+        final CloudianEnabledResponse response = new CloudianEnabledResponse();
+        response.setEnabled(!connector.isConnectorDisabled());
+        response.setCmcUrl(connector.getCmcUrl());
+        response.setObjectName(APINAME.toLowerCase());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

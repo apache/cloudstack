@@ -63,7 +63,7 @@ public class CloudianUtils {
      * @param ssoKey
      * @return returns SSO URL parameters or null on error
      */
-    public static String generateSSOUrlParams(final String user, final String group, final String ssoKey) {
+    public static String generateSSOUrl(final String cmcUrlPath, final String user, final String group, final String ssoKey) {
         final StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("user=").append(user);
         stringBuilder.append("&group=").append(group);
@@ -87,6 +87,6 @@ public class CloudianUtils {
             stringBuilder.append("explorer.htm");
         }
 
-        return stringBuilder.toString();
+        return cmcUrlPath + "ssosecurelogin.htm?" + stringBuilder.toString();
     }
 }

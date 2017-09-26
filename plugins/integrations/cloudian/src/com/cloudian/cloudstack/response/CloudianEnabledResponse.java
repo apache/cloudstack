@@ -17,5 +17,34 @@
 
 package com.cloudian.cloudstack.response;
 
-public class CloudianEnabledResponse {
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+
+public class CloudianEnabledResponse extends BaseResponse {
+    @SerializedName(ApiConstants.ENABLED)
+    @Param(description = "the Cloudian connector enabled state")
+    private Boolean enabled;
+
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "the Cloudian Management Console base URL")
+    private String cmcUrl;
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public String getCmcUrl() {
+        return cmcUrl;
+    }
+
+    public void setCmcUrl(String cmcUrl) {
+        this.cmcUrl = cmcUrl;
+    }
 }

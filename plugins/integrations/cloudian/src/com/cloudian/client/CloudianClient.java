@@ -52,6 +52,7 @@ import com.cloud.utils.nio.TrustAllManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CloudianClient {
+
     private static final Logger LOG = Logger.getLogger(CloudianClient.class);
 
     private final HttpClient httpClient;
@@ -120,7 +121,7 @@ public class CloudianClient {
     //////////////// Public APIs: User /////////////////////
     ////////////////////////////////////////////////////////
 
-    public boolean addUser(final UserInfo user) {
+    public boolean addUser(final CloudianUser user) {
         try {
             final HttpResponse response = put("/user", user);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -130,35 +131,35 @@ public class CloudianClient {
         return false;
     }
 
-    public UserInfo listUser(final String userId, final String groupId) {
+    public CloudianUser listUser(final String userId, final String groupId) {
         try {
             final HttpResponse response = get(String.format("/user?userId=%s&groupId=%s", userId, groupId));
             final ObjectMapper mapper = new ObjectMapper();
             if (response.getEntity() == null || response.getEntity().getContent() == null) {
                 return null;
             }
-            return mapper.readValue(response.getEntity().getContent(), UserInfo.class);
+            return mapper.readValue(response.getEntity().getContent(), CloudianUser.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian user due to:", e);
         }
         return null;
     }
 
-    public List<UserInfo> listUsers(final String groupId) {
+    public List<CloudianUser> listUsers(final String groupId) {
         try {
             final HttpResponse response = get(String.format("/user/list?groupId=%s&userType=all&userStatus=active", groupId));
             final ObjectMapper mapper = new ObjectMapper();
             if (response.getEntity() == null || response.getEntity().getContent() == null) {
-                return null;
+                return new ArrayList<>();
             }
-            return Arrays.asList(mapper.readValue(response.getEntity().getContent(), UserInfo[].class));
+            return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianUser[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian users due to:", e);
         }
         return new ArrayList<>();
     }
 
-    public boolean updateUser(final UserInfo user) {
+    public boolean updateUser(final CloudianUser user) {
         try {
             final HttpResponse response = post("/user", user);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -182,7 +183,7 @@ public class CloudianClient {
     //////////////// Public APIs: Group /////////////////////
     /////////////////////////////////////////////////////////
 
-    public boolean addGroup(final GroupInfo group) {
+    public boolean addGroup(final CloudianGroup group) {
         try {
             final HttpResponse response = put("/group", group);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -192,35 +193,35 @@ public class CloudianClient {
         return false;
     }
 
-    public GroupInfo listGroup(final String groupId) {
+    public CloudianGroup listGroup(final String groupId) {
         try {
             final HttpResponse response = get(String.format("/group?groupId=%s", groupId));
             final ObjectMapper mapper = new ObjectMapper();
             if (response.getEntity() == null || response.getEntity().getContent() == null) {
                 return null;
             }
-            return mapper.readValue(response.getEntity().getContent(), GroupInfo.class);
+            return mapper.readValue(response.getEntity().getContent(), CloudianGroup.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian group due to:", e);
         }
         return null;
     }
 
-    public List<GroupInfo> listGroups() {
+    public List<CloudianGroup> listGroups() {
         try {
             final HttpResponse response = get("/group/list");
             final ObjectMapper mapper = new ObjectMapper();
             if (response.getEntity() == null || response.getEntity().getContent() == null) {
-                return null;
+                return new ArrayList<>();
             }
-            return Arrays.asList(mapper.readValue(response.getEntity().getContent(), GroupInfo[].class));
+            return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianGroup[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian groups due to:", e);
         }
         return new ArrayList<>();
     }
 
-    public boolean updateGroup(final GroupInfo group) {
+    public boolean updateGroup(final CloudianGroup group) {
         try {
             final HttpResponse response = post("/group", group);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;

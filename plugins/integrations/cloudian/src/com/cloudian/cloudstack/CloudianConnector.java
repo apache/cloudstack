@@ -59,6 +59,18 @@ public interface CloudianConnector extends PluggableService {
     ConfigKey<String> CloudianSsoKey = new ConfigKey<>("Advanced", String.class, "cloudian.sso.key", "ss0sh5r3dk3y",
             "The shared single sign-on key as configured in Cloudian CMC.", true);
 
+    String getAdminUrl();
+    String getCmcUrl();
+
+    /**
+     * Checks if the Cloudian Connector is disabled
+     * @return returns true is connector is disabled
+     */
     boolean isConnectorDisabled();
+
+    /**
+     * Generates single-sign on URL for logged in user
+     * @return returns the SSO URL string
+     */
     String generateSsoUrl();
 }

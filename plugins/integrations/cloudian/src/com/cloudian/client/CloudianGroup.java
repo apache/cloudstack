@@ -20,10 +20,16 @@ package com.cloudian.client;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GroupInfo {
+public class CloudianGroup {
+
     String groupId;
     String groupName;
     Boolean active;
+
+    @Override
+    public String toString() {
+        return String.format("Cloudian Group [id=%s, name=%s, active=%s]", groupId, groupName, active);
+    }
 
     public String getGroupId() {
         return groupId;
