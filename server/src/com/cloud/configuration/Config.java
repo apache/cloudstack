@@ -562,7 +562,7 @@ public enum Config {
             "The interval (in milliseconds) when host stats are retrieved from agents.",
             null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
-    IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", null, "Default API port", null),
+    IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", null, "Default API port. To disable set it to 0 or negative.", null),
     InvestigateRetryInterval(
             "Advanced",
             HighAvailabilityManager.class,
@@ -1276,7 +1276,7 @@ public enum Config {
             Integer.class,
             "usage.sanity.check.interval",
             null,
-            "Interval (in days) to check sanity of usage data",
+            "Interval (in days) to check sanity of usage data. To disable set it to 0 or negative.",
             null),
     UsageAggregationTimezone("Usage", ManagementServer.class, String.class, "usage.aggregation.timezone", "GMT", "The timezone to use for usage stats aggregation", null),
     TrafficSentinelIncludeZones(
