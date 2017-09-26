@@ -47,8 +47,10 @@ public interface HAConfig extends StateObject<HAConfig.HAState>, InternalIdentit
         ActivityCheckFailureUnderThresholdRatio,
         PowerCycle,
         Recovered,
+        RetryRecovery,
         RecoveryWaitPeriodTimeout,
         RecoveryOperationThresholdExceeded,
+        RetryFencing,
         Fenced;
 
         public Long getServerId() {
@@ -123,6 +125,7 @@ public interface HAConfig extends StateObject<HAConfig.HAState>, InternalIdentit
 
             FSM.addTransition(Recovering, Event.Disabled, Disabled);
             FSM.addTransition(Recovering, Event.Ineligible, Ineligible);
+            FSM.addTransition(Recovering, Event.RetryRecovery, Recovering);
             FSM.addTransition(Recovering, Event.Recovered, Recovered);
             FSM.addTransition(Recovering, Event.RecoveryOperationThresholdExceeded, Fencing);
 
@@ -132,6 +135,7 @@ public interface HAConfig extends StateObject<HAConfig.HAState>, InternalIdentit
 
             FSM.addTransition(Fencing, Event.Disabled, Disabled);
             FSM.addTransition(Fencing, Event.Ineligible, Ineligible);
+            FSM.addTransition(Fencing, Event.RetryFencing, Fencing);
             FSM.addTransition(Fencing, Event.Fenced, Fenced);
 
             FSM.addTransition(Fenced, Event.Disabled, Disabled);

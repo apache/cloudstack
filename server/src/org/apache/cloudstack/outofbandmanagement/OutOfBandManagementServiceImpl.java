@@ -263,7 +263,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     }
 
     public boolean isOutOfBandManagementEnabled(final Host host) {
-        return isOutOfBandManagementEnabledForZone(host.getDataCenterId())
+        return host != null && isOutOfBandManagementEnabledForZone(host.getDataCenterId())
                 && isOutOfBandManagementEnabledForCluster(host.getClusterId())
                 && isOutOfBandManagementEnabledForHost(host.getId());
     }

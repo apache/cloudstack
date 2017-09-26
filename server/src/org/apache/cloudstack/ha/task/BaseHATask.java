@@ -17,6 +17,13 @@
 
 package org.apache.cloudstack.ha.task;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.provider.HACheckerException;
@@ -24,13 +31,7 @@ import org.apache.cloudstack.ha.provider.HAFenceException;
 import org.apache.cloudstack.ha.provider.HAProvider;
 import org.apache.cloudstack.ha.provider.HARecoveryException;
 import org.apache.log4j.Logger;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import org.joda.time.DateTime;
 
 public abstract class BaseHATask implements Callable<Boolean> {
     public static final Logger LOG = Logger.getLogger(BaseHATask.class);
@@ -40,6 +41,7 @@ public abstract class BaseHATask implements Callable<Boolean> {
     private final HAConfig haConfig;
     private final ExecutorService executor;
     private Long timeout;
+    private DateTime created;
 
     public BaseHATask(final HAResource resource, final HAProvider<HAResource> haProvider, final HAConfig haConfig, final HAProvider.HAProviderConfig haProviderConfig,
             final ExecutorService executor) {
@@ -48,6 +50,7 @@ public abstract class BaseHATask implements Callable<Boolean> {
         this.haConfig = haConfig;
         this.executor = executor;
         this.timeout = (Long)haProvider.getConfigValue(haProviderConfig, resource);
+        this.created = new DateTime();
     }
 
     public HAProvider<HAResource> getHaProvider() {
@@ -74,6 +77,9 @@ public abstract class BaseHATask implements Callable<Boolean> {
 
     @Override
     public Boolean call() {
+        if (new DateTime().minusHours(1).isAfter(getCreated())) {
+            return false;
+        }
         final Future<Boolean> future = executor.submit(new Callable<Boolean>() {
             @Override
             public Boolean call() throws HACheckerException, HAFenceException, HARecoveryException {
@@ -99,4 +105,7 @@ public abstract class BaseHATask implements Callable<Boolean> {
         return result;
     }
 
+    public DateTime getCreated() {
+        return created;
+    }
 }

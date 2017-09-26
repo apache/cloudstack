@@ -116,7 +116,8 @@ else
     lastUpdateTime=${arrTime[1]}
     echo "$SuspectTime:$latestUpdateTime:$MSTime" > $acFile
 
-    if [[ $lastSuspectTime -ne $SuspectTime ]]; then
+    suspectTimeDiff=$(expr $SuspectTime - $lastSuspectTime)
+    if [[ $suspectTimeDiff -lt 0 ]]; then
         if [[ $latestUpdateTime -gt $SuspectTime ]]; then
             echo "=====> ALIVE <====="
         else

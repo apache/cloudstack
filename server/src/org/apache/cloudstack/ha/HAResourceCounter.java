@@ -41,7 +41,6 @@ public final class HAResourceCounter {
     }
 
     public synchronized void incrActivityCounter(final boolean isFailure) {
-        lastActivityCheckTimestamp = System.currentTimeMillis();
         activityCheckCounter.incrementAndGet();
         if (isFailure) {
             activityCheckFailureCounter.incrementAndGet();
@@ -71,8 +70,12 @@ public final class HAResourceCounter {
         return activityCheckFailureCounter.get() > (activityCheckCounter.get() * failureRatio);
     }
 
-    public boolean canPerformActivityCheck(final Long activityCheckInterval) {
-        return lastActivityCheckTimestamp == null || (System.currentTimeMillis() - lastActivityCheckTimestamp) > (activityCheckInterval * 1000);
+    public synchronized boolean canPerformActivityCheck(final Long activityCheckInterval) {
+        if (lastActivityCheckTimestamp == null || (System.currentTimeMillis() - lastActivityCheckTimestamp) > (activityCheckInterval * 1000)) {
+            lastActivityCheckTimestamp = System.currentTimeMillis();
+            return true;
+        }
+        return false;
     }
 
     public boolean canRecheckActivity(final Long maxDegradedPeriod) {
@@ -121,7 +124,7 @@ public final class HAResourceCounter {
         fenceFuture = future;
     }
 
-    public boolean lastFencingCompleted() {
+    public boolean canAttemptFencing() {
         return fenceFuture == null || fenceFuture.isDone();
     }
 
