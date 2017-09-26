@@ -19,11 +19,14 @@
 
 package com.cloud.utils;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,6 +34,29 @@ import org.owasp.esapi.StringUtilities;
 
 public class StringUtils {
     private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    private static Charset preferredACSCharset;
+    private static final String UTF8 = "UTF-8";
+
+    static {
+        if (isUtf8Supported()) {
+            preferredACSCharset = Charset.forName(UTF8);
+        } else {
+            preferredACSCharset = Charset.defaultCharset();
+        }
+    }
+
+    public static Charset getPreferredCharset() {
+        return preferredACSCharset;
+    }
+
+    public static boolean isUtf8Supported() {
+        return Charset.isSupported(UTF8);
+    }
+
+    protected static Charset getDefaultCharset() {
+        return Charset.defaultCharset();
+    }
 
     public static String join(Iterable<? extends Object> iterable, String delim) {
         StringBuilder sb = new StringBuilder();
@@ -295,5 +321,11 @@ public class StringUtils {
             listOfChunks.add(originalList.subList(originalList.size() - originalList.size() % chunkSize, originalList.size()));
         }
         return listOfChunks;
+    }
+
+    public static String shuffleCSVList(final String csvList) {
+        List<String> list = csvTagsToList(csvList);
+        Collections.shuffle(list, new Random(System.nanoTime()));
+        return join(list, ",");
     }
 }

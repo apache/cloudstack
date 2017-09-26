@@ -612,6 +612,12 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                 LOG.error("Error trying to perform health checks in HA manager", t);
             }
         }
+
+        @Override
+        public Long getDelay() {
+            return null;
+        }
+
     }
 
     private final class ActivityCheckPollTask extends ManagedContextRunnable implements BackgroundPollTask {
@@ -648,6 +654,12 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                 LOG.error("Error trying to perform activity checks in HA manager", t);
             }
         }
+
+        @Override
+        public Long getDelay() {
+            return null;
+        }
+
     }
 
     private final class RecoveryPollTask extends ManagedContextRunnable implements BackgroundPollTask {
@@ -700,6 +712,12 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                 LOG.error("Error trying to perform recovery operation in HA manager", t);
             }
         }
+
+        @Override
+        public Long getDelay() {
+            return null;
+        }
+
     }
 
     private final class FencingPollTask extends ManagedContextRunnable implements BackgroundPollTask {
@@ -739,5 +757,11 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                 LOG.error("Error trying to perform fencing operation in HA manager", t);
             }
         }
+
+        @Override
+        public Long getDelay() {
+            return null;
+        }
+
     }
 }

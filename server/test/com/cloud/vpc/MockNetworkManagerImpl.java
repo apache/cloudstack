@@ -572,6 +572,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return null;
     }
 
+    @Override
+    public Map<String, String> getSystemVMAccessDetails(VirtualMachine vm) {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#implementNetwork(long, com.cloud.deploy.DeployDestination, com.cloud.vm.ReservationContext)
      */

@@ -38,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
@@ -183,7 +184,7 @@ public class Script implements Callable<String> {
         String[] command = _command.toArray(new String[_command.size()]);
 
         if (_logger.isDebugEnabled()) {
-            _logger.debug("Executing: " + buildCommandLine(command));
+            _logger.debug("Executing: " + buildCommandLine(command).split(KeyStoreUtils.defaultKeystoreFile)[0]);
         }
 
         try {

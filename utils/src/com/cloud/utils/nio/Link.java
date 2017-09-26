@@ -30,6 +30,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -42,6 +43,8 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.cloudstack.framework.ca.CAService;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
 
@@ -64,7 +67,6 @@ public class Link {
     private boolean _gotFollowingPacket;
 
     private SSLEngine _sslEngine;
-    public static String keystoreFile = "/cloudmanagementserver.keystore";
 
     public Link(InetSocketAddress addr, NioConnection connection) {
         _addr = addr;
@@ -99,7 +101,6 @@ public class Link {
         _sslEngine = sslEngine;
     }
 
-
     private static void doWrite(SocketChannel ch, ByteBuffer[] buffers, SSLEngine sslEngine) throws IOException {
         SSLSession sslSession = sslEngine.getSession();
         ByteBuffer pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
@@ -119,11 +120,7 @@ public class Link {
             engResult = sslEngine.wrap(buffers, pkgBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
                     engResult.getStatus() != SSLEngineResult.Status.OK) {
-                String msg = "SSL: SSLEngine returns a bad result on writing! " + engResult;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg);
-                }
-                throw new IOException(msg);
+                throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
 
             processedLen = 0;
@@ -184,11 +181,7 @@ public class Link {
             }
 
             if (ch.read(_readBuffer) == -1) {
-                String msg = "Connection closed with -1 on reading header.";
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg + ch.toString());
-                }
-                throw new IOException(msg);
+                throw new IOException("Connection closed with -1 on reading size.");
             }
 
             if (_readBuffer.hasRemaining()) {
@@ -203,11 +196,7 @@ public class Link {
             }
 
             if (readSize > MAX_SIZE_PER_PACKET) {
-                String msg = "Wrong packet size: " + readSize;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg + ": " + ch.toString());
-                }
-                throw new IOException(msg);
+                throw new IOException("Wrong packet size: " + readSize);
             }
 
             if (!_gotFollowingPacket) {
@@ -233,11 +222,7 @@ public class Link {
         }
 
         if (ch.read(_readBuffer) == -1) {
-            String msg = "Connection closed with -1 on reading data.";
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug(msg + ch.toString());
-            }
-            throw new IOException(msg);
+            throw new IOException("Connection closed with -1 on read.");
         }
 
         if (_readBuffer.hasRemaining()) {   // We're not done yet.
@@ -261,18 +246,10 @@ public class Link {
             engResult = _sslEngine.unwrap(_readBuffer, appBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
                     engResult.getStatus() != SSLEngineResult.Status.OK) {
-                String msg = "SSL: SSLEngine returns a bad result on reading! " + engResult;
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg + ch.toString());
-                }
-                throw new IOException(msg);
+                throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
             if (remaining == _readBuffer.remaining()) {
-                String msg = "SSL: Unable to unwrap received data! still remaining " + remaining + "bytes!";
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg + ch.toString());
-                }
-                throw new IOException(msg);
+                throw new IOException("SSL: Unable to unwrap received data! still remaining " + remaining + "bytes!");
             }
 
             appBuf.flip();
@@ -388,44 +365,79 @@ public class Link {
         _connection.scheduleTask(task);
     }
 
-    public static SSLContext initSSLContext(boolean isClient) throws GeneralSecurityException, IOException {
-        InputStream stream;
-        SSLContext sslContext = null;
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        KeyStore ks = KeyStore.getInstance("JKS");
-        TrustManager[] tms;
+    public static SSLEngine initServerSSLEngine(final CAService caService, final String clientAddress) throws GeneralSecurityException, IOException {
+        final SSLContext sslContext = SSLUtils.getSSLContext();
+        if (caService != null) {
+            return caService.createSSLEngine(sslContext, clientAddress);
+        }
+        s_logger.error("CA service is not configured, by-passing CA manager to create SSL engine");
+        char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
+        final KeyStore ks = loadKeyStore(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
+        tmf.init(ks);
+        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+        return sslContext.createSSLEngine();
+    }
 
-        File confFile = PropertiesUtil.findConfigFile("db.properties");
-        if (null != confFile && !isClient) {
-            final String pass = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
-            char[] passphrase = "vmops.com".toCharArray();
+    public static KeyStore loadKeyStore(final InputStream stream, final char[] passphrase) throws GeneralSecurityException, IOException {
+        final KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(stream, passphrase);
+        return ks;
+    }
+
+    public static SSLContext initClientSSLContext() throws GeneralSecurityException, IOException {
+        final SSLContext sslContext = SSLUtils.getSSLContext();
+
+        char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
+        File confFile = PropertiesUtil.findConfigFile("agent.properties");
+        if (confFile != null) {
+            s_logger.info("Conf file found: " + confFile.getAbsolutePath());
+            final String pass = PropertiesUtil.getProperties(confFile).getProperty(KeyStoreUtils.passphrasePropertyName);
             if (pass != null) {
                 passphrase = pass.toCharArray();
             }
-            String confPath = confFile.getParent();
-            String keystorePath = confPath + keystoreFile;
-            if (new File(keystorePath).exists()) {
-                stream = new FileInputStream(keystorePath);
-            } else {
-                s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
-                stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
-                passphrase = "vmops.com".toCharArray();
-            }
-            ks.load(stream, passphrase);
-            stream.close();
-            kmf.init(ks, passphrase);
-            tmf.init(ks);
-            tms = tmf.getTrustManagers();
         } else {
-            ks.load(null, null);
-            kmf.init(ks, null);
-            tms = new TrustManager[1];
-            tms[0] = new TrustAllManager();
+            confFile = PropertiesUtil.findConfigFile("db.properties");
+            if (confFile != null) {
+                final String pass = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
+                if (pass != null) {
+                    passphrase = pass.toCharArray();
+                }
+            }
         }
 
-        sslContext = SSLUtils.getSSLContext();
-        sslContext.init(kmf.getKeyManagers(), tms, null);
+        InputStream stream = null;
+        if (confFile != null) {
+            final String confPath = confFile.getParent();
+            final String keystorePath = confPath + KeyStoreUtils.defaultKeystoreFile;
+            if (new File(keystorePath).exists()) {
+                stream = new FileInputStream(keystorePath);
+            }
+        }
+
+        final KeyStore ks = loadKeyStore(stream, passphrase);
+        final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ks);
+        TrustManager[] tms;
+        if (stream != null) {
+            // This enforces a two-way SSL authentication
+            tms = tmf.getTrustManagers();
+        } else {
+            // This enforces a one-way SSL authentication
+            tms = new TrustManager[]{new TrustAllManager()};
+            s_logger.warn("Failed to load keystore, using trust all manager");
+        }
+
+        if (stream != null) {
+            stream.close();
+        }
+
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
+        sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
+
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("SSL: SSLcontext has been initialized");
         }
@@ -467,14 +479,10 @@ public class Link {
             if (sslEngine.isInboundDone() && sslEngine.isOutboundDone()) {
                 return false;
             }
-            s_logger.warn("This SSL engine was forced to close inbound due to end of stream.");
             try {
                 sslEngine.closeInbound();
             } catch (SSLException e) {
-                // we still need to clean as much as possible but let's report this issue
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("This SSL engine failed to close inbound : " + e.getLocalizedMessage(),e);
-                }
+                s_logger.warn("This SSL engine was forced to close inbound due to end of stream.");
             }
             sslEngine.closeOutbound();
             // After closeOutbound the engine will be set to WRAP state,
@@ -486,8 +494,9 @@ public class Link {
         try {
             result = sslEngine.unwrap(peerNetData, peerAppData);
             peerNetData.compact();
-        } catch (SSLException sslException) {
-            s_logger.error("SSL error occurred while processing unwrap data: " + sslException.getMessage());
+        } catch (final SSLException sslException) {
+            s_logger.error(String.format("SSL error caught during unwrap data: %s, for local address=%s, remote address=%s. The client may have invalid ca-certificates.",
+                    sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
             return true;
         }
@@ -511,11 +520,7 @@ public class Link {
                     break;
                 }
             default:
-                String msg = "Invalid SSL status: " + result.getStatus();
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg + ": " + socketChannel.toString());
-                }
-                throw new IllegalStateException(msg);
+                throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
         }
         return true;
     }
@@ -531,8 +536,9 @@ public class Link {
         SSLEngineResult result = null;
         try {
             result = sslEngine.wrap(myAppData, myNetData);
-        } catch (SSLException sslException) {
-            s_logger.error("SSL error occurred while processing wrap data: " + sslException.getMessage());
+        } catch (final SSLException sslException) {
+            s_logger.error(String.format("SSL error caught during wrap data: %s, for local address=%s, remote address=%s.",
+                    sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
             return true;
         }
@@ -551,11 +557,7 @@ public class Link {
                 myNetData = enlargeBuffer(myNetData, netBufferSize);
                 break;
             case BUFFER_UNDERFLOW:
-                String msg = "Buffer underflow occurred after a wrap. We should not reach here.";
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg + socketChannel.toString());
-                }
-                throw new SSLException(msg);
+                throw new SSLException("Buffer underflow occurred after a wrap. We should not reach here.");
             case CLOSED:
                 try {
                     myNetData.flip();
@@ -611,6 +613,9 @@ public class Link {
                 case NEED_TASK:
                     Runnable task;
                     while ((task = sslEngine.getDelegatedTask()) != null) {
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("SSL: Running delegated task!");
+                        }
                         task.run();
                     }
                     break;
@@ -619,11 +624,7 @@ public class Link {
                 case NOT_HANDSHAKING:
                     break;
                 default:
-                    String msg = "Invalid SSL status: " + handshakeStatus;
-                    if(s_logger.isDebugEnabled()) {
-                        s_logger.debug(msg + ": " + socketChannel.toString());
-                    }
-                    throw new IllegalStateException(msg);
+                    throw new IllegalStateException("Invalid SSL status: " + handshakeStatus);
             }
             handshakeStatus = sslEngine.getHandshakeStatus();
         }

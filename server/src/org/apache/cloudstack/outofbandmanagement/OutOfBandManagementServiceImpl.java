@@ -571,5 +571,11 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
                 LOG.error("Error trying to retrieve host out-of-band management stats", t);
             }
         }
+
+        @Override
+        public Long getDelay() {
+            return null;
+        }
+
     }
 }

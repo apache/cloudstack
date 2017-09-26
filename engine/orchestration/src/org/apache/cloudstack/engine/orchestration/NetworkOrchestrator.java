@@ -37,8 +37,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.Networks;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
@@ -53,6 +51,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -64,6 +63,7 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ConfigurationManager;
@@ -110,6 +110,7 @@ import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkStateListener;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -207,6 +208,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Strings;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -3193,6 +3195,38 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
         return profiles;
+    }
+
+    @Override
+    public Map<String, String> getSystemVMAccessDetails(final VirtualMachine vm) {
+        final Map<String, String> accessDetails = new HashMap<>();
+        accessDetails.put(NetworkElementCommand.ROUTER_NAME, vm.getInstanceName());
+        String privateIpAddress = null;
+        for (final NicProfile profile : getNicProfiles(vm)) {
+            if (profile == null) {
+                continue;
+            }
+            final Network network = _networksDao.findById(profile.getNetworkId());
+            if (network == null) {
+                continue;
+            }
+            if (network.getTrafficType() == Networks.TrafficType.Control) {
+                accessDetails.put(NetworkElementCommand.ROUTER_IP,  profile.getIp4Address());
+            }
+            if (network.getTrafficType() == Networks.TrafficType.Guest) {
+                accessDetails.put(NetworkElementCommand.ROUTER_GUEST_IP,  profile.getIp4Address());
+            }
+            if (network.getTrafficType() == Networks.TrafficType.Management) {
+                privateIpAddress = profile.getIp4Address();
+            }
+            if (network.getTrafficType() != null && !Strings.isNullOrEmpty(profile.getIp4Address())) {
+                accessDetails.put(network.getTrafficType().name(), profile.getIp4Address());
+            }
+        }
+        if (privateIpAddress != null && Strings.isNullOrEmpty(accessDetails.get(NetworkElementCommand.ROUTER_IP))) {
+            accessDetails.put(NetworkElementCommand.ROUTER_IP,  privateIpAddress);
+        }
+        return accessDetails;
     }
 
     protected boolean stateTransitTo(NetworkVO network, Network.Event e) throws NoTransitionException {

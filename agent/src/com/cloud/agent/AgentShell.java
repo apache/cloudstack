@@ -17,10 +17,8 @@
 package com.cloud.agent;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -37,7 +35,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
@@ -70,6 +67,7 @@ public class AgentShell implements IAgentShell, Daemon {
     private int _proxyPort;
     private int _workers;
     private String _guid;
+    private int _hostCounter = 0;
     private int _nextAgentId = 1;
     private volatile boolean _exit = false;
     private int _pingRetries;
@@ -110,7 +108,16 @@ public class AgentShell implements IAgentShell, Daemon {
 
     @Override
     public String getHost() {
-        return _host;
+        String[] hosts = _host.split(",");
+        if (_hostCounter >= hosts.length) {
+            _hostCounter = 0;
+        }
+        s_logger.info("Connecting to host: " + hosts[_hostCounter % hosts.length]);
+        return hosts[_hostCounter++ % hosts.length];
+    }
+
+    public void setHost(final String host) {
+        _host = host;
     }
 
     @Override
@@ -174,16 +181,12 @@ public class AgentShell implements IAgentShell, Daemon {
 
         s_logger.info("agent.properties found at " + file.getAbsolutePath());
 
-        InputStream propertiesStream = null;
         try {
-            propertiesStream = new FileInputStream(file);
-            _properties.load(propertiesStream);
+            PropertiesUtil.loadFromFile(_properties, file);
         } catch (final FileNotFoundException ex) {
             throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
         } catch (final IOException ex) {
             throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
-        } finally {
-            IOUtils.closeQuietly(propertiesStream);
         }
     }
 
@@ -416,11 +419,6 @@ public class AgentShell implements IAgentShell, Daemon {
             /* By default we only search for log4j.xml */
             LogUtils.initLog4j("log4j-cloud.xml");
 
-            /*
-                By default we disable IPv6 for now to maintain backwards
-                compatibility. At a later point in time we can change this
-                behavior to prefer IPv6 over IPv4.
-            */
             boolean ipv6disabled = true;
             String ipv6 = getProperty(null, "ipv6disabled");
             if (ipv6 != null) {
@@ -471,6 +469,7 @@ public class AgentShell implements IAgentShell, Daemon {
                 while (!_exit)
                     Thread.sleep(1000);
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] AgentShell was interupted.");
             }
 
         } catch (final ConfigurationException e) {

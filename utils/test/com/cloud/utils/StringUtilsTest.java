@@ -230,4 +230,15 @@ public class StringUtilsTest {
         Assert.assertEquals("a,b,c", StringUtils.listToCsvTags(Arrays.asList("a","b", "c")));
         Assert.assertEquals("", StringUtils.listToCsvTags(new ArrayList<String>()));
     }
+
+    @Test
+    public void testShuffleCSVList() {
+        String input = "one,two,three,four,five,six,seven,eight,nine,ten";
+        String output = StringUtils.shuffleCSVList(input);
+        Assert.assertFalse(input.equals(output));
+
+        input = "only-one";
+        output = StringUtils.shuffleCSVList("only-one");
+        Assert.assertTrue(input.equals(output));
+    }
 }

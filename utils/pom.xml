@@ -35,6 +35,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-ca</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>
@@ -178,7 +183,6 @@
           <excludes>
             <exclude>com/cloud/utils/testcase/*TestCase*</exclude>
             <exclude>com/cloud/utils/db/*Test*</exclude>
-            <exclude>com/cloud/utils/testcase/NioTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>
