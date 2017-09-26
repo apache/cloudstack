@@ -28,7 +28,18 @@
             url: createURL('cloudianIsEnabled'),
             async: false,
             success: function(json) {
-                pluginEnabled = (json.cloudianisenabledresponse.success == 'true');
+                var response = json.cloudianisenabledresponse.cloudianisenabled;
+                pluginEnabled = (response.enabled == 'true');
+                if (pluginEnabled) {
+                    var cloudianLogoutUrl = response.url + "logout.htm?";
+                    onLogoutCallback = function() {
+                        g_loginResponse = null;
+                        var csUrl = window.location.href;
+                        var redirect = "redirect=" + encodeURIComponent(csUrl);
+                        window.location.replace(cloudianLogoutUrl + redirect);
+                        return false;
+                    };
+                }
             }
         });
         return pluginEnabled;
@@ -43,15 +54,6 @@
                 var response = json.cloudianssologinresponse.cloudianssologin;
                 var cmcWindow = window.open(response.url, "CMCWindow");
                 cmcWindow.focus();
-
-                var cloudianLogoutUrl = response.url.split("ssosecurelogin.htm")[0] + "logout.htm?";
-                onLogoutCallback = function() {
-                    g_loginResponse = null;
-                    var csUrl = window.location.href;
-                    var redirect = "redirect=" + encodeURIComponent(csUrl);
-                    window.location.replace(cloudianLogoutUrl + redirect);
-                    return false;
-                };
             },
             error: function(data) {
                 description = 'Single-Sign-On failed for Cloudian management console.';
