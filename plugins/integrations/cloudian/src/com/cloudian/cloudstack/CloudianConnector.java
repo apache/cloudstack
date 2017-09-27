@@ -29,7 +29,7 @@ public interface CloudianConnector extends PluggableService {
     ConfigKey<String> CloudianAdminHost = new ConfigKey<>("Advanced", String.class, "cloudian.admin.host", "s3-admin.cloudian.com",
             "The hostname of the Cloudian Admin server.", true);
 
-    ConfigKey<String> CloudianAdminPort = new ConfigKey<>("Advanced", String.class, "cloudian.admin.port", "19443",
+    ConfigKey<Integer> CloudianAdminPort = new ConfigKey<>("Advanced", Integer.class, "cloudian.admin.port", "19443",
             "The port of the Cloudian Admin server.", true);
 
     ConfigKey<String> CloudianAdminProtocol = new ConfigKey<>("Advanced", String.class, "cloudian.admin.protocol", "https",

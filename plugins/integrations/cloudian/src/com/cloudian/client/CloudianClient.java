@@ -31,10 +31,12 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -42,10 +44,13 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
@@ -59,14 +64,20 @@ public class CloudianClient {
     private static final Logger LOG = Logger.getLogger(CloudianClient.class);
 
     private final HttpClient httpClient;
-    private final String baseUrl;
+    private final HttpClientContext httpContext;
+    private final String adminApiUrl;
 
-    public CloudianClient(final String baseUrl, final String username, final String password, final boolean validateSSlCertificate, final int timeout) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
-        this.baseUrl = baseUrl;
-
-        final UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
+    public CloudianClient(final String host, final Integer port, final String scheme, final String username, final String password, final boolean validateSSlCertificate, final int timeout) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         final CredentialsProvider provider = new BasicCredentialsProvider();
-        provider.setCredentials(AuthScope.ANY, credentials);
+        provider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+        final HttpHost adminHost = new HttpHost(host, port, scheme);
+        final AuthCache authCache = new BasicAuthCache();
+        authCache.put(adminHost, new BasicScheme());
+
+        this.adminApiUrl = adminHost.toURI();
+        this.httpContext = HttpClientContext.create();
+        this.httpContext.setCredentialsProvider(provider);
+        this.httpContext.setAuthCache(authCache);
 
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
@@ -92,31 +103,31 @@ public class CloudianClient {
     }
 
     private HttpResponse delete(final String path) throws IOException {
-        return httpClient.execute(new HttpDelete(baseUrl + path));
+        return httpClient.execute(new HttpDelete(adminApiUrl + path), httpContext);
     }
 
     private HttpResponse get(final String path) throws IOException {
-        return httpClient.execute(new HttpGet(baseUrl + path));
+        return httpClient.execute(new HttpGet(adminApiUrl + path), httpContext);
     }
 
     private HttpResponse post(final String path, final Object item) throws IOException {
         final ObjectMapper mapper = new ObjectMapper();
         final String json = mapper.writeValueAsString(item);
         final StringEntity entity = new StringEntity(json);
-        final HttpPost request = new HttpPost(baseUrl + path);
+        final HttpPost request = new HttpPost(adminApiUrl + path);
         request.setHeader("Content-type", "application/json");
         request.setEntity(entity);
-        return httpClient.execute(request);
+        return httpClient.execute(request, httpContext);
     }
 
     private HttpResponse put(final String path, final Object item) throws IOException {
         final ObjectMapper mapper = new ObjectMapper();
         final String json = mapper.writeValueAsString(item);
         final StringEntity entity = new StringEntity(json);
-        final HttpPut request = new HttpPut(baseUrl + path);
+        final HttpPut request = new HttpPut(adminApiUrl + path);
         request.setHeader("Content-type", "application/json");
         request.setEntity(entity);
-        return httpClient.execute(request);
+        return httpClient.execute(request, httpContext);
     }
 
     ////////////////////////////////////////////////////////

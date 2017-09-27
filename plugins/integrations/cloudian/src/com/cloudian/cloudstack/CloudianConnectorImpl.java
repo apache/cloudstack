@@ -73,7 +73,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
 
     private CloudianClient getClient() {
         try {
-            return new CloudianClient(getAdminUrl(),
+            return new CloudianClient(CloudianAdminHost.value(), CloudianAdminPort.value(), CloudianAdminProtocol.value(),
                     CloudianAdminUser.value(), CloudianAdminPassword.value(),
                     CloudianValidateSSLSecurity.value(), CloudianAdminApiRequestTimeout.value());
         } catch (final KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {

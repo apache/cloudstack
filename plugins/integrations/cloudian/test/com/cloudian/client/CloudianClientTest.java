@@ -23,17 +23,19 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 public class CloudianClientTest {
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(14333);
 
+    private final int port = 14333;
     private final int timeout = 2;
     private final String adminUsername = "admin";
     private final String adminPassword = "public";
     private CloudianClient client;
 
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(port);
+
     @Before
     public void setUp() throws Exception {
-        client = new CloudianClient("http://localhost:14333", adminUsername, adminPassword, false, timeout);
+        client = new CloudianClient("localhost", port, "http", adminUsername, adminPassword, false, timeout);
     }
 
     @After
@@ -73,12 +75,12 @@ public class CloudianClientTest {
         client.listGroups();
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testBasicAuth() {
         wireMockRule.stubFor(WireMock.get(urlEqualTo("/group/list"))
                 .willReturn(WireMock.aResponse()
                         .withStatus(200)
-                        .withBody("")));
+                        .withBody("[]")));
         client.listGroups();
         WireMock.verify(getRequestedFor(urlEqualTo("/group/list"))
                 .withBasicAuth(new BasicCredentials(adminUsername, adminPassword)));
