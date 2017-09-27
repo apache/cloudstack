@@ -1,14 +1,10 @@
 package com.cloudian.cloudstack;
 
-import java.util.List;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.cloudian.client.CloudianClient;
-import com.cloudian.client.CloudianGroup;
-import com.cloudian.client.CloudianUser;
 
 public class CloudianClientTest {
 
@@ -29,7 +25,6 @@ public class CloudianClientTest {
 
     @Test
     public void listUserAccount() throws Exception {
-        List<CloudianUser> users = client.listUsers("0");
     }
 
     @Test
@@ -38,9 +33,7 @@ public class CloudianClientTest {
 
     @Test
     public void removeUserAccount() throws Exception {
-        for (CloudianUser user : client.listUsers("2ddabedc-4733-4cdf-80b1-abbd9d027005")) {
-            boolean result = client.removeUser(user.getUserId(), user.getGroupId());
-        }
+
     }
 
     @Test
@@ -49,7 +42,6 @@ public class CloudianClientTest {
 
     @Test
     public void listGroup() throws Exception {
-        List<CloudianGroup> groups = client.listGroups();
     }
 
     @Test
@@ -58,7 +50,6 @@ public class CloudianClientTest {
 
     @Test
     public void removeGroup() throws Exception {
-        boolean result = client.removeGroup("2ddabedc-4733-4cdf-80b1-abbd9d027005");
     }
 
 }
