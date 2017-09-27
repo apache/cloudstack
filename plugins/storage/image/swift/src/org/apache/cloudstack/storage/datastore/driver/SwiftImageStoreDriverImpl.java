@@ -27,7 +27,8 @@ import javax.inject.Inject;
 import com.cloud.configuration.Config;
 import com.cloud.utils.SwiftUtil;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -53,7 +54,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(SwiftImageStoreDriverImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(SwiftImageStoreDriverImpl.class);
 
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;

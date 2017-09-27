@@ -34,7 +34,8 @@ import netapp.manage.NaElement;
 import netapp.manage.NaException;
 import netapp.manage.NaServer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.netapp.AssociateLunCmd;
@@ -66,7 +67,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
         roundrobin, leastfull
     }
 
-    public static final Logger s_logger = Logger.getLogger(NetappManagerImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(NetappManagerImpl.class.getName());
     @Inject
     public VolumeDao _volumeDao;
     @Inject

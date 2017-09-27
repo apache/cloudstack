@@ -22,7 +22,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -40,7 +41,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
 public class XenServerFencer extends AdapterBase implements FenceBuilder {
-    private static final Logger s_logger = Logger.getLogger(XenServerFencer.class);
+    private static final Logger s_logger = LogManager.getLogger(XenServerFencer.class);
 
     @Inject
     HostDao _hostDao;

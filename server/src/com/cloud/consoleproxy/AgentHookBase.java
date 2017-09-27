@@ -22,7 +22,8 @@ import java.security.SecureRandom;
 import java.util.Date;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -61,7 +62,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * can reuse
  */
 public abstract class AgentHookBase implements AgentHook {
-    private static final Logger s_logger = Logger.getLogger(AgentHookBase.class);
+    private static final Logger s_logger = LogManager.getLogger(AgentHookBase.class);
 
     VMInstanceDao _instanceDao;
     HostDao _hostDao;

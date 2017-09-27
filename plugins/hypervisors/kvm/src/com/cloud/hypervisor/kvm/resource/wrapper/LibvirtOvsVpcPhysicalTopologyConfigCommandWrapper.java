@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
@@ -31,7 +32,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  OvsVpcPhysicalTopologyConfigCommand.class)
 public final class LibvirtOvsVpcPhysicalTopologyConfigCommandWrapper extends CommandWrapper<OvsVpcPhysicalTopologyConfigCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtOvsVpcPhysicalTopologyConfigCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtOvsVpcPhysicalTopologyConfigCommandWrapper.class);
 
     @Override
     public Answer execute(final OvsVpcPhysicalTopologyConfigCommand command, final LibvirtComputingResource libvirtComputingResource) {

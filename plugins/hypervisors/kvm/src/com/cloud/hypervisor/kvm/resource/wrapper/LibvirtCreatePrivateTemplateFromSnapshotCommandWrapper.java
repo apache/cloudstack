@@ -24,7 +24,8 @@ import java.io.IOException;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -46,7 +47,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  CreatePrivateTemplateFromSnapshotCommand.class)
 public final class LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper extends CommandWrapper<CreatePrivateTemplateFromSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final CreatePrivateTemplateFromSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {

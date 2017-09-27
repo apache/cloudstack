@@ -32,7 +32,8 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaremetalProvisionDoneNotificationCmd;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalHostCmd;
 
@@ -46,7 +47,7 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 
 public class BaremetalManagerImpl extends ManagerBase implements BaremetalManager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
-    private static final Logger s_logger = Logger.getLogger(BaremetalManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(BaremetalManagerImpl.class);
 
     @Inject
     protected HostDao _hostDao;

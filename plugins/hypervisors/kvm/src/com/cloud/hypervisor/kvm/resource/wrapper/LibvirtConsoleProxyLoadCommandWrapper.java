@@ -26,7 +26,8 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -36,7 +37,7 @@ import com.cloud.resource.ServerResource;
 
 public abstract class LibvirtConsoleProxyLoadCommandWrapper<T extends Command, A extends Answer, R extends ServerResource> extends CommandWrapper<Command, Answer, ServerResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtConsoleProxyLoadCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtConsoleProxyLoadCommandWrapper.class);
 
     public Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {
         String result = null;

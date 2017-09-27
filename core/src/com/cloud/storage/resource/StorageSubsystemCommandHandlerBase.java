@@ -19,7 +19,8 @@
 
 package com.cloud.storage.resource;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -42,7 +43,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
 
 public class StorageSubsystemCommandHandlerBase implements StorageSubsystemCommandHandler {
-    private static final Logger s_logger = Logger.getLogger(StorageSubsystemCommandHandlerBase.class);
+    private static final Logger s_logger = LogManager.getLogger(StorageSubsystemCommandHandlerBase.class);
     protected StorageProcessor processor;
 
     public StorageSubsystemCommandHandlerBase(StorageProcessor processor) {

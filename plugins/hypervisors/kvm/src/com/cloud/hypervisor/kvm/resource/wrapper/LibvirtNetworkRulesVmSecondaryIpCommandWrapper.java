@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -32,7 +33,7 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  NetworkRulesVmSecondaryIpCommand.class)
 public final class LibvirtNetworkRulesVmSecondaryIpCommandWrapper extends CommandWrapper<NetworkRulesVmSecondaryIpCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtOvsVpcRoutingPolicyConfigCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtOvsVpcRoutingPolicyConfigCommandWrapper.class);
 
     @Override
     public Answer execute(final NetworkRulesVmSecondaryIpCommand command, final LibvirtComputingResource libvirtComputingResource) {

@@ -26,7 +26,8 @@ import java.util.TimeZone;
 
 
 import com.cloud.exception.CloudException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVPNUserVO;
@@ -36,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageVPNUserDaoImpl extends GenericDaoBase<UsageVPNUserVO, Long> implements UsageVPNUserDao {
-    public static final Logger s_logger = Logger.getLogger(UsageVPNUserDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UsageVPNUserDaoImpl.class.getName());
 
     protected static final String UPDATE_DELETED = "UPDATE usage_vpn_user SET deleted = ? WHERE account_id = ? AND user_id = ? and deleted IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT zone_id, account_id, domain_id, user_id, user_name, created, deleted " + "FROM usage_vpn_user "

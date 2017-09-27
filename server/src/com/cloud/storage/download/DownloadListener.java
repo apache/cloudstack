@@ -24,8 +24,9 @@ import java.util.Timer;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -96,7 +97,7 @@ public class DownloadListener implements Listener {
         }
     }
 
-    public static final Logger s_logger = Logger.getLogger(DownloadListener.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DownloadListener.class.getName());
     public static final int SMALL_DELAY = 100;
     public static final long STATUS_POLL_INTERVAL = 10000L;
 

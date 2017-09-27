@@ -32,13 +32,14 @@ import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.ha.HAManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
 
 public class KVMInvestigator extends AdapterBase implements Investigator {
-    private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
+    private final static Logger s_logger = LogManager.getLogger(KVMInvestigator.class);
     @Inject
     private HostDao _hostDao;
     @Inject

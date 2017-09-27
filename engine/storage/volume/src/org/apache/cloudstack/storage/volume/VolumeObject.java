@@ -20,7 +20,8 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -57,7 +58,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VolumeObject implements VolumeInfo {
-    private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
+    private static final Logger s_logger = LogManager.getLogger(VolumeObject.class);
     protected VolumeVO volumeVO;
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected DataStore dataStore;

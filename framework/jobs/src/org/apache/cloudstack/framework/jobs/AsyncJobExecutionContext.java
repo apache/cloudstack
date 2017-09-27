@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
@@ -33,7 +34,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 
 public class AsyncJobExecutionContext  {
-    private static final Logger s_logger = Logger.getLogger(AsyncJobExecutionContext.class);
+    private static final Logger s_logger = LogManager.getLogger(AsyncJobExecutionContext.class);
 
     private AsyncJob _job;
 

@@ -27,7 +27,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -98,7 +99,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {NetScalerVMManager.class})
 public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMManager, VirtualMachineGuru {
-    private static final Logger s_logger = Logger.getLogger(NetScalerVMManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(NetScalerVMManagerImpl.class);
     static final private String NetScalerLbVmNamePrefix = "NS";
 
     @Inject

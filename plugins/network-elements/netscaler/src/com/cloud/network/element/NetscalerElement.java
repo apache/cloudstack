@@ -28,7 +28,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -159,7 +160,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager,
         IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
 
-    private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
+    private static final Logger s_logger = LogManager.getLogger(NetscalerElement.class);
     public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
     public static final AutoScaleCounterType AutoScaleCounterNetscaler = new AutoScaleCounterType("netscaler");
 

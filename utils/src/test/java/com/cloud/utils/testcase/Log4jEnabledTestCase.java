@@ -26,8 +26,6 @@ import java.util.Random;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.xml.DOMConfigurator;
-
 public class Log4jEnabledTestCase extends TestCase {
     @Override
     protected void setUp() {
@@ -39,7 +37,8 @@ public class Log4jEnabledTestCase extends TestCase {
                 File file = new File(configUrl.toURI());
 
                 System.out.println("Log4j configuration from : " + file.getAbsolutePath());
-                DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
+                org.apache.logging.log4j.core.config.Configurator.initialize("cloud", file.getAbsolutePath());
+// TODO remove this line                DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
             } catch (URISyntaxException e) {
                 System.out.println("Unable to convert log4j configuration Url to URI");
             }

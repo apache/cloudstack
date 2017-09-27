@@ -18,15 +18,6 @@
 */
 package com.cloud.test;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableMap;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
-import org.springframework.util.Assert;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,16 +26,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.springframework.util.Assert;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
-import static org.apache.log4j.Level.ALL;
-import static org.apache.log4j.Level.DEBUG;
-import static org.apache.log4j.Level.ERROR;
-import static org.apache.log4j.Level.FATAL;
-import static org.apache.log4j.Level.INFO;
-import static org.apache.log4j.Level.OFF;
+import static org.apache.logging.log4j.Level.ALL;
+import static org.apache.logging.log4j.Level.DEBUG;
+import static org.apache.logging.log4j.Level.ERROR;
+import static org.apache.logging.log4j.Level.FATAL;
+import static org.apache.logging.log4j.Level.INFO;
+import static org.apache.logging.log4j.Level.OFF;
 
 /**
 *
@@ -60,19 +61,23 @@ import static org.apache.log4j.Level.OFF;
 * expected patterns were not logged.
 *
 */
-public final class TestAppender extends AppenderSkeleton {
+public final class TestAppender extends AbstractAppender {
     private final static String APPENDER_NAME = "test_appender";
     private final ImmutableMap<Level, Set<PatternResult>> expectedPatternResults;
+
     private TestAppender(final Map<Level, Set<PatternResult>> expectedPatterns) {
-        super();
+        // TODO evaluate these parameters
+        super("TestAppender", null, null);
         expectedPatternResults = ImmutableMap.copyOf(expectedPatterns);
     }
-    protected void append(LoggingEvent loggingEvent) {
+
+    @Override
+    public void append(LogEvent loggingEvent) {
         checkArgument(loggingEvent != null, "append requires a non-null loggingEvent");
         final Level level = loggingEvent.getLevel();
         checkState(expectedPatternResults.containsKey(level), "level " + level + " not supported by append");
         for (final PatternResult patternResult : expectedPatternResults.get(level)) {
-            if (patternResult.getPattern().matcher(loggingEvent.getRenderedMessage()).matches()) {
+            if (patternResult.getPattern().matcher(loggingEvent.getMessage().getFormattedMessage()).matches()) {
                 patternResult.markFound();
             }
         }
@@ -172,7 +177,16 @@ public final class TestAppender extends AppenderSkeleton {
      * @param testAppender The test appender to attach to {@code logger}
      */
     public static void safeAddAppender(Logger logger, TestAppender testAppender) {
-        logger.removeAppender(APPENDER_NAME);
-        logger.addAppender(testAppender);
+        org.apache.logging.log4j.core.Logger coreLogger
+            = (org.apache.logging.log4j.core.Logger)logger;
+        org.apache.logging.log4j.core.LoggerContext context
+            = (org.apache.logging.log4j.core.LoggerContext)coreLogger.getContext();
+        org.apache.logging.log4j.core.config.Configuration configuration
+            = (org.apache.logging.log4j.core.config.Configuration)context.getConfiguration();
+
+        Appender appender = configuration.getAppender(APPENDER_NAME);
+
+        coreLogger.removeAppender(appender);
+        coreLogger.addAppender(testAppender);
     }
 }

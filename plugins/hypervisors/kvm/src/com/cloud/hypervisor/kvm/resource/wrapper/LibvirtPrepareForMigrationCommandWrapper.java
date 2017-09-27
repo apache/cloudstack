@@ -21,7 +21,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.net.URISyntaxException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -41,7 +42,7 @@ import com.cloud.storage.Volume;
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtPrepareForMigrationCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtPrepareForMigrationCommandWrapper.class);
 
     @Override
     public Answer execute(final PrepareForMigrationCommand command, final LibvirtComputingResource libvirtComputingResource) {

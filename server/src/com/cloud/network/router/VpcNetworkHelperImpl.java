@@ -29,7 +29,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.dc.dao.VlanDao;
@@ -53,7 +54,7 @@ import com.cloud.vm.NicProfile;
 
 public class VpcNetworkHelperImpl extends NetworkHelperImpl {
 
-    private static final Logger s_logger = Logger.getLogger(VpcNetworkHelperImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(VpcNetworkHelperImpl.class);
 
     @Inject
     private VlanDao _vlanDao;

@@ -29,7 +29,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -39,7 +40,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAllocator {
-    private static final Logger s_logger = Logger.getLogger(ExternalIpAddressAllocator.class);
+    private static final Logger s_logger = LogManager.getLogger(ExternalIpAddressAllocator.class);
     @Inject
     ConfigurationDao _configDao = null;
     @Inject

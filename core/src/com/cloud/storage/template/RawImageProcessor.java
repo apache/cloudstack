@@ -24,7 +24,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -32,7 +33,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 
 public class RawImageProcessor extends AdapterBase implements Processor {
-    private static final Logger s_logger = Logger.getLogger(RawImageProcessor.class);
+    private static final Logger s_logger = LogManager.getLogger(RawImageProcessor.class);
     StorageLayer _storage;
 
     @Override

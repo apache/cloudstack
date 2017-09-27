@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.apache.commons.lang.Validate;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.LdapValidator;
@@ -52,7 +53,7 @@ import com.cloud.utils.Pair;
 @Component
 @Local(value = LdapManager.class)
 public class LdapManagerImpl implements LdapManager, LdapValidator {
-    private static final Logger s_logger = Logger.getLogger(LdapManagerImpl.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(LdapManagerImpl.class.getName());
 
     @Inject
     private LdapConfigurationDao _ldapConfigurationDao;

@@ -49,7 +49,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <cs.log4j.version>1.2.17</cs.log4j.version>
+    <cs.log4j.version>2.9.1</cs.log4j.version>
     <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
     <cs.cglib.version>3.2.5</cs.cglib.version>
     <cs.dbcp.version>1.4</cs.dbcp.version>
@@ -257,8 +257,8 @@
         <scope>provided,test</scope>
       </dependency>
       <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-api</artifactId>
         <version>${cs.log4j.version}</version>
       </dependency>
       <dependency>
@@ -333,15 +333,9 @@
         <version>${cs.aws.sdk.version}</version>
       </dependency>
       <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>apache-log4j-extras</artifactId>
-        <version>${cs.log4j.extras.version}</version>
-        <exclusions>
-          <exclusion>
-            <artifactId>log4j</artifactId>
-            <groupId>log4j</groupId>
-          </exclusion>
-        </exclusions>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-core</artifactId>
+        <version>${cs.log4j.version}</version>
       </dependency>
       <dependency>
         <groupId>javax.ejb</groupId>

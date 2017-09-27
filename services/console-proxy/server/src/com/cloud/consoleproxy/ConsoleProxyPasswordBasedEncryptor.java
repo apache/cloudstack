@@ -28,7 +28,8 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -41,7 +42,7 @@ import com.google.gson.GsonBuilder;
  *
  */
 public class ConsoleProxyPasswordBasedEncryptor {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyPasswordBasedEncryptor.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyPasswordBasedEncryptor.class);
 
     private Gson gson;
 

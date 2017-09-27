@@ -20,7 +20,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -34,7 +35,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
     private boolean _archTypex8664 = false;
     private final StringBuffer _emulator = new StringBuffer();
     private final StringBuffer _capXML = new StringBuffer();
-    private static final Logger s_logger = Logger.getLogger(LibvirtCapXMLParser.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtCapXMLParser.class);
     private final ArrayList<String> guestOsTypes = new ArrayList<String>();
 
     @Override

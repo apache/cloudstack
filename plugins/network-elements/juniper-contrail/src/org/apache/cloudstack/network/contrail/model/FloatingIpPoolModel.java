@@ -23,7 +23,8 @@ import java.util.TreeSet;
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.types.FloatingIpPool;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
@@ -31,7 +32,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class FloatingIpPoolModel extends ModelObjectBase {
-    private static final Logger s_logger = Logger.getLogger(FloatingIpPoolModel.class);
+    private static final Logger s_logger = LogManager.getLogger(FloatingIpPoolModel.class);
 
     private String _name;
 

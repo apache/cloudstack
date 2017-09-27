@@ -29,7 +29,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.commands.AddSspCmd;
 import org.apache.cloudstack.api.commands.DeleteSspCmd;
@@ -87,7 +88,7 @@ import com.cloud.vm.dao.NicDao;
  * table for that information.
  */
 public class SspElement extends AdapterBase implements ConnectivityProvider, SspManager, SspService, NetworkMigrationResponder {
-    private static final Logger s_logger = Logger.getLogger(SspElement.class);
+    private static final Logger s_logger = LogManager.getLogger(SspElement.class);
     public static final String s_SSP_NAME = "StratosphereSsp";
     private static final Provider s_ssp_provider = new Provider(s_SSP_NAME, false);
 

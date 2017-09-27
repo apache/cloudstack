@@ -25,7 +25,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -121,7 +122,7 @@ public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements Ext
     // obsolete
     // private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class);
 
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ExternalNetworkDeviceManagerImpl.class);
 
     @Override
     public Host addNetworkDevice(AddNetworkDeviceCmd cmd) {

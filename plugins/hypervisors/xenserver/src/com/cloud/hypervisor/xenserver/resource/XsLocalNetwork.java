@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.xensource.xenapi.Connection;
@@ -29,7 +30,7 @@ import com.xensource.xenapi.Types.XenAPIException;
  */
 public class XsLocalNetwork {
 
-    private static final Logger s_logger = Logger.getLogger(XsLocalNetwork.class);
+    private static final Logger s_logger = LogManager.getLogger(XsLocalNetwork.class);
 
     private final CitrixResourceBase _citrixResourceBase;
     private final Network _n;

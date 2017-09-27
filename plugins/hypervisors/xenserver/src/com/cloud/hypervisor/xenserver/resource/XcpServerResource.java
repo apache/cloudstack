@@ -18,7 +18,8 @@ package com.cloud.hypervisor.xenserver.resource;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.resource.ServerResource;
@@ -30,7 +31,7 @@ import com.xensource.xenapi.VM;
 @Local(value = ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
 
-    private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
+    private final static Logger s_logger = LogManager.getLogger(XcpServerResource.class);
     private final static long mem_32m = 33554432L;
 
     @Override

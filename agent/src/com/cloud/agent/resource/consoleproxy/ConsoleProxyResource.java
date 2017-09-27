@@ -33,7 +33,8 @@ import java.util.Properties;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -80,7 +81,7 @@ import com.google.gson.Gson;
  *
  */
 public class ConsoleProxyResource extends ServerResourceBase implements ServerResource {
-    static final Logger s_logger = Logger.getLogger(ConsoleProxyResource.class);
+    static final Logger s_logger = LogManager.getLogger(ConsoleProxyResource.class);
 
     private final Properties _properties = new Properties();
     private Thread _consoleProxyMain = null;

@@ -18,7 +18,8 @@
 package com.cloud.network.rules;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -36,7 +37,7 @@ import com.cloud.vm.VirtualMachineManager;
 
 public class PrivateGatewayRules extends RuleApplier {
 
-    private static final Logger s_logger = Logger.getLogger(PrivateGatewayRules.class);
+    private static final Logger s_logger = LogManager.getLogger(PrivateGatewayRules.class);
 
     private final PrivateGateway _privateGateway;
 

@@ -26,7 +26,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -41,7 +42,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 
 public class BaremetalPxeResourceBase extends ManagerBase implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(BaremetalPxeResourceBase.class);
+    private static final Logger s_logger = LogManager.getLogger(BaremetalPxeResourceBase.class);
     String _name;
     String _guid;
     String _username;

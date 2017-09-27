@@ -28,7 +28,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.network.dao.FirewallRulesDcidrsDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
@@ -100,7 +101,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 public class FirewallManagerImpl extends ManagerBase implements FirewallService, FirewallManager, NetworkRuleApplier {
-    private static final Logger s_logger = Logger.getLogger(FirewallManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(FirewallManagerImpl.class);
 
     @Inject
     FirewallRulesDao _firewallDao;

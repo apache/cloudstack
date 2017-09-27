@@ -26,7 +26,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -58,8 +59,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 
 public class Ovm3StoragePool {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3StoragePool.class);
+    private static final Logger LOGGER = LogManager.getLogger(Ovm3StoragePool.class);
     private Connection c;
     private Ovm3Configuration config;
     private OvmObject ovmObject = new OvmObject();

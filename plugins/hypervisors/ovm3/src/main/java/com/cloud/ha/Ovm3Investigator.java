@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -35,7 +36,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 
 public class Ovm3Investigator extends AdapterBase implements Investigator {
-    private static final Logger LOGGER = Logger.getLogger(Ovm3Investigator.class);
+    private static final Logger LOGGER = LogManager.getLogger(Ovm3Investigator.class);
     @Inject
     HostDao hostDao;
     @Inject

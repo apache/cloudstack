@@ -19,7 +19,8 @@
 
 package com.cloud.utils;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
@@ -29,7 +30,7 @@ import java.util.Map;
 
 public class HttpUtils {
 
-    public static final Logger s_logger = Logger.getLogger(HttpUtils.class);
+    public static final Logger s_logger = LogManager.getLogger(HttpUtils.class);
 
     public static final String UTF_8 = "UTF-8";
     public static final String RESPONSE_TYPE_JSON = "json";

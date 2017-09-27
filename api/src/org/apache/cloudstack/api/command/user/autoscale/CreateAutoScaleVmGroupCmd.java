@@ -18,7 +18,8 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -45,7 +46,7 @@ import com.cloud.network.rules.LoadBalancer;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmGroupCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateAutoScaleVmGroupCmd.class.getName());
 
     private static final String s_name = "autoscalevmgroupresponse";
 

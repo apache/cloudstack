@@ -30,7 +30,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -50,7 +51,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {HypervManager.class})
 public class HypervManagerImpl implements HypervManager {
-    public static final Logger s_logger = Logger.getLogger(HypervManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(HypervManagerImpl.class);
 
     private String name;
     private int runLevel;

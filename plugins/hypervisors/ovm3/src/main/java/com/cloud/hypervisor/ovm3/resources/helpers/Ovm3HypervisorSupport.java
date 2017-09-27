@@ -26,7 +26,8 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -63,7 +64,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
 public class Ovm3HypervisorSupport {
-    private final Logger LOGGER = Logger.getLogger(Ovm3HypervisorSupport.class);
+    private final Logger LOGGER = LogManager.getLogger(Ovm3HypervisorSupport.class);
     private Connection c;
     private Ovm3Configuration config;
 

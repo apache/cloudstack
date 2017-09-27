@@ -23,7 +23,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
@@ -36,7 +37,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class NetconfHelper {
-    private static final Logger s_logger = Logger.getLogger(NetconfHelper.class);
+    private static final Logger s_logger = LogManager.getLogger(NetconfHelper.class);
 
     private static final String SSH_NETCONF_TERMINATOR = "]]>]]>";
 

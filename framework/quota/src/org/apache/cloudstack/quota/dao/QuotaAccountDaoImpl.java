@@ -23,7 +23,8 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -33,7 +34,7 @@ import java.util.List;
 @Component
 @Local(value = { QuotaAccountDao.class })
 public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> implements QuotaAccountDao {
-    public static final Logger s_logger = Logger.getLogger(QuotaAccountDaoImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(QuotaAccountDaoImpl.class);
 
     public List<QuotaAccountVO> listAllQuotaAccount() {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaAccountVO>>() {

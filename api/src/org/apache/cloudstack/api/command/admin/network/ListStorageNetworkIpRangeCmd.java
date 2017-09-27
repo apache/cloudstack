@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +43,7 @@ import com.cloud.user.Account;
 @APICommand(name = "listStorageNetworkIpRange", description = "List a storage network IP range.", responseObject = StorageNetworkIpRangeResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListStorageNetworkIpRangeCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(ListStorageNetworkIpRangeCmd.class);
 
     String _name = "liststoragenetworkiprangeresponse";
 

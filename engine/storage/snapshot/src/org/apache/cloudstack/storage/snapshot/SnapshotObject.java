@@ -22,7 +22,8 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -58,7 +59,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public class SnapshotObject implements SnapshotInfo {
-    private static final Logger s_logger = Logger.getLogger(SnapshotObject.class);
+    private static final Logger s_logger = LogManager.getLogger(SnapshotObject.class);
     private SnapshotVO snapshot;
     private DataStore store;
     private Object payload;

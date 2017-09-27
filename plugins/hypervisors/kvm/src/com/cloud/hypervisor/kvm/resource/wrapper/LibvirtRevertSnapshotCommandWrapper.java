@@ -25,7 +25,8 @@ import org.apache.cloudstack.storage.command.RevertSnapshotCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -43,7 +44,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  RevertSnapshotCommand.class)
 public final class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRevertSnapshotCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtRevertSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final RevertSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {

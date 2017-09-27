@@ -30,7 +30,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.AddUcsManagerCmd;
 import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
@@ -70,7 +71,7 @@ import com.cloud.utils.xmlobject.XmlObjectParser;
 
 @Local(value = {UcsManager.class})
 public class UcsManagerImpl implements UcsManager {
-    public static final Logger s_logger = Logger.getLogger(UcsManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(UcsManagerImpl.class);
     public static final Long COOKIE_TTL = TimeUnit.MILLISECONDS.convert(100L, TimeUnit.MINUTES);
     public static final Long COOKIE_REFRESH_TTL = TimeUnit.MILLISECONDS.convert(10L, TimeUnit.MINUTES);
 

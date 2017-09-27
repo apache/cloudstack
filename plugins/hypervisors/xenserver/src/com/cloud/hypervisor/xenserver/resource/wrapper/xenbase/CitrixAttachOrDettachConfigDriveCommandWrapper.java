@@ -29,7 +29,8 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.Types;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -39,7 +40,7 @@ import org.apache.xmlrpc.XmlRpcException;
 @ResourceWrapper(handles =  AttachOrDettachConfigDriveCommand.class)
 public final class CitrixAttachOrDettachConfigDriveCommandWrapper extends CommandWrapper<AttachOrDettachConfigDriveCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixAttachOrDettachConfigDriveCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixAttachOrDettachConfigDriveCommandWrapper.class);
 
     @Override
     public Answer execute(final AttachOrDettachConfigDriveCommand command, final CitrixResourceBase citrixResourceBase) {

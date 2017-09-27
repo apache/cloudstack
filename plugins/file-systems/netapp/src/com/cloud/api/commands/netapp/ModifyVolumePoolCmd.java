@@ -18,7 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +37,7 @@ import com.cloud.server.api.response.netapp.ModifyVolumePoolCmdResponse;
 @APICommand(name = "modifyPool", description = "Modify pool", responseObject = ModifyVolumePoolCmdResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ModifyVolumePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ModifyVolumePoolCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ModifyVolumePoolCmd.class.getName());
     private static final String s_name = "modifypoolresponse";
 
     @Parameter(name = ApiConstants.POOL_NAME, type = CommandType.STRING, required = true, description = "pool name.")

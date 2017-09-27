@@ -30,7 +30,8 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
@@ -77,7 +78,7 @@ import com.cloud.utils.exception.ExceptionUtil;
 
 public class VmwareHelper {
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareHelper.class);
 
     public static final int MAX_SCSI_CONTROLLER_COUNT = 4;
     public static final int MAX_IDE_CONTROLLER_COUNT = 2;

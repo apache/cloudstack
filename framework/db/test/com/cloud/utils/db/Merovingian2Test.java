@@ -19,13 +19,14 @@ package com.cloud.utils.db;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class Merovingian2Test extends TestCase {
-    static final Logger s_logger = Logger.getLogger(Merovingian2Test.class);
+    static final Logger s_logger = LogManager.getLogger(Merovingian2Test.class);
     Merovingian2 _lockMaster = Merovingian2.createLockMaster(1234);
 
     @Override

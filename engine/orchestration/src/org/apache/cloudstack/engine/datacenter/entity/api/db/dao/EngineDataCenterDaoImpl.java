@@ -25,7 +25,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
@@ -53,7 +54,7 @@ import com.cloud.utils.net.NetUtils;
  **/
 @Component(value = "EngineDataCenterDao")
 public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, Long> implements EngineDataCenterDao {
-    private static final Logger s_logger = Logger.getLogger(EngineDataCenterDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(EngineDataCenterDaoImpl.class);
 
     protected SearchBuilder<EngineDataCenterVO> NameSearch;
     protected SearchBuilder<EngineDataCenterVO> ListZonesByDomainIdSearch;

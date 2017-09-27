@@ -18,7 +18,8 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo;
@@ -29,7 +30,7 @@ import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
 
 public class KVMHABase {
-    private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
+    private static final Logger s_logger = LogManager.getLogger(KVMHABase.class);
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
     protected long _heartBeatUpdateTimeout = 60000;

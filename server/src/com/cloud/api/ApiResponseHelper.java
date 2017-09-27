@@ -302,7 +302,8 @@ import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.text.DecimalFormat;
@@ -319,7 +320,7 @@ import java.util.TimeZone;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
-    private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
+    private static final Logger s_logger = LogManager.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
     @Inject

@@ -22,7 +22,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -47,7 +48,7 @@ import com.cloud.vm.VirtualMachine;
 @ResourceWrapper(handles =  StartCommand.class)
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtStartCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtStartCommandWrapper.class);
 
     @Override
     public Answer execute(final StartCommand command, final LibvirtComputingResource libvirtComputingResource) {

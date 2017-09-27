@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.volume;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,7 +35,7 @@ import com.cloud.vm.VirtualMachine;
         Volume.class, VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVolumeCmdByAdmin extends CreateVolumeCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateVolumeCmdByAdmin.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateVolumeCmdByAdmin.class.getName());
 
     @Override
     public void execute(){

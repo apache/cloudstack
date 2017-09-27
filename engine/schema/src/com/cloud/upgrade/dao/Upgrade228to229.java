@@ -24,13 +24,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade228to229 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade228to229.class);
+    final static Logger s_logger = LogManager.getLogger(Upgrade228to229.class);
 
     @Override
     public String[] getUpgradableVersionRange() {

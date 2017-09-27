@@ -25,7 +25,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateBcfAttachmentCommand;
@@ -90,7 +91,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * removes them when the VM is destroyed.
  */
 public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder {
-    private static final Logger s_logger = Logger.getLogger(BigSwitchBcfGuestNetworkGuru.class);
+    private static final Logger s_logger = LogManager.getLogger(BigSwitchBcfGuestNetworkGuru.class);
 
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;

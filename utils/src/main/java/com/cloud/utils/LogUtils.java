@@ -21,24 +21,28 @@ package com.cloud.utils;
 
 import java.io.File;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class LogUtils {
-    public static final Logger s_logger = Logger.getLogger(LogUtils.class);
+    public static final Logger s_logger = LogManager.getLogger(LogUtils.class);
 
     public static void initLog4j(String log4jConfigFileName) {
         assert (log4jConfigFileName != null);
         File file = PropertiesUtil.findConfigFile(log4jConfigFileName);
         if (file != null) {
             s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+            org.apache.logging.log4j.core.config.Configurator.initialize("cloud", file.getAbsolutePath());
+            // TODO watch interval must be set in an updated log4j xml*/
+// TODO remove this line            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
         } else {
             String nameWithoutExtension = log4jConfigFileName.substring(0, log4jConfigFileName.lastIndexOf('.'));
             file = PropertiesUtil.findConfigFile(nameWithoutExtension + ".properties");
             if (file != null) {
                 s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-                DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+                org.apache.logging.log4j.core.config.Configurator.initialize("cloud", file.getAbsolutePath());
+                // TODO watch interval must be set in an updated log4j xml*/
+// TODO remove this line                DOMConfigurator.configureAndWatch(file.getAbsolutePath());
             }
         }
     }

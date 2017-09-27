@@ -34,7 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.ArrayOfManagedObjectReference;
@@ -114,7 +115,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.Script;
 
 public class VirtualMachineMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
+    private static final Logger s_logger = LogManager.getLogger(VirtualMachineMO.class);
     private static final ExecutorService MonitorServiceExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("VM-Question-Monitor"));
     private ManagedObjectReference _vmEnvironmentBrowser = null;
 

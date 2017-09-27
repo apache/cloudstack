@@ -20,7 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.DB;
@@ -31,7 +32,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrsVO, Long> implements FirewallRulesCidrsDao {
-    private static final Logger s_logger = Logger.getLogger(FirewallRulesCidrsDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(FirewallRulesCidrsDaoImpl.class);
     protected final SearchBuilder<FirewallRulesCidrsVO> CidrsSearch;
 
     protected FirewallRulesCidrsDaoImpl() {

@@ -25,7 +25,8 @@ import javax.inject.Inject;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Upload;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -45,7 +46,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(CloudStackImageStoreDriverImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(CloudStackImageStoreDriverImpl.class);
 
     @Inject
     ConfigurationDao _configDao;

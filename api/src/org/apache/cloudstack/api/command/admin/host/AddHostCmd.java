@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.admin.host;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +41,7 @@ import com.cloud.user.Account;
 @APICommand(name = "addHost", description = "Adds a new host.", responseObject = HostResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddHostCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(AddHostCmd.class.getName());
 
     private static final String s_name = "addhostresponse";
 

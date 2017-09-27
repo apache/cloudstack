@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsCreateTunnelAnswer;
@@ -32,7 +33,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles = OvsCreateTunnelCommand.class)
 public final class LibvirtOvsCreateTunnelCommandWrapper extends CommandWrapper<OvsCreateTunnelCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtOvsCreateTunnelCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtOvsCreateTunnelCommandWrapper.class);
 
     @Override
     public Answer execute(final OvsCreateTunnelCommand command, final LibvirtComputingResource libvirtComputingResource) {

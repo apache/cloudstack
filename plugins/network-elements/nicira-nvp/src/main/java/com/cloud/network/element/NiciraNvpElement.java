@@ -31,7 +31,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -139,7 +140,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     private static final int MAX_PORT = 65535;
     private static final int MIN_PORT = 0;
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpElement.class);
+    private static final Logger s_logger = LogManager.getLogger(NiciraNvpElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 

@@ -82,7 +82,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.collect.ImmutableList;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -104,7 +105,7 @@ import static com.google.common.collect.ObjectArrays.concat;
 import static java.util.Collections.sort;
 
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
-    private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
+    private static final Logger s_logger = LogManager.getLogger(DatabaseUpgradeChecker.class);
     private final ImmutableList<CloudStackVersion> availableVersions;
     protected Map<CloudStackVersion, DbUpgrade[]> _upgradeMap = new HashMap<>();
 

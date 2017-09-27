@@ -26,13 +26,14 @@ import java.util.List;
 
 import net.juniper.contrail.api.ApiObjectBase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.Identity;
 
 public class DBSyncGeneric {
 
-    private static final Logger s_logger = Logger.getLogger(DBSyncGeneric.class);
+    private static final Logger s_logger = LogManager.getLogger(DBSyncGeneric.class);
 
     /* for each synchronization VNC class, following methods
      * needs to be defined.

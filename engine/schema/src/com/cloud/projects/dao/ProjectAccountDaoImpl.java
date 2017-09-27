@@ -19,7 +19,8 @@ package com.cloud.projects.dao;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.ProjectAccount;
@@ -37,7 +38,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     final GenericSearchBuilder<ProjectAccountVO, Long> AdminSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> ProjectAccountSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> CountByRoleSearch;
-    public static final Logger s_logger = Logger.getLogger(ProjectAccountDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ProjectAccountDaoImpl.class.getName());
 
     protected ProjectAccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();

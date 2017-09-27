@@ -42,7 +42,8 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.network.schema.interfacevlan.InterfaceVlan;
 import com.cloud.network.schema.interfacevlan.Interface;
@@ -61,7 +62,7 @@ import com.cloud.network.schema.portprofile.VlanProfile.SwitchportBasic.Basic;
 import com.cloud.network.schema.showvcs.Output;
 
 public class BrocadeVcsApi {
-    private static final Logger s_logger = Logger.getLogger(BrocadeVcsApi.class);
+    private static final Logger s_logger = LogManager.getLogger(BrocadeVcsApi.class);
 
     private final String _host;
     private final String _adminuser;

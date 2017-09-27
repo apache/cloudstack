@@ -26,7 +26,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.dao.CapacityDao;
@@ -44,7 +45,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(LocalStoragePoolAllocator.class);
+    private static final Logger s_logger = LogManager.getLogger(LocalStoragePoolAllocator.class);
 
     @Inject
     StoragePoolHostDao _poolHostDao;

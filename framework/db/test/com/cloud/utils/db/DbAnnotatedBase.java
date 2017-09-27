@@ -21,13 +21,14 @@ import javax.inject.Inject;
 
 import junit.framework.Assert;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 @Component
 @DB
 public class DbAnnotatedBase {
-    private static final Logger s_logger = Logger.getLogger(DbAnnotatedBase.class);
+    private static final Logger s_logger = LogManager.getLogger(DbAnnotatedBase.class);
 
     @Inject
     DummyComponent _dummy;

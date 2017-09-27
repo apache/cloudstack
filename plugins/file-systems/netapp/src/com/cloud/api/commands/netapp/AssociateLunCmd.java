@@ -20,7 +20,8 @@ import java.rmi.ServerException;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +37,7 @@ import com.cloud.server.api.response.netapp.AssociateLunCmdResponse;
 @APICommand(name = "associateLun", description = "Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssociateLunCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AssociateLunCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(AssociateLunCmd.class.getName());
     private static final String s_name = "associatelunresponse";
 
     /////////////////////////////////////////////////////

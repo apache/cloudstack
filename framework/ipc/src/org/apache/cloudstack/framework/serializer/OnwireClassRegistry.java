@@ -32,7 +32,8 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 //
@@ -40,7 +41,7 @@ import org.apache.log4j.Logger;
 // Credit: http://internna.blogspot.com/2007/11/java-5-retrieving-all-classes-from.html
 //
 public class OnwireClassRegistry {
-    private static final Logger s_logger = Logger.getLogger(OnwireClassRegistry.class);
+    private static final Logger s_logger = LogManager.getLogger(OnwireClassRegistry.class);
 
     private List<String> packages = new ArrayList<String>();
     private final Map<String, Class<?>> registry = new HashMap<String, Class<?>>();

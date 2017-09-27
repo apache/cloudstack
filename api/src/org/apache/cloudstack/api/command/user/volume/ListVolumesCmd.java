@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import org.apache.cloudstack.acl.RoleType;
@@ -41,7 +42,7 @@ import com.cloud.storage.Volume;
 @APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListVolumesCmd.class.getName());
 
     private static final String s_name = "listvolumesresponse";
 

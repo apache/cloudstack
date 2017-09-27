@@ -21,14 +21,15 @@ import java.util.List;
 import java.util.Map;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class UserConcentratedPodPlanner extends FirstFitPlanner implements DeploymentClusterPlanner {
 
-    private static final Logger s_logger = Logger.getLogger(UserConcentratedPodPlanner.class);
+    private static final Logger s_logger = LogManager.getLogger(UserConcentratedPodPlanner.class);
 
     /**
      * This method should reorder the given list of Cluster Ids by applying any necessary heuristic

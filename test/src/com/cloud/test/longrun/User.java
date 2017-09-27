@@ -26,12 +26,13 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.test.stress.TestClientWithAPI;
 
 public class User {
-    public static final Logger s_logger = Logger.getLogger(User.class.getClass());
+    public static final Logger s_logger = LogManager.getLogger(User.class.getClass());
 
     private ArrayList<VirtualMachine> virtualMachines;
     private ArrayList<String> publicIp;

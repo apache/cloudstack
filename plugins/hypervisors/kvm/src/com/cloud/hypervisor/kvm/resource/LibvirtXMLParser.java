@@ -23,13 +23,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class LibvirtXMLParser extends DefaultHandler {
-    private static final Logger s_logger = Logger.getLogger(LibvirtXMLParser.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtXMLParser.class);
     protected static final SAXParserFactory s_spf;
     static {
         s_spf = SAXParserFactory.newInstance();

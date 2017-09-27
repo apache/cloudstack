@@ -23,7 +23,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
@@ -54,7 +55,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
-    public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
+    public static final Logger s_logger = LogManager.getLogger(HypervisorGuruBase.class);
 
     @Inject
     private NicDao _nicDao;

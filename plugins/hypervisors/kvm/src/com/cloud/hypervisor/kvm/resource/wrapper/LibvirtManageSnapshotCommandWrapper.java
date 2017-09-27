@@ -22,7 +22,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.io.File;
 import java.text.MessageFormat;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -49,7 +50,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  ManageSnapshotCommand.class)
 public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<ManageSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtManageSnapshotCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtManageSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final ManageSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {

@@ -22,7 +22,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -48,7 +49,7 @@ import com.cloud.network.security.dao.SecurityGroupWorkDao;
  *
  */
 public class SecurityGroupListener implements Listener {
-    public static final Logger s_logger = Logger.getLogger(SecurityGroupListener.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(SecurityGroupListener.class.getName());
 
     private static final int MAX_RETRIES_ON_FAILURE = 3;
     private static final int MIN_TIME_BETWEEN_CLEANUPS = 30 * 60;//30 minutes

@@ -26,7 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.StringUtils;
 
@@ -51,7 +52,7 @@ import com.cloud.utils.UriUtils;
 
 public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
-    private static final Logger s_logger = Logger.getLogger(CloudStackImageStoreLifeCycleImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(CloudStackImageStoreLifeCycleImpl.class);
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject

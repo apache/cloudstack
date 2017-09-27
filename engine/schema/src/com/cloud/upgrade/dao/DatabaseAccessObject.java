@@ -20,11 +20,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DatabaseAccessObject {
 
-    private static Logger s_logger = Logger.getLogger(DatabaseAccessObject.class);
+    private static Logger s_logger = LogManager.getLogger(DatabaseAccessObject.class);
 
     public void dropKey(Connection conn, String tableName, String key, boolean isForeignKey)
     {

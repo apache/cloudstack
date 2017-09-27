@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -46,7 +47,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "listCiscoAsa1000vResources", responseObject = CiscoAsa1000vResourceResponse.class, description = "Lists Cisco ASA 1000v appliances",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCiscoAsa1000vResourcesCmd extends BaseListCmd {
-    private static final Logger s_logger = Logger.getLogger(ListCiscoAsa1000vResourcesCmd.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(ListCiscoAsa1000vResourcesCmd.class.getName());
     private static final String s_name = "listCiscoAsa1000vResources";
     @Inject
     CiscoAsa1000vService _ciscoAsa1000vService;

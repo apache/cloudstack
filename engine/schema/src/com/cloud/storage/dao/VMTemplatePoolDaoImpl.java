@@ -23,7 +23,8 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -42,7 +43,7 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolVO, Long> implements VMTemplatePoolDao {
-    public static final Logger s_logger = Logger.getLogger(VMTemplatePoolDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(VMTemplatePoolDaoImpl.class.getName());
 
     protected final SearchBuilder<VMTemplateStoragePoolVO> PoolSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> TemplateSearch;

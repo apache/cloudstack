@@ -30,7 +30,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -153,7 +154,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
     ScheduledExecutorService _executor;
     private int _externalNetworkStatsInterval;
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalDeviceUsageManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ExternalDeviceUsageManagerImpl.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

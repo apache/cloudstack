@@ -24,7 +24,8 @@ import java.util.TimerTask;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -39,7 +40,7 @@ import org.apache.cloudstack.framework.rpc.RpcServiceHandler;
 
 @Component
 public class SampleManagerComponent {
-    private static final Logger s_logger = Logger.getLogger(SampleManagerComponent.class);
+    private static final Logger s_logger = LogManager.getLogger(SampleManagerComponent.class);
 
     @Inject
     private MessageBus _eventBus;

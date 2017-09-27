@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkAnswer;
@@ -39,8 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public class Ovm3HypervisorNetwork {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3HypervisorNetwork.class);
+    private static final Logger LOGGER = LogManager.getLogger(Ovm3HypervisorNetwork.class);
     private Connection c;
     private Ovm3Configuration config;
     public Ovm3HypervisorNetwork(Connection conn, Ovm3Configuration ovm3config) {

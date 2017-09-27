@@ -27,7 +27,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateLogicalSwitchAnswer;
@@ -82,7 +83,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements NetworkGuruAdditionalFunctions{
     private static final int MAX_NAME_LENGTH = 40;
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);
+    private static final Logger s_logger = LogManager.getLogger(NiciraNvpGuestNetworkGuru.class);
 
     @Inject
     protected NetworkModel networkModel;

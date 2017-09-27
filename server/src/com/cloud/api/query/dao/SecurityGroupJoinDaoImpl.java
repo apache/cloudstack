@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -48,7 +49,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO, Long> implements SecurityGroupJoinDao {
-    public static final Logger s_logger = Logger.getLogger(SecurityGroupJoinDaoImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(SecurityGroupJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;

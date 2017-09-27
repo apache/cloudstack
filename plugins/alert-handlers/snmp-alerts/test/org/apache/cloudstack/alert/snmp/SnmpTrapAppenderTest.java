@@ -17,19 +17,19 @@
 
 package org.apache.cloudstack.alert.snmp;
 
+import java.util.List;
+
+import org.apache.logging.log4j.core.LogEvent;
+import org.junit.Test;
+import org.mockito.Mock;
+
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.util.List;
-
-import org.apache.log4j.spi.LoggingEvent;
-import org.junit.Test;
-import org.mockito.Mock;
-
 public class SnmpTrapAppenderTest {
-    SnmpTrapAppender _appender = new SnmpTrapAppender();
-    LoggingEvent _event = mock(LoggingEvent.class);
+    SnmpTrapAppender _appender = new SnmpTrapAppender("SnmpTrapAppender",null, null);
+    LogEvent _event = mock(LogEvent.class);
     SnmpEnhancedPatternLayout _snmpEnhancedPatternLayout = mock(SnmpEnhancedPatternLayout.class);
     @Mock
     List<SnmpHelper> snmpHelpers;

@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -34,7 +35,7 @@ import com.cloud.user.User;
 @APICommand(name = "createUser", description = "Creates a user for an account that already exists", responseObject = UserResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class CreateUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateUserCmd.class.getName());
 
     private static final String s_name = "createuserresponse";
 

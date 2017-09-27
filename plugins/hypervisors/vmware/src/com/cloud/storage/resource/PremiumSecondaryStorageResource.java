@@ -21,7 +21,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
@@ -32,7 +33,7 @@ import com.cloud.hypervisor.Hypervisor;
 
 public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource {
 
-    private static final Logger s_logger = Logger.getLogger(PremiumSecondaryStorageResource.class);
+    private static final Logger s_logger = LogManager.getLogger(PremiumSecondaryStorageResource.class);
 
     private Map<Hypervisor.HypervisorType, SecondaryStorageResourceHandler> _handlers = new HashMap<Hypervisor.HypervisorType, SecondaryStorageResourceHandler>();
 

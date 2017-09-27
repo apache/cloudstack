@@ -60,14 +60,15 @@ import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyNetwork
 import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyPortAnswer;
 import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerMappingDao;
 import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
 import java.util.UUID;
 
 public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(OpendaylightGuestNetworkGuru.class);
+    private static final Logger s_logger = LogManager.getLogger(OpendaylightGuestNetworkGuru.class);
 
     @Inject
     protected NetworkOfferingServiceMapDao ntwkOfferingSrvcDao;

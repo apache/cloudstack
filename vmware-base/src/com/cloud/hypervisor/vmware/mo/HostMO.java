@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
@@ -68,7 +69,7 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.Pair;
 
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
-    private static final Logger s_logger = Logger.getLogger(HostMO.class);
+    private static final Logger s_logger = LogManager.getLogger(HostMO.class);
     Map<String, VirtualMachineMO> _vmCache = new HashMap<String, VirtualMachineMO>();
 
     //Map<String, String> _vmInternalNameMapCache = new HashMap<String, String>();

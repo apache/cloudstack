@@ -18,7 +18,8 @@ package com.cloud.consoleproxy;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -30,7 +31,7 @@ import com.cloud.vm.UserVmVO;
  * to non ACS console proxy services. The documentation that describe its use and requirements can be found in <a href="https://cwiki.apache.org/confluence/display/CLOUDSTACK/QuickCloud">QuickCloud</a>.
  */
 public class AgentBasedStandaloneConsoleProxyManager extends AgentBasedConsoleProxyManager {
-    private static final Logger s_logger = Logger.getLogger(AgentBasedStandaloneConsoleProxyManager.class);
+    private static final Logger s_logger = LogManager.getLogger(AgentBasedStandaloneConsoleProxyManager.class);
 
     @Override
     public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {

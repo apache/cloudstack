@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.mysql.jdbc.BalanceStrategy;
 import com.mysql.jdbc.Connection;
@@ -32,7 +33,7 @@ import com.mysql.jdbc.LoadBalancingConnectionProxy;
 import com.mysql.jdbc.SQLError;
 
 public class StaticStrategy implements BalanceStrategy {
-    private static final Logger s_logger = Logger.getLogger(StaticStrategy.class);
+    private static final Logger s_logger = LogManager.getLogger(StaticStrategy.class);
 
     public StaticStrategy() {
     }

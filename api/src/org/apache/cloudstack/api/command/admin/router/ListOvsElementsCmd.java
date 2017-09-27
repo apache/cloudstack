@@ -30,7 +30,8 @@ import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -42,8 +43,7 @@ import com.cloud.network.element.VirtualRouterElementService;
 @APICommand(name = "listOvsElements", description = "Lists all available ovs elements.", responseObject = OvsProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListOvsElementsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger
-        .getLogger(ListNetworkOfferingsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListNetworkOfferingsCmd.class.getName());
     private static final String Name = "listovselementsresponse";
     @Inject
     private List<VirtualRouterElementService> _service;

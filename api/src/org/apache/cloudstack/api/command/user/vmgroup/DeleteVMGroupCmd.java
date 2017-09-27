@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vmgroup;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -35,7 +36,7 @@ import com.cloud.vm.InstanceGroup;
 @APICommand(name = "deleteInstanceGroup", description = "Deletes a vm group", responseObject = SuccessResponse.class, entityType = {InstanceGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVMGroupCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteVMGroupCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DeleteVMGroupCmd.class.getName());
     private static final String s_name = "deleteinstancegroupresponse";
 
     /////////////////////////////////////////////////////

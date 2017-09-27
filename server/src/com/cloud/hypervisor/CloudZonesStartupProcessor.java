@@ -22,7 +22,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResourceDetail;
@@ -61,7 +62,7 @@ import com.cloud.utils.net.NetUtils;
  */
 @Component
 public class CloudZonesStartupProcessor extends AdapterBase implements StartupCommandProcessor {
-    private static final Logger s_logger = Logger.getLogger(CloudZonesStartupProcessor.class);
+    private static final Logger s_logger = LogManager.getLogger(CloudZonesStartupProcessor.class);
     @Inject
     ClusterDao _clusterDao = null;
     @Inject

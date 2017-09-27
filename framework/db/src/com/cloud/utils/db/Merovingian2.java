@@ -29,7 +29,8 @@ import java.util.TimeZone;
 
 import javax.management.StandardMBean;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -37,7 +38,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.time.InaccurateClock;
 
 public class Merovingian2 extends StandardMBean implements MerovingianMBean {
-    private static final Logger s_logger = Logger.getLogger(Merovingian2.class);
+    private static final Logger s_logger = LogManager.getLogger(Merovingian2.class);
 
     private static final String ACQUIRE_SQL =
             "INSERT INTO op_lock (op_lock.key, op_lock.mac, op_lock.ip, op_lock.thread, op_lock.acquired_on, waiters) VALUES (?, ?, ?, ?, ?, 1)";

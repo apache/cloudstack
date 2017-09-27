@@ -31,7 +31,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -50,7 +51,7 @@ import com.cloud.simulator.MockHost;
 import com.cloud.utils.component.ComponentContext;
 
 public class AgentResourceBase implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(AgentResourceBase.class);
+    private static final Logger s_logger = LogManager.getLogger(AgentResourceBase.class);
 
     protected String _name;
     private List<String> _warnings = new LinkedList<String>();

@@ -37,7 +37,8 @@ import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
 import net.juniper.contrail.api.types.VnSubnetsType;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -90,7 +91,7 @@ import com.cloud.vm.VirtualMachineManager;
  * Exercise the public API.
  */
 public class NetworkProviderTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(NetworkProviderTest.class);
+    private static final Logger s_logger = LogManager.getLogger(NetworkProviderTest.class);
 
     @Inject
     public ContrailManager _contrailMgr;

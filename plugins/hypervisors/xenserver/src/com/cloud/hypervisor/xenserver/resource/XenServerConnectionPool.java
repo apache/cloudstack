@@ -29,7 +29,8 @@ import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClientException;
 
@@ -48,7 +49,7 @@ import java.util.Properties;
 import java.util.Queue;
 
 public class XenServerConnectionPool {
-    private static final Logger s_logger = Logger.getLogger(XenServerConnectionPool.class);
+    private static final Logger s_logger = LogManager.getLogger(XenServerConnectionPool.class);
     protected HashMap<String /* poolUuid */, XenServerConnection> _conns = new HashMap<String, XenServerConnection>();
     protected int _retries;
     protected int _interval;

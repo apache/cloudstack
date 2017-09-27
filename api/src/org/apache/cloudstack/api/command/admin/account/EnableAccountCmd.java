@@ -18,7 +18,8 @@ package org.apache.cloudstack.api.command.admin.account;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -38,7 +39,7 @@ import com.cloud.user.Account;
 @APICommand(name = "enableAccount", description = "Enables an account", responseObject = AccountResponse.class, entityType = {Account.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class EnableAccountCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(EnableAccountCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(EnableAccountCmd.class.getName());
     private static final String s_name = "enableaccountresponse";
 
     /////////////////////////////////////////////////////

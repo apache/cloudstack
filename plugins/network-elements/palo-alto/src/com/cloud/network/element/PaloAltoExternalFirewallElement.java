@@ -24,7 +24,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -85,7 +86,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
         PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, StaticNatServiceProvider {
 
-    private static final Logger s_logger = Logger.getLogger(PaloAltoExternalFirewallElement.class);
+    private static final Logger s_logger = LogManager.getLogger(PaloAltoExternalFirewallElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 

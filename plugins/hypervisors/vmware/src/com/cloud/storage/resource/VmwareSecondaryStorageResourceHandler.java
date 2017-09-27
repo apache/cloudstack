@@ -18,8 +18,9 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.NDC;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
@@ -52,7 +53,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 
 public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
-    private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResourceHandler.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareSecondaryStorageResourceHandler.class);
 
     private final PremiumSecondaryStorageResource _resource;
     private final VmwareStorageManager _storageMgr;

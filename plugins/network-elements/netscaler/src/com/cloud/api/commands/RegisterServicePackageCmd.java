@@ -17,7 +17,8 @@ package com.cloud.api.commands;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +37,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "registerNetscalerServicePackage", responseObject = NetScalerServicePackageResponse.class, description = "Registers NCC Service Package")
 public class RegisterServicePackageCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(RegisterServicePackageCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(RegisterServicePackageCmd.class.getName());
     private static final String s_name = "registerNetscalerServicePackage";
 
     @Inject

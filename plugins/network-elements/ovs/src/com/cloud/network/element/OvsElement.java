@@ -27,7 +27,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupOvsCommand;
@@ -102,7 +103,7 @@ StaticNatServiceProvider, IpDeployer {
     @Inject
     NetworkTopologyContext _networkTopologyContext;
 
-    private static final Logger s_logger = Logger.getLogger(OvsElement.class);
+    private static final Logger s_logger = LogManager.getLogger(OvsElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Override

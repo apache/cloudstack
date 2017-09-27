@@ -48,7 +48,8 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.cloudstack.framework.ca.CAService;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.NioConnectionException;
@@ -58,7 +59,7 @@ import com.cloud.utils.exception.NioConnectionException;
  * provides that.
  */
 public abstract class NioConnection implements Callable<Boolean> {
-    private static final Logger s_logger = Logger.getLogger(NioConnection.class);;
+    private static final Logger s_logger = LogManager.getLogger(NioConnection.class);;
 
     protected Selector _selector;
     protected ExecutorService _threadExecutor;

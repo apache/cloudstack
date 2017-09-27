@@ -28,7 +28,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.Storage;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -54,7 +55,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(AbstractStoragePoolAllocator.class);
+    private static final Logger s_logger = LogManager.getLogger(AbstractStoragePoolAllocator.class);
     @Inject
     StorageManager storageMgr;
     protected @Inject

@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +38,7 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteStorageNetworkIpRange", description = "Deletes a storage network IP Range.", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteStorageNetworkIpRangeCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(DeleteStorageNetworkIpRangeCmd.class);
 
     private static final String s_name = "deletestoragenetworkiprangeresponse";
 

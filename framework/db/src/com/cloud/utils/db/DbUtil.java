@@ -41,12 +41,13 @@ import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
 
 public class DbUtil {
-    protected final static Logger s_logger = Logger.getLogger(DbUtil.class);
+    protected final static Logger s_logger = LogManager.getLogger(DbUtil.class);
 
     private static Map<String, Connection> s_connectionForGlobalLocks = new HashMap<String, Connection>();
 

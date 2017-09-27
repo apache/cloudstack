@@ -57,7 +57,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
@@ -89,7 +90,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
 public final class HAManagerImpl extends ManagerBase implements HAManager, ClusterManagerListener, PluggableService, Configurable, StateListener<HAConfig.HAState, HAConfig.Event, HAConfig> {
-    public static final Logger LOG = Logger.getLogger(HAManagerImpl.class);
+    public static final Logger LOG = LogManager.getLogger(HAManagerImpl.class);
 
     @Inject
     private HAConfigDao haConfigDao;

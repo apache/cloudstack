@@ -45,7 +45,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -59,7 +60,7 @@ import java.util.Map;
 
 @APICommand(name = "listAndSwitchSamlAccount", description = "Lists and switches to other SAML accounts owned by the SAML user", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(ListAndSwitchSAMLAccountCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListAndSwitchSAMLAccountCmd.class.getName());
     private static final String s_name = "listandswitchsamlaccountresponse";
 
     @Inject

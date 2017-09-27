@@ -26,7 +26,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -56,7 +57,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO, Long> implements TemplateDataStoreDao {
-    private static final Logger s_logger = Logger.getLogger(TemplateDataStoreDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(TemplateDataStoreDaoImpl.class);
     private SearchBuilder<TemplateDataStoreVO> updateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeSearch;
     private SearchBuilder<TemplateDataStoreVO> cacheSearch;

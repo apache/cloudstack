@@ -26,7 +26,7 @@ package org.apache.cloudstack.framework.jobs;
 @ContextConfiguration(locations = "classpath:/AsyncJobManagerTestContext.xml")
 public class AsyncJobManagerTest extends TestCase {
     private static final Logger s_logger =
-            Logger.getLogger(AsyncJobManagerTest.class);
+            LogManager.getLogger(AsyncJobManagerTest.class);
 
     @Inject
     AsyncJobManager _jobMgr;

@@ -22,7 +22,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
@@ -34,7 +35,7 @@ import com.cloud.utils.component.ManagerBase;
 
 @SuppressWarnings("unchecked")
 public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuthenticationManager {
-    public static final Logger s_logger = Logger.getLogger(APIAuthenticationManagerImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(APIAuthenticationManagerImpl.class.getName());
 
     private List<PluggableAPIAuthenticator> _apiAuthenticators;
 

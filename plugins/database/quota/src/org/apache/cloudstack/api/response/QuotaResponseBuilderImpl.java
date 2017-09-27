@@ -50,7 +50,8 @@ import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -72,7 +73,7 @@ import java.util.ListIterator;
 @Component
 @Local(value = QuotaResponseBuilderImpl.class)
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
-    private static final Logger s_logger = Logger.getLogger(QuotaResponseBuilderImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(QuotaResponseBuilderImpl.class);
 
     @Inject
     private QuotaTariffDao _quotaTariffDao;

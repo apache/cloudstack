@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vmsnapshot;
 
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,8 +36,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0", responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RevertToVMSnapshotCmdByAdmin extends RevertToVMSnapshotCmd {
-    public static final Logger s_logger = Logger
-            .getLogger(RevertToVMSnapshotCmdByAdmin.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(RevertToVMSnapshotCmdByAdmin.class.getName());
 
 
     @Override

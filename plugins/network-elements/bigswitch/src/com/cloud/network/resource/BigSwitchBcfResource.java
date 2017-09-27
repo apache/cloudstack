@@ -25,7 +25,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -70,7 +71,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 
 public class BigSwitchBcfResource extends ManagerBase implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(BigSwitchBcfResource.class);
+    private static final Logger s_logger = LogManager.getLogger(BigSwitchBcfResource.class);
 
     private String _name;
     private String _guid;

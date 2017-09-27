@@ -24,7 +24,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
@@ -69,7 +70,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl implements CiscoNexusVSMElementService, NetworkElement, Manager {
 
-    private static final Logger s_logger = Logger.getLogger(CiscoNexusVSMElement.class);
+    private static final Logger s_logger = LogManager.getLogger(CiscoNexusVSMElement.class);
 
     @Inject
     CiscoNexusVSMDeviceDao _vsmDao;

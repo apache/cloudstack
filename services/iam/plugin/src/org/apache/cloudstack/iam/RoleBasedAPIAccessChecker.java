@@ -25,7 +25,8 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.PermissionScope;
@@ -56,7 +57,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 //based on the set of roles, access is granted if any of the role has access to the api
 public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
-    protected static final Logger s_logger = Logger.getLogger(RoleBasedAPIAccessChecker.class);
+    protected static final Logger s_logger = LogManager.getLogger(RoleBasedAPIAccessChecker.class);
 
     @Inject
     AccountService _accountService;

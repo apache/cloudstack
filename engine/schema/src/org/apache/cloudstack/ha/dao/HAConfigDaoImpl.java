@@ -31,7 +31,8 @@ import com.cloud.utils.db.UpdateBuilder;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.ha.HAConfigVO;
 import org.apache.cloudstack.ha.HAResource;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -42,7 +43,7 @@ import java.util.List;
 @DB
 @Component
 public class HAConfigDaoImpl extends GenericDaoBase<HAConfigVO, Long> implements HAConfigDao {
-    private static final Logger LOG = Logger.getLogger(HAConfigDaoImpl.class);
+    private static final Logger LOG = LogManager.getLogger(HAConfigDaoImpl.class);
 
     private static final String EXPIRE_OWNERSHIP = "UPDATE ha_config set mgmt_server_id=NULL where mgmt_server_id=?";
 

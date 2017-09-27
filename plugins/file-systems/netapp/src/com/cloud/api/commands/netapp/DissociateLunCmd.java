@@ -20,7 +20,8 @@ import java.rmi.ServerException;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +41,7 @@ import com.cloud.server.api.response.netapp.DissociateLunCmdResponse;
 @APICommand(name = "dissociateLun", description = "Dissociate a LUN", responseObject = DissociateLunCmdResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DissociateLunCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DissociateLunCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DissociateLunCmd.class.getName());
     private static final String s_name = "dissociatelunresponse";
 
     @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, required = true, description = "LUN path.")

@@ -26,7 +26,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -92,7 +93,7 @@ import com.cloud.vm.VirtualMachine.PowerState;
 
 @Component
 public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
-    private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(MockVmManagerImpl.class);
 
     @Inject
     MockVMDao _mockVmDao = null;

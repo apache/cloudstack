@@ -17,7 +17,8 @@
 
 package com.cloud.hypervisor.ovm3.resources.helpers;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
@@ -31,8 +32,7 @@ import com.cloud.hypervisor.ovm3.resources.Ovm3VirtualRoutingResource;
 import com.cloud.utils.ExecutionResult;
 
 public class Ovm3VirtualRoutingSupport {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3VirtualRoutingSupport.class);
+    private static final Logger LOGGER = LogManager.getLogger(Ovm3VirtualRoutingSupport.class);
     private static final String CREATE = "create";
     private static final String SUCCESS = "success";
     private final Connection c;

@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.DVPortgroupConfigSpec;
 import com.vmware.vim25.DVSConfigInfo;
@@ -36,7 +37,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class DistributedVirtualSwitchMO extends BaseMO {
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(DistributedVirtualSwitchMO.class);
+    private static final Logger s_logger = LogManager.getLogger(DistributedVirtualSwitchMO.class);
     private static ConcurrentHashMap<String, List<String>> s_dvPortGroupCacheMap = null;
 
     public DistributedVirtualSwitchMO(VmwareContext context, ManagedObjectReference morDvs) {

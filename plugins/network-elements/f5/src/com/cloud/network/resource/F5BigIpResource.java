@@ -52,7 +52,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -130,7 +131,7 @@ public class F5BigIpResource implements ServerResource {
     private String _objectNamePathSep = "-";
     private String _routeDomainIdentifier = "%";
 
-    private static final Logger s_logger = Logger.getLogger(F5BigIpResource.class);
+    private static final Logger s_logger = LogManager.getLogger(F5BigIpResource.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

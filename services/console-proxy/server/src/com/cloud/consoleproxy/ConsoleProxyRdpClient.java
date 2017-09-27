@@ -21,7 +21,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.net.InetSocketAddress;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import rdpclient.RdpClient;
 import streamer.Pipeline;
@@ -41,7 +42,7 @@ import common.SizeChangeListener;
 
 public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
 
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyRdpClient.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyRdpClient.class);
 
     private static final int SHIFT_KEY_MASK = 64;
     private static final int CTRL_KEY_MASK = 128;

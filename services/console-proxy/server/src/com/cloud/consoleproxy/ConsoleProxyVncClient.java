@@ -20,7 +20,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.UnknownHostException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.consoleproxy.vnc.FrameBufferCanvas;
 import com.cloud.consoleproxy.vnc.RfbConstants;
@@ -32,7 +33,7 @@ import com.cloud.consoleproxy.vnc.VncClient;
  *
  */
 public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyVncClient.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyVncClient.class);
 
     private static final int SHIFT_KEY_MASK = 64;
     private static final int CTRL_KEY_MASK = 128;

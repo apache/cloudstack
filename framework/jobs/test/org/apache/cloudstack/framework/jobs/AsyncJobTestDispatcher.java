@@ -20,7 +20,8 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.jobs.JobInfo.Status;
 
@@ -28,7 +29,7 @@ import com.cloud.utils.component.AdapterBase;
 
 public class AsyncJobTestDispatcher extends AdapterBase implements AsyncJobDispatcher {
     private static final Logger s_logger =
-            Logger.getLogger(AsyncJobTestDispatcher.class);
+            LogManager.getLogger(AsyncJobTestDispatcher.class);
 
     @Inject
     private AsyncJobManager _asyncJobMgr;

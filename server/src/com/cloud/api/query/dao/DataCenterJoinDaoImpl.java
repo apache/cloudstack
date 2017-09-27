@@ -20,7 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -40,7 +41,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long> implements DataCenterJoinDao {
-    public static final Logger s_logger = Logger.getLogger(DataCenterJoinDaoImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(DataCenterJoinDaoImpl.class);
 
     private SearchBuilder<DataCenterJoinVO> dofIdSearch;
     @Inject

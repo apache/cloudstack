@@ -21,18 +21,17 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
 
-import com.cloud.projects.Project;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-
-import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
-
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * CallContext records information about the environment the call is made.  This
@@ -40,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * entry point must set the context and remove it when the thread finishes.
  */
 public class CallContext {
-    private static final Logger s_logger = Logger.getLogger(CallContext.class);
+    private static final Logger s_logger = LogManager.getLogger(CallContext.class);
     private static ManagedThreadLocal<CallContext> s_currentContext = new ManagedThreadLocal<CallContext>();
     private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = new ManagedThreadLocal<Stack<CallContext>>() {
         @Override
@@ -171,7 +170,7 @@ public class CallContext {
             callingContext = new CallContext(userId, accountId, contextId);
         }
         s_currentContext.set(callingContext);
-        NDC.push("ctx-" + UuidUtils.first(contextId));
+        ThreadContext.push("ctx-" + UuidUtils.first(contextId));
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Registered: " + callingContext);
         }
@@ -261,13 +260,13 @@ public class CallContext {
         }
         String contextId = context.getContextId();
         String sessionIdOnStack = null;
-        String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
-        while ((sessionIdOnStack = NDC.pop()) != null) {
-            if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
+        String sessionIdPushedToThreadContext = "ctx-" + UuidUtils.first(contextId);
+        while ((sessionIdOnStack = ThreadContext.pop()) != null) {
+            if (sessionIdOnStack.isEmpty() || sessionIdPushedToThreadContext.equals(sessionIdOnStack)) {
                 break;
             }
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Popping from NDC: " + contextId);
+                s_logger.trace("Popping from ThreadContext: " + contextId);
             }
         }
 

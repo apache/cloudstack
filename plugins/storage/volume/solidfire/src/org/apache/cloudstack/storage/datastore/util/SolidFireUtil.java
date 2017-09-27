@@ -25,7 +25,8 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -74,7 +75,7 @@ import com.solidfire.jsvcgen.javautil.Optional;
 import static org.apache.commons.lang.ArrayUtils.toPrimitive;
 
 public class SolidFireUtil {
-    private static final Logger s_logger = Logger.getLogger(SolidFireUtil.class);
+    private static final Logger s_logger = LogManager.getLogger(SolidFireUtil.class);
 
     public static final String PROVIDER_NAME = "SolidFire";
     public static final String SHARED_PROVIDER_NAME = "SolidFireShared";

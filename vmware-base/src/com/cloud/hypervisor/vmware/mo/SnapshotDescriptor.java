@@ -26,10 +26,11 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SnapshotDescriptor {
-    private static final Logger s_logger = Logger.getLogger(SnapshotDescriptor.class);
+    private static final Logger s_logger = LogManager.getLogger(SnapshotDescriptor.class);
 
     private final Properties _properties = new Properties();
 

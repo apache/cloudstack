@@ -44,7 +44,8 @@ import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
 import com.cloud.domain.Domain;
@@ -61,7 +62,7 @@ import com.cloud.user.DomainService;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapImportUsersCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(LdapImportUsersCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(LdapImportUsersCmd.class.getName());
 
     private static final String s_name = "ldapuserresponse";
 

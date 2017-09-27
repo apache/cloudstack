@@ -27,7 +27,8 @@ import org.apache.cloudstack.network.contrail.model.InstanceIpModel;
 import org.apache.cloudstack.network.contrail.model.VMInterfaceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -89,7 +90,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Inject
     DataCenterDao _dcDao;
 
-    private static final Logger s_logger = Logger.getLogger(ContrailGuru.class);
+    private static final Logger s_logger = LogManager.getLogger(ContrailGuru.class);
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
     private boolean canHandle(NetworkOffering offering, NetworkType networkType, PhysicalNetwork physicalNetwork) {

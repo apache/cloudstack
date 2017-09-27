@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.user.event;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,7 +40,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteEventsCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeleteEventsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DeleteEventsCmd.class.getName());
 
     private static final String s_name = "deleteeventsresponse";
 

@@ -35,7 +35,8 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.network.element.SspElement;
 import org.apache.cloudstack.network.element.SspManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -43,7 +44,7 @@ import javax.inject.Inject;
  * Stratosphere SDN Platform NetworkGuru
  */
 public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder {
-    private static final Logger s_logger = Logger.getLogger(SspGuestNetworkGuru.class);
+    private static final Logger s_logger = LogManager.getLogger(SspGuestNetworkGuru.class);
 
     @Inject
     SspManager _sspMgr;

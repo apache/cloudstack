@@ -27,7 +27,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.StartupCommand;
@@ -53,7 +54,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class OvmDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
-    private static final Logger s_logger = Logger.getLogger(OvmDiscoverer.class);
+    private static final Logger s_logger = LogManager.getLogger(OvmDiscoverer.class);
     protected String _publicNetworkDevice;
     protected String _privateNetworkDevice;
     protected String _guestNetworkDevice;

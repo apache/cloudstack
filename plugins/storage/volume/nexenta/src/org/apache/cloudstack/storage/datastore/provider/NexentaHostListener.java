@@ -18,12 +18,13 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 
 public class NexentaHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(NexentaHostListener.class);
+    private static final Logger s_logger = LogManager.getLogger(NexentaHostListener.class);
 
     @Override
     public boolean hostAdded(long hostId) {

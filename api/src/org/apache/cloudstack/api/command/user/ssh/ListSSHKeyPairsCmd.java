@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.user.ssh;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +35,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listSSHKeyPairs", description = "List registered keypairs", responseObject = SSHKeyPairResponse.class, entityType = {SSHKeyPair.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSSHKeyPairsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListSSHKeyPairsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListSSHKeyPairsCmd.class.getName());
     private static final String s_name = "listsshkeypairsresponse";
 
     /////////////////////////////////////////////////////

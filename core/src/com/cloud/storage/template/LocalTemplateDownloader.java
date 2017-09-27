@@ -29,12 +29,13 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.storage.StorageLayer;
 
 public class LocalTemplateDownloader extends TemplateDownloaderBase implements TemplateDownloader {
-    public static final Logger s_logger = Logger.getLogger(LocalTemplateDownloader.class);
+    public static final Logger s_logger = LogManager.getLogger(LocalTemplateDownloader.class);
 
     public LocalTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
         super(storageLayer, downloadUrl, toDir, maxTemplateSizeInBytes, callback);

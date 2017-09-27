@@ -33,10 +33,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -59,7 +58,6 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.slf4j.MDC;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
@@ -92,7 +90,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.storage.dao.VolumeDao;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
@@ -104,7 +105,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             Integer.class, "vm.job.lock.timeout", "1800",
             "Time in seconds to wait in acquiring lock to submit a vm worker job", false);
 
-    private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(AsyncJobManagerImpl.class);
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;     // 3 seconds
 
@@ -512,19 +513,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 String related = job.getRelated();
                 String logContext = job.getShortUuid();
                 if (related != null && !related.isEmpty()) {
-                    NDC.push("job-" + related + "/" + "job-" + job.getId());
+                    ThreadContext.push("job-" + related + "/" + "job-" + job.getId());
                     AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
                     if (relatedJob != null) {
                         logContext = relatedJob.getShortUuid();
                     }
                 } else {
-                    NDC.push("job-" + job.getId());
+                    ThreadContext.push("job-" + job.getId());
                 }
-                MDC.put("logcontextid", logContext);
+                ThreadContext.put("logcontextid", logContext);
                 try {
                     super.run();
                 } finally {
-                    NDC.pop();
+                    ThreadContext.pop();
                 }
             }
 
@@ -555,7 +556,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             logContext = relatedJob.getShortUuid();
                         }
                     }
-                    MDC.put("logcontextid", logContext);
+                    ThreadContext.put("logcontextid", logContext);
 
                     // execute the job
                     if (s_logger.isDebugEnabled()) {

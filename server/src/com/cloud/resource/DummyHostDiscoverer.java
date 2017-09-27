@@ -24,7 +24,8 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
@@ -33,7 +34,7 @@ import com.cloud.utils.component.AdapterBase;
 
 @Component
 public class DummyHostDiscoverer extends AdapterBase implements Discoverer {
-    private static final Logger s_logger = Logger.getLogger(DummyHostDiscoverer.class);
+    private static final Logger s_logger = LogManager.getLogger(DummyHostDiscoverer.class);
 
     @Override
     public Map<ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) {

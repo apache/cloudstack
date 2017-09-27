@@ -27,7 +27,8 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.Types;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -37,7 +38,7 @@ import org.apache.xmlrpc.XmlRpcException;
 @ResourceWrapper(handles =  GetVmIpAddressCommand.class)
 public final class CitrixGetVmIpAddressCommandWrapper extends CommandWrapper<GetVmIpAddressCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixGetVmIpAddressCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixGetVmIpAddressCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVmIpAddressCommand command, final CitrixResourceBase citrixResourceBase) {

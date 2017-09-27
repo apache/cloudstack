@@ -26,14 +26,15 @@ import java.util.Properties;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class ProcessUtil {
-    private static final Logger s_logger = Logger.getLogger(ProcessUtil.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(ProcessUtil.class.getName());
 
     // paths cannot be hardcoded
     public static void pidCheck(String pidDir, String run) throws ConfigurationException {

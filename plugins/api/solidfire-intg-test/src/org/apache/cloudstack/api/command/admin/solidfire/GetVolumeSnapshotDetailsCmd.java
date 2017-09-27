@@ -20,7 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
@@ -34,7 +35,7 @@ import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 
 public class GetVolumeSnapshotDetailsCmd extends BaseCmd {
-    private static final Logger LOGGER = Logger.getLogger(GetVolumeSnapshotDetailsCmd.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(GetVolumeSnapshotDetailsCmd.class.getName());
     private static final String NAME = "getvolumesnapshotdetailsresponse";
 
     @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.STRING, description = "CloudStack Snapshot UUID", required = true)

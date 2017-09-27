@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsSetTagAndFlowAnswer;
@@ -53,7 +54,7 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  StartCommand.class)
 public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixStartCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixStartCommandWrapper.class);
 
     @Override
     public Answer execute(final StartCommand command, final CitrixResourceBase citrixResourceBase) {

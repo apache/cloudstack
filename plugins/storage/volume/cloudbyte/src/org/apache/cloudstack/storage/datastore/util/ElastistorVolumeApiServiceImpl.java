@@ -26,7 +26,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ListResponse;
@@ -47,7 +48,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 public class ElastistorVolumeApiServiceImpl extends ManagerBase implements ElastistorVolumeApiService {
-    private static final Logger s_logger = Logger.getLogger(ElastistorVolumeApiServiceImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ElastistorVolumeApiServiceImpl.class);
 
     @Inject
     protected VolumeDao _volsDao;

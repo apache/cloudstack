@@ -46,7 +46,8 @@ import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -92,7 +93,7 @@ import java.util.Set;
 @Local(value = {CertService.class})
 public class CertServiceImpl implements CertService {
 
-    private static final Logger s_logger = Logger.getLogger(CertServiceImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(CertServiceImpl.class);
 
     @Inject
     AccountManager _accountMgr;

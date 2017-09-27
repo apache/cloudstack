@@ -52,7 +52,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -60,7 +61,7 @@ import com.google.common.base.Strings;
 
 public class UriUtils {
 
-    public static final Logger s_logger = Logger.getLogger(UriUtils.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UriUtils.class.getName());
 
     public static String formNfsUri(String host, String path) {
         try {

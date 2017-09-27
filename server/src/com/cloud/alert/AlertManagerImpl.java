@@ -39,7 +39,8 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
@@ -87,8 +88,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
-    private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");
+    private static final Logger s_logger = LogManager.getLogger(AlertManagerImpl.class.getName());
+    private static final Logger s_alertsLogger = LogManager.getLogger("org.apache.cloudstack.alerts");
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 

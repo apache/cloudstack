@@ -47,7 +47,8 @@ import org.apache.cloudstack.utils.graphite.GraphiteClient;
 import org.apache.cloudstack.utils.graphite.GraphiteException;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -150,7 +151,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-    public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(StatsCollector.class.getName());
 
     static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
             "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);

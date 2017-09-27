@@ -24,7 +24,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -47,7 +48,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * Current code base uses blocking calls to wait for job completion
  */
 public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDispatcher {
-    private static final Logger s_logger = Logger.getLogger(VmWorkJobWakeupDispatcher.class);
+    private static final Logger s_logger = LogManager.getLogger(VmWorkJobWakeupDispatcher.class);
 
     @Inject
     private VmWorkJobDao _workjobDao;

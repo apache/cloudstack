@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,7 +34,7 @@ import com.cloud.user.User;
             description = "This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user",
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RegisterCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(RegisterCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(RegisterCmd.class.getName());
 
     private static final String s_name = "registeruserkeysresponse";
 

@@ -31,14 +31,15 @@ import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDrive
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverPowerCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 public final class NestedCloudStackOutOfBandManagementDriver extends AdapterBase implements OutOfBandManagementDriver {
-    private static final Logger LOG = Logger.getLogger(NestedCloudStackOutOfBandManagementDriver.class);
+    private static final Logger LOG = LogManager.getLogger(NestedCloudStackOutOfBandManagementDriver.class);
 
     public OutOfBandManagementDriverResponse execute(final OutOfBandManagementDriverCommand cmd) {
         OutOfBandManagementDriverResponse response = new OutOfBandManagementDriverResponse(null, "Unsupported Command", false);

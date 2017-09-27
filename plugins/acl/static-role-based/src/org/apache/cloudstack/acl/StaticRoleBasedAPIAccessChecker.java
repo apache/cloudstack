@@ -25,7 +25,8 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 
@@ -41,7 +42,7 @@ import com.cloud.utils.component.PluggableService;
 // based on the account type, access is granted
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
-    protected static final Logger LOGGER = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
+    protected static final Logger LOGGER = LogManager.getLogger(StaticRoleBasedAPIAccessChecker.class);
 
     private Set<String> commandPropertyFiles = new HashSet<String>();
     private Set<String> commandsPropertiesOverrides = new HashSet<String>();

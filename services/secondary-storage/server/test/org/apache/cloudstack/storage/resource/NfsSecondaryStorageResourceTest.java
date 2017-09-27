@@ -18,10 +18,14 @@
  */
 package org.apache.cloudstack.storage.resource;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.StringWriter;
+
 import com.cloud.test.TestAppender;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,10 +34,6 @@ import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.StringWriter;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.syslog;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -26,13 +27,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.net.SyslogAppender;
-import org.apache.log4j.spi.LoggingEvent;
-
 import com.cloud.utils.net.NetUtils;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.appender.SyslogAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.DefaultConfiguration;
+import org.apache.logging.log4j.core.filter.ThresholdFilter;
+import org.apache.logging.log4j.core.impl.Log4jLogEvent;
+import org.apache.logging.log4j.core.net.Facility;
+import org.apache.logging.log4j.message.Message;
+import org.apache.logging.log4j.message.MessageFormatMessage;
 
-public class AlertsSyslogAppender extends AppenderSkeleton {
+public class AlertsSyslogAppender extends AbstractAppender {
     String _syslogHosts = null;
     String _delimiter = ",";
     List<String> _syslogHostsList = null;
@@ -50,7 +59,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
     public static final String MESSAGE_DELIMITER_STRING = "   ";
     //add the alertType in this array it its level needs to be set to critical
     private static final int[] criticalAlerts = {7, 8, 9, 10, 11, 12, 13, 15, 16, 19, 20, 27};
-    private static final Map<Integer, String> alertsMap;
+    static final Map<Integer, String> alertsMap;
 
     static {
         Map<Integer, String> aMap = new HashMap<Integer, String>(27);
@@ -86,42 +95,37 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
         alertsMap = Collections.unmodifiableMap(aMap);
     }
 
+    protected AlertsSyslogAppender(String name, Layout<? extends Serializable> layout) {
+            super(name, ThresholdFilter.createFilter(Level.TRACE, null, null), layout);
+    }
+
     @Override
-    protected void append(LoggingEvent event) {
-        if (!isAsSevereAsThreshold(event.getLevel())) {
+    public void append(LogEvent event) {
+        if (isFiltered(event)) {
             return;
         }
 
         if (_syslogAppenders != null && !_syslogAppenders.isEmpty()) {
             try {
-                String logMessage = event.getRenderedMessage();
+                String logMessage = event.getMessage().getFormattedMessage();
                 if (logMessage.contains("alertType") && logMessage.contains("message")) {
                     parseMessage(logMessage);
                     String syslogMessage = createSyslogMessage();
+                    // TODO this might need another type of message
+                    Message passOnMessage = new MessageFormatMessage(syslogMessage);
 
-                    LoggingEvent syslogEvent = new LoggingEvent(event.getFQNOfLoggerClass(), event.getLogger(), event.getLevel(), syslogMessage, null);
+                    LogEvent syslogEvent = new Log4jLogEvent(event.getLoggerName(), null, event.getLoggerFqcn(), event.getLevel(), passOnMessage, null, event.getThrown());
 
                     for (SyslogAppender syslogAppender : _syslogAppenders) {
                         syslogAppender.append(syslogEvent);
                     }
                 }
             } catch (Exception e) {
-                errorHandler.error(e.getMessage());
+                getHandler().error(e.getMessage());
             }
         }
     }
 
-    @Override
-    synchronized public void close() {
-        for (SyslogAppender syslogAppender : _syslogAppenders) {
-            syslogAppender.close();
-        }
-    }
-
-    @Override
-    public boolean requiresLayout() {
-        return true;
-    }
 
     void setSyslogAppenders() {
         if (_syslogAppenders == null) {
@@ -137,12 +141,18 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
 
         if (!validateIpAddresses()) {
             reset();
-            errorHandler.error(" Invalid format for the IP Addresses parameter ");
+            getHandler().error(" Invalid format for the IP Addresses parameter ");
             return;
         }
 
         for (String syslogHost : _syslogHostsList) {
-            _syslogAppenders.add(new SyslogAppender(getLayout(), syslogHost, SyslogAppender.getFacility(_facility)));
+            SyslogAppender.Builder builder = SyslogAppender.newSyslogAppenderBuilder();
+            builder.setAppName(getName());
+            builder.setFacility(Facility.toFacility(getFacility()));
+            Configuration configuration = new DefaultConfiguration();
+
+            SyslogAppender app = builder.build();
+            _syslogAppenders.add(app);
         }
     }
 
@@ -248,10 +258,10 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
             if (sysMessage != null) {
                 message.append("message").append(_keyValueDelimiter).append(" ").append(sysMessage);
             } else {
-                errorHandler.error("What is the use of alert without message ");
+                getHandler().error("What is the use of alert without message ");
             }
         } else {
-            errorHandler.error("Invalid alert Type ");
+            getHandler().error("Invalid alert Type ");
         }
 
         return message.toString();
@@ -282,7 +292,9 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
         _facility = facility;
         if (_syslogAppenders != null && !_syslogAppenders.isEmpty()) {
             for (SyslogAppender syslogAppender : _syslogAppenders) {
-                syslogAppender.setFacility(facility);
+
+                // TODO Double check this functionaly; probably won't work :(
+//                syslogAppender.setLayout(this.getLayout());
             }
         }
     }

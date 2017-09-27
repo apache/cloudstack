@@ -18,7 +18,8 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
@@ -32,7 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
-    private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
+    private static final Logger s_logger = LogManager.getLogger(KVMHAMonitor.class);
     private final Map<String, NfsStoragePool> _storagePool = new ConcurrentHashMap<String, NfsStoragePool>();
 
     private final String _hostIP; /* private ip address */

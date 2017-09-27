@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -36,7 +37,7 @@ import com.xensource.xenapi.Types.XenAPIException;
 @ResourceWrapper(handles =  PvlanSetupCommand.class)
 public final class CitrixPvlanSetupCommandWrapper extends CommandWrapper<PvlanSetupCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixPvlanSetupCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixPvlanSetupCommandWrapper.class);
 
     @Override
     public Answer execute(final PvlanSetupCommand command, final CitrixResourceBase citrixResourceBase) {

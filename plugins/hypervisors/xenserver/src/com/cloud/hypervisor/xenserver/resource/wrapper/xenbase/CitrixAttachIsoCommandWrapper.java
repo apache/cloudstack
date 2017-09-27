@@ -21,7 +21,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -40,7 +41,7 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  AttachIsoCommand.class)
 public final class CitrixAttachIsoCommandWrapper extends CommandWrapper<AttachIsoCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixAttachIsoCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixAttachIsoCommandWrapper.class);
 
     @Override
     public Answer execute(final AttachIsoCommand command, final CitrixResourceBase citrixResourceBase) {

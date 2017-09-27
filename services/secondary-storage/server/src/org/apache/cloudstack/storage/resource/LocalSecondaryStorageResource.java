@@ -21,7 +21,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -53,7 +54,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.component.ComponentContext;
 
 public class LocalSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
-    private static final Logger s_logger = Logger.getLogger(LocalSecondaryStorageResource.class);
+    private static final Logger s_logger = LogManager.getLogger(LocalSecondaryStorageResource.class);
     int _timeout;
 
     String _instance;

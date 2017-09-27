@@ -19,7 +19,8 @@ package com.cloud.hypervisor.vmware.mo;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.DatastoreHostMount;
 import com.vmware.vim25.DatastoreSummary;
@@ -41,7 +42,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
 
 public class DatastoreMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(DatastoreMO.class);
+    private static final Logger s_logger = LogManager.getLogger(DatastoreMO.class);
 
     private String _name;
     private Pair<DatacenterMO, String> _ownerDc;

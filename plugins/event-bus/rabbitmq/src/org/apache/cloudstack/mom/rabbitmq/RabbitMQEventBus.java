@@ -31,7 +31,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.rabbitmq.client.BlockedListener;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
@@ -94,7 +95,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private ExecutorService executorService;
     private static DisconnectHandler disconnectHandler;
     private static BlockedConnectionHandler blockedConnectionHandler;
-    private static final Logger s_logger = Logger.getLogger(RabbitMQEventBus.class);
+    private static final Logger s_logger = LogManager.getLogger(RabbitMQEventBus.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

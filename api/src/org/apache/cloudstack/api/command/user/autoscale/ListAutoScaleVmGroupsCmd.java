@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +40,7 @@ import com.cloud.network.as.AutoScaleVmGroup;
 @APICommand(name = "listAutoScaleVmGroups", description = "Lists autoscale vm groups.", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListAutoScaleVmGroupsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListAutoScaleVmGroupsCmd.class.getName());
 
     private static final String s_name = "listautoscalevmgroupsresponse";
 

@@ -30,7 +30,8 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -143,7 +144,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         full, linked
     }
 
-    private static final Logger s_logger = Logger.getLogger(VolumeOrchestrator.class);
+    private static final Logger s_logger = LogManager.getLogger(VolumeOrchestrator.class);
 
     @Inject
     EntityManager _entityMgr;

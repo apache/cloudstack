@@ -18,7 +18,8 @@ package org.apache.cloudstack.api.command.admin.usage;
 
 import java.util.Date;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +38,7 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class GenerateUsageRecordsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(GenerateUsageRecordsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(GenerateUsageRecordsCmd.class.getName());
 
     private static final String s_name = "generateusagerecordsresponse";
 

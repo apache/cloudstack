@@ -28,7 +28,8 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Optional;
 import com.google.gson.FieldNamingPolicy;
@@ -44,7 +45,7 @@ import com.google.gson.JsonDeserializer;
  */
 public class RESTServiceConnector {
 
-    private static final Logger s_logger = Logger.getLogger(RESTServiceConnector.class);
+    private static final Logger s_logger = LogManager.getLogger(RESTServiceConnector.class);
 
     private static final Optional<String> ABSENT = Optional.absent();
 

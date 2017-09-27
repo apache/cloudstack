@@ -17,7 +17,8 @@
 
 package org.apache.cloudstack.api.command.admin.vm;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -37,7 +38,7 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ResetVMSSHKeyCmdByAdmin extends ResetVMSSHKeyCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ResetVMSSHKeyCmdByAdmin.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ResetVMSSHKeyCmdByAdmin.class.getName());
 
 
     @Override

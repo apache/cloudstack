@@ -20,7 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.api.ACL;
@@ -43,7 +44,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "attachIAMPolicyToAccount", description = "attach iam policy to accounts", responseObject = SuccessResponse.class)
 public class AttachIAMPolicyToAccountCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AttachIAMPolicyToAccountCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(AttachIAMPolicyToAccountCmd.class.getName());
     private static final String s_name = "attachiampolicytoaccountresponse";
 
     @Inject

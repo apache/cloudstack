@@ -33,13 +33,14 @@ import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.provider.HAProvider;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 
 public abstract class HAAbstractHostProvider extends AdapterBase implements HAProvider<Host> {
 
-    private final static Logger LOG = Logger.getLogger(HAAbstractHostProvider.class);
+    private final static Logger LOG = LogManager.getLogger(HAAbstractHostProvider.class);
 
     @Inject
     private AlertManager alertManager;

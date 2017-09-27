@@ -26,7 +26,8 @@ import com.cloud.network.NetworkModel;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -38,7 +39,7 @@ import java.util.Map;
 
 public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected Map<String, String> _params;
-    private static final Logger s_logger = Logger.getLogger(DiscovererBase.class);
+    private static final Logger s_logger = LogManager.getLogger(DiscovererBase.class);
     @Inject
     protected ClusterDao _clusterDao;
     @Inject

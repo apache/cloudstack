@@ -18,7 +18,8 @@ package org.apache.cloudstack.api;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -35,7 +36,7 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
 
     protected Logger getLogger() {
-        return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class);
+        return LogManager.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class);
     }
 
     protected String getResponseName() {

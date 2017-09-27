@@ -25,12 +25,13 @@ import net.juniper.contrail.api.types.InstanceIp;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 
 public class InstanceIpModel extends ModelObjectBase {
-    private static final Logger s_logger = Logger.getLogger(InstanceIpModel.class);
+    private static final Logger s_logger = LogManager.getLogger(InstanceIpModel.class);
 
     private String _name;
     private String _uuid;

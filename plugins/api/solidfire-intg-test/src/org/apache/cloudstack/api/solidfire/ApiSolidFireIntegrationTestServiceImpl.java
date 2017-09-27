@@ -16,19 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.solidfire;
 
-import java.util.List;
 import java.util.ArrayList;
-
-import org.apache.cloudstack.api.command.admin.solidfire.GetPathForVolumeCmd;
-// import org.apache.log4j.Logger;
-import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireAccountIdCmd;
-import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireVolumeAccessGroupIdCmd;
-import org.apache.cloudstack.api.command.admin.solidfire.GetVolumeSnapshotDetailsCmd;
-import org.apache.cloudstack.api.command.admin.solidfire.GetVolumeiScsiNameCmd;
-import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireVolumeSizeCmd;
-import org.springframework.stereotype.Component;
+import java.util.List;
 
 import com.cloud.utils.component.AdapterBase;
+import org.apache.cloudstack.api.command.admin.solidfire.GetPathForVolumeCmd;
+import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireAccountIdCmd;
+import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireVolumeAccessGroupIdCmd;
+import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireVolumeSizeCmd;
+import org.apache.cloudstack.api.command.admin.solidfire.GetVolumeSnapshotDetailsCmd;
+import org.apache.cloudstack.api.command.admin.solidfire.GetVolumeiScsiNameCmd;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ApiSolidFireIntegrationTestServiceImpl extends AdapterBase implements ApiSolidFireIntegrationTestService {

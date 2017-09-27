@@ -32,14 +32,15 @@ import net.juniper.contrail.api.types.ServiceTemplateType;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ServiceInstanceModel extends ModelObjectBase {
-    private static final Logger s_logger = Logger.getLogger(ServiceInstanceModel.class);
+    private static final Logger s_logger = LogManager.getLogger(ServiceInstanceModel.class);
 
     private String _uuid;
     private String _fqName;

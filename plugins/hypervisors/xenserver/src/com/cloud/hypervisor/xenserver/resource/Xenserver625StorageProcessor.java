@@ -46,7 +46,8 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import java.io.File;
@@ -59,7 +60,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
-    private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
+    private static final Logger s_logger = LogManager.getLogger(XenServerStorageProcessor.class);
 
     public Xenserver625StorageProcessor(final CitrixResourceBase resource) {
         super(resource);

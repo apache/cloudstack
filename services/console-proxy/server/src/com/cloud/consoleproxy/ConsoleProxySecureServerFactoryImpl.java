@@ -21,7 +21,8 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -35,7 +36,7 @@ import java.net.InetSocketAddress;
 import java.security.KeyStore;
 
 public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFactory {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxySecureServerFactoryImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxySecureServerFactoryImpl.class);
 
     private SSLContext sslContext = null;
 

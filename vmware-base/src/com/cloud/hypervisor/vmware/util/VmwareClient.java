@@ -30,7 +30,8 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
@@ -65,7 +66,7 @@ import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
  *
  */
 public class VmwareClient {
-    private static final Logger s_logger = Logger.getLogger(VmwareClient.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareClient.class);
 
     private static class TrustAllTrustManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
 

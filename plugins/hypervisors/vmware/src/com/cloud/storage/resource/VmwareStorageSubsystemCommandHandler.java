@@ -21,7 +21,8 @@ package com.cloud.storage.resource;
 import java.io.File;
 import java.util.EnumMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -42,7 +43,7 @@ import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorC
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
 
-    private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
     private Integer _nfsVersion;

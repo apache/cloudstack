@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +33,7 @@ import com.cloud.user.Account;
 @APICommand(name = "updateServiceOffering", description = "Updates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateServiceOfferingCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateServiceOfferingCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpdateServiceOfferingCmd.class.getName());
     private static final String s_name = "updateserviceofferingresponse";
 
     /////////////////////////////////////////////////////

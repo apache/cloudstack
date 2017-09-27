@@ -23,7 +23,8 @@ import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterAnswer;
@@ -40,7 +41,7 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles = ConfigurePortForwardingRulesOnLogicalRouterCommand.class)
 public final class NiciraNvpConfigurePortForwardingRulesCommandWrapper extends CommandWrapper<ConfigurePortForwardingRulesOnLogicalRouterCommand, Answer, NiciraNvpResource> {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpConfigurePortForwardingRulesCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(NiciraNvpConfigurePortForwardingRulesCommandWrapper.class);
 
     @Override
     public Answer execute(final ConfigurePortForwardingRulesOnLogicalRouterCommand command, final NiciraNvpResource niciraNvpResource) {

@@ -27,7 +27,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -79,7 +80,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 
 public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
-    private static final Logger s_logger = Logger.getLogger(VmwareServerDiscoverer.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareServerDiscoverer.class);
 
     @Inject
     VmwareManager _vmwareMgr;

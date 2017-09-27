@@ -17,17 +17,18 @@
 
 package org.apache.cloudstack.alert.snmp;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.spi.ErrorCode;
-import org.apache.log4j.spi.LoggingEvent;
-
 import com.cloud.utils.net.NetUtils;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
 
-public class SnmpTrapAppender extends AppenderSkeleton {
+public class SnmpTrapAppender extends AbstractAppender {
     private String _delimiter = ",";
     private String _snmpManagerIpAddresses;
     private String _snmpManagerPorts;
@@ -43,12 +44,16 @@ public class SnmpTrapAppender extends AppenderSkeleton {
 
     List<SnmpHelper> _snmpHelpers = new ArrayList<SnmpHelper>();
 
+    protected SnmpTrapAppender(String name, Filter filter, Layout<? extends Serializable> layout) {
+        super(name, filter, layout);
+    }
+
     @Override
-    protected void append(LoggingEvent event) {
+    public void append(LogEvent event) {
         SnmpEnhancedPatternLayout snmpEnhancedPatternLayout;
 
         if (getLayout() == null) {
-            errorHandler.error("No layout set for the Appender named [" + getName() + ']', null, ErrorCode.MISSING_LAYOUT);
+            getHandler().error("No layout set for the Appender named [" + getName() + ']');
             return;
         }
 
@@ -58,7 +63,7 @@ public class SnmpTrapAppender extends AppenderSkeleton {
             return;
         }
 
-        if (!isAsSevereAsThreshold(event.getLevel())) {
+        if (isFiltered(event)) {
             return;
         }
 
@@ -69,7 +74,7 @@ public class SnmpTrapAppender extends AppenderSkeleton {
                 try {
                     helper.sendSnmpTrap(snmpTrapInfo);
                 } catch (Exception e) {
-                    errorHandler.error(e.getMessage());
+                    getHandler().error(e.getMessage());
                 }
             }
         }
@@ -97,13 +102,13 @@ public class SnmpTrapAppender extends AppenderSkeleton {
 
         if (!(_ipAddresses.size() == _communities.size() && _ipAddresses.size() == _ports.size())) {
             reset();
-            errorHandler.error(" size of ip addresses , communities, " + "and ports list doesn't match, " + "setting all to null");
+            getHandler().error(" size of ip addresses , communities, " + "and ports list doesn't match, " + "setting all to null");
             return;
         }
 
         if (!validateIpAddresses() || !validatePorts()) {
             reset();
-            errorHandler.error(" Invalid format for the IP Addresses or Ports parameter ");
+            getHandler().error(" Invalid format for the IP Addresses or Ports parameter ");
             return;
         }
 
@@ -114,7 +119,7 @@ public class SnmpTrapAppender extends AppenderSkeleton {
             try {
                 _snmpHelpers.add(new SnmpHelper(address, _communities.get(i)));
             } catch (Exception e) {
-                errorHandler.error(e.getMessage());
+                getHandler().error(e.getMessage());
             }
         }
     }
@@ -124,17 +129,6 @@ public class SnmpTrapAppender extends AppenderSkeleton {
         _communities = null;
         _ports = null;
         _snmpHelpers.clear();
-    }
-
-    @Override
-    public void close() {
-        if (!closed)
-            closed = true;
-    }
-
-    @Override
-    public boolean requiresLayout() {
-        return true;
     }
 
     private List<String> parse(String str) {

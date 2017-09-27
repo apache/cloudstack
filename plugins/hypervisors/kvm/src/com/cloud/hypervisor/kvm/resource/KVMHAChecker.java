@@ -20,13 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
-    private static final Logger s_logger = Logger.getLogger(KVMHAChecker.class);
+    private static final Logger s_logger = LogManager.getLogger(KVMHAChecker.class);
     private List<NfsStoragePool> _pools;
     private String _hostIP;
     private long _heartBeatCheckerTimeout = 360000; /* 6 minutes */

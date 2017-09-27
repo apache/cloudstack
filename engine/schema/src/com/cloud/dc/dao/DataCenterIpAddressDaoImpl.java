@@ -22,7 +22,8 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -39,7 +40,7 @@ import com.cloud.utils.net.NetUtils;
 @Component
 @DB
 public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddressVO, Long> implements DataCenterIpAddressDao {
-    private static final Logger s_logger = Logger.getLogger(DataCenterIpAddressDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(DataCenterIpAddressDaoImpl.class);
 
     private final SearchBuilder<DataCenterIpAddressVO> AllFieldsSearch;
     private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllIpCount;

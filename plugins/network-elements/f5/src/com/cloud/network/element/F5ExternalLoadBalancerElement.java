@@ -25,7 +25,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 
@@ -95,7 +96,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, IpDeployer,
         F5ExternalLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
 
-    private static final Logger s_logger = Logger.getLogger(F5ExternalLoadBalancerElement.class);
+    private static final Logger s_logger = LogManager.getLogger(F5ExternalLoadBalancerElement.class);
 
     @Inject
     NetworkModel _networkManager;

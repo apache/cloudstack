@@ -24,7 +24,8 @@ import java.util.Properties;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -48,7 +49,7 @@ import com.cloud.utils.db.DbProperties;
 
 @Component
 public class RegionManagerImpl extends ManagerBase implements RegionManager, Manager {
-    public static final Logger s_logger = Logger.getLogger(RegionManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(RegionManagerImpl.class);
 
     @Inject
     RegionDao _regionDao;

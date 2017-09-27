@@ -27,7 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import com.cloud.network.router.NetworkHelper;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 
@@ -115,7 +116,7 @@ import com.cloud.vm.dao.UserVmDao;
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
 NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider {
-    private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
+    private static final Logger s_logger = LogManager.getLogger(VirtualRouterElement.class);
     public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
     public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();

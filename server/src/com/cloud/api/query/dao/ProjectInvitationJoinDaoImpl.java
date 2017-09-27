@@ -19,7 +19,8 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -32,7 +33,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class ProjectInvitationJoinDaoImpl extends GenericDaoBase<ProjectInvitationJoinVO, Long> implements ProjectInvitationJoinDao {
-    public static final Logger s_logger = Logger.getLogger(ProjectInvitationJoinDaoImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(ProjectInvitationJoinDaoImpl.class);
 
     private SearchBuilder<ProjectInvitationJoinVO> piIdSearch;
 

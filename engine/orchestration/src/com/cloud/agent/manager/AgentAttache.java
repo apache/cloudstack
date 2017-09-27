@@ -33,7 +33,8 @@ import java.util.concurrent.TimeUnit;
 
 import com.cloud.agent.api.ModifySshKeysCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
@@ -65,7 +66,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  *  AgentAttache provides basic commands to be implemented.
  */
 public abstract class AgentAttache {
-    private static final Logger s_logger = Logger.getLogger(AgentAttache.class);
+    private static final Logger s_logger = LogManager.getLogger(AgentAttache.class);
 
     private static final ScheduledExecutorService s_listenerExecutor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("ListenerTimer"));
     private static final Random s_rand = new Random(System.currentTimeMillis());

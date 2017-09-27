@@ -28,7 +28,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.resource.SecondaryStorageDiscoverer;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -45,7 +46,7 @@ import com.cloud.host.Status;
 import com.cloud.storage.dao.SnapshotDao;
 
 public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer implements ResourceStateAdapter, Listener {
-    private static final Logger s_logger = Logger.getLogger(SimulatorSecondaryDiscoverer.class);
+    private static final Logger s_logger = LogManager.getLogger(SimulatorSecondaryDiscoverer.class);
     @Inject
     MockStorageManager _mockStorageMgr = null;
     @Inject

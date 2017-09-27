@@ -30,7 +30,8 @@ import java.util.Properties;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 
@@ -39,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class EncryptionSecretKeyChecker {
 
-    private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
+    private static final Logger s_logger = LogManager.getLogger(EncryptionSecretKeyChecker.class);
 
     // Two possible locations with the new packaging naming
     private static final String s_altKeyFile = "key";

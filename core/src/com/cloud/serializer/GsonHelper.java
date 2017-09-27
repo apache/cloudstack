@@ -21,7 +21,8 @@ package com.cloud.serializer;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,7 +41,7 @@ import com.cloud.agent.transport.Request.PortConfigListTypeAdaptor;
 import com.cloud.utils.Pair;
 
 public class GsonHelper {
-    private static final Logger s_logger = Logger.getLogger(GsonHelper.class);
+    private static final Logger s_logger = LogManager.getLogger(GsonHelper.class);
 
     protected static final Gson s_gson;
     protected static final Gson s_gogger;

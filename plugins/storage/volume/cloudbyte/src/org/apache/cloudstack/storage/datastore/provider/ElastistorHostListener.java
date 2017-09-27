@@ -43,7 +43,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -60,7 +61,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ElastistorHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
+    private static final Logger s_logger = LogManager.getLogger(DefaultHostListener.class);
     @Inject
     AgentManager agentMgr;
     @Inject

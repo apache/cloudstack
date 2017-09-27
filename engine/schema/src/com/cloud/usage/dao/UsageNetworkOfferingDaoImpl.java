@@ -26,7 +26,8 @@ import java.util.TimeZone;
 
 
 import com.cloud.exception.CloudException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageNetworkOfferingVO;
@@ -36,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOfferingVO, Long> implements UsageNetworkOfferingDao {
-    public static final Logger s_logger = Logger.getLogger(UsageNetworkOfferingDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UsageNetworkOfferingDaoImpl.class.getName());
 
     protected static final String UPDATE_DELETED =
         "UPDATE usage_network_offering SET deleted = ? WHERE account_id = ? AND vm_instance_id = ? AND network_offering_id = ? and deleted IS NULL";

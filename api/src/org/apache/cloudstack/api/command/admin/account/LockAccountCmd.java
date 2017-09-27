@@ -16,17 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.account;
 
-import java.util.logging.Logger;
-
+import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-
-import com.cloud.user.Account;
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @APICommand(name = "lockAccount",
             description = "This deprecated function used to locks an account. Look for the API DisableAccount instead",
@@ -35,7 +34,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class LockAccountCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(LockAccountCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(LockAccountCmd.class.getName());
 
     private static final String s_name = "lockaccountresponse";
 

@@ -27,7 +27,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.fsm.StateMachine2;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -70,7 +71,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGroupService, Manager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
-    public static final Logger s_logger = Logger.getLogger(AffinityGroupServiceImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(AffinityGroupServiceImpl.class);
     private String _name;
 
     @Inject

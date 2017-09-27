@@ -26,7 +26,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +49,7 @@ import com.cloud.vm.ConsoleProxyVO;
 
 public class ConsoleProxyManagerTest {
 
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerTest.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyManagerTest.class);
 
     @Mock
     GlobalLock globalLock;

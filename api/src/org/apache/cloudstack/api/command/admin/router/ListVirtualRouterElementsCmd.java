@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +44,7 @@ import com.cloud.network.element.VirtualRouterElementService;
 @APICommand(name = "listVirtualRouterElements", description = "Lists all available virtual router elements.", responseObject = VirtualRouterProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVirtualRouterElementsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListNetworkOfferingsCmd.class.getName());
     private static final String s_name = "listvirtualrouterelementsresponse";
 
     // TODO, VirtualRouterElementServer is not singleton in system!

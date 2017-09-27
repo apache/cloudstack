@@ -22,7 +22,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -46,7 +47,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "listF5LoadBalancers", responseObject = F5LoadBalancerResponse.class, description = "lists F5 load balancer devices",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListF5LoadBalancersCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListF5LoadBalancersCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListF5LoadBalancersCmd.class.getName());
     private static final String s_name = "listf5loadbalancerresponse";
     @Inject
     F5ExternalLoadBalancerElementService _f5DeviceManagerService;

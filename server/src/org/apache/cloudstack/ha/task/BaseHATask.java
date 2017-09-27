@@ -30,11 +30,12 @@ import org.apache.cloudstack.ha.provider.HACheckerException;
 import org.apache.cloudstack.ha.provider.HAFenceException;
 import org.apache.cloudstack.ha.provider.HAProvider;
 import org.apache.cloudstack.ha.provider.HARecoveryException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 
 public abstract class BaseHATask implements Callable<Boolean> {
-    public static final Logger LOG = Logger.getLogger(BaseHATask.class);
+    public static final Logger LOG = LogManager.getLogger(BaseHATask.class);
 
     private final HAResource resource;
     private final HAProvider<HAResource> haProvider;

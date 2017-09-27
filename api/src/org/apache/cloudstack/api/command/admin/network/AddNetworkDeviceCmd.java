@@ -20,7 +20,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
             responseObject = NetworkDeviceResponse.class,
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddNetworkDeviceCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddNetworkDeviceCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(AddNetworkDeviceCmd.class);
     private static final String s_name = "addnetworkdeviceresponse";
 
     // ///////////////////////////////////////////////////

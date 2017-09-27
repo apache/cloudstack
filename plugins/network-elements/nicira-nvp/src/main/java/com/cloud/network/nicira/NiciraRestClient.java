@@ -30,7 +30,8 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.rest.BasicRestClient;
 import com.cloud.utils.rest.CloudstackRESTException;
@@ -41,7 +42,7 @@ import com.cloud.utils.rest.HttpUriRequestBuilder;
 
 public class NiciraRestClient extends BasicRestClient {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraRestClient.class);
+    private static final Logger s_logger = LogManager.getLogger(NiciraRestClient.class);
 
     private static final String CONTENT_TYPE = HttpConstants.CONTENT_TYPE;
     private static final String TEXT_HTML_CONTENT_TYPE = HttpConstants.TEXT_HTML_CONTENT_TYPE;

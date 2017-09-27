@@ -36,7 +36,8 @@ import net.nuage.vsp.acs.client.common.RequestType;
 import net.nuage.vsp.acs.client.common.model.NuageVspEntity;
 import net.nuage.vsp.acs.client.exception.NuageVspException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Strings;
 
@@ -54,7 +55,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 
 public class NuageVspResource extends ManagerBase implements ServerResource, VspStatisticsMBean {
-    private static final Logger s_logger = Logger.getLogger(NuageVspResource.class);
+    private static final Logger s_logger = LogManager.getLogger(NuageVspResource.class);
 
     private String _guid;
     private String _zoneId;

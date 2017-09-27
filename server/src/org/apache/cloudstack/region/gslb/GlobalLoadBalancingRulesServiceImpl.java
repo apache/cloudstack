@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadBalancerRuleCmd;
@@ -72,7 +73,7 @@ import com.cloud.utils.net.NetUtils;
 @Local(value = {GlobalLoadBalancingRulesService.class})
 public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingRulesService {
 
-    private static final Logger s_logger = Logger.getLogger(GlobalLoadBalancingRulesServiceImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(GlobalLoadBalancingRulesServiceImpl.class);
 
     @Inject
     AccountManager _accountMgr;

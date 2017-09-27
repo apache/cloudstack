@@ -30,12 +30,13 @@ import net.juniper.contrail.api.ApiPropertyBase;
 import net.juniper.contrail.api.ObjectReference;
 import net.juniper.contrail.api.types.NetworkIpam;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ImmutableMap;
 
 public class ApiConnectorMockito implements ApiConnector {
-    private static final Logger s_logger = Logger.getLogger(ApiConnectorMockito.class);
+    private static final Logger s_logger = LogManager.getLogger(ApiConnectorMockito.class);
 
     static final Map<String, ApiObjectBase> object_map = new ImmutableMap.Builder<String, ApiObjectBase>().put("network-ipam:default-network-ipam", new NetworkIpam())
         .build();

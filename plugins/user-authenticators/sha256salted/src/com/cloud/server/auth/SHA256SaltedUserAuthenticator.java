@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
 import com.cloud.user.UserAccount;
@@ -35,7 +36,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SHA256SaltedUserAuthenticator extends AdapterBase implements UserAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(SHA256SaltedUserAuthenticator.class);
+    public static final Logger s_logger = LogManager.getLogger(SHA256SaltedUserAuthenticator.class);
     private static final String s_defaultPassword = "000000000000000000000000000=";
     private static final String s_defaultSalt = "0000000000000000000000000000000=";
     @Inject

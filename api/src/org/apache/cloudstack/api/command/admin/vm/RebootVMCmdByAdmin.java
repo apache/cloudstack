@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,7 +35,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "rebootVirtualMachine", description = "Reboots a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RebootVMCmdByAdmin extends RebootVMCmd {
-    public static final Logger s_logger = Logger.getLogger(RebootVMCmdByAdmin.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(RebootVMCmdByAdmin.class.getName());
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{

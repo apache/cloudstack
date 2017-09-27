@@ -18,7 +18,8 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsBladeResponse;
@@ -35,7 +36,7 @@ import com.cloud.user.Account;
 @APICommand(name = "listUcsBlades", description = "List ucs blades", responseObject = UcsBladeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUcsBladeCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUcsBladeCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(ListUcsBladeCmd.class);
 
     @Inject
     private UcsManager mgr;

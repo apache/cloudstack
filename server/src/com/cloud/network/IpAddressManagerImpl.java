@@ -29,7 +29,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -175,7 +176,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(IpAddressManagerImpl.class);
 
     @Inject
     NetworkOrchestrationService _networkMgr = null;

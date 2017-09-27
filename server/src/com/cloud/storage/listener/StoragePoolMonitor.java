@@ -20,7 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -47,7 +48,7 @@ import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolStatus;
 
 public class StoragePoolMonitor implements Listener {
-    private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
+    private static final Logger s_logger = LogManager.getLogger(StoragePoolMonitor.class);
     private final StorageManagerImpl _storageManager;
     private final PrimaryDataStoreDao _poolDao;
     private DataStoreProviderManager _dataStoreProviderMgr;

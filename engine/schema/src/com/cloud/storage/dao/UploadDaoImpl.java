@@ -19,7 +19,8 @@ package com.cloud.storage.dao;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.Upload.Mode;
@@ -31,7 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class UploadDaoImpl extends GenericDaoBase<UploadVO, Long> implements UploadDao {
-    public static final Logger s_logger = Logger.getLogger(UploadDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UploadDaoImpl.class.getName());
     protected final SearchBuilder<UploadVO> typeUploadStatusSearch;
     protected final SearchBuilder<UploadVO> typeHostAndUploadStatusSearch;
     protected final SearchBuilder<UploadVO> typeModeAndStatusSearch;

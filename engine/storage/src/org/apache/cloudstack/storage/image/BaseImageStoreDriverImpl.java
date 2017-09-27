@@ -26,7 +26,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.storage.Upload;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -60,7 +61,7 @@ import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.utils.net.Proxy;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
-    private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(BaseImageStoreDriverImpl.class);
     @Inject
     protected VMTemplateDao _templateDao;
     @Inject

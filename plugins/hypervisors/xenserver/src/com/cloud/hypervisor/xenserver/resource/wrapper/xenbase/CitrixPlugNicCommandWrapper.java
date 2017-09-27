@@ -21,7 +21,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PlugNicAnswer;
@@ -37,7 +38,7 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  PlugNicCommand.class)
 public final class CitrixPlugNicCommandWrapper extends CommandWrapper<PlugNicCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixPlugNicCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixPlugNicCommandWrapper.class);
 
     @Override
     public Answer execute(final PlugNicCommand command, final CitrixResourceBase citrixResourceBase) {

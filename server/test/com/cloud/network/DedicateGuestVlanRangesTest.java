@@ -32,7 +32,8 @@ import java.util.UUID;
 import com.cloud.user.User;
 import junit.framework.Assert;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +61,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 public class DedicateGuestVlanRangesTest {
 
-    private static final Logger s_logger = Logger.getLogger(DedicateGuestVlanRangesTest.class);
+    private static final Logger s_logger = LogManager.getLogger(DedicateGuestVlanRangesTest.class);
 
     NetworkServiceImpl networkService = new NetworkServiceImpl();
 

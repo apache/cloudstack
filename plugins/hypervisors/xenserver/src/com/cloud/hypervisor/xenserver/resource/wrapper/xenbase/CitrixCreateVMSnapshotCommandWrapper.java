@@ -25,7 +25,8 @@ import java.util.Set;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateVMSnapshotAnswer;
@@ -47,7 +48,7 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  CreateVMSnapshotCommand.class)
 public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<CreateVMSnapshotCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCreateVMSnapshotCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixCreateVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final CreateVMSnapshotCommand command, final CitrixResourceBase citrixResourceBase) {

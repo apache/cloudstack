@@ -38,7 +38,8 @@ import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -75,7 +76,7 @@ import com.cloud.vm.DiskProfile;
  * Storage related bits
  */
 public class Ovm3StorageProcessor implements StorageProcessor {
-    private final Logger LOGGER = Logger.getLogger(Ovm3StorageProcessor.class);
+    private final Logger LOGGER = LogManager.getLogger(Ovm3StorageProcessor.class);
     private Connection c;
     private OvmObject ovmObject = new OvmObject();
     private Ovm3StoragePool pool;

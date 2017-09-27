@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
@@ -34,7 +35,7 @@ import com.cloud.server.ResourceTag;
 @APICommand(name = "addResourceDetail", description = "Adds detail for the Resource.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddResourceDetailCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddResourceDetailCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(AddResourceDetailCmd.class.getName());
     private static final String s_name = "addresourcedetailresponse";
 
     /////////////////////////////////////////////////////

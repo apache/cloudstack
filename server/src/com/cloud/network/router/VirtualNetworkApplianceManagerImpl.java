@@ -42,7 +42,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -250,7 +251,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru, Listener,
 Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
-    private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject private EntityManager _entityMgr;
     @Inject private DataCenterDao _dcDao;

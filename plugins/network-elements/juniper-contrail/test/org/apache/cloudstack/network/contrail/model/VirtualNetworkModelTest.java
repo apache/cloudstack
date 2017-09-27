@@ -36,7 +36,8 @@ import net.juniper.contrail.api.types.VirtualNetworkPolicyType;
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
 import org.apache.cloudstack.network.contrail.management.ContrailManagerImpl;
 import org.apache.cloudstack.network.contrail.management.ModelDatabase;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,7 +48,7 @@ import com.cloud.network.dao.NetworkVO;
 
 public class VirtualNetworkModelTest extends TestCase {
 
-    private static final Logger s_logger = Logger.getLogger(VirtualNetworkModelTest.class);
+    private static final Logger s_logger = LogManager.getLogger(VirtualNetworkModelTest.class);
 
     private ModelController controller;
 

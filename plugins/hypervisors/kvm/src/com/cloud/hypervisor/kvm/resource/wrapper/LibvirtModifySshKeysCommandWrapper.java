@@ -24,7 +24,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.StringUtils;
 import com.cloud.agent.api.Answer;
@@ -37,7 +38,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  ModifySshKeysCommand.class)
 public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<ModifySshKeysCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtModifySshKeysCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtModifySshKeysCommandWrapper.class);
 
     @Override
     public Answer execute(final ModifySshKeysCommand command, final LibvirtComputingResource libvirtComputingResource) {

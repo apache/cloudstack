@@ -23,13 +23,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public abstract class Upgrade30xBase extends LegacyDbUpgrade {
 
-    final static Logger s_logger = Logger.getLogger(Upgrade30xBase.class);
+    final static Logger s_logger = LogManager.getLogger(Upgrade30xBase.class);
 
     protected String getNetworkLabelFromConfig(Connection conn, String name) {
         String sql = "SELECT value FROM `cloud`.`configuration` where name = ?";

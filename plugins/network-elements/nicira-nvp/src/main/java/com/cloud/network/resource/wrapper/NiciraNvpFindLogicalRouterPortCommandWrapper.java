@@ -23,7 +23,8 @@ import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.FindLogicalRouterPortAnswer;
@@ -39,7 +40,7 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  FindLogicalRouterPortCommand.class)
 public class NiciraNvpFindLogicalRouterPortCommandWrapper extends CommandWrapper<FindLogicalRouterPortCommand, Answer, NiciraNvpResource> {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpFindLogicalRouterPortCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(NiciraNvpFindLogicalRouterPortCommandWrapper.class);
 
     @Override
     public Answer execute(FindLogicalRouterPortCommand command, NiciraNvpResource niciraNvpResource) {

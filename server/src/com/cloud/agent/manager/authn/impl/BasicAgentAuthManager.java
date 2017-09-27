@@ -21,7 +21,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -37,7 +38,7 @@ import com.cloud.utils.component.AdapterBase;
 
 @Component
 public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorizer, StartupCommandProcessor {
-    private static final Logger s_logger = Logger.getLogger(BasicAgentAuthManager.class);
+    private static final Logger s_logger = LogManager.getLogger(BasicAgentAuthManager.class);
     @Inject
     HostDao _hostDao = null;
     @Inject

@@ -28,7 +28,8 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -51,7 +52,7 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long> implements VMTemplateHostDao {
-    public static final Logger s_logger = Logger.getLogger(VMTemplateHostDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(VMTemplateHostDaoImpl.class.getName());
     @Inject
     HostDao _hostDao;
     protected final SearchBuilder<VMTemplateHostVO> HostSearch;

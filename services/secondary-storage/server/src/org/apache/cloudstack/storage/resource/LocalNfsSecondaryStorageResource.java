@@ -19,7 +19,8 @@ package org.apache.cloudstack.storage.resource;
 import java.net.URI;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
@@ -33,7 +34,7 @@ import com.cloud.utils.script.Script;
 @Component
 public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResource {
 
-    private static final Logger s_logger = Logger.getLogger(LocalNfsSecondaryStorageResource.class);
+    private static final Logger s_logger = LogManager.getLogger(LocalNfsSecondaryStorageResource.class);
 
     public LocalNfsSecondaryStorageResource() {
         this._dlMgr = new DownloadManagerImpl();

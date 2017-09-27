@@ -18,7 +18,8 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
@@ -31,7 +32,7 @@ import com.cloud.utils.Pair;
  *
  */
 public class VmwareStorageLayoutHelper {
-    private static final Logger s_logger = Logger.getLogger(VmwareStorageLayoutHelper.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareStorageLayoutHelper.class);
 
     public static String[] getVmdkFilePairDatastorePath(DatastoreMO dsMo, String vmName, String vmdkName, VmwareStorageLayoutType layoutType, boolean linkedVmdk)
         throws Exception {

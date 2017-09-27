@@ -26,7 +26,8 @@ import java.util.TimeZone;
 
 
 import com.cloud.exception.CloudException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageLoadBalancerPolicyVO;
@@ -36,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBalancerPolicyVO, Long> implements UsageLoadBalancerPolicyDao {
-    public static final Logger s_logger = Logger.getLogger(UsageLoadBalancerPolicyDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UsageLoadBalancerPolicyDaoImpl.class.getName());
 
     protected static final String REMOVE_BY_USERID_LBID = "DELETE FROM usage_load_balancer_policy WHERE account_id = ? AND id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_load_balancer_policy SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";

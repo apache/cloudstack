@@ -19,7 +19,8 @@ package com.cloud.cluster.dao;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostPeerVO;
@@ -30,7 +31,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementServerHostPeerVO, Long> implements ManagementServerHostPeerDao {
-    private static final Logger s_logger = Logger.getLogger(ManagementServerHostPeerDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ManagementServerHostPeerDaoImpl.class);
 
     private final SearchBuilder<ManagementServerHostPeerVO> ClearPeerSearch;
     private final SearchBuilder<ManagementServerHostPeerVO> FindForUpdateSearch;

@@ -33,7 +33,8 @@ import net.juniper.contrail.api.types.VirtualNetworkPolicyType;
 import net.juniper.contrail.api.types.VnSubnetsType;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
@@ -44,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public class VirtualNetworkModel extends ModelObjectBase {
-    private static final Logger s_logger = Logger.getLogger(VirtualNetworkModel.class);
+    private static final Logger s_logger = LogManager.getLogger(VirtualNetworkModel.class);
 
     private String _uuid;
     private long _id;

@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.agentlb.HostTransferMapVO;
@@ -34,7 +35,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @DB
 public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Long> implements HostTransferMapDao {
-    private static final Logger s_logger = Logger.getLogger(HostTransferMapDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(HostTransferMapDaoImpl.class);
 
     protected SearchBuilder<HostTransferMapVO> AllFieldsSearch;
     protected SearchBuilder<HostTransferMapVO> IntermediateStateSearch;

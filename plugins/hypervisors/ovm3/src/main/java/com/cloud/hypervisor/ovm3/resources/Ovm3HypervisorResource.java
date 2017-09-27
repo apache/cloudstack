@@ -26,7 +26,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -110,8 +111,7 @@ import com.cloud.vm.VirtualMachine.State;
 @Local(value = HypervisorResource.class)
 public class Ovm3HypervisorResource extends ServerResourceBase implements
         HypervisorResource {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3HypervisorResource.class);
+    private static final Logger LOGGER = LogManager.getLogger(Ovm3HypervisorResource.class);
     @Inject
     private VirtualRoutingResource vrResource;
     private StorageSubsystemCommandHandler storageHandler;

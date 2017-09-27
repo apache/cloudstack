@@ -23,11 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 
 public class Network extends OvmObject {
-    private static final Logger LOGGER = Logger.getLogger(Network.class);
+    private static final Logger LOGGER = LogManager.getLogger(Network.class);
     private static final String START = "start";
     private static final String BRIDGE = "Bridge";
     private static final String ADDRESS = "Address";

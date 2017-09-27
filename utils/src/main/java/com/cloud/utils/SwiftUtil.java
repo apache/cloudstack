@@ -29,7 +29,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Formatter;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
@@ -39,7 +40,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 public class SwiftUtil {
-    private static Logger logger = Logger.getLogger(SwiftUtil.class);
+    private static Logger logger = LogManager.getLogger(SwiftUtil.class);
     private static final long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 

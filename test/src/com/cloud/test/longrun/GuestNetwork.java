@@ -19,14 +19,15 @@ package com.cloud.test.longrun;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.NDC;
 
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
 public class GuestNetwork implements Runnable {
-    public static final Logger s_logger = Logger.getLogger(GuestNetwork.class.getClass());
+    public static final Logger s_logger = LogManager.getLogger(GuestNetwork.class.getClass());
 
     private String publicIp;
     private ArrayList<VirtualMachine> virtualMachines;

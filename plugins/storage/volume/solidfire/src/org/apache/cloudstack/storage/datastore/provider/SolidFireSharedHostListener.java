@@ -32,7 +32,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -52,7 +53,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireSharedHostListener implements HypervisorHostListener {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireSharedHostListener.class);
+    private static final Logger LOGGER = LogManager.getLogger(SolidFireSharedHostListener.class);
 
     @Inject private AgentManager agentMgr;
     @Inject private AlertManager alertMgr;

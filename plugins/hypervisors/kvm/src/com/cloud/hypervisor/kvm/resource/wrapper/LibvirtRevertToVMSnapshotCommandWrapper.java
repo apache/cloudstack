@@ -22,7 +22,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.util.List;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainSnapshot;
@@ -40,7 +41,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 @ResourceWrapper(handles =  RevertToVMSnapshotCommand.class)
 public final class LibvirtRevertToVMSnapshotCommandWrapper extends CommandWrapper<RevertToVMSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRevertToVMSnapshotCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtRevertToVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final RevertToVMSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {

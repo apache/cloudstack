@@ -19,14 +19,12 @@
 
 package com.cloud.agent.transport;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import org.apache.logging.log4j.Logger;
 
 public class LoggingExclusionStrategy implements ExclusionStrategy {
     Logger _logger = null;

@@ -22,7 +22,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
@@ -43,7 +44,7 @@ import com.cloud.user.AccountService;
 
 public class RoleBasedEntityAccessChecker extends DomainChecker implements SecurityChecker {
 
-    private static final Logger s_logger = Logger.getLogger(RoleBasedEntityAccessChecker.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(RoleBasedEntityAccessChecker.class.getName());
 
     @Inject
     AccountService _accountService;

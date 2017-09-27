@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +44,7 @@ import com.cloud.server.api.response.netapp.ListLunsCmdResponse;
 @APICommand(name = "listLunsOnFiler", description = "List LUN", responseObject = ListLunsCmdResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLunsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ListLunsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListLunsCmd.class.getName());
     private static final String s_name = "listlunresponse";
 
     @Parameter(name = ApiConstants.POOL_NAME, type = CommandType.STRING, required = true, description = "pool name.")

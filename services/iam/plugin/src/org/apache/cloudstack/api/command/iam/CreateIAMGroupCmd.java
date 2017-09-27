@@ -18,7 +18,8 @@ package org.apache.cloudstack.api.command.iam;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +40,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "createIAMGroup", responseObject = IAMGroupResponse.class, description = "Creates an IAM group")
 public class CreateIAMGroupCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateIAMGroupCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateIAMGroupCmd.class.getName());
 
     private static final String s_name = "createiamgroupresponse";
 

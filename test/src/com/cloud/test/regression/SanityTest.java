@@ -16,14 +16,15 @@
 // under the License.
 package com.cloud.test.regression;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class SanityTest extends TestCase {
 
-    public static final Logger s_logger = Logger.getLogger(SanityTest.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(SanityTest.class.getName());
 
     public SanityTest() {
         this.setClient();

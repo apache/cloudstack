@@ -20,7 +20,8 @@ package com.cloud.upgrade.dao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.sql.Connection;
@@ -33,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class Upgrade4930to41000 implements DbUpgrade {
-    final static Logger LOG = Logger.getLogger(Upgrade4930to41000.class);
+    final static Logger LOG = LogManager.getLogger(Upgrade4930to41000.class);
 
     public static class MemoryValues {
         long max;

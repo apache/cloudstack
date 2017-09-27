@@ -146,7 +146,8 @@ import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -172,7 +173,7 @@ import java.util.concurrent.TimeUnit;
 
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
-    public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(AccountManagerImpl.class);
 
     @Inject
     private AccountDao _accountDao;

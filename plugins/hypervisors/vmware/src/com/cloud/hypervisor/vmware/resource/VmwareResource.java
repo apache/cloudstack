@@ -44,8 +44,9 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.NDC;
 import org.apache.commons.lang.StringUtils;
 
 import com.google.gson.Gson;
@@ -303,7 +304,7 @@ import com.vmware.vim25.VirtualMachineToolsStatus;
 import com.cloud.agent.api.GetVmIpAddressCommand;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
-    private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareResource.class);
 
     protected String _name;
 

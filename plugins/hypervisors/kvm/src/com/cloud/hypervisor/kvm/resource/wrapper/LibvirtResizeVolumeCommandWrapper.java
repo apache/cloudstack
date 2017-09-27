@@ -20,7 +20,8 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.StorageVol;
@@ -45,7 +46,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  ResizeVolumeCommand.class)
 public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<ResizeVolumeCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtResizeVolumeCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtResizeVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final ResizeVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {

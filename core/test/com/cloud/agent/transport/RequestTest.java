@@ -21,9 +21,13 @@ package com.cloud.agent.transport;
 
 import java.nio.ByteBuffer;
 import junit.framework.TestCase;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.junit.Assert;
 import org.mockito.Mockito;
 
@@ -58,7 +62,7 @@ import com.cloud.template.VirtualMachineTemplate;
  */
 
 public class RequestTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(RequestTest.class);
+    private static final Logger s_logger = LogManager.getLogger(RequestTest.class);
 
     public void testSerDeser() {
         s_logger.info("Testing serializing and deserializing works as expected");
@@ -74,10 +78,12 @@ public class RequestTest extends TestCase {
         Request sreq = new Request(2, 3, new Command[] {cmd1, cmd2, cmd3}, true, true);
         sreq.setSequence(892403717);
 
-        Logger logger = Logger.getLogger(GsonHelper.class);
+        Logger logger = LogManager.getLogger(GsonHelper.class);
         Level level = logger.getLevel();
 
-        logger.setLevel(Level.DEBUG);
+        Map<String,Level> levels = new HashMap<>();
+        levels.put(GsonHelper.class.getName(),Level.DEBUG);
+        org.apache.logging.log4j.core.config.Configurator.setLevel(levels);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
@@ -85,7 +91,8 @@ public class RequestTest extends TestCase {
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        logger.setLevel(Level.TRACE);
+        levels.put(GsonHelper.class.getName(),Level.TRACE);
+        org.apache.logging.log4j.core.config.Configurator.setLevel(levels);
         log = sreq.log("Trace", true, Level.TRACE);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
@@ -93,11 +100,13 @@ public class RequestTest extends TestCase {
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        logger.setLevel(Level.INFO);
+        levels.put(GsonHelper.class.getName(),Level.INFO);
+        org.apache.logging.log4j.core.config.Configurator.setLevel(levels);
         log = sreq.log("Info", true, Level.INFO);
         assert (log == null);
 
-        logger.setLevel(level);
+        levels.put(GsonHelper.class.getName(),level);
+        org.apache.logging.log4j.core.config.Configurator.setLevel(levels);
 
         byte[] bytes = sreq.getBytes();
 
@@ -217,22 +226,26 @@ public class RequestTest extends TestCase {
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         Request sreq = new Request(2, 3, new Command[] {cmd3}, true, true);
         sreq.setSequence(1);
-        Logger logger = Logger.getLogger(GsonHelper.class);
+        Logger logger = LogManager.getLogger(GsonHelper.class);
         Level level = logger.getLevel();
 
-        logger.setLevel(Level.DEBUG);
+        Map<String, Level> levels = new HashMap<>();
+        levels.put(GsonHelper.class.getName(),Level.DEBUG);
+        org.apache.logging.log4j.core.config.Configurator.setLevel(levels);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log == null);
 
         log = sreq.log("Debug", false, Level.DEBUG);
         assert (log != null);
 
-        logger.setLevel(Level.TRACE);
+        levels.put(GsonHelper.class.getName(),Level.TRACE);
+        org.apache.logging.log4j.core.config.Configurator.setLevel(levels);
         log = sreq.log("Trace", true, Level.TRACE);
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
         s_logger.debug(log);
 
-        logger.setLevel(level);
+        levels.put(GsonHelper.class.getName(),level);
+        org.apache.logging.log4j.core.config.Configurator.setLevel(levels);
     }
 
     protected void compareRequest(Request req1, Request req2) {

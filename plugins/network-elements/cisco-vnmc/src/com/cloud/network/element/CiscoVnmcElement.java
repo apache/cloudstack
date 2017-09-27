@@ -31,7 +31,8 @@ import javax.persistence.EntityExistsException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -135,7 +136,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public class CiscoVnmcElement extends AdapterBase implements SourceNatServiceProvider, FirewallServiceProvider, PortForwardingServiceProvider, IpDeployer,
         StaticNatServiceProvider, ResourceStateAdapter, NetworkElement, CiscoVnmcElementService, CiscoAsa1000vService {
-    private static final Logger s_logger = Logger.getLogger(CiscoVnmcElement.class);
+    private static final Logger s_logger = LogManager.getLogger(CiscoVnmcElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject

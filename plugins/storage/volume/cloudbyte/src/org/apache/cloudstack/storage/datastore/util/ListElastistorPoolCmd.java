@@ -27,12 +27,13 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @APICommand(name = "listElastistorPool", description = "Lists the pools of elastistor",
         responseObject = ListElastistorPoolResponse.class)
 public class ListElastistorPoolCmd extends BaseCmd {
-    public static final Logger  s_logger = Logger.getLogger(ListElastistorPoolCmd.class.getName());
+    public static final Logger  s_logger = LogManager.getLogger(ListElastistorPoolCmd.class.getName());
     private static final String s_name   = "listElastistorPoolResponse";
 
     @Inject

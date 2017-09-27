@@ -22,14 +22,15 @@ package com.cloud.storage.template;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.io.File;
 import java.util.Map;
 
 public class TARProcessor extends AdapterBase implements Processor {
-    private static final Logger s_logger = Logger.getLogger(TARProcessor.class);
+    private static final Logger s_logger = LogManager.getLogger(TARProcessor.class);
 
     private StorageLayer _storage;
 

@@ -27,7 +27,8 @@ import java.util.Date;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 
 public class AlertControlsUnitTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(AlertControlsUnitTest.class);
+    private static final Logger s_logger = LogManager.getLogger(AlertControlsUnitTest.class);
 
     @Spy
     ManagementServerImpl _mgmtServer = new ManagementServerImpl();

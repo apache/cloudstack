@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.Secret;
@@ -66,7 +67,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class LibvirtStorageAdaptor implements StorageAdaptor {
-    private static final Logger s_logger = Logger.getLogger(LibvirtStorageAdaptor.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtStorageAdaptor.class);
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
