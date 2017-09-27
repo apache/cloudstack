@@ -261,7 +261,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             "Interval in milliseconds to check if the job is complete", false);
 
     static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
-            "Check the url for a volume before downloading it from the management server. Set to flase when you managment has no internet access.",
+            "Check the url for a volume before downloading it from the management server. Set to false when you managment has no internet access.",
             true);
 
     private long _maxVolumeSizeInGb;
