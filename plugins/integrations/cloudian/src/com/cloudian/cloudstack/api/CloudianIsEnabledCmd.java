@@ -56,7 +56,7 @@ public class CloudianIsEnabledCmd extends BaseCmd {
     @Override
     public void execute() {
         final CloudianEnabledResponse response = new CloudianEnabledResponse();
-        response.setEnabled(!connector.isConnectorDisabled());
+        response.setEnabled(connector.isEnabled());
         response.setCmcUrl(connector.getCmcUrl());
         response.setObjectName(APINAME.toLowerCase());
         response.setResponseName(getCommandName());

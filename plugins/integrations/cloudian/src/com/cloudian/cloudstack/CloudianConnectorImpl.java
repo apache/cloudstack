@@ -83,7 +83,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     }
 
     private boolean addOrUpdateGroup(final Domain domain) {
-        if (domain == null || isConnectorDisabled()) {
+        if (domain == null || !isEnabled()) {
             return false;
         }
         final CloudianClient client = getClient();
@@ -107,7 +107,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     }
 
     private boolean removeGroup(final Domain domain) {
-        if (domain == null || isConnectorDisabled()) {
+        if (domain == null || !isEnabled()) {
             return false;
         }
         final CloudianClient client = getClient();
@@ -121,7 +121,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     }
 
     private boolean addOrUpdateUserAccount(final Account account, final Domain domain) {
-        if (account == null || domain == null || isConnectorDisabled()) {
+        if (account == null || domain == null || !isEnabled()) {
             return false;
         }
         final User accountUser = userDao.listByAccount(account.getId()).get(0);
@@ -151,7 +151,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     }
 
     private boolean removeUserAccount(final Account account) {
-        if (account == null || isConnectorDisabled()) {
+        if (account == null || !isEnabled()) {
             return false;
         }
         final CloudianClient client = getClient();
@@ -165,20 +165,14 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     //////////////////////////////////////////////////
 
     @Override
-    public String getAdminUrl() {
-        return String.format("%s://%s:%s", CloudianAdminProtocol.value(),
-                CloudianAdminHost.value(), CloudianAdminPort.value());
-    }
-
-    @Override
     public String getCmcUrl() {
         return String.format("%s://%s:%s/Cloudian/", CloudianCmcProtocol.value(),
                 CloudianCmcHost.value(), CloudianCmcPort.value());
     }
 
     @Override
-    public boolean isConnectorDisabled() {
-        return !CloudianConnectorEnabled.value();
+    public boolean isEnabled() {
+        return CloudianConnectorEnabled.value();
     }
 
     @Override
@@ -208,7 +202,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        if (isConnectorDisabled()) {
+        if (!isEnabled()) {
             return true;
         }
 
@@ -279,7 +273,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(CloudianIsEnabledCmd.class);
-        if (isConnectorDisabled()) {
+        if (!isEnabled()) {
             return cmdList;
         }
         cmdList.add(CloudianSsoLoginCmd.class);
