@@ -17,8 +17,8 @@
 
 package com.cloud.vm;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -42,19 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.network.element.UserDataServiceProvider;
-import com.cloud.storage.Storage;
-import com.cloud.user.User;
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.uservm.UserVm;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
@@ -68,14 +55,23 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -92,11 +88,13 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -108,9 +106,11 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
@@ -119,12 +119,11 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 
 public class UserVmManagerTest {
 
-    @Spy
-    UserVmManagerImpl _userVmMgr = new UserVmManagerImpl();
+    @InjectMocks
+    UserVmManagerImpl _userVmMgr;
     @Mock
     VirtualMachineManager _itMgr;
     @Mock
@@ -176,7 +175,7 @@ public class UserVmManagerTest {
     @Mock
     Account _accountMock2;
     @Mock
-    ServiceOfferingDao _offeringDao;
+    ServiceOfferingDao _serviceOfferingDao;
     @Mock
     ServiceOfferingVO _offeringVo;
     @Mock
@@ -219,36 +218,6 @@ public class UserVmManagerTest {
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
-
-        _userVmMgr._vmDao = _vmDao;
-        _userVmMgr._vmInstanceDao = _vmInstanceDao;
-        _userVmMgr._templateDao = _templateDao;
-        _userVmMgr._templateStoreDao = _templateStoreDao;
-        _userVmMgr._volsDao = _volsDao;
-        _userVmMgr._usageEventDao = _usageEventDao;
-        _userVmMgr._itMgr = _itMgr;
-        _userVmMgr.volumeMgr = _storageMgr;
-        _userVmMgr._accountDao = _accountDao;
-        _userVmMgr._accountService = _accountService;
-        _userVmMgr._userDao = _userDao;
-        _userVmMgr._accountMgr = _accountMgr;
-        _userVmMgr._configMgr = _configMgr;
-        _userVmMgr._offeringDao = _offeringDao;
-        _userVmMgr._capacityMgr = _capacityMgr;
-        _userVmMgr._resourceLimitMgr = _resourceLimitMgr;
-        _userVmMgr._scaleRetry = 2;
-        _userVmMgr._entityMgr = _entityMgr;
-        _userVmMgr._storagePoolDao = _storagePoolDao;
-        _userVmMgr._vmSnapshotDao = _vmSnapshotDao;
-        _userVmMgr._configDao = _configDao;
-        _userVmMgr._nicDao = _nicDao;
-        _userVmMgr._networkModel = _networkModel;
-        _userVmMgr._networkDao = _networkDao;
-        _userVmMgr._dcDao = _dcDao;
-        _userVmMgr._ipAddrMgr = _ipAddrMgr;
-        _userVmMgr._ipAddressDao = _ipAddressDao;
-        _userVmMgr._networkOfferingDao = _networkOfferingDao;
-        _userVmMgr._networkMgr = _networkMgr;
 
         doReturn(3L).when(_account).getId();
         doReturn(8L).when(_vmMock).getAccountId();
@@ -336,7 +305,7 @@ public class UserVmManagerTest {
     // Test restoreVm when VM is in stopped state
     @Test
     public void testRestoreVMF2() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    ResourceAllocationException {
 
         doReturn(VirtualMachine.State.Stopped).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
@@ -373,7 +342,7 @@ public class UserVmManagerTest {
     // Test restoreVM when VM is in running state
     @Test
     public void testRestoreVMF3() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    ResourceAllocationException {
 
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
@@ -410,7 +379,7 @@ public class UserVmManagerTest {
     // Test restoreVM on providing new template Id, when VM is in running state
     @Test
     public void testRestoreVMF4() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    ResourceAllocationException {
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
@@ -455,7 +424,7 @@ public class UserVmManagerTest {
     // Test restoreVM on providing new ISO Id, when VM(deployed using ISO) is in running state
     @Test
     public void testRestoreVMF5() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    ResourceAllocationException {
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
@@ -518,7 +487,7 @@ public class UserVmManagerTest {
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
-       // UserContext.current().setEventDetails("Vm Id: "+getId());
+        // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
@@ -560,8 +529,8 @@ public class UserVmManagerTest {
         ServiceOffering so1 =  getSvcoffering(512);
         ServiceOffering so2 =  getSvcoffering(256);
 
-        when(_offeringDao.findById(anyLong())).thenReturn((ServiceOfferingVO)so1);
-        when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO)so1);
+        when(_serviceOfferingDao.findById(anyLong())).thenReturn((ServiceOfferingVO)so1);
+        when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO)so1);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -678,8 +647,8 @@ public class UserVmManagerTest {
         boolean useLocalStorage = false;
 
         ServiceOfferingVO serviceOffering =
-            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN,
-                    useLocalStorage, false, null, false, null, false);
+                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN,
+                        useLocalStorage, false, null, false, null, false);
         return serviceOffering;
     }
 
@@ -708,7 +677,7 @@ public class UserVmManagerTest {
         CallContext.register(user, caller);
         try {
 
-        _userVmMgr.moveVMToUser(cmd);
+            _userVmMgr.moveVMToUser(cmd);
         } finally {
             CallContext.unregister();
         }
@@ -748,7 +717,7 @@ public class UserVmManagerTest {
         when(_accountMgr.finalizeOwner(any(Account.class), anyString(), anyLong(), anyLong())).thenReturn(newAccount);
 
         doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class),
-            any(ControlledEntity.class));
+                any(ControlledEntity.class));
 
         CallContext.register(user, caller);
 

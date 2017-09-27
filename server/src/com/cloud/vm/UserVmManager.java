@@ -52,24 +52,10 @@ public interface UserVmManager extends UserVmService {
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     /**
-     * @param hostId get all of the virtual machines that belong to one host.
-     * @return collection of VirtualMachine.
-     */
-    List<? extends UserVm> getVirtualMachines(long hostId);
-
-    /**
      * @param vmId id of the virtual machine.
      * @return VirtualMachine
      */
     UserVmVO getVirtualMachine(long vmId);
-
-    /**
-     * Stops the virtual machine
-     * @param userId the id of the user performing the action
-     * @param vmId
-     * @return true if stopped; false if problems.
-     */
-    boolean stopVirtualMachine(long userId, long vmId);
 
     /**
      * Obtains statistics for a list of host or VMs; CPU and network utilization

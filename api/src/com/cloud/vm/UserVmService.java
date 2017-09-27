@@ -395,10 +395,6 @@ public interface UserVmService {
 
     UserVm stopVirtualMachine(long vmId, boolean forced) throws ConcurrentOperationException;
 
-    void deletePrivateTemplateRecord(Long templateId);
-
-    HypervisorType getHypervisorTypeOfUserVM(long vmid);
-
     UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
         StorageUnavailableException, ResourceAllocationException;
 
@@ -475,12 +471,6 @@ public interface UserVmService {
      * @return Base64 encoded userdata
      */
     String getVmUserData(long vmId);
-
-    /**
-     * determin whether the uservm should be visible to the end user
-     * @return  value of the display flag
-     */
-    public boolean isDisplayResourceEnabled(Long vmId);
 
     void collectVmDiskStatistics(UserVm userVm);
 
