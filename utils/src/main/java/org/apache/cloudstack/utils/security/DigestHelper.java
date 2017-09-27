@@ -82,4 +82,15 @@ public class DigestHelper {
         map.put("SHA-512", 128);
         return map;
     }
+
+    public static boolean isAlgorithmSupported(String checksum) {
+        ChecksumValue toCheckAgainst = new ChecksumValue(checksum);
+        String algorithm = toCheckAgainst.getAlgorithm();
+        try {
+            MessageDigest.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            return false;
+        }
+        return true;
+    }
 }

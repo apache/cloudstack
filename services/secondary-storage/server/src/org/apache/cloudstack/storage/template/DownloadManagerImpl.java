@@ -315,12 +315,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
     }
 
-    private ChecksumValue computeCheckSum(String algorithm, File f) {
+    private ChecksumValue computeCheckSum(String algorithm, File f) throws NoSuchAlgorithmException {
         try (InputStream is = new FileInputStream(f);) {
             return DigestHelper.digest(algorithm, is);
         } catch (IOException e) {
-            return null;
-        } catch (NoSuchAlgorithmException e) {
             return null;
         }
     }
@@ -375,7 +373,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         File originalTemplate = new File(td.getDownloadLocalPath());
         ChecksumValue oldValue = new ChecksumValue(dnld.getChecksum());
-        ChecksumValue newValue = computeCheckSum(oldValue.getAlgorithm(), originalTemplate);
+        ChecksumValue newValue = null;
+        try {
+            newValue = computeCheckSum(oldValue.getAlgorithm(), originalTemplate);
+        } catch (NoSuchAlgorithmException e) {
+            return "checksum algorithm not recognised: " + oldValue.getAlgorithm();
+        }
         if(StringUtils.isNotBlank(dnld.getChecksum()) && ! oldValue.equals(newValue)) {
             return "checksum \"" + newValue +"\" didn't match the given value, \"" + oldValue + "\"";
         }
@@ -683,6 +686,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         if (cmd.getName() == null) {
             return new DownloadAnswer("Invalid Name", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+        }
+
+        if(! DigestHelper.isAlgorithmSupported(cmd.getChecksum())) {
+            return new DownloadAnswer("invalid algorithm: " + cmd.getChecksum(), VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
         }
 
         DataStoreTO dstore = cmd.getDataStore();

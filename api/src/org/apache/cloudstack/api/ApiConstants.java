@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import sun.security.provider.SHA;
+
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
@@ -665,6 +667,12 @@ public class ApiConstants {
     public static final String ZONE_ID_LIST = "zoneids";
     public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";
     public static final String ADMIN = "admin";
+    public static final String CHECKSUM_PARAMETER_PREFIX_DESCRIPTION = "The parameter containing the checksum will be considered a MD5sum if it is not prefixed\n"
+            + " and just a plain ascii/utf8 representation of a hexadecimal string. If it is required to\n"
+            + " use another algorithm the hexadecimal string is to be prefixed with a string of the form,\n"
+            + " \"{<algorithm>}\", not including the double quotes. In this <algorithm> is the exact string\n"
+            + " representing the java supported algorithm, i.e. MD5 or SHA-256. Note that java does not\n"
+            + " contain an algorithm called SHA256 or one called sha-256, only SHA-256.";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
