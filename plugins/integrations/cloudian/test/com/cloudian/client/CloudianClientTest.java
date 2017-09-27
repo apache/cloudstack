@@ -1,5 +1,8 @@
 package com.cloudian.client;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 
@@ -11,6 +14,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -19,19 +23,65 @@ public class CloudianClientTest {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(14333);
 
+    private final int timeout = 2;
+
     private CloudianClient client;
 
     @Before
     public void setUp() throws Exception {
-        client = new CloudianClient("http://localhost:14333", "admin", "public", false);
+        client = new CloudianClient("http://localhost:14333", "admin", "public", false, timeout);
     }
 
     @After
     public void tearDown() throws Exception {
     }
 
+    @Test(expected = CloudRuntimeException.class)
+    public void testRequestTimeout() {
+        wireMockRule.stubFor(WireMock.get(urlEqualTo("/group/list"))
+                .willReturn(WireMock.aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withStatus(200)
+                        .withFixedDelay(2 * timeout * 1000)
+                        .withBody("")));
+        client.listGroups();
+    }
+
     @Test
-    public void addUserAccount() throws Exception {
+    public void addUserAccount() {
+        wireMockRule.stubFor(WireMock.put(urlEqualTo("/user"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("")));
+
+        final CloudianUser user = new CloudianUser();
+        user.setActive(true);
+        user.setUserId("someUserId");
+        user.setGroupId("someGroupId");
+        user.setUserType(CloudianUser.USER);
+        user.setFullName("John Doe");
+        boolean result = client.addUser(user);
+        Assert.assertTrue(result);
+        WireMock.verify(putRequestedFor(urlEqualTo("/user"))
+                .withRequestBody(containing("userId\":\"someUserId"))
+                .withHeader("Content-Type", equalTo("application/json")));
+    }
+
+    @Test
+    public void addUserAccountFail() {
+        wireMockRule.stubFor(WireMock.put(urlEqualTo("/user"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(400)
+                        .withBody("")));
+
+        final CloudianUser user = new CloudianUser();
+        user.setActive(true);
+        user.setUserId("someUserId");
+        user.setGroupId("someGroupId");
+        user.setUserType(CloudianUser.USER);
+        user.setFullName("John Doe");
+        boolean result = client.addUser(user);
+        Assert.assertFalse(result);
     }
 
     @Test
@@ -97,6 +147,35 @@ public class CloudianClientTest {
 
     @Test
     public void addGroup() throws Exception {
+        wireMockRule.stubFor(WireMock.put(urlEqualTo("/group"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("")));
+
+        final CloudianGroup group = new CloudianGroup();
+        group.setActive(true);
+        group.setGroupId("someGroupId");
+        group.setGroupName("someGroupName");
+        boolean result = client.addGroup(group);
+        Assert.assertTrue(result);
+        WireMock.verify(putRequestedFor(urlEqualTo("/group"))
+                .withRequestBody(containing("groupId\":\"someGroupId"))
+                .withHeader("Content-Type", equalTo("application/json")));
+    }
+
+    @Test
+    public void addGroupFail() throws Exception {
+        wireMockRule.stubFor(WireMock.put(urlEqualTo("/group"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(400)
+                        .withBody("")));
+
+        final CloudianGroup group = new CloudianGroup();
+        group.setActive(true);
+        group.setGroupId("someGroupId");
+        group.setGroupName("someGroupName");
+        boolean result = client.addGroup(group);
+        Assert.assertFalse(result);
     }
 
     @Test

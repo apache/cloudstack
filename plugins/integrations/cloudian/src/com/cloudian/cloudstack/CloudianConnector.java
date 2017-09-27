@@ -44,6 +44,9 @@ public interface CloudianConnector extends PluggableService {
     ConfigKey<String> CloudianAdminPassword = new ConfigKey<>("Advanced", String.class, "cloudian.admin.password", "public",
             "The system admin password for the Cloudian Admin server.", true);
 
+    ConfigKey<Integer> CloudianAdminApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "cloudian.admin.api.request.timeout", "5",
+            "The admin API request timeout in seconds.", true);
+
     ConfigKey<String> CloudianCmcAdminUser = new ConfigKey<>("Advanced", String.class, "cloudian.cmc.admin.user", "admin",
             "The admin user name for accessing the Cloudian Management Console.", true);
 

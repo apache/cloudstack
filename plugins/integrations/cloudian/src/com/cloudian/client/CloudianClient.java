@@ -18,6 +18,7 @@
 package com.cloudian.client;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -60,14 +61,13 @@ public class CloudianClient {
     private final HttpClient httpClient;
     private final String baseUrl;
 
-    public CloudianClient(final String baseUrl, final String username, final String password, final boolean validateSSlCertificate) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+    public CloudianClient(final String baseUrl, final String username, final String password, final boolean validateSSlCertificate, final int timeout) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         this.baseUrl = baseUrl;
 
         final UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
         final CredentialsProvider provider = new BasicCredentialsProvider();
         provider.setCredentials(AuthScope.ANY, credentials);
 
-        final int timeout = 10;
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
                 .setConnectionRequestTimeout(timeout * 1000)
@@ -129,7 +129,7 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to add Cloudian user due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -146,7 +146,7 @@ public class CloudianClient {
             return mapper.readValue(response.getEntity().getContent(), CloudianUser.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian user due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -163,7 +163,7 @@ public class CloudianClient {
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianUser[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian users due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -176,7 +176,7 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to update Cloudian user due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -189,7 +189,7 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove Cloudian user due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -206,7 +206,7 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to add Cloudian group due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -223,7 +223,7 @@ public class CloudianClient {
             return mapper.readValue(response.getEntity().getContent(), CloudianGroup.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian group due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -240,7 +240,7 @@ public class CloudianClient {
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianGroup[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian groups due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -253,7 +253,7 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove group due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
@@ -266,7 +266,7 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove group due to:", e);
-            if (e instanceof ConnectTimeoutException) {
+            if (e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
                 throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
             }
         }
