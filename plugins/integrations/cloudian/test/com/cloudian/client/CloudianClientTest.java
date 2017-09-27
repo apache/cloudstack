@@ -11,7 +11,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 
 import java.util.List;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,10 +35,6 @@ public class CloudianClientTest {
     @Before
     public void setUp() throws Exception {
         client = new CloudianClient("localhost", port, "http", adminUsername, adminPassword, false, timeout);
-    }
-
-    @After
-    public void tearDown() throws Exception {
     }
 
     private CloudianUser getTestUser() {
