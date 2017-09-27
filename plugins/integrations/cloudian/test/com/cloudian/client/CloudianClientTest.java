@@ -1,10 +1,8 @@
-package com.cloudian.cloudstack;
+package com.cloudian.client;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.cloudian.client.CloudianClient;
 
 public class CloudianClientTest {
 
