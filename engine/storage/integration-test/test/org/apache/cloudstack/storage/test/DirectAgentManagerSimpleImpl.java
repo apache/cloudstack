@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
-import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SetupCommand;
@@ -54,6 +53,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.vmware.VmwareServerDiscoverer;
 import com.cloud.hypervisor.xenserver.resource.XcpOssResource;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -219,7 +219,7 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public int registerForInitialConnects(StartupCommandProcessor creator, boolean priority) {
+    public int registerForInitialConnects(Adapter creator, boolean priority) {
         // TODO Auto-generated method stub
         return 0;
     }
@@ -290,4 +290,16 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     @Override
     public void notifyMonitorsOfRemovedHost(long hostId, long clusterId) {
     }
+
+	@Override
+	public void disconnectWithInvestigation(long hostId, Event event) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void notifyMonitorsOfNewlyAddedHost(long hostId) {
+		// TODO Auto-generated method stub
+		
+	}
 }

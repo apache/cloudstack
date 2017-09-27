@@ -30,6 +30,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.component.Adapter;
 
 /**
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
@@ -119,7 +120,7 @@ public interface AgentManager {
      * @param priority in listening for events.
      * @return id to unregister if needed.
      */
-    int registerForInitialConnects(StartupCommandProcessor creator, boolean priority);
+    int registerForInitialConnects(Adapter creator, boolean priority);
 
     /**
      * Unregister for listening to host events.

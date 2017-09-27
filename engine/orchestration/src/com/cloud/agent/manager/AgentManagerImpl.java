@@ -51,7 +51,6 @@ import org.slf4j.MDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
-import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
@@ -97,6 +96,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -130,7 +130,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(10007);
     protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(17);
     protected List<Pair<Integer, Listener>> _cmdMonitors = new ArrayList<Pair<Integer, Listener>>(17);
-    protected List<Pair<Integer, StartupCommandProcessor>> _creationMonitors = new ArrayList<Pair<Integer, StartupCommandProcessor>>(17);
+    protected List<Pair<Integer, Adapter>> _creationMonitors = new ArrayList<Pair<Integer, Adapter>>(17);
     protected List<Long> _loadingAgents = new ArrayList<Long>();
     protected int _monitorId = 0;
     private final Lock _agentStatusLock = new ReentrantLock();
@@ -276,13 +276,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public int registerForInitialConnects(final StartupCommandProcessor creator, final boolean priority) {
+    public int registerForInitialConnects(Adapter creator, final boolean priority) {
         synchronized (_hostMonitors) {
             _monitorId++;
             if (priority) {
-                _creationMonitors.add(0, new Pair<Integer, StartupCommandProcessor>(_monitorId, creator));
+                _creationMonitors.add(0, new Pair<Integer, Adapter>(_monitorId, creator));
             } else {
-                _creationMonitors.add(new Pair<Integer, StartupCommandProcessor>(_monitorId, creator));
+                _creationMonitors.add(new Pair<Integer, Adapter>(_monitorId, creator));
             }
             return _monitorId;
         }

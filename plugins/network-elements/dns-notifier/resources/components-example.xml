@@ -147,9 +147,6 @@ under the License.
             <adapter name="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru"/>
             <adapter name="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru" />
         </adapters>
-        <adapters key="com.cloud.agent.StartupCommandProcessor">
-            <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
-        </adapters>
         <manager name="OvsTunnelManager" key="com.cloud.network.ovs.OvsTunnelManager" class="com.cloud.network.ovs.OvsTunnelManagerImpl"/>
         <manager name="ElasticLoadBalancerManager" key="com.cloud.network.lb.ElasticLoadBalancerManager" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl"/>
         <manager name="LBHealthCheckManager" key="com.cloud.network.lb.LBHealthCheckManager" class="com.cloud.network.lb.LBHealthCheckManagerImpl"/>

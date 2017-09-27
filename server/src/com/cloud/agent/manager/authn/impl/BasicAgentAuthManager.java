@@ -21,40 +21,19 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.authn.AgentAuthnException;
 import com.cloud.agent.manager.authn.AgentAuthorizer;
-import com.cloud.exception.ConnectionException;
-import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
-public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorizer, StartupCommandProcessor {
-    private static final Logger s_logger = Logger.getLogger(BasicAgentAuthManager.class);
-    @Inject
-    HostDao _hostDao = null;
-    @Inject
-    ConfigurationDao _configDao = null;
-    @Inject
-    AgentManager _agentManager = null;
+public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorizer {
 
-    @Override
-    public boolean processInitialConnect(StartupCommand[] cmd) throws ConnectionException {
-        try {
-            authorizeAgent(cmd);
-        } catch (AgentAuthnException e) {
-            throw new ConnectionException(true, "Failed to authenticate/authorize", e);
-        }
-        s_logger.debug("Authorized agent with guid " + cmd[0].getGuid());
-        return false;//so that the next host creator can process it
-    }
+    @Inject
+    private AgentManager _agentManager;
 
     @Override
     public boolean authorizeAgent(StartupCommand[] cmd) throws AgentAuthnException {
