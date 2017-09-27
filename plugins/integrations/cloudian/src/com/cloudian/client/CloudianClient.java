@@ -41,6 +41,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
@@ -48,6 +49,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -65,7 +67,7 @@ public class CloudianClient {
         final CredentialsProvider provider = new BasicCredentialsProvider();
         provider.setCredentials(AuthScope.ANY, credentials);
 
-        final int timeout = 15;
+        final int timeout = 10;
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
                 .setConnectionRequestTimeout(timeout * 1000)
@@ -127,6 +129,9 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to add Cloudian user due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return false;
     }
@@ -141,6 +146,9 @@ public class CloudianClient {
             return mapper.readValue(response.getEntity().getContent(), CloudianUser.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian user due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return null;
     }
@@ -155,6 +163,9 @@ public class CloudianClient {
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianUser[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian users due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return new ArrayList<>();
     }
@@ -165,6 +176,9 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to update Cloudian user due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return false;
     }
@@ -175,6 +189,9 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove Cloudian user due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return false;
     }
@@ -189,6 +206,9 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to add Cloudian group due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return false;
     }
@@ -203,6 +223,9 @@ public class CloudianClient {
             return mapper.readValue(response.getEntity().getContent(), CloudianGroup.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian group due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return null;
     }
@@ -217,6 +240,9 @@ public class CloudianClient {
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianGroup[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian groups due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return new ArrayList<>();
     }
@@ -227,6 +253,9 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove group due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return false;
     }
@@ -237,6 +266,9 @@ public class CloudianClient {
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
             LOG.error("Failed to remove group due to:", e);
+            if (e instanceof ConnectTimeoutException) {
+                throw new CloudRuntimeException("Failed to execute operation due to timeout issue");
+            }
         }
         return false;
     }

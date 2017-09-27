@@ -29,7 +29,7 @@
             async: false,
             success: function(json) {
                 var response = json.cloudianisenabledresponse.cloudianisenabled;
-                pluginEnabled = (response.enabled == 'true');
+                pluginEnabled = response.enabled;
                 if (pluginEnabled) {
                     var cloudianLogoutUrl = response.url + "logout.htm?";
                     onLogoutCallback = function() {
