@@ -1,7 +1,10 @@
 package com.cloudian.client;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
@@ -15,26 +18,49 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 public class CloudianClientTest {
-
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(14333);
 
     private final int timeout = 2;
-
+    private final String adminUsername = "admin";
+    private final String adminPassword = "public";
     private CloudianClient client;
 
     @Before
     public void setUp() throws Exception {
-        client = new CloudianClient("http://localhost:14333", "admin", "public", false, timeout);
+        client = new CloudianClient("http://localhost:14333", adminUsername, adminPassword, false, timeout);
     }
 
     @After
     public void tearDown() throws Exception {
     }
+
+    private CloudianUser getTestUser() {
+        final CloudianUser user = new CloudianUser();
+        user.setActive(true);
+        user.setUserId("someUserId");
+        user.setGroupId("someGroupId");
+        user.setUserType(CloudianUser.USER);
+        user.setFullName("John Doe");
+        return user;
+    }
+
+    private CloudianGroup getTestGroup() {
+        final CloudianGroup group = new CloudianGroup();
+        group.setActive(true);
+        group.setGroupId("someGroupId");
+        group.setGroupName("someGroupName");
+        return group;
+    }
+
+    ////////////////////////////////////////////////////////
+    //////////////// General API tests /////////////////////
+    ////////////////////////////////////////////////////////
 
     @Test(expected = CloudRuntimeException.class)
     public void testRequestTimeout() {
@@ -47,6 +73,21 @@ public class CloudianClientTest {
         client.listGroups();
     }
 
+    @Test(expected = CloudRuntimeException.class)
+    public void testBasicAuth() {
+        wireMockRule.stubFor(WireMock.get(urlEqualTo("/group/list"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("")));
+        client.listGroups();
+        WireMock.verify(getRequestedFor(urlEqualTo("/group/list"))
+                .withBasicAuth(new BasicCredentials(adminUsername, adminPassword)));
+    }
+
+    /////////////////////////////////////////////////////
+    //////////////// User API tests /////////////////////
+    /////////////////////////////////////////////////////
+
     @Test
     public void addUserAccount() {
         wireMockRule.stubFor(WireMock.put(urlEqualTo("/user"))
@@ -54,16 +95,11 @@ public class CloudianClientTest {
                         .withStatus(200)
                         .withBody("")));
 
-        final CloudianUser user = new CloudianUser();
-        user.setActive(true);
-        user.setUserId("someUserId");
-        user.setGroupId("someGroupId");
-        user.setUserType(CloudianUser.USER);
-        user.setFullName("John Doe");
+        final CloudianUser user = getTestUser();
         boolean result = client.addUser(user);
         Assert.assertTrue(result);
         WireMock.verify(putRequestedFor(urlEqualTo("/user"))
-                .withRequestBody(containing("userId\":\"someUserId"))
+                .withRequestBody(containing("userId\":\"" + user.getUserId()))
                 .withHeader("Content-Type", equalTo("application/json")));
     }
 
@@ -74,12 +110,7 @@ public class CloudianClientTest {
                         .withStatus(400)
                         .withBody("")));
 
-        final CloudianUser user = new CloudianUser();
-        user.setActive(true);
-        user.setUserId("someUserId");
-        user.setGroupId("someGroupId");
-        user.setUserType(CloudianUser.USER);
-        user.setFullName("John Doe");
+        final CloudianUser user = getTestUser();
         boolean result = client.addUser(user);
         Assert.assertFalse(result);
     }
@@ -137,25 +168,67 @@ public class CloudianClientTest {
     }
 
     @Test
-    public void updateUserAccount() throws Exception {
+    public void updateUserAccount() {
+        wireMockRule.stubFor(WireMock.post(urlEqualTo("/user"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("")));
+
+        final CloudianUser user = getTestUser();
+        boolean result = client.updateUser(user);
+        Assert.assertTrue(result);
+        WireMock.verify(postRequestedFor(urlEqualTo("/user"))
+                .withRequestBody(containing("userId\":\"" + user.getUserId()))
+                .withHeader("Content-Type", equalTo("application/json")));
     }
 
     @Test
-    public void removeUserAccount() throws Exception {
+    public void updateUserAccountFail() {
+        wireMockRule.stubFor(WireMock.post(urlEqualTo("/user"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(400)
+                        .withBody("")));
 
+        boolean result = client.updateUser(getTestUser());
+        Assert.assertFalse(result);
     }
 
     @Test
-    public void addGroup() throws Exception {
+    public void removeUserAccount() {
+        wireMockRule.stubFor(WireMock.delete(urlPathMatching("/user.*"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("")));
+        final CloudianUser user = getTestUser();
+        boolean result = client.removeUser(user.getUserId(), user.getGroupId());
+        Assert.assertTrue(result);
+        WireMock.verify(deleteRequestedFor(urlPathMatching("/user.*"))
+                .withQueryParam("userId", equalTo(user.getUserId())));
+    }
+
+    @Test
+    public void removeUserAccountFail() {
+        wireMockRule.stubFor(WireMock.delete(urlPathMatching("/user.*"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(400)
+                        .withBody("")));
+        final CloudianUser user = getTestUser();
+        boolean result = client.removeUser(user.getUserId(), user.getGroupId());
+        Assert.assertFalse(result);
+    }
+
+    //////////////////////////////////////////////////////
+    //////////////// Group API tests /////////////////////
+    //////////////////////////////////////////////////////
+
+    @Test
+    public void addGroup() {
         wireMockRule.stubFor(WireMock.put(urlEqualTo("/group"))
                 .willReturn(WireMock.aResponse()
                         .withStatus(200)
                         .withBody("")));
 
-        final CloudianGroup group = new CloudianGroup();
-        group.setActive(true);
-        group.setGroupId("someGroupId");
-        group.setGroupName("someGroupName");
+        final CloudianGroup group = getTestGroup();
         boolean result = client.addGroup(group);
         Assert.assertTrue(result);
         WireMock.verify(putRequestedFor(urlEqualTo("/group"))
@@ -170,10 +243,7 @@ public class CloudianClientTest {
                         .withStatus(400)
                         .withBody("")));
 
-        final CloudianGroup group = new CloudianGroup();
-        group.setActive(true);
-        group.setGroupId("someGroupId");
-        group.setGroupName("someGroupName");
+        final CloudianGroup group = getTestGroup();
         boolean result = client.addGroup(group);
         Assert.assertFalse(result);
     }
@@ -228,11 +298,53 @@ public class CloudianClientTest {
     }
 
     @Test
-    public void updateGroup() throws Exception {
+    public void updateGroup() {
+        wireMockRule.stubFor(WireMock.post(urlEqualTo("/group"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("")));
+
+        final CloudianGroup group = getTestGroup();
+        boolean result = client.updateGroup(group);
+        Assert.assertTrue(result);
+        WireMock.verify(postRequestedFor(urlEqualTo("/group"))
+                .withRequestBody(containing("groupId\":\"" + group.getGroupId()))
+                .withHeader("Content-Type", equalTo("application/json")));
     }
 
     @Test
-    public void removeGroup() throws Exception {
+    public void updateGroupFail() {
+        wireMockRule.stubFor(WireMock.post(urlEqualTo("/group"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(400)
+                        .withBody("")));
+
+        boolean result = client.updateGroup(getTestGroup());
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void removeGroup() {
+        wireMockRule.stubFor(WireMock.delete(urlPathMatching("/group.*"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("")));
+        final CloudianGroup group = getTestGroup();
+        boolean result = client.removeGroup(group.getGroupId());
+        Assert.assertTrue(result);
+        WireMock.verify(deleteRequestedFor(urlPathMatching("/group.*"))
+                .withQueryParam("groupId", equalTo(group.getGroupId())));
+    }
+
+    @Test
+    public void removeGroupFail() {
+        wireMockRule.stubFor(WireMock.delete(urlPathMatching("/group.*"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(400)
+                        .withBody("")));
+        final CloudianGroup group = getTestGroup();
+        boolean result = client.removeGroup(group.getGroupId());
+        Assert.assertFalse(result);
     }
 
 }
