@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import sun.security.provider.SHA;
-
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
