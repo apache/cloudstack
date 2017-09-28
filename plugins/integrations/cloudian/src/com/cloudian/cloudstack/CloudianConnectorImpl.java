@@ -77,9 +77,9 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                     CloudianAdminUser.value(), CloudianAdminPassword.value(),
                     CloudianValidateSSLSecurity.value(), CloudianAdminApiRequestTimeout.value());
         } catch (final KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
-            LOG.error("Failed to create Cloudian client due to: ", e);
+            LOG.error("Failed to create Cloudian API client due to: ", e);
         }
-        throw new CloudRuntimeException("Failed to create and return Cloudian client instance");
+        throw new CloudRuntimeException("Failed to create and return Cloudian API client instance");
     }
 
     private boolean addOrUpdateGroup(final Domain domain) {
@@ -90,15 +90,12 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         final CloudianGroup existingGroup = client.listGroup(domain.getUuid());
         if (existingGroup != null) {
             if (!existingGroup.getActive() || !existingGroup.getGroupName().equals(domain.getPath())) {
-                LOG.debug("Updating Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
                 existingGroup.setActive(true);
                 existingGroup.setGroupName(domain.getPath());
                 return client.updateGroup(existingGroup);
             }
             return true;
         }
-
-        LOG.debug("Adding Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
         final CloudianGroup group = new CloudianGroup();
         group.setGroupId(domain.getUuid());
         group.setGroupName(domain.getPath());
@@ -111,13 +108,20 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             return false;
         }
         final CloudianClient client = getClient();
-        LOG.debug("Removing Cloudian group for domain uuid=" + domain.getUuid() + " name=" + domain.getName() + " path=" + domain.getPath());
         for (final CloudianUser user: client.listUsers(domain.getUuid())) {
             if (client.removeUser(user.getUserId(), domain.getUuid())) {
                 LOG.error(String.format("Failed to remove Cloudian user id=%s, while removing Cloudian group id=%s", user.getUserId(), domain.getUuid()));
             }
         }
-        return client.removeGroup(domain.getUuid());
+        for (int retry = 0; retry < 3; retry++) {
+            if (client.removeGroup(domain.getUuid())) {
+                return true;
+            } else {
+                LOG.warn("Failed to remove Cloudian group id=" + domain.getUuid() + ", retrying count=" + retry+1);
+            }
+        }
+        LOG.warn("Failed to remove Cloudian group id=" + domain.getUuid() + ", please remove manually");
+        return false;
     }
 
     private boolean addOrUpdateUserAccount(final Account account, final Domain domain) {
@@ -130,7 +134,6 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         final CloudianUser existingUser = client.listUser(account.getUuid(), domain.getUuid());
         if (existingUser != null) {
             if (!existingUser.getActive() || !existingUser.getFullName().equals(fullName)) {
-                LOG.debug("Updating Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
                 existingUser.setActive(true);
                 existingUser.setEmailAddr(accountUser.getEmail());
                 existingUser.setFullName(fullName);
@@ -138,8 +141,6 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             }
             return true;
         }
-
-        LOG.debug("Adding Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
         final CloudianUser user = new CloudianUser();
         user.setUserId(account.getUuid());
         user.setGroupId(domain.getUuid());
@@ -156,8 +157,15 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         }
         final CloudianClient client = getClient();
         final Domain domain = domainDao.findById(account.getDomainId());
-        LOG.debug("Removing Cloudian user for account with uuid=" + account.getUuid() + " name=" + account.getAccountName());
-        return client.removeUser(account.getUuid(), domain.getUuid());
+        for (int retry = 0; retry < 3; retry++) {
+            if (client.removeUser(account.getUuid(), domain.getUuid())) {
+                return true;
+            } else {
+                LOG.warn("Failed to remove Cloudian user id=" + account.getUuid() + " in group id=" + domain.getUuid() + ", retrying count=" + retry+1);
+            }
+        }
+        LOG.warn("Failed to remove Cloudian user id=" + account.getUuid() + " in group id=" + domain.getUuid() + ", please remove manually");
+        return false;
     }
 
     //////////////////////////////////////////////////

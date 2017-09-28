@@ -32,16 +32,8 @@ public class CloudianEnabledResponse extends BaseResponse {
     @Param(description = "the Cloudian Management Console base URL")
     private String cmcUrl;
 
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public String getCmcUrl() {
-        return cmcUrl;
     }
 
     public void setCmcUrl(String cmcUrl) {

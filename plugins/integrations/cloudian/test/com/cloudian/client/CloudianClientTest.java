@@ -44,7 +44,6 @@ import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 public class CloudianClientTest {
-
     private final int port = 14333;
     private final int timeout = 2;
     private final String adminUsername = "admin";
@@ -365,5 +364,4 @@ public class CloudianClientTest {
         boolean result = client.removeGroup(group.getGroupId());
         Assert.assertFalse(result);
     }
-
 }

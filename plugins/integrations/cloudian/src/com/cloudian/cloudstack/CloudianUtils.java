@@ -45,8 +45,8 @@ public class CloudianUtils {
             return null;
         }
         try {
-            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
-            Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+            final SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
+            final Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
             mac.init(signingKey);
             byte[] rawHmac = mac.doFinal(data.getBytes());
             return Base64.encodeBase64String(rawHmac);

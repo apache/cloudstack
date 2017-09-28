@@ -58,9 +58,9 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 
 public class CloudianClient {
-
     private static final Logger LOG = Logger.getLogger(CloudianClient.class);
 
     private final HttpClient httpClient;
@@ -135,6 +135,10 @@ public class CloudianClient {
     ////////////////////////////////////////////////////////
 
     public boolean addUser(final CloudianUser user) {
+        if (user == null) {
+            return false;
+        }
+        LOG.debug("Adding Cloudian user: " + user);
         try {
             final HttpResponse response = put("/user", user);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -148,6 +152,9 @@ public class CloudianClient {
     }
 
     public CloudianUser listUser(final String userId, final String groupId) {
+        if (Strings.isNullOrEmpty(userId) || Strings.isNullOrEmpty(groupId)) {
+            return null;
+        }
         try {
             final HttpResponse response = get(String.format("/user?userId=%s&groupId=%s", userId, groupId));
             final ObjectMapper mapper = new ObjectMapper();
@@ -165,6 +172,9 @@ public class CloudianClient {
     }
 
     public List<CloudianUser> listUsers(final String groupId) {
+        if (Strings.isNullOrEmpty(groupId)) {
+            return new ArrayList<>();
+        }
         try {
             final HttpResponse response = get(String.format("/user/list?groupId=%s&userType=all&userStatus=active", groupId));
             final ObjectMapper mapper = new ObjectMapper();
@@ -182,6 +192,10 @@ public class CloudianClient {
     }
 
     public boolean updateUser(final CloudianUser user) {
+        if (user == null) {
+            return false;
+        }
+        LOG.debug("Updating Cloudian user: " + user);
         try {
             final HttpResponse response = post("/user", user);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -195,6 +209,10 @@ public class CloudianClient {
     }
 
     public boolean removeUser(final String userId, final String groupId) {
+        if (Strings.isNullOrEmpty(userId) || Strings.isNullOrEmpty(groupId)) {
+            return false;
+        }
+        LOG.debug("Removing Cloudian user with user id=" + userId + " in group id=" + groupId);
         try {
             final HttpResponse response = delete(String.format("/user?userId=%s&groupId=%s", userId, groupId));
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -212,6 +230,10 @@ public class CloudianClient {
     /////////////////////////////////////////////////////////
 
     public boolean addGroup(final CloudianGroup group) {
+        if (group == null) {
+            return false;
+        }
+        LOG.debug("Adding Cloudian group: " + group);
         try {
             final HttpResponse response = put("/group", group);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -225,6 +247,9 @@ public class CloudianClient {
     }
 
     public CloudianGroup listGroup(final String groupId) {
+        if (Strings.isNullOrEmpty(groupId)) {
+            return null;
+        }
         try {
             final HttpResponse response = get(String.format("/group?groupId=%s", groupId));
             final ObjectMapper mapper = new ObjectMapper();
@@ -259,6 +284,10 @@ public class CloudianClient {
     }
 
     public boolean updateGroup(final CloudianGroup group) {
+        if (group == null) {
+            return false;
+        }
+        LOG.debug("Updating Cloudian group: " + group);
         try {
             final HttpResponse response = post("/group", group);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -272,6 +301,10 @@ public class CloudianClient {
     }
 
     public boolean removeGroup(final String groupId) {
+        if (Strings.isNullOrEmpty(groupId)) {
+            return false;
+        }
+        LOG.debug("Removing Cloudian group id=" + groupId);
         try {
             final HttpResponse response = delete(String.format("/group?groupId=%s", groupId));
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
@@ -283,5 +316,4 @@ public class CloudianClient {
         }
         return false;
     }
-
 }
