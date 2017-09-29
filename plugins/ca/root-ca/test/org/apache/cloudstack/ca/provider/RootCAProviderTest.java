@@ -136,7 +136,7 @@ public class RootCAProviderTest {
         overrideDefaultConfigValue(RootCAProvider.rootCAAuthStrictness, "_defaultValue", "false");
         final SSLEngine e = provider.createSSLEngine(SSLUtils.getSSLContext(), "/1.2.3.4:5678", null);
         Assert.assertFalse(e.getUseClientMode());
-        Assert.assertFalse(e.getWantClientAuth());
+        Assert.assertFalse(e.getNeedClientAuth());
     }
 
     @Test
@@ -144,7 +144,7 @@ public class RootCAProviderTest {
         overrideDefaultConfigValue(RootCAProvider.rootCAAuthStrictness, "_defaultValue", "true");
         final SSLEngine e = provider.createSSLEngine(SSLUtils.getSSLContext(), "/1.2.3.4:5678", null);
         Assert.assertFalse(e.getUseClientMode());
-        Assert.assertTrue(e.getWantClientAuth());
+        Assert.assertTrue(e.getNeedClientAuth());
     }
 
     @Test

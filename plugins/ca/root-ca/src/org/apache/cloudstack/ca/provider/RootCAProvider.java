@@ -249,7 +249,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         TrustManager[] tms = new TrustManager[]{new RootCACustomTrustManager(remoteAddress, authStrictness, allowExpiredCertificate, certMap, caCertificate, crlDao)};
         sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
         final SSLEngine sslEngine = sslContext.createSSLEngine();
-        sslEngine.setWantClientAuth(authStrictness);
+        sslEngine.setNeedClientAuth(authStrictness);
         return sslEngine;
     }
 
