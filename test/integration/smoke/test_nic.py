@@ -30,6 +30,7 @@ from nose.plugins.attrib import attr
 
 import signal
 import sys
+import logging
 import time
 
 
@@ -37,6 +38,11 @@ class TestNic(cloudstackTestCase):
 
     def setUp(self):
         self.cleanup = []
+        self.logger = logging.getLogger('TestNIC')
+        self.stream_handler = logging.StreamHandler()
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.stream_handler)
+
 
         def signal_handler(signal, frame):
             self.tearDown()
@@ -277,6 +283,38 @@ class TestNic(cloudstackTestCase):
             )
 
         return
+
+    def test_02_nic_with_mac(self):
+        """Test to add and update added nic to a virtual machine with specific mac"""
+
+        hypervisorIsVmware = False
+        isVmwareToolInstalled = False
+        if self.hypervisor.lower() == "vmware":
+            hypervisorIsVmware = True
+
+        self.virtual_machine2 = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[self.test_network.id],
+            macaddress="aa:bb:cc:dd:ee:ff",
+            mode=self.zone.networktype if hypervisorIsVmware else "default"
+        )
+        self.cleanup.insert(0, self.virtual_machine2)
+        self.assertEqual(self.virtual_machine2.nic[0].macaddress, "aa:bb:cc:dd:ee:ff", "Mac address not honored")
+        vmdata = self.virtual_machine2.add_nic(
+            self.apiclient,
+            self.test_network2.id,
+            macaddress="ee:ee:dd:cc:bb:aa")
+        found = False
+        for n in vmdata.nic:
+            if n.macaddress == "ee:ee:dd:cc:bb:aa":
+                found = True
+                break
+
+        self.assertTrue(found, "Nic not successfully added with specified mac address")
 
     def tearDown(self):
         try:

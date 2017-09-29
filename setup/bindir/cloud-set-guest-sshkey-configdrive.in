@@ -84,7 +84,7 @@ else
     exit 1
 fi
 
-homedir=$(grep ^$user /etc/passwd|awk -F ":" '{print $6}')
+homedir=$(getent passwd $user|awk -F ":" '{print $6}')
 sshdir=$homedir/.ssh
 authorized=$sshdir/authorized_keys
 

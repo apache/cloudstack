@@ -159,6 +159,7 @@ import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -1531,6 +1532,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workDao.update(work.getId(), work);
             }
             return;
+        } else {
+            HostVO host = _hostDao.findById(hostId);
+            if (!cleanUpEvenIfUnableToStop && vm.getState() == State.Running && host.getResourceState() == ResourceState.PrepareForMaintenance) {
+                s_logger.debug("Host is in PrepareForMaintenance state - Stop VM operation on the VM id: " + vm.getId() + " is not allowed");
+                throw new CloudRuntimeException("Stop VM operation on the VM id: " + vm.getId() + " is not allowed as host is preparing for maintenance mode");
+            }
         }
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);

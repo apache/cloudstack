@@ -371,7 +371,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         PrimaryDataStoreInfo primaryDataStoreInfo = (PrimaryDataStoreInfo)store;
 
         // check if there is at least one host up in this cluster
-        List<HostVO> allHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, primaryDataStoreInfo.getClusterId(),
+        List<HostVO> allHosts = _resourceMgr.listAllUpHosts(Host.Type.Routing, primaryDataStoreInfo.getClusterId(),
                 primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getDataCenterId());
 
         if (allHosts.isEmpty()) {

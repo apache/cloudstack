@@ -1136,6 +1136,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long vmId = cmd.getVmId();
         Long networkId = cmd.getNetworkId();
         String ipAddress = cmd.getIpAddress();
+        String macAddress = cmd.getMacAddress();
         Account caller = CallContext.current().getCallingAccount();
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
@@ -1166,12 +1167,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
         }
 
-        NicProfile profile = new NicProfile(null, null);
+        if(_nicDao.findByNetworkIdAndMacAddress(networkId, macAddress) != null) {
+            throw new CloudRuntimeException("A NIC with this MAC address exists for network: " + network.getUuid());
+        }
+
+        NicProfile profile = new NicProfile(ipAddress, null, macAddress);
         if (ipAddress != null) {
             if (!(NetUtils.isValidIp(ipAddress) || NetUtils.isValidIpv6(ipAddress))) {
                 throw new InvalidParameterValueException("Invalid format for IP address parameter: " + ipAddress);
             }
-            profile = new NicProfile(ipAddress, null);
         }
 
         // Perform permission check on VM
@@ -2632,6 +2636,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
+        checkIfHostOfVMIsInPrepareForMaintenanceState(vmInstance.getHostId(), vmId, "Reboot");
+
         // If the VM is Volatile in nature, on reboot discard the VM's root disk and create a new root disk for it: by calling restoreVM
         long serviceOfferingId = vmInstance.getServiceOfferingId();
         ServiceOfferingVO offering = _serviceOfferingDao.findById(vmInstance.getId(), serviceOfferingId);
@@ -3363,17 +3369,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (requestedIpPair == null) {
                 requestedIpPair = new IpAddresses(null, null);
             } else {
-                _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+                _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair);
             }
 
-            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
 
             if (defaultNetworkNumber == 0) {
                 defaultNetworkNumber++;
                 // if user requested specific ip for default network, add it
                 if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
-                    _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                    _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps);
                     profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                } else if (defaultIps.getMacAddress() != null) {
+                    profile = new NicProfile(null, null, defaultIps.getMacAddress());
                 }
 
                 profile.setDefaultNic(true);
@@ -3619,8 +3627,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 _vmDao.persist(vm);
                 for (String key : customParameters.keySet()) {
-                    //handle double byte strings.
-                    vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
+                    if( key.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) ||
+                            key.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) ||
+                            key.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
+                        // handle double byte strings.
+                        vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
+                    } else {
+                        vm.setDetail(key, customParameters.get(key));
+                    }
                 }
                 vm.setDetail("deployvm", "true");
                 _vmDao.saveDetails(vm);
@@ -4587,7 +4601,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if(!serviceOffering.isDynamic()) {
             for(String detail: cmd.getDetails().keySet()) {
-                if(detail.equalsIgnoreCase("cpuNumber") || detail.equalsIgnoreCase("cpuSpeed") || detail.equalsIgnoreCase("memory")) {
+                if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
                     throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
                 }
             }
@@ -4619,10 +4633,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String ipAddress = cmd.getIpAddress();
         String ip6Address = cmd.getIp6Address();
+        String macAddress = cmd.getMacAddress();
         String name = cmd.getName();
         String displayName = cmd.getDisplayName();
         UserVm vm = null;
-        IpAddresses addrs = new IpAddresses(ipAddress, ip6Address);
+        IpAddresses addrs = new IpAddresses(ipAddress, ip6Address, macAddress);
         Long size = cmd.getSize();
         String group = cmd.getGroup();
         String userData = cmd.getUserData();
@@ -4832,6 +4847,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
+        checkIfHostOfVMIsInPrepareForMaintenanceState(vm.getHostId(), vmId, "Migrate");
+
         if(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
@@ -4923,6 +4940,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             return false;
         }
+    }
+
+    private void checkIfHostOfVMIsInPrepareForMaintenanceState(Long hostId, Long vmId, String operation) {
+        HostVO host = _hostDao.findById(hostId);
+        if (host.getResourceState() != ResourceState.PrepareForMaintenance) {
+            return;
+        }
+
+        s_logger.debug("Host is in PrepareForMaintenance state - " + operation + " VM operation on the VM id: " + vmId + " is not allowed");
+        throw new InvalidParameterValueException(operation + " VM operation on the VM id: " + vmId + " is not allowed as host is preparing for maintenance mode");
     }
 
     private Long accountOfDedicatedHost(HostVO host) {
