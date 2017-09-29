@@ -304,6 +304,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _dom0MinMem;
 
+    private long _dom0OvercommitMem;
+
     protected boolean _disconnected = true;
     protected int _cmdsTimeout;
     protected int _stopTimeout;
@@ -848,6 +850,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String)params.get("host.reserved.mem.mb");
         // Reserve 1GB unless admin overrides
         _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024 * 1024L;
+
+        value = (String)params.get("host.overcommit.mem.mb");
+        // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
+        // compressing technologies
+        _dom0OvercommitMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024L;
 
         value = (String) params.get("kvmclock.disable");
         if (Boolean.parseBoolean(value)) {
@@ -2782,12 +2789,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         info.add((int)cpus);
         info.add(speed);
         // Report system's RAM as actual RAM minus host OS reserved RAM
-        ram = ram - _dom0MinMem;
+        ram = ram - _dom0MinMem + _dom0OvercommitMem;
         info.add(ram);
         info.add(cap);
         info.add(_dom0MinMem);
         info.add(cpuSockets);
-        s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", _dom0MinMem=" + _dom0MinMem + ", cpu sockets=" + cpuSockets);
+        s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", _dom0MinMem=" + _dom0MinMem + ", _dom0OvercommitMem=" + _dom0OvercommitMem + ", cpu sockets=" + cpuSockets);
 
         return info;
     }
