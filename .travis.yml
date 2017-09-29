@@ -126,14 +126,14 @@ env:
 
     - TESTS="component/test_projects
              component/test_project_configs
-             component/test_project_limits
              component/test_project_usage
              component/test_regions
              component/test_regions_accounts
              component/test_routers
              component/test_snapshots"
 
-    - TESTS="component/test_resource_limits"
+    - TESTS="component/test_project_limits
+             component/test_resource_limits"
 
     - TESTS="component/test_stopped_vm
              component/test_tags
