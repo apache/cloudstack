@@ -17,18 +17,26 @@
 # under the License.
 
 #set -x
-logfile="/var/log/patchsystemvm.log"
+logfile="/var/log/cloud.log"
+
+log_it() {
+  echo "$(date) patchsystemvm.sh $@" >> $logfile
+}
+
 # To use existing console proxy .zip-based package file
 patch_console_proxy() {
    local patchfile=$1
+   log_it "Patching CPVM/SSVM with cloud agent jars from $patchfile"
    rm /usr/local/cloud/systemvm -rf
    mkdir -p /usr/local/cloud/systemvm
-   echo "All" | unzip $patchfile -d /usr/local/cloud/systemvm >$logfile 2>&1
+   log_it "Patching /usr/local/cloud/systemvm:"
+   echo "All" | unzip $patchfile -d /usr/local/cloud/systemvm >>$logfile 2>&1
    find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
    return 0
 }
 
 consoleproxy_svcs() {
+   log_it "Configuring console proxy services"
    chkconfig cloud on
    chkconfig postinit on
    chkconfig cloud-passwd-srvr off
@@ -46,6 +54,7 @@ consoleproxy_svcs() {
 }
 
 secstorage_svcs() {
+   log_it "Configuring SSVM services"
    chkconfig cloud on
    chkconfig postinit on
    chkconfig cloud-passwd-srvr off
@@ -63,10 +72,11 @@ secstorage_svcs() {
 }
 
 routing_svcs() {
+   log_it "Configuring VR services"
    grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
    RROUTER=$?
    chkconfig cloud off
-   chkconfig haproxy on ; 
+   chkconfig haproxy on ;
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
@@ -74,6 +84,7 @@ routing_svcs() {
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
    if [ $RROUTER -eq 0 ]
    then
+       log_it "Configuring redundant VR services"
        chkconfig dnsmasq off
        chkconfig cloud-passwd-srvr off
        chkconfig keepalived on
@@ -82,6 +93,7 @@ routing_svcs() {
        echo "keepalived conntrackd postinit" >> /var/cache/cloud/enabled_svcs
        echo "dnsmasq cloud-passwd-srvr" >> /var/cache/cloud/disabled_svcs
    else
+       log_it "Configuring non-redundant VR services"
        chkconfig dnsmasq on
        chkconfig cloud-passwd-srvr on
        chkconfig keepalived off
@@ -92,9 +104,10 @@ routing_svcs() {
 }
 
 dhcpsrvr_svcs() {
+   log_it "Configuring DHCP services"
    chkconfig cloud off
-   chkconfig cloud-passwd-srvr on ; 
-   chkconfig haproxy off ; 
+   chkconfig cloud-passwd-srvr on ;
+   chkconfig haproxy off ;
    chkconfig dnsmasq on
    chkconfig ssh on
    chkconfig nfs-common off
@@ -106,8 +119,9 @@ dhcpsrvr_svcs() {
 }
 
 elbvm_svcs() {
+   log_it "Configuring external load balancing VM services"
    chkconfig cloud off
-   chkconfig haproxy on ; 
+   chkconfig haproxy on ;
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
@@ -117,10 +131,10 @@ elbvm_svcs() {
    echo "cloud dnsmasq cloud-passwd-srvr apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
 
-
 ilbvm_svcs() {
+   log_it "Configuring internal load balancing VM services"
    chkconfig cloud off
-   chkconfig haproxy on ; 
+   chkconfig haproxy on ;
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
@@ -131,6 +145,7 @@ ilbvm_svcs() {
 }
 
 enable_pcihotplug() {
+   log_it "Configuring PCI hot plug"
    sed -i -e "/acpiphp/d" /etc/modules
    sed -i -e "/pci_hotplug/d" /etc/modules
    echo acpiphp >> /etc/modules
@@ -138,6 +153,7 @@ enable_pcihotplug() {
 }
 
 enable_serial_console() {
+   log_it "Enabling serial console"
    sed -i -e "/^serial.*/d" /boot/grub/grub.conf
    sed -i -e "/^terminal.*/d" /boot/grub/grub.conf
    sed -i -e "/^default.*/a\serial --unit=0 --speed=115200 --parity=no --stop=1" /boot/grub/grub.conf
@@ -147,8 +163,11 @@ enable_serial_console() {
    sed -i -e "/6:23:respawn/a\s0:2345:respawn:/sbin/getty -L 115200 ttyS0 vt102" /etc/inittab
 }
 
+log_it "Starting $0 $*"
 
 CMDLINE=$(cat /var/cache/cloud/cmdline)
+log_it "CMDLINE passed to system VM patch process: $CMDLINE"
+
 TYPE="router"
 PATCH_MOUNT=$1
 Hypervisor=$2
@@ -169,10 +188,11 @@ done
 
 if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f ${PATCH_MOUNT}/systemvm.zip ]
 then
+  log_it "Patching ${TYPE}."
   patch_console_proxy ${PATCH_MOUNT}/systemvm.zip
   if [ $? -gt 0 ]
   then
-    printf "Failed to apply patch systemvm\n" >$logfile
+    log_it "Failed to apply patch systemvm"
     exit 5
   fi
 fi
@@ -183,26 +203,29 @@ echo "" > /root/.ssh/known_hosts
 
 if [ "$Hypervisor" == "kvm" ]
 then
+   log_it "Enabling PCI hotplug and serial console for KVM"
    enable_pcihotplug
    enable_serial_console
 fi
 
 if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ]
 then
+  log_it "Updating ${TYPE} services"
   routing_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute routing_svcs\n" >$logfile
+    log_it "Failed to execute routing_svcs"
     exit 6
   fi
 fi
 
 if [ "$TYPE" == "dhcpsrvr" ]
 then
+  log_it "Updating ${TYPE} services"
   dhcpsrvr_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute dhcpsrvr_svcs\n" >$logfile
+    log_it "Failed to execute dhcpsrvr_svcs"
     exit 6
   fi
 fi
@@ -210,40 +233,44 @@ fi
 
 if [ "$TYPE" == "consoleproxy" ]
 then
+  log_it "Updating ${TYPE} services"
   consoleproxy_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute consoleproxy_svcs\n" >$logfile
+    log_it "Failed to execute consoleproxy_svcs"
     exit 7
   fi
 fi
 
 if [ "$TYPE" == "secstorage" ]
 then
+  log_it "Updating ${TYPE} services"
   secstorage_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute secstorage_svcs\n" >$logfile
+    log_it "Failed to execute secstorage_svcs"
     exit 8
   fi
 fi
 
 if [ "$TYPE" == "elbvm" ]
 then
+  log_it "Updating ${TYPE} services"
   elbvm_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute elbvm svcs\n" >$logfile
+    log_it "Failed to execute elbvm svcs"
     exit 9
   fi
 fi
 
 if [ "$TYPE" == "ilbvm" ]
 then
+  log_it "Updating ${TYPE} services"
   ilbvm_svcs
   if [ $? -gt 0 ]
   then
-    printf "Failed to execute ilbvm svcs\n" >$logfile
+    log_it "Failed to execute ilbvm svcs"
     exit 9
   fi
 fi

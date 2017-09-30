@@ -1,10 +1,10 @@
 #!/bin/bash -e
 ### BEGIN INIT INFO
 # Provides:          postinit
-# Required-Start:    mountkernfs $local_fs cloud-early-config
+# Required-Start:    mountkernfs $local_fs cloud-early-init
 # Required-Stop:     $local_fs
-# Should-Start:      
-# Should-Stop:       
+# Should-Start:
+# Should-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: 	post-init
@@ -19,7 +19,7 @@
 # with the License.  You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -61,7 +61,7 @@ setup_redundant_router() {
 }
 
 start() {
-  case $TYPE in 
+  case $TYPE in
      secstorage)
          [ "$NAME" == "" ] && NAME=secstorage
          setup_secstorage;
@@ -95,7 +95,7 @@ for i in $CMDLINE
     # search for foo=bar pattern and cut out foo
     KEY=$(echo $i | cut -d= -f1)
     VALUE=$(echo $i | cut -d= -f2)
-    case $KEY in 
+    case $KEY in
       eth0ip)
           ETH0_IP=$VALUE
           ;;
@@ -142,10 +142,10 @@ for i in $CMDLINE
         DHCP_RANGE=$(echo $VALUE | tr ':' ',')
       	;;
       bootproto)
-        BOOTPROTO=$VALUE 
+        BOOTPROTO=$VALUE
       	;;
       type)
-        TYPE=$VALUE	
+        TYPE=$VALUE
 	;;
       redundant_router)
         RROUTER=$VALUE

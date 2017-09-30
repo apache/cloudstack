@@ -36,11 +36,14 @@ function install_cloud_scripts() {
   rsync -av ./cloud_scripts/ /
   chmod +x /opt/cloud/bin/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
-    /etc/init.d/{cloud,cloud-early-config,cloud-passwd-srvr,postinit} \
+    /etc/init.d/{cloud,cloud-early-init,cloud-early-config,cloud-passwd-srvr,postinit} \
     /etc/profile.d/cloud.sh
 
-  chkconfig --add cloud-early-config
-  chkconfig cloud-early-config on
+  chkconfig --add cloud-early-init
+  chkconfig cloud-early-init on
+  # Testing serialized cloud-early-init and cloud-early-config
+  # chkconfig --add cloud-early-config
+  # chkconfig cloud-early-config on
   chkconfig --add cloud-passwd-srvr
   chkconfig cloud-passwd-srvr off
   chkconfig --add cloud
