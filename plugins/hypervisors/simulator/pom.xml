@@ -30,7 +30,6 @@
     <description>Simulator Hypervisor for Cloudstack</description>
     <build>
         <defaultGoal>install</defaultGoal>
-        <sourceDirectory>src</sourceDirectory>
     </build>
     <dependencies>
         <dependency>

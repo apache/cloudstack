@@ -208,7 +208,6 @@
     <module>framework</module>
     <module>client</module>
     <module>services</module>
-    <module>maven-standard</module>
     <module>quickcloud</module>
   </modules>
 
@@ -569,20 +568,6 @@
 
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
-    <resources>
-      <resource>
-        <directory>${basedir}/resources</directory>
-      </resource>
-    </resources>
-    <testResources>
-      <testResource>
-        <directory>test/resources</directory>
-      </testResource>
-    </testResources>
-    <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
-    <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -143,14 +143,6 @@
     </dependency>
   </dependencies>
   <build>
-    <testResources>
-      <testResource>
-        <directory>test/resources</directory>
-        <excludes>
-          <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
-        </excludes>
-      </testResource>
-    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

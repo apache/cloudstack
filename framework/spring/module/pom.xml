@@ -23,9 +23,9 @@
     <name>Apache CloudStack Framework - Spring Module</name>
     <parent>
         <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloud-maven-standard</artifactId>
+        <artifactId>cloudstack</artifactId>
         <version>4.12.0.0-SNAPSHOT</version>
-        <relativePath>../../../maven-standard/pom.xml</relativePath>
+        <relativePath>../../../pom.xml</relativePath>
     </parent>
     <dependencies>
         <dependency>

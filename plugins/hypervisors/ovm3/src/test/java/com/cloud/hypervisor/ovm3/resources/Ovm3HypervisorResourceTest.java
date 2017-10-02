@@ -313,9 +313,6 @@ public class Ovm3HypervisorResourceTest {
         boolean enableHA = true;
         boolean limitCpuUse = false;
         String vncPassword = "gobbeldygoo";
-        // public StartCommand(VirtualMachineTO vm, Host host, boolean
-        // executeInSequence) {
-        // ./api/src/com/cloud/agent/api/to/VirtualMachineTO.java
         VirtualMachineTO vmspec = new VirtualMachineTO(id, instanceName, type,
                 cpus, speed, minRam, maxRam, bootloader, os, enableHA,
                 limitCpuUse, vncPassword);

@@ -36,7 +36,7 @@
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-client-ui</artifactId>
         <version>${project.version}</version>
-	<type>pom</type>
+        <type>pom</type>
       </dependency>
     </dependencies>
 
