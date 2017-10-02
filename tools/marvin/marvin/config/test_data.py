@@ -42,13 +42,12 @@ test_data = {
         "displaytext": "Test project"
     },
     "publiciprange": {
-        "gateway": "",
-        "netmask": "",
-        "startip": "",
-        "endip": "",
+        "gateway": "10.6.0.254",
+        "netmask": "255.255.255.0",
+        "startip": "10.6.0.2",
+        "endip": "10.6.0.20",
         "forvirtualnetwork": "true",
-        "vlan": "",
-        "zoneid": ""
+        "vlan": "300"
     },
     "private_gateway": {
         "ipaddress": "172.16.1.2",
@@ -1927,7 +1926,7 @@ test_data = {
                     "bootable": True,
                     "ispublic": False,
                     "url": "http://dl.openvm.eu/cloudstack/iso/TinyCore-8.0.iso",
-                    "ostype": 'CentOS 6.3 (64-bit)',
+                    "ostype": 'Other Linux (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
         },
      "setHostConfigurationForIngressRule": False,

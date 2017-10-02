@@ -21,7 +21,8 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (listHypervisorCapabilities,
                                   attachIso,
-                                  deleteVolume)
+                                  deleteVolume,
+                                  updateResourceLimit)
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -48,6 +49,7 @@ class Services:
     """Test Volume Services
     """
 
+    """
     def __init__(self):
         self.services = {
             "account": {
@@ -99,7 +101,7 @@ class Services:
             "sleep": 50,
             "ostype": 'CentOS 5.3 (64-bit)',
         }
-
+"""
 
 class TestAttachVolume(cloudstackTestCase):
 
@@ -107,13 +109,13 @@ class TestAttachVolume(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestAttachVolume, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
         cls._cleanup = []
         cls.unsupportedStorageType = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -123,17 +125,17 @@ class TestAttachVolume(cloudstackTestCase):
                 return
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
-            cls.services["disk_offering"]
+            cls.testdata["disk_offering"]
         )
         cls._cleanup.append(cls.disk_offering)
-        template = get_template(
+        cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
-        cls.services["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = template.id
+        #cls.testdata["zoneid"] = cls.zone.id
+        #cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
+        #cls.testdata["virtual_machine"]["template"] = template.id
         # get max data volumes limit based on the hypervisor type and version
         listHost = Host.list(
             cls.api_client,
@@ -151,27 +153,38 @@ class TestAttachVolume(cloudstackTestCase):
             if res[i].hypervisorversion == ver:
                 break
         cls.max_data_volumes = int(res[i].maxdatavolumeslimit)
+        if 'kvm' in cls.hypervisor.lower():
+            cls.max_data_volumes = 27
         cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
-        cls.services["volume"]["max"] = cls.max_data_volumes
+        #cls.services["volume"]["max"] = cls.max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
             cls.api_client,
-            cls.services["account"],
+            cls.testdata["account"],
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.account)
 
+        cmd = updateResourceLimit.updateResourceLimitCmd()
+        cmd.account = cls.account.name
+        cmd.domainid = cls.domain.id
+        cmd.resourcetype = 2
+        cmd.max = cls.max_data_volumes
+        res = cls.api_client.updateResourceLimit(cmd)
+
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
-            cls.services["service_offering"]
+            cls.testdata["service_offering"]
         )
         cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
-            cls.services["virtual_machine"],
+            cls.testdata["virtual_machine"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
+            templateid=cls.template.id,
+            zoneid=cls.zone.id
         )
 
     def setUp(self):
@@ -217,7 +230,7 @@ class TestAttachVolume(cloudstackTestCase):
             for i in range(self.max_data_volumes):
                 volume = Volume.create(
                     self.apiclient,
-                    self.services["volume"],
+                    self.testdata["volume"],
                     zoneid=self.zone.id,
                     account=self.account.name,
                     domainid=self.account.domainid,
@@ -291,7 +304,7 @@ class TestAttachVolume(cloudstackTestCase):
             # Start VM
             self.virtual_machine.start(self.apiclient)
             # Sleep to ensure that VM is in ready state
-            time.sleep(self.services["sleep"])
+            time.sleep(self.testdata["sleep"])
 
             vm_response = VirtualMachine.list(
                 self.apiclient,
@@ -332,7 +345,7 @@ class TestAttachVolume(cloudstackTestCase):
         # Create a volume and attach to VM
         volume = Volume.create(
             self.apiclient,
-            self.services["volume"],
+            self.testdata["volume"],
             zoneid=self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid,

@@ -27,84 +27,6 @@ from marvin.lib.common import *
 from marvin.sshClient import SshClient
 import datetime
 
-
-class Services:
-    """Test Project Services
-    """
-
-    def __init__(self):
-        self.services = {
-                        "domain": {
-                                   "name": "Domain",
-                        },
-                        "project": {
-                                    "name": "Project",
-                                    "displaytext": "Test project",
-                        },
-                         "mgmt_server": {
-                                   "ipaddress": '192.168.100.21',
-                                   "username": 'root',
-                                   "password": 'password',
-                                   "port": 22,
-                        },
-                        "account": {
-                                    "email": "administrator@clogeny.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "user": {
-                                    "email": "administrator@clogeny.com",
-                                    "firstname": "User",
-                                    "lastname": "User",
-                                    "username": "User",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
-                        },
-                         "virtual_machine": {
-                                    "displayname": "Test VM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    # Hypervisor type should be same as
-                                    # hypervisor type of cluster
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                         },
-                         "template": {
-                                "displaytext": "Public Template",
-                                "name": "Public template",
-                                "ostype": 'CentOS 5.3 (64-bit)',
-                                "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
-                                "hypervisor": 'XenServer',
-                                "format": 'VHD',
-                                "isfeatured": True,
-                                "ispublic": True,
-                                "isextractable": True,
-                        },
-                        "configs": {
-                                "project.invite.timeout": 300,
-                        },
-                        "ostype": 'CentOS 5.3 (64-bit)',
-                        # Cent OS 5.3 (64 bit)
-                        "sleep": 60,
-                        "timeout": 10,
-                    }
-
-
 class TestUserProjectCreation(cloudstackTestCase):
 
     @classmethod
@@ -112,9 +34,9 @@ class TestUserProjectCreation(cloudstackTestCase):
         cls.testClient = super(TestUserProjectCreation, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -129,19 +51,19 @@ class TestUserProjectCreation(cloudstackTestCase):
         # Create domains, account etc.
         cls.domain = Domain.create(
                                    cls.api_client,
-                                   cls.services["domain"]
+                                   cls.testdata["domain"]
                                    )
 
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
+                            cls.testdata["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
                             cls.api_client,
-                            cls.services["account"],
+                            cls.testdata["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
@@ -203,7 +125,7 @@ class TestUserProjectCreation(cloudstackTestCase):
 
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -239,7 +161,7 @@ class TestUserProjectCreation(cloudstackTestCase):
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.user.name,
                                  domainid=self.user.domainid
                                  )
@@ -276,9 +198,9 @@ class TestProjectCreationNegative(cloudstackTestCase):
         cls.testClient = super(TestProjectCreationNegative, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
 
         # Checking for prereqisits - global configs
         configs = Configurations.list(
@@ -294,19 +216,19 @@ class TestProjectCreationNegative(cloudstackTestCase):
         # Create domains, account etc.
         cls.domain = Domain.create(
                                    cls.api_client,
-                                   cls.services["domain"]
+                                   cls.testdata["domain"]
                                    )
 
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
+                            cls.testdata["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
                             cls.api_client,
-                            cls.services["account"],
+                            cls.testdata["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
@@ -367,7 +289,7 @@ class TestProjectCreationNegative(cloudstackTestCase):
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -403,7 +325,7 @@ class TestProjectCreationNegative(cloudstackTestCase):
         with self.assertRaises(Exception):
             project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.user.name,
                                  domainid=self.user.domainid
                                  )
@@ -419,9 +341,9 @@ class TestProjectInviteRequired(cloudstackTestCase):
         cls.testClient = super(TestProjectInviteRequired, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
         cls.domain = get_domain(cls.api_client)
@@ -439,14 +361,14 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
+                            cls.testdata["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
                             cls.api_client,
-                            cls.services["user"],
+                            cls.testdata["user"],
                             admin=True,
                             domainid=cls.domain.id
                             )
@@ -490,7 +412,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -566,12 +488,13 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+
         cls.testClient = super(TestProjectInviteRequiredTrue, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
         cls.domain = get_domain(cls.api_client)
@@ -589,14 +512,14 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
 
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
+                            cls.testdata["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
                             cls.api_client,
-                            cls.services["user"],
+                            cls.testdata["user"],
                             admin=True,
                             domainid=cls.domain.id
                             )
@@ -640,7 +563,7 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -720,9 +643,9 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         cls.testClient = super(TestProjectInviteTimeout, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
         cls.domain = get_domain(cls.api_client)
@@ -746,21 +669,21 @@ class TestProjectInviteTimeout(cloudstackTestCase):
 
         if not isinstance(configs, list):
             raise unittest.SkipTest("The 'project.invite.timeout' is not found in global configs")
-        elif int(configs[0].value) != cls.services["configs"]["project.invite.timeout"]:
+        elif int(configs[0].value) != cls.testdata["configs"]["project.invite.timeout"]:
             raise unittest.SkipTest("'project.invite.timeout' should be: %s " %
-                            cls.services["configs"]["project.invite.timeout"])
+                            cls.testdata["configs"]["project.invite.timeout"])
 
         cls.config = configs[0]
         cls.account = Account.create(
                             cls.api_client,
-                            cls.services["account"],
+                            cls.testdata["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
 
         cls.user = Account.create(
                             cls.api_client,
-                            cls.services["user"],
+                            cls.testdata["user"],
                             admin=True,
                             domainid=cls.domain.id
                             )
@@ -807,7 +730,7 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -933,7 +856,7 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -1064,7 +987,7 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -1193,7 +1116,7 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -1312,15 +1235,15 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         config = configs[0]
         self.assertEqual(
                     int(config.value),
-                    self.services["configs"]["project.invite.timeout"],
+                    self.testdata["configs"]["project.invite.timeout"],
                     "'project.invite.timeout' should be %s" %
-                            self.services["configs"]["project.invite.timeout"]
+                            self.testdata["configs"]["project.invite.timeout"]
                     )
 
         # Create project as a domain admin
         project = Project.create(
                                  self.apiclient,
-                                 self.services["project"],
+                                 self.testdata["project"],
                                  account=self.account.name,
                                  domainid=self.account.domainid
                                  )
@@ -1367,7 +1290,7 @@ class TestProjectInviteTimeout(cloudstackTestCase):
 
         # Fetch the latest mail sent to user
         mail_content = fetch_latest_mail(
-                                         self.services["mail_account"],
+                                         self.testdata["mail_account"],
                                          from_mail=self.user.user[0].email
                                          )
         return

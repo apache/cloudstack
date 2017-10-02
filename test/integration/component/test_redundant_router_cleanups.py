@@ -757,7 +757,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
             master_router = routers[1]
             backup_router = routers[0]
         else:
-            self.fail("Both the routers in RVR are in BackupState")
+            self.fail("Both the routers in RVR are in BackupState - CLOUDSTACK-9015")
 
         Router.stop(
             self.apiclient,

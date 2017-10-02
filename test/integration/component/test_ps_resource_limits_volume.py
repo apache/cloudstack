@@ -136,7 +136,7 @@ class TestPrimaryResourceLimitsVolume(cloudstackTestCase):
         # upload volume and verify that the volume is uploaded
         volume = Volume.upload(self.apiclient, self.services["configurableData"]["upload_volume"],
                                zoneid=self.zone.id, account=self.account.name,
-                               domainid=self.account.domainid, url="http://people.apache.org/~sanjeev/rajani-thin-volume.vhd")
+                               domainid=self.account.domainid)
 
         volume.wait_for_upload(self.apiclient)
         volumes = Volume.list(self.apiclient, id=volume.id,
