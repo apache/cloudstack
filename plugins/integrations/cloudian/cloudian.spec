@@ -89,6 +89,7 @@ if [ -f /usr/share/cloudstack-management/webapps/client/plugins/plugins.js ]; th
         gzip -c /usr/share/cloudstack-management/webapps/client/plugins/plugins.js > /usr/share/cloudstack-management/webapps/client/plugins/plugins.js.gz
     fi
 fi
+echo "Restart the CloudStack management server to load the Cloudian Connector plugin"
 exit 0
 
 %postun
@@ -100,6 +101,7 @@ if [ -f /usr/share/cloudstack-management/webapps/client/plugins/plugins.js ]; th
         gzip -c /usr/share/cloudstack-management/webapps/client/plugins/plugins.js > /usr/share/cloudstack-management/webapps/client/plugins/plugins.js.gz
     fi
 fi
+echo "Restart the CloudStack management server to unload the Cloudian Connector plugin"
 exit 0
 
 %changelog

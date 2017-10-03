@@ -149,51 +149,46 @@ how to do this.
 
 === Install the Connector RPM
 The Connector RPM should be installed, configured and enabled on each
-CloudStack Management Server in your network. 
+CloudStack management server in your network. After installation, restart
+the CloudStack management server(s).
 
 .Install using yum (easily resolves dependencies)
 [subs="attributes, quotes"]
 ----
-# yum install ./cloudian-cloudplatform-{cpver}_{hsver}-{rc}.el6.noarch.rpm
-Loaded plugins: fastestmirror, security
-Loading mirror speeds from cached hostfile
-[...snipped...]
-Setting up Install Process
-Examining ./cloudian-cloudplatform-{cpver}_{hsver}-{rc}.el6.noarch.rpm:
-cloudian-cloudplatform-{cpver}_{hsver}-{rc}.el6.noarch
-Marking ./cloudian-cloudplatform-{cpver}_{hsver}-{rc}.el6.noarch.rpm to be installed
+# yum install ./cloudian-cloudstack-{cpver}_{hsver}-{rc}.noarch.rpm
+Loaded plugins: fastestmirror
+Examining ./cloudian-cloudstack-{cpver}_{hsver}-{rc}.noarch.rpm: cloudian-cloudstack-{cpver}_{hsver}-{rc}.noarch
+Marking ./cloudian-cloudstack-{cpver}_{hsver}-{rc}.noarch.rpm to be installed
 Resolving Dependencies
 --> Running transaction check
----> Package cloudian-cloudplatform.noarch 0:{cpver}_{hsver}-{rc}.el6 will be installed
+---> Package cloudian-cloudstack.noarch 0:{cpver}_{hsver}-{rc} will be installed
 --> Finished Dependency Resolution
 
 Dependencies Resolved
 [...snipped...]
 
-Total size: 1.3 M
-Installed size: 1.3 M
-Is this ok [y/N]: y
-Downloading Packages:
-Running rpm_check_debug
-Running Transaction Test
-Transaction Test Succeeded
-Running Transaction
-  Installing : cloudian-cloudplatform-{cpver}_{hsver}-{rc}.el6.noarch      1/1
-=====================================================================
-[red]#HyperStore Connect for CloudStack has been successfully installed.#
+Install  1 Package
 
-[red]#The next steps are:#
-    [red]#1. # cloudian-cloudstack.sh configure#
-    [red]#2. # cloudian-cloudstack.sh enable#
-
-[red]#Should you ever wish to disable the connector:#
-    [red]#3. # cloudian-cloudstack.sh disable#
+Total size: 531 k
+Installed size: 531 k
+Is this ok [y/d/N]: y
+Downloading packages:
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : cloudian-cloudstack-{cpver}_{hsver}-{rc}.noarch     1/1
 =====================================================================
-  Verifying  : cloudian-cloudplatform-{cpver}_{hsver}-{rc}.el6.noarch      1/1
+[red]#Restart the CloudStack management server to load the Cloudian Connector plugin#
+=====================================================================
+  Verifying  : cloudian-cloudstack-{cpver}_{hsver}-{rc}.noarch     1/1
 
 Installed:
-  cloudian-cloudplatform.noarch 0:{cpver}_{hsver}-{rc}.el6
+  cloudian-cloudstack.noarch 0:{cpver}_{hsver}-{rc}
+
 Complete!
+
+# systemctl restart cloudstack-management
 ----
 
 TIP: When the connector RPM is installed for the first time
@@ -274,15 +269,13 @@ file: /etc/cloudian-[red]#[version]#-puppet/modules/cmc/templates/mts-ui.propert
 Enabling the connector is the last step. You should have already installed
 the RPM and configured it as per above before you enable it.
 
-Enabling the connector patches a few CloudStack files and restarts
-the management server as shown below. The patches are easily reversed at
-any time with the disable option which is discussed below.
+Log into the CloudStack UI as root admin, go to "Global Settings". Search for
+'cloudian.connector.enabled' and set it to true and restart each of the
+management server(s) to reload the connector.
 
 .Enabling restarts the management server
 ----
-# cloudian-cloudstack.sh enable
-Stopping cloudstack-management:                            [  OK  ]
-Starting cloudstack-management:                            [  OK  ]
+# systemctl restart cloudstack-management
 ----
 
 anchor:upgrade[]
@@ -295,7 +288,7 @@ upgrade functionality. Any configuration changes you made to the
 existing version will carry over automatically to the new version.
 
 ----
-# yum upgrade ./cloudian-cloudplatform-newpackage.rpm
+# yum upgrade ./cloudian-cloudstack-newpackage.noarch.rpm
 ----
 
 If the new connector is not compatible with the existing CloudStack
@@ -307,21 +300,41 @@ rpm by following the <<uninstall,Uninstalling the Connector>> section.
 After you have upgraded CloudStack, install a new connector for that version.
 
 When you uninstall the connector all created Domain/Account mappings remain
-on Cloudian so simply re-enabling a new connector will work. 
-
-You may like to backup the '/etc/cloudian-cloudstack/connector.properties' file
-before continuing though so you can use it for the next connector.
+on Cloudian so simply re-enabling a new connector will work.
 
 anchor:uninstall[]
 
 == Uninstalling the Connector
-If you wish to uninstall the connector you simply remove the RPM. It will
-disable the connector if enabled, restart the management server if 
-required and clean up.
+If you wish to uninstall the connector you simply remove the RPM and restart
+each of the management server(s) and clean up.
 
 .Uninstall the Connector RPM
+[subs="attributes, quotes"]
 ----
-# rpm -e cloudian-cloudplatform
+# yum remove cloudian-cloudstack.noarch
+Loaded plugins: fastestmirror
+Resolving Dependencies
+--> Running transaction check
+---> Package cloudian-cloudstack.noarch 0:{cpver}_{hsver}-{rc} will be erased
+--> Finished Dependency Resolution
+[...snipped...]
+
+Installed size: 531 k
+Is this ok [y/N]: y
+Downloading packages:
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Erasing    : cloudian-cloudstack-{cpver}_{hsver}-{rc}.noarch     1/1
+[red]#Restart the CloudStack management server to unload the Cloudian Connector plugin#
+  Verifying  : cloudian-cloudstack-{cpver}_{hsver}-{rc}.noarch     1/1
+
+Removed:
+  cloudian-cloudstack.noarch 0:{cpver}_{hsver}-{rc}
+Complete!
+
+# systemctl restart cloudstack-management
 ----
 
 anchor:admin[]
@@ -333,9 +346,20 @@ the connector for details.
 
 === Connector Logs
 
-The connector runs as part of the CloudStack Management server. Logging
+The connector runs as a plugin of the CloudStack Management server. Logging
 is therefore integrated with the Management Server's log files. Logging
-is only output when the connector is enabled.
+is only output when the connector is enabled and appropriate logging
+configuration has been setup, for example:
+
+----
+# cat /etc/cloudstack/management/log4j-cloud.xml
+
+[...snipped...]
+   <category name="com.cloudian">
+     <priority value="DEBUG"/>
+   </category>
+[...snipped...]
+----
 
 .Connector Log File
 ----
@@ -349,9 +373,13 @@ and the CloudStack Management Server is started up.
 
 .Example Start up Messages:
 ----
-[cloudian.cloudstack.CloudianIntegrationServlet] (main:null) Cloudian integration server is ready.
-[cloudian.cloudstack.CloudianIntegrationServlet] (main:null) Cloudian Admin host:s3-admin.cloudian.com
-[cloudian.cloudstack.CloudianIntegrationServlet] (main:null) Cloudian Admin port:18081
+INFO  [o.a.c.s.m.m.i.DefaultModuleDefinitionSet] (localhost-startStop-1:null) (logid:) Module Hierarchy:         cloudian
+...
+INFO  [o.a.c.s.m.m.i.DefaultModuleDefinitionSet] (localhost-startStop-1:null) (logid:) Loaded module context [cloudian] in 272 ms
+DEBUG [c.c.a.ApiServer] (localhost-startStop-1:null) (logid:) Discovered plugin CloudianConnectorImpl
+INFO  [o.a.c.s.m.m.i.DefaultModuleDefinitionSet] (localhost-startStop-1:null) (logid:) Starting module [cloudian]
+...
+DEBUG [c.c.c.CloudianConnectorImpl] (localhost-startStop-1:null) (logid:) Cloudian connector is enabled, completed configuration, integration is ready. Cloudian admin host:admin.hs.yadav.xyz, port:19443
 ----
 
 ==== SSO Failures
@@ -429,32 +457,22 @@ the normal clean state of the cloudstack-management installation. Note
 though that the output will vary slightly depending on your installation
 and what you have changed.
 +
-.With Connector Disabled
+.With Connector not installed
 ----
 # rpm -qV cloudstack-management
 S.5....T.  c /etc/cloudstack/management/db.properties
-......G..    /var/log/cloudstack/agent
-S.5....T.    /var/log/cloudstack/management/catalina.out
+.......T.    /var/run/cloudstack-management.pid
 ----
 +
-.With Connector Enabled
+.With Connector installed
 ----
 # rpm -qV cloudstack-management
+
+# rpm -qV cloudstack-management
 S.5....T.  c /etc/cloudstack/management/db.properties
-S.5....T.    /usr/share/cloudstack-management/webapps/client/WEB-INF/web.xml
-S.5....T.    /usr/share/cloudstack-management/webapps/client/css/cloudstack3.css
-S.5....T.    /usr/share/cloudstack-management/webapps/client/css/cloudstack3.css.gz
-S.5....T.    /usr/share/cloudstack-management/webapps/client/index.jsp
-S.5....T.    /usr/share/cloudstack-management/webapps/client/scripts/accounts.js
-S.5....T.    /usr/share/cloudstack-management/webapps/client/scripts/accounts.js.gz
-S.5....T.    /usr/share/cloudstack-management/webapps/client/scripts/cloud.core.callbacks.js
-S.5....T.    /usr/share/cloudstack-management/webapps/client/scripts/cloud.core.callbacks.js.gz
-S.5....T.    /usr/share/cloudstack-management/webapps/client/scripts/cloudStack.js
-S.5....T.    /usr/share/cloudstack-management/webapps/client/scripts/cloudStack.js.gz
-S.5....T.    /usr/share/cloudstack-management/webapps/client/scripts/domains.js
-S.5....T.    /usr/share/cloudstack-management/webapps/client/scripts/domains.js.gz
-......G..    /var/log/cloudstack/agent
-S.5....T.    /var/log/cloudstack/management/catalina.out
+S.5....T.    /usr/share/cloudstack-management/webapps/client/plugins/plugins.js
+S.5....T.    /usr/share/cloudstack-management/webapps/client/plugins/plugins.js.gz
+.......T.    /var/run/cloudstack-management.pid
 ----
 
 . Fail-safe botched scripts recovery
