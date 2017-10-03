@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloudian.cloudstack.api;
+package org.apache.cloudstack.cloudian.api;
 
 import javax.inject.Inject;
 
@@ -24,10 +24,10 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.cloudian.CloudianConnector;
+import org.apache.cloudstack.cloudian.response.CloudianSsoLoginResponse;
 
 import com.cloud.user.Account;
-import com.cloudian.cloudstack.CloudianConnector;
-import com.cloudian.cloudstack.response.CloudianSsoLoginResponse;
 import com.google.common.base.Strings;
 
 @APICommand(name = CloudianSsoLoginCmd.APINAME, description = "Generates single-sign-on login url for logged-in CloudStack user to access the Cloudian Management Console",

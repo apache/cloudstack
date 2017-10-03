@@ -15,32 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloudian.client;
+package org.apache.cloudstack.cloudian.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CloudianUser {
-    public static final String USER = "User";
-
-    String userId;
+public class CloudianGroup {
     String groupId;
-    String userType;
-    String fullName;
-    String emailAddr;
+    String groupName;
     Boolean active;
 
     @Override
     public String toString() {
-        return String.format("Cloudian User [id=%s, group id=%s, type=%s, active=%s, name=%s]", userId, groupId, userType, active, fullName);
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
+        return String.format("Cloudian Group [id=%s, name=%s, active=%s]", groupId, groupName, active);
     }
 
     public String getGroupId() {
@@ -51,28 +38,12 @@ public class CloudianUser {
         this.groupId = groupId;
     }
 
-    public String getUserType() {
-        return userType;
+    public String getGroupName() {
+        return groupName;
     }
 
-    public void setUserType(String userType) {
-        this.userType = userType;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getEmailAddr() {
-        return emailAddr;
-    }
-
-    public void setEmailAddr(String emailAddr) {
-        this.emailAddr = emailAddr;
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public Boolean getActive() {

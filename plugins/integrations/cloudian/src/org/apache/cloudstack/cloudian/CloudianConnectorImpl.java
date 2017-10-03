@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloudian.cloudstack;
+package org.apache.cloudstack.cloudian;
 
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -28,6 +28,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.cloudian.api.CloudianSsoLoginCmd;
+import org.apache.cloudstack.cloudian.api.CloudianIsEnabledCmd;
+import org.apache.cloudstack.cloudian.client.CloudianClient;
+import org.apache.cloudstack.cloudian.client.CloudianGroup;
+import org.apache.cloudstack.cloudian.client.CloudianUser;
+import org.apache.cloudstack.cloudian.client.CloudianUtils;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -46,11 +52,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloudian.client.CloudianClient;
-import com.cloudian.client.CloudianGroup;
-import com.cloudian.client.CloudianUser;
-import com.cloudian.cloudstack.api.CloudianIsEnabledCmd;
-import com.cloudian.cloudstack.api.CloudianSsoLoginCmd;
 
 public class CloudianConnectorImpl extends ComponentLifecycleBase implements CloudianConnector, Configurable {
     private static final Logger LOG = Logger.getLogger(CloudianConnectorImpl.class);

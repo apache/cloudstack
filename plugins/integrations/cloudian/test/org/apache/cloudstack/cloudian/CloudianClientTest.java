@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloudian.client;
+package org.apache.cloudstack.cloudian;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -34,6 +34,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 import java.util.List;
 
+import org.apache.cloudstack.cloudian.client.CloudianClient;
+import org.apache.cloudstack.cloudian.client.CloudianGroup;
+import org.apache.cloudstack.cloudian.client.CloudianUser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;

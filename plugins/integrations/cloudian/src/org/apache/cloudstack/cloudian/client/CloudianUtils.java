@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloudian.cloudstack;
+package org.apache.cloudstack.cloudian.client;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

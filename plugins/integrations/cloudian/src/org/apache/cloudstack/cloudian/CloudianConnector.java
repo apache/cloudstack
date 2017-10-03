@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloudian.cloudstack;
+package org.apache.cloudstack.cloudian;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 

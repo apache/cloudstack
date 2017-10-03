@@ -15,17 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloudian.cloudstack.api;
+package org.apache.cloudstack.cloudian.api;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.cloudian.CloudianConnector;
+import org.apache.cloudstack.cloudian.response.CloudianEnabledResponse;
 
 import com.cloud.user.Account;
-import com.cloudian.cloudstack.CloudianConnector;
-import com.cloudian.cloudstack.response.CloudianEnabledResponse;
 
 @APICommand(name = CloudianIsEnabledCmd.APINAME, description = "Checks if the Cloudian Connector is enabled",
         responseObject = CloudianEnabledResponse.class,
