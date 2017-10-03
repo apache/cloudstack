@@ -3,7 +3,7 @@
 echo "Preparing to package Cloudian Connector"
 
 RPMDIR="$PWD/rpmbuild"
-PKG="cloudian-cloudstack-4.9"
+PKG="cloudian-cloudstack"
 
 VERSION=`(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
 if echo $VERSION | grep -q SNAPSHOT ; then
@@ -37,5 +37,6 @@ if [ $? -ne 0 ]; then
     exit 3
 else
     echo "RPM Build Done"
+    mv rpmbuild/RPMS/noarch/$PKG*rpm .
 fi
 exit

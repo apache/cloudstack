@@ -18,6 +18,10 @@ Version and the Cloudian Client version.
 [options="header",cols="2,3,4"]
 |======================
 |Connector Version|CloudStack Compatibility|Cloudian Compatibility
+|4.2.1_2.4-1|4.2.1|Versions 2.x only
+|4.2.1_4.0.1-1|4.2.1|Versions 3.x onwards
+|4.3_4.0.1-1|4.3|Versions 3.x onwards
+|4.5_5.0-1|4.5|Versions 5.x onwards
 |4.7_5.0-1|4.7|Versions 5.x onwards
 |4.9_6.2-1|4.9|Versions 6.2 onwards
 |======================
@@ -41,12 +45,16 @@ Updated for Java 7::
 Re-implementation of Connector::
     Re-implemented Connector per CloudStack best-practices.
 Configuration moved as CloudStack configuration::
-    Moved Cloudian configuration to CloudStack configuration.
-New Configurations::
-    New configurations to fine-tune API call timeouts, SSL validations etc.
+    Moved Cloudian configuration to CloudStack configuration. Deprecates use
+    of connector properties file.
+Simplifies Connector Administration::
+    Simplifies connector installation, configuration, uninstallation and
+    upgrades.
+New API timeout configuration::
+    New configurations to fine-tune API call timeout.
 User and Group auto-provisioning::
-    Better auto-provisioning of CloudStack users and domains as Cloudian users
-    and groups.
+    Better auto-provisioning and de-provisioning of CloudStack users and domains
+    as Cloudian users and groups.
 Documentation Updates::
     Various documentation updates.
 
