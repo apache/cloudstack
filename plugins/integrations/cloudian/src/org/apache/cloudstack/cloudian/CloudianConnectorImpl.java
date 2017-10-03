@@ -216,6 +216,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             return true;
         }
 
+        LOG.debug(String.format("Cloudian connector is enabled, completed configuration, integration is ready. " +
+                        "Cloudian admin host:%s, port:%s, user:%s",
+                CloudianAdminHost.value(), CloudianAdminPort.value(), CloudianAdminUser.value()));
+
         messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
@@ -275,9 +279,6 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                 }
             }
         });
-
-        LOG.debug(String.format("Cloudian connector is enabled, completed configuration, integration is ready. " +
-                        "Cloudian admin host:%s, port:%s", CloudianAdminHost.value(), CloudianAdminPort.value()));
 
         return true;
     }

@@ -171,10 +171,11 @@ public class CloudianClient {
         if (Strings.isNullOrEmpty(userId) || Strings.isNullOrEmpty(groupId)) {
             return null;
         }
+        LOG.debug("Trying to find Cloudian user with id=" + userId + " and group id=" + groupId);
         try {
             final HttpResponse response = get(String.format("/user?userId=%s&groupId=%s", userId, groupId));
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cloudian API call unauthorized, failed to list user");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cloudian admin API call unauthorized, please ask your administrator to fix integration issues.");
             }
             if (response.getEntity() == null || response.getEntity().getContent() == null) {
                 return null;
@@ -194,10 +195,11 @@ public class CloudianClient {
         if (Strings.isNullOrEmpty(groupId)) {
             return new ArrayList<>();
         }
+        LOG.debug("Trying to list Cloudian users in group id=" + groupId);
         try {
             final HttpResponse response = get(String.format("/user/list?groupId=%s&userType=all&userStatus=active", groupId));
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                return new ArrayList<>();
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cloudian admin API call unauthorized, please ask your administrator to fix integration issues.");
             }
             final ObjectMapper mapper = new ObjectMapper();
             if (response.getEntity() == null || response.getEntity().getContent() == null) {
@@ -272,10 +274,11 @@ public class CloudianClient {
         if (Strings.isNullOrEmpty(groupId)) {
             return null;
         }
+        LOG.debug("Trying to find Cloudian group with id=" + groupId);
         try {
             final HttpResponse response = get(String.format("/group?groupId=%s", groupId));
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cloudian API call unauthorized, failed to list group");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cloudian admin API call unauthorized, please ask your administrator to fix integration issues.");
             }
             if (response.getEntity() == null || response.getEntity().getContent() == null){
                 return null;
@@ -292,9 +295,13 @@ public class CloudianClient {
     }
 
     public List<CloudianGroup> listGroups() {
+        LOG.debug("Trying to list Cloudian groups");
         try {
             final HttpResponse response = get("/group/list");
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK || response.getEntity() == null || response.getEntity().getContent() == null) {
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cloudian admin API call unauthorized, please ask your administrator to fix integration issues.");
+            }
+             if (response.getEntity() == null || response.getEntity().getContent() == null) {
                 return new ArrayList<>();
             }
             final ObjectMapper mapper = new ObjectMapper();
