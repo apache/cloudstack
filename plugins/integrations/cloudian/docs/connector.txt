@@ -203,168 +203,78 @@ steps below.
 anchor:configure[]
 
 === Configure the Connector
-The RPM installs a utility script called 'cloudian-cloudstack.sh' which is
-used to simplify initial configuration. The script is mostly self-describing
-and can is run as follows.
 
-----
-# cloudian-cloudstack.sh configure
+The main way to configure, enable and disable the connector is using
+the CloudStack global setting. The global settings provide an easy
+way to configure the connector and synchronize setting across multiple
+management server(s).
 
-HyperStore Connect for CloudStack
-====================================
-Please follow the instructions below to configure things. You can exit
-configuration at any time using ctrl-c and no changes will be saved.
-Defaults are shown where available for each configuration and pressing
-return just accepts that default.
+TIP: Except for the configuration to enable/disable the connector, changing the
+configuration does not require restarting the management server(s).
 
-[...continued...]
-----
+NOTE: The new re-implementation of the connector deprecates the use of
+connector.properties file, used by previous Cloudian connector versions.
 
-Once started, it will ask you to confirm the individual settings of your
-network. You can accept the defaults by pressing return as noted in the 
-text output.
+.Connector specific Global Settings
+[options="header",cols="3,10"]
+|======================
+|Property|Description
 
-The script will guide you through the following four configuration sections:
+|cloudian.connector.enabled|The setting to enable/disable the Cloudian
+Connector. When set to true, this enables the connector. By default, this is
+false.
 
-.Section 1 Example - Cloudian Admin Server
-----
-[...continued...]
+|cloudian.admin.host|The hostname of the Cloudian Admin Server. The Admin server is
+usually running on the same server as the S3 servers. If you have a load
+balanced address you can use that.
 
-1. Cloudian Admin Server
-========================
-The admin server is used to automatically provision and deprovision
-CloudStack user accounts on Cloudian.
+|cloudian.admin.port|The port the Cloudian Admin Server is listening on. This is usually
+port 19443 for most default installations of Cloudian that are using a secure
+(https) admin service or alternatively 18081 for insecure (http) connections.
 
-Admin Service Hostname[s3-admin.cloudian.com]:
+|cloudian.admin.protocol|The protocol to use to access the Admin Server. This should match
+the setting of the 'adminPort' and should be either 'http' or 'https'.
 
-[...continued...]
-----
+|cloudian.validate.ssl|If the admin server is using https and has a valid SSL certificate
+set this to 'true' to ensure you are connecting in a secure manner which validates
+the certificate each time.
 
-At this point, the script will try to connect to the admin server and will
-optionally ask you for further details on your Basic Authentication 
-setup if it detects the admin server has basic authentication enabled.
+|cloudian.admin.user|Basic Authentication user name for the Cloudian Admin server. If
+you have not enabled Basic Authentication any value is ok as the server will
+ignore it.
 
-.Optional Basic Authentication configuration.
-----
-[...continued...]
+|cloudian.admin.password|Basic Authentication password for the Cloudian Admin server. If
+you have not enabled Basic Authentication any value is ok as the server will
+ignore it.
 
-1.1 Basic Authentication
-========================
-It looks like the Admin Server is configured with Basic Auth enabled
-and the default user/password is incorrect. Please enter the correct
-admin user/password below.
+|cloudian.api.request.timeout|The timeout in seconds to be used by the Cloudian
+client when making admin API requests.
 
-Basic Auth Admin User[admin]: 
-Basic Auth Admin Pass[password]: s3cr3t
+|cloudian.cmc.admin.user|The user id of the Cloudian administrator that you
+would like to map to the CloudStack admin user. This is only required for
+Single-Sign-On for the CloudStack admin user.
 
-[...continued...]
-----
+|cloudian.cmc.host|The hostname of the Cloudian CMC Server. This should be resolvable
+on the hosts where your CloudStack users will run their browsers.
 
-The script should then be able to confirm that the connection to 
-the Admin server is good.
+|cloudian.cmc.port|The port used by CMC. Usually this is 8443 if you are using HTTPS or
+port 8080 if you are using HTTP.
 
-----
-[...continued...]
+|cloudian.cmc.protocol|The protocol for users to use to access CMC. This should match
+the setting of the 'cmcPort' and should be either 'http' or 'https'.
 
-Admin host/port is listening.
-Admin host/port/protcol and auth ok
-Admin Server certicate cannot be validated. Using insecure SSL.
-SUCCESS: Admin Server Version: 6.0.2 Compiled: 2016-07-14 15:54
-
-[...continued...]
-----
-
-Next, the script looks at your CMC configuration. It also tests 
-the connection and tries using HTTPS on port 8443 first before asking
-for a different port/protocol preference.
-
-.Section 2 Example - Cloudian Management Console
-----
-[...continued...]
-
-2. Cloudian Management Console (CMC)
-====================================
-A user browsing the CloudStack page who clicks on the Cloudian Storage
-button will have their web browser automatically load CMC using the 
-following information.
-
-CMC Hostname[cmc.cloudian.com]:
-
-SUCCESS: Connection OK to CMC.
-
-[...continued...]
-----
-
-The script will then guide you through Single-Sign-On configuration.
-
-.Section 3 Example - Cloudian Single-Sign-On
-----
-[...continued...]
-
-3. Cloudian Single-Sign-On
-==========================
-In order for a CloudStack user to be automatically logged in to the
-HyperStore CMC UI for seamless object store integration, the connector
-needs to know the SSO Shared Key configured in Cloudian.
-
-Note: Ensure SSO is enabled on the Cloudian HyperStore CMC servers.
-Please consult the HyperStore Connect for CloudStack Configuration Guide
-for how to do this.
-
-On Cloudian HyperStore CMC, please ensure:
-    sso.enabled=true
-    sso.shared.key=YourSecretKeyHere
- 
-For your security, do not use the default value for the shared key.
-
-sso.shared.key[ssosharedkey]:
-
-[...continued...]
-----
-
-The last thing to configure is the Admin user mapping between CloudStack
-and Cloudian.
-
-.Section 4 Example - Admin User Mapping
-----
-[...continued...]
-
-4. CloudStack/Cloudian User Mapping
-===================================
-The connector creates a one-to-one mapping CloudStack domains and
-Cloudian groups and Cloudstack Accounts to Cloudian Users. The
-CloudStack Admin user is special and maps to the special Cloudian
-Administrator User Id. Please configure if required.
-
-Cloudian Administrator User Id[admin]:
-
-[...continued...]
-----
-
-Once you've passed all that, it will prompt you to update the properties
-file or leave it unchanged.
-
-----
-[...continued...]
-
-Update configuration file y/n[y]:y
-Wrote properties file: /etc/cloudian-cloudstack/connector.properties
-----
-
-As you may note above, this writes a properties file. You can either
-manually copy that properties file to other CloudStack Management
-Servers or re-run the configure script on each. We advise you to
-re-run the script as it sometimes catches some configuration problems
-like unknown hostnames or blocked ports, etc.
-
-The <<properties,Connector Properties File>> is discussed separately below.
+|cloudian.sso.key|This is a special shared secret between Cloudian and
+CloudStack and it must be configured to the same value as-is configured
+in Cloudian CMC. You can find the current value in your CMC configuration
+file: /etc/cloudian-[red]#[version]#-puppet/modules/cmc/templates/mts-ui.properties.erb
+|======================
 
 === Enable the Connector
 
 Enabling the connector is the last step. You should have already installed
 the RPM and configured it as per above before you enable it.
 
-Enabling the connector patches a few CloudStack files and restarts 
+Enabling the connector patches a few CloudStack files and restarts
 the management server as shown below. The patches are easily reversed at
 any time with the disable option which is discussed below.
 
@@ -417,189 +327,9 @@ required and clean up.
 anchor:admin[]
 
 == Connector Administration
-The current connector is quite simple and there is not so much to 
-configure or administrate. 
-
-=== Connector Administration Command
-
-The main way to configure, enable and disable the connector is the
-script 'cloudian-cloudstack.sh'. This script lives under '/usr/sbin'
-and so should be in your path. You've already seen this script used
-above.
-
-.cloudian-cloudstack.sh command usage
-----
-# cloudian-cloudstack.sh help
-Usage: cloudian-cloudstack.sh configure|enable|disable [norestart]|forget|status|version
-----
-
-.Overview of cloudian-cloudstack.sh command options
-[options="header",cols="3,10"]
-|======================
-|Option|Description
-
-|configure|<<optconfigure, The Configure option>> is used immediately
-after initial installation or during service to check or update the
-connectors properties file.
-
-|enable|<<optenable, The Enable Option>> is used to enable the 
-connector. It connector must have been successfully configured first.
-
-|disable|<<optdisable, The Disable Option>> is used to disable the
-connector.
-
-|disable norestart|Same as the disable option but does not restart the
-CloudStack Management server. This is used by the RPM package.
-
-|forget|The 'forget' option is used by the RPM package. It tells the 
-connector to quietly forget that it patched the CloudStack package
-and disable itself. It is different from 'disable' in that disable correctly
-unpatches CloudStack but 'forget' doesn't. Refrain from using this
-option unless directed by Cloudian support.
-
-|status|Outputs the current state of the connector. Returns 'installed' if
-not yet configured, 'configured' if configured but not enabled and 'enabled'
-if enabled. This option also returns the status codes 1,2 and 3 respectively.
-
-|version|Outputs the version of the current connector. This version is more
-detailed than the RPM name and will be required by support.
-|======================
-
-anchor:optconfigure[]
-
-==== The Configure Option
-This option will guide you through connector configuration. It
-tests the configuration as it goes and doesn't make any changes unless you
-tell it to at the end of the script. When you first install the connector
-you will need to use this option to <<configure,configure>> it.
-
-The configure option always uses the defaults that it finds in the connector
-<<properties,properties file>>. As such, it's also a good tool to use if you
-are having some trouble and want to retest your existing configuration.
-
-It's preferable to use the 'configure' option instead of editing the
-properties file directly.
-
-CAUTION: If you change the configuration while the connector is enabled, you 
-will need to restart the management server manually.
-
-anchor:optenable[]
-
-==== The Enable Option
-This option will enable the connector. When you first install the
-connector it is not enabled. When you enable the connector, it patches
-various CloudStack files and restarts the CloudStack management server.
-
-.The patches change the following behavior of CloudStack:
-. Enables a Cloudian Servlet inside CloudStack to manage account 
-  provisioning, deprovisioning and SSO URL creation.
-. Adds a button to the GUI for 'Cloudian Storage' which opens HyperStore
-  CMC in a new window. The CloudStack Domain and Account will automatically
-  be provisioned in HyperStore if not yet available and the user will be
-  logged in.
-. Deleting a CloudStack Domain on CloudStack deletes the Cloudian Group
-. Deleting a CloudStack Account on CloudStack deletes the Cloudian User
-. Logging out of CloudStack also automatically terminates the Cloudian CMC session.
-
-anchor:optdisable[]
-
-==== The Disable Option
-This option will disable the connector. Disabling the connector
-removes the integration completely from CloudStack. It also
-restarts the management server.
-
-Disable is effectively the reverse of enable.
-
-TIP: If required, you can also disable the connector without restarting the 
-management server using the 'disable norestart' option.
-
-anchor:properties[]
-
-=== Connector Properties File
-We recommend using the 'cloudian-cloudstack.sh' script to configure
-the properties file as it provides help and also tests the configuration 
-options. However, it is also possible to edit the properties directly.
-
-.Example /etc/cloudian-cloudstack/connector.properties
-----
-# Warning: This file is automatically generated.
-# Edit using:
-#     cloudian-cloudstack.sh configure
-#
-adminHost=s3-admin.cloudian.com
-adminPassword=public
-adminProtocol=https
-adminSecureSSL=false
-adminPort=19443
-adminUser=admin
-adminUserId=admin
-cmcHost=cmc.cloudian.com
-cmcPort=8443
-cmcProtocol=https
-conConfigured=false
-conEnabled=false
-ssoSharedKey=ssosharedkey
-----
-
-CAUTION: As with the configure script, any configuration change will not be
-picked up until the management server has been restarted.
-
-.Connector Properties (connector.properties)
-[options="header",cols="3,10"]
-|======================
-|Property|Description
-
-|adminHost|The hostname of the Cloudian Admin Server. The Admin server is
-usually running on the same server as the S3 servers. If you have a load
-balanced address you can use that.
-
-|adminPort|The port the Cloudian Admin Server is listening on. This is usually
-port 19443 for most default installations of Cloudian that are using a secure
-(https) admin service or alternatively 18081 for insecure (http) connections.
-
-|adminProtocol|The protocol to use to access the Admin Server. This should match
-the setting of the 'adminPort' and should be either 'http' or 'https'.
-
-|adminSecureSSL|If the admin server is using https and has a valid SSL certificate
-set this to 'true' to ensure you are connecting in a secure manner which validates
-the certificate each time.
-
-|adminUser|Basic Authentication user name for the Cloudian Admin server. If
-you have not enabled Basic Authentication any value is ok as the server will
-ignore it.
-
-|adminPassword|Basic Authentication password for the Cloudian Admin server. If
-you have not enabled Basic Authentication any value is ok as the server will
-ignore it.
-
-|adminUserId|The user id of the Cloudian Administrator that you would like to
-map to the CloudStack admin user. This is only required for Single-Sign-On
-for the CloudStack admin user.
-
-|cmcHost|The hostname of the Cloudian CMC Server. This should be resolvable 
-on the hosts where your CloudStack users will run their browsers.
-
-|cmcPort|The port used by CMC. Usually this is 8443 if you are using HTTPS or
-port 8080 if you are using HTTP.
-
-|cmcProtocol|The protocol for users to use to access CMC. This should match
-the setting of the 'cmcPort' and should be either 'http' or 'https'.
-
-|conConfigured|This defaults to 'false'. It is simply a marker to say if you have
-successfully ran through the configuration. If this option is 'false', you will
-not be able to enable the connector. Values are 'true' or 'false'.
-
-|conEnabled|This defaults to 'false'. This setting is controlled by the 
-'cloudian-cloudstack.sh' script and is used to indicate to the script
-that it has enabled the connector. This setting is used when re-installing
-the connector, upgrading it etc. Refrain from editing this value manually
-unless you know it's wrong for some reason.
-
-|ssoSharedKey|This is a special shared secret between Cloudian and 
-CloudStack and it must be configured to the same value as-is configured
-in Cloudian CMC. You can find the current value in your CMC configuration
-file: /etc/cloudian-[red]#[version]#-puppet/modules/cmc/templates/mts-ui.properties.erb
-|======================
+The current connector is quite simple and there is not so much to
+configure or administrate. See the section that explains how to configure
+the connector for details.
 
 === Connector Logs
 

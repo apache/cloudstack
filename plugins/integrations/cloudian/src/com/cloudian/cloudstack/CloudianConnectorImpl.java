@@ -211,6 +211,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         super.configure(name, params);
 
         if (!isEnabled()) {
+            LOG.debug("Cloudian connector is disabled, skipping configuration");
             return true;
         }
 
@@ -273,6 +274,9 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                 }
             }
         });
+
+        LOG.debug(String.format("Cloudian connector is enabled, completed configuration, integration is ready. " +
+                        "Cloudian admin host:%s, port:%s", CloudianAdminHost.value(), CloudianAdminPort.value()));
 
         return true;
     }
