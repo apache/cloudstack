@@ -30,6 +30,8 @@ import java.util.List;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -102,12 +104,22 @@ public class CloudianClient {
         }
     }
 
+    private void checkAuthFailure(final HttpResponse response) {
+        if (response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+            LOG.error("Cloudian admin API authentication failed, please check Cloudian configuration");
+        }
+    }
+
     private HttpResponse delete(final String path) throws IOException {
-        return httpClient.execute(new HttpDelete(adminApiUrl + path), httpContext);
+        final HttpResponse response = httpClient.execute(new HttpDelete(adminApiUrl + path), httpContext);
+        checkAuthFailure(response);
+        return response;
     }
 
     private HttpResponse get(final String path) throws IOException {
-        return httpClient.execute(new HttpGet(adminApiUrl + path), httpContext);
+        final HttpResponse response = httpClient.execute(new HttpGet(adminApiUrl + path), httpContext);
+        checkAuthFailure(response);
+        return response;
     }
 
     private HttpResponse post(final String path, final Object item) throws IOException {
@@ -117,7 +129,9 @@ public class CloudianClient {
         final HttpPost request = new HttpPost(adminApiUrl + path);
         request.setHeader("Content-type", "application/json");
         request.setEntity(entity);
-        return httpClient.execute(request, httpContext);
+        final HttpResponse response = httpClient.execute(request, httpContext);
+        checkAuthFailure(response);
+        return response;
     }
 
     private HttpResponse put(final String path, final Object item) throws IOException {
@@ -127,7 +141,9 @@ public class CloudianClient {
         final HttpPut request = new HttpPut(adminApiUrl + path);
         request.setHeader("Content-type", "application/json");
         request.setEntity(entity);
-        return httpClient.execute(request, httpContext);
+        final HttpResponse response = httpClient.execute(request, httpContext);
+        checkAuthFailure(response);
+        return response;
     }
 
     ////////////////////////////////////////////////////////
@@ -157,10 +173,13 @@ public class CloudianClient {
         }
         try {
             final HttpResponse response = get(String.format("/user?userId=%s&groupId=%s", userId, groupId));
-            final ObjectMapper mapper = new ObjectMapper();
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cloudian API call unauthorized, failed to list user");
+            }
             if (response.getEntity() == null || response.getEntity().getContent() == null) {
                 return null;
             }
+            final ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(response.getEntity().getContent(), CloudianUser.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian user due to:", e);
@@ -177,6 +196,9 @@ public class CloudianClient {
         }
         try {
             final HttpResponse response = get(String.format("/user/list?groupId=%s&userType=all&userStatus=active", groupId));
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                return new ArrayList<>();
+            }
             final ObjectMapper mapper = new ObjectMapper();
             if (response.getEntity() == null || response.getEntity().getContent() == null) {
                 return new ArrayList<>();
@@ -252,10 +274,13 @@ public class CloudianClient {
         }
         try {
             final HttpResponse response = get(String.format("/group?groupId=%s", groupId));
-            final ObjectMapper mapper = new ObjectMapper();
-            if (response.getEntity() == null || response.getEntity().getContent() == null) {
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cloudian API call unauthorized, failed to list group");
+            }
+            if (response.getEntity() == null || response.getEntity().getContent() == null){
                 return null;
             }
+            final ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(response.getEntity().getContent(), CloudianGroup.class);
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian group due to:", e);
@@ -269,10 +294,10 @@ public class CloudianClient {
     public List<CloudianGroup> listGroups() {
         try {
             final HttpResponse response = get("/group/list");
-            final ObjectMapper mapper = new ObjectMapper();
-            if (response.getEntity() == null || response.getEntity().getContent() == null) {
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK || response.getEntity() == null || response.getEntity().getContent() == null) {
                 return new ArrayList<>();
             }
+            final ObjectMapper mapper = new ObjectMapper();
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianGroup[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian groups due to:", e);

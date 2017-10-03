@@ -34,6 +34,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.cloudian.client.CloudianClient;
 import org.apache.cloudstack.cloudian.client.CloudianGroup;
 import org.apache.cloudstack.cloudian.client.CloudianUser;
@@ -103,6 +104,15 @@ public class CloudianClientTest {
         client.listGroups();
         verify(getRequestedFor(urlEqualTo("/group/list"))
                 .withBasicAuth(new BasicCredentials(adminUsername, adminPassword)));
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testBasicAuthFailure() {
+        wireMockRule.stubFor(get(urlPathMatching("/user"))
+                .willReturn(aResponse()
+                        .withStatus(401)
+                        .withBody("")));
+        client.listUser("someUserId", "somegGroupId");
     }
 
     /////////////////////////////////////////////////////

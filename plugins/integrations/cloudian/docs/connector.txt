@@ -355,7 +355,7 @@ configuration has been setup, for example:
 # cat /etc/cloudstack/management/log4j-cloud.xml
 
 [...snipped...]
-   <category name="com.cloudian">
+   <category name="org.apache.cloudstack.cloudian">
      <priority value="DEBUG"/>
    </category>
 [...snipped...]
