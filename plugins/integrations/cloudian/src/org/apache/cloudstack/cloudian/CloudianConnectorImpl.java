@@ -28,6 +28,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.cloudian.api.CloudianSsoLoginCmd;
 import org.apache.cloudstack.cloudian.api.CloudianIsEnabledCmd;
 import org.apache.cloudstack.cloudian.client.CloudianClient;
@@ -195,6 +197,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         if (caller.getAccountName().equals("admin") && caller.getRoleId() == RoleType.Admin.getId()) {
             user = CloudianCmcAdminUser.value();
             group = "0";
+            final CloudianUser adminUser = getClient().listUser(user, group);
+            if (adminUser == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to find mapped Cloudian admin user, please fix integration issues.");
+            }
         } else {
             addOrUpdateGroup(domain);
             addOrUpdateUserAccount(caller, domain);

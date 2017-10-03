@@ -37,6 +37,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
@@ -106,7 +107,8 @@ public class CloudianClient {
 
     private void checkAuthFailure(final HttpResponse response) {
         if (response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-            LOG.error("Cloudian admin API authentication failed, please check Cloudian configuration");
+            final Credentials credentials = httpContext.getCredentialsProvider().getCredentials(AuthScope.ANY);
+            LOG.error("Cloudian admin API authentication failed, please check Cloudian configuration. Admin auth principal=" + credentials.getUserPrincipal() + ", password=" + credentials.getPassword() + ", API url=" + adminApiUrl);
         }
     }
 

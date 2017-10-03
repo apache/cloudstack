@@ -46,7 +46,7 @@
       },
 
       show: function() {
-        var description = 'Cloudian management console should open in another window.';
+        var description = 'Cloudian Management Console should open in another window.';
         $.ajax({
             url: createURL('cloudianSsoLogin'),
             async: false,
@@ -56,10 +56,10 @@
                 cmcWindow.focus();
             },
             error: function(data) {
-                description = 'Single-Sign-On failed for Cloudian management console.';
+                description = 'Single-Sign-On failed for Cloudian Management Console. Please ask your administrator to fix integration issues.';
             }
         });
-        return $('<div>').html(description);
+        return $('<div style="margin: 20px;">').html(description);
       }
     });
   };
