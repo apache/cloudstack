@@ -1,0 +1,202 @@
+image::images/cloudian_big_logo.png[align="center"]
+
+= HyperStore Connect for CloudStack Release Notes
+:Copyright: Copyright (c) 2013-2017 Cloudian KK. All rights reserved.
+:Date: October 2017
+:Revision: {cpver}_{hsver}
+
+// NOTE: This txt document uses asciidoc formatting and was used to
+// generate the HTML document of the same name. If you are reading
+// this you may find reading the HTML document in a browser easier.
+
+== About Release Version Numbers
+
+Release Versions are currently two fold and contain both the CloudStack
+Version and the Cloudian Client version.
+
+.Example Version Numbers
+[options="header",cols="2,3,4"]
+|======================
+|Connector Version|CloudStack Compatibility|Cloudian Compatibility
+|4.7_5.0-1|4.7|Versions 5.x onwards
+|4.9_6.2-1|4.9|Versions 6.2 onwards
+|======================
+
+NOTE: A Version stating CloudStack 4.2.1 *IS* compatible with CloudStack
+4.2.1 and *MAY* or *MAY NOT* be compatible with later CloudStack versions. If
+it is not compatible the "enable" option will fail and you should ask
+Cloudian Support for the latest version for your version of CloudStack.
+
+== Release Notes
+
+=== Release 4.9_6.2-1
+
+==== New Features and Improvements
+
+[qanda]
+Updated for CloudStack 4.9::
+    The connector has been updated to work with and tested with CloudStack 4.9.
+Updated for Java 7::
+    As CloudStack 4.9 has moved to Java 7, Connector also now uses Java 7.
+Re-implementation of Connector::
+    Re-implemented Connector per CloudStack best-practices.
+Configuration moved as CloudStack configuration::
+    Moved Cloudian configuration to CloudStack configuration.
+New Configurations::
+    New configurations to fine-tune API call timeouts, SSL validations etc.
+User and Group auto-provisioning::
+    Better auto-provisioning of CloudStack users and domains as Cloudian users
+    and groups.
+Documentation Updates::
+    Various documentation updates.
+
+==== Bugs Fixes
+
+N/A
+
+
+=== Release 4.7_5.0-3
+
+==== New Features and Improvements
+
+[qanda]
+Updated for CloudStack 4.7::
+    The connector has been updated to work with and tested with CloudStack 4.7.
+Updated for Java 7::
+    As CloudStack 4.7 has moved to Java 7, Connector also now uses Java 7.
+Added SSL Support for Cloudian Admin Server::
+    Previously only HTTP was supported to the Admin Server. HTTPS is now supported and detected
+    at configuration time.
+Documentation Updates::
+    Various documentation updates.
+
+==== Bugs Fixes
+
+N/A
+
+=== Release 4.5_5.0-1
+
+==== New Features and Improvements
+
+[qanda]
+Updated for CloudStack 4.5::
+    The connector has been updated to work with and tested with
+CloudStack 4.5.
+Removed Single Domain Restriction From Single-Sign-On::
+    Single-Sign-On with Cloudian has been updated for Cloudian HyperStore
+    5.0 or greater. The new method is cookie-less and thus no longer
+    requires that Cloudian and CloudStack share the same DNS sub-domain.
+    This greatly eases the deployment of the connector. This change also
+    *requires* Cloudian HyperStore 5.0 or greater.
+Updated Documentation::
+    The documentation has been updated and improved.
+Updated Cloudian Logo::
+    The logo has been updated to the current Cloudian HyperStore logo.
+
+==== Bugs Fixes
+
+N/A
+
+=== Release 4.3_4.0.1-1
+
+==== New Features and Improvements
+
+[qanda]
+Dynamic User and Group Provisioning::
+    Previously the CloudStack domain or account had to have been created
+    when the connector was enabled for the connector to provision a Cloudian
+    group or user. This has been improved so that users and groups are 
+    dynamically created on demand when Cloudian Storage is accessed.
+CloudStack userId mapping::
+    The mapping for CloudStack users has been changed. Previously a CP
+    Account Name was mapped to a Cloudian UserId. Going forward the CP
+    Account UUID is used as it provides a more stable mapping as Account
+    Names are edited over time.
+Cloudian Storage now opens a new window::
+    Clicking on the Cloudian Storage button now opens a new window (or tab)
+    for CMC instead of displaying a size restricted CMC in the CloudStack
+    window.
+
+==== Bugs Fixes
+
+[qanda]
+35299 - Cloudian Storage button should open window for CMC::
+    See the New Features and Improvements section above. 
+35483 - Add account fails if group pre-existed the Connector::
+    If you tried to add an account to a group that already existed
+    on CloudStack before the connector was installed, that group
+    would not exist on Cloudian and add account would fail.
+35484 - Delete Account displays error if Cloudian User doesn't exist::
+    Deleting an account causes a Cloudian user to be deleted. If that Cloudian
+    user doesn't exist or has already been deleted, this causes an error to
+    be displayed. This error is logged but no longer displayed on the UI.
+35486 - Restrict Cloudian servlet operations by session and user::
+    A security improvement to restrict servlet operations to a correctly
+    logged in CloudStack user with the correct role permissions.
+35499 - CloudStack login should logout any existing CMC session::
+    To ensure a correctly matching Cloudian session when logging into
+    CloudStack, we force terminate any existing Cloudian session on login.
+35502 - Dynamic provisioning on demand::
+    See the New Features and Improvements section above. 
+35506 - CloudStack Logout should logout of CMC also::
+    Related to 35499. The CloudStack logout button was not fully logging
+    out of CMC.
+35507 - Perform SSO login each time Cloudian Storage is selected::
+    To ensure user always gets the expected Cloudian Session, perform
+    the SSO login when Cloudian Storage button is selected.
+35544 - CloudStack logout doesn't log CMC out on Firefox::
+    Add a small busy loop to allow Firefox time to start the async
+    request to CMC to logout before the page is refreshed on session
+    logout. Not perfect but best we can do right now without changing
+    more of the CloudStack core code.
+
+=== Release 4.2.1_4.0.1-2
+
+==== New Features and Improvements
+
+[qanda]
+Added Release Notes::
+    Added this release notes file.
+
+=== Release 4.2.1_4.0.1-1
+
+==== New Features and Improvements
+
+[qanda]
+RPM Packaging::
+    This is the first version of the HyperStore Connect for CloudStack
+    that supports an RPM install for easier installation and maintenance.
+Documentation::
+    Documentation has been rewritten for RPM packaging and expanded.
+Configuration Script::
+    A new script "cloudian-cloudstack.sh" has been added which automates
+    most of the connector configuration and enabling/disabling.
+Java 6/7 Support::
+    Previously, we only supported Java 7 which made the connector hard to
+    deploy in CloudStack environments using Java 6.
+Various Cleanups::
+    Patches installed and changes made have been reduced.
+
+==== Bugs Fixes
+
+[qanda]
+34958 - CloudStack Admin to Cloudian Admin user mapping is hard-coded::
+    A new configuration has been added to allow mapping of the CloudStack
+    Admin account to a different Cloudian admin user id. The default remains
+    'admin@cloudian.com'.
+
+''''
+
+_Confidentiality Notice_
+
+_The information contained in this document is confidential to, and is the
+intellectual property of, Cloudian, Inc. Neither this document nor any
+information contained herein may be (1) used in any manner other than to
+support the use of Cloudian software in accordance with a valid license
+obtained from Cloudian, Inc, or (2) reproduced, disclosed or otherwise
+provided to others under any circumstances, without the prior written
+permission of Cloudian, Inc. Without limiting the foregoing, use of any
+information contained in this document in connection with the development
+of a product or service that may be competitive with Cloudian software
+is strictly prohibited. Any permitted reproduction of this document or
+any portion hereof must be accompanied by this legend._

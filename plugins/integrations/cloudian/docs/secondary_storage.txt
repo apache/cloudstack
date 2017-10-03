@@ -1,0 +1,257 @@
+image::images/cloudian_big_logo.png[align="center"]
+
+= CloudStack Secondary Storage Guide
+:Copyright: Copyright (c) 2013-2016 Cloudian KK. All rights reserved.
+:Date: July 2016
+:Revision: {cpver}_{hsver}
+
+// NOTE: This text document uses asciidoc formatting and was used to
+// generate the HTML document of the same name. If you are reading
+// this you may find reading the HTML document in a browser easier.
+
+== Overview
+This document is a supplementary guide for CloudStack and describes
+how to configure CloudStack {cpver} to use Cloudian HyperStore as
+Secondary Storage. Please also review CloudStack's documentation
+(Getting Started Guide) for configuring and using S3 as Secondary Storage.
+
+=== Cloudian as CloudStack Secondary Storage
+CloudStack, as of version 4.2.1, can utilize Cloudian HyperStore as S3
+Secondary Storage out of the box. There is no need for any modifications
+or to install any connectors.
+
+Secondary Storage is used to store ISOs, Templates, Snapshots and Volumes.
+
+CAUTION: CloudStack still requires an NFS Secondary Storage 'Staging' Server
+with is mentioned in the Requirements below.
+
+== Requirements
+
+=== Package Requirements
+.Required Software Packages
+- CloudStack {cpver} software
+  * Installed/configured and running.
+- Cloudian HyperStore 5.0 or greater
+  * Installed/configured and running.
+
+TIP: If you do not plan on using the Cloudian-CloudStack connector, then
+secondary storage will work with Cloudian 2.4 or greater.
+
+=== NFS Secondary Storage Staging Server Requirement
+The use of S3 as Secondary Storage for CloudStack also requires an NFS
+server. The NFS server is required because the various hypervisors cannot yet
+talk directly to S3 but instead talk through the standard file system API. As
+such, CloudStack requires an NFS staging server which the Hypervisors use
+to read and write data from/to. The NFS storage requirements for the staging
+server are small however as space is only required while objects are staged
+(moving) between the S3 server and the VMs.
+
+=== DNS Name Resolution Requirement
+All CloudStack Management Servers, system VMs and customer VMs (if required)
+must be able to resolve your S3 bucket names. Usually, if you already have Cloudian
+installed and running in your environment, this is already working.
+
+At a minimum the following names should resolve to the correct IP addresses using
+the DNS server that your Management Server and System VMs are using.
+
+.Example Domain Names that should Resolve on CloudStack Servers
+[options="header",cols="5,5"]
+|======================
+|DNS Name Types that Must Resolve|Example Name
+|Cloudian S3 Endpoint|s3-tokyo.mycloud.com
+|Bucket for Secondary Storage|secondary.s3-tokyo.mycloud.com
+|Cloudian Admin Server|s3-admin.mycloud.com
+|======================
+
+.Use the host command to ensure a name resolves in DNS:
+----
+% host secondary.s3-tokyo.mycloud.com
+----
+
+== Adding Cloudian as CloudStack Secondary Storage
+
+=== Increase Max Size of a single Object Put (pre-5.0)
+
+TIP: Skip this step if using Cloudian 5.0 or greater as the limit
+is already pre-configured to 5GB.
+
+Earlier Cloudian versions shipped configured with a default limit of 100MB for
+Object Put. This limit was usually ok as most applications change
+to using Multipart Upload when the object size approaches 100MB. CloudStack
+unfortunately still has a lot of code which tries to store objects using a
+single large Object PUT. To allow these requests to complete, please change the
+following and restart the S3 service.
+
+.Only Required for pre-5.0 Cloudian Installations
+----
+# vi /opt/cloudian/conf/mts.properties
+cloudian.s3.putobject.max_size=5368709120
+
+# service cloudian-s3 restart
+----
+
+=== Setup a Cloudian User and Bucket for Secondary Storage
+S3 Secondary Storage stores the CloudStack templates, snapshots etc in
+a dedicated S3 Bucket. To properly configure CloudStack you will need
+to know the S3 Bucket name and how to access your S3 Server (the S3
+endpoint, access key and secret key).
+
+Below, we will create a dedicated Cloudian user and a dedicated bucket
+which we will assign for use as Secondary Storage.
+
+.A. [Cloudian admin user] Create a dedicated user/group.
+[options="header",cols="1,10"]
+[frame="topbot",grid="none"]
+|======================
+|Step|Description
+|1|Login to the Cloudian Management Console (CMC) as the 'Cloudian
+admin' user.
+|2|Create a new group called 'cloudplatform'. Any group name is ok.
+|3|Create a new user called 'cloudplatform' in the 'cloudplatform' group.
+Any user name is ok.
+|======================
+
+[[s3bucket]]
+
+.B. [Cloudian cloudplatform user] Create a dedicated bucket.
+[options="header",cols="1,10"]
+[frame="topbot",grid="none"]
+|======================
+|Step|Description
+|1|Login to CMC as the 'cloudplatform' user created above.
+|2|Create a bucket called 'secondary'. Any bucket name will do.
+|3|On the top menu bar on the right hand side, use the drop down menu
+under your user name to select 'Security Credentials' and copy
+and paste your Access and Secret Keys to a note for later use.
+CloudStack will need these when you attach Cloudian as Secondary
+Storage in a later step below.
+|======================
+
+=== Open Up Access to your S3 Network from Secondary Storage
+If your S3 server is on a different network to your Secondary Storage VM, you 
+will need to open up access to the S3 network. This also allows users to download
+templates from their S3 object store areas.
+
+image::images/ss_globalopt.png["Edit global options"]
+
+NOTE: Editing the Global Settings requires you to restart the management server.
+
+=== Add an NFS Secondary Storage Staging Server
+As mentioned previously, S3 Secondary Storage currently requires the use of
+an NFS Secondary Staging Server.
+
+.C. [CloudStack admin user] Add NFS Secondary Storage Staging Server
+[options="header",cols="1,10"]
+[frame="topbot",grid="none"]
+|======================
+|Step|Description
+|1|Login to CloudStack Management Server as the 'admin' user.
+|2|Navigate to 'Infrastructure' -> 'Secondary Storage'.
+|3|Click 'Select View' and select 'Secondary Staging Store'.
+|4|Click 'Add Secondary Staging Store'.
+|5|Configure the 'zone', 'server' and 'path' for your desired
+secondary staging store. For example 'nfs.mycloud.com' and
+'/export/staging'.
+| a|image::images/s3_ss_cache.png[height="300", "S3 Secondary Staging Store Configuration Example"]
+|======================
+
+
+=== Attach Cloudian as Secondary Storage
+CloudStack supports using either S3 or NFS as Secondary Storage but
+not both. The below instructions assume you are not using Secondary
+Storage on NFS and that you can delete it to add the S3 storage.
+
+WARNING: *Already using NFS for Secondary Storage with CloudStack?*
+You need to migrate your Secondary Storage. Refer to CloudStack's
+instructions for 'migrating' existing NFS Secondary Storage to an
+S3 object storage. CloudStack 4.5 onwards supports migrating data via
+special commands which are described in the 'Getting Started Guide' in a
+section titled 'Upgrading from NFS to Object Storage'.
+
+.D. [CloudStack admin user] Adding S3 Secondary Storage
+[options="header",cols="1,10"]
+[frame="topbot",grid="none"]
+|======================
+|Step|Description
+|1|Login to CloudStack Management Server as the 'admin' user.
+|2|Navigate to 'Infrastructure' -> 'Secondary Storage'.
+|3|If it exists, select and delete any existing NFS Secondary Storage
+server setting. [yellow-background]*NOTE: Do not do this if you
+want to migrate existing NFS secondary storage to S3. Instead, see
+warning above.*
+|4|Click the 'Add Secondary Storage' button. This will open up a pop-up
+form which you can fill out similarly to below.
+| a|image::images/s3_ss_config.png["S3 Secondary Storage Configuration Example"]
+|======================
+
+.Secondary Storage Pop-up Example Configuration
+[options="header",cols="2,3,8",width="100%"]
+|======================
+|Field|Value|Description
+|Name|Cloudian|Any name which identifies this S3 storage for you is ok.
+|Provider|S3|The S3 provider is used to configure generic S3 storage.
+|Access Key|<your_value_here>|The access key of the Cloudian account that
+owns the S3 bucket. Use the one for the 'cloudplatform' user in
+<<s3bucket,B - Step 3>> above.
+|Secret Key|<your_value_here>|The secret key of the Cloudian account that
+owns the S3 bucket. Use the one for the 'cloudplatform' user in
+<<s3bucket,B - Step 3>> above.
+|Bucket|secondary|The name of the S3 bucket that you created for the
+'cloudplatform' user in <<s3bucket,B - Step 2>> above.
+|Endpoint|s3-tokyo.mycloud.com|This is the S3 endpoint. If your S3 server
+is not running on a standard port such as port 80 or port 443 for HTTPS,
+you must add a port here also. Example: 's3-tokyo.mycloud.com:18443'.
+|Use HTTPS|<UN?CHECK>|Check 'Use HTTPS' only if you have configured your
+S3 service with a *trusted SSL certificate* and enabled HTTPS. Your HTTPS
+service should be listening on port 443 or you provided a port in the
+endpoint configuration above. Otherwise, uncheck this option.
+|Connection Timeout|<BLANK>|Leave this option blank.
+|Max Error Retry|<BLANK>|Leave this option blank.
+|Socket Timeout|<BLANK>|Leave this option blank.
+|Create NFS Secondary Staging Store|<UNCHECK>|You should be able to leave
+this option unchecked as a NFS Secondary Staging Store was explicitly 
+configured in the previous step.
+|NFS Server|<BLANK>|The staging server is already configured.
+|Path|<BLANK>|The staging server is already configured.
+|======================
+
+CAUTION: CloudStack doesn't currently allow you to re-edit the S3
+configuration so take time to double check what you enter. If you
+make a mistake the only options currently are either a) delete and recreate
+the storage or b) directly edit the entry in the database.
+
+=== All Done!
+When you have finished adding Cloudian as Secondary Storage in the previous steps,
+CloudStack will populate the new secondary storage with the system
+and default templates. This can take some time do download as the templates
+are quite big.
+
+[TIP]
+====
+You can check if the system template and the default template have properly
+downloaded to the new secondary storage by navigating to 'Templates',
+selecting a template, clicking on the 'Zones' tab and checking its Status is
+Ready 100% Downloaded.
+
+Should you continue to have problems, sometimes it is necessary to restart
+the Secondary Storage VM. You can do this by navigating to 'Infrastructure',
+'System VMs', selecting and rebooting the 'Secondary Storage VM'.
+====
+
+CloudStack should now ready to use Cloudian HyperStore for S3 Secondary Storage.
+
+''''
+
+_Confidentiality Notice_
+
+_The information contained in this document is confidential to, and is the
+intellectual property of, Cloudian, Inc. Neither this document nor any
+information contained herein may be (1) used in any manner other than to
+support the use of Cloudian software in accordance with a valid license
+obtained from Cloudian, Inc, or (2) reproduced, disclosed or otherwise
+provided to others under any circumstances, without the prior written
+permission of Cloudian, Inc. Without limiting the foregoing, use of any
+information contained in this document in connection with the development
+of a product or service that may be competitive with Cloudian software
+is strictly prohibited. Any permitted reproduction of this document or
+any portion hereof must be accompanied by this legend._
