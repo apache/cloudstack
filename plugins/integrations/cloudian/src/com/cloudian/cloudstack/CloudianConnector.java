@@ -35,7 +35,7 @@ public interface CloudianConnector extends PluggableService {
     ConfigKey<String> CloudianAdminProtocol = new ConfigKey<>("Advanced", String.class, "cloudian.admin.protocol", "https",
             "The protocol of the Cloudian Admin server.", true);
 
-    ConfigKey<Boolean> CloudianValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "cloudian.validate.ssl", "false",
+    ConfigKey<Boolean> CloudianValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "cloudian.validate.ssl", "true",
             "When set to true, this will validate the SSL certificate when connecting to https/ssl enabled admin host.", true);
 
     ConfigKey<String> CloudianAdminUser = new ConfigKey<>("Advanced", String.class, "cloudian.admin.user", "sysadmin",
@@ -44,7 +44,7 @@ public interface CloudianConnector extends PluggableService {
     ConfigKey<String> CloudianAdminPassword = new ConfigKey<>("Advanced", String.class, "cloudian.admin.password", "public",
             "The system admin password for the Cloudian Admin server.", true);
 
-    ConfigKey<Integer> CloudianAdminApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "cloudian.admin.api.request.timeout", "5",
+    ConfigKey<Integer> CloudianAdminApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "cloudian.api.request.timeout", "5",
             "The admin API request timeout in seconds.", true);
 
     ConfigKey<String> CloudianCmcAdminUser = new ConfigKey<>("Advanced", String.class, "cloudian.cmc.admin.user", "admin",
