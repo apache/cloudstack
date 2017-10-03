@@ -233,7 +233,7 @@ port 19443 for most default installations of Cloudian that are using a secure
 (https) admin service or alternatively 18081 for insecure (http) connections.
 
 |cloudian.admin.protocol|The protocol to use to access the Admin Server. This should match
-the setting of the 'adminPort' and should be either 'http' or 'https'.
+the setting of the 'cloudian.admin.port' and should be either 'http' or 'https'.
 
 |cloudian.validate.ssl|If the admin server is using https and has a valid SSL certificate
 set this to 'true' to ensure you are connecting in a secure manner which validates
@@ -261,7 +261,7 @@ on the hosts where your CloudStack users will run their browsers.
 port 8080 if you are using HTTP.
 
 |cloudian.cmc.protocol|The protocol for users to use to access CMC. This should match
-the setting of the 'cmcPort' and should be either 'http' or 'https'.
+the setting of the 'cloudian.cmc.port' and should be either 'http' or 'https'.
 
 |cloudian.sso.key|This is a special shared secret between Cloudian and
 CloudStack and it must be configured to the same value as-is configured
