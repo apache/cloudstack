@@ -107,6 +107,7 @@
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
     <module>database/quota</module>
+    <module>integrations/cloudian</module>
     <module>integrations/prometheus</module>
   </modules>
 
