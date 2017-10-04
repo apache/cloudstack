@@ -351,16 +351,6 @@ is therefore integrated with the Management Server's log files. Logging
 is only output when the connector is enabled and appropriate logging
 configuration has been setup, for example:
 
-----
-# cat /etc/cloudstack/management/log4j-cloud.xml
-
-[...snipped...]
-   <category name="org.apache.cloudstack.cloudian">
-     <priority value="DEBUG"/>
-   </category>
-[...snipped...]
-----
-
 .Connector Log File
 ----
 view /var/log/cloudstack/management/management-server.log
@@ -379,7 +369,7 @@ INFO  [o.a.c.s.m.m.i.DefaultModuleDefinitionSet] (localhost-startStop-1:null) (l
 DEBUG [c.c.a.ApiServer] (localhost-startStop-1:null) (logid:) Discovered plugin CloudianConnectorImpl
 INFO  [o.a.c.s.m.m.i.DefaultModuleDefinitionSet] (localhost-startStop-1:null) (logid:) Starting module [cloudian]
 ...
-DEBUG [c.c.c.CloudianConnectorImpl] (localhost-startStop-1:null) (logid:) Cloudian connector is enabled, completed configuration, integration is ready. Cloudian admin host:admin.hs.yadav.xyz, port:19443
+DEBUG [c.c.c.CloudianConnectorImpl] (localhost-startStop-1:null) (logid:) Cloudian connector is enabled, completed configuration, integration is ready. Cloudian admin host:admin.abc.xyz, port:19443
 ----
 
 ==== SSO Failures
@@ -391,25 +381,34 @@ but there was a typo and it was mapped to 'admn'.
 
 .Example of an SSO Failure
 ----
-[c.c.c.CloudianIntegrationServlet] (catalina-exec-23:null) EndUser: *admin|b3ebfd90-d73d-11e3-9a7c-002170530220|4069e3d2-d73d-11e3-9a7c-002170530220
-[c.c.c.CloudianIntegrationServlet] (catalina-exec-23:null) Mapping admin to 'admn'
-[c.c.c.CloudianIntegrationServlet] (catalina-exec-23:null) SSO login failed for admn user. Check config.
-[c.c.c.CloudianIntegrationServlet] (catalina-exec-23:null) SSO login failed. Removing any existing SSO Cookie.
+DEBUG [o.a.c.c.CloudianConnectorImpl] (qtp1809303591-31:ctx-6e8e8621 ctx-40a6e707) (logid:cd96b235) Attempting Cloudian SSO with user id=admn, group id=0
+DEBUG [o.a.c.c.c.CloudianClient] (qtp1809303591-31:ctx-6e8e8621 ctx-40a6e707) (logid:cd96b235) Trying to find Cloudian user with id=admn and group id=0
+INFO  [c.c.a.ApiServer] (qtp1809303591-31:ctx-6e8e8621 ctx-40a6e707) (logid:cd96b235) Failed to find the requested resource and get valid response from Cloudian admin API call, please ask your administrator to diagnose and fix issues.
 ----
 
 ==== Other Failures
 
-Connectivity problems with the Cloudian Admin server will probably be the 
-source of other problems logged. Below, we have incorrectly configured
-Basic Auth and the connector is unable to connect to the Cloudian Admin server.
+Connectivity problems with the Cloudian Admin server will probably be the
+source of other problems logged. Below, we have logs from a timeout/connectivity
+issue and incorrectly configured Basic Auth which causes authorization failures
+and the connector fails to connect to the Cloudian Admin server.
+
+.Admin Server connection problem due to time out
+----
+DEBUG [o.a.c.c.CloudianConnectorImpl] (qtp1809303591-372:ctx-a707eecc ctx-0e85865f) (logid:3efb32f0) Attempting Cloudian SSO with user id=753a62a8-978c-4bab-bfc4-b55ea2fda505, group id=16711de6-a806-11e7-b0a6-a434d91cd37e
+DEBUG [o.a.c.c.c.CloudianClient] (qtp1809303591-372:ctx-a707eecc ctx-0e85865f) (logid:3efb32f0) Trying to find Cloudian user with id=753a62a8-978c-4bab-bfc4-b55ea2fda505 and group id=16711de6-a806-11e7-b0a6-a434d91cd37e
+ERROR [o.a.c.c.c.CloudianClient] (qtp1809303591-372:ctx-a707eecc ctx-0e85865f) (logid:3efb32f0) Failed to list Cloudian user due to:
+org.apache.http.conn.ConnectTimeoutException: Connect to admin.hs.yadav.xyz:19443 [admin.abc.xyz/10.5.1.6] failed: connect timed out
+[...snipped...]
+INFO  [c.c.a.ApiServer] (qtp1638771699-28:ctx-e8b5b507 ctx-0632d279) (logid:94e8345e) Operation timed out, please try again.
+----
 
 .Admin Server Connection problem logging in as admin
 ----
-[c.c.c.CloudianIntegrationServlet] (catalina-exec-17:null) EndUser: *admin|b3ebfd90-d73d-11e3-9a7c-002170530220|4069e3d2-d73d-11e3-9a7c-002170530220
-[c.c.c.CloudianIntegrationServlet] (catalina-exec-17:null) Mapping admin to 'admin'
-[o.a.c.h.a.AuthChallengeProcessor] (catalina-exec-17:null) basic authentication scheme selected
-[o.a.c.h.HttpMethodDirector] (catalina-exec-17:null) Failure authenticating with BASIC 'CloudianAdmin'@admin.cloudian.com:18081
-[c.c.c.CloudianIntegrationServlet] (catalina-exec-17:null) SSO login request failed for '*admin|b3ebfd90-d73d-11e3-9a7c-002170530220|4069e3d2-d73d-11e3-9a7c-002170530220'
+DEBUG [o.a.c.c.CloudianConnectorImpl] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Attempting Cloudian SSO with user id=753a62a8-978c-4bab-bfc4-b55ea2fda505, group id=16711de6-a806-11e7-b0a6-a434d91cd37e
+DEBUG [o.a.c.c.c.CloudianClient] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Trying to find Cloudian user with id=753a62a8-978c-4bab-bfc4-b55ea2fda505 and group id=16711de6-a806-11e7-b0a6-a434d91cd37e
+ERROR [o.a.c.c.c.CloudianClient] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Cloudian admin API authentication failed, please check Cloudian configuration. Admin auth principal=[principal: admin], password=incorrect-password, API url=https://admin.abc.xyz:19443
+INFO  [c.c.a.ApiServer] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Cloudian admin API call unauthorized, please ask your administrator to fix integration issues.
 ----
 
 == Trouble Shooting
@@ -422,20 +421,18 @@ There are a few things which can go wrong for SSO. Here are the
 most common problems and things to check.
 +
 .SSO Check List
-* Does the mapping of adminUserId point to the correct Cloudian user
-  in the <<properties,Connector Properties File>>?
+* Does the global settings 'cloudian.cmc.admin.user' point to the correct
+  Cloudian (admin) user?
 * Is SSO configured and enabled on Cloudian HyperStore CMC?
 * Check for errors in the CMC log file.
-* Are both CloudStack and HyperStore CMC configured with the same 
-  ssoSharedKey?
-* Try running 'cloudian-cloudstack.sh configure' which runs through
-  the connectivity settings.
+* Are both CloudStack and HyperStore CMC configured with the same
+  'cloudian.sso.key'?
 * Check the /var/log/cloudstack/management/management-server.log file and
   search for errors relating to SSO.
-* Try access the CMC host directly from the problem users host using 
-  the configured cmcHost, cmcPort and cmcProtocol configured in the 
-  <<properties,Connector Properties File>>.
-* If you log out of the management server and log in again, does 
+* Try access the CMC host directly from the problem users host using
+  the configured 'cloudian.cmc.host', 'cloudian.cmc.port' and 'cloudian.cmc.protocol'
+  configured in the CloudStack global settings.
+* If you log out of the management server and log in again, does
   the 'Cloudian Storage' button work?
 
 . Adding/Deleting Domains or Accounts fails
@@ -445,72 +442,14 @@ has changed with the connection or the admin server is down?
 +
 .Admin Check List
 * Is the admin server alive and listening?
-* Run the 'cloudian-cloudstack.sh configure' script as it tests the connection
-  using the configured properties. This will usually identify the problem.
+* Try access the admin server host directly from the problem users host using
+  the configured 'cloudian.admin.host', 'cloudian.admin.port' and
+  'cloudian.admin.protocol' configured in the CloudStack global settings. Check
+  the configured auth settings 'cloudian.admin.user' and
+  'cloudian.admin.password'.
+* If you're experiencing timeout issues, trying changing the API timeout value
+  defined in 'cloudian.api.request.timeout' global setting.
 * Look for errors in the admin log file /var/log/cloudian/cloudian-admin.log.
-
-. CloudStack Patching
-+
-The enable and disable options of the 'cloudian-cloudstack.sh' script
-usually manages all the patching for you. The following shows you
-the normal clean state of the cloudstack-management installation. Note
-though that the output will vary slightly depending on your installation
-and what you have changed.
-+
-.With Connector not installed
-----
-# rpm -qV cloudstack-management
-S.5....T.  c /etc/cloudstack/management/db.properties
-.......T.    /var/run/cloudstack-management.pid
-----
-+
-.With Connector installed
-----
-# rpm -qV cloudstack-management
-
-# rpm -qV cloudstack-management
-S.5....T.  c /etc/cloudstack/management/db.properties
-S.5....T.    /usr/share/cloudstack-management/webapps/client/plugins/plugins.js
-S.5....T.    /usr/share/cloudstack-management/webapps/client/plugins/plugins.js.gz
-.......T.    /var/run/cloudstack-management.pid
-----
-
-. Fail-safe botched scripts recovery
-+
-This procedure is probably not required but is noted here as a
-fail-safe recovery method if things fail when you for update
-packages or otherwise and unexpected things happen.
-+
-RPM is luckily a great way to manage application files on a machine
-as the original RPM contains everything you need to recover and 
-re-install the original state of the CloudStack Application. If
-things don't work for some reason and you want to back things out
-, but disable doesn't work for some reason, you can do the following:
-+
-.First, try uninstall the connector
-----
-# rpm -e cloudian-cloudplatform
-----
-+
-If that fails to uninstall for some reason you can try to uninstall
-it using the '--noscripts' option as below:
-+
-.Optionally, force uninstall the connector (if uninstall fails)
-----
-# rpm -e --noscripts cloudian-cloudplatform
-----
-+
-Next re-install (without uninstalling) CloudStack. Re-install
-will keep any configuration files belonging to CloudStack intact
-and just gets the application files back to its initial installation
-state.
-+
-[subs="attributes"]
-----
-# yum reinstall ./CloudStack-{cpver}.0.0-rhel/cloudstack-management-{cpver}.0.0-1.el6.x86_64.rpm
-----
-+
-At this point you can install, configure and enable the connector again.
 
 ''''
 

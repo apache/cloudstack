@@ -114,7 +114,7 @@ public class CloudianClient {
 
     private void checkResponseOK(final HttpResponse response) {
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to get valid response from Cloudian admin API call, please ask your administrator to fix diagnose and fix issues.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to find the requested resource and get valid response from Cloudian admin API call, please ask your administrator to diagnose and fix issues.");
         }
     }
 

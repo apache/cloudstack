@@ -30,8 +30,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.cloudian.api.CloudianSsoLoginCmd;
 import org.apache.cloudstack.cloudian.api.CloudianIsEnabledCmd;
+import org.apache.cloudstack.cloudian.api.CloudianSsoLoginCmd;
 import org.apache.cloudstack.cloudian.client.CloudianClient;
 import org.apache.cloudstack.cloudian.client.CloudianGroup;
 import org.apache.cloudstack.cloudian.client.CloudianUser;
@@ -85,20 +85,11 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         throw new CloudRuntimeException("Failed to create and return Cloudian API client instance");
     }
 
-    private boolean addOrUpdateGroup(final Domain domain) {
+    private boolean addGroup(final Domain domain) {
         if (domain == null || !isEnabled()) {
             return false;
         }
         final CloudianClient client = getClient();
-        final CloudianGroup existingGroup = client.listGroup(domain.getUuid());
-        if (existingGroup != null) {
-            if (!existingGroup.getActive() || !existingGroup.getGroupName().equals(domain.getPath())) {
-                existingGroup.setActive(true);
-                existingGroup.setGroupName(domain.getPath());
-                return client.updateGroup(existingGroup);
-            }
-            return true;
-        }
         final CloudianGroup group = new CloudianGroup();
         group.setGroupId(domain.getUuid());
         group.setGroupName(domain.getPath());
@@ -127,23 +118,13 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         return false;
     }
 
-    private boolean addOrUpdateUserAccount(final Account account, final Domain domain) {
+    private boolean addUserAccount(final Account account, final Domain domain) {
         if (account == null || domain == null || !isEnabled()) {
             return false;
         }
         final User accountUser = userDao.listByAccount(account.getId()).get(0);
-        final String fullName = String.format("%s %s (%s)", accountUser.getFirstname(), accountUser.getLastname(), account.getAccountName());
         final CloudianClient client = getClient();
-        final CloudianUser existingUser = client.listUser(account.getUuid(), domain.getUuid());
-        if (existingUser != null) {
-            if (!existingUser.getActive() || !existingUser.getFullName().equals(fullName)) {
-                existingUser.setActive(true);
-                existingUser.setEmailAddr(accountUser.getEmail());
-                existingUser.setFullName(fullName);
-                return client.updateUser(existingUser);
-            }
-            return true;
-        }
+        final String fullName = String.format("%s %s (%s)", accountUser.getFirstname(), accountUser.getLastname(), account.getAccountName());
         final CloudianUser user = new CloudianUser();
         user.setUserId(account.getUuid());
         user.setGroupId(domain.getUuid());
@@ -152,6 +133,25 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         user.setUserType(CloudianUser.USER);
         user.setActive(true);
         return client.addUser(user);
+    }
+
+    private boolean updateUserAccount(final Account account, final Domain domain, final CloudianUser existingUser) {
+        if (account == null || domain == null || !isEnabled()) {
+            return false;
+        }
+        final CloudianClient client = getClient();
+        if (existingUser != null) {
+            final User accountUser = userDao.listByAccount(account.getId()).get(0);
+            final String fullName = String.format("%s %s (%s)", accountUser.getFirstname(), accountUser.getLastname(), account.getAccountName());
+            if (!existingUser.getActive() || !existingUser.getFullName().equals(fullName) || !existingUser.getEmailAddr().equals(accountUser.getEmail())) {
+                existingUser.setActive(true);
+                existingUser.setFullName(fullName);
+                existingUser.setEmailAddr(accountUser.getEmail());
+                return client.updateUser(existingUser);
+            }
+            return true;
+        }
+        return false;
     }
 
     private boolean removeUserAccount(final Account account) {
@@ -197,13 +197,31 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         if (caller.getAccountName().equals("admin") && caller.getRoleId() == RoleType.Admin.getId()) {
             user = CloudianCmcAdminUser.value();
             group = "0";
-            final CloudianUser adminUser = getClient().listUser(user, group);
-            if (adminUser == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to find mapped Cloudian admin user, please fix integration issues.");
+        }
+
+        LOG.debug(String.format("Attempting Cloudian SSO with user id=%s, group id=%s", user, group));
+
+        final CloudianUser ssoUser = getClient().listUser(user, group);
+        if (ssoUser == null || !ssoUser.getActive()) {
+            LOG.debug(String.format("Failed to find existing Cloudian user id=%s in group id=%s", user, group));
+            final CloudianGroup ssoGroup = getClient().listGroup(group);
+            if (ssoGroup == null) {
+                LOG.debug(String.format("Failed to find existing Cloudian group id=%s, trying to add it", group));
+                if (!addGroup(domain)) {
+                    LOG.error("Failed to add missing Cloudian group id=" + group);
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Aborting Cloudian SSO, failed to add group to Cloudian.");
+                }
+            }
+            if (!addUserAccount(caller, domain)) {
+                LOG.error("Failed to add missing Cloudian group id=" + group);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Aborting Cloudian SSO, failed to add user to Cloudian.");
+            }
+            final CloudianUser addedSsoUser = getClient().listUser(user, group);
+            if (addedSsoUser == null || !addedSsoUser.getActive()) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Aborting Cloudian SSO, failed to find mapped Cloudian user, please fix integration issues.");
             }
         } else {
-            addOrUpdateGroup(domain);
-            addOrUpdateUserAccount(caller, domain);
+            updateUserAccount(caller, domain, ssoUser);
         }
 
         return CloudianUtils.generateSSOUrl(getCmcUrl(), user, group, CloudianSsoKey.value());
@@ -235,7 +253,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                     final Account account = accountDao.findById(accountId);
                     final Domain domain = domainDao.findById(account.getDomainId());
 
-                    if (!addOrUpdateUserAccount(account, domain)) {
+                    if (!addUserAccount(account, domain)) {
                         LOG.warn(String.format("Failed to add account in Cloudian while adding CloudStack account=%s in domain=%s", account.getAccountName(), domain.getPath()));
                     }
                 } catch (final Exception e) {
@@ -263,7 +281,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             public void onPublishMessage(String senderAddress, String subject, Object args) {
                 try {
                     final Domain domain = domainDao.findById((Long) args);
-                    if (!addOrUpdateGroup(domain)) {
+                    if (!addGroup(domain)) {
                         LOG.warn(String.format("Failed to add group in Cloudian while adding CloudStack domain=%s id=%s", domain.getPath(), domain.getId()));
                     }
                 } catch (final Exception e) {
