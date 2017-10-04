@@ -108,13 +108,17 @@ public class CloudianClient {
         if (response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
             final Credentials credentials = httpContext.getCredentialsProvider().getCredentials(AuthScope.ANY);
             LOG.error("Cloudian admin API authentication failed, please check Cloudian configuration. Admin auth principal=" + credentials.getUserPrincipal() + ", password=" + credentials.getPassword() + ", API url=" + adminApiUrl);
-            throw new ServerApiException(ApiErrorCode.UNAUTHORIZED, "Cloudian admin API call unauthorized, please ask your administrator to fix integration issues.");
+            throw new ServerApiException(ApiErrorCode.UNAUTHORIZED, "Cloudian backend API call unauthorized, please ask your administrator to fix integration issues.");
         }
     }
 
     private void checkResponseOK(final HttpResponse response) {
-        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to find the requested resource and get valid response from Cloudian admin API call, please ask your administrator to diagnose and fix issues.");
+        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
+            LOG.debug("Requested Cloudian resource does not exist");
+            return;
+        }
+        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK && response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to find the requested resource and get valid response from Cloudian backend API call, please ask your administrator to diagnose and fix issues.");
         }
     }
 
@@ -187,7 +191,9 @@ public class CloudianClient {
         try {
             final HttpResponse response = get(String.format("/user?userId=%s&groupId=%s", userId, groupId));
             checkResponseOK(response);
-            if (response.getEntity() == null || response.getEntity().getContent() == null) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT ||
+                    response.getEntity() == null ||
+                    response.getEntity().getContent() == null) {
                 return null;
             }
             final ObjectMapper mapper = new ObjectMapper();
@@ -207,10 +213,12 @@ public class CloudianClient {
         try {
             final HttpResponse response = get(String.format("/user/list?groupId=%s&userType=all&userStatus=active", groupId));
             checkResponseOK(response);
-            final ObjectMapper mapper = new ObjectMapper();
-            if (response.getEntity() == null || response.getEntity().getContent() == null) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT ||
+                    response.getEntity() == null ||
+                    response.getEntity().getContent() == null) {
                 return new ArrayList<>();
             }
+            final ObjectMapper mapper = new ObjectMapper();
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianUser[].class));
         } catch (final IOException e) {
             LOG.error("Failed to list Cloudian users due to:", e);
@@ -276,7 +284,9 @@ public class CloudianClient {
         try {
             final HttpResponse response = get(String.format("/group?groupId=%s", groupId));
             checkResponseOK(response);
-            if (response.getEntity() == null || response.getEntity().getContent() == null){
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT ||
+                    response.getEntity() == null ||
+                    response.getEntity().getContent() == null) {
                 return null;
             }
             final ObjectMapper mapper = new ObjectMapper();
@@ -293,7 +303,9 @@ public class CloudianClient {
         try {
             final HttpResponse response = get("/group/list");
             checkResponseOK(response);
-            if (response.getEntity() == null || response.getEntity().getContent() == null) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT ||
+                    response.getEntity() == null ||
+                    response.getEntity().getContent() == null) {
                 return new ArrayList<>();
             }
             final ObjectMapper mapper = new ObjectMapper();

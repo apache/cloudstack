@@ -383,7 +383,7 @@ but there was a typo and it was mapped to 'admn'.
 ----
 DEBUG [o.a.c.c.CloudianConnectorImpl] (qtp1809303591-31:ctx-6e8e8621 ctx-40a6e707) (logid:cd96b235) Attempting Cloudian SSO with user id=admn, group id=0
 DEBUG [o.a.c.c.c.CloudianClient] (qtp1809303591-31:ctx-6e8e8621 ctx-40a6e707) (logid:cd96b235) Trying to find Cloudian user with id=admn and group id=0
-INFO  [c.c.a.ApiServer] (qtp1809303591-31:ctx-6e8e8621 ctx-40a6e707) (logid:cd96b235) Failed to find the requested resource and get valid response from Cloudian admin API call, please ask your administrator to diagnose and fix issues.
+INFO  [c.c.a.ApiServer] (qtp1809303591-31:ctx-6e8e8621 ctx-40a6e707) (logid:cd96b235) Failed to find the requested resource and get valid response from Cloudian backend API call, please ask your administrator to diagnose and fix issues.
 ----
 
 ==== Other Failures
@@ -407,8 +407,8 @@ INFO  [c.c.a.ApiServer] (qtp1638771699-28:ctx-e8b5b507 ctx-0632d279) (logid:94e8
 ----
 DEBUG [o.a.c.c.CloudianConnectorImpl] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Attempting Cloudian SSO with user id=753a62a8-978c-4bab-bfc4-b55ea2fda505, group id=16711de6-a806-11e7-b0a6-a434d91cd37e
 DEBUG [o.a.c.c.c.CloudianClient] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Trying to find Cloudian user with id=753a62a8-978c-4bab-bfc4-b55ea2fda505 and group id=16711de6-a806-11e7-b0a6-a434d91cd37e
-ERROR [o.a.c.c.c.CloudianClient] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Cloudian admin API authentication failed, please check Cloudian configuration. Admin auth principal=[principal: admin], password=incorrect-password, API url=https://admin.abc.xyz:19443
-INFO  [c.c.a.ApiServer] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Cloudian admin API call unauthorized, please ask your administrator to fix integration issues.
+ERROR [o.a.c.c.c.CloudianClient] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Cloudian backend API authentication failed, please check Cloudian configuration. Admin auth principal=[principal: admin], password=incorrect-password, API url=https://admin.abc.xyz:19443
+INFO  [c.c.a.ApiServer] (qtp1809303591-23:ctx-e9d61989 ctx-78760902) (logid:d3ea9e30) Cloudian backend API call unauthorized, please ask your administrator to fix integration issues.
 ----
 
 == Trouble Shooting
