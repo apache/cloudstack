@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function (cloudStack) {
-  cloudStack.plugins.quota.config = {
+  cloudStack.plugins.cloudian.config = {
     title: 'Cloudian Storage',
     desc: 'Cloudian Storage',
     externalLink: 'https://cloudian.com/',
