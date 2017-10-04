@@ -224,8 +224,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             updateUserAccount(caller, domain, ssoUser);
         }
 
-        LOG.debug(String.format("Returning generated Cloudian SSO URL for user id=%s, group id=%s", user, group));
-
+        LOG.debug(String.format("Validated Cloudian SSO for Cloudian user id=%s, group id=%s", user, group));
         return CloudianUtils.generateSSOUrl(getCmcUrl(), user, group, CloudianSsoKey.value());
     }
 
