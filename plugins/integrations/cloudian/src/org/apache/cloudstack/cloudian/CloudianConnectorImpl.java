@@ -220,9 +220,11 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             if (addedSsoUser == null || !addedSsoUser.getActive()) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Aborting Cloudian SSO, failed to find mapped Cloudian user, please fix integration issues.");
             }
-        } else {
+        } else if (!group.equals("0")) {
             updateUserAccount(caller, domain, ssoUser);
         }
+
+        LOG.debug(String.format("Returning generated Cloudian SSO URL for user id=%s, group id=%s", user, group));
 
         return CloudianUtils.generateSSOUrl(getCmcUrl(), user, group, CloudianSsoKey.value());
     }
