@@ -134,7 +134,6 @@
     <bean id="ipDeployersRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="ip.deployers.exclude" />
-        <property name="excludeDefault" value="MidoNetElement" />
         <property name="preRegistered">
             <list>
                 <ref bean="VpcVirtualRouter" />
@@ -145,7 +144,6 @@
     <bean id="dhcpProvidersRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="dhcp.providers.exclude" />
-        <property name="excludeDefault" value="MidoNetElement" />
         <property name="preRegistered">
             <list>
                 <ref bean="VpcVirtualRouter" />

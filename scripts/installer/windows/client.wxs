@@ -1449,9 +1449,6 @@
                         <Component Id="cmpE79D8DE0A3F5641D63029C9C5BB84D0D" Guid="{71A421D6-EC6B-4410-BEB8-D8A13CBF2F76}">
                             <File Id="fil26BE9842DE6416E8946A2295439E129D" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\cloud-plugin-network-internallb-4.4.0-SNAPSHOT.jar" />
                         </Component>
-                        <Component Id="cmpA6C72B638E002C5141944F120B6B9711" Guid="{02C8CA2E-826F-452D-AC54-2E8787451C2B}">
-                            <File Id="filB57FEF496D3CF0EDD6B9DC7FA5E08D31" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\cloud-plugin-network-midonet-4.4.0-SNAPSHOT.jar" />
-                        </Component>
                         <Component Id="cmpBA53547354F4749AB6DB53E652729729" Guid="{0026D30B-04AA-45D9-9582-743650497E99}">
                             <File Id="filC6F3205D9E0721B202FECAD231D0E72B" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\cloud-plugin-network-netscaler-4.4.0-SNAPSHOT.jar" />
                         </Component>
@@ -1703,9 +1700,6 @@
                         </Component>
                         <Component Id="cmp6114379A976905B2F2770C6E5934AC79" Guid="{8CCECB3F-062A-439E-863E-950BA2B0062F}">
                             <File Id="fil6A0D7E786C6E6FD2FF2C2D52A4A7FB3E" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\mail-1.4.jar" />
-                        </Component>
-                        <Component Id="cmpCF3E965E2D26D7E48F44F280084D6836" Guid="{7A9845D3-BF3E-495C-9CFB-BA1D37199DAB}">
-                            <File Id="fil7B2A7C3FF6D92CABA0F6015F9D1FCB7E" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\midonet-client-1.1.0.jar" />
                         </Component>
                         <Component Id="cmp2210FF2D22610D7C6B5B50F74A6CCFF6" Guid="{8B4D96E1-E8D0-415D-BC1E-0D6B9C2896EB}">
                             <File Id="fil79A9A35E5D30D89644135E92F334EBC6" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\nekohtml-1.9.12.jar" />

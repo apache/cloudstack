@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.configuration;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -29,14 +38,6 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
 
 public enum Config {
 
@@ -1208,24 +1209,6 @@ public enum Config {
             null),
     VmwareHungWorkerTimeout("Advanced", ManagementServer.class, Long.class, "vmware.hung.wokervm.timeout", "7200", "Worker VM timeout in seconds", null),
     VmwareVcenterSessionTimeout("Advanced", ManagementServer.class, Long.class, "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", null),
-
-    // Midonet
-    MidoNetAPIServerAddress(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "midonet.apiserver.address",
-            "http://localhost:8081",
-            "Specify the address at which the Midonet API server can be contacted (if using Midonet)",
-            null),
-    MidoNetProviderRouterId(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "midonet.providerrouter.id",
-            "d7c5e6a3-e2f4-426b-b728-b7ce6a0448e5",
-            "Specifies the UUID of the Midonet provider router (if using Midonet)",
-            null),
 
     // KVM
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),

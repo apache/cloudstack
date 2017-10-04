@@ -248,3 +248,6 @@ ALTER TABLE `cloud`.`oobm` MODIFY COLUMN port VARCHAR(255);
 
 -- CLOUDSTACK-9902: Console proxy SSL toggle
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`, `default_value`, `is_dynamic`) VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.sslEnabled', 'false', 'Enable SSL for console proxy', 'false', 0);
+
+-- CLOUDSTACK-9859: Retirement of midonet plugin (final removal) 
+delete from `cloud`.`configuration` where name in ('midonet.apiserver.address', 'midonet.providerrouter.id');

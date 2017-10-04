@@ -207,11 +207,5 @@
         <module>hypervisors/simulator</module>
       </modules>
     </profile>
-    <profile>
-      <id>midonet</id>
-      <modules>
-        <module>network-elements/midonet</module>
-      </modules>
-    </profile>
   </profiles>
 </project>
