@@ -21,6 +21,7 @@ package org.apache.cloudstack.ca;
 
 import java.lang.reflect.Field;
 import java.math.BigInteger;
+import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 
@@ -108,7 +109,8 @@ public class CAManagerImplTest {
     public void testProvisionCertificate() throws Exception {
         final Host host = Mockito.mock(Host.class);
         Mockito.when(host.getPrivateIpAddress()).thenReturn("1.2.3.4");
-        final X509Certificate certificate = CertUtils.generateV1Certificate(CertUtils.generateRandomKeyPair(1024), "CN=ca", "CN=ca", 1, "SHA256withRSA");
+        final KeyPair keyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate certificate = CertUtils.generateV3Certificate(null, keyPair, keyPair.getPublic(), "CN=ca", "SHA256withRSA", 365, null, null);
         Mockito.when(caProvider.issueCertificate(Mockito.anyString(), Mockito.anyList(), Mockito.anyList(), Mockito.anyInt())).thenReturn(new Certificate(certificate, null, Collections.singletonList(certificate)));
         Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(SetupKeyStoreCommand.class))).thenReturn(new SetupKeystoreAnswer("someCsr"));
         Mockito.when(agentManager.reconnect(Mockito.anyLong())).thenReturn(true);
