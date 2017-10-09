@@ -14,38 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package org.apache.cloudstack.metrics;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public interface PrometheusExporter {
 
-public interface ImageStore extends Identity, InternalIdentity {
+    void updateMetrics();
 
-    /**
-     * @return name of the object store.
-     */
-    String getName();
-
-    /**
-     * @return availability zone.
-     */
-    Long getDataCenterId();
-
-    /**
-     * @return object store provider name
-     */
-    String getProviderName();
-
-    /**
-     *
-     * @return data store protocol
-     */
-    String getProtocol();
-
-    /**
-     *
-     * @return uri
-     */
-    String getUrl();
-
+    String getMetrics();
 }
