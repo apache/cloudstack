@@ -32,6 +32,8 @@ import signal
 import sys
 import logging
 import time
+import threading
+import Queue
 
 
 class TestNic(cloudstackTestCase):
@@ -315,6 +317,141 @@ class TestNic(cloudstackTestCase):
                 break
 
         self.assertTrue(found, "Nic not successfully added with specified mac address")
+
+
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_03_nic_multiple_vmware(self):
+        """Test to adding multiple nics to a VMware VM and restarting VM
+
+           Refer to CLOUDSTACK-10107 for details, in this test we add 8 nics to
+           a VM and stop, start it to show that VMware VMs are not limited to
+           having up to 7 nics.
+        """
+
+        if self.hypervisor.lower() != "vmware":
+            self.skipTest("Skipping test applicable for VMware")
+
+        network_offering = NetworkOffering.create(
+            self.apiclient,
+            self.services["nw_off_isolated_persistent"]
+        )
+        self.cleanup.insert(0, network_offering)
+        network_offering.update(self.apiclient, state='Enabled')
+
+        offering = dict(self.services["network"])
+        offering["networkoffering"] = network_offering.id
+
+        networks = []
+
+        def createNetwork(idx):
+            offering["name"] = "Test Network%s" % idx
+            network = Network.create(
+                self.apiclient,
+                offering,
+                self.account.name,
+                self.account.domainid,
+                zoneid=self.services["network"]["zoneid"]
+            )
+            networks.append(network)
+            self.cleanup.insert(0, network)
+
+
+        class NetworkMaker(threading.Thread):
+            def __init__(self, queue=None, createNetwork=None):
+                threading.Thread.__init__(self)
+                self.queue = queue
+                self.createNetwork = createNetwork
+
+            def run(self):
+                while True:
+                    idx = self.queue.get()
+                    if idx is not None:
+                        self.createNetwork(idx)
+                    self.queue.task_done()
+
+        # Start multiple networks
+        tsize = 8
+        queue = Queue.Queue()
+        for _ in range(tsize):
+            worker = NetworkMaker(queue, createNetwork)
+            worker.setDaemon(True)
+            worker.start()
+
+        for idx in range(tsize):
+            queue.put(idx)
+        queue.join()
+
+        # Deploy a VM
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[networks[0].id],
+            mode=self.zone.networktype
+        )
+        self.cleanup.insert(0, vm)
+
+        # Add nics to networks
+        for network in networks[1:]:
+            response = vm.add_nic(self.apiclient, network.id)
+            found = False
+            for nic in response.nic:
+                if nic.networkid == network.id:
+                    found = True
+                    break
+            self.assertTrue(found, "Nic not successfully added for the specific network")
+
+        # Stop VM
+        vm.stop(self.apiclient, forced=True)
+
+        vms = VirtualMachine.list(
+            self.apiclient,
+            id=vm.id
+        )
+        self.assertEqual(
+                validateList(vms)[0],
+                PASS,
+                "vms list validation failed")
+
+        vm_response = vms[0]
+        self.assertEqual(
+            vm_response.state,
+            "Stopped",
+            "Verify the VM is stopped"
+        )
+
+        # Start VM
+        vm.start(self.apiclient)
+
+        vms = VirtualMachine.list(
+            self.apiclient,
+            id=vm.id
+        )
+        self.assertEqual(
+                validateList(vms)[0],
+                PASS,
+                "vms list validation failed")
+
+        vm_response = vms[0]
+        self.assertEqual(
+            vm_response.state,
+            "Running",
+            "Verify the VM is running"
+        )
+
+        self.assertTrue(len(vm_response.nic) == len(networks), "Number of nics on VM not 8")
+
+        # Validate nics exist on each of the network
+        for network in networks:
+            found = False
+            for nic in vm_response.nic:
+                if nic.networkid == network.id:
+                    found = True
+                    break
+            self.assertTrue(found, "Nic not found for the specific network")
+
 
     def tearDown(self):
         try:
