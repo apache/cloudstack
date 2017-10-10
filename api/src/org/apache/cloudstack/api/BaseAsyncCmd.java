@@ -17,7 +17,10 @@
 package org.apache.cloudstack.api;
 
 
+import jdk.internal.joptsimple.internal.Strings;
 import org.apache.log4j.Logger;
+
+import java.util.UUID;
 
 /**
  * queryAsyncJobResult API command.
@@ -29,7 +32,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String vpcSyncObject = "vpc";
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalancer";
-    private static final Logger s_logger = Logger.getLogger(BaseAsyncCmd.class.getName());
+    private static final Logger s_logger = Logger.getLogger(BaseAsyncCmd.class);
 
     private Object job;
 
@@ -39,10 +42,23 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CUSTOM_JOB_ID , type = CommandType.STRING)
     private String injectedJobId;
 
+    @Parameter(name = ApiConstants.CALL_ID, type = CommandType.UUID)
+    private UUID callId;
+
     public String getInjectedJobId() {
+        if (Strings.isNullOrEmpty(injectedJobId)) {
+            if (getCallId() == null) {
+                callId = UUID.randomUUID();
+            }
+            injectedJobId = getCallId().toString();
+        }
         return this.injectedJobId;
     }
 
+    public UUID getCallId()
+    {
+        return this.callId;
+    }
     /**
      * For proper tracking of async commands through the system, events must be generated when the command is
      * scheduled, started, and completed. Commands should specify the type of event so that when the scheduled,
