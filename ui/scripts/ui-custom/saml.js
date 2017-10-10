@@ -81,7 +81,10 @@
                     option.data("userId", accounts[i].userId);
                     option.data("domainId", accounts[i].domainId);
                     option.val(accounts[i].userId + '/' + accounts[i].domainId);
-                    option.html(accounts[i].accountName + "/" + accounts[i].domainName);
+                    option.html(accounts[i].accountName + accounts[i].domainPath);
+					if (accounts[i].domainName == 'ROOT') {
+						option.append('ROOT');
+					}
                     option.appendTo($domainSelect);
                 }
                 var currentAccountDomain = g_userid + '/' + g_domainid;
