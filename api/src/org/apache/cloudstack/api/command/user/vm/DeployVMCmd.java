@@ -333,6 +333,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                     } catch (NumberFormatException e) {
                         throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + ips.get("networkid"));
                     }
+                    // so no network found but a valid number as network id; are we assuming exceptions thrown or lucky guessing?
                 }
                 String requestedIp = ips.get("ip");
                 String requestedIpv6 = ips.get("ipv6");

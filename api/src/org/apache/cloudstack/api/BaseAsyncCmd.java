@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api;
 
 
-import jdk.internal.joptsimple.internal.Strings;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.UUID;
@@ -46,7 +46,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     private UUID callId;
 
     public String getInjectedJobId() {
-        if (Strings.isNullOrEmpty(injectedJobId)) {
+        if (!StringUtils.isNotBlank(injectedJobId)) {
             if (getCallId() == null) {
                 callId = UUID.randomUUID();
             }
