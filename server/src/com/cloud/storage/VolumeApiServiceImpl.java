@@ -260,6 +260,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
 
+    static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
+            "Check the url for a volume before downloading it from the management server. Set to false when you managment has no internet access.",
+            true);
+
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
@@ -403,8 +407,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("File:// type urls are currently unsupported");
             }
             UriUtils.validateUrl(format, url);
-        // check URL existence
-        UriUtils.checkUrlExistence(url);
+            if (VolumeUrlCheck.value()) { // global setting that can be set when their MS does not have internet access
+                s_logger.debug("Checking url: " + url);
+                UriUtils.checkUrlExistence(url);
+            }
             // Check that the resource limit for secondary storage won't be exceeded
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
         } else {

@@ -62,7 +62,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private static final int CHUNK_SIZE = 1024 * 1024; //1M
     private String downloadUrl;
     private String toFile;
-    public TemplateDownloader.Status status = TemplateDownloader.Status.NOT_STARTED;
+    public TemplateDownloader.Status status;
     public String errorString = " ";
     private long remoteSize = 0;
     public long downloadTime = 0;
@@ -83,15 +83,82 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             String user, String password, Proxy proxy, ResourceType resourceType) {
         _storage = storageLayer;
         this.downloadUrl = downloadUrl;
-        setToDir(toDir);
-        status = TemplateDownloader.Status.NOT_STARTED;
+        this.toDir = toDir;
         this.resourceType = resourceType;
         this.maxTemplateSizeInBytes = maxTemplateSizeInBytes;
+        completionCallback = callback;
 
+        status = TemplateDownloader.Status.NOT_STARTED;
         totalBytes = 0;
         client = new HttpClient(s_httpClientManager);
+        myretryhandler = createRetryTwiceHandler();
+        try {
+            request = createRequest(downloadUrl);
+            checkTemporaryDestination(toDir);
+            checkProxy(proxy);
+            checkCredentials(user, password);
+        } catch (Exception ex) {
+            errorString = "Unable to start download -- check url? ";
+            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
+            s_logger.warn("Exception in constructor -- " + ex.toString());
+        } catch (Throwable th) {
+            s_logger.warn("throwable caught ", th);
+        }
+    }
 
-        myretryhandler = new HttpMethodRetryHandler() {
+    private GetMethod createRequest(String downloadUrl) {
+        GetMethod request = new GetMethod(downloadUrl);
+        request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
+        request.setFollowRedirects(true);
+        return request;
+    }
+
+    private void checkTemporaryDestination(String toDir) {
+        try {
+            File f = File.createTempFile("dnld", "tmp_", new File(toDir));
+
+            if (_storage != null) {
+                _storage.setWorldReadableAndWriteable(f);
+            }
+
+            toFile = f.getAbsolutePath();
+        } catch (IOException ex) {
+            errorString = "Unable to start download -- check url? ";
+            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
+            s_logger.warn("Exception in constructor -- " + ex.toString());
+        }
+    }
+
+    private void checkCredentials(String user, String password) {
+        try {
+            Pair<String, Integer> hostAndPort = UriUtils.validateUrl(downloadUrl);
+            if ((user != null) && (password != null)) {
+                client.getParams().setAuthenticationPreemptive(true);
+                Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
+                client.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+            } else {
+                s_logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
+            }
+        } catch (IllegalArgumentException iae) {
+            errorString = iae.getMessage();
+            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
+            inited = false;
+        }
+    }
+
+    private void checkProxy(Proxy proxy) {
+        if (proxy != null) {
+            client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
+            if (proxy.getUserName() != null) {
+                Credentials proxyCreds = new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPassword());
+                client.getState().setProxyCredentials(AuthScope.ANY, proxyCreds);
+            }
+        }
+    }
+
+    private HttpMethodRetryHandler createRetryTwiceHandler() {
+        return new HttpMethodRetryHandler() {
             @Override
             public boolean retryMethod(final HttpMethod method, final IOException exception, int executionCount) {
                 if (executionCount >= 2) {
@@ -111,185 +178,40 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 return false;
             }
         };
-
-        try {
-            request = new GetMethod(downloadUrl);
-            request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
-            completionCallback = callback;
-            this.request.setFollowRedirects(true);
-
-            File f = File.createTempFile("dnld", "tmp_", new File(toDir));
-
-            if (_storage != null) {
-                _storage.setWorldReadableAndWriteable(f);
-            }
-
-            toFile = f.getAbsolutePath();
-            Pair<String, Integer> hostAndPort = UriUtils.validateUrl(downloadUrl);
-
-            if (proxy != null) {
-                client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
-                if (proxy.getUserName() != null) {
-                    Credentials proxyCreds = new UsernamePasswordCredentials(proxy.getUserName(), proxy.getPassword());
-                    client.getState().setProxyCredentials(AuthScope.ANY, proxyCreds);
-                }
-            }
-            if ((user != null) && (password != null)) {
-                client.getParams().setAuthenticationPreemptive(true);
-                Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                client.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
-            } else {
-                s_logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
-            }
-        } catch (IllegalArgumentException iae) {
-            errorString = iae.getMessage();
-            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-            inited = false;
-        } catch (Exception ex) {
-            errorString = "Unable to start download -- check url? ";
-            status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-            s_logger.warn("Exception in constructor -- " + ex.toString());
-        } catch (Throwable th) {
-            s_logger.warn("throwable caught ", th);
-        }
     }
 
     @Override
     public long download(boolean resume, DownloadCompleteCallback callback) {
-        switch (status) {
-            case ABORTED:
-            case UNRECOVERABLE_ERROR:
-            case DOWNLOAD_FINISHED:
-                return 0;
-            default:
-
-        }
+        if (skipDownloadOnStatus()) return 0;
         int bytes = 0;
         File file = new File(toFile);
         try {
 
-            long localFileSize = 0;
-            if (file.exists() && resume) {
-                localFileSize = file.length();
-                s_logger.info("Resuming download to file (current size)=" + localFileSize);
-            }
+            long localFileSize = checkLocalFileSizeForResume(resume, file);
 
             Date start = new Date();
 
-            int responseCode = 0;
+            if (checkServerResponse(localFileSize)) return 0;
 
-            if (localFileSize > 0) {
-                // require partial content support for resume
-                request.addRequestHeader("Range", "bytes=" + localFileSize + "-");
-                if (client.executeMethod(request) != HttpStatus.SC_PARTIAL_CONTENT) {
-                    errorString = "HTTP Server does not support partial get";
-                    status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-                    return 0;
-                }
-            } else if ((responseCode = client.executeMethod(request)) != HttpStatus.SC_OK) {
-                status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-                errorString = " HTTP Server returned " + responseCode + " (expected 200 OK) ";
-                return 0; //FIXME: retry?
-            }
+            if (!tryAndGetRemoteSize()) return 0;
 
-            Header contentLengthHeader = request.getResponseHeader("Content-Length");
-            boolean chunked = false;
-            long remoteSize2 = 0;
-            if (contentLengthHeader == null) {
-                Header chunkedHeader = request.getResponseHeader("Transfer-Encoding");
-                if (chunkedHeader == null || !"chunked".equalsIgnoreCase(chunkedHeader.getValue())) {
-                    status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-                    errorString = " Failed to receive length of download ";
-                    return 0; //FIXME: what status do we put here? Do we retry?
-                } else if ("chunked".equalsIgnoreCase(chunkedHeader.getValue())) {
-                    chunked = true;
-                }
-            } else {
-                remoteSize2 = Long.parseLong(contentLengthHeader.getValue());
-                if (remoteSize2 == 0) {
-                    status = TemplateDownloader.Status.DOWNLOAD_FINISHED;
-                    String downloaded = "(download complete remote=" + remoteSize + "bytes)";
-                    errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
-                    downloadTime = 0;
-                    return 0;
-                }
-            }
+            if (!canHandleDownloadSize()) return 0;
 
-            if (remoteSize == 0) {
-                remoteSize = remoteSize2;
-            }
+            checkAndSetDownloadSize();
 
-            if (remoteSize > maxTemplateSizeInBytes) {
-                s_logger.info("Remote size is too large: " + remoteSize + " , max=" + maxTemplateSizeInBytes);
-                status = Status.UNRECOVERABLE_ERROR;
-                errorString = "Download file size is too large";
-                return 0;
-            }
+            try (InputStream in = request.getResponseBodyAsStream();
+                 RandomAccessFile out = new RandomAccessFile(file, "rw");
+            ) {
+                out.seek(localFileSize);
 
-            if (remoteSize == 0) {
-                remoteSize = maxTemplateSizeInBytes;
-            }
+                s_logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInBytes);
 
-            InputStream in = request.getResponseBodyAsStream();
+                if (copyBytes(file, in, out)) return 0;
 
-            RandomAccessFile out = new RandomAccessFile(file, "rw");
-            out.seek(localFileSize);
-
-            s_logger.info("Starting download from " + getDownloadUrl() + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInBytes);
-
-            byte[] block = new byte[CHUNK_SIZE];
-            long offset = 0;
-            boolean done = false;
-            boolean verifiedFormat=false;
-            status = TemplateDownloader.Status.IN_PROGRESS;
-            while (!done && status != Status.ABORTED && offset <= remoteSize) {
-                if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
-                    out.write(block, 0, bytes);
-                    offset += bytes;
-                    out.seek(offset);
-                    totalBytes += bytes;
-                        if (!verifiedFormat && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
-                        String uripath = null;
-                        try {
-                            URI str = new URI(getDownloadUrl());
-                            uripath = str.getPath();
-                        } catch (URISyntaxException e) {
-                            s_logger.warn("Invalid download url: " + getDownloadUrl() + ", This should not happen since we have validated the url before!!");
-                        }
-                        String unsupportedFormat = ImageStoreUtil.checkTemplateFormat(file.getAbsolutePath(), uripath);
-                            if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
-                                 try {
-                                     request.abort();
-                                     out.close();
-                                     in.close();
-                                 } catch (Exception ex) {
-                                     s_logger.debug("Error on http connection : " + ex.getMessage());
-                                 }
-                                 status = Status.UNRECOVERABLE_ERROR;
-                                 errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
-                                 return 0;
-                            }
-                            s_logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
-                            verifiedFormat = true;
-                        }
-                } else {
-                    done = true;
-                }
-            }
-            out.getFD().sync();
-
-            Date finish = new Date();
-            String downloaded = "(incomplete download)";
-            if (totalBytes >= remoteSize) {
-                status = TemplateDownloader.Status.DOWNLOAD_FINISHED;
-                downloaded = "(download complete remote=" + remoteSize + "bytes)";
-            }
-            errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
-            downloadTime += finish.getTime() - start.getTime();
-            in.close();
-            out.close();
-
+                Date finish = new Date();
+                checkDowloadCompletion();
+                downloadTime += finish.getTime() - start.getTime();
+            } finally { /* in.close() and out.close() */ }
             return totalBytes;
         } catch (HttpException hte) {
             status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
@@ -307,6 +229,133 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             }
         }
         return 0;
+    }
+
+    private boolean copyBytes(File file, InputStream in, RandomAccessFile out) throws IOException {
+        int bytes;
+        byte[] block = new byte[CHUNK_SIZE];
+        long offset = 0;
+        boolean done = false;
+        VerifyFormat verifyFormat = new VerifyFormat(file);
+        status = Status.IN_PROGRESS;
+        while (!done && status != Status.ABORTED && offset <= remoteSize) {
+            if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
+                offset = writeBlock(bytes, out, block, offset);
+                if (!verifyFormat.isVerifiedFormat() && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
+                    verifyFormat.invoke();
+                    if (verifyFormat.isInvalid()) return true;
+                }
+            } else {
+                done = true;
+            }
+        }
+        out.getFD().sync();
+        return false;
+    }
+
+    private long writeBlock(int bytes, RandomAccessFile out, byte[] block, long offset) throws IOException {
+        out.write(block, 0, bytes);
+        offset += bytes;
+        out.seek(offset);
+        totalBytes += bytes;
+        return offset;
+    }
+
+    private void checkDowloadCompletion() {
+        String downloaded = "(incomplete download)";
+        if (totalBytes >= remoteSize) {
+            status = Status.DOWNLOAD_FINISHED;
+            downloaded = "(download complete remote=" + remoteSize + "bytes)";
+        }
+        errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
+    }
+
+    private boolean canHandleDownloadSize() {
+        if (remoteSize > maxTemplateSizeInBytes) {
+            s_logger.info("Remote size is too large: " + remoteSize + " , max=" + maxTemplateSizeInBytes);
+            status = Status.UNRECOVERABLE_ERROR;
+            errorString = "Download file size is too large";
+            return false;
+        }
+
+        return true;
+    }
+
+    private void checkAndSetDownloadSize() {
+        if (remoteSize == 0) {
+            remoteSize = maxTemplateSizeInBytes;
+        }
+    }
+
+    private boolean tryAndGetRemoteSize() {
+        Header contentLengthHeader = request.getResponseHeader("Content-Length");
+        boolean chunked = false;
+        long reportedRemoteSize = 0;
+        if (contentLengthHeader == null) {
+            Header chunkedHeader = request.getResponseHeader("Transfer-Encoding");
+            if (chunkedHeader == null || !"chunked".equalsIgnoreCase(chunkedHeader.getValue())) {
+                status = Status.UNRECOVERABLE_ERROR;
+                errorString = " Failed to receive length of download ";
+                return false;
+            } else if ("chunked".equalsIgnoreCase(chunkedHeader.getValue())) {
+                chunked = true;
+            }
+        } else {
+            reportedRemoteSize = Long.parseLong(contentLengthHeader.getValue());
+            if (reportedRemoteSize == 0) {
+                status = Status.DOWNLOAD_FINISHED;
+                String downloaded = "(download complete remote=" + remoteSize + "bytes)";
+                errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
+                downloadTime = 0;
+                return false;
+            }
+        }
+
+        if (remoteSize == 0) {
+            remoteSize = reportedRemoteSize;
+        }
+        return true;
+    }
+
+    private boolean checkServerResponse(long localFileSize) throws IOException {
+        int responseCode = 0;
+
+        if (localFileSize > 0) {
+            // require partial content support for resume
+            request.addRequestHeader("Range", "bytes=" + localFileSize + "-");
+            if (client.executeMethod(request) != HttpStatus.SC_PARTIAL_CONTENT) {
+                errorString = "HTTP Server does not support partial get";
+                status = Status.UNRECOVERABLE_ERROR;
+                return true;
+            }
+        } else if ((responseCode = client.executeMethod(request)) != HttpStatus.SC_OK) {
+            status = Status.UNRECOVERABLE_ERROR;
+            errorString = " HTTP Server returned " + responseCode + " (expected 200 OK) ";
+            return true; //FIXME: retry?
+        }
+        return false;
+    }
+
+    private long checkLocalFileSizeForResume(boolean resume, File file) {
+        // TODO check the status of this downloader as well?
+        long localFileSize = 0;
+        if (file.exists() && resume) {
+            localFileSize = file.length();
+            s_logger.info("Resuming download to file (current size)=" + localFileSize);
+        }
+        return localFileSize;
+    }
+
+    private boolean skipDownloadOnStatus() {
+        switch (status) {
+            case ABORTED:
+            case UNRECOVERABLE_ERROR:
+            case DOWNLOAD_FINISHED:
+                return true;
+            default:
+
+        }
+        return false;
     }
 
     public String getDownloadUrl() {
@@ -407,19 +456,12 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         this.resume = resume;
     }
 
-    public void setToDir(String toDir) {
-        this.toDir = toDir;
-    }
-
-    public String getToDir() {
-        return toDir;
-    }
-
     @Override
     public long getMaxTemplateSizeInBytes() {
         return maxTemplateSizeInBytes;
     }
 
+    // TODO move this test code to unit tests or integration tests
     public static void main(String[] args) {
         String url = "http:// dev.mysql.com/get/Downloads/MySQL-5.0/mysql-noinstall-5.0.77-win32.zip/from/http://mirror.services.wisc.edu/mysql/";
         try {
@@ -452,4 +494,48 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         return resourceType;
     }
 
+    private class VerifyFormat {
+        private boolean invalidFormat;
+        private File file;
+        private boolean verifiedFormat;
+
+        public VerifyFormat(File file) {
+            this.file = file;
+            this.verifiedFormat = false;
+        }
+
+        boolean isInvalid() {
+            return invalidFormat;
+        }
+
+        public boolean isVerifiedFormat() {
+            return verifiedFormat;
+        }
+
+        public VerifyFormat invoke() {
+            String uripath = null;
+            try {
+                URI str = new URI(downloadUrl);
+                uripath = str.getPath();
+            } catch (URISyntaxException e) {
+                s_logger.warn("Invalid download url: " + downloadUrl + ", This should not happen since we have validated the url before!!");
+            }
+            String unsupportedFormat = ImageStoreUtil.checkTemplateFormat(file.getAbsolutePath(), uripath);
+            if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
+                try {
+                    request.abort();
+                } catch (Exception ex) {
+                    s_logger.debug("Error on http connection : " + ex.getMessage());
+                }
+                status = Status.UNRECOVERABLE_ERROR;
+                errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
+                invalidFormat = true;
+            } else {
+                s_logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
+                verifiedFormat = true;
+                invalidFormat = false;
+            }
+            return this;
+        }
+    }
 }
