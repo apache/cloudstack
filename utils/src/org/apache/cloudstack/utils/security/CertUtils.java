@@ -34,7 +34,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -48,13 +47,14 @@ import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
@@ -145,47 +145,56 @@ public class CertUtils {
         return new BigInteger(64, new SecureRandom());
     }
 
-    public static X509Certificate generateV1Certificate(final KeyPair keyPair,
-                                                        final String subjectDN,
-                                                        final String issuerDN,
-                                                        final int validityYears,
-                                                        final String signatureAlgorithm) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
-        final DateTime now = DateTime.now(DateTimeZone.UTC);
-        final X500Principal subjectDn = new X500Principal(subjectDN);
-        final X500Principal issuerDn = new X500Principal(issuerDN);
-        final X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
-        certGen.setSerialNumber(generateRandomBigInt());
-        certGen.setSubjectDN(subjectDn);
-        certGen.setIssuerDN(issuerDn);
-        certGen.setNotBefore(now.minusDays(1).toDate());
-        certGen.setNotAfter(now.plusYears(validityYears).toDate());
-        certGen.setPublicKey(keyPair.getPublic());
-        certGen.setSignatureAlgorithm(signatureAlgorithm);
-        return certGen.generate(keyPair.getPrivate(), "BC");
-    }
-
-    public static X509Certificate generateV3Certificate(final X509Certificate caCert,
-                                                        final PrivateKey caPrivateKey,
-                                                        final PublicKey clientPublicKey,
-                                                        final String subjectDN,
-                                                        final String signatureAlgorithm,
-                                                        final int validityDays,
-                                                        final List<String> dnsNames,
-                                                        final List<String> publicIPAddresses) throws IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, InvalidKeyException, SignatureException {
+    /**
+     * Generates a X509 V3 Certificate based on provided arguments
+     * @param caCert when caCert is not provided self-signed root CA certificate is generated with basic constraints
+     * @param caKeyPair the ca KeyPair that contains public and private keys
+     * @param clientPublicKey the client public key, for CA self-signing this will be CA public key
+     * @param subjectDN
+     * @param issuerDN
+     * @param signatureAlgorithm
+     * @param validityDays
+     * @param dnsNames
+     * @param publicIPAddresses
+     * @return returns a X509Certificate
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws CertificateException
+     * @throws NoSuchProviderException
+     * @throws InvalidKeyException
+     * @throws SignatureException
+     */
+    public static X509Certificate generateCertificate(final X509Certificate caCert,
+                                                      final KeyPair caKeyPair,
+                                                      final PublicKey clientPublicKey,
+                                                      final String subjectDN,
+                                                      final String issuerDN,
+                                                      final String signatureAlgorithm,
+                                                      final int validityDays,
+                                                      final List<String> dnsNames,
+                                                      final List<String> publicIPAddresses) throws IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, InvalidKeyException, SignatureException {
         final DateTime now = DateTime.now(DateTimeZone.UTC);
         final BigInteger serial = generateRandomBigInt();
         final X500Principal subject = new X500Principal(subjectDN);
+        final X500Principal issuer = new X500Principal(issuerDN);
 
         final X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();;
         certGen.setSerialNumber(serial);
-        certGen.setIssuerDN(caCert.getSubjectX500Principal());
         certGen.setSubjectDN(subject);
+        certGen.setIssuerDN(issuer);
         certGen.setNotBefore(now.minusHours(12).toDate());
         certGen.setNotAfter(now.plusDays(validityDays).toDate());
         certGen.setPublicKey(clientPublicKey);
         certGen.setSignatureAlgorithm(signatureAlgorithm);
-        certGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
-                new AuthorityKeyIdentifierStructure(caCert));
+        if (caCert == null) {
+            certGen.addExtension(X509Extensions.BasicConstraints, true,
+                    new BasicConstraints(true, 0));
+            certGen.addExtension(X509Extensions.KeyUsage, true,
+                    new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        } else {
+            certGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
+                    new AuthorityKeyIdentifierStructure(caCert));
+        }
         certGen.addExtension(X509Extensions.SubjectKeyIdentifier, false,
                 new SubjectKeyIdentifierStructure(clientPublicKey));
 
@@ -212,8 +221,8 @@ public class CertUtils {
             certGen.addExtension(X509Extensions.SubjectAlternativeName, false,
                     subjectAlternativeNamesExtension);
         }
-        final X509Certificate certificate = certGen.generate(caPrivateKey, "BC");
-        certificate.verify(caCert.getPublicKey());
+        final X509Certificate certificate = certGen.generate(caKeyPair.getPrivate(), "BC");
+        certificate.verify(caKeyPair.getPublic());
         return certificate;
     }
 }

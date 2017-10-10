@@ -56,10 +56,10 @@ public class RootCACustomTrustManagerTest {
         certMap.clear();
         caKeypair = CertUtils.generateRandomKeyPair(1024);
         clientKeypair = CertUtils.generateRandomKeyPair(1024);
-        caCertificate = CertUtils.generateV1Certificate(caKeypair, "CN=ca", "CN=ca", 1,
-                "SHA256withRSA");
-        expiredClientCertificate = CertUtils.generateV3Certificate(caCertificate, caKeypair.getPrivate(), clientKeypair.getPublic(),
-                "CN=cloudstack.apache.org", "SHA256withRSA", 0, Collections.singletonList("cloudstack.apache.org"), Collections.singletonList(clientIp));
+        caCertificate = CertUtils.generateCertificate(null, caKeypair, caKeypair.getPublic(), "CN=ca", "CN=ca",
+                "SHA256withRSA", 1, null, null);
+        expiredClientCertificate = CertUtils.generateCertificate(caCertificate, caKeypair, clientKeypair.getPublic(),
+                "CN=cloudstack.apache.org", caCertificate.getIssuerDN().getName(), "SHA256withRSA", 0, Collections.singletonList("cloudstack.apache.org"), Collections.singletonList(clientIp));
     }
 
     @Test

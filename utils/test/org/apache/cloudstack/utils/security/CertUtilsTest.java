@@ -39,7 +39,7 @@ public class CertUtilsTest {
     @Before
     public void setUp() throws Exception {
         caKeyPair = CertUtils.generateRandomKeyPair(1024);
-        caCertificate = CertUtils.generateV1Certificate(caKeyPair, "CN=test", "CN=test", 1, "SHA256WithRSAEncryption");
+        caCertificate = CertUtils.generateCertificate(null, caKeyPair, caKeyPair.getPublic(), "CN=test", "CN=test", "SHA256WithRSAEncryption", 365, null, null);
     }
 
     @Test
@@ -93,8 +93,8 @@ public class CertUtilsTest {
         final List<String> domainNames = Arrays.asList("domain1.com", "www.2.domain2.com", "3.domain3.com");
         final List<String> addressList = Arrays.asList("1.2.3.4", "192.168.1.1", "2a02:120b:2c16:f6d0:d9df:8ebc:e44a:f181");
 
-        final X509Certificate clientCert = CertUtils.generateV3Certificate(caCertificate, caKeyPair.getPrivate(), clientKeyPair.getPublic(),
-                "CN=domain.example", "SHA256WithRSAEncryption", 10, domainNames, addressList);
+        final X509Certificate clientCert = CertUtils.generateCertificate(caCertificate, caKeyPair, clientKeyPair.getPublic(),
+                "CN=domain.example", caCertificate.getIssuerDN().getName(), "SHA256WithRSAEncryption", 10, domainNames, addressList);
 
         clientCert.verify(caKeyPair.getPublic());
         Assert.assertEquals(clientCert.getIssuerDN(), caCertificate.getIssuerDN());

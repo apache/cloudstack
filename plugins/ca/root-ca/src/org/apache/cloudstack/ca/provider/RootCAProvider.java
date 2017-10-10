@@ -35,7 +35,6 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -139,11 +138,12 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         final String subject = "CN=" + domainNames.get(0);
 
         final KeyPair keyPair = CertUtils.generateRandomKeyPair(CAManager.CertKeySize.value());
-        final X509Certificate clientCertificate = CertUtils.generateV3Certificate(
+        final X509Certificate clientCertificate = CertUtils.generateCertificate(
                 caCertificate,
-                caKeyPair.getPrivate(),
+                caKeyPair,
                 keyPair.getPublic(),
                 subject,
+                caCertificate.getIssuerDN().getName(),
                 CAManager.CertSignatureAlgorithm.value(),
                 validityDays,
                 domainNames,
@@ -167,10 +167,11 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
         final PKCS10CertificationRequest request = new PKCS10CertificationRequest(pemObject.getContent());
 
-        final X509Certificate clientCertificate = CertUtils.generateV3Certificate(
-                caCertificate, caKeyPair.getPrivate(),
+        final X509Certificate clientCertificate = CertUtils.generateCertificate(
+                caCertificate, caKeyPair,
                 request.getPublicKey(),
                 request.getCertificationRequestInfo().getSubject().toString(),
+                caCertificate.getIssuerDN().getName(),
                 CAManager.CertSignatureAlgorithm.value(),
                 validityDays,
                 domainNames,
@@ -461,16 +462,18 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         }
         try {
             LOG.debug("Generating root CA certificate");
-            final X509Certificate rootCaCertificate = CertUtils.generateV1Certificate(
+            final X509Certificate rootCaCertificate = CertUtils.generateCertificate(
+                    null,
                     caKeyPair,
+                    caKeyPair.getPublic(),
                     rootCAIssuerDN.value(),
                     rootCAIssuerDN.value(),
-                    caValidityYears,
-                    CAManager.CertSignatureAlgorithm.value());
+                    CAManager.CertSignatureAlgorithm.value(),
+                    caValidityYears * 365, null, null);
             if (!configDao.update(rootCACertificate.key(), rootCACertificate.category(), CertUtils.x509CertificateToPem(rootCaCertificate))) {
                 LOG.error("Failed to update RootCA public/x509 certificate");
             }
-        } catch (final NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException | IOException e) {
+        } catch (final NoSuchAlgorithmException | NoSuchProviderException | CertificateException | SignatureException | InvalidKeyException | IOException e) {
             LOG.error("Failed to generate RootCA certificate from private/public keys due to exception:", e);
             return false;
         }

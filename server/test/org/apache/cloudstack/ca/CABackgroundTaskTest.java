@@ -68,8 +68,8 @@ public class CABackgroundTaskTest {
         host.setManagementServerId(ManagementServerNode.getManagementServerId());
         task = new CAManagerImpl.CABackgroundTask(caManager, hostDao);
         final KeyPair keypair = CertUtils.generateRandomKeyPair(1024);
-        expiredCertificate = CertUtils.generateV1Certificate(keypair, "CN=ca", "CN=ca", 0,
-                "SHA256withRSA");
+        expiredCertificate = CertUtils.generateCertificate(null, keypair, keypair.getPublic(), "CN=ca", "CN=ca",
+                "SHA256withRSA", 0, null, null);
 
         Mockito.when(hostDao.findByIp(Mockito.anyString())).thenReturn(host);
         Mockito.when(caManager.getActiveCertificatesMap()).thenReturn(certMap);

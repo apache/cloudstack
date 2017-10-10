@@ -21,10 +21,21 @@ logfile="/var/log/patchsystemvm.log"
 # To use existing console proxy .zip-based package file
 patch_console_proxy() {
    local patchfile=$1
+   local backupfolder="/tmp/.conf.backup"
+   if [ -f /usr/local/cloud/systemvm/conf/cloud.jks ]; then
+      rm -fr $backupfolder
+      mkdir -p $backupfolder
+      cp -r /usr/local/cloud/systemvm/conf/* $backupfolder/
+   fi
    rm /usr/local/cloud/systemvm -rf
    mkdir -p /usr/local/cloud/systemvm
    echo "All" | unzip $patchfile -d /usr/local/cloud/systemvm >$logfile 2>&1
    find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
+   if [ -f $backupfolder/cloud.jks ]; then
+      cp -r $backupfolder/* /usr/local/cloud/systemvm/conf/
+      echo "Restored keystore file and certs using backup" >> $logfile
+   fi
+   rm -fr $backupfolder
    return 0
 }
 
