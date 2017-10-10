@@ -540,7 +540,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                         throw new CloudRuntimeException("No APICommand annotation found for class " + cmdClass.getCanonicalName());
                     }
 
-                    BaseCmd cmdObj = (BaseCmd)cmdClass.newInstance();
+                    BaseCmd cmdObj = (BaseCmd)cmdClass.getConstructor(cmdClass).newInstance();
                     cmdObj = ComponentContext.inject(cmdObj);
                     cmdObj.configure();
                     cmdObj.setFullUrlParams(paramMap);
