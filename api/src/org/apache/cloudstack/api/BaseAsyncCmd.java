@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api;
 
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -42,23 +43,13 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CUSTOM_JOB_ID , type = CommandType.STRING)
     private String injectedJobId;
 
-    @Parameter(name = ApiConstants.CALL_ID, type = CommandType.UUID)
-    private UUID callId;
-
     public String getInjectedJobId() {
         if (!StringUtils.isNotBlank(injectedJobId)) {
-            if (getCallId() == null) {
-                callId = UUID.randomUUID();
-            }
-            injectedJobId = getCallId().toString();
+            injectedJobId = CallContext.current().getContextId();
         }
         return this.injectedJobId;
     }
 
-    public UUID getCallId()
-    {
-        return this.callId;
-    }
     /**
      * For proper tracking of async commands through the system, events must be generated when the command is
      * scheduled, started, and completed. Commands should specify the type of event so that when the scheduled,
