@@ -1019,21 +1019,6 @@
       </dependencies>
     </profile>
     <profile>
-      <id>midonet</id>
-      <activation>
-        <property>
-          <name>midonet</name>
-        </property>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.cloudstack</groupId>
-          <artifactId>cloud-plugin-network-midonet</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
       <id>srx</id>
       <activation>
         <property>
