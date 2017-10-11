@@ -42,20 +42,55 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     protected int csErrorCode;
 
+    protected String contextId;
+
+    /**
+     * @deprecated use a version that takes a callId
+     */
+    @Deprecated
+    protected CloudRuntimeException() {
+        super();
+
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+    }
+
+    /**
+     * @deprecated use the version that takes a callId
+     */
+    @Deprecated
     public CloudRuntimeException(String message) {
         super(message);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
+    public CloudRuntimeException(String callId, String message) {
+        super(message);
+        setContextId(callId);
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+    }
+
+    /**
+     * @deprecated use the version that takes a callId
+     */
+    @Deprecated
+    public CloudRuntimeException(Throwable t) {
+        super(t.getMessage(), t);
+
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+    }
+
+    /**
+     * @deprecated use the version that takes a callId
+     */
+    @Deprecated
     public CloudRuntimeException(String message, Throwable th) {
         super(message, th);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
-    protected CloudRuntimeException() {
-        super();
+    public void setContextId(String contextId) {
 
-        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+        this.contextId = contextId;
     }
 
     public void addProxyObject(ExceptionProxyObject obj) {
@@ -87,10 +122,6 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     public int getCSErrorCode() {
         return csErrorCode;
-    }
-
-    public CloudRuntimeException(Throwable t) {
-        super(t.getMessage(), t);
     }
 
     @Override
@@ -137,5 +168,8 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
             uuidList.add(new Pair<Class<?>, String>(Class.forName(clzName), val));
         }
+    }
+    public String getContextId() {
+        return contextId;
     }
 }
