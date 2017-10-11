@@ -47,7 +47,9 @@ import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ServiceContent;
 import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchTrunkVlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
 
 public class HypervisorHostHelperTest {
     @Mock
@@ -845,4 +847,40 @@ public class HypervisorHostHelperTest {
         assertFalse(secPolicy.getMacChanges().isValue());
     }
 
+    @Test
+    public void testCreateDVPortVlanSpecNullVlanId() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(null, null);
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchVlanIdSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchVlanIdSpec) spec).getVlanId() == 0);
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecValidVlanId() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(100, "400");
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchVlanIdSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchVlanIdSpec) spec).getVlanId() == 100);
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecValidVlanRange() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(null, "200-250");
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getStart() == 200);
+        assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getEnd() == 250);
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecInvalidMissingVlanRange() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(null, "200-");
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchVlanIdSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchVlanIdSpec) spec).getVlanId() == 0);
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecInvalidInputVlanRange() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(null, "a-b");
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getStart() == 0);
+        assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getEnd() == 0);
+    }
 }

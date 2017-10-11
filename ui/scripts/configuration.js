@@ -2848,7 +2848,7 @@
                                     },
 
                                     forgedTransmits: {
-                                        label: 'label.forged.trasmits',
+                                        label: 'label.forged.transmits',
                                         select: function(args) {
                                             args.response.success({
                                                 data: [{

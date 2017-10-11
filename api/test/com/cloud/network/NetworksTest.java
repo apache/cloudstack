@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URISyntaxException;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.cloud.dc.Vlan;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * @author dhoogland
@@ -41,6 +41,13 @@ public class NetworksTest {
     public void emptyBroadcastDomainTypeTest() throws URISyntaxException {
         BroadcastDomainType type = BroadcastDomainType.getTypeOf("");
         Assert.assertEquals("an empty uri should mean a broadcasttype of undecided", BroadcastDomainType.UnDecided, type);
+    }
+
+    @Test
+    public void vlanCommaSeparatedTest() throws URISyntaxException {
+        Assert.assertEquals(BroadcastDomainType.getValue(new URI("vlan://100")), "100");
+        Assert.assertEquals(BroadcastDomainType.getValue(new URI("vlan://100-200")), "100-200");
+        Assert.assertEquals(BroadcastDomainType.getValue(new URI("vlan://10-50,12,11,112-170")), "10-50,12,11,112-170");
     }
 
     @Test

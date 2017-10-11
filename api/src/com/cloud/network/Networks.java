@@ -75,6 +75,10 @@ public class Networks {
                     throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
                 }
             }
+            @Override
+            public String getValueFrom(URI uri) {
+                return uri.getAuthority();
+            }
         },
         Vswitch("vs", String.class), LinkLocal(null, null), Vnet("vnet", Long.class), Storage("storage", Integer.class), Lswitch("lswitch", String.class) {
             @Override

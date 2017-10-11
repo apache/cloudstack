@@ -199,6 +199,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -2893,7 +2894,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     newVlanNetmask = sameSubnet.second().second();
                 }
                 final Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
-                        domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+                        false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
                 // create an entry in the nic_secondary table. This will be the new
                 // gateway that will be configured on the corresponding routervm.
                 return vlan;
@@ -3010,7 +3011,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public Vlan createVlanAndPublicIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final boolean forVirtualNetwork, final Long podId, final String startIP, final String endIP,
-            final String vlanGateway, final String vlanNetmask, String vlanId, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr) {
+            final String vlanGateway, final String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr) {
         final Network network = _networkModel.getNetwork(networkId);
 
         boolean ipv4 = false, ipv6 = false;
@@ -3077,8 +3078,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     final String[] vlan = uri.toString().split("vlan:\\/\\/");
                     networkVlanId = vlan[1];
                     // For pvlan
-                    networkVlanId = networkVlanId.split("-")[0];
-                }
+                    if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
+                        networkVlanId = networkVlanId.split("-")[0];
+                    }
+               }
             }
 
             if (vlanId != null && !connectivityWithoutVlan) {
@@ -3168,7 +3171,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     continue;
                 }
                 // from here, subnet overlaps
-                if ( !vlanId.equals(vlan.getVlanTag()) ) {
+                if (!UriUtils.checkVlanUriOverlap(
+                        BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId)),
+                        BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag())))) {
                     boolean overlapped = false;
                     if( network.getTrafficType() == TrafficType.Public ) {
                         overlapped = true;
@@ -3239,7 +3244,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Check if the vlan is being used
-        if (_zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).size() > 0) {
+        if (!bypassVlanOverlapCheck && _zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).size() > 0) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                     + zone.getName());
         }

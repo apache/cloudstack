@@ -53,6 +53,7 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
@@ -86,6 +87,7 @@ import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
+import com.vmware.vim25.NumericRange;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
@@ -111,6 +113,7 @@ import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchTrunkVlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
 
@@ -507,11 +510,17 @@ public class HypervisorHostHelper {
             // No doubt about this, depending on vid=null to avoid lots of code below
             vid = null;
         } else {
+            if (vlanId != null) {
+                vlanId = vlanId.replace("vlan://", "");
+            }
             networkName = composeCloudNetworkName(namePrefix, vlanId, secondaryvlanId, networkRateMbps, physicalNetwork);
 
-            if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
+            if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId) && !vlanId.contains(",") && !vlanId.contains("-")) {
                 createGCTag = true;
                 vid = Integer.parseInt(vlanId);
+            }
+            if (vlanId != null && (vlanId.contains(",") || vlanId.contains("-"))) {
+                createGCTag = true;
             }
             if (secondaryvlanId != null) {
                 spvlanid = Integer.parseInt(secondaryvlanId);
@@ -568,7 +577,7 @@ public class HypervisorHostHelper {
                     portGroupPolicy.setPortConfigResetAtDisconnect(true);
                 }
                 // Next, create the port group. For this, we need to create a VLAN spec.
-                createPortGroup(physicalNetwork, networkName, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, portGroupPolicy, dvSwitchMo, numPorts, autoExpandSupported);
+                createPortGroup(physicalNetwork, networkName, vlanId, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, portGroupPolicy, dvSwitchMo, numPorts, autoExpandSupported);
                 bWaitPortGroupReady = true;
             }
         } else if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
@@ -705,8 +714,8 @@ public class HypervisorHostHelper {
 
     }
 
-    private static void createPortGroup(String physicalNetwork, String networkName, Integer vid, Integer spvlanid, DatacenterMO dataCenterMo,
-            DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, VMwareDVSPortgroupPolicy portGroupPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported)
+    private static void createPortGroup(String physicalNetwork, String networkName, String vlanRange, Integer vid, Integer spvlanid, DatacenterMO dataCenterMo,
+                                        DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, VMwareDVSPortgroupPolicy portGroupPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported)
                     throws Exception {
         VmwareDistributedVirtualSwitchVlanSpec vlanSpec = null;
         VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
@@ -716,7 +725,7 @@ public class HypervisorHostHelper {
         // Next, create the port group. For this, we need to create a VLAN spec.
         // NOTE - VmwareDistributedVirtualSwitchPvlanSpec extends VmwareDistributedVirtualSwitchVlanSpec.
         if (vid == null || spvlanid == null) {
-            vlanSpec = createDVPortVlanIdSpec(vid);
+            vlanSpec = createDVPortVlanSpec(vid, vlanRange);
             dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
         } else if (spvlanid != null) {
             // Create a pvlan spec. The pvlan spec is different from the pvlan config spec
@@ -893,11 +902,19 @@ public class HypervisorHostHelper {
             VmwareDistributedVirtualSwitchPvlanSpec newpVlanSpec = (VmwareDistributedVirtualSwitchPvlanSpec) newVlanSpec;
             oldVlanId = oldpVlanSpec.getPvlanId();
             newVlanId = newpVlanSpec.getPvlanId();
-        } else {
+        } else if (oldVlanSpec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec && newVlanSpec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec) {
+            VmwareDistributedVirtualSwitchTrunkVlanSpec oldpVlanSpec = (VmwareDistributedVirtualSwitchTrunkVlanSpec) oldVlanSpec;
+            VmwareDistributedVirtualSwitchTrunkVlanSpec newpVlanSpec = (VmwareDistributedVirtualSwitchTrunkVlanSpec) newVlanSpec;
+            oldVlanId = oldpVlanSpec.getVlanId().get(0).getStart();
+            newVlanId = newpVlanSpec.getVlanId().get(0).getStart();
+        } else if (oldVlanSpec instanceof VmwareDistributedVirtualSwitchVlanIdSpec && newVlanSpec instanceof VmwareDistributedVirtualSwitchVlanIdSpec) {
             VmwareDistributedVirtualSwitchVlanIdSpec oldVlanIdSpec = (VmwareDistributedVirtualSwitchVlanIdSpec) oldVlanSpec;
             VmwareDistributedVirtualSwitchVlanIdSpec newVlanIdSpec = (VmwareDistributedVirtualSwitchVlanIdSpec) newVlanSpec;
             oldVlanId = oldVlanIdSpec.getVlanId();
             newVlanId = newVlanIdSpec.getVlanId();
+        } else {
+            s_logger.debug("Old and new vlan spec type mismatch found for [" + dvPortGroupName + "] has changed. Old spec type is: " + oldVlanSpec.getClass() + ", and new spec type is:" + newVlanSpec.getClass());
+            return false;
         }
 
         if (oldVlanId != newVlanId) {
@@ -1037,9 +1054,36 @@ public class HypervisorHostHelper {
         return pvlanConfigSpec;
     }
 
-    public static VmwareDistributedVirtualSwitchVlanIdSpec createDVPortVlanIdSpec(Integer vlanId) {
+    public static VmwareDistributedVirtualSwitchVlanSpec createDVPortVlanSpec(Integer vlanId, String vlanRange) {
+        if (vlanId == null && vlanRange != null && !vlanRange.isEmpty()) {
+            s_logger.debug("Creating dvSwitch port vlan-trunk spec with range: " + vlanRange);
+            VmwareDistributedVirtualSwitchTrunkVlanSpec trunkVlanSpec = new VmwareDistributedVirtualSwitchTrunkVlanSpec();
+            for (final String vlanRangePart : vlanRange.split(",")) {
+                if (vlanRangePart == null || vlanRange.isEmpty()) {
+                    continue;
+                }
+                final NumericRange numericRange = new NumericRange();
+                if (vlanRangePart.contains("-")) {
+                    final String[] range = vlanRangePart.split("-");
+                    if (range.length == 2 && range[0] != null && range[1] != null) {
+                        numericRange.setStart(NumbersUtil.parseInt(range[0], 0));
+                        numericRange.setEnd(NumbersUtil.parseInt(range[1], 0));
+                    } else {
+                        continue;
+                    }
+                } else {
+                    numericRange.setStart(NumbersUtil.parseInt(vlanRangePart, 0));
+                    numericRange.setEnd(NumbersUtil.parseInt(vlanRangePart, 0));
+                }
+                trunkVlanSpec.getVlanId().add(numericRange);
+            }
+            if (trunkVlanSpec.getVlanId().size() != 0) {
+                return trunkVlanSpec;
+            }
+        }
         VmwareDistributedVirtualSwitchVlanIdSpec vlanIdSpec = new VmwareDistributedVirtualSwitchVlanIdSpec();
-        vlanIdSpec.setVlanId(vlanId == null ? 0 : vlanId.intValue());
+        vlanIdSpec.setVlanId(vlanId == null ? 0 : vlanId);
+        s_logger.debug("Creating dvSwitch port vlan-id spec with id: " + vlanIdSpec.getVlanId());
         return vlanIdSpec;
     }
 
