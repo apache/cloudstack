@@ -66,7 +66,7 @@ public class RootCAProviderTest {
     @Before
     public void setUp() throws Exception {
         caKeyPair = CertUtils.generateRandomKeyPair(1024);
-        caCertificate = CertUtils.generateV1Certificate(caKeyPair, "CN=ca", "CN=ca", 1, "SHA256withRSA");
+        caCertificate = CertUtils.generateV3Certificate(null, caKeyPair, caKeyPair.getPublic(), "CN=ca", "SHA256withRSA", 365, null, null);
 
         provider = new RootCAProvider();
 

@@ -137,14 +137,9 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
         final KeyPair keyPair = CertUtils.generateRandomKeyPair(CAManager.CertKeySize.value());
         final X509Certificate clientCertificate = CertUtils.generateV3Certificate(
-                caCertificate,
-                caKeyPair.getPrivate(),
-                keyPair.getPublic(),
-                subject,
-                CAManager.CertSignatureAlgorithm.value(),
-                validityDays,
-                domainNames,
-                ipAddresses);
+                caCertificate, caKeyPair, keyPair.getPublic(),
+                subject, CAManager.CertSignatureAlgorithm.value(),
+                validityDays, domainNames, ipAddresses);
         return new Certificate(clientCertificate, keyPair.getPrivate(), Collections.singletonList(caCertificate));
     }
 
@@ -164,14 +159,11 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
         final PKCS10CertificationRequest request = new PKCS10CertificationRequest(pemObject.getContent());
 
+        final String subject = request.getCertificationRequestInfo().getSubject().toString();
         final X509Certificate clientCertificate = CertUtils.generateV3Certificate(
-                caCertificate, caKeyPair.getPrivate(),
-                request.getPublicKey(),
-                request.getCertificationRequestInfo().getSubject().toString(),
-                CAManager.CertSignatureAlgorithm.value(),
-                validityDays,
-                domainNames,
-                ipAddresses);
+                caCertificate, caKeyPair, request.getPublicKey(),
+                subject, CAManager.CertSignatureAlgorithm.value(),
+                validityDays, domainNames, ipAddresses);
         return new Certificate(clientCertificate, null, Collections.singletonList(caCertificate));
 
     }
@@ -257,6 +249,10 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     /////////////// Root CA Config ///////////////////
     //////////////////////////////////////////////////
 
+    private int getCaValidityDays() {
+        return 365 * caValidityYears;
+    }
+
     private char[] findKeyStorePassphrase() {
         char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
         final String configuredPassphrase = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
@@ -268,7 +264,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     private boolean createManagementServerKeystore(final String keyStoreFilePath, final char[] passphrase) {
         final Certificate managementServerCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()),
-                Collections.singletonList(NetUtils.getDefaultHostIp()), caValidityYears * 365);
+                Collections.singletonList(NetUtils.getDefaultHostIp()), getCaValidityDays());
         if (managementServerCertificate == null || managementServerCertificate.getPrivateKey() == null) {
             throw new CloudRuntimeException("Failed to generate certificate and setup management server keystore");
         }
@@ -347,12 +343,10 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         }
         try {
             LOG.debug("Generating root CA certificate");
-            final X509Certificate rootCaCertificate = CertUtils.generateV1Certificate(
-                    caKeyPair,
-                    rootCAIssuerDN.value(),
-                    rootCAIssuerDN.value(),
-                    caValidityYears,
-                    CAManager.CertSignatureAlgorithm.value());
+            final X509Certificate rootCaCertificate = CertUtils.generateV3Certificate(
+                    null, caKeyPair, caKeyPair.getPublic(),
+                    rootCAIssuerDN.value(), CAManager.CertSignatureAlgorithm.value(),
+                    getCaValidityDays(), null, null);
             if (!configDao.update(rootCACertificate.key(), rootCACertificate.category(), CertUtils.x509CertificateToPem(rootCaCertificate))) {
                 LOG.error("Failed to update RootCA public/x509 certificate");
             }
