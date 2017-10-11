@@ -4591,6 +4591,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
             StorageUnavailableException, ResourceAllocationException {
+
+        String callId = cmd.getInjectedJobId();
         //Verify that all objects exist before passing them to the service
         Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
 
@@ -4600,14 +4602,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+            CloudRuntimeException ex =  new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+            ex.setContextId(cmd.getInjectedJobId());
+            throw ex;
         }
 
         Long serviceOfferingId = cmd.getServiceOfferingId();
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+            CloudRuntimeException ex = new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+            ex.setContextId(cmd.getInjectedJobId());
+            throw ex;
         }
 
         Long templateId = cmd.getTemplateId();
