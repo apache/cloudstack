@@ -18,9 +18,7 @@ package com.cloud.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URISyntaxException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -39,21 +37,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import com.cloud.host.Status;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
@@ -62,6 +51,15 @@ import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NfsUtils;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class DatabaseConfig {
     private static final Logger s_logger = Logger.getLogger(DatabaseConfig.class.getName());
@@ -1169,22 +1167,14 @@ public class DatabaseConfig {
             printError("An email address for each user is required.");
         }
 
-        MessageDigest md5 = null;
+        String algorithm = "MD5";
+        String pwDigest;
         try {
-            md5 = MessageDigest.getInstance("MD5");
+            pwDigest = DigestHelper.getPaddedDigest(algorithm, password);
         } catch (NoSuchAlgorithmException e) {
             s_logger.error("error saving user", e);
             return;
         }
-        md5.reset();
-        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
-        String pwStr = pwInt.toString(16);
-        int padding = 32 - pwStr.length();
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < padding; i++) {
-            sb.append('0'); // make sure the MD5 password is 32 digits long
-        }
-        sb.append(pwStr);
 
         // create an account for the admin user first
         final String insertAdminAccount = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (?, ?, '1', '1')";
@@ -1206,7 +1196,7 @@ public class DatabaseConfig {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertUser);
             stmt.setLong(1, id);
             stmt.setString(2, username);
-            stmt.setString(3, sb.toString());
+            stmt.setString(3, pwDigest);
             stmt.setString(4, firstname);
             stmt.setString(5, lastname);
             stmt.setString(6, email);

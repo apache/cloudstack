@@ -16,12 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
-import static com.cloud.utils.StringUtils.join;
-import static com.cloud.utils.storage.S3.S3Utils.putFile;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -32,11 +26,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,41 +37,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
-import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.cloudstack.storage.template.DownloadManager;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
-import org.apache.cloudstack.storage.template.UploadEntity;
-import org.apache.cloudstack.storage.template.UploadManager;
-import org.apache.cloudstack.storage.template.UploadManagerImpl;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
@@ -148,7 +105,6 @@ import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.SecondaryStorageVm;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -162,6 +118,47 @@ import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
+
+import static com.cloud.utils.StringUtils.join;
+import static com.cloud.utils.storage.S3.S3Utils.putFile;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
@@ -1316,46 +1313,24 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             parent += File.separator;
         }
         String absoluteTemplatePath = parent + relativeTemplatePath;
-        MessageDigest digest;
-        String checksum = null;
+        String algorithm = cmd.getAlgorithm();
         File f = new File(absoluteTemplatePath);
-        InputStream is = null;
-        byte[] buffer = new byte[8192];
-        int read = 0;
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("parent path " + parent + " relative template path " + relativeTemplatePath);
         }
+        String checksum = null;
 
-        try {
-            digest = MessageDigest.getInstance("MD5");
-            is = new FileInputStream(f);
-            while ((read = is.read(buffer)) > 0) {
-                digest.update(buffer, 0, read);
-            }
-            byte[] md5sum = digest.digest();
-            BigInteger bigInt = new BigInteger(1, md5sum);
-            checksum = bigInt.toString(16);
+        try (InputStream is = new FileInputStream(f);){
+            checksum = DigestHelper.digest(algorithm, is).toString();
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully calculated checksum for file " + absoluteTemplatePath + " - " + checksum);
             }
-
         } catch (IOException e) {
-            String logMsg = "Unable to process file for MD5 - " + absoluteTemplatePath;
+            String logMsg = "Unable to process file for " + algorithm + " - " + absoluteTemplatePath;
             s_logger.error(logMsg);
             return new Answer(cmd, false, checksum);
         } catch (NoSuchAlgorithmException e) {
             return new Answer(cmd, false, checksum);
-        } finally {
-            try {
-                if (is != null) {
-                    is.close();
-                }
-            } catch (IOException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Could not close the file " + absoluteTemplatePath);
-                }
-                return new Answer(cmd, false, checksum);
-            }
         }
 
         return new Answer(cmd, true, checksum);
@@ -3054,4 +3029,5 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         return cmd;
     }
+
 }

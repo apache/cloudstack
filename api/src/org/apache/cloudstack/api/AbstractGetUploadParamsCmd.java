@@ -18,14 +18,14 @@
  */
 package org.apache.cloudstack.api;
 
+import java.net.URL;
+import java.util.UUID;
+
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
-
-import java.net.URL;
-import java.util.UUID;
 
 public abstract class AbstractGetUploadParamsCmd extends BaseCmd {
 
@@ -42,7 +42,7 @@ public abstract class AbstractGetUploadParamsCmd extends BaseCmd {
             + "to be hosted on")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the MD5 checksum value of this volume/template")
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this volume/template " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional accountName. Must be used with domainId.")
