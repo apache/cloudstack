@@ -22,12 +22,13 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.cloud.consoleproxy.ConsoleProxyClientListener;
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.packet.server.FramebufferUpdatePacket;
 import com.cloud.consoleproxy.vnc.packet.server.ServerCutText;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class VncServerPacketReceiver implements Runnable {
-    private static final Logger s_logger = Logger.getLogger(VncServerPacketReceiver.class);
+    private static final Logger s_logger = LogManager.getLogger(VncServerPacketReceiver.class);
 
     private final VncScreenDescription screen;
     private BufferedImageCanvas canvas;

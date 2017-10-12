@@ -27,11 +27,11 @@ import java.util.Map;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyResourceHandler implements HttpHandler {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyResourceHandler.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyResourceHandler.class);
 
     static Map<String, String> s_mimeTypes;
     static {

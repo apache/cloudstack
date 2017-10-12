@@ -27,11 +27,11 @@ import java.util.Map;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyAjaxImageHandler implements HttpHandler {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxImageHandler.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyAjaxImageHandler.class);
 
     @Override
     public void handle(HttpExchange t) throws IOException {

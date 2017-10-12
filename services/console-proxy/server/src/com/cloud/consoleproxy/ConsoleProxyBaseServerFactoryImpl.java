@@ -22,11 +22,11 @@ import java.net.InetSocketAddress;
 import javax.net.ssl.SSLServerSocket;
 
 import com.sun.net.httpserver.HttpServer;
-
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyBaseServerFactoryImpl implements ConsoleProxyServerFactory {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyBaseServerFactoryImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyBaseServerFactoryImpl.class);
 
     @Override
     public void init(byte[] ksBits, String ksPassword) {

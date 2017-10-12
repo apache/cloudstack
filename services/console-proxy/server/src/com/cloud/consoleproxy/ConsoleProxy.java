@@ -33,18 +33,19 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * ConsoleProxy, singleton class that manages overall activities in console proxy process. To make legacy code work, we still
  */
 public class ConsoleProxy {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxy.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxy.class);
 
     public static final int KEYBOARD_RAW = 0;
     public static final int KEYBOARD_COOKED = 1;
@@ -256,7 +257,6 @@ public class ConsoleProxy {
         }
 
         configLog4j();
-        Logger.setFactory(new ConsoleProxyLoggerFactory());
 
         // Using reflection to setup private/secure communication channel towards management server
         ConsoleProxy.context = context;
@@ -380,7 +380,6 @@ public class ConsoleProxy {
     public static void main(String[] argv) {
         standaloneStart = true;
         configLog4j();
-        Logger.setFactory(new ConsoleProxyLoggerFactory());
 
         InputStream confs = ConsoleProxy.class.getResourceAsStream("/conf/consoleproxy.properties");
         Properties conf = new Properties();
