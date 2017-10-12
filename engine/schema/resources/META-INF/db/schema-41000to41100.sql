@@ -523,3 +523,7 @@ ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'Indicates if 
 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
 ADD COLUMN `vlan` INT(10) UNSIGNED NULL COMMENT 'Vlan the management network range is on';
+
+-- CLOUDSTACK-10109: Enable dedication of public IPs to SSVM and CPVM
+ALTER TABLE `cloud`.`user_ip_address`
+ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'true if IP is set to system vms, false if not';

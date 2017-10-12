@@ -1340,5 +1340,8 @@ cloudStack.docs = {
     },
     helpLdapLinkDomainAdmin: {
         desc: 'domain admin of the linked domain. Specify a username in GROUP/OU of LDAP'
+    },
+    helpSetReservationSystemVms: {
+        desc: 'If enabled, IP range reservation is set for SSVM & CPVM. Global setting "system.vm.public.ip.reservation.mode.strictness" is used to control whether reservation is strict or not (preferred)'
     }
 };

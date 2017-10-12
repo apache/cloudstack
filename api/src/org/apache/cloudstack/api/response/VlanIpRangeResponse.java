@@ -116,8 +116,20 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     @Param(description = "the cidr of IPv6 network")
     private String ip6Cidr;
 
+    @SerializedName(ApiConstants.FOR_SYSTEM_VMS)
+    @Param(description = "indicates whether VLAN IP range is dedicated to system vms or not")
+    private Boolean forSystemVms;
+
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Boolean getForSystemVms() {
+        return forSystemVms;
+    }
+
+    public void setForSystemVms(Boolean forSystemVms) {
+        this.forSystemVms = forSystemVms;
     }
 
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
