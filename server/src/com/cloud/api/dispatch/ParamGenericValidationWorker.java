@@ -38,7 +38,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class ParamGenericValidationWorker implements DispatchWorker {
 
-    static Logger s_logger = LogManager.getLogger(ParamGenericValidationWorker.class.getName());
+    static Logger s_logger = LogManager.getLogger(ParamGenericValidationWorker.class);
 
     protected static final List<String> defaultParamNames = new ArrayList<String>();
 

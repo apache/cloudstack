@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.AbstractLogger;
@@ -54,14 +55,16 @@ public class ParamGenericValidationWorkerTest {
 
     protected static final String FAKE_CMD_ROLE_NAME = "fakecmdrolename";
 
-    protected String loggerOutput;
+    protected String loggerOutput;// = "";
 
     protected void driveTest(final BaseCmd cmd, final Map<String, String> params) {
         final ParamGenericValidationWorker genValidationWorker = new ParamGenericValidationWorker();
 
         // We create a mock logger to verify the result
         // TODO replace by a real mocked logger and verify by when'ing the warn call (, or so)
-        ParamGenericValidationWorker.s_logger = new AbstractLogger("") {
+        Logger logger = ParamGenericValidationWorker.s_logger;
+
+        ParamGenericValidationWorker.s_logger = new AbstractLogger("ParamGenericValidationWorker") {
             @Override
             public boolean isEnabled(Level level, Marker marker, Message message, Throwable throwable) {
                 return true;
@@ -145,17 +148,12 @@ public class ParamGenericValidationWorkerTest {
 
             @Override
             public void logMessage(String s, Level level, Marker marker, Message message, Throwable throwable) {
-
+                loggerOutput = message.toString();
             }
 
             @Override
             public Level getLevel() {
                 return Level.TRACE;
-            }
-
-            @Override
-            public void warn(final Object msg) {
-                loggerOutput = msg.toString();
             }
         };
 
