@@ -23,17 +23,16 @@ import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextListener;
 import org.apache.cloudstack.managed.context.ManagedContextUtils;
 import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class DefaultManagedContext implements ManagedContext {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultManagedContext.class);
+    private static final Logger log = LogManager.getLogger(DefaultManagedContext.class);
 
     List<ManagedContextListener<?>> listeners = new CopyOnWriteArrayList<ManagedContextListener<?>>();
 
