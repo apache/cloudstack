@@ -22,55 +22,61 @@ import javax.naming.ConfigurationException;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.DefaultConfiguration;
+import org.apache.logging.log4j.message.Message;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SnmpEnhancedPatternLayoutTest {
     Configuration configuration = new DefaultConfiguration();
     SnmpEnhancedPatternLayout _snmpEnhancedPatternLayout = new SnmpEnhancedPatternLayout(configuration, null, null);
+    @Mock
+    LogEvent event;
+    @Mock
+    Message messageObject;
 
     @Before
     public void setUp() throws ConfigurationException {
+        MockitoAnnotations.initMocks(this);
+
+        when(event.getMessage()).thenReturn(messageObject);
+
         _snmpEnhancedPatternLayout.setKeyValueDelimiter("::");
         _snmpEnhancedPatternLayout.setPairDelimiter("//");
     }
 
     @Test
     public void parseAlertTest() {
-        LogEvent event = mock(LogEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+            + " network CIDR is not configured originally. Set it default to 10.102.192.0/22");
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
         commonAssertions(info, "Management network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void ParseAlertWithPairDelimeterInMessageTest() {
-        LogEvent event = mock(LogEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " //network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+            + " //network CIDR is not configured originally. Set it default to 10.102.192.0/22");
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
         commonAssertions(info, "Management //network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void ParseAlertWithKeyValueDelimeterInMessageTest() {
-        LogEvent event = mock(LogEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " ::network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+            + " ::network CIDR is not configured originally. Set it default to 10.102.192.0/22");
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
         commonAssertions(info, "Management ::network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void parseRandomTest() {
-        LogEvent event = mock(LogEvent.class);
         when(event.getMessage().getFormattedMessage()).thenReturn("Problem clearing email alert");
         assertNull(" Null value was expected ", _snmpEnhancedPatternLayout.parseEvent(event));
     }
@@ -84,7 +90,7 @@ public class SnmpEnhancedPatternLayoutTest {
         assertEquals(" message is not as expected ", message, info.getMessage());
     }
 
-    private void setMessage(String message, LogEvent event) {
-        when(event.getMessage().getFormattedMessage()).thenReturn(message);
+    private void setMessage(String message) {
+        when(messageObject.getFormattedMessage()).thenReturn(message);
     }
 }
