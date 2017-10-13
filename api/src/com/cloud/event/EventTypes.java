@@ -19,12 +19,6 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.ha.HAConfig;
-import org.apache.cloudstack.usage.Usage;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -75,6 +69,12 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.usage.Usage;
 
 public class EventTypes {
 
@@ -569,6 +569,9 @@ public class EventTypes {
     public static final String EVENT_NETSCALER_VM_START = "NETSCALERVM.START";
     public static final String EVENT_NETSCALER_VM_STOP = "NETSCALERVM.STOP";
 
+    public static final String EVENT_ANNOTATION_CREATE = "ANNOTATION.CREATE";
+    public static final String EVENT_ANNOTATION_REMOVE = "ANNOTATION.REMOVE";
+
 
     static {
 
@@ -953,6 +956,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_ADD, "NETSCALER.SERVICEPACKAGE.CREATE");
         entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_DELETE, "NETSCALER.SERVICEPACKAGE.DELETE");
 
+        entityEventDetails.put(EVENT_ANNOTATION_CREATE, Annotation.class);
+        entityEventDetails.put(EVENT_ANNOTATION_REMOVE, Annotation.class);
     }
 
     public static String getEntityForEvent(String eventName) {

@@ -35,8 +35,6 @@ import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.VgpuResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.ha.HAResource;
-import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 
 import com.cloud.api.ApiDBUtils;
@@ -51,6 +49,9 @@ import com.cloud.storage.StorageStats;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 
 @Component
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
@@ -244,6 +245,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setJobId(host.getJobUuid());
             hostResponse.setJobStatus(host.getJobStatus());
         }
+        hostResponse.setAnnotation(host.getAnnotation());
+        hostResponse.setLastAnnotated(host.getLastAnnotated ());
+        hostResponse.setUsername(host.getUsername());
 
         hostResponse.setObjectName("host");
 
