@@ -162,11 +162,11 @@ class TestHostAnnotations(cloudstackTestCase):
 
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_05_add_annotation_for_invvalid_entityType(self):
+    def test_05_add_annotation_for_invalid_entityType(self):
         cmd = addAnnotation.addAnnotationCmd()
         cmd.entityid = self.host.id
         cmd.entitytype = "BLA"
-        cmd.annotation = annotation
+        cmd.annotation = "annotation"
 
         try:
             self.apiclient.addAnnotation(cmd)
