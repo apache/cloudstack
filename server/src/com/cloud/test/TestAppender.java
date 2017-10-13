@@ -186,7 +186,9 @@ public final class TestAppender extends AbstractAppender {
 
         Appender appender = configuration.getAppender(APPENDER_NAME);
 
-        coreLogger.removeAppender(appender);
+        if(coreLogger.getAppenders() != null && coreLogger.getAppenders().containsKey(APPENDER_NAME)) {
+            coreLogger.removeAppender(appender);
+        }
         coreLogger.addAppender(testAppender);
     }
 }
