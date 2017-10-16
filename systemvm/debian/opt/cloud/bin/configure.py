@@ -755,7 +755,7 @@ class CsForwardingRules(CsDataBag):
         for public_ip in self.dbag:
             if public_ip == "id":
                 continue
-            for rule in self.dbag[public_ip]:
+            for rule in self.dbag[public_ip].values():
                 if rule["type"] == "forward":
                     self.processForwardRule(rule)
                 elif rule["type"] == "staticnat":

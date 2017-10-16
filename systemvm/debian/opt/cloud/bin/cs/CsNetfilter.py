@@ -79,7 +79,7 @@ class CsTable(object):
 class CsNetfilters(object):
 
     def __init__(self, load=True):
-        self.rules = []
+        self.rules = {}
         self.table = CsTable()
         self.chain = CsChain()
         if load:
@@ -101,10 +101,10 @@ class CsNetfilters(object):
                 self.save(rule)
 
     def save(self, rule):
-        self.rules.append(rule)
+        self.rules[rule.to_str()] = rule
 
     def get(self):
-        return self.rules
+        return self.rules.values()
 
     def has_table(self, table):
         return table in self.table.get()
@@ -113,16 +113,16 @@ class CsNetfilters(object):
         return self.chain.has_chain(table, chain)
 
     def has_rule(self, new_rule):
-        for r in self.get():
-            if new_rule == r:
-                if new_rule.get_count() > 0:
-                    continue
-                r.mark_seen()
-                return True
+        if new_rule.to_str() in self.rules.keys():
+            if new_rule.get_count() > 0:
+                return False
+            new_rule.mark_seen()
+            self.rules[new_rule.to_str()] = new_rule
+            return True
         return False
 
     def get_unseen(self):
-        del_list = [x for x in self.rules if x.unseen()]
+        del_list = [x for x in self.rules.values() if x.unseen()]
         for r in del_list:
             cmd = "iptables -t %s %s" % (r.get_table(), r.to_str(True))
             logging.debug("unseen cmd:  %s ", cmd)
@@ -217,9 +217,8 @@ class CsNetfilters(object):
         self.delete(nr)
 
     def delete(self, rule):
-        """ Delete a rule from the list of configured rules
-        The rule will not actually be removed on the host """
-        self.rules[:] = [x for x in self.rules if not x == rule]
+        if rule.to_str() in self.rules.keys():
+            del self.rules[rule.to_str()]
 
 
 class CsNetfilter(object):
