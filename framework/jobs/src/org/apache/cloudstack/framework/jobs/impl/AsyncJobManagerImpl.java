@@ -39,6 +39,9 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -60,6 +63,11 @@ import org.slf4j.MDC;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
@@ -126,6 +134,14 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private VolumeDetailsDao _volumeDetailsDao;
     @Inject
     private VolumeDao _volsDao;
+    @Inject
+    private SnapshotDao _snapshotDao;
+    @Inject
+    private SnapshotService snapshotSrv;
+    @Inject
+    private SnapshotDataFactory snapshotFactory;
+    @Inject
+    private SnapshotDetailsDao _snapshotDetailsDao;
 
     private volatile long _executionRunNumber = 1;
 
@@ -1028,6 +1044,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                                 s_logger.error("Unexpected exception while removing concurrent request meta data :" + e.getLocalizedMessage());
                             }
                         }
+                    }
+                    List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
+                    for (SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
+                        SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotDetailsVO.getResourceId(), DataStoreRole.Primary);
+                        snapshotSrv.processEventOnSnapshotObject(snapshot, Snapshot.Event.OperationFailed);
+                        _snapshotDetailsDao.removeDetail(snapshotDetailsVO.getResourceId(), AsyncJob.Constants.MS_ID);
                     }
                 }
             });

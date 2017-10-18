@@ -386,7 +386,7 @@ public class VolumeApiServiceImplTest {
         when(_volFactory.getVolume(anyLong())).thenReturn(volumeInfoMock);
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Allocated);
         when(volumeInfoMock.getPoolId()).thenReturn(1L);
-        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null);
+        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false);
     }
 
     @Test
@@ -396,7 +396,7 @@ public class VolumeApiServiceImplTest {
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
         when(volumeInfoMock.getPoolId()).thenReturn(1L);
         when (volService.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
-        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null);
+        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false);
     }
 
     @Test

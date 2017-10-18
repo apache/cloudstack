@@ -1105,7 +1105,7 @@ class Snapshot:
 
     @classmethod
     def create(cls, apiclient, volume_id, account=None,
-               domainid=None, projectid=None, locationtype=None):
+               domainid=None, projectid=None, locationtype=None, asyncbackup=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
@@ -1117,6 +1117,8 @@ class Snapshot:
             cmd.projectid = projectid
         if locationtype:
             cmd.locationtype = locationtype
+	if asyncbackup:
+	    cmd.asyncbackup = asyncbackup
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
     def delete(self, apiclient):

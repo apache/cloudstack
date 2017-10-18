@@ -41,6 +41,8 @@ public interface AsyncJob extends JobInfo {
         // is defined
         public static final int SIGNAL_MASK_WAKEUP = 1;
 
+        public static final String MS_ID = "MS_ID";
+
         public static final String SYNC_LOCK_NAME = "SyncLock";
     }
 

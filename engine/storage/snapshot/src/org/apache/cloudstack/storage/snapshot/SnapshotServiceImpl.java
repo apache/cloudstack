@@ -24,7 +24,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -44,16 +43,22 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 
+import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.template.TemplateConstants;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -72,6 +77,8 @@ public class SnapshotServiceImpl implements SnapshotService {
     DataMotionService motionSrv;
     @Inject
     StorageCacheManager _cacheMgr;
+    @Inject
+    private SnapshotDetailsDao _snapshotDetailsDao;
 
     static private class CreateSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;
@@ -226,9 +233,9 @@ public class SnapshotServiceImpl implements SnapshotService {
     // we are taking delta snapshot
     private DataStore findSnapshotImageStore(SnapshotInfo snapshot) {
         Boolean fullSnapshot = true;
-        Object payload = snapshot.getPayload();
-        if (payload != null) {
-            fullSnapshot = (Boolean)payload;
+        Boolean snapshotFullBackup = snapshot.getFullBackup();
+        if (snapshotFullBackup != null) {
+            fullSnapshot = snapshotFullBackup;
         }
         if (fullSnapshot) {
             return dataStoreMgr.getImageStore(snapshot.getDataCenterId());
@@ -300,19 +307,22 @@ public class SnapshotServiceImpl implements SnapshotService {
         CopyCommandResult result = callback.getResult();
         SnapshotInfo destSnapshot = context.destSnapshot;
         SnapshotObject srcSnapshot = (SnapshotObject)context.srcSnapshot;
+        Object payload = srcSnapshot.getPayload();
+        CreateSnapshotPayload createSnapshotPayload = (CreateSnapshotPayload)payload;
         AsyncCallFuture<SnapshotResult> future = context.future;
         SnapshotResult snapResult = new SnapshotResult(destSnapshot, result.getAnswer());
         if (result.isFailed()) {
             try {
-                destSnapshot.processEvent(Event.OperationFailed);
-                //if backup snapshot failed, mark srcSnapshot in snapshot_store_ref as failed also
-                srcSnapshot.processEvent(Event.DestroyRequested);
-                srcSnapshot.processEvent(Event.OperationSuccessed);
-
-                srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
-                _snapshotDao.remove(srcSnapshot.getId());
-            } catch (NoTransitionException e) {
-                s_logger.debug("Failed to update state: " + e.toString());
+                if (createSnapshotPayload.getAsyncBackup()) {
+                    destSnapshot.processEvent(Event.OperationFailed);
+                    throw new SnapshotBackupException("Failed in creating backup of snapshot with ID "+srcSnapshot.getId());
+                } else {
+                    destSnapshot.processEvent(Event.OperationFailed);
+                    //if backup snapshot failed, mark srcSnapshot in snapshot_store_ref as failed also
+                    cleanupOnSnapshotBackupFailure(context.srcSnapshot);
+                }
+            } catch (SnapshotBackupException e) {
+                s_logger.debug("Failed to create backup: " + e.toString());
             }
             snapResult.setResult(result.getResult());
             future.complete(snapResult);
@@ -547,4 +557,38 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         return null;
     }
+
+    @Override
+    public void processEventOnSnapshotObject(SnapshotInfo snapshot, Snapshot.Event event) {
+        SnapshotObject object = (SnapshotObject)snapshot;
+        try {
+            object.processEvent(event);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Unable to update the state " + e.toString());
+        }
+    }
+
+    @Override
+    public void cleanupOnSnapshotBackupFailure(SnapshotInfo snapshot) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                try {
+                    SnapshotObject srcSnapshot = (SnapshotObject)snapshot;
+                    srcSnapshot.processEvent(Event.DestroyRequested);
+                    srcSnapshot.processEvent(Event.OperationSuccessed);
+
+                    srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
+
+                    _snapshotDetailsDao.removeDetail(srcSnapshot.getId(), AsyncJob.Constants.MS_ID);
+                    _snapshotDao.remove(srcSnapshot.getId());
+                } catch (NoTransitionException ex) {
+                    s_logger.debug("Failed to create backup " + ex.toString());
+                    throw new CloudRuntimeException("Failed to backup snapshot" + snapshot.getId());
+                }
+            }
+        });
+
+    }
+
 }
