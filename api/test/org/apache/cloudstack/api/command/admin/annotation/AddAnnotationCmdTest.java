@@ -18,17 +18,38 @@
  */
 package org.apache.cloudstack.api.command.admin.annotation;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.spy;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 public class AddAnnotationCmdTest {
 
     private AddAnnotationCmd addAnnotationCmd = new AddAnnotationCmd();
 
+    @Mock
+    public AnnotationService annotationService;
+
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        addAnnotationCmd.annotationService = annotationService;
+    }
+
+    @Test
+    public void properEntityType() throws Exception {
+        addAnnotationCmd.setEntityType("HOST");
+        addAnnotationCmd.setEntityUuid("1");
+        AnnotationResponse annotationResponse = spy(new AnnotationResponse());
+        when(annotationService.addAnnotation(addAnnotationCmd)).thenReturn(annotationResponse);
+        addAnnotationCmd.execute();
+        verify(annotationResponse).setResponseName("addannotationresponse");
     }
 
     @Test (expected = IllegalStateException.class)
