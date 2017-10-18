@@ -170,8 +170,8 @@ class TestHostAnnotations(cloudstackTestCase):
 
         try:
             self.apiclient.addAnnotation(cmd)
-        except CloudstackAPIException as f:
-            log.debug("error message %s" % f)
+        except Exception as f:
+            pass
         else:
             self.fail("AddAnnotation is allowed for on an unknown entityType")
 
