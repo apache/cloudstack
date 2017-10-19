@@ -49,10 +49,16 @@ public class AddAnnotationCmd extends BaseCmd {
         return annotation;
     }
 
+    protected void setEntityType(String newType) {
+        entityType = newType;
+    }
     public AnnotationService.EntityType getEntityType() {
         return AnnotationService.EntityType.valueOf(entityType);
     }
 
+    protected void setEntityUuid(String newUuid) {
+        entityUuid = newUuid;
+    }
     public String getEntityUuid() {
         return entityUuid;
     }
@@ -61,7 +67,7 @@ public class AddAnnotationCmd extends BaseCmd {
     public void execute()
             throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
-        Preconditions.checkNotNull(entityUuid,"I have to have an entity to set an annotation on!");
+        Preconditions.checkNotNull(getEntityUuid(),"I have to have an entity to set an annotation on!");
         Preconditions.checkState(AnnotationService.EntityType.contains(entityType),(java.lang.String)"'%s' is ot a valid EntityType to put annotations on", entityType);
         AnnotationResponse annotationResponse = annotationService.addAnnotation(this);
         annotationResponse.setResponseName(getCommandName());
