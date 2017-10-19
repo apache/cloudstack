@@ -39,6 +39,10 @@ import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 
+/**
+ * @deprecated use the more dynamic ConfigKey
+ */
+@Deprecated
 public enum Config {
 
     // Alert
@@ -1979,17 +1983,6 @@ public enum Config {
         _scope = ConfigKey.Scope.Global.toString();
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, String scope) {
-        _category = category;
-        _componentClass = componentClass;
-        _type = type;
-        _name = name;
-        _defaultValue = defaultValue;
-        _description = description;
-        _range = range;
-        _scope = scope;
-    }
-
     public String getCategory() {
         return _category;
     }
@@ -2008,10 +2001,6 @@ public enum Config {
 
     public Class<?> getType() {
         return _type;
-    }
-
-    public Class<?> getComponentClass() {
-        return _componentClass;
     }
 
     public String getScope() {
@@ -2080,9 +2069,5 @@ public enum Config {
             categories.add((String)key);
         }
         return categories;
-    }
-
-    public static List<Config> getConfigListByScope(String scope) {
-        return s_scopeLevelConfigsMap.get(scope);
     }
 }
