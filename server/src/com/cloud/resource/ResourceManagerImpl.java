@@ -29,6 +29,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -44,9 +48,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -2755,8 +2757,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public GPUDeviceTO getGPUDevice(final long hostId, final String groupName, final String vgpuType) {
-        final HostGpuGroupsVO gpuDevice = listAvailableGPUDevice(hostId, groupName, vgpuType).get(0);
-        return new GPUDeviceTO(gpuDevice.getGroupName(), vgpuType, null);
+        final List<HostGpuGroupsVO> gpuDeviceList = listAvailableGPUDevice(hostId, groupName, vgpuType);
+
+        if (CollectionUtils.isEmpty(gpuDeviceList)) {
+            final String errorMsg = "Host " + hostId + " does not have required GPU device or out of capacity. GPU group: " + groupName + ", vGPU Type: " + vgpuType;
+            s_logger.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+        return new GPUDeviceTO(gpuDeviceList.get(0).getGroupName(), vgpuType, null);
     }
 
     @Override
