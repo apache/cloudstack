@@ -20,9 +20,11 @@
 package com.cloud.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import junit.framework.Assert;
 
@@ -232,13 +234,16 @@ public class StringUtilsTest {
     }
 
     @Test
-    public void testShuffleCSVList() {
+    public void testCSVList() {
         String input = "one,two,three,four,five,six,seven,eight,nine,ten";
-        String output = StringUtils.shuffleCSVList(input);
-        Assert.assertFalse(input.equals(output));
+        List<String> list = Arrays.asList(input.split(","));
+        assertTrue(input.equals(StringUtils.toCSVList(list)));
+    }
 
-        input = "only-one";
-        output = StringUtils.shuffleCSVList("only-one");
-        Assert.assertTrue(input.equals(output));
+    @Test
+    public void testCSVListWithOneItem() {
+        String input = "singleitem";
+        List<String> list = Arrays.asList(input.split(","));
+        assertTrue(input.equals(StringUtils.toCSVList(list)));
     }
 }

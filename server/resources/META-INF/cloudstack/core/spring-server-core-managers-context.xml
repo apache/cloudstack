@@ -256,4 +256,6 @@
 
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl" />
 
+    <bean id="agentMSLB" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />
+
 </beans>

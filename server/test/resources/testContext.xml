@@ -81,6 +81,7 @@
   </bean>
 
   <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
+  <bean id="messageBus" class="org.apache.cloudstack.framework.messagebus.MessageBusBase" />
 
   <bean id="apiServlet" class = "com.cloud.api.ApiServlet" />
 

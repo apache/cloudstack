@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api;
 
+import java.util.List;
+
 public class ReadyCommand extends Command {
     private String _details;
 
@@ -28,13 +30,16 @@ public class ReadyCommand extends Command {
 
     private Long dcId;
     private Long hostId;
+    private List<String> msHostList;
+    private String lbAlgorithm;
+    private Long lbCheckInterval;
 
     public ReadyCommand(Long dcId) {
         super();
         this.dcId = dcId;
     }
 
-    public ReadyCommand(Long dcId, Long hostId) {
+    public ReadyCommand(final Long dcId, final Long hostId) {
         this(dcId);
         this.hostId = hostId;
     }
@@ -58,5 +63,29 @@ public class ReadyCommand extends Command {
 
     public Long getHostId() {
         return hostId;
+    }
+
+    public List<String> getMsHostList() {
+        return msHostList;
+    }
+
+    public void setMsHostList(List<String> msHostList) {
+        this.msHostList = msHostList;
+    }
+
+    public String getLbAlgorithm() {
+        return lbAlgorithm;
+    }
+
+    public void setLbAlgorithm(String lbAlgorithm) {
+        this.lbAlgorithm = lbAlgorithm;
+    }
+
+    public Long getLbCheckInterval() {
+        return lbCheckInterval;
+    }
+
+    public void setLbCheckInterval(Long lbCheckInterval) {
+        this.lbCheckInterval = lbCheckInterval;
     }
 }
