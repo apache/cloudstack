@@ -63,6 +63,7 @@ import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
@@ -75,6 +76,8 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private AgentManager agentMgr;
     @Inject
     private CAManager caManager;
+    @Inject
+    private IndirectAgentLB indirectAgentLB;
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -279,7 +282,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
             setupAgentSecurity(sshConnection, agentIp, hostname);
 
-            String parameters = " -m " + StringUtils.shuffleCSVList(_hostIp) + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+            String parameters = " -m " + StringUtils.toCSVList(indirectAgentLB.getManagementServerList(null, dcId, null)) + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;
