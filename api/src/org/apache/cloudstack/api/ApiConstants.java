@@ -38,6 +38,7 @@ public class ApiConstants {
     public static final String BIND_PASSWORD = "bindpass";
     public static final String BYTES_READ_RATE = "bytesreadrate";
     public static final String BYTES_WRITE_RATE = "byteswriterate";
+    public static final String BYPASS_VLAN_OVERLAP_CHECK = "bypassvlanoverlapcheck";
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
     public static final String CA_CERTIFICATES = "cacertificates";

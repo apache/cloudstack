@@ -392,11 +392,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         VirtualSwitchType vsType = VirtualSwitchType.getType(vSwitchType);
         //The management network is probably always going to be a physical network with islation type of vlans, so assume BroadcastDomainType VLAN
         if (VirtualSwitchType.StandardVirtualSwitch == vsType) {
-            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan, null);
+            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan, null, null);
         }
         else {
             HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, null, 180000,
-                    vsType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, null);
+                    vsType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, null, null);
         }
     }
 

@@ -85,13 +85,8 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     @Override
-    public long countByZoneAndUri(final long zoneId, final String broadcastUri) {
-        return 0;
-    }
-
-    @Override
-    public long countByZoneUriAndGuestType(final long zoneId, final String broadcastUri, final GuestType guestType) {
-        return 0;
+    public List<NetworkVO> listByZoneAndUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType) {
+        return null;
     }
 
     @Override

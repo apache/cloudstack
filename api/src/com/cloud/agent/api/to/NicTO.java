@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import com.cloud.offering.NetworkOffering;
+
 import java.util.List;
+import java.util.Map;
 
 public class NicTO extends NetworkTO {
     int deviceId;
@@ -26,6 +29,7 @@ public class NicTO extends NetworkTO {
     boolean pxeDisable;
     String nicUuid;
     List<String> nicSecIps;
+    Map<NetworkOffering.Detail, String> details;
 
     public NicTO() {
         super();
@@ -96,5 +100,13 @@ public class NicTO extends NetworkTO {
 
     public void setNetworkUuid(String uuid) {
         super.setUuid(uuid);
+    }
+
+    public Map<NetworkOffering.Detail, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(final Map<NetworkOffering.Detail, String> details) {
+        this.details = details;
     }
 }
