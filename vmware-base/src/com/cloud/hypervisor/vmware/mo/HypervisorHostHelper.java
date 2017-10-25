@@ -38,6 +38,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -515,11 +516,11 @@ public class HypervisorHostHelper {
             }
             networkName = composeCloudNetworkName(namePrefix, vlanId, secondaryvlanId, networkRateMbps, physicalNetwork);
 
-            if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId) && !vlanId.contains(",") && !vlanId.contains("-")) {
+            if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId) && !StringUtils.containsAny(vlanId, ",-")) {
                 createGCTag = true;
                 vid = Integer.parseInt(vlanId);
             }
-            if (vlanId != null && (vlanId.contains(",") || vlanId.contains("-"))) {
+            if (vlanId != null && StringUtils.containsAny(vlanId, ",-")) {
                 createGCTag = true;
             }
             if (secondaryvlanId != null) {

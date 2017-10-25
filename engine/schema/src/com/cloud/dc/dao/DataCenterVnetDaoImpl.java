@@ -112,7 +112,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     private List<DataCenterVnetVO> findOverlappingVnets(final long dcId, final Long physicalNetworkId, final String vnet) {
         final List<Integer> searchVnets = UriUtils.expandVlanUri(vnet);
         final List<DataCenterVnetVO> overlappingVnets = new ArrayList<>();
-        if (searchVnets == null || searchVnets.size() == 0) {
+        if (searchVnets == null || searchVnets.isEmpty()) {
             return overlappingVnets;
         }
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();

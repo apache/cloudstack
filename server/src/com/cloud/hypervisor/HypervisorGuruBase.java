@@ -148,15 +148,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             if (network != null) {
                 final Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
                 if (details != null) {
-                    if (!details.containsKey(NetworkOffering.Detail.PromiscuousMode)) {
-                        details.put(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
-                    }
-                    if (!details.containsKey(NetworkOffering.Detail.MacAddressChanges)) {
-                        details.put(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
-                    }
-                    if (!details.containsKey(NetworkOffering.Detail.ForgedTransmits)) {
-                        details.put(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
-                    }
+                    details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+                    details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+                    details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
                 }
                 nicTo.setDetails(details);
             }

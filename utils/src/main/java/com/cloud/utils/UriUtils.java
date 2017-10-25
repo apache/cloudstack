@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
@@ -438,11 +439,6 @@ public class UriUtils {
         if (vlans1 == null || vlans2 == null) {
             return true;
         }
-        for (final Integer vlan1: vlans1) {
-            if (vlans2.contains(vlan1)) {
-                return true;
-            }
-        }
-        return false;
+        return !Collections.disjoint(vlans1, vlans2);
     }
 }
