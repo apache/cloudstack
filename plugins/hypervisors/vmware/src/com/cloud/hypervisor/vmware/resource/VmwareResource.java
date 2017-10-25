@@ -1085,18 +1085,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
                 dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
                 s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
-                nic =
-                        VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid, nicTo.getMac(), deviceNumber,
-                                deviceNumber + 1, true, true);
+                nic = VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid,
+                        nicTo.getMac(), deviceNumber + 1, true, true);
             } else {
                 s_logger.info("Preparing NIC device on network " + networkInfo.second());
-                nic =
-                        VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), deviceNumber, deviceNumber + 1, true,
-                                true);
+                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(),
+                        nicTo.getMac(), deviceNumber + 1, true, true);
             }
 
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
             deviceConfigSpec.setDevice(nic);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
@@ -1754,7 +1751,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int i = 0;
             int ideUnitNumber = 0;
             int scsiUnitNumber = 0;
-            int nicUnitNumber = 0;
             int ideControllerKey = vmMo.getIDEDeviceControllerKey();
             int scsiControllerKey = vmMo.getGenericScsiDeviceControllerKeyNoException();
             int controllerKey;
@@ -2016,21 +2012,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
                         dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
                         s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
-                        nic =
-                                VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid, nicTo.getMac(), nicUnitNumber++,
-                                        i + 1, true, true);
+                        nic = VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid,
+                                nicTo.getMac(), i + 1, true, true);
                         if (nicTo.getUuid() != null) {
                             nicUuidToDvSwitchUuid.put(nicTo.getUuid(), dvSwitchUuid);
                         }
                     } else {
                         s_logger.info("Preparing NIC device on network " + networkInfo.second());
-                        nic =
-                                VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), nicUnitNumber++, i + 1, true, true);
+                        nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(),
+                                nicTo.getMac(), i + 1, true, true);
                     }
                 }
                 else{
                     //if NSX API VERSION >= 4.2, connect to br-int (nsx.network), do not create portgroup else previous behaviour
-                    nic = VmwareHelper.prepareNicOpaque(vmMo, nicDeviceType, networkInfo.second(), nicTo.getMac(), nicUnitNumber++, i + 1, true, true);
+                    nic = VmwareHelper.prepareNicOpaque(vmMo, nicDeviceType, networkInfo.second(),
+                            nicTo.getMac(), i + 1, true, true);
                 }
 
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
