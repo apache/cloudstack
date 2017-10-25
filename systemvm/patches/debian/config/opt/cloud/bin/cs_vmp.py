@@ -18,10 +18,14 @@
 from pprint import pprint
 from netaddr import *
 
-
 def merge(dbag, data):
     """
-    Track vm passwords
+    create a dictionary of values new in data ignoring those in dbag and return it
+    :param dbag: old data
+    :param data: new data
+    :return: new data in the right format
     """
-    dbag[data['ip_address']] = data['password']
-    return dbag
+    rc = {}
+    rc['id'] = 'vmpassword'
+    rc[data['ip_address']] = data['password']
+    return rc
