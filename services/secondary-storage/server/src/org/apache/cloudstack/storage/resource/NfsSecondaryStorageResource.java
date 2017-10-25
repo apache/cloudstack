@@ -35,9 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import javax.naming.ConfigurationException;
-
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -76,6 +74,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.configuration.Resource;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
@@ -2809,7 +2808,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         int accountDirSizeInGB = getSizeInGB(accountTemplateDirSize + accountSnapshotDirSize + accountVolumeDirSize);
         int defaultMaxAccountSecondaryStorageInGB = Integer.parseInt(cmd.getDefaultMaxAccountSecondaryStorage());
 
-        if ((accountDirSizeInGB + contentLengthInGB) > defaultMaxAccountSecondaryStorageInGB) {
+        if (defaultMaxAccountSecondaryStorageInGB != Resource.RESOURCE_UNLIMITED && (accountDirSizeInGB + contentLengthInGB) > defaultMaxAccountSecondaryStorageInGB) {
             s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxAccountSecondaryStorageInGB: " + defaultMaxAccountSecondaryStorageInGB + " contentLengthInGB:"
                     + contentLengthInGB);
             String errorMessage = "Maximum number of resources of type secondary_storage for account has exceeded";
