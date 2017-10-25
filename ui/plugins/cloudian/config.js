@@ -14,10 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
-  cloudStack.plugins = [
-    //'testPlugin',
-    'cloudian',
-    'quota'
-  ];
-}(jQuery, cloudStack));
+(function (cloudStack) {
+  cloudStack.plugins.cloudian.config = {
+    title: 'Cloudian Storage',
+    desc: 'Cloudian Storage',
+    externalLink: 'https://cloudian.com/',
+    authorName: 'Cloudian Inc.',
+    authorEmail: 'info@cloudian.com '
+  };
+}(cloudStack));
