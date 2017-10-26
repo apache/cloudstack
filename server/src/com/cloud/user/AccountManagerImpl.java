@@ -1686,29 +1686,60 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DELETE, eventDescription = "deleting User")
     public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
-        long id = deleteUserCmd.getId();
-
-        UserVO user = _userDao.findById(id);
-
-        if (user == null) {
-            throw new InvalidParameterValueException("The specified user doesn't exist in the system");
-        }
+        UserVO user = getValidUserVO(deleteUserCmd.getId());
 
         Account account = _accountDao.findById(user.getAccountId());
 
         // don't allow to delete the user from the account of type Project
+        checkAccountAndAccess(user, account);
+        return _userDao.remove(deleteUserCmd.getId());
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
+    public boolean moveUser(long id, long newAccountId) {
+        UserVO user = getValidUserVO(id);
+        Account oldAccount = _accountDao.findById(user.getAccountId());
+        Account newAccount = _accountDao.findById(newAccountId);
+        checkAccountAndAccess(user, oldAccount);
+        if(newAccount.getDomainId() != oldAccount.getDomainId()) {
+            // not in scope
+            throw new InvalidParameterValueException("movin a user from an account in one domain to an account in annother domain is not supported!");
+        }
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                UserVO newUser = new UserVO(user);
+                newUser.setAccountId(newAccountId);
+                boolean marksucceeded = _userDao.remove(id);
+                UserVO persisted = _userDao.persist(newUser);
+                return marksucceeded && persisted.getUuid().equals(user.getUuid());
+            }
+        });
+    }
+
+    private void checkAccountAndAccess(UserVO user, Account account) {
+        // don't allow to delete the user from the account of type Project
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Project users cannot be deleted or moved.");
+        }
+
+        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
+        CallContext.current().putContextParameter(User.class, user.getUuid());
+    }
+
+    private UserVO getValidUserVO(long id) {
+        UserVO user = _userDao.findById(id);
+
+        if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("The specified user doesn't exist in the system");
         }
 
         // don't allow to delete default user (system and admin users)
         if (user.isDefault()) {
-            throw new InvalidParameterValueException("The user is default and can't be removed");
+            throw new InvalidParameterValueException("The user is default and can't be (re)moved");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
-        CallContext.current().putContextParameter(User.class, user.getUuid());
-        return _userDao.remove(id);
+        return user;
     }
 
     protected class AccountCleanupTask extends ManagedContextRunnable {
