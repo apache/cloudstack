@@ -2608,9 +2608,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.trace("VM Operation Thread Running");
             try {
                 _workDao.cleanup(VmOpCleanupWait.value());
-
-                // TODO. hard-coded to one hour after job has been completed
-                final Date cutDate = new Date(new Date().getTime() - 3600000);
+                final Date cutDate = new Date(DateUtil.currentGMTTime().getTime() - VmOpCleanupInterval.value() * 1000);
                 _workJobDao.expungeCompletedWorkJobs(cutDate);
             } catch (final Exception e) {
                 s_logger.error("VM Operations failed due to ", e);
@@ -2980,7 +2978,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 scanStalledVMInTransitionStateOnDisconnectedHosts();
 
-                final List<VMInstanceVO> instances = _vmDao.findVMInTransition(new Date(new Date().getTime() - AgentManager.Wait.value() * 1000), State.Starting, State.Stopping);
+                final List<VMInstanceVO> instances = _vmDao.findVMInTransition(new Date(DateUtil.currentGMTTime().getTime() - AgentManager.Wait.value() * 1000), State.Starting, State.Stopping);
                 for (final VMInstanceVO instance : instances) {
                     final State state = instance.getState();
                     if (state == State.Stopping) {
