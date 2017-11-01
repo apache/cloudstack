@@ -444,6 +444,15 @@
                         }
                     }
                 },
+
+                tabFilter: function(args) {
+                    var hiddenTabs = [];
+                    if(!isAdmin()) {
+                        hiddenTabs.push('settings');
+                    }
+                    return hiddenTabs;
+                },
+
                 tabs: {
                     details: {
                         title: 'label.details',
@@ -680,7 +689,7 @@
                             });
                         }
                     },
-                    // Granular settings for account
+                    // Granular settings for domains
                     settings: {
                         title: 'label.settings',
                         custom: cloudStack.uiCustom.granularSettings({
