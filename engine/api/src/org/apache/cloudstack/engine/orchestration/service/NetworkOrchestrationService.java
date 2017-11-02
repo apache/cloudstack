@@ -189,6 +189,11 @@ public interface NetworkOrchestrationService {
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException;
 
+    /**
+     * Removes the provided nic from the given vm
+     * @param vm
+     * @param nic
+     */
     void removeNic(VirtualMachineProfile vm, Nic nic);
 
     /**

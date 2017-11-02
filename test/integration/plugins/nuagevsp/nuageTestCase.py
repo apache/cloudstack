@@ -849,6 +849,34 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the assignment and state of public "
                    "IP address - %s" % public_ip.ipaddress.ipaddress)
 
+    # verify_VRWithoutPublicIPNIC - Verifies that the given Virtual Router has
+    # no public IP and NIC
+    def verify_VRWithoutPublicIPNIC(self, vr):
+        """Verifies VR without Public IP and NIC"""
+        self.debug("Verifies that there is no public IP and NIC in Virtual "
+                   "Router - %s" % vr.name)
+        self.assertEqual(vr.publicip, None,
+                         "Virtual router has public IP"
+                         )
+        for nic in vr.nic:
+            self.assertNotEqual(nic.traffictype, "Public",
+                                "Virtual router has public NIC"
+                                )
+        self.debug("Successfully verified that there is no public IP and NIC "
+                   "in Virtual Router - %s" % vr.name)
+
+    def verify_vpc_has_no_src_nat(self, vpc, account=None):
+        if not account:
+            account = self.account
+        self.debug("Verify that there is no src NAT ip address "
+                   "allocated for the vpc")
+        src_nat_ip = PublicIPAddress.list(
+            self.api_client,
+            vpcid=vpc.id,
+            issourcenat=True,
+            account=account.name)
+        self.assertEqual(src_nat_ip, None, "VPC has a source NAT ip!")
+
     # VSD verifications; VSD is a programmable policy and analytics engine of
     # Nuage VSP SDN platform
 
@@ -985,10 +1013,10 @@ class nuageTestCase(cloudstackTestCase):
         expected_status = cs_object.state.upper() if not stopped \
             else "DELETE_PENDING"
         tries = 0
-        while (vsd_object.status != expected_status) and (tries < 10):
+        while (vsd_object.status != expected_status) and (tries < 120):
             self.debug("Waiting for the CloudStack object " + cs_object.name +
                        " to be fully resolved in VSD...")
-            time.sleep(30)
+            time.sleep(5)
             self.debug("Rechecking the CloudStack object " + cs_object.name +
                        " status in VSD...")
             vsd_object = self.vsd.get_vm(

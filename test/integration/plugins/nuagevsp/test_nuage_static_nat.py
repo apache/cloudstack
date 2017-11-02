@@ -26,8 +26,11 @@ from marvin.lib.base import (Account,
 from marvin.cloudstackAPI import (enableNuageUnderlayVlanIpRange,
                                   disableNuageUnderlayVlanIpRange,
                                   listNuageUnderlayVlanIpRanges)
+from marvin.lib.common import list_virtual_machines
+
 # Import System Modules
 from nose.plugins.attrib import attr
+import threading
 import copy
 import time
 
@@ -150,7 +153,7 @@ class TestNuageStaticNat(nuageTestCase):
 
         # wget from VM
         tries = 0
-        max_tries = 3 if non_default_nic else 10
+        max_tries = 3 if non_default_nic else 120
         filename = None
         headers = None
         while tries < max_tries:
@@ -162,7 +165,7 @@ class TestNuageStaticNat(nuageTestCase):
             except Exception as e:
                 self.debug("Failed to wget from VM - %s" % e)
                 self.debug("Retrying wget from VM after some time...")
-                time.sleep(60)
+                time.sleep(5)
                 tries += 1
 
         try:
@@ -294,6 +297,17 @@ class TestNuageStaticNat(nuageTestCase):
                 self.debug("Skipped Static NAT Internet traffic "
                            "(wget www.google.com) test from VM as there is no "
                            "Internet connectivity in the data center")
+
+    # enable_staticNat_on_a_starting_vm - Enables Static Nat on a starting VM
+    # in the given network with the given public IP.
+    def enable_staticNat_on_a_starting_vm(self):
+        self.debug("Enables Static Nat on a starting VM in the network - %s "
+                   "with the given public IP - %s" %
+                   (self.network, self.public_ip))
+        time.sleep(15)
+        vm_list = list_virtual_machines(self.api_client, listall=True)
+        self.create_StaticNatRule_For_VM(
+            vm_list[0], self.public_ip, self.network)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_01_nuage_StaticNAT_public_ip_range(self):
@@ -2088,3 +2102,74 @@ class TestNuageStaticNat(nuageTestCase):
         # from the deployed VM
         self.verify_StaticNAT_Internet_traffic(
             vpc_vm, vpc_tier, public_ip_2, vpc=vpc)
+
+    # Bug CLOUDSTACK-9751
+    @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
+    def test_11_nuage_enable_staticNat_when_vr_is_in_starting_state(self):
+        """Test Nuage VSP Static NAT functionality by enabling Static Nat when
+        VR is in starting state
+        """
+
+        # 1. Create a Nuage VSP Isolated network offering.
+        # 2. Create an Isolated network with above created offering.
+        # 3. Deploy a VM in the above created Isolated network,
+        #    which starts a VR.
+        # 4. While VR is in the starting state, acquire a public IP and enable
+        #    static nat in another thread.
+        # 5. Verify that Static NAT is successfully enabled in both CloudStack
+        #    and VSD.
+        # 6. Delete all the created objects (cleanup).
+
+        # Creating network offering
+        self.debug("Creating Nuage VSP Isolated Network offering with Static "
+                   "NAT service provider as NuageVsp...")
+        net_off = self.create_NetworkOffering(
+            self.test_data["nuagevsp"]["isolated_network_offering"])
+        self.validate_NetworkOffering(net_off, state="Enabled")
+
+        # Creating an Isolated network
+        self.debug("Creating an Isolated network with Static NAT service...")
+        self.network = self.create_Network(net_off, gateway='10.1.1.1')
+        self.validate_Network(self.network, state="Allocated")
+
+        # Acquiring a Public IP
+        self.debug("Acquiring a Public IP in the created Isolated network...")
+        self.public_ip = self.acquire_PublicIPAddress(self.network)
+        self.validate_PublicIPAddress(self.public_ip, self.network)
+
+        # Enabling Static NAT on a starting VM
+        self.debug("Creating a thread for enabling Static Nat on a starting "
+                   "VM...")
+        static_nat_thread = threading.Thread(
+            name='enable_static_nat',
+            target=self.enable_staticNat_on_a_starting_vm)
+        static_nat_thread.start()
+
+        vm = self.create_VM(self.network)
+
+        # Check the status of Static Nat thread and if it is not finished then
+        # below command will wait for it to finish
+        self.debug("Waiting for for enabling Static Nat on a starting VM "
+                   "thread to finish...")
+        static_nat_thread.join()
+
+        # CloudStack verification for the implemented Isolated Network
+        self.validate_Network(self.network, state="Implemented")
+        vr = self.get_Router(self.network)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm, state="Running")
+
+        # VSD verification for the implemented Isolated Network
+        self.verify_vsd_network(self.domain.id, self.network)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm)
+
+        # CloudStack verification for Static NAT functionality
+        self.validate_PublicIPAddress(
+            self.public_ip, self.network, static_nat=True, vm=vm)
+
+        # VSD verification for Static NAT functionality
+        self.verify_vsd_floating_ip(self.network, vm, self.public_ip.ipaddress)
+
+        # Verifying Static NAT traffic
+        self.verify_StaticNAT_traffic(self.network, self.public_ip)

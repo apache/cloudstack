@@ -43,14 +43,12 @@ import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -88,8 +86,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
@@ -108,7 +104,6 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -140,7 +135,6 @@ import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
-import com.cloud.vm.dao.DomainRouterDao;
 
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
@@ -162,8 +156,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    ConfigurationManager _configMgr;
-    @Inject
     AccountManager _accountMgr;
     @Inject
     NetworkDao _ntwkDao;
@@ -176,8 +168,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
-    DomainRouterDao _routerDao;
-    @Inject
     VpcGatewayDao _vpcGatewayDao;
     @Inject
     PrivateIpDao _privateIpDao;
@@ -188,13 +178,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     VpcOfferingServiceMapDao _vpcOffServiceDao;
     @Inject
-    PhysicalNetworkDao _pNtwkDao;
-    @Inject
     ResourceTagDao _resourceTagDao;
     @Inject
     FirewallRulesDao _firewallDao;
-    @Inject
-    Site2SiteVpnGatewayDao _vpnGatewayDao;
     @Inject
     Site2SiteVpnManager _s2sVpnMgr;
     @Inject
@@ -206,17 +192,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     DataCenterDao _dcDao;
     @Inject
-    ConfigurationServer _configServer;
-    @Inject
     NetworkACLDao _networkAclDao;
-    @Inject
-    NetworkACLItemDao _networkACLItemDao;
     @Inject
     NetworkACLManager _networkAclMgr;
     @Inject
     IpAddressManager _ipAddrMgr;
-    @Inject
-    ConfigDepot _configDepot;
 
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
@@ -2266,14 +2246,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // check permissions
         _accountMgr.checkAccess(caller, null, true, owner, vpc);
 
-        boolean isSourceNat = false;
-        if (getExistingSourceNatInVpc(owner.getId(), vpcId) == null) {
-            isSourceNat = true;
-        }
-
         s_logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
 
-        final boolean isSourceNatFinal = isSourceNat;
+        final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(owner.getId(), vpcId) == null;
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -2448,5 +2423,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public boolean applyStaticRoute(final long routeId) throws ResourceUnavailableException {
         final StaticRoute route = _staticRouteDao.findById(routeId);
         return applyStaticRoutesForVpc(route.getVpcId());
+    }
+
+    @Override
+    public boolean isSrcNatIpRequired(long vpcOfferingId) {
+        final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
+        return vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter);
     }
 }
