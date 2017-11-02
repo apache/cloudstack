@@ -19,7 +19,9 @@ package com.cloud.configuration;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
@@ -159,6 +161,19 @@ public interface ConfigurationService {
      * @throws
      */
     Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState);
+
+    /**
+     * Creates a mutual exclusive IP range in the pod with same gateway, netmask.
+     * @param cmd - The command specifying pod ID, start IP, end IP, gateway, netmask.
+     * @return The new range if successful, null otherwise.
+     */
+    Pod createPodIpRange(CreateManagementNetworkIpRangeCmd cmd);
+
+    /**
+     * Deletes a mutually exclusive IP range in the pod.
+     * @param cmd - The command specifying pod ID, start IP, end IP.
+     */
+    void deletePodIpRange(DeleteManagementNetworkIpRangeCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.

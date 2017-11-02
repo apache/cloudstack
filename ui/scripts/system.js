@@ -936,56 +936,154 @@
                                     });
                                 }
                             },
+
                             ipAddresses: {
-                                //read-only listView (no actions) filled with pod info (not VlanIpRange info)
                                 title: 'label.ip.ranges',
-                                listView: {
-                                    fields: {
-                                        name: {
-                                            label: 'label.pod'
-                                        },
-                                        //pod name
-                                        gateway: {
-                                            label: 'label.gateway'
-                                        },
-                                        //'Reserved system gateway' is too long and causes a visual format bug (2 lines overlay)
-                                        netmask: {
-                                            label: 'label.netmask'
-                                        },
-                                        //'Reserved system netmask' is too long and causes a visual format bug (2 lines overlay)
-                                        startip: {
-                                            label: 'label.start.IP'
-                                        },
-                                        //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
-                                        endip: {
-                                            label: 'label.end.IP'
-                                        }
-                                        //'Reserved system end IP' is too long and causes a visual format bug (2 lines overlay)
-                                    },
-                                    dataProvider: function (args) {
-                                        var array1 =[];
-                                        if (args.filterBy != null) {
-                                            if (args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                                                switch (args.filterBy.search.by) {
-                                                    case "name":
-                                                    if (args.filterBy.search.value.length > 0)
-                                                    array1.push("&keyword=" + args.filterBy.search.value);
-                                                    break;
+                                custom: function (args) {
+                                    return $('<div></div>').multiEdit({
+                                        context: args.context,
+                                        noSelect: true,
+                                        fields: {
+                                            'podid': {
+                                                label: 'label.pod',
+                                                select: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("listPods&zoneid=" + selectedZoneObj.id),
+                                                        dataType: "json",
+                                                        success: function (json) {
+                                                            var items =[];
+                                                            var pods = json.listpodsresponse.pod;
+                                                            $(pods).each(function () {
+                                                                items.push({
+                                                                    name: this.id,
+                                                                    description: this.name
+                                                                });
+                                                            });
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
+                                                    });
                                                 }
+                                            },
+                                            'gateway': {
+                                                edit: true,
+                                                label: 'label.gateway'
+                                            },
+                                            'netmask': {
+                                                edit: true,
+                                                label: 'label.netmask'
+                                            },
+                                            'startip': {
+                                                edit: true,
+                                                label: 'label.start.IP'
+                                            },
+                                            'endip': {
+                                                edit: true,
+                                                label: 'label.end.IP',
+                                                validation: {
+                                                    required: false
+                                                }
+                                            },
+                                            'add-rule': {
+                                                label: 'label.add',
+                                                addButton: true
                                             }
-                                        }
-                                        $.ajax({
-                                            url: createURL("listPods&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                                            dataType: "json",
-                                            async: true,
-                                            success: function (json) {
-                                                var items = json.listpodsresponse.pod;
-                                                args.response.success({
-                                                    data: items
+                                        },
+                                        add: {
+                                            label: 'label.add',
+                                            action: function (args) {
+                                                var array1 =[];
+
+                                                array1.push("&podid=" + args.data.podid);
+                                                array1.push("&gateway=" + args.data.gateway);
+                                                array1.push("&netmask=" + args.data.netmask);
+                                                array1.push("&startip=" + args.data.startip);
+
+                                                if (args.data.endip != null && args.data.endip.length > 0)
+                                                    array1.push("&endip=" + args.data.endip);
+
+                                                $.ajax({
+                                                    url: createURL("createManagementNetworkIpRange" + array1.join("")),
+                                                    dataType: "json",
+                                                    success: function (json) {
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: json.createmanagementnetworkiprangeresponse.jobid
+                                                            },
+                                                            notification: {
+                                                                label: 'label.add.management.ip.range',
+                                                                poll: pollAsyncJobResult
+                                                            }
+                                                        });
+                                                    },
+                                                    error: function (XMLHttpResponse) {
+                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                        args.response.error(errorMsg);
+                                                    }
                                                 });
                                             }
-                                        });
-                                    }
+                                        },
+                                        actions: {
+                                            destroy: {
+                                                label: 'label.delete',
+                                                action: function (args) {
+                                                    var array1 =[];
+                                                    array1.push("&podid=" + args.context.multiRule[0].podid);
+                                                    array1.push("&startip=" + args.context.multiRule[0].startip);
+                                                    array1.push("&endip=" + args.context.multiRule[0].endip);
+
+                                                    $.ajax({
+                                                        url: createURL('deleteManagementNetworkIpRange' + array1.join("")),
+                                                        dataType: 'json',
+                                                        async: true,
+                                                        success: function (json) {
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: json.deletemanagementnetworkiprangeresponse.jobid
+                                                                },
+                                                                notification: {
+                                                                    label: 'label.remove.management.ip.range',
+                                                                    poll: pollAsyncJobResult
+                                                                }
+                                                            });
+                                                        },
+                                                        error: function (XMLHttpResponse) {
+                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                            args.response.error(errorMsg);
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        },
+                                        dataProvider: function (args) {
+                                            $.ajax({
+                                                url: createURL("listPods&zoneid=" + selectedZoneObj.id),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function (json) {
+                                                    var items =[];
+
+                                                    var pods = json.listpodsresponse.pod;
+                                                    $(pods).each(function () {
+                                                        for (var i = 0; i < this.startip.length; i++) {
+                                                            items.push({
+                                                                podid: this.id,
+                                                                gateway: this.gateway,
+                                                                netmask: this.netmask,
+                                                                startip: this.startip[i],
+                                                                endip: this.endip[i]
+                                                            });
+                                                        }
+                                                    });
+
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -13465,11 +13563,10 @@
                                 label: 'label.edit',
                                 action: function (args) {
                                     var array1 =[];
+
                                     array1.push("&name=" + todb(args.data.name));
                                     array1.push("&netmask=" + todb(args.data.netmask));
-                                    array1.push("&startIp=" + todb(args.data.startip));
-                                    if (args.data.endip != null && args.data.endip.length > 0)
-                                    array1.push("&endIp=" + todb(args.data.endip));
+
                                     if (args.data.gateway != null && args.data.gateway.length > 0)
                                     array1.push("&gateway=" + todb(args.data.gateway));
 
@@ -13730,17 +13827,6 @@
                                             required: true
                                         }
                                     },
-                                    startip: {
-                                        label: 'label.start.IP',
-                                        isEditable: true,
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
-                                    endip: {
-                                        label: 'label.end.IP',
-                                        isEditable: true
-                                    },
                                     gateway: {
                                         label: 'label.gateway',
                                         isEditable: true,
@@ -13756,7 +13842,6 @@
                                         label: 'label.allocation.state'
                                     }
                                 }, {
-
                                     isdedicated: {
                                         label: 'label.dedicated'
                                     },
@@ -13766,13 +13851,10 @@
                                 }],
 
                                 dataProvider: function (args) {
-
                                     $.ajax({
                                         url: createURL("listPods&id=" + args.context.pods[0].id),
                                         success: function (json) {
                                             var item = json.listpodsresponse.pod[0];
-
-
                                             $.ajax({
                                                 url: createURL("listDedicatedPods&podid=" + args.context.pods[0].id),
                                                 success: function (json) {

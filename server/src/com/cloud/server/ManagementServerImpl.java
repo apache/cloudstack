@@ -105,11 +105,13 @@ import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkServiceProviderCmd;
@@ -3010,6 +3012,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateLBHealthCheckPolicyCmd.class);
         cmdList.add(GetUploadParamsForTemplateCmd.class);
         cmdList.add(GetUploadParamsForVolumeCmd.class);
+        cmdList.add(AcquirePodIpCmdByAdmin.class);
+        cmdList.add(ReleasePodIpCmdByAdmin.class);
+        cmdList.add(CreateManagementNetworkIpRangeCmd.class);
+        cmdList.add(DeleteManagementNetworkIpRangeCmd.class);
+
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
         cmdList.add(DisableOutOfBandManagementForHostCmd.class);
@@ -3021,9 +3028,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
-
-        cmdList.add(AcquirePodIpCmdByAdmin.class);
-        cmdList.add(ReleasePodIpCmdByAdmin.class);
 
         return cmdList;
     }
