@@ -21,6 +21,7 @@ package com.cloud;
 
 import java.util.ArrayList;
 
+import net.nuage.vsp.acs.client.api.model.NetworkRelatedVsdIds;
 import net.nuage.vsp.acs.client.api.model.VspAclRule;
 import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
 import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
@@ -113,6 +114,16 @@ public class NuageTest {
                 .cidr("networkCidr")
                 .gateway("networkGateway")
                 .virtualRouterIp("virtualRouterIp")
+                .networkRelatedVsdIds(buildNetworkRelatedIds())
+                .build();
+    }
+
+    protected NetworkRelatedVsdIds buildNetworkRelatedIds() {
+        return new NetworkRelatedVsdIds.Builder()
+                .vsdZoneId("vsdZoneId")
+                .vsdDomainId("vsdDomainId")
+                .vsdEnterpriseId("vsdEnterpriseId")
+                .vsdSubnetId("vsdSubnetId")
                 .build();
     }
 

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+import net.nuage.vsp.acs.client.api.model.NetworkRelatedVsdIds;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -37,6 +38,8 @@ import com.cloud.NuageTest;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
+import com.cloud.agent.api.manager.ImplementNetworkVspAnswer;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -142,6 +145,7 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
         when(host.getId()).thenReturn(NETWORK_ID);
         when(_agentManager.easySend(eq(NETWORK_ID), any(Command.class))).thenReturn(new Answer(null));
+        when(_agentManager.easySend(eq(NETWORK_ID), any(ImplementNetworkVspCommand.class))).thenReturn(new ImplementNetworkVspAnswer(null, new NetworkRelatedVsdIds.Builder().build()));
         when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         final NuageVspDeviceVO device = mock(NuageVspDeviceVO.class);

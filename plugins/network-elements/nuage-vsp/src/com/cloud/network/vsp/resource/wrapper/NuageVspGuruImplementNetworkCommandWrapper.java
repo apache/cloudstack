@@ -21,22 +21,27 @@ package com.cloud.network.vsp.resource.wrapper;
 
 import javax.naming.ConfigurationException;
 
+import net.nuage.vsp.acs.client.api.NuageVspGuruClient;
+import net.nuage.vsp.acs.client.api.model.NetworkRelatedVsdIds;
 import net.nuage.vsp.acs.client.exception.NuageVspException;
 
 import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
+import com.cloud.agent.api.manager.ImplementNetworkVspAnswer;
 import com.cloud.network.resource.NuageVspResource;
+import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
 @ResourceWrapper(handles =  ImplementNetworkVspCommand.class)
-public final class NuageVspGuruImplementNetworkCommandWrapper extends NuageVspCommandWrapper<ImplementNetworkVspCommand> {
+public final class NuageVspGuruImplementNetworkCommandWrapper extends CommandWrapper<ImplementNetworkVspCommand, ImplementNetworkVspAnswer, NuageVspResource> {
 
-    @Override public boolean executeNuageVspCommand(ImplementNetworkVspCommand cmd, NuageVspResource nuageVspResource) throws ConfigurationException, NuageVspException {
-        nuageVspResource.getNuageVspGuruClient().implement(cmd.getNetwork(), cmd.getDhcpOption());
-        return true;
+    @Override
+    public ImplementNetworkVspAnswer execute(ImplementNetworkVspCommand command, NuageVspResource serverResource) {
+        try {
+            NuageVspGuruClient client = serverResource.getNuageVspGuruClient();
+            NetworkRelatedVsdIds networkRelatedVsdIds = client.implement(command.getNetwork(), command.getDhcpOption());
+            return new ImplementNetworkVspAnswer(command, networkRelatedVsdIds);
+        } catch (ConfigurationException | NuageVspException e) {
+            return new ImplementNetworkVspAnswer(command, e);
+        }
     }
-
-    @Override public StringBuilder fillDetail(StringBuilder stringBuilder, ImplementNetworkVspCommand command) {
-        return stringBuilder.append("Created network mapping to ").append(command.getNetwork().getName());
-    }
-
 }

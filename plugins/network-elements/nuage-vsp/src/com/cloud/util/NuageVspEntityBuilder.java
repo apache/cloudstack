@@ -25,13 +25,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import net.nuage.vsp.acs.client.api.model.NetworkRelatedVsdIds;
+import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspAddressRange;
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
+import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspDomainCleanUp;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
+import net.nuage.vsp.acs.client.api.model.VspNic;
+import net.nuage.vsp.acs.client.api.model.VspStaticNat;
+import net.nuage.vsp.acs.client.api.model.VspVm;
+import net.nuage.vsp.acs.client.common.model.Pair;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
@@ -65,24 +83,12 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
-import net.nuage.vsp.acs.client.api.model.VspAclRule;
-import net.nuage.vsp.acs.client.api.model.VspAddressRange;
-import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
-import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspDomainCleanUp;
-import net.nuage.vsp.acs.client.api.model.VspNetwork;
-import net.nuage.vsp.acs.client.api.model.VspNic;
-import net.nuage.vsp.acs.client.api.model.VspStaticNat;
-import net.nuage.vsp.acs.client.api.model.VspVm;
-import net.nuage.vsp.acs.client.common.model.Pair;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.commons.collections.MapUtils;
 
 public class NuageVspEntityBuilder {
     private static final Logger s_logger = Logger.getLogger(NuageVspEntityBuilder.class);
@@ -112,9 +118,15 @@ public class NuageVspEntityBuilder {
     @Inject
     NetworkDetailsDao _networkDetailsDao;
     @Inject
+    VpcDetailsDao _vpcDetailsDao;
+    @Inject
     VMInstanceDao _vmInstanceDao;
     @Inject
     NuageVspManager _nuageVspManager;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
 
@@ -151,6 +163,7 @@ public class NuageVspEntityBuilder {
         return buildVspNetwork(network.getDomainId(), network);
     }
 
+    //TODO:Sigert implement caching in this function. retrieve data
     public VspNetwork buildVspNetwork(long domainId, Network network) {
         VspNetwork.Builder vspNetworkBuilder = new VspNetwork.Builder()
                 .id(network.getId())
@@ -171,30 +184,59 @@ public class NuageVspEntityBuilder {
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         vspNetworkBuilder.egressDefaultPolicy(networkOffering.getEgressDefaultPolicy()).publicAccess(networkOffering.getSupportsPublicAccess());
 
+        Map<String, String> networkDetails = _networkDetailsDao.listDetailsKeyPairs(network.getId(), false);
+        String vsdSubnetId = null;
+        String vsdZoneId = null;
+        String vsdDomainId = null;
+
+        if (MapUtils.isNotEmpty(networkDetails)) {
+            vsdSubnetId = networkDetails.get(NuageVspManager.NETWORK_METADATA_VSD_SUBNET_ID);
+        }
+
         if (network.getVpcId() != null) {
-            VpcVO vpc = _vpcDao.findById(network.getVpcId());
+            long vpcId = network.getVpcId();
+            VpcVO vpc = _vpcDao.findById(vpcId);
             vspNetworkBuilder.vpcUuid(vpc.getUuid())
                     .vpcName(vpc.getName())
                     .networkType(VspNetwork.NetworkType.Vpc);
+            Map<String, String> vpcDetails = _vpcDetailsDao.listDetailsKeyPairs(vpcId, false);
+            if (MapUtils.isNotEmpty(vpcDetails)) {
+                vsdDomainId = vpcDetails.get(NuageVspManager.NETWORK_METADATA_VSD_DOMAIN_ID);
+                vsdZoneId = vpcDetails.get(NuageVspManager.NETWORK_METADATA_VSD_ZONE_ID);
+            }
+
         } else {
+            if (MapUtils.isNotEmpty(networkDetails)) {
+                vsdDomainId = networkDetails.get(NuageVspManager.NETWORK_METADATA_VSD_DOMAIN_ID);
+                vsdZoneId = networkDetails.get(NuageVspManager.NETWORK_METADATA_VSD_ZONE_ID);
+            }
+
             if (networkOffering.getGuestType() == Network.GuestType.Shared) {
                 List<VlanVO> vlans = _vlanDao.listVlansByNetworkIdIncludingRemoved(network.getId());
-                List<VspAddressRange> vspAddressRanges = Lists.transform(vlans, new Function<VlanVO, VspAddressRange>() {
-                    @Nullable
-                    @Override
-                    public VspAddressRange apply(VlanVO vlanVO) {
-                        return new VspAddressRange.Builder().gateway(vlanVO.getVlanGateway()).netmask(vlanVO.getVlanNetmask()).build();
-                    }
-                });
 
-                vspNetworkBuilder.networkType(VspNetwork.NetworkType.Shared).addressRanges(vspAddressRanges);
+                List<VspAddressRange> vspAddressRanges =
+                        vlans.stream()
+                             .map(vlan -> new VspAddressRange.Builder().gateway(vlan.getVlanGateway()).netmask(vlan.getVlanNetmask()).build())
+                             .collect(Collectors.toList());
+
+
+                vspNetworkBuilder.networkType(VspNetwork.NetworkType.Shared)
+                                 .addressRanges(vspAddressRanges);
             } else if (_networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.SourceNat)
                     || _networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.StaticNat)) {
                 vspNetworkBuilder.networkType(VspNetwork.NetworkType.L3);
             } else {
                 vspNetworkBuilder.networkType(VspNetwork.NetworkType.L2);
             }
+
         }
+
+        NetworkRelatedVsdIds networkRelatedVsdIds = new NetworkRelatedVsdIds.Builder()
+                                                          .vsdDomainId(vsdDomainId)
+                                                          .vsdSubnetId(vsdSubnetId)
+                                                          .vsdZoneId(vsdZoneId)
+                                                          .build();
+        vspNetworkBuilder.networkRelatedVsdIds(networkRelatedVsdIds);
 
         boolean firewallServiceSupported = _networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.Firewall);
         vspNetworkBuilder.firewallServiceSupported(firewallServiceSupported);
@@ -225,20 +267,22 @@ public class NuageVspEntityBuilder {
     public VspNetwork updateVspNetworkByPublicIp(VspNetwork vspNetwork, Network network, String publicIp) {
         List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
         final long ip = NetUtils.ip2Long(publicIp);
-        VlanVO matchingVlan = Iterables.find(vlans, new Predicate<VlanVO>() {
-            @Override
-            public boolean apply(@Nullable VlanVO vlan) {
-                Pair<String, String> ipAddressRange = getIpAddressRange(vlan);
-                long startIp = NetUtils.ip2Long(ipAddressRange.getLeft());
-                long endIp = NetUtils.ip2Long(ipAddressRange.getRight());
-                return startIp <= ip && ip <= endIp;
-            }
-        });
+        VlanVO matchingVlan = vlans.stream()
+                                   .filter(vlan -> isVlanContainingIp(vlan, ip))
+                                   .findFirst()
+                                   .get();
 
         return new VspNetwork.Builder().fromObject(vspNetwork)
                 .gateway(matchingVlan.getVlanGateway())
                 .cidr(NetUtils.getCidrFromGatewayAndNetmask(matchingVlan.getVlanGateway(), matchingVlan.getVlanNetmask()))
                 .build();
+    }
+
+    private boolean isVlanContainingIp(Vlan vlan, long ip) {
+        Pair<String, String> ipAddressRange = getIpAddressRange(vlan);
+        long startIp = NetUtils.ip2Long(ipAddressRange.getLeft());
+        long endIp = NetUtils.ip2Long(ipAddressRange.getRight());
+        return startIp <= ip && ip <= endIp;
     }
 
     private List<Pair<String, String>> getSharedIpAddressRanges(long networkId) {
@@ -326,30 +370,8 @@ public class NuageVspEntityBuilder {
     public VspVm buildVspVm(VirtualMachine vm, Network network) {
         VspVm.Builder vspVmBuilder = new VspVm.Builder()
                 .uuid(vm.getUuid())
-                .name(vm.getInstanceName());
-
-        switch (vm.getState()) {
-            case Starting:
-                vspVmBuilder.state(VspVm.State.Starting); break;
-            case Running:
-                vspVmBuilder.state(VspVm.State.Running); break;
-            case Stopping:
-                vspVmBuilder.state(VspVm.State.Stopping); break;
-            case Stopped:
-                vspVmBuilder.state(VspVm.State.Stopped); break;
-            case Destroyed:
-                vspVmBuilder.state(VspVm.State.Destroyed); break;
-            case Expunging:
-                vspVmBuilder.state(VspVm.State.Expunging); break;
-            case Migrating:
-                vspVmBuilder.state(VspVm.State.Migrating); break;
-            case Error:
-                vspVmBuilder.state(VspVm.State.Error); break;
-            case Shutdowned:
-                vspVmBuilder.state(VspVm.State.Shutdowned); break;
-            default:
-                vspVmBuilder.state(VspVm.State.Unknown);
-        }
+                .name(vm.getInstanceName())
+                .state(getEnumValue(vm.getState(), VspVm.State.Unknown));
 
         boolean isDomainRouter = vm.getType().equals(VirtualMachine.Type.DomainRouter);
         vspVmBuilder.domainRouter(isDomainRouter);
@@ -363,19 +385,27 @@ public class NuageVspEntityBuilder {
     }
 
     public VspNic buildVspNic(String nicUuid, NicProfile nicProfile) {
-        return buildVspNic(nicUuid, nicProfile.getMacAddress(), nicProfile.getIPv4Address(), nicProfile.getNetworkId());
+        return buildVspNic(nicUuid, nicProfile.getMacAddress(), nicProfile.getIPv4Address(), nicProfile.getNetworkId(), null);
     }
 
     public VspNic buildVspNic(NicVO nic) {
-        return buildVspNic(nic.getUuid(), nic.getMacAddress(), nic.getIPv4Address(), nic.getNetworkId());
+        return buildVspNic(nic.getUuid(), nic.getMacAddress(), nic.getIPv4Address(), nic.getNetworkId(), null);
     }
 
-    private VspNic buildVspNic(String uuid, String macAddress, String ip, long networkId) {
+    public VspNic buildVspNic(NicVO nic, NicSecondaryIpVO nicSecondaryIp) {
+        return buildVspNic(nic.getUuid(), nic.getMacAddress(), nic.getIPv4Address(), nic.getNetworkId(), nicSecondaryIp);
+    }
+
+    private VspNic buildVspNic(String uuid, String macAddress, String ip, long networkId, NicSecondaryIpVO nicSecondaryIp) {
         VspNic.Builder vspNicBuilder = new VspNic.Builder()
                 .uuid(uuid)
                 .macAddress(macAddress)
                 .useStaticIp(true)
                 .ip(ip);
+
+        if (nicSecondaryIp != null) {
+            vspNicBuilder.secondaryIpUuid(nicSecondaryIp.getUuid()).secondaryIpAddress(nicSecondaryIp.getIp4Address());
+        }
 
         Network network = _networkDao.findById(networkId);
         NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
@@ -395,6 +425,10 @@ public class NuageVspEntityBuilder {
                 .vlanNetmask(staticNatVlan.getVlanNetmask())
                 .vlanUnderlay(NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, staticNatVlan));
 
+        if (staticNatIp.getVmIp() != null) {
+            vspStaticNatBuilder.destinationIp(staticNatIp.getVmIp() + "/32");
+        }
+
         if (vspNic != null) {
             vspStaticNatBuilder.nic(vspNic);
         }
@@ -403,11 +437,24 @@ public class NuageVspEntityBuilder {
     }
 
     public VspStaticNat buildVspStaticNat(Boolean forRevoke, IPAddressVO staticNatIp, VlanVO staticNatVlan, NicVO nic) {
-        VspNic vspNic = (nic != null) ?buildVspNic(nic) : null;
+        NicSecondaryIpVO nicSecondaryIp = null;
+
+        if (nic == null && staticNatIp.getAssociatedWithVmId() != null && staticNatIp.getVmIp() != null) {
+            nicSecondaryIp = _nicSecondaryIpDao.findByIp4AddressAndInstanceId(staticNatIp.getAssociatedWithVmId(), staticNatIp.getVmIp());
+            if (nicSecondaryIp != null) {
+                nic = _nicDao.findById(nicSecondaryIp.getNicId());
+            }
+        }
+
+        VspNic vspNic = (nic != null) ? buildVspNic(nic, nicSecondaryIp) : null;
         return buildVspStaticNat(forRevoke, staticNatIp, staticNatVlan, vspNic);
     }
 
     public VspAclRule buildVspAclRule(FirewallRule firewallRule, Network network) {
+        return buildVspAclRule(firewallRule, network, null);
+    }
+
+    public VspAclRule buildVspAclRule(FirewallRule firewallRule, Network network, IPAddressVO staticNat) {
         VspAclRule.Builder vspAclRuleBuilder = new VspAclRule.Builder()
                 .uuid(firewallRule.getUuid())
                 .protocol(firewallRule.getProtocol())
@@ -415,35 +462,25 @@ public class NuageVspEntityBuilder {
                 .endPort(firewallRule.getSourcePortEnd())
                 .sourceCidrList(firewallRule.getSourceCidrList())
                 .priority(-1)
-                .type(VspAclRule.ACLType.Firewall);
-
-        switch (firewallRule.getState()) {
-            case Active:
-                vspAclRuleBuilder.state(VspAclRule.ACLState.Active); break;
-            case Add:
-                vspAclRuleBuilder.state(VspAclRule.ACLState.Add); break;
-            case Revoke:
-                vspAclRuleBuilder.state(VspAclRule.ACLState.Revoke);
-        }
-
-        switch (firewallRule.getTrafficType()) {
-            case Ingress:
-                vspAclRuleBuilder.trafficType(VspAclRule.ACLTrafficType.Ingress); break;
-            case Egress:
-                vspAclRuleBuilder.trafficType(VspAclRule.ACLTrafficType.Egress);
-        }
+                .type(VspAclRule.ACLType.Firewall)
+                .state(getEnumValue(firewallRule.getState(), VspAclRule.ACLState.class))
+                .trafficType(getEnumValue(firewallRule.getTrafficType(), VspAclRule.ACLTrafficType.class));
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (firewallRule.getTrafficType() == FirewallRule.TrafficType.Egress && networkOffering.getEgressDefaultPolicy()) {
-            vspAclRuleBuilder.action(VspAclRule.ACLAction.Deny);
+            vspAclRuleBuilder.deny();
         } else {
-            vspAclRuleBuilder.action(VspAclRule.ACLAction.Allow);
+            vspAclRuleBuilder.allow();
         }
 
-        if (firewallRule.getSourceIpAddressId() != null) {
-            IPAddressVO ipAddress = _ipAddressDao.findById(firewallRule.getSourceIpAddressId());
-            if (ipAddress != null) {
-                vspAclRuleBuilder.sourceIpAddress(ipAddress.getVmIp() + "/32");
+        if (staticNat == null && firewallRule.getSourceIpAddressId() != null) {
+            IPAddressVO staticNatIp = _ipAddressDao.findById(firewallRule.getSourceIpAddressId());
+
+            if (staticNatIp != null) {
+                VlanVO staticNatVlan = _vlanDao.findById(staticNatIp.getVlanId());
+                NicVO nic = _nicDao.findByIp4AddressAndNetworkId(staticNatIp.getVmIp(), staticNatIp.getAssociatedWithNetworkId());
+
+                vspAclRuleBuilder.staticNat(buildVspStaticNat(null, staticNatIp, staticNatVlan, nic));
             }
         }
 
@@ -451,7 +488,7 @@ public class NuageVspEntityBuilder {
     }
 
     public VspAclRule buildVspAclRule(NetworkACLItem networkAcl) {
-        VspAclRule.Builder vspAclRuleBuilder = new VspAclRule.Builder()
+        return new VspAclRule.Builder()
                 .uuid(networkAcl.getUuid())
                 .protocol(networkAcl.getProtocol())
                 .startPort(networkAcl.getSourcePortStart())
@@ -459,32 +496,11 @@ public class NuageVspEntityBuilder {
                 .sourceIpAddress(null)
                 .sourceCidrList(networkAcl.getSourceCidrList())
                 .priority(networkAcl.getNumber())
-                .type(VspAclRule.ACLType.NetworkACL);
-
-        switch (networkAcl.getState()) {
-            case Active:
-                vspAclRuleBuilder.state(VspAclRule.ACLState.Active); break;
-            case Add:
-                vspAclRuleBuilder.state(VspAclRule.ACLState.Add); break;
-            case Revoke:
-                vspAclRuleBuilder.state(VspAclRule.ACLState.Revoke);
-        }
-
-        switch (networkAcl.getTrafficType()) {
-            case Ingress:
-                vspAclRuleBuilder.trafficType(VspAclRule.ACLTrafficType.Ingress); break;
-            case Egress:
-                vspAclRuleBuilder.trafficType(VspAclRule.ACLTrafficType.Egress);
-        }
-
-        switch (networkAcl.getAction()) {
-            case Allow:
-                vspAclRuleBuilder.action(VspAclRule.ACLAction.Allow); break;
-            case Deny:
-                vspAclRuleBuilder.action(VspAclRule.ACLAction.Deny);
-        }
-
-        return vspAclRuleBuilder.build();
+                .type(VspAclRule.ACLType.NetworkACL)
+                .state(getEnumValue(networkAcl.getState(), VspAclRule.ACLState.class))
+                .trafficType(getEnumValue(networkAcl.getTrafficType(), VspAclRule.ACLTrafficType.class))
+                .action(getEnumValue(networkAcl.getAction(), VspAclRule.ACLAction.class))
+                .build();
     }
 
     /** Build VspDhcpVMOption to put on the VM interface */

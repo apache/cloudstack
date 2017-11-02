@@ -58,6 +58,7 @@ import com.cloud.agent.api.guru.DeallocateVmVspCommand;
 import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
 import com.cloud.agent.api.guru.ReserveVmInterfaceVspCommand;
 import com.cloud.agent.api.guru.TrashNetworkVspCommand;
+import com.cloud.agent.api.manager.ImplementNetworkVspAnswer;
 import com.cloud.host.Host;
 
 import static org.junit.Assert.assertEquals;
@@ -152,7 +153,7 @@ public class NuageVspResourceTest extends NuageTest {
         VspNetwork vspNetwork = buildVspNetwork();
         VspDhcpDomainOption vspDhcpOptions = buildspDhcpDomainOption();
         ImplementNetworkVspCommand cmd = new ImplementNetworkVspCommand(vspNetwork, vspDhcpOptions);
-        com.cloud.agent.api.Answer implNtwkAns = _resource.executeRequest(cmd);
+        ImplementNetworkVspAnswer implNtwkAns = (ImplementNetworkVspAnswer)_resource.executeRequest(cmd);
         assertTrue(implNtwkAns.getResult());
         verify(_mockNuageVspGuruClient).implement(vspNetwork, vspDhcpOptions);
     }
