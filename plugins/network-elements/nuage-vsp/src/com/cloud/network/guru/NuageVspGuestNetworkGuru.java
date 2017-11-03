@@ -34,8 +34,6 @@ import net.nuage.vsp.acs.client.api.model.VspNic;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 import net.nuage.vsp.acs.client.api.model.VspVm;
 
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedListMultimap;
