@@ -1409,21 +1409,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 if (value != null && value) {
                     cloneType = UserVmCloneType.full;
                 }
-                try {
-                    UserVmCloneSettingVO cloneSettingVO = _vmCloneSettingDao.findByVmId(vm.getId());
-                    if (cloneSettingVO != null){
-                        if (! cloneSettingVO.getCloneType().equals(cloneType.toString())){
-                            cloneSettingVO.setCloneType(cloneType.toString());
-                            _vmCloneSettingDao.update(cloneSettingVO.getVmId(), cloneSettingVO);
-                        }
-                    }
-                    else {
-                        UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(vm.getId(), cloneType.toString());
-                        _vmCloneSettingDao.persist(vmCloneSettingVO);
+                UserVmCloneSettingVO cloneSettingVO = _vmCloneSettingDao.findByVmId(vm.getId());
+                if (cloneSettingVO != null){
+                    if (! cloneSettingVO.getCloneType().equals(cloneType.toString())){
+                        cloneSettingVO.setCloneType(cloneType.toString());
+                        _vmCloneSettingDao.update(cloneSettingVO.getVmId(), cloneSettingVO);
                     }
                 }
-                catch (Throwable e){
-                    s_logger.debug("[NSX_PLUGIN_LOG] ERROR: " + e.getMessage());
+                else {
+                    UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(vm.getId(), cloneType.toString());
+                    _vmCloneSettingDao.persist(vmCloneSettingVO);
                 }
             }
 
