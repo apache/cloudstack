@@ -291,7 +291,7 @@ install -D packaging/systemd/cloudstack-management.service ${RPM_BUILD_ROOT}%{_u
 install -D packaging/systemd/cloudstack-management.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-management
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
-install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
+install -D server/target/conf/cloudstack-catalina7.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 
 chmod 440 ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
