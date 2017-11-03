@@ -52,6 +52,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -1696,21 +1697,32 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
-    public boolean moveUser(long id, long newAccountId) {
-        UserVO user = getValidUserVO(id);
+    public boolean moveUser(MoveUserCmd cmd) {
+        UserVO user = getValidUserVO(cmd.getId());
         Account oldAccount = _accountDao.findById(user.getAccountId());
-        Account newAccount = _accountDao.findById(newAccountId);
         checkAccountAndAccess(user, oldAccount);
+
+        Account newAccount = null;
+        if (StringUtils.isNotBlank(cmd.getAccountName())) {
+            newAccount = _accountDao.findEnabledAccount(cmd.getAccountName(), oldAccount.getDomainId());
+        }
+        if (newAccount == null && cmd.getAccountId() != null) {
+            newAccount = _accountDao.findById(cmd.getAccountId());
+        } else {
+            throw new CloudRuntimeException("no account name or account id. this should have been caught before this point");
+        }
+
         if(newAccount.getDomainId() != oldAccount.getDomainId()) {
             // not in scope
             throw new InvalidParameterValueException("movin a user from an account in one domain to an account in annother domain is not supported!");
         }
+        long newAccountId = newAccount.getAccountId();
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 UserVO newUser = new UserVO(user);
                 newUser.setAccountId(newAccountId);
-                boolean marksucceeded = _userDao.remove(id);
+                boolean marksucceeded = _userDao.remove(cmd.getId());
                 UserVO persisted = _userDao.persist(newUser);
                 return marksucceeded && persisted.getUuid().equals(user.getUuid());
             }

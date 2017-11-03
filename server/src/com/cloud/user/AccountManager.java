@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -156,9 +157,16 @@ public interface AccountManager extends AccountService, Configurable{
     boolean deleteUser(DeleteUserCmd deleteUserCmd);
 
     /**
+     * moves a user to another account within the same domain
+     * @param moveUserCmd
+     * @return true if the user was successfully moved
+     */
+    boolean moveUser(MoveUserCmd moveUserCmd);
+
+    /**
      * Update a user by userId
      *
-     * @param userId
+     * @param cmd
      * @return UserAccount object
      */
     UserAccount updateUser(UpdateUserCmd cmd);
