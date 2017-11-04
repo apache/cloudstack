@@ -16,7 +16,7 @@
 # under the License.
 
 # The binding interface for the management server
-bind.interface=
+bind.interface=::
 
 # The service context path where URL requests should be served
 context.path=/client
