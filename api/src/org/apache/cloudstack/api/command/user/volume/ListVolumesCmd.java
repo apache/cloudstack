@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -63,6 +64,9 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the pod id the disk volume belongs to")
     private Long podId;
 
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the cluster id the disk volume belongs to", authorized = {RoleType.Admin})
+    private Long clusterId;
+
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of disk volume")
     private String type;
 
@@ -96,6 +100,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
 
     public Long getHostId() {
         return hostId;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     public Long getId() {

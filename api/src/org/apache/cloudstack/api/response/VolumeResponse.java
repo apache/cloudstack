@@ -228,9 +228,36 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     String chainInfo;
 
     @SerializedName(ApiConstants.SNAPSHOT_QUIESCEVM)
-    @Param(description = "need quiesce vm or not when taking snapshot", since="4.3")
+    @Param(description = "need quiesce vm or not when taking snapshot", since = "4.3")
     private boolean needQuiescevm;
 
+    @SerializedName(ApiConstants.PHYSICAL_SIZE)
+    @Param(description = "the bytes alloaated")
+    private Long physicalsize;
+
+    @SerializedName(ApiConstants.VIRTUAL_SIZE)
+    @Param(description = "the bytes actually consumed on disk")
+    private Long virtualsize;
+
+    @SerializedName(ApiConstants.UTILIZATION)
+    @Param(description = "the disk utilization")
+    private String utilization;
+
+    @SerializedName(ApiConstants.CLUSTER_ID)
+    @Param(description = "cluster id of the volume")
+    private String clusterid;
+
+    @SerializedName(ApiConstants.CLUSTER_NAME)
+    @Param(description = "cluster name where the volume is allocated")
+    private String clustername;
+
+    @SerializedName(ApiConstants.POD_ID)
+    @Param(description = "pod id of the volume")
+    private String podid;
+
+    @SerializedName(ApiConstants.POD_NAME)
+    @Param(description = "pod name of the volume")
+    private String podname;
 
     public String getPath() {
         return path;
@@ -301,7 +328,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.virtualMachineState = virtualMachineState;
     }
 
-    public void setProvisioningType(String provisioningType){
+    public void setProvisioningType(String provisioningType) {
         this.provisioningType = provisioningType;
     }
 
@@ -649,4 +676,61 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     public Boolean getDisplayVolume() {
         return displayVolume;
     }
+
+    public Long getPhysicalsize() {
+        return physicalsize;
+    }
+
+    public void setPhysicalsize(Long physicalsize) {
+        this.physicalsize = physicalsize;
+    }
+
+    public Long getVirtualsize() {
+        return virtualsize;
+    }
+
+    public void setVirtualsize(Long virtualsize) {
+        this.virtualsize = virtualsize;
+    }
+
+    public String getUtilization() {
+        return utilization;
+    }
+
+    public void setUtilization(String utilization) {
+        this.utilization = utilization;
+    }
+
+    public String getClusterId() {
+        return clusterid;
+    }
+
+    public void setClusterId(String clusterid) {
+        this.clusterid = clusterid;
+    }
+
+    public String getClusterName() {
+        return clustername;
+    }
+
+    public void setClusterName(String clustername) {
+        this.clustername = clustername;
+    }
+
+    public String getPodId() {
+        return podid;
+    }
+
+    public void setPodId(String podid) {
+        this.podid = podid;
+    }
+
+    public String getPodName() {
+        return podname;
+    }
+
+    public void setPodName(String podname) {
+        this.podname = podname;
+    }
+
 }

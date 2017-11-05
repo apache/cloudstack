@@ -315,7 +315,7 @@ public class DatabaseConfig {
 
         s_defaultConfigurationValues.put("host.stats.interval", "60000");
         s_defaultConfigurationValues.put("storage.stats.interval", "60000");
-        //s_defaultConfigurationValues.put("volume.stats.interval", "-1");
+        s_defaultConfigurationValues.put("volume.stats.interval", "60000");
         s_defaultConfigurationValues.put("port", "8250");
         s_defaultConfigurationValues.put("integration.api.port", "8096");
         s_defaultConfigurationValues.put("usage.stats.job.exec.time", "00:15"); // run at 12:15am
