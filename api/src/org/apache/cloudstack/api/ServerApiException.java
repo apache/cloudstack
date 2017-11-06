@@ -53,6 +53,7 @@ public class ServerApiException extends CloudRuntimeException {
                     addProxyObject(idList.get(i));
                 }
             }
+            setContextId(rt.getContextId());
             setCSErrorCode(rt.getCSErrorCode());
         } else if (cause instanceof CloudException) {
             CloudException rt = (CloudException)cause;
@@ -62,6 +63,7 @@ public class ServerApiException extends CloudRuntimeException {
                     addProxyObject(idList.get(i));
                 }
             }
+            setContextId(rt.getContextId());
             setCSErrorCode(rt.getCSErrorCode());
         }
     }

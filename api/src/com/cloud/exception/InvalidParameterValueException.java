@@ -22,8 +22,13 @@ public class InvalidParameterValueException extends CloudRuntimeException {
 
     private static final long serialVersionUID = -2232066904895010203L;
 
+    @Deprecated
     public InvalidParameterValueException(String message) {
         super(message);
+    }
+
+    public InvalidParameterValueException(String callId, String message) {
+        super(callId, message);
     }
 
 }

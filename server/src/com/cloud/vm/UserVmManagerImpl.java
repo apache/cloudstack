@@ -1142,40 +1142,40 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "unable to find a virtual machine with id " + vmId);
         }
 
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
-            throw new InvalidParameterValueException("NIC cannot be added to VM with VM Snapshots");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "NIC cannot be added to VM with VM Snapshots");
         }
 
         NetworkVO network = _networkDao.findById(networkId);
         if (network == null) {
-            throw new InvalidParameterValueException("unable to find a network with id " + networkId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "unable to find a network with id " + networkId);
         }
 
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
         if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
                 && !(network.getAclType() == ACLType.Account && network.getAccountId() == vmInstance.getAccountId())) {
-            throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vmId: " + vmId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "only shared network or isolated network with the same account_id can be added to vmId: " + vmId);
         }
         }
 
         List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
         for (NicVO nic : allNics) {
             if (nic.getNetworkId() == network.getId())
-                throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
+                throw new CloudRuntimeException(cmd.getInjectedJobId(), "A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
         }
 
         if(_nicDao.findByNetworkIdAndMacAddress(networkId, macAddress) != null) {
-            throw new CloudRuntimeException("A NIC with this MAC address exists for network: " + network.getUuid());
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "A NIC with this MAC address exists for network: " + network.getUuid());
         }
 
         NicProfile profile = new NicProfile(ipAddress, null, macAddress);
         if (ipAddress != null) {
             if (!(NetUtils.isValidIp(ipAddress) || NetUtils.isValidIpv6(ipAddress))) {
-                throw new InvalidParameterValueException("Invalid format for IP address parameter: " + ipAddress);
+                throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Invalid format for IP address parameter: " + ipAddress);
             }
         }
 
@@ -1185,7 +1185,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify that zone is not Basic
         DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterId());
         if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
-            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't add a new NIC to a VM on a Basic Network");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't add a new NIC to a VM on a Basic Network");
         }
 
         // Perform account permission check on network
@@ -1193,7 +1193,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         //ensure network belongs in zone
         if (network.getDataCenterId() != vmInstance.getDataCenterId()) {
-            throw new CloudRuntimeException(vmInstance + " is in zone:" + vmInstance.getDataCenterId() + " but " + network + " is in zone:" + network.getDataCenterId());
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), vmInstance + " is in zone:" + vmInstance.getDataCenterId() + " but " + network + " is in zone:" + network.getDataCenterId());
         }
 
         // Get all vms hostNames in the network
@@ -1205,7 +1205,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (String hostName : hostNames) {
                 VMInstanceVO vm = _vmInstanceDao.findVMByHostName(hostName);
                 if (_networkModel.getNicInNetwork(vm.getId(), network.getId()) != null && vm.getHostName().equals(vmInstance.getHostName())) {
-                    throw new CloudRuntimeException(network + " already has a vm with host name: " + vmInstance.getHostName());
+                    throw new CloudRuntimeException(cmd.getInjectedJobId(), network + " already has a vm with host name: " + vmInstance.getHostName());
                 }
             }
         }
@@ -1217,11 +1217,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             guestNic = _itMgr.addVmToNetwork(vmInstance, network, profile);
             cleanUp = false;
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to add NIC to " + vmInstance + ": " + e);
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Unable to add NIC to " + vmInstance + ": " + e);
         } catch (InsufficientCapacityException e) {
-            throw new CloudRuntimeException("Insufficient capacity when adding NIC to " + vmInstance + ": " + e);
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Insufficient capacity when adding NIC to " + vmInstance + ": " + e);
         } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Concurrent operations on adding NIC to " + vmInstance + ": " + e);
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Concurrent operations on adding NIC to " + vmInstance + ": " + e);
         } finally {
             if(cleanUp) {
                 try {
@@ -1233,7 +1233,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (guestNic == null) {
-            throw new CloudRuntimeException("Unable to add NIC to " + vmInstance);
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Unable to add NIC to " + vmInstance);
         }
         CallContext.current().putContextParameter(Nic.class, guestNic.getUuid());
         s_logger.debug("Successful addition of " + network + " from " + vmInstance);
@@ -1249,22 +1249,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null) {
-            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Unable to find a virtual machine with id " + vmId);
         }
 
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
-            throw new InvalidParameterValueException("NIC cannot be removed from VM with VM Snapshots");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "NIC cannot be removed from VM with VM Snapshots");
         }
 
         NicVO nic = _nicDao.findById(nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("Unable to find a nic with id " + nicId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Unable to find a nic with id " + nicId);
         }
 
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
         if (network == null) {
-            throw new InvalidParameterValueException("Unable to find a network with id " + nic.getNetworkId());
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Unable to find a network with id " + nic.getNetworkId());
         }
 
         // Perform permission check on VM
@@ -1273,12 +1273,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify that zone is not Basic
         DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterId());
         if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
-            throw new InvalidParameterValueException("Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't remove a NIC from a VM on a Basic Network");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't remove a NIC from a VM on a Basic Network");
         }
 
         // check to see if nic is attached to VM
         if (nic.getInstanceId() != vmId) {
-            throw new InvalidParameterValueException(nic + " is not a nic on " + vmInstance);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), nic + " is not a nic on " + vmInstance);
         }
 
         // Perform account permission check on network
@@ -1286,26 +1286,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // don't delete default NIC on a user VM
         if (nic.isDefaultNic() && vmInstance.getType() == VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("Unable to remove nic from " + vmInstance + " in " + network + ", nic is default.");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Unable to remove nic from " + vmInstance + " in " + network + ", nic is default.");
         }
 
         // if specified nic is associated with PF/LB/Static NAT
         if (_rulesMgr.listAssociatedRulesForGuestNic(nic).size() > 0) {
-            throw new InvalidParameterValueException("Unable to remove nic from " + vmInstance + " in " + network + ", nic has associated Port forwarding or Load balancer or Static NAT rules.");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Unable to remove nic from " + vmInstance + " in " + network + ", nic has associated Port forwarding or Load balancer or Static NAT rules.");
         }
 
         boolean nicremoved = false;
         try {
             nicremoved = _itMgr.removeNicFromVm(vmInstance, nic);
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to remove " + network + " from " + vmInstance + ": " + e);
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Unable to remove " + network + " from " + vmInstance + ": " + e);
 
         } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Concurrent operations on removing " + network + " from " + vmInstance + ": " + e);
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Concurrent operations on removing " + network + " from " + vmInstance + ": " + e);
         }
 
         if (!nicremoved) {
-            throw new CloudRuntimeException("Unable to remove " + network + " from " + vmInstance);
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Unable to remove " + network + " from " + vmInstance);
         }
 
         s_logger.debug("Successful removal of " + network + " from " + vmInstance);
@@ -1321,21 +1321,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "unable to find a virtual machine with id " + vmId);
         }
 
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
-            throw new InvalidParameterValueException("NIC cannot be updated for VM with VM Snapshots");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "NIC cannot be updated for VM with VM Snapshots");
         }
 
         NicVO nic = _nicDao.findById(nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("unable to find a nic with id " + nicId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "unable to find a nic with id " + nicId);
         }
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
         if (network == null) {
-            throw new InvalidParameterValueException("unable to find a network with id " + nic.getNetworkId());
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "unable to find a network with id " + nic.getNetworkId());
         }
 
         // Perform permission check on VM
@@ -1344,7 +1344,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify that zone is not Basic
         DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterId());
         if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
-            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't change default NIC on a Basic Network");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't change default NIC on a Basic Network");
         }
 
         // no need to check permissions for network, we'll enumerate the ones they already have access to
@@ -1352,16 +1352,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         //check to see if nic is attached to VM
         if (nic.getInstanceId() != vmId) {
-            throw new InvalidParameterValueException(nic + " is not a nic on  " + vmInstance);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), nic + " is not a nic on  " + vmInstance);
         }
         // if current default equals chosen new default, Throw an exception
         if (nic.isDefaultNic()) {
-            throw new CloudRuntimeException("refusing to set default nic because chosen nic is already the default");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "refusing to set default nic because chosen nic is already the default");
         }
 
         //make sure the VM is Running or Stopped
         if ((vmInstance.getState() != State.Running) && (vmInstance.getState() != State.Stopped)) {
-            throw new CloudRuntimeException("refusing to set default " + vmInstance + " is not Running or Stopped");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "refusing to set default " + vmInstance + " is not Running or Stopped");
         }
 
         NicProfile existing = null;
@@ -1374,7 +1374,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (existing == null) {
             s_logger.warn("Failed to update default nic, no nic profile found for existing default network");
-            throw new CloudRuntimeException("Failed to find a nic profile for the existing default network. This is bad and probably means some sort of configuration corruption");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Failed to find a nic profile for the existing default network. This is bad and probably means some sort of configuration corruption");
         }
 
         Network oldDefaultNetwork = null;
@@ -1411,9 +1411,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             newdefault = _networkModel.getDefaultNetworkForVm(vmId);
             if (newdefault.getId() == existingdefaultnet.getId()) {
-                throw new CloudRuntimeException("Setting a default nic failed, and we had no default nic, but we were able to set it back to the original");
+                throw new CloudRuntimeException(cmd.getInjectedJobId(), "Setting a default nic failed, and we had no default nic, but we were able to set it back to the original");
             }
-            throw new CloudRuntimeException("Failed to change default nic to " + nic + " and now we have no default");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Failed to change default nic to " + nic + " and now we have no default");
         } else if (newdefault.getId() == nic.getNetworkId()) {
             s_logger.debug("successfully set default network to " + network + " for " + vmInstance);
             String nicIdString = Long.toString(nic.getId());
@@ -1429,7 +1429,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return _vmDao.findById(vmInstance.getId());
         }
 
-        throw new CloudRuntimeException("something strange happened, new default network(" + newdefault.getId() + ") is not null, and is not equal to the network("
+        throw new CloudRuntimeException(cmd.getInjectedJobId(), "something strange happened, new default network(" + newdefault.getId() + ") is not null, and is not equal to the network("
                 + nic.getNetworkId() + ") of the chosen nic");
     }
 
@@ -1442,34 +1442,34 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         //check whether the nic belongs to user vm.
         NicVO nicVO = _nicDao.findById(nicId);
         if (nicVO == null) {
-            throw new InvalidParameterValueException("There is no nic for the " + nicId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "There is no nic for the " + nicId);
         }
 
         if (nicVO.getVmType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("The nic is not belongs to user vm");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "The nic is not belongs to user vm");
         }
 
         UserVm vm = _vmDao.findById(nicVO.getInstanceId());
         if (vm == null) {
-            throw new InvalidParameterValueException("There is no vm with the nic");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "There is no vm with the nic");
         }
 
         Network network = _networkDao.findById(nicVO.getNetworkId());
         if (network == null) {
-            throw new InvalidParameterValueException("There is no network with the nic");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "There is no network with the nic");
         }
         // Don't allow to update vm nic ip if network is not in Implemented/Setup/Allocated state
         if (!(network.getState() == Network.State.Allocated || network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
-            throw new InvalidParameterValueException("Network is not in the right state to update vm nic ip. Correct states are: " + Network.State.Allocated + ", " + Network.State.Implemented + ", "
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Network is not in the right state to update vm nic ip. Correct states are: " + Network.State.Allocated + ", " + Network.State.Implemented + ", "
                     + Network.State.Setup);
         }
 
         NetworkOfferingVO offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (offering == null) {
-            throw new InvalidParameterValueException("There is no network offering with the network");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "There is no network offering with the network");
         }
         if (!_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty() && vm.getState() != State.Stopped) {
-            InvalidParameterValueException ex = new InvalidParameterValueException(
+            InvalidParameterValueException ex = new InvalidParameterValueException(cmd.getInjectedJobId(),
                     "VM is not Stopped, unable to update the vm nic having the specified id");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
@@ -1483,16 +1483,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.debug("Calling the ip allocation ...");
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         if (dc == null) {
-            throw new InvalidParameterValueException("There is no dc with the nic");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(), "There is no dc with the nic");
         }
         if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
             try {
                 ipaddr = _ipAddrMgr.allocateGuestIP(network, ipaddr);
             } catch (InsufficientAddressCapacityException e) {
-                throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, for insufficient address capacity");
+                throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Allocating ip to guest nic " + nicVO.getUuid() + " failed, for insufficient address capacity");
             }
             if (ipaddr == null) {
-                throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
+                throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
             }
 
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
@@ -1514,7 +1514,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _networkMgr.implementNetworkElementsAndResources(dest, context, network, offering);
                 } catch (Exception ex) {
                     s_logger.warn("Failed to implement network " + network + " elements and resources as a part of vm nic ip update due to ", ex);
-                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id) elements and resources as a part of vm nic ip update");
+                    CloudRuntimeException e = new CloudRuntimeException(cmd.getInjectedJobId(), "Failed to implement network (with specified id) elements and resources as a part of vm nic ip update");
                     e.addProxyObject(network.getUuid(), "networkId");
                     // restore to old ip address
                     if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
@@ -1534,14 +1534,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (dc.getNetworkType() == NetworkType.Basic) {
                 podId = vm.getPodIdToDeployIn();
                 if (podId == null) {
-                    throw new InvalidParameterValueException("vm pod id is null in Basic zone; can't decide the range for ip allocation");
+                    throw new InvalidParameterValueException(cmd.getInjectedJobId(), "vm pod id is null in Basic zone; can't decide the range for ip allocation");
                 }
             }
 
             try {
                 ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, ipOwner, ipaddr);
                 if (ipaddr == null) {
-                    throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
+                    throw new InvalidParameterValueException(cmd.getInjectedJobId(), "Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
                 }
                 final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nicVO.getNetworkId(), nicVO.getIPv4Address());
                 if (ip != null) {
@@ -1591,7 +1591,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             return vmInstance;
         } else {
-            throw new CloudRuntimeException("Failed to scale the VM");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(), "Failed to scale the VM");
         }
     }
 
@@ -1656,7 +1656,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
         if (vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware && vmInstance.getHypervisorType() != HypervisorType.Simulator) {
             s_logger.info("Scaling the VM dynamically is not supported for VMs running on Hypervisor "+vmInstance.getHypervisorType());
-            throw new InvalidParameterValueException("Scaling the VM dynamically is not supported for VMs running on Hypervisor "+vmInstance.getHypervisorType());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Scaling the VM dynamically is not supported for VMs running on Hypervisor "+vmInstance.getHypervisorType());
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -1684,7 +1685,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Don't allow to scale when (Any of the new values less than current values) OR (All current and new values are same)
         if ((newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu) || (newSpeed == currentSpeed && newMemory == currentMemory && newCpu == currentCpu)) {
-            throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering(speed=" + newSpeed + ",cpu=" + newCpu + ",memory=," + newMemory
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Only scaling up the vm is supported, new service offering(speed=" + newSpeed + ",cpu=" + newCpu + ",memory=," + newMemory
                     + ")" + " should have at least one value(cpu/ram) greater than old value and no resource value less than older(speed=" + currentSpeed + ",cpu=" + currentCpu
                     + ",memory=," + currentMemory + ")");
         }
@@ -1698,7 +1700,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String newVgpuType = newDetails.get("vgpuType");
         if(currentVgpuType != null) {
             if(newVgpuType == null || !newVgpuType.equalsIgnoreCase(currentVgpuType)) {
-                throw new InvalidParameterValueException("Dynamic scaling of vGPU type is not supported. VM has vGPU Type: " + currentVgpuType);
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Dynamic scaling of vGPU type is not supported. VM has vGPU Type: " + currentVgpuType);
             }
         }
 
@@ -1719,18 +1722,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check zone wide flag
             boolean enableDynamicallyScaleVm = EnableDynamicallyScaleVm.valueIn(vmInstance.getDataCenterId());
             if (!enableDynamicallyScaleVm) {
-               throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
+               throw new PermissionDeniedException(CallContext.current().getContextId(),
+                       "Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
             }
 
             // Check vm flag
             if (!vmInstance.isDynamicallyScalable()) {
-                throw new CloudRuntimeException("Unable to Scale the vm: " + vmInstance.getUuid() + " as vm does not have tools to support dynamic scaling");
+                throw new CloudRuntimeException(CallContext.current().getContextId(),
+                        "Unable to Scale the vm: " + vmInstance.getUuid() + " as vm does not have tools to support dynamic scaling");
             }
 
             // Check disable threshold for cluster is not crossed
             HostVO host = _hostDao.findById(vmInstance.getHostId());
             if (_capacityMgr.checkIfClusterCrossesThreshold(host.getClusterId(), cpuDiff, memoryDiff)) {
-                throw new CloudRuntimeException("Unable to scale vm: " + vmInstance.getUuid() + " due to insufficient resources");
+                throw new CloudRuntimeException(CallContext.current().getContextId(),
+                        "Unable to scale vm: " + vmInstance.getUuid() + " due to insufficient resources");
             }
 
             while (retry-- != 0) { // It's != so that it can match -1.
@@ -1880,26 +1886,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final UserVmVO vm = _vmDao.findById(vmId);
 
         if (vm == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "unable to find a virtual machine with id " + vmId);
         }
 
         // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
         if (!_accountMgr.isAdmin(userId) && !AllowUserExpungeRecoverVm.valueIn(userId)) {
-            throw new PermissionDeniedException("Recovering a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "Recovering a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
         }
 
         if (vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is removed: " + vmId);
             }
-            throw new InvalidParameterValueException("Unable to find vm by id " + vmId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to find vm by id " + vmId);
         }
 
         if (vm.getState() != State.Destroyed) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("vm is not in the right state: " + vmId);
             }
-            throw new InvalidParameterValueException("Vm with id " + vmId + " is not in the right state");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Vm with id " + vmId + " is not in the right state");
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -1913,7 +1923,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // if the account is deleted, throw error
                 if (account.getRemoved() != null) {
-                    throw new CloudRuntimeException("Unable to recover VM as the account is deleted");
+                    throw new CloudRuntimeException(CallContext.current().getContextId(),
+                            "Unable to recover VM as the account is deleted");
                 }
 
                 // Get serviceOffering for Virtual Machine
@@ -1928,10 +1939,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 try {
                     if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
                         s_logger.debug("Unable to recover the vm because it is not in the correct state: " + vmId);
-                        throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Unable to recover the vm because it is not in the correct state: " + vmId);
                     }
                 } catch (NoTransitionException e) {
-                    throw new InvalidParameterValueException("Unable to recover the vm because it is not in the correct state: " + vmId);
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Unable to recover the vm because it is not in the correct state: " + vmId);
                 }
 
                 // Recover the VM's disks
@@ -2352,7 +2365,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Input validation and permission checks
         UserVmVO vmInstance = _vmDao.findById(id);
         if (vmInstance == null) {
-            throw new InvalidParameterValueException("unable to find virtual machine with id " + id);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "unable to find virtual machine with id " + id);
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -2449,19 +2463,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throws ResourceUnavailableException, InsufficientCapacityException {
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
-            throw new CloudRuntimeException("Unable to find virtual machine with id " + id);
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Unable to find virtual machine with id " + id);
         }
 
         if(instanceName != null){
             VMInstanceVO vmInstance = _vmInstanceDao.findVMByInstanceName(instanceName);
             if(vmInstance != null && vmInstance.getId() != id){
-                throw new CloudRuntimeException("Instance name : " + instanceName + " is not unique");
+                throw new CloudRuntimeException(CallContext.current().getContextId(),
+                        "Instance name : " + instanceName + " is not unique");
             }
         }
 
         if (vm.getState() == State.Error || vm.getState() == State.Expunging) {
             s_logger.error("vm is not in the right state: " + id);
-            throw new InvalidParameterValueException("Vm with id " + id + " is not in the right state");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Vm with id " + id + " is not in the right state");
         }
 
         if (displayName == null) {
@@ -2474,7 +2491,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         ServiceOffering offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
         if (!offering.getOfferHA() && ha) {
-            throw new InvalidParameterValueException("Can't enable ha for the vm as it's created from the Service offering having HA disabled");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Can't enable ha for the vm as it's created from the Service offering having HA disabled");
         }
 
         if (isDisplayVmEnabled == null) {
@@ -2511,7 +2529,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
 
         if (securityGroupIdList != null && isVMware) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Security group feature is not supported for vmWare hypervisor");
         } else {
             // Get default guest network in Basic zone
             Network defaultNetwork = null;
@@ -2541,7 +2560,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     // Add instance in provided groups
                     _securityGroupMgr.addInstanceToGroups(id, securityGroupIdList);
                 } else {
-                    throw new InvalidParameterValueException("Virtual machine must be stopped prior to update security groups ");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Virtual machine must be stopped prior to update security groups ");
                 }
             }
         }
@@ -2571,7 +2591,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (result) {
                 s_logger.debug("User data successfully updated for vm id=" + id);
             } else {
-                throw new CloudRuntimeException("Failed to reset userdata for the virtual machine ");
+                throw new CloudRuntimeException(CallContext.current().getContextId(),
+                        "Failed to reset userdata for the virtual machine ");
             }
         }
 
@@ -2603,7 +2624,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.UserData)) {
             UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(network);
             if (element == null) {
-                throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
+                throw new CloudRuntimeException(CallContext.current().getContextId(),
+                        "Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
             }
             boolean result = element.saveUserData(network, nicProfile, vmProfile);
             if (!result) {
@@ -2632,7 +2654,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                    "unable to find a virtual machine with id " + vmId);
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -2647,7 +2670,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return restoreVMInternal(caller, vmInstance, null);
             }
         } else {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                    "Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
         }
 
         UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId);
@@ -2676,26 +2700,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
         if (expunge && !_accountMgr.isAdmin(ctx.getCallingAccount().getId()) && !AllowUserExpungeRecoverVm.valueIn(cmd.getEntityOwnerId())) {
-            throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only. Or when the allow.user.expunge.recover.vm key is set.");
+            throw new PermissionDeniedException(cmd.getInjectedJobId(),
+                    "Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only. Or when the allow.user.expunge.recover.vm key is set.");
         }
         // check if VM exists
         UserVmVO vm = _vmDao.findById(vmId);
 
         if (vm == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                    "unable to find a virtual machine with id " + vmId);
         }
 
         // check if there are active volume snapshots tasks
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
         if (checkStatusOfVolumeSnapshots(vmId, Volume.Type.ROOT)) {
-            throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, vm destroy is not permitted, please try again later.");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(),
+                    "There is/are unbacked up snapshot(s) on ROOT volume, vm destroy is not permitted, please try again later.");
         }
         s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
             if (!expunge(vm, ctx.getCallingUserId(), ctx.getCallingAccount())) {
-                throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
+                throw new CloudRuntimeException(cmd.getInjectedJobId(),
+                        "Failed to expunge vm " + destroyedVm);
             }
         }
 
@@ -2718,7 +2746,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isNameInUse = _vmGroupDao.isNameInUse(accountId, groupName);
 
         if (isNameInUse) {
-            throw new InvalidParameterValueException("Unable to create vm group, a group with name " + groupName + " already exists for account " + accountId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to create vm group, a group with name " + groupName + " already exists for account " + accountId);
         }
 
         return createVmGroup(groupName, accountId);
@@ -2759,7 +2788,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify input parameters
         InstanceGroupVO group = _vmGroupDao.findById(groupId);
         if ((group == null) || (group.getRemoved() != null)) {
-            throw new InvalidParameterValueException("unable to find a vm group with id " + groupId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "unable to find a vm group with id " + groupId);
         }
 
         _accountMgr.checkAccess(caller, null, true, group);
@@ -2810,7 +2840,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         InstanceGroupVO ngrpLock = _vmGroupDao.lockRow(groupFinal.getId(), false);
                 if (ngrpLock == null) {
                             s_logger.warn("Failed to acquire lock on vm group id=" + groupFinal.getId() + " name=" + groupFinal.getName());
-                            throw new CloudRuntimeException("Failed to acquire lock on vm group id=" + groupFinal.getId() + " name=" + groupFinal.getName());
+                            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                                    "Failed to acquire lock on vm group id=" + groupFinal.getId() + " name=" + groupFinal.getName());
                 }
 
                 // Currently don't allow to assign a vm to more than one group
@@ -2906,7 +2937,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
 
         if (defaultNetwork == null) {
-            throw new InvalidParameterValueException("Unable to find a default network to start a vm");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to find a default network to start a vm");
         } else {
             networkList.add(_networkDao.findById(defaultNetwork.getId()));
         }
@@ -2914,7 +2946,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
 
         if (securityGroupIdList != null && isVmWare) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Security group feature is not supported for vmWare hypervisor");
         } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
             //add the default securityGroup only if no security group is specified
             if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
@@ -2965,7 +2998,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (networkIdList == null || networkIdList.isEmpty()) {
             Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
             if (networkWithSecurityGroup == null) {
-                throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getUuid());
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "No network with security enabled is found in zone id=" + zone.getUuid());
             }
 
             networkList.add(_networkDao.findById(networkWithSecurityGroup.getId()));
@@ -2973,21 +3007,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
             if (isVmWare) {
-                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Security group feature is not supported for vmWare hypervisor");
             }
             // Only one network can be specified, and it should be security group enabled
             if (networkIdList.size() > 1) {
-                throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Only support one network per VM if security group enabled");
             }
 
             NetworkVO network = _networkDao.findById(networkIdList.get(0));
 
             if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Unable to find network by id " + networkIdList.get(0).longValue());
             }
 
             if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
-                throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Network is not security group enabled: " + network.getId());
             }
 
             networkList.add(network);
@@ -2999,20 +3037,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 NetworkVO network = _networkDao.findById(networkId);
 
                 if (network == null) {
-                    throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Unable to find network by id " + networkIdList.get(0).longValue());
                 }
 
                 boolean isSecurityGroupEnabled = _networkModel.isSecurityGroupSupportedInNetwork(network);
                 if (isSecurityGroupEnabled) {
                     if (networkIdList.size() > 1) {
-                        throw new InvalidParameterValueException("Can't create a vm with multiple networks one of" + " which is Security Group enabled");
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Can't create a vm with multiple networks one of" + " which is Security Group enabled");
                     }
 
                     isSecurityGroupEnabledNetworkUsed = true;
                 }
 
                 if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
-                    throw new InvalidParameterValueException("Can specify only Shared Guest networks when" + " deploy vm in Advance Security Group enabled zone");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Can specify only Shared Guest networks when" + " deploy vm in Advance Security Group enabled zone");
                 }
 
                 // Perform account permission check
@@ -3083,7 +3124,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
             if (requiredOfferings.size() < 1) {
-                throw new InvalidParameterValueException("Unable to find network offering with availability=" + Availability.Required
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Unable to find network offering with availability=" + Availability.Required
                                 + " to automatically create the network as a part of vm creation");
             }
 
@@ -3091,14 +3133,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // get Virtual networks
                 List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
                 if (virtualNetworks == null) {
-                    throw new InvalidParameterValueException("No (virtual) networks are found for account " + owner);
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "No (virtual) networks are found for account " + owner);
                 }
                 if (virtualNetworks.isEmpty()) {
                     long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                     // Validate physical network
                     PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
                     if (physicalNetwork == null) {
-                        throw new InvalidParameterValueException("Unable to find physical network with id: " + physicalNetworkId + " and tag: "
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Unable to find physical network with id: " + physicalNetworkId + " and tag: "
                                 + requiredOfferings.get(0).getTags());
                     }
                     s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
@@ -3108,12 +3152,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         defaultNetwork = _networkDao.findById(newNetwork.getId());
                     }
                 } else if (virtualNetworks.size() > 1) {
-                    throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
                 } else {
                     defaultNetwork = _networkDao.findById(virtualNetworks.get(0).getId());
                 }
             } else {
-                throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);
             }
 
             if (defaultNetwork != null) {
@@ -3124,17 +3170,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (Long networkId : networkIdList) {
                 NetworkVO network = _networkDao.findById(networkId);
                 if (network == null) {
-                    throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Unable to find network by id " + networkIdList.get(0).longValue());
                 }
                 if (network.getVpcId() != null) {
                     // Only ISOs, XenServer, KVM, and VmWare template types are
                     // supported for vpc networks
                     if (template.getFormat() != ImageFormat.ISO && !vpcSupportedHTypes.contains(template.getHypervisorType())) {
-                        throw new InvalidParameterValueException("Can't create vm from template with hypervisor " + template.getHypervisorType() + " in vpc network " + network);
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Can't create vm from template with hypervisor " + template.getHypervisorType() + " in vpc network " + network);
                     } else if (template.getFormat() == ImageFormat.ISO && !vpcSupportedHTypes.contains(hypervisor)) {
                         // Only XenServer, KVM, and VMware hypervisors are supported
                         // for vpc networks
-                        throw new InvalidParameterValueException("Can't create vm of hypervisor type " + hypervisor + " in vpc network");
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Can't create vm of hypervisor type " + hypervisor + " in vpc network");
 
                     }
                 }
@@ -3144,7 +3193,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // don't allow to use system networks
                 NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                 if (networkOffering.isSystemOnly()) {
-                    throw new InvalidParameterValueException("Network id=" + networkId + " is system only and can't be used for vm deployment");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Network id=" + networkId + " is system only and can't be used for vm deployment");
                 }
                 networkList.add(network);
             }
@@ -3156,7 +3206,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     public void checkNameForRFCCompliance(String name) {
         if (!NetUtils.verifyDomainNameLabel(name, true)) {
-            throw new InvalidParameterValueException("Invalid name. Vm name can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Invalid name. Vm name can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
                     + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
         }
     }
@@ -3171,7 +3222,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, owner);
 
         if (owner.getState() == Account.State.disabled) {
-            throw new PermissionDeniedException("The owner of vm to deploy is disabled: " + owner);
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "The owner of vm to deploy is disabled: " + owner);
         }
         VMTemplateVO template = _templateDao.findById(tmplt.getId());
         if (template != null) {
@@ -3184,7 +3236,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
                 && !_accountMgr.isRootAdmin(caller.getId())) {
-            throw new PermissionDeniedException(
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
                     "Cannot perform this operation, Zone is currently disabled: "
                             + zone.getId());
         }
@@ -3194,7 +3246,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (dedicatedZone != null) {
             DomainVO domain = _domainDao.findById(dedicatedZone.getDomainId());
             if (domain == null) {
-                throw new CloudRuntimeException("Unable to find the domain " + zone.getDomainId() + " for the zone: " + zone);
+                throw new CloudRuntimeException(CallContext.current().getContextId(),
+                        "Unable to find the domain " + zone.getDomainId() + " for the zone: " + zone);
             }
             // check that caller can operate with domain
             _configMgr.checkZoneAccess(caller, zone);
@@ -3220,12 +3273,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if (diskOffering != null && diskOffering.isCustomized()) {
                 if (diskSize == null) {
-                    throw new InvalidParameterValueException("This disk offering requires a custom size specified");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "This disk offering requires a custom size specified");
                 }
                 Long customDiskOfferingMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
                 Long customDiskOfferingMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
                 if ((diskSize < customDiskOfferingMinSize) || (diskSize > customDiskOfferingMaxSize)) {
-                    throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
                             + " Min:" + customDiskOfferingMinSize);
                 }
                 size=size+diskSize*(1024*1024*1024);
@@ -3242,7 +3297,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (Long securityGroupId : securityGroupIdList) {
                 SecurityGroup sg = _securityGroupDao.findById(securityGroupId);
                 if (sg == null) {
-                    throw new InvalidParameterValueException("Unable to find security group by id " + securityGroupId);
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Unable to find security group by id " + securityGroupId);
                 } else {
                     // verify permissions
                     _accountMgr.checkAccess(caller, null, true, owner, sg);
@@ -3255,9 +3311,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (Long affinityGroupId : affinityGroupIdList) {
                 AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
                 if (ag == null) {
-                    throw new InvalidParameterValueException("Unable to find affinity group " + ag);
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Unable to find affinity group " + ag);
                 } else if (!_affinityGroupService.isAffinityGroupProcessorAvailable(ag.getType())) {
-                    throw new InvalidParameterValueException("Affinity group type is not supported for group: " + ag + " ,type: " + ag.getType()
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Affinity group type is not supported for group: " + ag + " ,type: " + ag.getType()
                             + " , Please try again after removing the affinity group");
                 } else {
                     // verify permissions
@@ -3268,7 +3326,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         // make sure the owner of these entities is same
                         if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
                             if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
-                                throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's domain");
+                                throw new PermissionDeniedException(CallContext.current().getContextId(),
+                                        "Affinity Group " + ag + " does not belong to the VM's domain");
                             }
                         }
                     } else {
@@ -3289,12 +3348,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         HypervisorType hypervisorType = null;
         if (template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
             if (hypervisor == null || hypervisor == HypervisorType.None) {
-                throw new InvalidParameterValueException("hypervisor parameter is needed to deploy VM or the hypervisor parameter value passed is invalid");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "hypervisor parameter is needed to deploy VM or the hypervisor parameter value passed is invalid");
             }
             hypervisorType = hypervisor;
         } else {
             if (hypervisor != null && hypervisor != HypervisorType.None && hypervisor != template.getHypervisorType()) {
-                throw new InvalidParameterValueException("Hypervisor passed to the deployVm call, is different from the hypervisor type of the template");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Hypervisor passed to the deployVm call, is different from the hypervisor type of the template");
             }
             hypervisorType = template.getHypervisorType();
         }
@@ -3308,15 +3369,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (template.getTemplateType().equals(TemplateType.SYSTEM)) {
-            throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to use system template " + template.getId() + " to deploy a user vm");
         }
         List<VMTemplateZoneVO> listZoneTemplate = _templateZoneDao.listByZoneTemplate(zone.getId(), template.getId());
         if (listZoneTemplate == null || listZoneTemplate.isEmpty()) {
-            throw new InvalidParameterValueException("The template " + template.getId() + " is not available for use");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "The template " + template.getId() + " is not available for use");
         }
 
         if (isIso && !template.isBootable()) {
-            throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Installing from ISO requires an ISO that is bootable: " + template.getId());
         }
 
         // Check templates permissions
@@ -3331,7 +3395,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (sshKeyPair != null && !sshKeyPair.equals("")) {
             SSHKeyPair pair = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (pair == null) {
-                throw new InvalidParameterValueException("A key pair with name '" + sshKeyPair + "' was not found.");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "A key pair with name '" + sshKeyPair + "' was not found.");
             }
 
             sshPublicKey = pair.getPublicKey();
@@ -3347,7 +3412,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (NetworkVO network : networkList) {
             if ((network.getDataCenterId() != zone.getId())) {
                 if (!network.isStrechedL2Network()) {
-                    throw new InvalidParameterValueException("Network id=" + network.getId() +
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Network id=" + network.getId() +
                             " doesn't belong to zone " + zone.getId());
                 }
 
@@ -3355,13 +3421,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), ntwkOffering.getTags(),
                         ntwkOffering.getTrafficType());
                 if (physicalNetworkId == null) {
-                    throw new InvalidParameterValueException("Network in which is VM getting deployed could not be" +
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Network in which is VM getting deployed could not be" +
                             " streched to the zone, as we could not find a valid physical network");
                 }
 
                 String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Connectivity);
                 if (!_networkModel.isProviderEnabledInPhysicalNetwork(physicalNetworkId, provider)) {
-                    throw new InvalidParameterValueException("Network in which is VM getting deployed could not be" +
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Network in which is VM getting deployed could not be" +
                             " streched to the zone, as we could not find a valid physical network");
                 }
             }
@@ -3370,7 +3438,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
                     && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
-                throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "only shared network or isolated network with the same account_id can be added to vm");
             }
             }
 
@@ -3400,15 +3469,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 profile.setDefaultNic(true);
                 if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
                     if ((userData != null) && (!userData.isEmpty())) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
                     }
 
                     if ((sshPublicKey != null) && (!sshPublicKey.isEmpty())) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
                     }
 
                     if (template.getEnablePassword()) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
                     }
                 }
             }
@@ -3422,7 +3494,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // vm can't be a part of more than 1 VPC network
             if (network.getVpcId() != null) {
                 if (vpcNetwork) {
-                    throw new InvalidParameterValueException("Vm can't be a part of more than 1 VPC network");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Vm can't be a part of more than 1 VPC network");
                 }
                 vpcNetwork = true;
             }
@@ -3431,7 +3504,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (securityGroupIdList != null && !securityGroupIdList.isEmpty() && !securityGroupEnabled) {
-            throw new InvalidParameterValueException("Unable to deploy vm with security groups as SecurityGroup service is not enabled for the vm's network");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to deploy vm with security groups as SecurityGroup service is not enabled for the vm's network");
         }
 
         // Verify network information - network default network has to be set;
@@ -3440,9 +3514,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // by Agent Manager in order to configure default
         // gateway for the vm
         if (defaultNetworkNumber == 0) {
-            throw new InvalidParameterValueException("At least 1 default network has to be specified for the vm");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "At least 1 default network has to be specified for the vm");
         } else if (defaultNetworkNumber > 1) {
-            throw new InvalidParameterValueException("Only 1 default network per vm is supported");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Only 1 default network per vm is supported");
         }
 
         long id = _vmDao.getNextInSequence(Long.class, "id");
@@ -3466,7 +3542,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
             VMInstanceVO vmByHostName = _vmInstanceDao.findVMByHostNameInZone(hostName, zone.getId());
             if (vmByHostName != null && vmByHostName.getState() != VirtualMachine.State.Expunging) {
-                 throw new InvalidParameterValueException("There already exists a VM by the name: " + hostName + ".");
+                 throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                         "There already exists a VM by the name: " + hostName + ".");
             }
         } else {
             if (hostName == null) {
@@ -3484,7 +3561,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check if VM with instanceName already exists.
         VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
         if (vmObj != null && vmObj.getState() != VirtualMachine.State.Expunging) {
-            throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "There already exists a VM by the display name supplied");
         }
 
         checkIfHostNameUniqueInNtwkDomain(hostName, networkList);
@@ -3505,11 +3583,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (group != null) {
                 boolean addToGroup = addInstanceToGroup(Long.valueOf(id), group);
                 if (!addToGroup) {
-                    throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
+                    throw new CloudRuntimeException(CallContext.current().getContextId(),
+                            "Unable to assign Vm to the group " + group);
                 }
             }
         } catch (Exception ex) {
-            throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Unable to assign Vm to the group " + group);
         }
 
         _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
@@ -3544,7 +3624,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
                 // * verify that there are no duplicates
                 if (hostNames.contains(hostName)) {
-                    throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + ntwkDomain.getKey() + "; network="
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "The vm with hostName " + hostName + " already exists in the network domain: " + ntwkDomain.getKey() + "; network="
                             + _networkModel.getNetwork(ntwkId));
                 }
             }
@@ -3586,18 +3667,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // custom root disk size, resizes base template to larger size
                 if (customParameters.containsKey("rootdisksize")) {
                     if (NumbersUtil.parseLong(customParameters.get("rootdisksize"), -1) <= 0) {
-                        throw new InvalidParameterValueException("rootdisk size should be a non zero number.");
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "rootdisk size should be a non zero number.");
                     }
                     rootDiskSize = Long.parseLong(customParameters.get("rootdisksize"));
 
                     // only KVM, XenServer and VMware  supports rootdisksize override
                     if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware)) {
-                        throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support  rootdisksize override");
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Hypervisor " + hypervisorType + " does not support  rootdisksize override");
                     }
 
                     VMTemplateVO templateVO = _templateDao.findById(template.getId());
                     if (templateVO == null) {
-                        throw new InvalidParameterValueException("Unable to look up template by id " + template.getId());
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Unable to look up template by id " + template.getId());
                     }
 
                     validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
@@ -3696,13 +3780,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if ((rootDiskSize << 30) < templateVO.getSize()) {
             Long templateVOSizeGB = templateVO.getSize() / 1024 / 1024 / 1024;
             s_logger.error("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)");
-            throw new InvalidParameterValueException("unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)");
         } else if ((rootDiskSize << 30) > templateVO.getSize()) {
              if (hypervisorType == HypervisorType.VMware && (vm.getDetails() == null || vm.getDetails().get("rootDiskController") == null)) {
                 s_logger.warn("If Root disk controller parameter is not overridden, then Root disk resize may fail because current Root disk controller value is NULL.");
              } else if (hypervisorType == HypervisorType.VMware && !vm.getDetails().get("rootDiskController").toLowerCase().contains("scsi")) {
                 s_logger.error("Found unsupported root disk controller : " + vm.getDetails().get("rootDiskController"));
-                throw new InvalidParameterValueException("Found unsupported root disk controller :" + vm.getDetails().get("rootDiskController"));
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Found unsupported root disk controller :" + vm.getDetails().get("rootDiskController"));
              } else {
                 s_logger.debug("Rootdisksize override validation successful. Template root disk size "+(templateVO.getSize() / 1024 / 1024 / 1024)+ " GB" + " Root disk size specified "+ rootDiskSize+" GB");
              }
@@ -3874,29 +3960,35 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         byte[] decodedUserData = null;
         if (userData != null) {
             if (!Base64.isBase64(userData)) {
-                throw new InvalidParameterValueException("User data is not base64 encoded");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "User data is not base64 encoded");
             }
             // If GET, use 4K. If POST, support upto 32K.
             if (httpmethod.equals(HTTPMethod.GET)) {
                 if (userData.length() >= MAX_HTTP_GET_LENGTH) {
-                    throw new InvalidParameterValueException("User data is too long for an http GET request");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "User data is too long for an http GET request");
                 }
                 decodedUserData = Base64.decodeBase64(userData.getBytes());
                 if (decodedUserData.length > MAX_HTTP_GET_LENGTH) {
-                    throw new InvalidParameterValueException("User data is too long for GET request");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "User data is too long for GET request");
                 }
             } else if (httpmethod.equals(HTTPMethod.POST)) {
                 if (userData.length() >= MAX_HTTP_POST_LENGTH) {
-                    throw new InvalidParameterValueException("User data is too long for an http POST request");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "User data is too long for an http POST request");
                 }
                 decodedUserData = Base64.decodeBase64(userData.getBytes());
                 if (decodedUserData.length > MAX_HTTP_POST_LENGTH) {
-                    throw new InvalidParameterValueException("User data is too long for POST request");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "User data is too long for POST request");
                 }
             }
 
             if (decodedUserData == null || decodedUserData.length < 1) {
-                throw new InvalidParameterValueException("User data is too short");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "User data is too short");
             }
         }
     }
@@ -3924,7 +4016,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!tmpVm.getState().equals(State.Running)) {
                 // Some other thread changed state of VM, possibly vmsync
                 s_logger.error("VM " + tmpVm + " unexpectedly went to " + tmpVm.getState() + " state");
-                throw new ConcurrentOperationException("Failed to deploy VM "+vm);
+                throw new ConcurrentOperationException(cmd.getInjectedJobId(), "Failed to deploy VM "+vm);
             }
         } finally {
             updateVmStateForFailedVmCreation(vm.getId(), hostId);
@@ -4164,12 +4256,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // if account is removed, return error
         if (caller != null && caller.getRemoved() != null) {
-            throw new PermissionDeniedException("The account " + caller.getUuid() + " is removed");
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "The account " + caller.getUuid() + " is removed");
         }
 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "unable to find a virtual machine with id " + vmId);
         }
 
         _userDao.findById(userId);
@@ -4188,9 +4282,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                return null;
             }
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Unable to contact the agent to stop the virtual machine " + vm, e);
         } catch (CloudException e) {
-            throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Unable to contact the agent to stop the virtual machine " + vm, e);
         }
     }
 
@@ -4233,12 +4329,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // if account is removed, return error
         if (callerAccount != null && callerAccount.getRemoved() != null) {
-            throw new InvalidParameterValueException("The account " + callerAccount.getId() + " is removed");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "The account " + callerAccount.getId() + " is removed");
         }
 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "unable to find a virtual machine with id " + vmId);
         }
 
         _accountMgr.checkAccess(callerAccount, null, true, vm);
@@ -4246,23 +4344,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account owner = _accountDao.findById(vm.getAccountId());
 
         if (owner == null) {
-            throw new InvalidParameterValueException("The owner of " + vm + " does not exist: " + vm.getAccountId());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "The owner of " + vm + " does not exist: " + vm.getAccountId());
         }
 
         if (owner.getState() == Account.State.disabled) {
-            throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
 
         Host destinationHost = null;
         if (hostId != null) {
             Account account = CallContext.current().getCallingAccount();
             if (!_accountService.isRootAdmin(account.getId())) {
-                throw new PermissionDeniedException(
+                throw new PermissionDeniedException(CallContext.current().getContextId(),
                         "Parameter hostid can only be specified by a Root Admin, permission denied");
             }
             destinationHost = _hostDao.findById(hostId);
             if (destinationHost == null) {
-                throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + hostId);
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Unable to find the host to deploy the VM, host id=" + hostId);
             }
         }
 
@@ -4310,7 +4411,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             if (!validPassword(password)) {
-                throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "A valid password for this virtual machine was not provided.");
             }
 
             // Check if an SSH key pair was selected for the instance and if so
@@ -4332,7 +4434,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // the service offering
             planner = _planningMgr.getDeploymentPlannerByName(deploymentPlannerToUse);
             if (planner == null) {
-                throw new InvalidParameterValueException("Can't find a planner by name " + deploymentPlannerToUse);
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Can't find a planner by name " + deploymentPlannerToUse);
             }
         }
 
@@ -4365,7 +4468,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null || vm.getRemoved() != null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a virtual machine with specified vmId");
+            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to find a virtual machine with specified vmId");
             throw ex;
         }
 
@@ -4381,7 +4485,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
             status = vmEntity.destroy(Long.toString(userId), expunge);
         } catch (CloudException e) {
-            CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
+            CloudRuntimeException ex = new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Unable to destroy with specified vmId", e);
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
@@ -4405,7 +4510,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             return _vmDao.findById(vmId);
         } else {
-            CloudRuntimeException ex = new CloudRuntimeException("Failed to destroy vm with specified vmId");
+            CloudRuntimeException ex = new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Failed to destroy vm with specified vmId");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
@@ -4540,7 +4646,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a virtual machine with specified vmId");
+            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to find a virtual machine with specified vmId");
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
@@ -4551,14 +4658,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (!(vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getState() == State.Error)) {
-            CloudRuntimeException ex = new CloudRuntimeException("Please destroy vm with specified vmId before expunge");
+            CloudRuntimeException ex = new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Please destroy vm with specified vmId before expunge");
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
 
         // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
         if (!_accountMgr.isAdmin(userId) && !AllowUserExpungeRecoverVm.valueIn(userId)) {
-            throw new PermissionDeniedException("Expunging a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "Expunging a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
         }
 
         _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId);
@@ -4569,7 +4678,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (status) {
             return _vmDao.findByIdIncludingRemoved(vmId);
         } else {
-            CloudRuntimeException ex = new CloudRuntimeException("Failed to expunge vm with specified vmId");
+            CloudRuntimeException ex = new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Failed to expunge vm with specified vmId");
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
@@ -4580,7 +4690,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public HypervisorType getHypervisorTypeOfUserVM(long vmId) {
         UserVmVO userVm = _vmDao.findById(vmId);
         if (userVm == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "unable to find a virtual machine with specified id");
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
@@ -4602,17 +4713,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone == null) {
-            CloudRuntimeException ex =  new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
-            ex.setContextId(cmd.getInjectedJobId());
-            throw ex;
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                    "Unable to find zone by id=" + zoneId);
         }
 
         Long serviceOfferingId = cmd.getServiceOfferingId();
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
-            CloudRuntimeException ex = new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
-            ex.setContextId(cmd.getInjectedJobId());
+            CloudRuntimeException ex = new InvalidParameterValueException(cmd.getInjectedJobId(),
+                    "Unable to find service offering: " + serviceOfferingId);
             throw ex;
         }
 
@@ -4621,7 +4731,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if(!serviceOffering.isDynamic()) {
             for(String detail: cmd.getDetails().keySet()) {
                 if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
-                    throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
+                    throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                            "cpuNumber or cpuSpeed or memory should not be specified for static service offering");
                 }
             }
         }
@@ -4629,7 +4740,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         // Make sure a valid template ID was specified
         if (template == null) {
-            throw new InvalidParameterValueException("Unable to use template " + templateId);
+            throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                    "Unable to use template " + templateId);
         }
 
         Long diskOfferingId = cmd.getDiskOfferingId();
@@ -4637,16 +4749,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (diskOfferingId != null) {
             diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
             if (diskOffering == null) {
-                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+                throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                        "Unable to find disk offering " + diskOfferingId);
             }
         }
 
         if (!zone.isLocalStorageEnabled()) {
             if (serviceOffering.getUseLocalStorage()) {
-                throw new InvalidParameterValueException("Zone is not configured to use local storage but service offering " + serviceOffering.getName() + " uses it");
+                throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                        "Zone is not configured to use local storage but service offering " + serviceOffering.getName() + " uses it");
             }
             if (diskOffering != null && diskOffering.getUseLocalStorage()) {
-                throw new InvalidParameterValueException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
+                throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                        "Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
             }
         }
 
@@ -4665,7 +4780,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String keyboard = cmd.getKeyboard();
         if (zone.getNetworkType() == NetworkType.Basic) {
             if (cmd.getNetworkIds() != null) {
-                throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
+                throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                        "Can't specify network Ids in Basic zone");
             } else {
                 vm = createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(cmd), owner, name, displayName, diskOfferingId,
                         size , group , cmd.getHypervisor(), cmd.getHttpMethod(), userData , sshKeyPairName , cmd.getIpToNetworkMap(), addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
@@ -4679,7 +4795,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             } else {
                 if (cmd.getSecurityGroupIdList() != null && !cmd.getSecurityGroupIdList().isEmpty()) {
-                    throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
+                    throw new InvalidParameterValueException(cmd.getInjectedJobId(),
+                            "Can't create vm with security groups; security group feature is not enabled per zone");
                 }
                 vm = createAdvancedVirtualMachine(zone, serviceOffering, template, cmd.getNetworkIds(), owner, name, displayName, diskOfferingId, size, group,
                         cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairName, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard, cmd.getAffinityGroupIdList(), cmd.getDetails(),
@@ -4691,7 +4808,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private List<Long> getSecurityGroupIdList(SecurityGroupAction cmd) {
         if (cmd.getSecurityGroupNameList() != null && cmd.getSecurityGroupIdList() != null) {
-            throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
         }
 
        //transform group names to ids here
@@ -4700,7 +4818,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (String groupName : cmd.getSecurityGroupNameList()) {
                 SecurityGroup sg = _securityGroupMgr.getSecurityGroup(groupName, cmd.getEntityOwnerId());
                 if (sg == null) {
-                    throw new InvalidParameterValueException("Unable to find group by name " + groupName);
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Unable to find group by name " + groupName);
                 } else {
                     securityGroupIds.add(sg.getId());
                 }
@@ -4730,7 +4849,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private void verifyMinAndMaxIops(String minIops, String maxIops) {
         if ((minIops != null && maxIops == null) || (minIops == null && maxIops != null)) {
-            throw new InvalidParameterValueException("Either 'Min IOPS' and 'Max IOPS' must both be specified or neither be specified.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Either 'Min IOPS' and 'Max IOPS' must both be specified or neither be specified.");
         }
 
         long lMinIops;
@@ -4744,7 +4864,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         catch (NumberFormatException ex) {
-            throw new InvalidParameterValueException("'Min IOPS' must be a whole number.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "'Min IOPS' must be a whole number.");
         }
 
         long lMaxIops;
@@ -4758,11 +4879,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         catch (NumberFormatException ex) {
-            throw new InvalidParameterValueException("'Max IOPS' must be a whole number.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "'Max IOPS' must be a whole number.");
         }
 
         if (lMinIops > lMaxIops) {
-            throw new InvalidParameterValueException("'Min IOPS' must be less than or equal to 'Max IOPS'.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "'Min IOPS' must be less than or equal to 'Max IOPS'.");
         }
     }
 
@@ -4779,32 +4902,38 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
-            throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to find the VM by id=" + vmId);
         }
 
         if (vm.getState() != State.Stopped) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Stopped, unable to migrate the vm having the specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "VM is not Stopped, unable to migrate the vm having the specified id");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
         if (vm.getType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("can only do storage migration on user vm");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "can only do storage migration on user vm");
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         if (vols.size() > 1) {
-            throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
         }
 
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
-            throw new InvalidParameterValueException("VM's disk cannot be migrated, please remove all the VM Snapshots for this VM");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "VM's disk cannot be migrated, please remove all the VM Snapshots for this VM");
         }
 
         HypervisorType destHypervisorType = destPool.getHypervisor();
@@ -4814,7 +4943,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (vm.getHypervisorType() != destHypervisorType) {
-            throw new InvalidParameterValueException("hypervisor is not compatible: dest: " + destHypervisorType.toString() + ", vm: " + vm.getHypervisorType().toString());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "hypervisor is not compatible: dest: " + destHypervisorType.toString() + ", vm: " + vm.getHypervisorType().toString());
         }
         _itMgr.storageMigration(vm.getUuid(), destPool);
         return _vmDao.findById(vm.getId());
@@ -4849,19 +4979,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
-            throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to find the VM by id=" + vmId);
         }
         // business logic
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "VM is not Running, unable to migrate the vm with specified id");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
@@ -4869,7 +5002,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkIfHostOfVMIsInPrepareForMaintenanceState(vm.getHostId(), vmId, "Migrate");
 
         if(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-            throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Live Migration of GPU enabled VM is not supported");
         }
 
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
@@ -4879,29 +5013,34 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM.");
             }
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
         if (vm.getType().equals(VirtualMachine.Type.User) && vm.getHypervisorType().equals(HypervisorType.LXC)) {
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
         if (isVMUsingLocalStorage(vm)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
             }
-            throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unsupported operation, VM uses Local storage, cannot migrate");
         }
 
         // check if migrating to same host
         long srcHostId = vm.getHostId();
         if (destinationHost.getId() == srcHostId) {
-            throw new InvalidParameterValueException("Cannot migrate VM, VM is already presnt on this host, please specify valid destination host to migrate the VM");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Cannot migrate VM, VM is already presnt on this host, please specify valid destination host to migrate the VM");
         }
 
         // check if host is UP
         if (destinationHost.getState() != com.cloud.host.Status.Up || destinationHost.getResourceState() != ResourceState.Enabled) {
-            throw new InvalidParameterValueException("Cannot migrate VM, destination host is not in correct state, has status: " + destinationHost.getState() + ", state: "
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Cannot migrate VM, destination host is not in correct state, has status: " + destinationHost.getState() + ", state: "
                             + destinationHost.getResourceState());
         }
 
@@ -4911,7 +5050,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HostVO srcHost = _hostDao.findById(srcHostId);
             if (srcHost != null && srcHost.getClusterId() != null && destinationHost.getClusterId() != null) {
                 if (srcHost.getClusterId().longValue() != destinationHost.getClusterId().longValue()) {
-                    throw new InvalidParameterValueException("Cannot migrate the VM, destination host is not in the same cluster as current host of the VM");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Cannot migrate the VM, destination host is not in the same cluster as current host of the VM");
                 }
             }
         }
@@ -4937,7 +5077,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         //check if there are any ongoing volume snapshots on the volumes associated with the VM.
         s_logger.debug("Checking if there are any ongoing snapshots volumes associated with VM with ID " + vmId);
         if (checkStatusOfVolumeSnapshots(vmId, null)) {
-            throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on volume(s) attached to this VM, VM Migration is not permitted, please try again later.");
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "There is/are unbacked up snapshot(s) on volume(s) attached to this VM, VM Migration is not permitted, please try again later.");
         }
         s_logger.debug("Found no ongoing snapshots on volumes associated with the vm with id " + vmId);
 
@@ -4974,7 +5115,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         s_logger.debug("Host is in PrepareForMaintenance state - " + operation + " VM operation on the VM id: " + vmId + " is not allowed");
-        throw new InvalidParameterValueException(operation + " VM operation on the VM id: " + vmId + " is not allowed as host is preparing for maintenance mode");
+        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                operation + " VM operation on the VM id: " + vmId + " is not allowed as host is preparing for maintenance mode");
     }
 
     private Long accountOfDedicatedHost(HostVO host) {
@@ -5188,31 +5330,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
-            throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find the vm by id " + vmId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to find the vm by id " + vmId);
         }
 
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
-            CloudRuntimeException ex = new CloudRuntimeException("VM is not Running, unable to migrate the vm with" + " specified id");
+            CloudRuntimeException ex = new CloudRuntimeException(CallContext.current().getContextId(),
+                    "VM is not Running, unable to migrate the vm with" + " specified id");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
         if(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-            throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Live Migration of GPU enabled VM is not supported");
         }
 
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
                 && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Hyperv)
                 && !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
-            throw new InvalidParameterValueException("Unsupported hypervisor type for vm migration, we support" + " XenServer/VMware/KVM only");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unsupported hypervisor type for vm migration, we support" + " XenServer/VMware/KVM only");
         }
 
         long srcHostId = vm.getHostId();
@@ -5224,30 +5371,35 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Check if src and destination hosts are valid and migrating to same host
         if (destinationHost.getId() == srcHostId) {
-            throw new InvalidParameterValueException("Cannot migrate VM, VM is already present on this host, please" + " specify valid destination host to migrate the VM");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Cannot migrate VM, VM is already present on this host, please" + " specify valid destination host to migrate the VM");
         }
 
         // Check if the source and destination hosts are of the same type and support storage motion.
         if (!(srcHost.getHypervisorType().equals(destinationHost.getHypervisorType()))) {
-            throw new CloudRuntimeException("The source and destination hosts are not of the same type. " + "Source hypervisor type and version: "
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "The source and destination hosts are not of the same type. " + "Source hypervisor type and version: "
                     + srcHost.getHypervisorType().toString() + " " + srcHost.getHypervisorVersion() + ", Destination hypervisor type and version: "
                     + destinationHost.getHypervisorType().toString() + " " + destinationHost.getHypervisorVersion());
         }
 
         HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
         if (!capabilities.isStorageMotionSupported()) {
-            throw new CloudRuntimeException("Migration with storage isn't supported on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Migration with storage isn't supported on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
         }
 
         // Check if destination host is up.
         if (destinationHost.getState() != com.cloud.host.Status.Up || destinationHost.getResourceState() != ResourceState.Enabled) {
-            throw new CloudRuntimeException("Cannot migrate VM, destination host is not in correct state, has " + "status: " + destinationHost.getState() + ", state: "
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Cannot migrate VM, destination host is not in correct state, has " + "status: " + destinationHost.getState() + ", state: "
                     + destinationHost.getResourceState());
         }
 
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
-            throw new InvalidParameterValueException("VM with VM Snapshots cannot be migrated with storage, please remove all VM snapshots");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "VM with VM Snapshots cannot be migrated with storage, please remove all VM snapshots");
         }
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
@@ -5256,7 +5408,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (volumeToPool.isEmpty()) {
                 // If the destination host is in the same cluster and volumes do not have to be migrated across pools
                 // then fail the call. migrateVirtualMachine api should have been used.
-                throw new InvalidParameterValueException("Migration of the vm " + vm + "from host " + srcHost + " to destination host " + destinationHost
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Migration of the vm " + vm + "from host " + srcHost + " to destination host " + destinationHost
                         + " doesn't involve migrating the volumes.");
             }
         }
@@ -5267,16 +5420,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 VolumeVO volume = _volsDao.findByUuid(entry.getKey());
                 StoragePoolVO pool = _storagePoolDao.findByUuid(entry.getValue());
                 if (volume == null) {
-                    throw new InvalidParameterValueException("There is no volume present with the given id " + entry.getKey());
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "There is no volume present with the given id " + entry.getKey());
                 } else if (pool == null) {
-                    throw new InvalidParameterValueException("There is no storage pool present with the given id " + entry.getValue());
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "There is no storage pool present with the given id " + entry.getValue());
                 } else if (pool.isInMaintenance()) {
-                    throw new InvalidParameterValueException("Cannot migrate volume " + volume + "to the destination storage pool " + pool.getName() +
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Cannot migrate volume " + volume + "to the destination storage pool " + pool.getName() +
                             " as the storage pool is in maintenance mode.");
                 } else {
                     // Verify the volume given belongs to the vm.
                     if (!vmVolumes.contains(volume)) {
-                        throw new InvalidParameterValueException("There volume " + volume + " doesn't belong to " + "the virtual machine " + vm + " that has to be migrated");
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "There volume " + volume + " doesn't belong to " + "the virtual machine " + vm + " that has to be migrated");
                     }
                     volToPoolObjectMap.put(Long.valueOf(volume.getId()), Long.valueOf(pool.getId()));
                 }
@@ -5286,7 +5443,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check if all the volumes are in the correct state.
         for (VolumeVO volume : vmVolumes) {
             if (volume.getState() != Volume.State.Ready) {
-                throw new CloudRuntimeException("Volume " + volume + " of the VM is not in Ready state. Cannot " + "migrate the vm with its volumes.");
+                throw new CloudRuntimeException(CallContext.current().getContextId(),
+                        "Volume " + volume + " of the VM is not in Ready state. Cannot " + "migrate the vm with its volumes.");
             }
         }
 
@@ -5318,34 +5476,40 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // can
             // assign
             // VMs
-            throw new InvalidParameterValueException("Only domain admins are allowed to assign VMs and not " + caller.getType());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Only domain admins are allowed to assign VMs and not " + caller.getType());
         }
 
         // get and check the valid VM
         final UserVmVO vm = _vmDao.findById(cmd.getVmId());
         if (vm == null) {
-            throw new InvalidParameterValueException("There is no vm by that id " + cmd.getVmId());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "There is no vm by that id " + cmd.getVmId());
         } else if (vm.getState() == State.Running) { // VV 3: check if vm is
             // running
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is Running, unable to move the vm " + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is Running, unable to move the vm with specified vmId");
+            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "VM is Running, unable to move the vm with specified vmId");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
         final Account oldAccount = _accountService.getActiveAccountById(vm.getAccountId());
         if (oldAccount == null) {
-            throw new InvalidParameterValueException("Invalid account for VM " + vm.getAccountId() + " in domain.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Invalid account for VM " + vm.getAccountId() + " in domain.");
         }
         final Account newAccount = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         if (newAccount == null) {
-            throw new InvalidParameterValueException("Invalid accountid=" + cmd.getAccountName() + " in domain " + cmd.getDomainId());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Invalid accountid=" + cmd.getAccountName() + " in domain " + cmd.getDomainId());
         }
 
         if (newAccount.getState() == Account.State.disabled) {
-            throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "The new account owner " + cmd.getAccountName() + " is disabled.");
         }
 
         //check caller has access to both the old and new account
@@ -5354,28 +5518,33 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // make sure the accounts are not same
         if (oldAccount.getAccountId() == newAccount.getAccountId()) {
-            throw new InvalidParameterValueException("The new account is the same as the old account. Account id =" + oldAccount.getAccountId());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "The new account is the same as the old account. Account id =" + oldAccount.getAccountId());
         }
 
         // don't allow to move the vm if there are existing PF/LB/Static Nat
         // rules, or vm is assigned to static Nat ip
         List<PortForwardingRuleVO> pfrules = _portForwardingDao.listByVm(cmd.getVmId());
         if (pfrules != null && pfrules.size() > 0) {
-            throw new InvalidParameterValueException("Remove the Port forwarding rules for this VM before assigning to another user.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Remove the Port forwarding rules for this VM before assigning to another user.");
         }
         List<FirewallRuleVO> snrules = _rulesDao.listStaticNatByVmId(vm.getId());
         if (snrules != null && snrules.size() > 0) {
-            throw new InvalidParameterValueException("Remove the StaticNat rules for this VM before assigning to another user.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Remove the StaticNat rules for this VM before assigning to another user.");
         }
         List<LoadBalancerVMMapVO> maps = _loadBalancerVMMapDao.listByInstanceId(vm.getId());
         if (maps != null && maps.size() > 0) {
-            throw new InvalidParameterValueException("Remove the load balancing rules for this VM before assigning to another user.");
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Remove the load balancing rules for this VM before assigning to another user.");
         }
         // check for one on one nat
         List<IPAddressVO> ips = _ipAddressDao.findAllByAssociatedVmId(cmd.getVmId());
         for (IPAddressVO ip : ips) {
             if (ip.isOneToOneNat()) {
-                throw new InvalidParameterValueException("Remove the one to one nat rule for this VM for ip " + ip.toString());
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Remove the one to one nat rule for this VM for ip " + ip.toString());
             }
         }
 
@@ -5468,7 +5637,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (zone.getNetworkType() == NetworkType.Basic) {
             if (networkIdList != null && !networkIdList.isEmpty()) {
-                throw new InvalidParameterValueException("Can't move vm with network Ids; this is a basic zone VM");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Can't move vm with network Ids; this is a basic zone VM");
             }
             // cleanup the old security groups
             _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
@@ -5483,7 +5653,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
 
             if (defaultNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default network to start a vm");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Unable to find a default network to start a vm");
             } else {
                 networkList.add(_networkDao.findById(defaultNetwork.getId()));
             }
@@ -5491,7 +5662,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware);
 
             if (securityGroupIdList != null && isVmWare) {
-                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Security group feature is not supported for vmWare hypervisor");
             } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
                 if (securityGroupIdList == null) {
                     securityGroupIdList = new ArrayList<Long>();
@@ -5570,7 +5742,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     for (Long networkId : networkIdList) {
                         NetworkVO network = _networkDao.findById(networkId);
                         if (network == null) {
-                            InvalidParameterValueException ex = new InvalidParameterValueException(
+                            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
                                     "Unable to find specified network id");
                             ex.addProxyObject(networkId.toString(), "networkId");
                             throw ex;
@@ -5581,7 +5753,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         // don't allow to use system networks
                         NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                         if (networkOffering.isSystemOnly()) {
-                            InvalidParameterValueException ex = new InvalidParameterValueException(
+                            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
                                     "Specified Network id is system only and can't be used for vm deployment");
                             ex.addProxyObject(network.getUuid(), "networkId");
                             throw ex;
@@ -5609,7 +5781,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware);
                 if (securityGroupIdList != null && isVmWare) {
-                    throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Security group feature is not supported for vmWare hypervisor");
                 } else if (!isVmWare && (defaultNetwork == null || _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)) && _networkModel.canAddDefaultSecurityGroup()) {
                     if (securityGroupIdList == null) {
                         securityGroupIdList = new ArrayList<Long>();
@@ -5650,7 +5823,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
 
                 if (applicableNetworks.isEmpty()) {
-                    throw new InvalidParameterValueException("No network is specified, please specify one when you move the vm. For now, please add a network to VM on NICs tab.");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "No network is specified, please specify one when you move the vm. For now, please add a network to VM on NICs tab.");
                 } else {
                     _networkMgr.allocate(vmProfile, networks);
                 }
@@ -5663,7 +5837,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             } else {
                 if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
-                    throw new InvalidParameterValueException("Can't move vm with security groups; security group feature is not enabled in this zone");
+                    throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Can't move vm with security groups; security group feature is not enabled in this zone");
                 }
                 Set<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
                 // if networkIdList is null and the first network of vm is shared network, then keep it if possible
@@ -5691,7 +5866,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     for (Long networkId : networkIdList) {
                         NetworkVO network = _networkDao.findById(networkId);
                         if (network == null) {
-                            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find specified network id");
+                            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                                    "Unable to find specified network id");
                             ex.addProxyObject(networkId.toString(), "networkId");
                             throw ex;
                         }
@@ -5701,7 +5877,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         // don't allow to use system networks
                         NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                         if (networkOffering.isSystemOnly()) {
-                            InvalidParameterValueException ex = new InvalidParameterValueException("Specified Network id is system only and can't be used for vm deployment");
+                            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                                    "Specified Network id is system only and can't be used for vm deployment");
                             ex.addProxyObject(network.getUuid(), "networkId");
                             throw ex;
                         }
@@ -5711,7 +5888,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     NetworkVO defaultNetwork = null;
                     List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
                     if (requiredOfferings.size() < 1) {
-                        throw new InvalidParameterValueException("Unable to find network offering with availability=" + Availability.Required
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Unable to find network offering with availability=" + Availability.Required
                                         + " to automatically create the network as a part of vm creation");
                     }
                     if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
@@ -5723,7 +5901,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             // Validate physical network
                             PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
                             if (physicalNetwork == null) {
-                                throw new InvalidParameterValueException("Unable to find physical network with id: " + physicalNetworkId + " and tag: "
+                                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                        "Unable to find physical network with id: " + physicalNetworkId + " and tag: "
                                         + requiredOfferings.get(0).getTags());
                             }
                             s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + requiredOfferings.get(0).getId()
@@ -5747,7 +5926,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                 } catch (Exception ex) {
                                     s_logger.warn("Failed to implement network " + newNetwork + " elements and"
                                             + " resources as a part of network provision for persistent network due to ", ex);
-                                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network"
+                                    CloudRuntimeException e = new CloudRuntimeException(CallContext.current().getContextId(),
+                                            "Failed to implement network"
                                             + " (with specified id) elements and resources as a part of network provision");
                                     e.addProxyObject(newNetwork.getUuid(), "networkId");
                                     throw e;
@@ -5755,13 +5935,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             }
                             defaultNetwork = _networkDao.findById(newNetwork.getId());
                         } else if (virtualNetworks.size() > 1) {
-                            throw new InvalidParameterValueException("More than 1 default Isolated networks are found " + "for account " + newAccount
+                            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                    "More than 1 default Isolated networks are found " + "for account " + newAccount
                                             + "; please specify networkIds");
                         } else {
                             defaultNetwork = _networkDao.findById(virtualNetworks.get(0).getId());
                         }
                     } else {
-                        throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);
                     }
 
                     applicableNetworks.add(defaultNetwork);
@@ -5798,7 +5980,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
+            InvalidParameterValueException ex = new InvalidParameterValueException(cmd.getInjectedJobId(),
+                    "Cannot find VM with ID " + vmId);
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
@@ -5808,7 +5991,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         //check if there are any active snapshots on volumes associated with the VM
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
         if (checkStatusOfVolumeSnapshots(vmId, Volume.Type.ROOT)) {
-            throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, Re-install VM is not permitted, please try again later.");
+            throw new CloudRuntimeException(cmd.getInjectedJobId(),
+                    "There is/are unbacked up snapshot(s) on ROOT volume, Re-install VM is not permitted, please try again later.");
         }
         s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
         return restoreVMInternal(caller, vm, newTemplateId);
@@ -5824,15 +6008,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Input validation
         if (owner == null) {
-            throw new InvalidParameterValueException("The owner of " + vm + " does not exist: " + vm.getAccountId());
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "The owner of " + vm + " does not exist: " + vm.getAccountId());
         }
 
         if (owner.getState() == Account.State.disabled) {
-            throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
+            throw new PermissionDeniedException(CallContext.current().getContextId(),
+                    "The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
 
         if (vm.getState() != VirtualMachine.State.Running && vm.getState() != VirtualMachine.State.Stopped) {
-            throw new CloudRuntimeException("Vm " + vm.getUuid() + " currently in " + vm.getState() + " state, restore vm can only execute when VM in Running or Stopped");
+            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                    "Vm " + vm.getUuid() + " currently in " + vm.getState() + " state, restore vm can only execute when VM in Running or Stopped");
         }
 
         if (vm.getState() == VirtualMachine.State.Running) {
@@ -5841,12 +6028,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<VolumeVO> rootVols = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
         if (rootVols.isEmpty()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Can not find root volume for VM " + vm.getUuid());
+            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Can not find root volume for VM " + vm.getUuid());
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
         if (rootVols.size() > 1) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("There are " + rootVols.size() + " root volumes for VM " + vm.getUuid());
+            InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "There are " + rootVols.size() + " root volumes for VM " + vm.getUuid());
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
@@ -5863,7 +6052,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // If target VM has associated VM snapshots then don't allow restore of VM
             List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
             if (vmSnapshots.size() > 0) {
-                throw new InvalidParameterValueException("Unable to restore VM, please remove VM snapshots before restoring VM");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Unable to restore VM, please remove VM snapshots before restoring VM");
             }
 
             VMTemplateVO template = null;
@@ -5873,20 +6063,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _accountMgr.checkAccess(caller, null, true, template);
                 if (isISO) {
                     if (!template.getFormat().equals(ImageFormat.ISO)) {
-                        throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Invalid ISO id provided to restore the VM ");
                     }
                 } else {
                     if (template.getFormat().equals(ImageFormat.ISO)) {
-                        throw new InvalidParameterValueException("Invalid template id provided to restore the VM ");
+                        throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                                "Invalid template id provided to restore the VM ");
                     }
                 }
             } else {
                 if (isISO && templateId == null) {
-                    throw new CloudRuntimeException("Cannot restore the VM since there is no ISO attached to VM");
+                    throw new CloudRuntimeException(CallContext.current().getContextId(),
+                            "Cannot restore the VM since there is no ISO attached to VM");
                 }
                 template = _templateDao.findById(templateId);
                 if (template == null) {
-                    InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find template/ISO for specified volumeid and vmId");
+                    InvalidParameterValueException ex = new InvalidParameterValueException(CallContext.current().getContextId(),
+                            "Cannot find template/ISO for specified volumeid and vmId");
                     ex.addProxyObject(vm.getUuid(), "vmId");
                     ex.addProxyObject(root.getUuid(), "volumeId");
                     throw ex;
@@ -5894,7 +6088,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             TemplateDataStoreVO tmplStore = _templateStoreDao.findByTemplateZoneReady(template.getId(), vm.getDataCenterId());
             if (tmplStore == null) {
-                throw new InvalidParameterValueException("Cannot restore the vm as the template " + template.getUuid() + " isn't available in the zone");
+                throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                        "Cannot restore the vm as the template " + template.getUuid() + " isn't available in the zone");
             }
 
             if (needRestart) {
@@ -5902,7 +6097,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _itMgr.stop(vm.getUuid());
                 } catch (ResourceUnavailableException e) {
                     s_logger.debug("Stop vm " + vm.getUuid() + " failed", e);
-                    CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
+                    CloudRuntimeException ex = new CloudRuntimeException(CallContext.current().getContextId(),
+                            "Stop vm failed for specified vmId");
                     ex.addProxyObject(vm.getUuid(), "vmId");
                     throw ex;
                 }
@@ -5970,7 +6166,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     // use it to encrypt & save the vm password
                     encryptAndStorePassword(vm, password);
                 } else {
-                    throw new CloudRuntimeException("VM reset is completed but failed to reset password for the virtual machine ");
+                    throw new CloudRuntimeException(CallContext.current().getContextId(),
+                            "VM reset is completed but failed to reset password for the virtual machine ");
                 }
             }
 
@@ -5997,7 +6194,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                 } catch (Exception e) {
                     s_logger.debug("Unable to start VM " + vm.getUuid(), e);
-                    CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM with specified id" + e.getMessage());
+                    CloudRuntimeException ex = new CloudRuntimeException(CallContext.current().getContextId(),
+                            "Unable to start VM with specified id" + e.getMessage());
                     ex.addProxyObject(vm.getUuid(), "vmId");
                     throw ex;
                 }
@@ -6055,7 +6253,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     cmd = new DeleteCommand(volumeInfo.getTO());
                 }
                 else {
-                    throw new CloudRuntimeException("This hypervisor type is not supported on managed storage for this command.");
+                    throw new CloudRuntimeException(CallContext.current().getContextId(),
+                            "This hypervisor type is not supported on managed storage for this command.");
                 }
 
                 Commands cmds = new Commands(Command.OnError.Stop);
@@ -6066,7 +6265,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _agentMgr.send(hostId, cmds);
                 }
                 catch (Exception ex) {
-                    throw new CloudRuntimeException(ex.getMessage());
+                    throw new CloudRuntimeException(CallContext.current().getContextId(),
+                            ex.getMessage());
                 }
 
                 if (!cmds.isSuccessful()) {
@@ -6074,7 +6274,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (!answer.getResult()) {
                             s_logger.warn("Failed to reset vm due to: " + answer.getDetails());
 
-                            throw new CloudRuntimeException("Unable to reset " + vm + " due to " + answer.getDetails());
+                            throw new CloudRuntimeException(CallContext.current().getContextId(),
+                                    "Unable to reset " + vm + " due to " + answer.getDetails());
                         }
                     }
                 }
@@ -6104,7 +6305,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
             if (encryptedPasswd == null) {
-                throw new CloudRuntimeException("Error encrypting password");
+                throw new CloudRuntimeException(CallContext.current().getContextId(),
+                        "Error encrypting password");
             }
 
             vm.setDetail("Encrypted.Password", encryptedPasswd);
@@ -6138,7 +6340,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public String getVmUserData(long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find virual machine with id " + vmId);
+            throw new InvalidParameterValueException(CallContext.current().getContextId(),
+                    "Unable to find virual machine with id " + vmId);
         }
 
         //check permissions

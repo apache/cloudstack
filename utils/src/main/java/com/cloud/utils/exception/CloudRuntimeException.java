@@ -69,6 +69,12 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
+    public CloudRuntimeException(String callId, String message, Throwable th) {
+        super(message, th);
+        setContextId(callId);
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+    }
+
     /**
      * @deprecated use the version that takes a callId
      */

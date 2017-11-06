@@ -32,6 +32,10 @@ public class PermissionDeniedException extends CloudRuntimeException {
         super(message);
     }
 
+    public PermissionDeniedException(String callId, String message) {
+        super(callId,message);
+    }
+
     public PermissionDeniedException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -314,7 +314,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public Map<Long, IpAddresses> getIpToNetworkMap() {
         if ((networkIds != null || ipAddress != null || getIp6Address() != null) && ipToNetworkList != null) {
-            throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
+            throw new InvalidParameterValueException(getInjectedJobId(),
+                    "NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
         }
         LinkedHashMap<Long, IpAddresses> ipToNetworkMap = null;
         if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
@@ -331,7 +332,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                     try {
                         networkId = Long.parseLong(ips.get("networkid"));
                     } catch (NumberFormatException e) {
-                        throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + ips.get("networkid"));
+                        throw new InvalidParameterValueException(getInjectedJobId(), "Unable to translate and find entity with networkId: " + ips.get("networkid"));
                     }
                     // so no network found but a valid number as network id; are we assuming exceptions thrown or lucky guessing?
                 }
