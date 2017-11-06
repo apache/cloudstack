@@ -66,6 +66,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
         IdZoneSearch.and("id", IdZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
         IdZoneSearch.and("type", IdZoneSearch.entity().getStorageType(), SearchCriteria.Op.EQ);
         IdZoneSearch.and("dcId", IdZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        IdZoneSearch.and("deleted", IdZoneSearch.entity().getDeleted(), SearchCriteria.Op.NULL);
         IdZoneSearch.done();
     }
 
@@ -85,6 +86,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
         sc.setParameters("id", id);
         sc.setParameters("type", type);
         sc.setParameters("dcId", dcId);
+        sc.setParameters("deleted", null);
         return listBy(sc, null);
     }
 
