@@ -17,7 +17,7 @@
 package com.cloud.consoleproxy;
 
 public enum InputEventType {
-    MOUSE_MOVE(1), MOUSE_DOWN(2), MOUSE_UP(3), KEY_PRESS(4), KEY_DOWN(5), KEY_UP(6), MOUSE_DBLCLICK(8);
+    MOUSE_MOVE(1), MOUSE_DOWN(2), MOUSE_UP(3), KEY_PRESS(4), KEY_DOWN(5), KEY_UP(6), MOUSE_DBLCLICK(8), MOUSE_SCROLL(9);
 
     int eventCode;
 
@@ -45,6 +45,8 @@ public enum InputEventType {
                 return KEY_UP;
             case 8:
                 return MOUSE_DBLCLICK;
+            case 9:
+                return MOUSE_SCROLL;
             default:
                 break;
         }
