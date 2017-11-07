@@ -296,4 +296,7 @@
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl" />
 
     <bean id="directDownloadManager" class="org.apache.cloudstack.direct.download.DirectDownloadManagerImpl" />
+
+    <bean id="agentMSLB" class="org.apache.cloudstack.agent.mslb.AgentMSLBServiceImpl" />
+
 </beans>

@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,48 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.agent.mslb;
 
-package com.cloud.agent.api;
+import java.util.List;
 
-public class ReadyCommand extends Command {
-    private String _details;
+public interface AgentMSLB {
 
-    public ReadyCommand() {
-        super();
-    }
+    /**
+     * Return list of management server addresses after applying configured MSLB algorithm
+     * @param hostId host id (if present)
+     * @param dcId zone id
+     * @return management servers string list
+     */
+    List<String> getManagementServerList(Long hostId, Long dcId);
 
-    private Long dcId;
-    private Long hostId;
-
-    public ReadyCommand(Long dcId) {
-        super();
-        this.dcId = dcId;
-    }
-
-    public ReadyCommand(final Long dcId, final Long hostId) {
-        this(dcId);
-        this.hostId = hostId;
-    }
-
-    public void setDetails(String details) {
-        _details = details;
-    }
-
-    public String getDetails() {
-        return _details;
-    }
-
-    public Long getDataCenterId() {
-        return dcId;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
-
-    public Long getHostId() {
-        return hostId;
-    }
 }

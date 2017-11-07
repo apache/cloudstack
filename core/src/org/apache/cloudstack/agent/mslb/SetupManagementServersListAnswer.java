@@ -17,46 +17,14 @@
 // under the License.
 //
 
-package com.cloud.agent.api;
+package org.apache.cloudstack.agent.mslb;
 
-public class ReadyCommand extends Command {
-    private String _details;
+import com.cloud.agent.api.Answer;
 
-    public ReadyCommand() {
-        super();
-    }
+public class SetupManagementServersListAnswer extends Answer {
 
-    private Long dcId;
-    private Long hostId;
-
-    public ReadyCommand(Long dcId) {
-        super();
-        this.dcId = dcId;
-    }
-
-    public ReadyCommand(final Long dcId, final Long hostId) {
-        this(dcId);
-        this.hostId = hostId;
-    }
-
-    public void setDetails(String details) {
-        _details = details;
-    }
-
-    public String getDetails() {
-        return _details;
-    }
-
-    public Long getDataCenterId() {
-        return dcId;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
-
-    public Long getHostId() {
-        return hostId;
+    public SetupManagementServersListAnswer(final boolean result) {
+        super(null);
+        this.result = result;
     }
 }

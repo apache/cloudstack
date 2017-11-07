@@ -50,6 +50,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Strings;
 
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class.getName());
@@ -72,6 +73,9 @@ public class AgentShell implements IAgentShell, Daemon {
     private volatile boolean _exit = false;
     private int _pingRetries;
     private final List<Agent> _agents = new ArrayList<Agent>();
+    private String hostToConnect;
+    private String connectedHost;
+    private long hostLBTimerInterval;
 
     public AgentShell() {
     }
@@ -107,18 +111,47 @@ public class AgentShell implements IAgentShell, Daemon {
     }
 
     @Override
-    public String getHost() {
-        final String[] hosts = _host.split(",");
+    public String getNextHost() {
+        final String[] hosts = getHosts();
         if (_hostCounter >= hosts.length) {
             _hostCounter = 0;
         }
-        final String host = hosts[_hostCounter % hosts.length];
+        hostToConnect = hosts[_hostCounter % hosts.length];
         _hostCounter++;
-        return host;
+        return hostToConnect;
     }
 
-    public void setHost(final String host) {
-        _host = host;
+    @Override
+    public String getConnectedHost() {
+        return connectedHost;
+    }
+
+    @Override
+    public long getHostLBTimerInterval() {
+        return hostLBTimerInterval * 1000L;
+    }
+
+    @Override
+    public void updateConnectedHost() {
+        connectedHost = hostToConnect;
+    }
+
+    @Override
+    public void setHosts(final String host) {
+        if (Strings.isNullOrEmpty(_host) || !_host.equals(host)) {
+            _host = host;
+            resetHostCounter();
+        }
+    }
+
+    @Override
+    public void resetHostCounter() {
+        _hostCounter = 0;
+    }
+
+    @Override
+    public String[] getHosts() {
+        return _host.split(",");
     }
 
     @Override
@@ -290,6 +323,9 @@ public class AgentShell implements IAgentShell, Daemon {
             _guid = UUID.randomUUID().toString();
             _properties.setProperty("guid", _guid);
         }
+
+        String val = getProperty(null, "host.lb.interval");
+        hostLBTimerInterval = (Strings.isNullOrEmpty(val) ? 0L : Long.valueOf(val));
 
         return true;
     }

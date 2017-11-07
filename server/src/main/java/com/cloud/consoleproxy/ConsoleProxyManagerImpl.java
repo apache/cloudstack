@@ -29,7 +29,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.agent.mslb.AgentMSLB;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -211,6 +211,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private KeysManager _keysMgr;
     @Inject
     private VirtualMachineManager _itMgr;
+    @Inject
+    private AgentMSLB agentMSLB;
 
     private ConsoleProxyListener _listener;
 
@@ -1355,7 +1357,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=consoleproxy");
-        buf.append(" host=").append(StringUtils.shuffleCSVList(ApiServiceConfiguration.ManagementHostIPAdr.value()));
+        buf.append(" host=").append(StringUtils.toCSVList(agentMSLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId())));
         buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
         if (_sslEnabled) {

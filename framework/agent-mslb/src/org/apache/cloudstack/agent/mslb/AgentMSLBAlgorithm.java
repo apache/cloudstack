@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,48 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
-package com.cloud.agent.api;
+package org.apache.cloudstack.agent.mslb;
 
-public class ReadyCommand extends Command {
-    private String _details;
+import java.util.List;
 
-    public ReadyCommand() {
-        super();
-    }
+public interface AgentMSLBAlgorithm {
+    /**
+     * Returns the management server list to send to host after applying the algorithm
+     * @param msList management server list
+     * @param orderedHostList ordered host list
+     * @param hostId host id
+     * @return returns the list of management server addresses which will be sent to host id
+     */
+    List<String> getMSList(final List<String> msList, final List<Long> orderedHostList, final Long hostId);
 
-    private Long dcId;
-    private Long hostId;
-
-    public ReadyCommand(Long dcId) {
-        super();
-        this.dcId = dcId;
-    }
-
-    public ReadyCommand(final Long dcId, final Long hostId) {
-        this(dcId);
-        this.hostId = hostId;
-    }
-
-    public void setDetails(String details) {
-        _details = details;
-    }
-
-    public String getDetails() {
-        return _details;
-    }
-
-    public Long getDataCenterId() {
-        return dcId;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
-
-    public Long getHostId() {
-        return hostId;
-    }
+    /**
+     * Gets the unique name of the algorithm
+     * @return returns the name of the Agent MSLB algorithm
+     */
+    String getName();
 }

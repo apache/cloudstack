@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,48 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.agent.mslb.algorithm;
 
-package com.cloud.agent.api;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import org.apache.cloudstack.agent.mslb.AgentMSLBAlgorithm;
 
-public class ReadyCommand extends Command {
-    private String _details;
+public class AgentMSLBShuffleAlgorithm implements AgentMSLBAlgorithm {
 
-    public ReadyCommand() {
-        super();
-    }
-
-    private Long dcId;
-    private Long hostId;
-
-    public ReadyCommand(Long dcId) {
-        super();
-        this.dcId = dcId;
-    }
-
-    public ReadyCommand(final Long dcId, final Long hostId) {
-        this(dcId);
-        this.hostId = hostId;
-    }
-
-    public void setDetails(String details) {
-        _details = details;
-    }
-
-    public String getDetails() {
-        return _details;
-    }
-
-    public Long getDataCenterId() {
-        return dcId;
+    @Override
+    public List<String> getMSList(final List<String> msList, final List<Long> orderedHostList, final Long hostId) {
+        final List<String> randomList = new ArrayList<>(msList);
+        Collections.shuffle(randomList, new Random(System.currentTimeMillis()));
+        return randomList;
     }
 
     @Override
-    public boolean executeInSequence() {
-        return true;
-    }
-
-    public Long getHostId() {
-        return hostId;
+    public String getName() {
+        return "shuffle";
     }
 }

@@ -21,10 +21,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -38,6 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
+import org.apache.cloudstack.agent.mslb.SetupManagementServersListAnswer;
+import org.apache.cloudstack.agent.mslb.SetupManagementServersListCommand;
 import org.apache.cloudstack.ca.SetupCertificateAnswer;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
@@ -65,6 +70,7 @@ import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentControlChannelException;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -121,6 +127,7 @@ public class Agent implements HandlerFactory, IAgentControl {
     Long _id;
 
     Timer _timer = new Timer("Agent Timer");
+    Timer hostLBTimer = new Timer("Host LB Timer");
 
     List<WatchTask> _watchList = new ArrayList<WatchTask>();
     long _sequence = 0;
@@ -144,7 +151,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         _shell = shell;
         _link = null;
 
-        _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
+        _connection = new NioClient("Agent", _shell.getNextHost(), _shell.getPort(), _shell.getWorkers(), this);
 
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 
@@ -179,7 +186,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             throw new ConfigurationException("Unable to configure " + _resource.getName());
         }
 
-        final String host = _shell.getHost();
+        final String host = _shell.getNextHost();
         _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
 
         // ((NioClient)_connection).setBindAddress(_shell.getPrivateIp());
@@ -255,7 +262,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
         }
         while (!_connection.isStartup()) {
-            final String host = _shell.getHost();
+            final String host = _shell.getNextHost();
             _shell.getBackoffAlgorithm().waitBeforeRetry();
             _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
             s_logger.info("Connecting to host:" + host);
@@ -266,6 +273,8 @@ public class Agent implements HandlerFactory, IAgentControl {
                 s_logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
             }
         }
+        _shell.updateConnectedHost();
+        scheduleHostLBCheckerTask();
     }
 
     public void stop(final String reason, final String detail) {
@@ -310,6 +319,14 @@ public class Agent implements HandlerFactory, IAgentControl {
         _shell.setPersistentProperty(getResourceName(), "id", Long.toString(id));
     }
 
+    private synchronized void scheduleHostLBCheckerTask() {
+        final long checkInterval = _shell.getHostLBTimerInterval();
+        if (checkInterval > 0L) {
+            s_logger.info("Scheduling preferred host timer task with host.lb.interval=" + checkInterval + "ms");
+            hostLBTimer.scheduleAtFixedRate(new PreferredHostCheckerTask(), checkInterval, checkInterval);
+        }
+    }
+
     public void scheduleWatch(final Link link, final Request request, final long delay, final long period) {
         synchronized (_watchList) {
             if (s_logger.isDebugEnabled()) {
@@ -332,8 +349,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             _watchList.clear();
         }
     }
-    public synchronized void lockStartupTask(final Link link)
-    {
+    public synchronized void lockStartupTask(final Link link) {
         _startup = new StartupTask(link);
         _timer.schedule(_startup, _startupWait);
     }
@@ -402,19 +418,23 @@ public class Agent implements HandlerFactory, IAgentControl {
             }
         }
 
-        link.close();
-        link.terminated();
+        if (link != null) {
+            link.close();
+            link.terminated();
+        }
 
         setLink(null);
         cancelTasks();
 
         _resource.disconnected();
 
+        final String lastConnectedHost = _shell.getConnectedHost();
+
         int inProgress = 0;
         do {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
 
-            s_logger.info("Lost connection to the server. Dealing with the remaining commands...");
+            s_logger.info("Lost connection to host: " + lastConnectedHost + ". Dealing with the remaining commands...");
 
             inProgress = _inProgress.get();
             if (inProgress > 0) {
@@ -434,10 +454,10 @@ public class Agent implements HandlerFactory, IAgentControl {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         }
 
-        final String host = _shell.getHost();
         do {
+            String host = _shell.getNextHost();
             _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
-            s_logger.info("Reconnecting to host:" + host);
+            s_logger.info("Lost connection to host: " + lastConnectedHost + ". Connecting to next host: " + host);
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
@@ -452,7 +472,8 @@ public class Agent implements HandlerFactory, IAgentControl {
             }
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         } while (!_connection.isStartup());
-        s_logger.info("Connected to the server");
+        _shell.updateConnectedHost();
+        s_logger.info("Connected to the host: " + _shell.getConnectedHost());
     }
 
     public void processStartupAnswer(final Answer answer, final Response response, final Link link) {
@@ -554,6 +575,8 @@ public class Agent implements HandlerFactory, IAgentControl {
                         answer = setupAgentCertificate((SetupCertificateCommand) cmd);
                     } else if (cmd instanceof SetupDirectDownloadCertificate) {
                         answer = setupDirectDownloadCertificate((SetupDirectDownloadCertificate) cmd);
+                    } else if (cmd instanceof SetupManagementServersListCommand) {
+                        answer = setupManagementServersList((SetupManagementServersListCommand) cmd);
                     } else {
                         if (cmd instanceof ReadyCommand) {
                             processReadyCommand(cmd);
@@ -626,6 +649,23 @@ public class Agent implements HandlerFactory, IAgentControl {
         String importCmd = String.format(importCommandFormat, cerFile, keyStoreFile, certificateName, privatePassword);
         Script.runSimpleBashScript(importCmd);
         return new Answer(cmd, true, "Certificate " + certificateName + " imported");
+    }
+
+    private Answer setupManagementServersList(SetupManagementServersListCommand cmd) {
+        final List<String> msList = cmd.getMsList();
+        if (msList != null && msList.size() > 0) {
+            final List<String> hosts = Arrays.asList(_shell.getHosts());
+            s_logger.info("Received management servers list: " + msList + ", current list: " + hosts);
+            if (isReceivedListUpdated(hosts, msList)) {
+                try {
+                    persistNewManagementServersList(msList);
+                    _shell.resetHostCounter();
+                } catch (Exception e) {
+                    throw new CloudRuntimeException("Couldnt persist received management servers list", e);
+                }
+            }
+        }
+        return new SetupManagementServersListAnswer(true);
     }
 
     public Answer setupAgentKeystore(final SetupKeyStoreCommand cmd) {
@@ -727,16 +767,44 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
-    public void processReadyCommand(final Command cmd) {
+    /**
+     * Checks if received list is different to actual management server list (in order and size)
+     * @param actual actual list
+     * @param received received list
+     * @return true if list is updated, false if not
+     */
+    private boolean isReceivedListUpdated(List<String> actual, List<String> received) {
+        if (actual.size() != received.size()) {
+            return true;
+        }
+        for (int i = 0; i < received.size(); i++) {
+            if (!received.get(i).equals(actual.get(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    /**
+     * Persist newly received management servers list
+     * @param msList management servers list
+     */
+    private void persistNewManagementServersList(List<String> msList) {
+        final String newHosts = StringUtils.toCSVList(msList);
+        _shell.setHosts(newHosts);
+        _shell.setPersistentProperty(null, "host", newHosts);
+        s_logger.info("Saved new management servers list: " + msList);
+    }
+
+    public void processReadyCommand(final Command cmd) {
         final ReadyCommand ready = (ReadyCommand)cmd;
 
-        s_logger.info("Proccess agent ready command, agent id = " + ready.getHostId());
+        s_logger.info("Processing agent ready command, agent id = " + ready.getHostId());
         if (ready.getHostId() != null) {
             setId(ready.getHostId());
         }
-        s_logger.info("Ready command is processed: agent id = " + getId());
 
+        s_logger.info("Ready command is processed for agent id = " + getId());
     }
 
     public void processOtherTask(final Task task) {
@@ -1017,5 +1085,42 @@ public class Agent implements HandlerFactory, IAgentControl {
                 processOtherTask(task);
             }
         }
+    }
+
+    public class PreferredHostCheckerTask extends ManagedContextTimerTask {
+
+         @Override
+         protected void runInContext() {
+             try {
+                 int index = 0;
+                 final String[] msList = _shell.getHosts();
+                 String preferredHost  = msList[index];
+                 final String connectedHost = _shell.getConnectedHost();
+                 if (s_logger.isTraceEnabled()) {
+                     s_logger.trace("Running preferred host checker task, connected host=" + connectedHost + ", preferred host=" + preferredHost);
+                 }
+                 if (!preferredHost.equals(connectedHost) && _link != null) {
+                     boolean isHostUp = true;
+                     try (final Socket socket = new Socket()) {
+                         socket.connect(new InetSocketAddress(preferredHost, _shell.getPort()), 5000);
+                     } catch (final IOException e) {
+                         isHostUp = false;
+                         if (s_logger.isDebugEnabled()) {
+                             s_logger.debug("Host: " + preferredHost + " is not reachable");
+                         }
+                     }
+                     if (isHostUp && _link != null && _inProgress.get() == 0) {
+                         if (s_logger.isDebugEnabled()) {
+                             s_logger.debug("Preferred host " + preferredHost + " is found to be reachable, trying to reconnect");
+                         }
+                         _shell.resetHostCounter();
+                         reconnect(_link);
+                     }
+                 }
+             } catch (Throwable t) {
+                 s_logger.error("Error caught while attempting to connect to preferred host", t);
+             }
+         }
+
     }
 }

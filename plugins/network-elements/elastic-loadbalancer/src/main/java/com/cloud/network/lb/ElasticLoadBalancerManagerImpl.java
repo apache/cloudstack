@@ -447,7 +447,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("Check if we need to add management server explicit route to ELB vm. pod cidr: " + dest.getPod().getCidrAddress() + "/"
                                 + dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: "
-                                + ApiServiceConfiguration.ManagementHostIPAdr.value());
+                                + ApiServiceConfiguration.ManagementServerAddresses.value());
                     }
 
                     if (s_logger.isDebugEnabled()) {
