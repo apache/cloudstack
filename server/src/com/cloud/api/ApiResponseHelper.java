@@ -17,6 +17,7 @@
 package com.cloud.api;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -346,6 +347,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    private ResourceTagDao _resourceTagDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -3193,9 +3196,24 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public UsageRecordResponse createUsageResponse(Usage usageRecord) {
-        UsageRecordResponse usageRecResponse = new UsageRecordResponse();
+    public Map<String, Set<ResourceTagResponse>> getUsageResourceTags()
+    {
+        try {
+            return _resourceTagDao.listTags();
+        } catch(Exception ex) {
+            s_logger.warn("Failed to get resource details for Usage data due to exception : ", ex);
+        }
+        return null;
+    }
 
+    @Override
+    public UsageRecordResponse createUsageResponse(Usage usageRecord) {
+        return createUsageResponse(usageRecord, null);
+    }
+
+    @Override
+    public UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap) {
+        UsageRecordResponse usageRecResponse = new UsageRecordResponse();
         Account account = ApiDBUtils.findAccountById(usageRecord.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             //find the project
@@ -3238,14 +3256,20 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        ResourceTag.ResourceObjectType resourceType = null;
+        Long resourceId = null;
         if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
             ServiceOfferingVO svcOffering = _entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, usageRecord.getOfferingId().toString());
             //Service Offering Id
-            usageRecResponse.setOfferingId(svcOffering.getUuid());
+            if(svcOffering != null) {
+                usageRecResponse.setOfferingId(svcOffering.getUuid());
+            }
             //VM Instance ID
             VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
             if (vm != null) {
+                resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
+                resourceId = vm.getId();
             }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
@@ -3274,16 +3298,20 @@ public class ApiResponseHelper implements ResponseGenerator {
             //IP Address ID
             IPAddressVO ip = _entityMgr.findByIdIncludingRemoved(IPAddressVO.class, usageRecord.getUsageId().toString());
             if (ip != null) {
+                resourceType = ResourceObjectType.PublicIpAddress;
+                resourceId = ip.getId();
                 usageRecResponse.setUsageId(ip.getUuid());
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
             //Device Type
+            resourceType = ResourceObjectType.UserVm;
             usageRecResponse.setType(usageRecord.getType());
             if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
                 //Domain Router Id
                 VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
                 if (vm != null) {
+                    resourceId = vm.getId();
                     usageRecResponse.setUsageId(vm.getUuid());
                 }
             } else {
@@ -3297,14 +3325,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             if((usageRecord.getNetworkId() != null) && (usageRecord.getNetworkId() != 0)) {
                 NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
                 if (network != null) {
+                    resourceType = ResourceObjectType.Network;
+                    resourceId = network.getId();
                     usageRecResponse.setNetworkId(network.getUuid());
                 }
             }
-
         } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
                 || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
+            resourceType = ResourceObjectType.Volume;
             //VM Instance Id
             VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
             if (vm != null) {
@@ -3314,13 +3344,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
             if (volume != null) {
                 usageRecResponse.setUsageId(volume.getUuid());
+                resourceId = volume.getId();
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.Volume;
             if (volume != null) {
                 usageRecResponse.setUsageId(volume.getUuid());
+                resourceId = volume.getId();
             }
             //Volume Size
             usageRecResponse.setSize(usageRecord.getSize());
@@ -3335,20 +3368,25 @@ public class ApiResponseHelper implements ResponseGenerator {
             VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId().toString());
             if (tmpl != null) {
                 usageRecResponse.setUsageId(tmpl.getUuid());
+                resourceId = tmpl.getId();
             }
             //Template/ISO Size
             usageRecResponse.setSize(usageRecord.getSize());
             if (usageRecord.getUsageType() == UsageTypes.ISO) {
                 usageRecResponse.setVirtualSize(usageRecord.getSize());
+                resourceType = ResourceObjectType.ISO;
             } else {
                 usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+                resourceType = ResourceObjectType.Template;
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.SNAPSHOT) {
             //Snapshot ID
             SnapshotVO snap = _entityMgr.findByIdIncludingRemoved(SnapshotVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.Snapshot;
             if (snap != null) {
                 usageRecResponse.setUsageId(snap.getUuid());
+                resourceId = snap.getId();
             }
             //Snapshot Size
             usageRecResponse.setSize(usageRecord.getSize());
@@ -3356,14 +3394,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY) {
             //Load Balancer Policy ID
             LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.LoadBalancer;
             if (lb != null) {
                 usageRecResponse.setUsageId(lb.getUuid());
+                resourceId = lb.getId();
             }
         } else if (usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE) {
             //Port Forwarding Rule ID
             PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.PortForwardingRule;
             if (pf != null) {
                 usageRecResponse.setUsageId(pf.getUuid());
+                resourceId = pf.getId();
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING) {
@@ -3379,16 +3421,19 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (vpnUser != null) {
                 usageRecResponse.setUsageId(vpnUser.getUuid());
             }
-
         } else if (usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP) {
             //Security Group Id
             SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.SecurityGroup;
             if (sg != null) {
+                resourceId = sg.getId();
                 usageRecResponse.setUsageId(sg.getUuid());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
+            resourceType = ResourceObjectType.UserVm;
             if (vm != null) {
+                resourceId = vm.getId();
                 usageRecResponse.setVmName(vm.getInstanceName());
                 usageRecResponse.setUsageId(vm.getUuid());
             }
@@ -3396,6 +3441,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
             }
+        }
+
+        if(resourceTagResponseMap != null && resourceTagResponseMap.get(resourceId + ":" + resourceType) != null) {
+             usageRecResponse.setTags(resourceTagResponseMap.get(resourceId + ":" + resourceType));
         }
 
         if (usageRecord.getRawUsage() != null) {

@@ -17,8 +17,12 @@
 package com.cloud.tags.dao;
 
 import java.util.List;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
 
-
+import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag;
@@ -66,5 +70,27 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
             tag.setResourceId(destId);
             update(tag.getId(), tag);
         }
+    }
+
+    @Override
+    public Map<String, Set<ResourceTagResponse>> listTags() {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        List<ResourceTagVO> resourceTagList = listBy(sc);
+        Map<String, Set<ResourceTagResponse>> resourceTagMap = new HashMap();
+        String resourceKey = null;
+        ResourceTagResponse resourceTagResponse = null;
+        for (ResourceTagVO resourceTagVO : resourceTagList) {
+            resourceTagResponse = new ResourceTagResponse();
+            resourceTagResponse.setKey(resourceTagVO.getKey());
+            resourceTagResponse.setValue(resourceTagVO.getValue());
+            Set<ResourceTagResponse> resourceTagSet = new HashSet();
+            resourceKey = resourceTagVO.getResourceId() + ":" + resourceTagVO.getResourceType();
+            if(resourceTagMap.get(resourceKey) != null) {
+                resourceTagSet = resourceTagMap.get(resourceKey);
+            }
+            resourceTagSet.add(resourceTagResponse);
+            resourceTagMap.put(resourceKey, resourceTagSet);
+        }
+        return resourceTagMap;
     }
 }
