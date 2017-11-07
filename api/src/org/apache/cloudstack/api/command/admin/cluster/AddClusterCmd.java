@@ -230,11 +230,7 @@ public class AddClusterCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceInUseException ex) {
             s_logger.warn("Exception: ", ex);
-            ServerApiException e = new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
-            for (String proxyObj : ex.getIdProxyList()) {
-                e.addProxyObject(proxyObj);
-            }
-            throw e;
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage(), ex);
         }
     }
 }
