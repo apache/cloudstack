@@ -204,7 +204,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUser(escapedUsername, type, name, context);
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap Exception: ",e);
-            throw new NoLdapUserMatchingQueryException("No Ldap User found for username: "+username + "name: " + name + "of type: " + type);
+            throw new NoLdapUserMatchingQueryException("No Ldap User found for username: "+username + " in group: " + name + " of type: " + type);
         } finally {
             closeContext(context);
         }
