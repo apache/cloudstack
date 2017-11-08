@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
+
+import com.cloud.utils.net.NetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import com.cloud.network.router.NetworkHelper;
@@ -568,7 +570,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         capabilities.put(Service.SourceNat, sourceNatCapabilities);
 
         capabilities.put(Service.StaticNat, null);
-        capabilities.put(Service.PortForwarding, null);
+
+        final Map<Capability, String> portForwardingCapabilities = new HashMap<Capability, String>();
+        portForwardingCapabilities.put(Capability.SupportedProtocols, NetUtils.TCP_PROTO + "," + NetUtils.UDP_PROTO);
+        capabilities.put(Service.PortForwarding, portForwardingCapabilities);
 
         return capabilities;
     }
