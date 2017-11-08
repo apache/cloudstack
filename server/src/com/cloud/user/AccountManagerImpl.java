@@ -1704,17 +1704,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         Account newAccount = null;
         if (StringUtils.isNotBlank(cmd.getAccountName())) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Getting id for account by name '" + cmd.getAccountName() + "' in domain " + oldAccount.getDomainId());
+            }
             newAccount = _accountDao.findEnabledAccount(cmd.getAccountName(), oldAccount.getDomainId());
         }
         if (newAccount == null && cmd.getAccountId() != null) {
             newAccount = _accountDao.findById(cmd.getAccountId());
-        } else {
+        }
+        if (newAccount == null) {
             throw new CloudRuntimeException("no account name or account id. this should have been caught before this point");
         }
 
         if(newAccount.getDomainId() != oldAccount.getDomainId()) {
             // not in scope
-            throw new InvalidParameterValueException("movin a user from an account in one domain to an account in annother domain is not supported!");
+            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
         }
         long newAccountId = newAccount.getAccountId();
         return Transaction.execute(new TransactionCallback<Boolean>() {
