@@ -1709,10 +1709,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 UserVO newUser = new UserVO(user);
+                user.setExternalEntity(user.getUuid());
+                user.setUuid(UUID.randomUUID().toString());
+                _userDao.update(user.getId(),user);
                 newUser.setAccountId(newAccountId);
-                boolean marksucceeded = _userDao.remove(cmd.getId());
+                boolean success = _userDao.remove(cmd.getId());
                 UserVO persisted = _userDao.persist(newUser);
-                return marksucceeded && persisted.getUuid().equals(user.getUuid());
+                return success && persisted.getUuid().equals(user.getExternalEntity());
             }
         });
     }
