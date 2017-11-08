@@ -1701,26 +1701,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO user = getValidUserVO(cmd.getId());
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
+        long domainId = oldAccount.getDomainId();
 
-        Account newAccount = null;
-        if (StringUtils.isNotBlank(cmd.getAccountName())) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Getting id for account by name '" + cmd.getAccountName() + "' in domain " + oldAccount.getDomainId());
-            }
-            newAccount = _accountDao.findEnabledAccount(cmd.getAccountName(), oldAccount.getDomainId());
-        }
-        if (newAccount == null && cmd.getAccountId() != null) {
-            newAccount = _accountDao.findById(cmd.getAccountId());
-        }
-        if (newAccount == null) {
-            throw new CloudRuntimeException("no account name or account id. this should have been caught before this point");
-        }
+        long newAccountId = getNewAccountId(cmd, domainId);
 
-        if(newAccount.getDomainId() != oldAccount.getDomainId()) {
-            // not in scope
-            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
-        }
-        long newAccountId = newAccount.getAccountId();
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -1731,6 +1715,29 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return marksucceeded && persisted.getUuid().equals(user.getUuid());
             }
         });
+    }
+
+    private long getNewAccountId(MoveUserCmd cmd, long domainId) {
+        Account newAccount = null;
+        if (StringUtils.isNotBlank(cmd.getAccountName())) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Getting id for account by name '" + cmd.getAccountName() + "' in domain " + domainId);
+            }
+            newAccount = _accountDao.findEnabledAccount(cmd.getAccountName(), domainId);
+        }
+        if (newAccount == null && cmd.getAccountId() != null) {
+            newAccount = _accountDao.findById(cmd.getAccountId());
+        }
+        if (newAccount == null) {
+            throw new CloudRuntimeException("no account name or account id. this should have been caught before this point");
+        }
+        long newAccountId = newAccount.getAccountId();
+
+        if(newAccount.getDomainId() != domainId) {
+            // not in scope
+            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
+        }
+        return newAccountId;
     }
 
     private void checkAccountAndAccess(UserVO user, Account account) {
