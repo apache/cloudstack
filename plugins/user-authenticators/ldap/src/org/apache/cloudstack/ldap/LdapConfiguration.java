@@ -40,7 +40,10 @@ public class LdapConfiguration implements Configurable{
                                                                                 true, ConfigKey.Scope.Global, null);
 
     private static final ConfigKey<Boolean> ldapEnableNestedGroups = new ConfigKey<Boolean>(Boolean.class, "ldap.nested.groups.enable", "Advanced", "true",
-                                                                                            "if true, nested groups will also be queried", true, ConfigKey.Scope.Global, null);
+            "if true, nested groups will also be queried", true, ConfigKey.Scope.Global, null);
+
+    private static final ConfigKey<String> ldapMemberOfAttribute = new ConfigKey<String>(String.class, "ldap.memberof.attribute", "Advanced", "memberof",
+            "the reverse membership attibute for group members", true, ConfigKey.Scope.Global, null);
 
     private static final ConfigKey<String> ldapBaseDn = new ConfigKey<String>(
             "Advanced",
@@ -332,6 +335,10 @@ public class LdapConfiguration implements Configurable{
         return ldapEnableNestedGroups.value();
     }
 
+    public static String getLdapMemberOfAttribute() {
+        return ldapMemberOfAttribute.value();
+    }
+
     @Override
     public String getConfigComponentName() {
         return LdapConfiguration.class.getSimpleName();
@@ -356,7 +363,8 @@ public class LdapConfiguration implements Configurable{
                 ldapGroupObject,
                 ldapGroupUniqueMemberAttribute,
                 ldapTrustStore,
-                ldapTrustStorePassword
+                ldapTrustStorePassword,
+                ldapMemberOfAttribute
         };
     }
 }
