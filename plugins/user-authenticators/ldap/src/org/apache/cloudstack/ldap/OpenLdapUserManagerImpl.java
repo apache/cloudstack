@@ -83,7 +83,11 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         final StringBuilder memberOfFilter = new StringBuilder();
         if (_ldapConfiguration.getSearchGroupPrinciple() != null) {
-            memberOfFilter.append("(memberof=");
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("adding search filter for '" + _ldapConfiguration.getSearchGroupPrinciple() +
+                "', using " + _ldapConfiguration.getLdapMemberOfAttribute());
+            }
+            memberOfFilter.append("(" + _ldapConfiguration.getLdapMemberOfAttribute() + "=");
             memberOfFilter.append(_ldapConfiguration.getSearchGroupPrinciple());
             memberOfFilter.append(")");
         }
