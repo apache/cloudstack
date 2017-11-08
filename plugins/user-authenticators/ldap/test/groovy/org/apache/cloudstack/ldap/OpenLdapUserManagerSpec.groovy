@@ -170,7 +170,7 @@ class OpenLdapUserManagerSpec extends spock.lang.Specification {
         ldapConfiguration.getBaseDn() >> "dc=cloudstack,dc=org"
         ldapConfiguration.getCommonNameAttribute() >> "cn"
         ldapConfiguration.getGroupObject() >> "groupOfUniqueNames"
-        ldapConfiguration.getGroupUniqueMemeberAttribute() >> "uniquemember"
+        ldapConfiguration.getGroupUniqueMemberAttribute() >> "uniquemember"
         ldapConfiguration.getLdapPageSize() >> 1
         ldapConfiguration.getReadTimeout() >> 1000
 
