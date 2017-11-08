@@ -85,9 +85,9 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         if (_ldapConfiguration.getSearchGroupPrinciple() != null) {
             if(s_logger.isDebugEnabled()) {
                 s_logger.debug("adding search filter for '" + _ldapConfiguration.getSearchGroupPrinciple() +
-                "', using " + _ldapConfiguration.getLdapMemberOfAttribute());
+                "', using " + _ldapConfiguration.getUserMemberOfAttribute());
             }
-            memberOfFilter.append("(" + _ldapConfiguration.getLdapMemberOfAttribute() + "=");
+            memberOfFilter.append("(" + _ldapConfiguration.getUserMemberOfAttribute() + "=");
             memberOfFilter.append(_ldapConfiguration.getSearchGroupPrinciple());
             memberOfFilter.append(")");
         }
@@ -193,7 +193,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
     @Override
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context) throws NamingException {
-        String attributeName = _ldapConfiguration.getGroupUniqueMemeberAttribute();
+        String attributeName = _ldapConfiguration.getGroupUniqueMemberAttribute();
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(new String[] {attributeName});
