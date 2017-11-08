@@ -31,6 +31,7 @@
 
         if (router.projectid) routerType = _l('label.project');
         if (router.vpcid) routerType = _l('label.vpc');
+        if ("isredundantrouter" in router && router.isredundantrouter) routerType = routerType + " (" + router.redundantstate + ")";
 
         return $.extend(router, {
             routerType: routerType
@@ -9599,6 +9600,23 @@
                             },
                             detailView: {
                                 name: 'label.virtual.appliance.details',
+                                viewAll: [{
+                                    label: 'label.account',
+                                    path: 'accounts',
+                                    preFilter: function(args) {
+                                        if (args.context.routers[0].projectid)
+                                            return false;
+                                        if (args.context.routers[0].account == 'system')
+                                            return false;
+                                        return true;
+                                    }
+                                }, {
+                                    label: 'label.networks',
+                                    path: 'network',
+                                }, {
+                                    label: 'label.instances',
+                                    path: 'instances'
+                                }],
                                 actions: {
                                     start: {
                                         label: 'label.action.start.router',

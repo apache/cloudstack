@@ -379,6 +379,31 @@
                     });
                 }
 
+                if ("routers" in args.context) {
+                    if ("vpcid" in args.context.routers[0]) {
+                        $.extend(data, {
+                            vpcid: args.context.routers[0].vpcid
+                        });
+                    } else {
+                        if ("guestnetworkid" in args.context.routers[0]) {
+                            $.extend(data, {
+                                networkid: args.context.routers[0].guestnetworkid
+                            });
+                        }
+                    }
+                    if ("projectid" in args.context.routers[0]) {
+                        $.extend(data, {
+                            projectid: args.context.routers[0].projectid
+                        });
+                    }
+                }
+
+                if ("networks" in args.context) {
+                    $.extend(data, {
+                        networkid: args.context.networks[0].id
+                    });
+                }
+
                 if ("templates" in args.context) {
                     $.extend(data, {
                         templateid: args.context.templates[0].id

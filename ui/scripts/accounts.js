@@ -137,6 +137,19 @@
                             });
                         }
 
+                        if ("routers" in args.context) {
+                            if ("account" in args.context.routers[0]) {
+                                $.extend(data, {
+                                    name: args.context.routers[0].account
+                                });
+                            }
+                            if ("domainid" in args.context.routers[0]) {
+                                $.extend(data, {
+                                    domainid: args.context.routers[0].domainid
+                                });
+                            }
+                        }
+
                         $.ajax({
                             url: createURL('listAccounts'),
                             data: data,
