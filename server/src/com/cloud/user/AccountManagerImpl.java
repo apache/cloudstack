@@ -1705,6 +1705,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         long newAccountId = getNewAccountId(cmd, domainId);
 
+        if(newAccountId == user.getAccountId()) {
+            // could do a not silent fail but the objective of the user is reached
+            return true; // no need to create a new user object for this user
+        }
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
