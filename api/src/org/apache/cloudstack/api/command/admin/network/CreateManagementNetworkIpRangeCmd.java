@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,17 +36,17 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "createManagementNetworkIpRange",
+@APICommand(name = CreateManagementNetworkIpRangeCmd.APINAME,
         description = "Creates a Management network IP range.",
         responseObject = PodResponse.class,
-        since = "4.10.0.0",
+        since = "4.11.0.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
 public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateManagementNetworkIpRangeCmd.class);
 
-    private static final String s_name = "createmanagementnetworkiprangeresponse";
+    public static final String APINAME = "createManagementNetworkIpRange";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -54,25 +55,29 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = PodResponse.class,
             required = true,
-            description = "UUID of POD, where the IP range belongs to.")
+            description = "UUID of POD, where the IP range belongs to.",
+            validations = {ApiArgValidator.PositiveNumber})
     private Long podId;
 
     @Parameter(name = ApiConstants.GATEWAY,
             type = CommandType.STRING,
             required = true,
-            description = "The gateway for the management network.")
+            description = "The gateway for the management network.",
+            validations = {ApiArgValidator.NotNullOrEmpty})
     private String gateway;
 
     @Parameter(name = ApiConstants.NETMASK,
             type = CommandType.STRING,
             required = true,
-            description = "The netmask for the management network.")
+            description = "The netmask for the management network.",
+            validations = {ApiArgValidator.NotNullOrEmpty})
     private String netmask;
 
     @Parameter(name = ApiConstants.START_IP,
             type = CommandType.STRING,
             required = true,
-            description = "The starting IP address.")
+            description = "The starting IP address.",
+            validations = {ApiArgValidator.NotNullOrEmpty})
     private String startIp;
 
     @Parameter(name = ApiConstants.END_IP,
@@ -129,7 +134,7 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

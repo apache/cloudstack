@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -33,17 +34,17 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteManagementNetworkIpRange",
+@APICommand(name = DeleteManagementNetworkIpRangeCmd.APINAME,
         description = "Deletes a management network IP range. This action is only allowed when no IPs in this range are allocated.",
         responseObject = SuccessResponse.class,
-        since = "4.10.0.0",
+        since = "4.11.0.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
 public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteManagementNetworkIpRangeCmd.class);
 
-    private static final String s_name = "deletemanagementnetworkiprangeresponse";
+    public static final String APINAME = "deleteManagementNetworkIpRange";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -53,19 +54,22 @@ public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = PodResponse.class,
             required = true,
-            description = "UUID of POD, where the IP range belongs to.")
+            description = "UUID of POD, where the IP range belongs to.",
+            validations = ApiArgValidator.PositiveNumber)
     private Long podId;
 
     @Parameter(name = ApiConstants.START_IP,
             type = CommandType.STRING,
             required = true,
-            description = "The starting IP address.")
+            description = "The starting IP address.",
+            validations = ApiArgValidator.NotNullOrEmpty)
     private String startIp;
 
     @Parameter(name = ApiConstants.END_IP,
             type = CommandType.STRING,
             required = true,
-            description = "The ending IP address.")
+            description = "The ending IP address.",
+            validations = ApiArgValidator.NotNullOrEmpty)
     private String endIp;
 
     /////////////////////////////////////////////////////
@@ -114,7 +118,7 @@ public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

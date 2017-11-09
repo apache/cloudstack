@@ -226,6 +226,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -999,7 +1000,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         checkIpRange(startIp, endIp, cidrAddress, cidrSize);
 
         // Check if the IP range overlaps with the public ip
-        if(startIp != null) {
+        if(!Strings.isNullOrEmpty(startIp)) {
             checkOverlapPublicIpRange(zoneId, startIp, endIp);
         }
 
@@ -1098,7 +1099,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public Pod createPodIpRange(final CreateManagementNetworkIpRangeCmd cmd) {
 
-        //Check if calling account is root admin.
         final Account account = CallContext.current().getCallingAccount();
 
         if(!_accountMgr.isRootAdmin(account.getId())) {
@@ -1119,12 +1119,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final long zoneId = pod.getDataCenterId();
 
-        //Check if gateway is a valid IP address.
         if(!NetUtils.isValidIp(gateway)) {
             throw new InvalidParameterValueException("The gateway IP address is invalid.");
         }
 
-        //Check if netmask is valid.
         if(!NetUtils.isValidNetmask(netmask)) {
             throw new InvalidParameterValueException("The netmask IP address is invalid.");
         }
@@ -1349,7 +1347,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // pod has allocated private IP addresses
         if (podHasAllocatedPrivateIPs(id)) {
 
-            if (netmask != null) {
+            if (!Strings.isNullOrEmpty(netmask)) {
                 final long newCidr = NetUtils.getCidrSize(netmask);
                 final long oldCidr = pod.getCidrSize();
 
@@ -1486,7 +1484,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // endIp is an optional parameter; if not specified - default it to the
         // end ip of the pod's cidr
-        if (startIp != null) {
+        if (!Strings.isNullOrEmpty(startIp)) {
             if (endIp == null) {
                 endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
             }
@@ -1497,7 +1495,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Create the new pod in the database
         String ipRange;
-        if (startIp != null) {
+        if (!Strings.isNullOrEmpty(startIp)) {
             ipRange = startIp + "-" + endIp;
         } else {
             throw new InvalidParameterValueException("Start ip is required parameter");
@@ -1518,7 +1516,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                 final HostPodVO pod = _podDao.persist(podFinal);
 
-                if (startIp != null) {
+                if (!Strings.isNullOrEmpty(startIp)) {
                     _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal);
                 }
 
@@ -1639,24 +1637,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private void checkIpRange(final String startIp, final String endIp, final String cidrAddress, final long cidrSize) {
         //Checking not null for start IP as well. Previously we assumed to be not null always.
         //But the check is required for the change in updatePod API.
-        if (startIp != null && !NetUtils.isValidIp(startIp)) {
+        if (!Strings.isNullOrEmpty(startIp) && !NetUtils.isValidIp(startIp)) {
             throw new InvalidParameterValueException("The start address of the IP range is not a valid IP address.");
         }
 
-        if (endIp != null && !NetUtils.isValidIp(endIp)) {
+        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.isValidIp(endIp)) {
             throw new InvalidParameterValueException("The end address of the IP range is not a valid IP address.");
         }
 
         //Not null check is required for the change in updatePod API.
-        if (startIp != null && !NetUtils.getCidrSubNet(startIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+        if (!Strings.isNullOrEmpty(startIp) && !NetUtils.getCidrSubNet(startIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
             throw new InvalidParameterValueException("The start address of the IP range is not in the CIDR subnet.");
         }
 
-        if (endIp != null && !NetUtils.getCidrSubNet(endIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.getCidrSubNet(endIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
             throw new InvalidParameterValueException("The end address of the IP range is not in the CIDR subnet.");
         }
 
-        if (endIp != null && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
+        if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
             throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
         }
 
