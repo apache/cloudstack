@@ -47,8 +47,8 @@ public class MoveUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID,
-            type = CommandType.UUID
-            , entityType = UserResponse.class,
+            type = CommandType.UUID,
+            entityType = UserResponse.class,
             required = true,
             description = "id of the user to be deleted")
     private Long id;
@@ -60,6 +60,7 @@ public class MoveUserCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT_ID,
             type = CommandType.UUID,
+            entityType = UserResponse.class,
             description = "Creates the user under the specified domain. Has to be accompanied with the account parameter")
     private Long accountId;
 
