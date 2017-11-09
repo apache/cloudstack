@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -35,8 +36,12 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "moveUser", description = "Moves a user to another account", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+@APICommand(name = "moveUser",
+        description = "Moves a user to another account",
+        responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        since = "4.11",
         authorized = {RoleType.Admin})
 public class MoveUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
@@ -60,7 +65,7 @@ public class MoveUserCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT_ID,
             type = CommandType.UUID,
-            entityType = UserResponse.class,
+            entityType = AccountResponse.class,
             description = "Creates the user under the specified domain. Has to be accompanied with the account parameter")
     private Long accountId;
 
