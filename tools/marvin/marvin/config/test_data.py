@@ -71,6 +71,15 @@ test_data = {
         "username": "test-account2",
         "password": "password"
     },
+    "user": {
+         "email": "user@test.com",
+         "firstname": "User",
+         "lastname": "User",
+         "username": "User",
+           # Random characters are appended for unique
+           # username
+         "password": "fr3sca",
+     },
     "small": {
         "displayname": "testserver",
         "username": "root",
