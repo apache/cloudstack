@@ -57,7 +57,9 @@ if [ "$1" = configure ]; then
     chgrp cloud ${CONFDIR}/${DBPROPS}
     chown -R cloud:cloud /var/log/cloudstack/management
 
-    ln -s ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j.xml
+    if [ ! -e "$CONFDIR/log4j.xml" ]; then
+        ln -s ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j.xml
+    fi
 
     # Add jdbc MySQL driver settings to db.properties if not present
     grep -s -q "db.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
