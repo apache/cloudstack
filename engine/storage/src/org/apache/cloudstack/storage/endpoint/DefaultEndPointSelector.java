@@ -364,6 +364,18 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     @Override
+    public EndPoint selectOneHypervisorHostByZone(long zoneId, Hypervisor.HypervisorType hypervisorType) {
+        Host host = hostDao.findOneByZoneAndHypervisor(zoneId, hypervisorType);
+        if (host == null) {
+            host = hostDao.findOneDisabledByZoneAndHypervisor(zoneId, hypervisorType);
+        }
+        if (host == null) {
+            throw new CloudRuntimeException("There is no host available in Up status in zone: " + zoneId + " for hypervisor: " + hypervisorType);
+        }
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+    }
+
+    @Override
     public List<EndPoint> selectAll(DataStore store) {
         List<EndPoint> endPoints = new ArrayList<EndPoint>();
         if (store.getScope().getScopeType() == ScopeType.HOST) {
